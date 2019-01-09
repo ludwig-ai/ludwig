@@ -58,7 +58,7 @@ python -m spacy download en
 ```
 or install it after cloning the repository:
 ```
-git clone gitolite@code.uber.internal:ailabs/ludwig
+git clone git@github.com:uber/ludwig.git
 cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate
