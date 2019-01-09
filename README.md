@@ -32,7 +32,7 @@ Ludwig's requirements are the following:
 - pandas
 - scipy
 - scikit-learn
-- scikit-image
+- imageio
 - spacy
 - tensorflow
 - matplotlib
