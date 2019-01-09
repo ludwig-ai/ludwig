@@ -1,0 +1,72 @@
+#! /usr/bin/env python
+# coding=utf-8
+# Copyright 2019 The Ludwig Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+import tensorflow as tf
+
+
+def sequence_length_3D(sequence):
+    used = tf.sign(tf.reduce_max(tf.abs(sequence), 2))
+    length = tf.reduce_sum(used, 1)
+    length = tf.cast(length, tf.int32)
+    return length
+
+
+def sequence_length_2D(sequence):
+    used = tf.sign(tf.abs(sequence))
+    length = tf.reduce_sum(used, 1)
+    length = tf.cast(length, tf.int32)
+    return length
+
+
+# Convert a dense matrix into a sparse matrix (for e.g. edit_distance)
+def to_sparse(tensor, lengths, max_length):
+    mask = tf.sequence_mask(lengths, max_length)
+    indices = tf.to_int64(tf.where(tf.equal(mask, True)))
+    values = tf.to_int32(tf.boolean_mask(tensor, mask))
+    shape = tf.to_int64(tf.shape(tensor))
+    return tf.SparseTensor(indices, values, shape)
+
+
+def get_tf_config(gpus=None, gpu_fraction=1, allow_parallel_threads=True):
+    intra_op_parallelism_threads = 2  # defult in tensorflow
+    inter_op_parallelism_threads = 5  # defult in tensorflow
+    if not allow_parallel_threads:
+        # this is needed for reproducibility
+        intra_op_parallelism_threads = 1
+        inter_op_parallelism_threads = 1
+
+    if gpus is not None:
+        if gpu_fraction > 0 and gpu_fraction < 1:
+            # this is the source of freezing in tensorflow 1.3.1
+            gpu_options = tf.GPUOptions(
+                per_process_gpu_memory_fraction=gpu_fraction,
+                allow_growth=True)
+        else:
+            gpu_options = tf.GPUOptions()
+        if isinstance(gpus, int):
+            gpus = [gpus]
+        gpu_options.visible_device_list = ','.join(str(g) for g in gpus)
+        tf_config = tf.ConfigProto(allow_soft_placement=True,
+                                   log_device_placement=False,
+                                   intra_op_parallelism_threads=intra_op_parallelism_threads,
+                                   inter_op_parallelism_threads=inter_op_parallelism_threads,
+                                   gpu_options=gpu_options)
+    else:
+        tf_config = tf.ConfigProto(allow_soft_placement=True,
+                                   log_device_placement=False,
+                                   intra_op_parallelism_threads=intra_op_parallelism_threads,
+                                   inter_op_parallelism_threads=inter_op_parallelism_threads)
+    return tf_config

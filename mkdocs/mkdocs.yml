@@ -1,0 +1,55 @@
+# Project information
+site_name: 'Ludwig'
+site_description: 'Deep learning toolbox'
+site_author: 'Piero Molino'
+site_url: 'https://uber.github.io/ludwig/'
+
+# Repository
+repo_name: 'uber/ludwig'
+repo_url: 'https://github.com/uber/ludwig'
+
+# Copyright
+copyright: 'Copyright &copy; 2018 - 2019 Uber Technologies Inc.'
+
+# Navigation
+nav:
+  - About: 'index.md'
+  - Getting Started: 'getting_started.md'
+  - Examples: 'examples.md'
+  - User Guide: 'user_guide.md'
+  - Developer Guide: 'developer_guide.md'
+  - API: 'api.md'
+
+# Configuration
+site_dir: '../docs/'
+theme:
+  name: 'material'
+  language: 'en'
+  logo: 'ludwig_logo.svg'
+  favicon: 'ludwig_logo.png'
+  custom_dir: 'custom/'
+  palette:
+    primary: 'grey'
+    accent: 'grey'
+
+# Customization
+extra_css:
+  - 'stylesheets/extra.css'
+  - 'stylesheets/monokai.css'
+
+#extra_javascript:
+#  - https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+      baselevel: 2
+  - codehilite:
+      guess_lang: false
+#  - pymdownx.superfences:
+#      custom_fences:
+#        - name: mermaid
+#          class: mermaid
+#          format: !!python/name:pymdownx.superfences.fence_div_format

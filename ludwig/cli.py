@@ -1,0 +1,90 @@
+#! /usr/bin/env python
+# coding=utf-8
+# Copyright 2019 The Ludwig Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+import argparse
+import sys
+
+from ludwig import collect
+from ludwig import experiment
+from ludwig import predict
+from ludwig import train
+from ludwig import visualize
+
+
+class CLI(object):
+    """CLI describes a command line interface for interacting with Ludwig, there
+    are several different functions that can be performed. These functions are:
+    - experiment - run an experiment using ludwig
+    - predict - Given a list of $hat{y}$ values, compute $d(\hat{y}, y) under a
+      specified metric
+    - train - trains a model on the input file specified to it
+    - visualize - Analysis of the results for the model on the dataset and
+      presents a variety of plots to understand and evaluate the results
+    - collect_weights - Collects the weights for a pretrained model as a tensor
+      representation
+    - collect_activations - For each datapoint, there exists a corresponding
+      tensor representation which are collected through this method
+    """
+
+    def __init__(self):
+        parser = argparse.ArgumentParser(
+            description='ludwig cli runner',
+            usage='''ludwig <command> [<args>]
+
+Available sub-commands:
+   experiment            Runs a full experiment training a model and testing it
+   train                 Trains a model
+   predict               Predicts using a pretrained model
+   visualize             Visualizes experimental results
+   collect_weights       Collects tensors containing a pretrained model weights
+   collect_activations   Collects tensors for each datapoint using a pretrained model
+''')
+        parser.add_argument('command', help='Subcommand to run')
+        # parse_args defaults to [1:] for args, but you need to
+        # exclude the rest of the args too, or validation will fail
+        args = parser.parse_args(sys.argv[1:2])
+        if not hasattr(self, args.command):
+            print('Unrecognized command')
+            parser.print_help()
+            exit(1)
+        # use dispatch pattern to invoke method with same name
+        getattr(self, args.command)()
+
+    def experiment(self):
+        experiment.cli(sys.argv[2:])
+
+    def train(self):
+        train.cli(sys.argv[2:])
+
+    def predict(self):
+        predict.cli(sys.argv[2:])
+
+    def visualize(self):
+        visualize.cli(sys.argv[2:])
+
+    def collect_weights(self):
+        collect.cli_collect_weights(sys.argv[2:])
+
+    def collect_activations(self):
+        collect.cli_collect_activations(sys.argv[2:])
+
+
+def main():
+    CLI()
+
+
+if __name__ == '__main__':
+    main()
