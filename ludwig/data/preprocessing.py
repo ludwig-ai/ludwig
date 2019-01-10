@@ -231,7 +231,6 @@ def load_data(
         input_features,
         output_features,
         split_data=True,
-        validation_split=None,  # TODO validation_split is not used
         shuffle_training=False
 ):
     logging.info('Loading data from: {0}'.format(hdf5_file_path))

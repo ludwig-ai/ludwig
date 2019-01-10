@@ -58,8 +58,8 @@ class Batcher(object):
 
     def last_batch(self):
         return self.index >= self.total_size or (
-                    self.ignore_last and
-                    self.index + self.batch_size >= self.total_size)
+                self.ignore_last and
+                self.index + self.batch_size >= self.total_size)
 
     def reset(self):
         self.index = 0
@@ -141,8 +141,10 @@ class BucketedBatcher(object):
 
     def last_batch(self):
         return not np.any(self.indices < self.bucket_sizes) \
-               or (self.ignore_last and not np.any(
-            self.indices + self.batch_size < self.bucket_sizes))
+               or (self.ignore_last and
+                   not np.any(
+                       self.indices + self.batch_size < self.bucket_sizes
+                   ))
 
     def reset(self):
         self.indices = np.array([0] * len(self.buckets_idcs))
