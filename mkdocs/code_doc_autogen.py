@@ -26,6 +26,8 @@ import inspect
 import os
 import re
 
+sys.path.append("../")
+
 import ludwig
 
 EXCLUDE = {}
