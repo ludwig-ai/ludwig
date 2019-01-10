@@ -30,8 +30,8 @@ encoders = ['embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
             'stacked_cnn']
 
 model_definition_template = Template(
-        '{input_features: ${input_name}, output_features: ${output_name}, '
-        'training: {epochs: 2}}')
+    '{input_features: ${input_name}, output_features: ${output_name}, '
+    'training: {epochs: 2}}')
 
 
 def generate_data(input_features, output_features, filename='test_csv.csv'):
@@ -54,9 +54,9 @@ def run_experiment(input_features, output_features, data_csv):
         output_name=output_features
     )
 
-    experiment(yaml.load(model_definition),skip_save_processed_input=True,
+    experiment(yaml.load(model_definition), skip_save_processed_input=True,
                skip_save_progress_weights=True,
-               skip_save_unprocessed_output=True,data_csv=data_csv
+               skip_save_unprocessed_output=True, data_csv=data_csv
                )
 
 
@@ -75,13 +75,15 @@ def test_experiment_1():
 
     for encoder in encoders:
         run_experiment(input_features.substitute(encoder=encoder),
-                       output_features, data_csv='data/atis.train.iob.sample.csv')
+                       output_features,
+                       data_csv='data/atis.train.iob.sample.csv')
 
 
 def test_experiment_2():
     # Single Sequence input, single sequence output
     # Only the following encoders are working
-    input_features_template = Template('[{name: utterance, type: sequence, reduce_output: null, encoder: ${encoder}}]')
+    input_features_template = Template(
+        '[{name: utterance, type: sequence, reduce_output: null, encoder: ${encoder}}]')
     output_features = '[{name: iob, type: sequence, reduce_input: null, decoder: tagger}]'
 
     encoders2 = ['embed', 'rnn', 'cnnrnn']
@@ -89,24 +91,28 @@ def test_experiment_2():
         logging.info('Test 2, Encoder: {0}'.format(encoder))
 
         input_features = input_features_template.substitute(encoder=encoder)
-        run_experiment(input_features, output_features, data_csv='data/atis.train.iob.sample.csv')
+        run_experiment(input_features, output_features,
+                       data_csv='data/atis.train.iob.sample.csv')
 
 
 def test_experiment_3(delete_temp_data=True):
     # Multiple inputs, Single category output
-    input_features_string = Template("[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: ${encoder1}}, "
-                      "{type: numerical, name: random_number}, "
-                      "{type: category, name: random_category, vocab_size: 10, encoder: ${encoder2}}, "
-                      "{type: set, name: random_set, vocab_size: 10, max_len: 10},"
-                      "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10}]")
+    input_features_string = Template(
+        "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: ${encoder1}}, "
+        "{type: numerical, name: random_number}, "
+        "{type: category, name: random_category, vocab_size: 10, encoder: ${encoder2}}, "
+        "{type: set, name: random_set, vocab_size: 10, max_len: 10},"
+        "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10}]")
     output_features_string = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2}]"
 
     # Generate test data
-    rel_path = generate_data(input_features_string.substitute(encoder1='rnn', encoder2='rnn'),
-                             output_features_string, 'test_csv.csv')
+    rel_path = generate_data(
+        input_features_string.substitute(encoder1='rnn', encoder2='rnn'),
+        output_features_string, 'test_csv.csv')
 
     for encoder1, encoder2 in zip(encoders, encoders):
-        input_features = input_features_string.substitute(encoder1=encoder1, encoder2=encoder2)
+        input_features = input_features_string.substitute(encoder1=encoder1,
+                                                          encoder2=encoder2)
 
         run_experiment(input_features, output_features_string, rel_path)
 
@@ -117,11 +123,11 @@ def test_experiment_3(delete_temp_data=True):
 
 def test_experiment_4(delete_temp_data=True):
     # Multiple inputs, Multiple outputs
-    input_features= "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: stacked_cnn}, " \
-                      "{type: numerical, name: random_number}, " \
-                      "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
-                      "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
-                      "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
+    input_features = "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: stacked_cnn}, " \
+                     "{type: numerical, name: random_number}, " \
+                     "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
+                     "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
+                     "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
     output_features = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2}," \
                       "{type: sequence, name: random_seq_output, vocab_size: 10, max_len: 5}," \
                       "{type: numerical, name: random_num_output}]"
@@ -130,10 +136,10 @@ def test_experiment_4(delete_temp_data=True):
     run_experiment(input_features, output_features, rel_path)
 
     input_features = "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: stacked_cnn}, " \
-                      "{type: numerical, name: random_number}, " \
-                      "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
-                      "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
-                      "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
+                     "{type: numerical, name: random_number}, " \
+                     "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
+                     "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
+                     "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
     output_features = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2, decoder: generator, reduce_input: sum}," \
                       "{type: sequence, name: random_seq_output, vocab_size: 10, max_len: 5}," \
                       "{type: numerical, name: random_num_output}]"
@@ -142,10 +148,10 @@ def test_experiment_4(delete_temp_data=True):
     run_experiment(input_features, output_features, rel_path)
 
     input_features = "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: stacked_cnn}, " \
-                      "{type: numerical, name: random_number}, " \
-                      "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
-                      "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
-                      "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
+                     "{type: numerical, name: random_number}, " \
+                     "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
+                     "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
+                     "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
     output_features = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2}," \
                       "{type: sequence, name: random_seq_output, vocab_size: 10, max_len: 5, decoder: generator, reduce_input: None}," \
                       "{type: numerical, name: random_num_output}]"
@@ -158,7 +164,6 @@ def test_experiment_4(delete_temp_data=True):
 
 
 if __name__ == '__main__':
-
     logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
     logger = logging.getLogger()
     logger.setLevel(logging.WARNING)
