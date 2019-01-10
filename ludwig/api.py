@@ -719,7 +719,7 @@ class LudwigModel:
             gpu_fraction=1,
             only_predictions=True,
             logging_level=logging.ERROR,
-            debug=False  ## TODO can we remove this debug flag?
+            debug=False  # TODO can we remove this debug flag?
     ):
         logging.getLogger().setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:

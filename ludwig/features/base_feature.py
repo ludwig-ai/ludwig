@@ -198,7 +198,7 @@ class OutputFeature(ABC, BaseFeature):
 
             try:
                 hidden = tf.concat([hidden] + dependencies_hidden, -1)
-            except:  # TODO catch specific errors - PEP8
+            except:
                 raise ValueError(
                     'Shape mismatch while concatenating dependent features of '
                     '{}: {}. Concatenating the feature activations tensor {} '
