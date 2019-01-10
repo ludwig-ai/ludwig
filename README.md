@@ -77,4 +77,4 @@ Please follow the instructions on [Horovod's repository](https://github.com/uber
 Full documentation
 ------------------
 
-You can find the full documentation inside `doc/documentation.md`.
+You can find the full documentation [here](http://ludwig.github.io), inside the `docs` directory, with the documentation sources available in `mkdocs/doc/documentation.md`.
