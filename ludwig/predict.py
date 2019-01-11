@@ -78,7 +78,7 @@ def full_predict(
     )
 
     # run the prediction
-    print_boxed("LOADING MODEL")
+    print_boxed('LOADING MODEL')
     model, model_definition = load_model_and_definition(model_path)
 
     prediction_results = predict(
@@ -144,7 +144,7 @@ def predict(
         :returns: Test Statistics for inference and evaluation of the model
                   performance.
         """
-    print_boxed("PREDICT")
+    print_boxed('PREDICT')
     test_stats = model.predict(
         dataset,
         batch_size,
@@ -326,7 +326,7 @@ def cli(sys_argv):
         '--logging_level',
         default='info',
         help='the level of logging to use',
-        choices=["critical", "error", "warning", "info", "debug", "notset"]
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
     args = parser.parse_args(sys_argv)

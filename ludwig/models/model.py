@@ -109,7 +109,7 @@ class Model:
                 setattr(self, fe_name, fe_properties['placeholder'])
 
             # ================ Model ================
-            logging.debug("- Combiner {}".format(combiner['type']))
+            logging.debug('- Combiner {}'.format(combiner['type']))
             build_combiner = get_build_combiner(combiner['type'])(**combiner)
             hidden, hidden_size = build_combiner(
                 feature_encodings,
@@ -373,8 +373,8 @@ class Model:
                 time=time_utils.strdelta(elapsed_time)))
             # logging.info(
             #     'Training memory: {} | Evaluation memory: {}'.format(
-            #         convert_size(train_memory_usage) if train_memory_usage > 0 else "n/a",
-            #         convert_size(eval_memory_usage) if eval_memory_usage > 0 else "n/a"
+            #         convert_size(train_memory_usage) if train_memory_usage > 0 else 'n/a',
+            #         convert_size(eval_memory_usage) if eval_memory_usage > 0 else 'n/a'
             #     )
             # )
 
@@ -821,9 +821,9 @@ class Model:
         if early_stop > 0:
             if progress_tracker.last_improvement >= early_stop:
                 logging.info(
-                    "\nEARLY STOPPING due to lack of validation improvement,"
-                    "it's been {0} epochs since last validation accuracy "
-                    "improvement\n".format(
+                    '\nEARLY STOPPING due to lack of validation improvement,'
+                    'it has been {0} epochs since last validation accuracy '
+                    'improvement\n'.format(
                         progress_tracker.epoch -
                         progress_tracker.last_improvement_epoch))
                 should_break = True
@@ -1048,7 +1048,7 @@ def reduce_learning_rate(
     if progress_tracker.last_improvement >= reduce_learning_rate_on_plateau_patience:
         if progress_tracker.num_reductions_lr >= reduce_learning_rate_on_plateau:
             logging.info('\n')
-            logging.info("It's been " +
+            logging.info('It has been ' +
                          str(progress_tracker.last_improvement) +
                          'epochs since last validation accuracy improvement '
                          'and the learning rate was already reduced ' +
@@ -1079,7 +1079,7 @@ def increase_batch_size(
     if progress_tracker.last_improvement >= increase_batch_size_on_plateau_patience:
         if progress_tracker.num_increases_bs >= increase_batch_size_on_plateau:
             logging.info('\n')
-            logging.info("It's been " +
+            logging.info('It has been ' +
                          str(progress_tracker.last_improvement) +
                          'epochs since last validation accuracy improvement '
                          'and the learning rate was already reduced ' +
@@ -1089,7 +1089,7 @@ def increase_batch_size(
 
         elif progress_tracker.batch_size == increase_batch_size_on_plateau_max:
             logging.info('\n')
-            logging.info("It's been" +
+            logging.info('It has been' +
                          str(progress_tracker.last_improvement) +
                          'epochs since last validation accuracy improvement'
                          'and the batch size was already increased' +

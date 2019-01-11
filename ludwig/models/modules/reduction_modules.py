@@ -47,11 +47,11 @@ def reduce_concat(sequence, **kwargs):
     if sequence.shape.as_list()[-2] is None or sequence.shape.as_list()[
         -1] is None:
         # this the case of outputs coming from rnn encoders
-        logging.warning("  WARNING: "
-                        "The sequence length dimension is undefined "
-                        "(probably because of an RNN based encoder), "
-                        "so the sequence cannot be reduced by concatenation. "
-                        "Last will be used instead.")
+        logging.warning('  WARNING: '
+                        'The sequence length dimension is undefined '
+                        '(probably because of an RNN based encoder), '
+                        'so the sequence cannot be reduced by concatenation. '
+                        'Last will be used instead.')
         return reduce_last(sequence, **kwargs)
     else:
         return tf.reshape(sequence,

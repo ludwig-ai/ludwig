@@ -64,8 +64,7 @@ def concatenate_df(train_df, vali_df, test_df):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Concatenate train validation and test set "
-                    "in Huaxiu's format"
+        description='Concatenate train validation and test set'
     )
 
     parser.add_argument(

@@ -38,7 +38,7 @@ default_preprocessing_parameters.update({
 base_type_registry.items()
 })
 
-default_combiner_type = "concat"
+default_combiner_type = 'concat'
 
 default_training_params = {
     'optimizer': {'type': 'adam'},
@@ -115,7 +115,7 @@ def get_default_optimizer_params(optimizer_type):
     if optimizer_type in default_optimizer_params_registry:
         return default_optimizer_params_registry[optimizer_type]
     else:
-        raise ValueError("Incorrect optimizer type: " + optimizer_type)
+        raise ValueError('Incorrect optimizer type: ' + optimizer_type)
 
 
 def merge_with_defaults(model_definition):
@@ -147,7 +147,7 @@ def merge_with_defaults(model_definition):
                           default_training_params[param])
 
     if len(model_definition['output_features']) == 0:
-        raise ValueError("No output features are defined")
+        raise ValueError('No output features are defined')
 
     set_default_value(
         model_definition['training'],

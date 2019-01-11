@@ -77,7 +77,7 @@ class ConcatCombiner:
             representations.append(fe_properties['representation'])
             representations_size += fe_properties['size']
 
-        scope_name = "concat_combiner"
+        scope_name = 'concat_combiner'
         with tf.variable_scope(scope_name):
             # ================ Concat ================
             hidden = tf.concat(representations, 1)
@@ -139,7 +139,7 @@ class SequenceConcatCombiner:
         representations_size = representation.shape[2]
         representations = [representation]
 
-        scope_name = "sequence_concat_combiner"
+        scope_name = 'sequence_concat_combiner'
         sequence_length = sequence_length_3D(representation)
 
         with tf.variable_scope(scope_name):
@@ -151,15 +151,15 @@ class SequenceConcatCombiner:
                         if fe_properties['representation'].shape[
                             1] != representations_size:
                             raise ValueError(
-                                "The sequence length of the input feature {} "
-                                "is {} and is different from the sequence length "
-                                "of the main sequence feature {} which is {}.\n"
-                                "Shape of {}: {}, shape of {}: {}.\n"
-                                "Sequence lengths of all sequential features must be the same "
-                                "in order to be concatenated by the sequence concat combiner. "
-                                "Try to impose the same max sequence length "
-                                "as a preprocessing parameter to both features "
-                                "or to reduce the output of {}.".format(
+                                'The sequence length of the input feature {} '
+                                'is {} and is different from the sequence length '
+                                'of the main sequence feature {} which is {}.\n'
+                                'Shape of {}: {}, shape of {}: {}.\n'
+                                'Sequence lengths of all sequential features must be the same '
+                                'in order to be concatenated by the sequence concat combiner. '
+                                'Try to impose the same max sequence length '
+                                'as a preprocessing parameter to both features '
+                                'or to reduce the output of {}.'.format(
                                     fe_properties['name'],
                                     fe_properties['representation'].shape[1],
                                     self.main_sequence_feature,
@@ -201,9 +201,9 @@ class SequenceConcatCombiner:
 
                     else:
                         raise ValueError(
-                            "The representation of {} has rank {} and cannot be concatenated "
-                            "by a sequence concat combiner. "
-                            "Only rank 2 and rank 3 tensors are supported.".format(
+                            'The representation of {} has rank {} and cannot be concatenated '
+                            'by a sequence concat combiner. '
+                            'Only rank 2 and rank 3 tensors are supported.'.format(
                                 fe_properties['name'],
                                 len(fe_properties['representation'].shape)
                             )
@@ -263,7 +263,7 @@ class SequenceCombiner:
             is_training=True,
             **kwargs
     ):
-        scope_name = "sequence_combiner"
+        scope_name = 'sequence_combiner'
         with tf.variable_scope(scope_name):
             # ================ Concat ================
             hidden, hidden_size = self.combiner(
@@ -295,9 +295,9 @@ def get_build_combiner(combiner_type):
 
 
 combiner_registry = {
-    "concat": ConcatCombiner,
-    "sequence_concat": SequenceConcatCombiner,
-    "sequence": SequenceCombiner
+    'concat': ConcatCombiner,
+    'sequence_concat': SequenceConcatCombiner,
+    'sequence': SequenceCombiner
 }
 
 sequence_encoder_registry = {

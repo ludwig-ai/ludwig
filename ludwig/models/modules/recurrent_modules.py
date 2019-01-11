@@ -1,7 +1,7 @@
 # coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -86,8 +86,8 @@ class Projection(tf.layers.Layer):
 
 
 class BasicDecoderOutput(
-    collections.namedtuple("BasicDecoderOutput",
-                           ("rnn_output", "sample_id", "projection_input"))):
+    collections.namedtuple('BasicDecoderOutput',
+                           ('rnn_output', 'sample_id', 'projection_input'))):
     pass
 
 
@@ -111,7 +111,7 @@ class BasicDecoder(tf.contrib.seq2seq.BasicDecoder):
             nest.map_structure(lambda _: dtype, self._projection_input_size()))
 
     def step(self, time, inputs, state, name=None):
-        with ops.name_scope(name, "BasicDecoderStep", (time, inputs, state)):
+        with ops.name_scope(name, 'BasicDecoderStep', (time, inputs, state)):
             cell_outputs, cell_state = self._cell(inputs, state)
             projection_inputs = cell_outputs  # get projection_inputs to compute sampled_softmax_cross_entropy_loss
             if self._output_layer is not None:
@@ -130,7 +130,7 @@ class BasicDecoder(tf.contrib.seq2seq.BasicDecoder):
 
 class TimeseriesTrainingHelper(tf.contrib.seq2seq.TrainingHelper):
     def sample(self, time, outputs, name=None, **unused_kwargs):
-        with ops.name_scope(name, "TrainingHelperSample", [time, outputs]):
+        with ops.name_scope(name, 'TrainingHelperSample', [time, outputs]):
             return tf.zeros(tf.shape(outputs)[:-1], dtype=dtypes.int32)
 
 
@@ -335,7 +335,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                 regularizer=regularizer
             )
         logging.debug('  class_weights: {0}'.format(class_weights))
-        class_biases = tf.get_variable("class_biases", [vocab_size + 1])
+        class_biases = tf.get_variable('class_biases', [vocab_size + 1])
         logging.debug('  class_biases: {0}'.format(class_biases))
         projection_layer = Projection(class_weights, class_biases)
 
@@ -359,8 +359,8 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                                                    h=initial_state)
                 initial_state = tuple([initial_state] * num_layers)
             else:
-                raise ValueError("num_layers in recurrent decoser: {}. "
-                                 "Number of layers in a recurrenct decoder cannot be <= 0".format(
+                raise ValueError('num_layers in recurrent decoser: {}. '
+                                 'Number of layers in a recurrenct decoder cannot be <= 0'.format(
                     num_layers))
 
             # Attention

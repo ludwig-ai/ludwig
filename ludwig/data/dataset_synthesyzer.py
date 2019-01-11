@@ -217,21 +217,21 @@ def write_csv(dataset, csv_file_path):
             writer.writerow(row)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='This script generates a synthetic dataset.')
-    parser.add_argument("csv_file_path", help="output csv file path")
+    parser.add_argument('csv_file_path', help='output csv file path')
     parser.add_argument(
-        "-d",
-        "--dataset_size",
-        help="size of the dataset",
+        '-d',
+        '--dataset_size',
+        help='size of the dataset',
         type=int,
         default=100
     )
     parser.add_argument(
-        "-f",
-        "--features",
-        default="[\
+        '-f',
+        '--features',
+        default='[\
           {name: text_1, type: text, vocab_size: 20, max_len: 20}, \
           {name: text_2, type: text, vocab_size: 20, max_len: 20}, \
           {name: category_1, type: category, vocab_size: 10}, \
@@ -248,8 +248,8 @@ if __name__ == "__main__":
           {name: sequence_2, type: sequence, vocab_size: 20, max_len: 20}, \
           {name: timeseries_1, type: timeseries, max_len: 20}, \
           {name: timeseries_2, type: timeseries, max_len: 20}, \
-          ]",
-        type=yaml.load, help="dataset features"
+          ]',
+        type=yaml.load, help='dataset features'
     )
     args = parser.parse_args()
 

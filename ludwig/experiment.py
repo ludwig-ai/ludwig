@@ -123,7 +123,7 @@ def experiment(
     """
     # set input features defaults
     if model_definition_file is not None:
-        with open(model_definition_file, "r") as def_file:
+        with open(model_definition_file, 'r') as def_file:
             model_definition = merge_with_defaults(yaml.load(def_file))
     else:
         model_definition = merge_with_defaults(model_definition)
@@ -459,7 +459,7 @@ def cli(sys_argv):
         '--logging_level',
         default='info',
         help='the level of logging to use',
-        choices=["critical", "error", "warning", "info", "debug", "notset"]
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
     args = parser.parse_args(sys_argv)

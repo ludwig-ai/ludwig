@@ -32,9 +32,9 @@ def embedding_matrix(vocab, embedding_size, representation='dense',
                 pretrained_embeddings, vocab)
             if embeddings_matrix.shape[-1] != embedding_size:
                 raise ValueError(
-                    "The size of the pretrained embedding size is {}, "
-                    "but the specified embedding_size is {}. "
-                    "Please change the embedding_size accordingly.".format(
+                    'The size of the pretrained embedding size is {}, '
+                    'but the specified embedding_size is {}. '
+                    'Please change the embedding_size accordingly.'.format(
                         embeddings_matrix.shape[-1],
                         embedding_size
                     ))
@@ -42,8 +42,8 @@ def embedding_matrix(vocab, embedding_size, representation='dense',
         else:
             if vocab_size < embedding_size:
                 logging.info(
-                    "  embedding_size ({}) is greater than vocab_size ({}). "
-                    "Setting embedding size to be equal to vocab_size.".format(
+                    '  embedding_size ({}) is greater than vocab_size ({}). '
+                    'Setting embedding size to be equal to vocab_size.'.format(
                         embedding_size, vocab_size
                     ))
                 embedding_size = vocab_size

@@ -59,18 +59,18 @@ class Generator:
     ):
         if len(hidden.shape) != 3 and self.attention_mechanism is not None:
             raise ValueError(
-                "Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] "
-                "when attention mechanism is {}. "
-                "If you are using a sequential encoder or combiner consider setting reduce_output to None "
-                "and flatten to False if those parameters apply."
-                "Also make sure theat reduce_input of {} output feature is None,".format(
+                'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
+                'when attention mechanism is {}. '
+                'If you are using a sequential encoder or combiner consider setting reduce_output to None '
+                'and flatten to False if those parameters apply.'
+                'Also make sure theat reduce_input of {} output feature is None,'.format(
                     len(hidden.shape), self.attention_mechanism,
                     output_feature['name']))
         if len(hidden.shape) != 2 and self.attention_mechanism is None:
             raise ValueError(
-                "Encoder outputs rank is {}, but should be 2 [batch x hidden] "
-                "when attention mechanism is {}. "
-                "Consider setting reduce_input of {} output feature to a value different from None.".format(
+                'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
+                'when attention mechanism is {}. '
+                'Consider setting reduce_input of {} output feature to a value different from None.'.format(
                     len(hidden.shape), self.attention_mechanism,
                     output_feature['name']))
 
@@ -86,15 +86,15 @@ class Generator:
         if self.tied_embeddings is not None:
             try:
                 tied_embeddings_tensor = tf.get_default_graph().get_tensor_by_name(
-                    "{}/embeddings:0".format(self.tied_embeddings))
+                    '{}/embeddings:0'.format(self.tied_embeddings))
             except:
                 raise ValueError(
-                    "An error occurred while obtaining embeddings from the feature {} "
-                    "to use as tied weights in the generator decoder of feature {}. "
-                    "{} does not exists or doesn't have an embedding weights.v"
-                    "Please check the spelling of the feature name "
-                    "in the tied_embeddings field and "
-                    "be sure its type is not binary, numerical or timeseries.".format(
+                    'An error occurred while obtaining embeddings from the feature {} '
+                    'to use as tied weights in the generator decoder of feature {}. '
+                    '{} does not exists or does not have an embedding weights.v'
+                    'Please check the spelling of the feature name '
+                    'in the tied_embeddings field and '
+                    'be sure its type is not binary, numerical or timeseries.'.format(
                         self.tied_embeddings,
                         output_feature['name'],
                         self.tied_embeddings
@@ -153,9 +153,9 @@ class Tagger:
         logging.info('  hidden shape: {0}'.format(hidden.shape))
         if len(hidden.shape) != 3:
             raise ValueError(
-                "Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] "
-                "when using a tagger sequential decoder. "
-                "Consider setting reduce_output to null / None if a sequential encoder / combiner is used.".format(
+                'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
+                'when using a tagger sequential decoder. '
+                'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
                     len(hidden.shape)))
 
         if is_timeseries:

@@ -54,8 +54,8 @@ def get_initializer(parameters):
         return initializer_fun(**arguments)
     else:
         raise ValueError(
-            "Initializers parameters should be either strings or dictionaries, "
-            "but the provided parameters are a {}. "
-            "Parameters values: {}".format(
+            'Initializers parameters should be either strings or dictionaries, '
+            'but the provided parameters are a {}. '
+            'Parameters values: {}'.format(
                 type(parameters), parameters
             ))

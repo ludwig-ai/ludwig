@@ -200,7 +200,7 @@ class LudwigModel:
         """
         if (self.model is None or self.model.session or
                 self.model_definition is None or self.metadata is None):
-            raise ValueError("Model has not been initialized or loaded")
+            raise ValueError('Model has not been initialized or loaded')
 
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
 
@@ -557,7 +557,7 @@ class LudwigModel:
 
         if metadata is None and metadata_json is None:
             raise ValueError(
-                "One of metadata and metadata_json must be different from None."
+                'One of metadata and metadata_json must be different from None.'
             )
         if metadata_json is not None:
             metadata = load_metadata(metadata_json)
@@ -652,7 +652,7 @@ class LudwigModel:
 
         if (self.model is None or self.model_definition is None
                 or self.metadata is None):
-            raise ValueError("Model has not been initialized or loaded")
+            raise ValueError('Model has not been initialized or loaded')
 
         if data_df is None:
             if data_csv is not None:
@@ -661,8 +661,8 @@ class LudwigModel:
                 data_df = pd.DataFrame(data_dict)
             else:
                 raise ValueError(
-                    "No input data specified. "
-                    "One of data_df, data_csv or data_dict must be provided"
+                    'No input data specified. '
+                    'One of data_df, data_csv or data_dict must be provided'
                 )
 
         if batch_size is None:
@@ -681,7 +681,7 @@ class LudwigModel:
             ]
 
         logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
-        features_to_load = (self.model_definition["input_features"] +
+        features_to_load = (self.model_definition['input_features'] +
                             self.model_definition['output_features'])
         preprocessed_data = build_data(
             data_df,
@@ -727,7 +727,7 @@ class LudwigModel:
 
         if (self.model is None or self.model_definition is None or
                 self.metadata is None):
-            raise ValueError("Model has not been trained or loaded")
+            raise ValueError('Model has not been trained or loaded')
 
         if data_df is None:
             if data_csv is not None:
@@ -736,12 +736,12 @@ class LudwigModel:
                 data_df = pd.DataFrame(data_dict)
             else:
                 raise ValueError(
-                    "No input data specified. "
-                    "One of data_df, data_csv and data_dict must be provided"
+                    'No input data specified. '
+                    'One of data_df, data_csv and data_dict must be provided'
                 )
 
         logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
-        features_to_load = self.model_definition["input_features"]
+        features_to_load = self.model_definition['input_features']
         if not only_predictions:
             features_to_load += self.model_definition['output_features']
         preprocessed_data = build_data(
@@ -1162,7 +1162,7 @@ def main(sys_argv):
         '--logging_level',
         default='info',
         help='the level of logging to use',
-        choices=["critical", "error", "warning", "info", "debug", "notset"]
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
     args = parser.parse_args(sys_argv)
