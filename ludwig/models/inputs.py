@@ -47,7 +47,7 @@ def build_single_input(input_feature,
                        is_training=True,
                        **kwargs):
     scope_name = input_feature['name']
-    logging.debug("- Input {} feature {}".format(
+    logging.debug('- Input {} feature {}'.format(
         input_feature['type'],
         input_feature['name']
     ))

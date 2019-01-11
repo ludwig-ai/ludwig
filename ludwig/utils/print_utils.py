@@ -17,17 +17,17 @@
 import logging
 
 logging_level_registry = {
-    "critical": logging.CRITICAL,
-    "error": logging.ERROR,
-    "warning": logging.WARNING,
-    "info": logging.INFO,
-    "debug": logging.DEBUG,
-    "notset": logging.NOTSET
+    'critical': logging.CRITICAL,
+    'error': logging.ERROR,
+    'warning': logging.WARNING,
+    'info': logging.INFO,
+    'debug': logging.DEBUG,
+    'notset': logging.NOTSET
 }
 
 
 def print_ludwig(message, ludwig_version):
-    logging.info("\n".join([' _         _        _      ',
+    logging.info('\n'.join([' _         _        _      ',
                             '| |_  _ __| |_ __ _(_)__ _ ',
                             '| | || / _` \ V  V / / _` |',
                             '|_|\_,_\__,_|\_/\_/|_\__, |',

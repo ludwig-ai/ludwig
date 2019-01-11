@@ -303,12 +303,12 @@ def train(
     """
     if model_load_path is not None:
         # Load model
-        print_boxed("LOADING MODEL")
+        print_boxed('LOADING MODEL')
         logging.info('Loading model: {}\n'.format(model_load_path))
         model, _ = load_model_and_definition(model_load_path)
     else:
         # Build model
-        print_boxed("BUILDING MODEL")
+        print_boxed('BUILDING MODEL')
         model = Model(
             model_definition['input_features'],
             model_definition['output_features'],
@@ -320,7 +320,7 @@ def train(
         )
 
     # Train model
-    print_boxed("TRAINING")
+    print_boxed('TRAINING')
     return model, model.train(
         training_set,
         validation_set=validation_set,
@@ -579,7 +579,7 @@ def cli(sys_argv):
         '--logging_level',
         default='info',
         help='the level of logging to use',
-        choices=["critical", "error", "warning", "info", "debug", "notset"]
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
     args = parser.parse_args(sys_argv)

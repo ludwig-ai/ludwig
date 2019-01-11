@@ -73,7 +73,7 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
 def build_single_output(output_feature, feature_hidden, feature_hidden_size,
                         final_hidden,
                         dropout_rate, regularizer, is_training=True, **kwargs):
-    logging.debug("- Output {} feature {}".format(
+    logging.debug('- Output {} feature {}'.format(
         output_feature['type'],
         output_feature['name']
     ))

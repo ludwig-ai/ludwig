@@ -99,7 +99,7 @@ def collect_activations(
     model, model_definition = load_model_and_definition(model_path)
 
     # collect activations
-    print_boxed("COLLECT ACTIVATIONS")
+    print_boxed('COLLECT ACTIVATIONS')
     collected_tensors = model.collect_activations(
         dataset,
         tensors,
@@ -138,7 +138,7 @@ def collect_weights(
     model, model_definition = load_model_and_definition(model_path)
 
     # collect weights
-    print_boxed("COLLECT WEIGHTS")
+    print_boxed('COLLECT WEIGHTS')
     collected_tensors = model.collect_weights(tensors)
     model.close_session()
 
@@ -270,7 +270,7 @@ def cli_collect_activations(sys_argv):
         '--logging_level',
         default='info',
         help='the level of logging to use',
-        choices=["critical", "error", "warning", "info", "debug", "notset"]
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
     args = parser.parse_args(sys_argv)
@@ -347,7 +347,7 @@ def cli_collect_weights(sys_argv):
         '--logging_level',
         default='info',
         help='the level of logging to use',
-        choices=["critical", "error", "warning", "info", "debug", "notset"]
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
     args = parser.parse_args(sys_argv)

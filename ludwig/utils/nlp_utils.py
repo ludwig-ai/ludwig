@@ -36,9 +36,9 @@ def load_nlp_pipeline():
         try:
             import en_core_web_sm
         except FileNotFoundError:
-            logging.error("Unable to load spacy model en_core_web_sm. "
-                          "Make sure to download it with: "
-                          "python -m spacy download en")
+            logging.error('Unable to load spacy model en_core_web_sm. '
+                          'Make sure to download it with: '
+                          'python -m spacy download en')
         nlp_pipeline = en_core_web_sm.load(disable=['parser', 'tagger', 'ner'])
     return nlp_pipeline
 
@@ -106,7 +106,7 @@ def process_text(
 #         return self.tvectorizer.transform(docs).toarray()
 
 if __name__ == '__main__':
-    text = "Hello John, how are you doing my good old friend? Are you still number 732 in the list? Did you pay $32.43 or 54.21 for the book?"
+    text = 'Hello John, how are you doing my good old friend? Are you still number 732 in the list? Did you pay $32.43 or 54.21 for the book?'
     print(process_text(text, load_nlp_pipeline()))
     print(process_text(text, load_nlp_pipeline(),
                        filter_numbers=True,

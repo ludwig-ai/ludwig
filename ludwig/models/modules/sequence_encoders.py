@@ -161,7 +161,7 @@ class ParallelCNN(object):
             self.num_conv_layers = 4
         else:
             raise ValueError(
-                "Invalid layer parametrization, use either conv_layers or num_conv_layers")
+                'Invalid layer parametrization, use either conv_layers or num_conv_layers')
 
         if fc_layers is not None and num_fc_layers is None:
             # use custom-defined layers
@@ -180,7 +180,7 @@ class ParallelCNN(object):
             num_fc_layers = 2
         else:
             raise ValueError(
-                "Invalid layer parametrization, use either fc_layers or num_fc_layers")
+                'Invalid layer parametrization, use either fc_layers or num_fc_layers')
 
         self.reduce_output = reduce_output
 
@@ -390,7 +390,7 @@ class StackedCNN:
             self.num_conv_layers = 6
         else:
             raise ValueError(
-                "Invalid layer parametrization, use either conv_layers or num_conv_layers")
+                'Invalid layer parametrization, use either conv_layers or num_conv_layers')
 
         if fc_layers is not None and num_fc_layers is None:
             # use custom-defined layers
@@ -409,7 +409,7 @@ class StackedCNN:
             num_fc_layers = 2
         else:
             raise ValueError(
-                "Invalid layer parametrization, use either fc_layers or num_fc_layers")
+                'Invalid layer parametrization, use either fc_layers or num_fc_layers')
 
         self.should_embed = should_embed
         self.reduce_output = reduce_output
@@ -605,7 +605,7 @@ class StackedParallelCNN:
             self.num_stacked_layers = 6
         else:
             raise ValueError(
-                "Invalid layer parametrization, use either stacked_layers or num_stacked_layers")
+                'Invalid layer parametrization, use either stacked_layers or num_stacked_layers')
 
         if fc_layers is not None and num_fc_layers is None:
             # use custom-defined layers
@@ -624,7 +624,7 @@ class StackedParallelCNN:
             num_fc_layers = 2
         else:
             raise ValueError(
-                "Invalid layer parametrization, use either fc_layers or num_fc_layers")
+                'Invalid layer parametrization, use either fc_layers or num_fc_layers')
 
         self.should_embed = should_embed
         self.reduce_output = reduce_output
@@ -887,7 +887,7 @@ class CNNRNN:
             self.num_conv_layers = 2
         else:
             raise ValueError(
-                "Invalid layer parametrization, use either conv_layers or num_conv_layers")
+                'Invalid layer parametrization, use either conv_layers or num_conv_layers')
 
         self.should_embed = should_embed
 

@@ -1833,7 +1833,9 @@ def cli(sys_argv):
         default=0,
         type=int,
         help='maximum numbers of labels. '
-             'If labels in dataset are higher than this number, "rare" label'
+             'If labels in dataset are higher than this number, '
+    rare
+    ' label'
     )
     parser.add_argument(
         '-ss',
@@ -1869,7 +1871,7 @@ def cli(sys_argv):
         '--logging_level',
         default='info',
         help='the level of logging to use',
-        choices=["critical", "error", "warning", "info", "debug", "notset"]
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
     )
 
     args = parser.parse_args(sys_argv)

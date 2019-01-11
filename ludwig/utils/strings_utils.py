@@ -38,9 +38,9 @@ def make_safe_filename(s):
         if c.isalnum():
             return c
         else:
-            return "_"
+            return '_'
 
-    return "".join(safe_char(c) for c in s).rstrip("_")
+    return ''.join(safe_char(c) for c in s).rstrip('_')
 
 
 def strip_accents(s):
