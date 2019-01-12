@@ -223,5 +223,5 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
 
 image_encoder_registry = {
     'stacked_cnn': Stacked2DCNN,
-    'rednet': ResNetEncoder
+    'resnet': ResNetEncoder
 }

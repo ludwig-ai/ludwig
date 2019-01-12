@@ -39,6 +39,10 @@ class Stacked2DCNN:
             initializer=None,
             **kwargs
     ):
+        from pprint import PrettyPrinter
+        print('================')
+        print(pool_size)
+        PrettyPrinter().pprint(kwargs)
         self.conv_stack_2d = ConvStack2D(
             layers=conv_layers,
             num_layers=num_conv_layers,
@@ -96,7 +100,7 @@ class Stacked2DCNN:
 class ResNetEncoder:
     def __init__(
             self,
-            resnet_size,
+            resnet_size=50,
             num_filters=16,
             kernel_size=3,
             conv_stride=1,
