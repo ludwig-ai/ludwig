@@ -131,7 +131,7 @@ def build_data(
         metadata_val,
         global_preprocessing_parameters
 ):
-    data_val = {}
+    data = {}
     for feature in features:
         add_feature_data = get_from_registry(
             feature['type'],
@@ -159,7 +159,7 @@ def build_data(
         add_feature_data(
             feature,
             dataset_df,
-            data_val,
+            data,
             metadata_val,
             preprocessing_parameters
         )
