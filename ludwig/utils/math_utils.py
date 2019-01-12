@@ -18,96 +18,6 @@ import math
 
 import numpy as np
 
-rng = np.random.RandomState()
-
-
-def cartesian(s0, s1, reverse_order=False):
-    ns0 = s0.shape[0]
-    ns1 = s1.shape[0]
-    if reverse_order:
-        rs0 = np.tile(s0, [ns1, 1])
-        rs1 = np.repeat(s1, ns0, axis=0)
-    else:
-        rs0 = np.repeat(s0, ns1, axis=0)
-        rs1 = np.tile(s1, [ns0, 1])
-
-    out = np.concatenate([rs0, rs1], axis=1)
-    return out
-
-
-# http://stackoverflow.com/questions/11144513/numpy-cartesian-product-of-x-and-y-array-points-into-single-array-of-2d-points
-# (called cartesian_product2 there)
-def cartesian1(arrays):
-    '''cartesian of arb amount of 1d arrays'''
-    la = len(arrays)
-    arr = np.empty([len(a) for a in arrays] + [la])
-    for i, a in enumerate(np.ix_(*arrays)):
-        arr[..., i] = a
-    return arr.reshape(-1, la)
-
-
-def coord_grid(dim, res):
-    return cartesian1([np.linspace(-1, 1, res)] * dim)
-
-
-def prob_invert(x, p=0.5):
-    assert x.max() <= 1., 'expects binary input'
-    assert x.min() >= 0., 'expects binary input'
-    invert = rng.rand(x.shape[0]) < p
-    for ix, x0 in enumerate(x):
-        x[ix] = x0 < 0.5 if invert[ix] else x0
-    return x, invert.astype('float32')
-
-
-def onehot(n, ii):
-    return np.eye(n)[ii]
-
-
-def unique_rows(a):
-    # taken from http://stackoverflow.com/questions/16970982/find-unique-rows-in-numpy-array
-    b = np.ascontiguousarray(a).view(
-        np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
-    _, idx = np.unique(b, return_index=True)
-    return a[idx]
-
-
-def get_range(sets, keys, ignore_min=False):
-    low = float('inf')
-    high = float('-inf')
-
-    if not isinstance(keys, list):
-        keys = [keys]
-
-    for key in keys:
-        for ii in range(len(sets)):
-            low = min(low, int(sets[ii][key].min()))
-            high = max(high, int(sets[ii][key].max()))
-
-    # return the dif, 0 indexed so we good with range here
-    if ignore_min:
-        return int(high)
-    else:
-        return int(high) - int(low)
-
-
-def radial_dist(arr):
-    x, y = np.expand_dims(arr[:, 0], axis=0), np.expand_dims(arr[:, 1], axis=0)
-    x2, y2 = np.square(x), np.square(y)
-    r = np.sqrt(x2 + y2)
-    return np.concatenate((x.T, y.T, r.T), axis=1)
-
-
-def coord_rect(res1, res2):
-    return cartesian1([np.linspace(-1, 1, res1), np.linspace(-1, 1, res2)])
-
-
-def radial_grid(dim, res):
-    return radial_dist(coord_grid(dim, res))
-
-
-def radial_rect(res1, res2):
-    return radial_dist(coord_rect(res1, res2))
-
 
 def jaccard(sorted_list_1, sorted_list_2):
     max_jaccard_score = 0
@@ -126,7 +36,7 @@ def jaccard(sorted_list_1, sorted_list_2):
                     break
 
             jaccard_score = intersection / (
-                        size_set_1 + size_set_2 - intersection)
+                    size_set_1 + size_set_2 - intersection)
             if jaccard_score > max_jaccard_score:
                 max_jaccard_score = jaccard_score
 
