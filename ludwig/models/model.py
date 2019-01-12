@@ -416,8 +416,7 @@ class Model:
             if not skip_save_progress_weights:
                 self.save_weights(session, model_weights_progress_path)
 
-            # print(flush=True)
-            # [h_weak_ref().flush() for h_weak_ref in logging._handlerList]
+            logging.info('')
 
         return progress_tracker.train_stats, progress_tracker.vali_stats, progress_tracker.test_stats
 

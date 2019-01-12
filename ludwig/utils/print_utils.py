@@ -44,6 +44,3 @@ def print_boxed(text, print_fun=logging.info):
     print_fun('│ {} │'.format(text.upper()))
     print_fun('╘{}╛'.format('═' * box_width))
     print_fun('')
-    # todo deal with flush
-    # print(flush=True)
-    # [h_weak_ref().flush() for h_weak_ref in logging._handlerList]
