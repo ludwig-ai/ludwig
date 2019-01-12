@@ -18,6 +18,8 @@ import logging
 import re
 from html.parser import HTMLParser
 
+from ludwig.utils import strings_utils
+
 
 class HTMLStripper(HTMLParser):
     def __init__(self):
@@ -61,11 +63,11 @@ res_post = [
     (re.compile(r'[\n\r]'), r' '),
     (re.compile(r'\\\\'), r' / '),
     (re.compile(r'<br/?>'), r' '),
-    (re.compile(r'\\\\'''), r'''),
+    (re.compile(r'\\\\'''), r'\''),
     (re.compile(r'^\'([^\']+)$'), r'\1'),
-    (re.compile(r'([\<\>\{\}\[\]\(\)\-\+\=:;,\./\?\!\$%&£#@'₹ ])\1+'), r'\1'),
+    (re.compile(r'([\<\>\{\}\[\]\(\)\-\+\=:;,\./\?\!\$%&£#@\'₹ ])\1+'), r'\1'),
     (re.compile(
-        r'[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890\<\>\{\}\[\]\(\)\-\+\=:;,\./\?\!\$%&£#@'₹ ]'),
+        r'[^qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890\<\>\{\}\[\]\(\)\-\+\=:;,\./\?\!\$%&£#@\'₹ ]'),
      r' '),
     (re.compile(r'\s{2,}'), r' ')
 ]
