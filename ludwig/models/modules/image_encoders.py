@@ -96,7 +96,7 @@ class Stacked2DCNN:
 class ResNetEncoder:
     def __init__(
             self,
-            resnet_size,
+            resnet_size=50,
             num_filters=16,
             kernel_size=3,
             conv_stride=1,
