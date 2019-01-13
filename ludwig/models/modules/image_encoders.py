@@ -39,10 +39,6 @@ class Stacked2DCNN:
             initializer=None,
             **kwargs
     ):
-        from pprint import PrettyPrinter
-        print('================')
-        print(pool_size)
-        PrettyPrinter().pprint(kwargs)
         self.conv_stack_2d = ConvStack2D(
             layers=conv_layers,
             num_layers=num_conv_layers,
