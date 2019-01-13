@@ -1833,9 +1833,7 @@ def cli(sys_argv):
         default=0,
         type=int,
         help='maximum numbers of labels. '
-             'If labels in dataset are higher than this number, '
-    rare
-    ' label'
+             'If labels in dataset are higher than this number, "rare" label'
     )
     parser.add_argument(
         '-ss',
