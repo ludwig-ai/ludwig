@@ -42,6 +42,7 @@ Ludwig's requirements are the following:
 - tqdm
 - tabulate
 - PyYAML
+- pytest
 
 Ludwig has been developed and tested with python 3 in mind.
 If you don’t have python 3 installed, install it
