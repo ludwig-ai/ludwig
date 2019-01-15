@@ -333,8 +333,6 @@ def cli(sys_argv):
 
     logging.basicConfig(
         stream=sys.stdout,
-        # filename='log.log', TODO - remove these?
-        # filemode='w',
         level=logging_level_registry[args.logging_level],
         format='%(message)s'
     )

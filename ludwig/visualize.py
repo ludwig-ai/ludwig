@@ -252,8 +252,7 @@ def compare_classifiers_performance_subset(
         top1_subset = prob_subset[:, -1]
         top3_subset = prob_subset[:, -3:]
 
-        ## TODO - double check this - pycharm warns "Unresolved attribute reference"
-        accuracies.append((gt_subset == top1_subset).sum() / len(gt_subset))
+        accuracies.append(np.sum((gt_subset == top1_subset)) / len(gt_subset))
 
         hits_at_k = 0
         for j in range(len(gt_subset)):
@@ -1418,14 +1417,15 @@ def calibration_multiclass(
     )
     for i, brier_score in enumerate(brier_scores):
         if i < len(algorithms):
-            # TODO not sure rstrip() avoids the newline
-            logging.info('{}:'.format(algorithms[i]).rstrip())
-        logging.info(brier_score)
+            format_str = '{}: '.format(algorithms[i])
+            format_str += '{}'
+        else:
+            format_str = '{}'
+        logging.info(format_str.format(brier_score))
 
 
 def confusion_matrix(
         test_stats,
-        ground_truth,  # TODO - this is unused
         field,
         top_n_classes,
         normalize,
@@ -1578,19 +1578,20 @@ def multiclass_multimetric(
 
             logging.info('\n')
             logging.info(algorithm_name)
-            # TODO rstrip()
-            logging.info('{0} best 5 classes: '.format(field).rstrip())
-            logging.info(higher_f1s)
+            tmp_str = '{0} best 5 classes: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(higher_f1s))
             logging.info(f1_np[higher_f1s])
-            logging.info('{0} worst 5 classes: '.format(field).rstrip())
-            logging.info(lower_f1s)
+            tmp_str = '{0} worst 5 classes: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(lower_f1s))
             logging.info(f1_np[lower_f1s])
-            logging.info('{0} number of classes with f1 score > 0: '.format(
-                field).rstrip())
-            logging.info((f1_np > 0).sum())
-            logging.info('{0} number of classes with f1 score = 0: '.format(
-                field).rstrip())
-            logging.info((f1_np == 0).sum())
+            tmp_str = '{0} number of classes with f1 score > 0: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(np.sum((f1_np > 0)))
+            tmp_str = '{0} number of classes with f1 score = 0: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(np.sum((f1_np == 0)))
 
 
 def frequency_vs_f1(
@@ -1876,8 +1877,6 @@ def cli(sys_argv):
 
     logging.basicConfig(
         stream=sys.stdout,
-        # filename='log.log', TODO - remove these?
-        # filemode='w',
         level=logging_level_registry[args.logging_level],
         format='%(message)s'
     )
