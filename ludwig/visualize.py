@@ -822,8 +822,7 @@ def confidence_filtering_data_vs_acc_2d(
         selected_acc[np.logical_not(indices)] = -1
         threshold_indices = np.unravel_index(np.argmax(selected_acc, axis=None),
                                              selected_acc.shape)
-        t1_maxes.append(thresholds[threshold_indices[
-            0]])  # TODO pycharm warning - unexpected type
+        t1_maxes.append(thresholds[threshold_indices[0]])
         t2_maxes.append(thresholds[threshold_indices[1]])
     algorithm_name = algorithms[0] if algorithms is not None and len(
         algorithms) > 0 else ''
