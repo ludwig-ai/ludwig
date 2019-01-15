@@ -594,7 +594,6 @@ class LudwigModel:
             gpus=None,
             gpu_fraction=1,
             logging_level=logging.ERROR,
-            debug=False
     ):
         """This function is used to perform one epoch of training of the model 
         on the specified dataset.
@@ -631,7 +630,6 @@ class LudwigModel:
                use for logging. Use logging constants like `logging.DEBUG`,
                `logging.INFO` and `logging.ERROR`. By default only errors will
                be printed.
-        :param debug: (bool, default: `False`) enables debugging mode
 
         There are three ways to provide data: by dataframes using the `data_df`
         parameter, by CSV using the `data_csv` parameter and by dictionary,
@@ -719,7 +717,6 @@ class LudwigModel:
             gpu_fraction=1,
             only_predictions=True,
             logging_level=logging.ERROR,
-            debug=False  # TODO can we remove this debug flag?
     ):
         logging.getLogger().setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
@@ -812,7 +809,6 @@ class LudwigModel:
             gpus=None,
             gpu_fraction=1,
             logging_level=logging.ERROR,
-            debug=False
     ):
         """This function is used to predict the output variables given the input
            variables using the trained model.
@@ -846,7 +842,6 @@ class LudwigModel:
                use for logging. Use logging constants like `logging.DEBUG`,
                `logging.INFO` and `logging.ERROR`. By default only errors will
                be printed.
-        :param debug: (bool, default: `False`) enables debugging mode
 
 
         # Return
@@ -875,7 +870,6 @@ class LudwigModel:
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             logging_level=logging_level,
-            debug=debug
         )
 
         return predictions
@@ -890,7 +884,6 @@ class LudwigModel:
             gpus=None,
             gpu_fraction=1,
             logging_level=logging.ERROR,
-            debug=False
     ):
         """This function is used to predict the output variables given the input
         variables using the trained model and compute test statistics like
@@ -927,7 +920,6 @@ class LudwigModel:
                use for logging. Use logging constants like `logging.DEBUG`,
                `logging.INFO` and `logging.ERROR`. By default only errors will
                be printed.
-        :param debug: (bool, default: `False`) enables debugging mode
 
 
         # Return
@@ -963,7 +955,6 @@ class LudwigModel:
             gpu_fraction=gpu_fraction,
             only_predictions=False,
             logging_level=logging_level,
-            debug=debug
         )
 
         return predictions, test_stats
@@ -1037,7 +1028,6 @@ def test_train_online(
         batch_size=128,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        debug=debug,
         logging_level=logging_level
     )
     ludwig_model.train_online(
@@ -1045,7 +1035,6 @@ def test_train_online(
         batch_size=128,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        debug=debug,
         logging_level=logging_level
     )
 
@@ -1055,7 +1044,6 @@ def test_train_online(
         batch_size=batch_size,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        debug=debug,
         logging_level=logging_level
     )
     ludwig_model.close()
@@ -1069,7 +1057,6 @@ def test_predict(
         batch_size=128,
         gpus=None,
         gpu_fraction=1,
-        debug=False,
         logging_level=logging.ERROR,
         **kwargs
 ):
@@ -1084,7 +1071,6 @@ def test_predict(
         batch_size=batch_size,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        debug=debug,
         logging_level=logging_level
     )
 
