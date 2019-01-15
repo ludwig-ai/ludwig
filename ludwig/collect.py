@@ -277,8 +277,6 @@ def cli_collect_activations(sys_argv):
 
     logging.basicConfig(
         stream=sys.stdout,
-        # filename='log.log', TODO - remove these?
-        # filemode='w',
         level=logging_level_registry[args.logging_level],
         format='%(message)s'
     )
@@ -354,8 +352,6 @@ def cli_collect_weights(sys_argv):
 
     logging.basicConfig(
         stream=sys.stdout,
-        # filename='log.log', TODO - remove these?
-        # filemode='w',
         level=logging_level_registry[args.logging_level],
         format='%(message)s'
     )

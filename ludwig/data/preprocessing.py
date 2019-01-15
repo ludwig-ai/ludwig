@@ -373,7 +373,7 @@ def preprocess_for_training(
     features = (model_definition['input_features'] +
                 model_definition['output_features'])
     (
-        concatenate_csv,  # TODO - all of these shadow names from outer scope
+        concatenate_csv,
         concatenate_df,
         build_dataset,
         build_dataset_df
@@ -383,7 +383,6 @@ def preprocess_for_training(
         # needs preprocessing
         logging.info('Using full dataframe')
         logging.info('Building dataset (it may take a while)')
-        # TODO these two shadow names from outer scope
         data, metadata = build_dataset_df(
             data_df,
             features,
@@ -409,7 +408,6 @@ def preprocess_for_training(
             data_validation_df,
             data_test_df
         )
-        # TODO these two shadow names from outer scope
         data, metadata = build_dataset_df(
             concatenated_df,
             features,
@@ -442,7 +440,6 @@ def preprocess_for_training(
             'with the same name have been found'
         )
         logging.info('Building dataset (it may take a while)')
-        # TODO these two shadow names from outer scope
         data, metadata = build_dataset(
             data_csv,
             features,
@@ -473,7 +470,6 @@ def preprocess_for_training(
             data_validation_csv,
             data_test_csv
         )
-        # TODO these two shadow names from outer scope
         data, metadata = build_dataset_df(
             concatenated_df,
             features,
@@ -508,7 +504,6 @@ def preprocess_for_training(
             model_definition['output_features'],
             shuffle_training=True
         )
-        # TODO - shadows name from outer scope
         metadata = load_metadata(metadata_json)
 
     elif data_train_hdf5 is not None and metadata_json is not None:
@@ -521,7 +516,6 @@ def preprocess_for_training(
             model_definition['output_features'],
             split_data=False
         )
-        # TODO - shadows name from outer scope
         metadata = load_metadata(metadata_json)
         if data_validation_hdf5 is not None:
             validation_set = load_data(
@@ -578,7 +572,7 @@ def preprocess_for_prediction(
         dataset_type='generic',
         data_csv=None,
         data_hdf5=None,
-        metadata=None,  # TODO shadows name from outer scope
+        metadata=None,
         only_predictions=False
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
@@ -592,7 +586,7 @@ def preprocess_for_prediction(
         :param data_csv: The CSV input data file
         :param data_hdf5: The hdf5 data file if there is no csv data file
         :param metadata: Metadata for the input features
-        :param only_predictions: TODO
+        :param only_predictions: If False does not load output features
         :returns: Dataset, Metadata
         """
     model_definition = load_json(
@@ -614,9 +608,8 @@ def preprocess_for_prediction(
             data_hdf5 = data_hdf5_fp
 
     # Load data
-    # TODO build_dataset shadows name from outer scope
     _, _, build_dataset, _ = get_dataset_fun(dataset_type)
-    metadata = load_metadata(metadata)  # TODO shadows name from outer scope
+    metadata = load_metadata(metadata)
     features = (model_definition['input_features'] +
                 ([] if only_predictions
                  else model_definition['output_features']))
@@ -629,7 +622,6 @@ def preprocess_for_prediction(
                 split_data=False, shuffle_training=False
             )
         else:
-            # TODO shadows name from outer scope
             dataset, metadata = build_dataset(
                 data_csv,
                 features,
@@ -652,7 +644,6 @@ def preprocess_for_prediction(
             else:  # if split == 'test':
                 dataset = test
         else:
-            # TODO shadows name from outer scope
             dataset, metadata = build_dataset(
                 data_csv,
                 features,
