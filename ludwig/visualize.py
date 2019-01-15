@@ -1588,10 +1588,10 @@ def multiclass_multimetric(
             logging.info(f1_np[lower_f1s])
             tmp_str = '{0} number of classes with f1 score > 0: '.format(field)
             tmp_str += '{}'
-            logging.info(tmp_str.format(np.sum((f1_np > 0)))
+            logging.info(tmp_str.format(np.sum(f1_np > 0)))
             tmp_str = '{0} number of classes with f1 score = 0: '.format(field)
             tmp_str += '{}'
-            logging.info(tmp_str.format(np.sum((f1_np == 0)))
+            logging.info(tmp_str.format(np.sum(f1_np == 0)))
 
 
 def frequency_vs_f1(
