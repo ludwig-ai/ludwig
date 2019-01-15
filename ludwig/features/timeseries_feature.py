@@ -180,7 +180,7 @@ class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
         set_default_value(input_feature, 'tied_weights', None)
 
 
-# TODO - this is still WIP
+# this is still WIP
 class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
