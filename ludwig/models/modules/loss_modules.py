@@ -94,7 +94,7 @@ def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
 
 # manual implementation of sequence loss
 def cross_entropy_sequence_loss(logits, targets, sequence_length):
-    '''Calculates the per-example cross-entropy loss for a sequence of logits and
+    """Calculates the per-example cross-entropy loss for a sequence of logits and
       masks out all losses passed the sequence length.
     Args:
       logits: Logits of shape `[B, T, vocab_size]`
@@ -103,7 +103,7 @@ def cross_entropy_sequence_loss(logits, targets, sequence_length):
         to the length of each input
     Returns:
       A tensor of shape [T, B] that contains the loss per example, per time step.
-    '''
+    """
     with tf.variable_scope('sequence_loss'):
         losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits, labels=targets)
