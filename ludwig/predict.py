@@ -123,26 +123,31 @@ def predict(
         gpu_fraction=1.0,
         debug=False
 ):
-    """Predicts the $\hat{y}$ based on the computed Model.
-        :param dataset: The dataset to test on
-        :type dataset: # TODO
-        :param model: The model trained that is now being evaluated.
-        :type model:
-        :model_definition: Model definition file read in through a yaml parser
+    """Computes predictions based on the computed model.
+        :param dataset: Dataset contaning the data to calculate
+               the predictions from.
+        :type dataset: Dataset
+        :param model: The trained model used to produce the predictions.
+        :type model: Model
+        :param model_definition: The model definition of the model to use
+               for obtaining predictions
         :type model_definition: Dictionary
-        :param batch_size: The size of each batch that is being used
+        :param batch_size: The size of batches when computing the predictions.
         :type batch_size: Integer
-        :param only_predictions: # TODO
+        :param only_predictions: If this parameter is True, only the predictions
+               will be returned, if it is False, also performance metrics
+               will be calculated on the predictions. It requires the data
+               to contanin also ground truth for the output features, otherwise
+               the metrics cannot be computed.
         :type only_predictions: Bool
-        :param gpus: List of GPUs to use
         :type gpus: List
-        :param gpu_fraction: Percentage of gpu memory to use
-        :type gpu_fraction: Float
-        :param debug: Whether the function is being debugged or not
+        :type gpu_fraction: Integer
+        :param debug: If true turns on tfdbg with inf_or_nan checks.
         :type debug: Boolean
 
-        :returns: Test Statistics for inference and evaluation of the model
-                  performance.
+        :returns: A dictionary contaning the predictions of each output feature,
+                  alongside with statistics on the quality of those predictions
+                  (if only_predictions is False).
         """
     print_boxed('PREDICT')
     test_stats = model.predict(
