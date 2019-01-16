@@ -72,53 +72,84 @@ def experiment(
         debug=False,
         **kwargs
 ):
-    """Conducts an experiment on a file through calibrated GPU utilization
-    :param model_definition: Definition of the model
+    """Trains a model on a dataset's training and validation splits and
+    uses it to predict on the test split.
+    It saves the trained model and the statistics of training and testing.
+    :param model_definition: Model definition which defines the different
+           parameters of the model, features, preprocessing and training.
     :type model_definition: Dictionary
-    :param model_definition_file: File from which the model is read
+    :param model_definition_file: The file that specifies the model definition.
+           It is a yaml file.
     :type model_definition_file: filepath (str)
-    :param data_csv: The raw input data as a csv file (not split)
+    :param data_csv: A CSV file contanining the input data which is used to
+           train, validate and test a model. The CSV either contains a
+           split column or will be split.
     :type data_csv: filepath (str)
-    :param data_train_csv: The raw training data as a csv file
+    :param data_train_csv: A CSV file contanining the input data which is used
+           to train a model.
     :type data_train_csv: filepath (str)
-    :param data_validation_csv: The raw validation data as a csv file
+    :param data_validation_csv: A CSV file contanining the input data which is used
+           to validate a model..
     :type data_validation_csv: filepath (str)
-    :param data_test_csv: The raw test data as a csv file
+    :param data_test_csv: A CSV file contanining the input data which is used
+           to test a model.
     :type data_test_csv: filepath (str)
-    :param data_hdf5: The raw data file in the hdf5 format
+    :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
+           of the csv file.
     :type data_hdf5: filepath (str)
-    :param data_train_hdf5: The raw input train data in the hdf5 format
+    :param data_train_hdf5: If the training set is in the hdf5 format, this is
+           used instead of the csv file.
     :type data_train_hdf5: filepath (str)
-    :param data_validation_hdf5: Raw input validation data in the hdf5 format
+    :param data_validation_hdf5: If the validation set is in the hdf5 format,
+           this is used instead of the csv file.
     :type data_validation_hdf5: filepath (str)
-    :param data_test_hdf5: Raw input test data in the hdf5 format
+    :param data_test_hdf5: If the test set is in the hdf5 format, this is
+           used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param metadata_json: The metadata that is fed into the model
-    :type metadata_json: TODO:
-    :param experiment_name: Name of the experiment
+    :param metadata_json: If the dataset is in hdf5 format, this is
+           the associated json file containing metadata.
+    :type metadata_json: filepath (str)
+    :param experiment_name: The name for the experiment.
     :type experiment_name: Str
-    :param model_name: Name of the mdoel
+    :param model_name: Name of the model that is being used.
     :type model_name: Str
-    :param model_load_path: The path from which the model is being loaded
+    :param model_load_path: If this is specified the loaded model will be used
+           as initialization (useful for transfer learning).
     :type model_load_path: filepath (str)
-    :param model_resume_path: Path for the model to resume training
+    :param model_resume_path: Resumes training of the model from the path
+           specified. The difference with model_load_path is that also training
+           statistics like the current epoch and the loss and performance so
+           far are also resumed effectively cotinuing a previously interrupted
+           training process.
     :type model_resume_path: filepath (str)
-    :param skip_save_progress_weights: # TODO
-    :type skip_save_progress_weights:
-    :param skip_save_processed_input: # TODO
-    :type skip_save_processed_input: bool
-    :param skip_save_unprocessed_output: # TODO
-    :type skip_save_unprocessed_output: bool
-    :param output_directory: Output directory for the results
+    :param skip_save_progress_weights: Skips saving the weights at the end of
+           each epoch. If this is true, training cannot be resumed from the
+           exactly the state at the end of the previous epoch.
+    :type skip_save_progress_weights: Boolean
+    :param skip_save_processed_input: If a CSV dataset is provided it is
+           preprocessed and then saved as an hdf5 and json to avoid running
+           the preprocessing again. If this parameter is False,
+           the hdf5 and json file are not saved.
+    :type skip_save_processed_input: Boolean
+    :param skip_save_unprocessed_output: By default predictions and
+           their probabilities are saved in both raw unprocessed numpy files
+           contaning tensors and as postprocessed CSV files
+           (one for each output feature). If this parameter is True,
+           only the CSV ones are saved and the numpy ones are skipped.
+    :type skip_save_unprocessed_output: Boolean
+    :param output_directory: The directory that will contanin the training
+           statistics, the saved model and the training procgress files.
     :type output_directory: filepath (str)
-    :param gpus: List of GPUs to use
+    :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of each gpu to use
-    :type gpu_fraction: Float
-    :param random_seed: Random seed to initialize parameters of the model
-    :type random_seed: Float
-    :param debug: Whether the function will contact breakpoints and
-                  the user will step through it
+    :param gpu_fraction: Fraction of the memory of each GPU to use at
+           the beginning of the training. The memory may grow elastically.
+    :type gpu_fraction: Integer
+    :param random_seed: Random seed used for weights initialization,
+           splits and any other random function.
+    :type random_seed: Integer
+    :param debug: If true turns on tfdbg with inf_or_nan checks.
+    :type debug: Boolean
     :type debug: Boolean
     """
     # set input features defaults
