@@ -121,7 +121,7 @@ def full_train(
            each epoch. If this is true, training cannot be resumed from the
            exactly the state at the end of the previous epoch.
     :type skip_save_progress_weights: Boolean
-    :param skip_save_processed_input: By if a CSV dataset is provided it is
+    :param skip_save_processed_input: If a CSV dataset is provided it is
            preprocessed and then saved as an hdf5 and json to avoid running
            the preprocessing again. If this parameter is False,
            the hdf5 and json file are not saved.
