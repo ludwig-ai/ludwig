@@ -53,7 +53,7 @@ def str2bool(v):
 
 
 def match_replace(string_to_match, list_regex):
-    '''Matches strings against regular expressions.
+    """Matches strings against regular expressions.
 
     arguments:
     string_to_match -- the string to match
@@ -61,7 +61,7 @@ def match_replace(string_to_match, list_regex):
     returns:
     string_to_match -- the cleaned string
     matched -- the list of regular expressions that matched
-    '''
+    """
     matched = []
     for regex in list_regex:
         match = re.search(regex[0], string_to_match)

@@ -102,7 +102,7 @@ class ParallelCNN(object):
             regularize=True,
             reduce_output='max',
             **kwargs):
-        '''
+        """
             :param input_sequence: The input sequence fed into the parallel cnn
             :type input_sequence:
             :param regularizer: The method of regularization that is being
@@ -138,7 +138,7 @@ class ParallelCNN(object):
             :param is_training: Whether this is training or not
             :type is_training: Boolean
             :returns: hidden, hidden_size - the hidden layer and hidden size
-            '''
+            """
 
         self.should_embed = should_embed
 
@@ -305,7 +305,7 @@ class StackedCNN:
             reduce_output='max',
             **kwargs
     ):
-        '''
+        """
             :param input_sequence: The input sequence fed into the stacked cnn
             :type input_sequence:
             :param regularizer: The method of regularization that is being used
@@ -343,7 +343,7 @@ class StackedCNN:
             :param is_training: Whether this is training or not
             :type is_training: Boolean
             :returns: hidden, hidden_size - the hidden layer and hidden size
-        '''
+        """
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -535,7 +535,7 @@ class StackedParallelCNN:
             reduce_output='max',
             **kwargs
     ):
-        '''
+        """
             :param input_sequence: The input sequence fed into the stacked parallel cnn
             :type input_sequence:
             :param regularizer: The method of regularization that is being
@@ -571,7 +571,7 @@ class StackedParallelCNN:
             :param is_training: Whether this is training or not
             :type is_training: Boolean
             :returns: hidden, hidden_size - the hidden layer and hidden size
-        '''
+        """
         if stacked_layers is not None and num_stacked_layers is None:
             # use custom-defined layers
             self.stacked_layers = stacked_layers
@@ -748,7 +748,7 @@ class RNN:
             reduce_output='last',
             **kwargs
     ):
-        '''
+        """
             :param input_sequence: The input sequence fed into the rnn
             :type input_sequence:
             :param dropout_rate: Probability of dropping a neuron in a layer
@@ -780,7 +780,7 @@ class RNN:
             :param is_training: Whether this is training or not
             :type is_training: Boolean
             :returns: hidden, hidden_size - the hidden layer and hidden size
-        '''
+        """
 
         self.should_embed = should_embed
 

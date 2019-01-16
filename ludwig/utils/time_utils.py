@@ -28,7 +28,7 @@ class WithTimer(object):
         return time.time() - self.wall, time.clock() - self.proc
 
     def enter(self):
-        '''Manually trigger enter'''
+        """Manually trigger enter"""
         self.__enter__()
 
     def __enter__(self):
@@ -66,15 +66,15 @@ class Timer(object):
         return time.clock() - self._proc
 
     def tic(self):
-        '''Like Matlab tic/toc for wall time and processor time'''
+        """Like Matlab tic/toc for wall time and processor time"""
         self.reset()
 
     def toc(self):
-        '''Like Matlab tic/toc for wall time'''
+        """Like Matlab tic/toc for wall time"""
         return self.wall()
 
     def tocproc(self):
-        '''Like Matlab tic/toc, but for processor time'''
+        """Like Matlab tic/toc, but for processor time"""
         return self.proc()
 
 
