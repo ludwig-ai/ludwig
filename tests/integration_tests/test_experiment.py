@@ -21,8 +21,6 @@ from string import Template
 import pandas as pd
 import yaml
 
-sys.path.append("../")
-
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
 from ludwig.experiment import experiment
 
@@ -40,12 +38,10 @@ def generate_data(input_features, output_features, filename='test_csv.csv'):
     data = [next(df) for _ in range(1000)]
 
     dataframe = pd.DataFrame(data[1:], columns=data[0])
-    rel_path = os.path.join(os.path.dirname(__file__),
-                            '../../data/{0}'.format(filename))
 
-    dataframe.to_csv(rel_path, index=False)
+    dataframe.to_csv(filename, index=False)
 
-    return rel_path
+    return filename
 
 
 def run_experiment(input_features, output_features, data_csv):
@@ -60,50 +56,67 @@ def run_experiment(input_features, output_features, data_csv):
                )
 
 
-def test_experiment_1():
+def test_experiment_1(delete_temp_data=True):
     # Single sequence input, single category output
 
-    model_definition_template = Template(
-        "{input_features: [{name: utterance, type: sequence, "
-        "encoder: ${encoder}, reduce_output: sum}], output_features:"
-        "[{name: intent, type: category, reduce_input: sum}] "
-        ", training: {epochs: 2}}"
-    )
-    input_features = Template('[{name: utterance, type: sequence, '
+    input_features = Template('[{name: utterance, type: sequence,'
+                              'vocab_size: 10, max_len: 10, '
                               'encoder: ${encoder}, reduce_output: sum}]')
-    output_features = "[{name: intent, type: category, reduce_input: sum}] "
+    output_features = "[{name: intent, type: category, vocab_size: 2," \
+                      " reduce_input: sum}] "
 
+    # Generate test data
+    rel_path = generate_data(
+        input_features.substitute(encoder='rnn'),
+        output_features, 'test_csv.csv')
     for encoder in encoders:
         run_experiment(input_features.substitute(encoder=encoder),
                        output_features,
-                       data_csv='data/atis.train.iob.sample.csv')
+                       data_csv=rel_path)
+
+    # Delete the generated data
+    if delete_temp_data is True:
+        os.remove(rel_path)
 
 
-def test_experiment_2():
+def test_experiment_2(delete_temp_data=True):
     # Single Sequence input, single sequence output
     # Only the following encoders are working
     input_features_template = Template(
-        '[{name: utterance, type: sequence, reduce_output: null, encoder: ${encoder}}]')
-    output_features = '[{name: iob, type: sequence, reduce_input: null, decoder: tagger}]'
+        '[{name: utterance, type: sequence, reduce_output: null,'
+        ' vocab_size: 10, min_len: 10, max_len: 10, encoder: ${encoder}}]')
+
+    output_features = '[{name: iob, type: sequence, reduce_input: null,' \
+                      ' vocab_size: 3, min_len: 10, max_len: 10,' \
+                      ' decoder: tagger}]'
+    # Generate test data
+    rel_path = generate_data(
+        input_features_template.substitute(encoder='rnn'),
+        output_features, 'test_csv.csv')
 
     encoders2 = ['embed', 'rnn', 'cnnrnn']
     for encoder in encoders2:
         logging.info('Test 2, Encoder: {0}'.format(encoder))
 
         input_features = input_features_template.substitute(encoder=encoder)
-        run_experiment(input_features, output_features,
-                       data_csv='data/atis.train.iob.sample.csv')
+        run_experiment(input_features, output_features, data_csv=rel_path)
+
+    # Delete the generated data
+    if delete_temp_data is True:
+        os.remove(rel_path)
 
 
 def test_experiment_3(delete_temp_data=True):
     # Multiple inputs, Single category output
     input_features_string = Template(
-        "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: ${encoder1}}, "
-        "{type: numerical, name: random_number}, "
-        "{type: category, name: random_category, vocab_size: 10, encoder: ${encoder2}}, "
-        "{type: set, name: random_set, vocab_size: 10, max_len: 10},"
-        "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10}]")
-    output_features_string = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2}]"
+        "[{type: text, name: random_text, vocab_size: 100, max_len: 20,"
+        " encoder: ${encoder1}}, {type: numerical, name: random_number}, "
+        "{type: category, name: random_category, vocab_size: 10,"
+        " encoder: ${encoder2}}, {type: set, name: random_set, vocab_size: 10,"
+        " max_len: 10}, {type: sequence, name: random_sequence, vocab_size: 10,"
+        " max_len: 10}]")
+    output_features_string = "[{type: category, name: intent, reduce_input:" \
+                             " sum, vocab_size: 2}]"
 
     # Generate test data
     rel_path = generate_data(
@@ -123,38 +136,57 @@ def test_experiment_3(delete_temp_data=True):
 
 def test_experiment_4(delete_temp_data=True):
     # Multiple inputs, Multiple outputs
-    input_features = "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: stacked_cnn}, " \
-                     "{type: numerical, name: random_number}, " \
-                     "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
-                     "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
-                     "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
-    output_features = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2}," \
-                      "{type: sequence, name: random_seq_output, vocab_size: 10, max_len: 5}," \
+    input_features = "[{type: text, name: random_text, vocab_size: 100," \
+                     " max_len: 20, encoder: stacked_cnn}, {type: numerical," \
+                     " name: random_number}, " \
+                     "{type: category, name: random_category, vocab_size: 10," \
+                     " encoder: stacked_parallel_cnn}, " \
+                     "{type: set, name: random_set, vocab_size: 10," \
+                     " max_len: 10}," \
+                     "{type: sequence, name: random_sequence, vocab_size: 10," \
+                     " max_len: 10, encoder: embed}]"
+    output_features = "[{type: category, name: intent, reduce_input: sum," \
+                      " vocab_size: 2}," \
+                      "{type: sequence, name: random_seq_output, vocab_size: " \
+                      "10, max_len: 5}," \
                       "{type: numerical, name: random_num_output}]"
 
     rel_path = generate_data(input_features, output_features, 'test_csv.csv')
     run_experiment(input_features, output_features, rel_path)
 
-    input_features = "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: stacked_cnn}, " \
+    input_features = "[{type: text, name: random_text, vocab_size: 100," \
+                     " max_len: 20, encoder: stacked_cnn}, " \
                      "{type: numerical, name: random_number}, " \
-                     "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
-                     "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
-                     "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
-    output_features = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2, decoder: generator, reduce_input: sum}," \
-                      "{type: sequence, name: random_seq_output, vocab_size: 10, max_len: 5}," \
+                     "{type: category, name: random_category, vocab_size: 10," \
+                     " encoder: stacked_parallel_cnn}, " \
+                     "{type: set, name: random_set, vocab_size: 10," \
+                     " max_len: 10}," \
+                     "{type: sequence, name: random_sequence, vocab_size: 10," \
+                     " max_len: 10, encoder: embed}]"
+    output_features = "[{type: category, name: intent, reduce_input: sum," \
+                      " vocab_size: 2, decoder: generator, " \
+                      "reduce_input: sum}," \
+                      "{type: sequence, name: random_seq_output, " \
+                      "vocab_size: 10, max_len: 5}," \
                       "{type: numerical, name: random_num_output}]"
 
     rel_path = generate_data(input_features, output_features, 'test_csv.csv')
     run_experiment(input_features, output_features, rel_path)
 
-    input_features = "[{type: text, name: random_text, vocab_size: 100, max_len: 20, encoder: stacked_cnn}, " \
+    input_features = "[{type: text, name: random_text, vocab_size: 100," \
+                     " max_len: 20, encoder: stacked_cnn}, " \
                      "{type: numerical, name: random_number}, " \
-                     "{type: category, name: random_category, vocab_size: 10, encoder: stacked_parallel_cnn}, " \
-                     "{type: set, name: random_set, vocab_size: 10, max_len: 10}," \
-                     "{type: sequence, name: random_sequence, vocab_size: 10, max_len: 10, encoder: embed}]"
-    output_features = "[{type: category, name: intent, reduce_input: sum, vocab_size: 2}," \
-                      "{type: sequence, name: random_seq_output, vocab_size: 10, max_len: 5, decoder: generator, reduce_input: None}," \
-                      "{type: numerical, name: random_num_output}]"
+                     "{type: category, name: random_category, vocab_size: 10," \
+                     " encoder: stacked_parallel_cnn}, " \
+                     "{type: set, name: random_set, vocab_size: 10," \
+                     " max_len: 10}," \
+                     "{type: sequence, name: random_sequence, vocab_size: 10," \
+                     " max_len: 10, encoder: embed}]"
+    output_features = "[{type: category, name: intent, reduce_input: sum," \
+                      " vocab_size: 2}," \
+                      "{type: sequence, name: random_seq_op, vocab_size: 10," \
+                      " max_len: 5, decoder: generator, reduce_input: None}," \
+                      "{type: numerical, name: random_num_op}]"
 
     rel_path = generate_data(input_features, output_features, 'test_csv.csv')
     run_experiment(input_features, output_features, rel_path)
