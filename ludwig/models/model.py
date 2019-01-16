@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-'''
+"""
 This module contains the class and auxiliary methods of a model.
-'''
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -59,9 +59,9 @@ from ludwig.utils.tf_utils import get_tf_config
 
 
 class Model:
-    '''
+    """
     Model is a class that builds the model that Ludwig uses
-    '''
+    """
 
     def __init__(self, input_features, output_features, combiner, training,
                  preprocessing,
@@ -195,7 +195,7 @@ class Model:
               resume=False, skip_save_progress_weights=False,
               gpus=None, gpu_fraction=1, random_seed=default_random_seed,
               **kwargs):
-        '''Trains a model with a set of hyperparameters listed below. Customizable
+        """Trains a model with a set of hyperparameters listed below. Customizable
         :param training_set: The training set
         :param validation_set: The validation dataset
         :param test_set: The test dataset
@@ -244,7 +244,7 @@ class Model:
         :type gpu_fraction: Float
         :param random_seed_default: Default initialization for the random seeds
         :type: Float
-        '''
+        """
         # ====== General setup =======
         output_features = self.hyperparameters['output_features']
         self.epochs = epochs

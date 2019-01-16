@@ -82,14 +82,14 @@ def set_random_seed(random_seed):
 
 
 def merge_dict(dct, merge_dct):
-    ''' Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
     ``dct``.
     :param dct: dict onto which the merge is executed
     :param merge_dct: dct merged into dct
     :return: None
-    '''
+    """
     dct = copy.deepcopy(dct)
     for k, v in merge_dct.items():
         if (k in dct and isinstance(dct[k], dict)
