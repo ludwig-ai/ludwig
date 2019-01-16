@@ -302,7 +302,6 @@ class OutputFeature(ABC, BaseFeature):
         final_hidden[self.name] = (feature_hidden, feature_hidden_size)
 
         # ================ Outputs ================
-        # TODO - pycharm complains "Need more values to unpack"
         train_mean_loss, eval_loss, output_tensors = self.build_output(
             combiner_hidden,
             combiner_hidden_size,
