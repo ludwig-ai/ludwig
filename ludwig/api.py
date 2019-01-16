@@ -216,9 +216,9 @@ class LudwigModel:
         )
 
     def close(self):
-        '''Closes an open LudwigModel (closing the session running it).
+        """Closes an open LudwigModel (closing the session running it).
         It should be called once done with the model to release resources.
-        '''
+        """
         if self.model is not None:
             self.model.close_session()
 
@@ -991,7 +991,6 @@ def test_train(
         batch_size=batch_size,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        debug=debug,
         logging_level=logging_level
     )
 
