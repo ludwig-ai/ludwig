@@ -67,64 +67,77 @@ def full_train(
         debug=False,
         **kwargs
 ):
-    """*full_train* defines the entire training scheme used by Ludwig's
+    """*full_train* defines the entire training procedure used by Ludwig's
     internals. Requires most of the parameters that are taken into the model.
-    Builds a full ludwig model and initiates the training.
+    Builds a full ludwig model and performs the training.
     :param model_definition: Model definition which defines the different
-           parameters of the model, including the task, features as a yaml file
+           parameters of the model, features, preprocessing and training.
     :type model_definition: Dictionary
     :param model_definition_file: The file that specifies the model definition.
            It is a yaml file.
     :type model_definition_file: filepath (str)
-    :param data_csv: The input data, $X, y$ which is used by Ludwig's core.
+    :param data_csv: A CSV file contanining the input data which is used to
+           train, validate and test a model. The CSV either contains a
+           split column or will be split.
     :type data_csv: filepath (str)
-    :param data_train_csv: Raw training data, only $X$ which is used by Ludwig's
-           core.
+    :param data_train_csv: A CSV file contanining the input data which is used
+           to train a model.
     :type data_train_csv: filepath (str)
-    :param data_validation_csv: Raw validation data, the hyperparameters are
-           tuned on this dataset.
+    :param data_validation_csv: A CSV file contanining the input data which is used
+           to validate a model..
     :type data_validation_csv: filepath (str)
-    :param data_test_csv: Raw test data, the model is evaluated on this data.
+    :param data_test_csv: A CSV file contanining the input data which is used
+           to test a model.
     :type data_test_csv: filepath (str)
     :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
-           of the csv file
+           of the csv file.
     :type data_hdf5: filepath (str)
-    :param data_train_hdf5: Train filepath in hdf5 format
+    :param data_train_hdf5: If the training set is in the hdf5 format, this is
+           used instead of the csv file.
     :type data_train_hdf5: filepath (str)
-    :param data_validation_hdf5: Validation filepath in hdf5 format
+    :param data_validation_hdf5: If the validation set is in the hdf5 format,
+           this is used instead of the csv file.
     :type data_validation_hdf5: filepath (str)
-    :param data_test_hdf5: Test data in the form of hdf5
+    :param data_test_hdf5: If the test set is in the hdf5 format, this is
+           used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param metadata_json: If there is any metadata that the model requires, then
-           this specifies the metadata.
+    :param metadata_json: If the dataset is in hdf5 format, this is
+           the associated json file containing metadata.
     :type metadata_json: filepath (str)
-    :param experiment_name: The name for the experiment
+    :param experiment_name: The name for the experiment.
     :type experiment_name: Str
-    :param model_name: Name of the model that is being used
+    :param model_name: Name of the model that is being used.
     :type model_name: Str
-    :param model_load_path: In the process of building the model,
-           model_load_path is used by *build_model* to generate
-    :type model_load_path: filepath (str)  TODO: Difference between model_load_path & model_resume_path
+    :param model_load_path: If this is specified the loaded model will be used
+           as initialization (useful for transfer learning).
+    :type model_load_path: filepath (str)
     :param model_resume_path: Resumes training of the model from the path
-           specified.
+           specified. The difference with model_load_path is that also training
+           statistics like the current epoch and the loss and performance so
+           far are also resumed effectively cotinuing a previously interrupted
+           training process.
     :type model_resume_path: filepath (str)
     :param skip_save_progress_weights: Skips saving the weights at the end of
-           an epoch
+           each epoch. If this is true, training cannot be resumed from the
+           exactly the state at the end of the previous epoch.
     :type skip_save_progress_weights: Boolean
-    :param skip_save_processed_input: Save the processed input after applying
-           the *preprocess* function
+    :param skip_save_processed_input: By if a CSV dataset is provided it is
+           preprocessed and then saved as an hdf5 and json to avoid running
+           the preprocessing again. If this parameter is False,
+           the hdf5 and json file are not saved.
     :type skip_save_processed_input: Boolean
-    :param output_directory: The directory of the outputs or results of the
-           model.
+    :param output_directory: The directory that will contanin the training
+           statistics, the saved model and the training procgress files.
     :type output_directory: filepath (str)
-    :param gpus: List of GPUs that are available for training/inference.
+    :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of each GPU to use
+    :param gpu_fraction: Fraction of the memory of each GPU to use at
+           the beginning of the training. The memory may grow elastically.
     :type gpu_fraction: Integer
-    :param random_seed: Random seed to initialize weights
+    :param random_seed: Random seed used for weights initialization,
+           splits and any other random function.
     :type random_seed: Integer
-    :param debug: Whether the user intends to step through ludwig's internals
-           for debugging purposes.
+    :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     :returns: None
     """
@@ -270,36 +283,35 @@ def train(
         debug=False
 ):
     """
-    :param training_set: The training set for the model
-    :type training_set: TODO: check
-    :param validation_set: The validation set to train the hyperparameters
-    :type validation_set: numpy array TODO: Check
-    :param test_set: The test set.
-    :type test_set: TODO: Check
-    :param model_definition: The file that specifies the model definition. It is
-          a yaml file.
-    :type model_definition: filepath (str)
-    :param save_path: The path to which the model is saved
+    :param training_set: Dataset contaning training data
+    :type training_set: Dataset
+    :param validation_set: Dataset contaning validation data
+    :type validation_set: Datasetk
+    :param test_set: Dataset contaning test data.
+    :type test_set: Dataset
+    :param model_definition: Model definition which defines the different
+           parameters of the model, features, preprocessing and training.
+    :type model_definition: Dictionary
+    :param save_path: The path to save the model to.
     :type save_path: filepath (str)
-    :param model_load_path: In the process of building the model,
-           model_load_path is used by *build_model* to generate
+    :param model_load_path: If this is specified the loaded model will be used
+           as initialization (useful for transfer learning).
     :type model_load_path: filepath (str)
-    :param resume: Whether training is being resumed or it is beginning from
-           scratch.
-    :type resume: Boolean
-    :param skip_save_progress_weights: Skips saving the weights at the end of an
-           epoch
+    :param skip_save_progress_weights: Skips saving the weights at the end of
+           each epoch. If this is true, training cannot be resumed from the
+           exactly the state at the end of the previous epoch.
     :type skip_save_progress_weights: Boolean
-    :param gpus: List of GPUs that are available for training/inference.
+    :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of each GPU to use
+    :param gpu_fraction: Fraction of the memory of each GPU to use at
+           the beginning of the training. The memory may grow elastically.
     :type gpu_fraction: Integer
-    :param random_seed: Random seed to initialize weights
+    :param random_seed: Random seed used for weights initialization,
+           splits and any other random function.
     :type random_seed: Integer
-    :param debug: Whether the user intends to step through ludwig's internals
-           for debugging purposes.
+    :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
-    :raises: Exception
+    :returns: None
     """
     if model_load_path is not None:
         # Load model
