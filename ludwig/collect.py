@@ -53,7 +53,7 @@ def collect_activations(
     datapoint in the dataset. Saves the tensors to the experiment directory
 
     :param model_path: Is the model from which the tensors will be collected
-    :param tensors: The names of the tensors that are to be collected  # TODO: confirm this is true
+    :param tensors: List contaning the names of the tensors to collect
     :param data_csv: The CSV filepath which contains the datapoints from which
            the tensors are collected
     :param data_hdf5: The HDF5 file path if the CSV file path does not exist,
@@ -165,7 +165,8 @@ def cli_collect_activations(sys_argv):
     --data_csv: Filepath for the input csv
     --data_hdf5: Filepath for the input hdf5 file, if there is a csv file, this
                  is not read
-    --metadata_json: The metadata for the model definition  # TODO: Could be a little more specific
+    --metadata_json: If the dataset is in hdf5 format, this is the associated
+                     json file containing metadata.
     --d: Refers to the dataset type of the file being read, by default is
          *generic*
     --s: Refers to the split of the data, can be one of: train, test,
