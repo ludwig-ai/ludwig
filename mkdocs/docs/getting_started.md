@@ -206,8 +206,21 @@ predictions = model.predict(test_dataframe)
 
 model.close()
 ```
-
 More details are provided in the [User Guide](user_guide.md) and in the [API documentation](api.md).
+
+### Using API in Jupyter Notebook
+
+To be able to use Ludwig API inside a Jupyter Notebook you need to run the
+notebook in combination with virtual environment.
+
+```
+source venv/bin/activate
+pip install ipykernel
+python -m ipykernel install --user --name=venv
+jupyter notebook
+```
+
+Create a new notebook choosing venv kernel.
 
 Extensibility
 -------------
