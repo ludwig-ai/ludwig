@@ -36,12 +36,85 @@ class EmbedEncoder:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
-            initializer=None,
             dropout=False,
+            initializer=None,
             regularize=True,
             reduce_output='sum',
             **kwargs
     ):
+        """
+            :param should_embed: If True the input sequence is expected
+                   to be made of integers and will be mapped into embeddings
+            :type should_embed: Boolean
+            :param vocab: Vocabulary of the input feature to encode
+            :type vocab: List
+            :param representation: the possible values are `dense` and `sparse`.
+                   `dense` means the mebeddings are initialized randomly,
+                   `sparse` meanse they are initialized to be one-hot encodings.
+            :type representation: Str (one of 'dense' or 'sparse')
+            :param embedding_size: it is the maximum embedding size, the actual
+                   size will be `min(vocaularyb_size, embedding_size)`
+                   for `dense` representations and exacly `vocaularyb_size`
+                   for the `sparse` encoding, where `vocabulary_size` is
+                   the number of different strings appearing in the training set
+                   in the column the feature is named after (plus 1 for `<UNK>`).
+            :type embedding_size: Integer
+            :param embeddings_trainable: If `True` embeddings are trained during
+                   the training process, if `False` embeddings are fixed.
+                   It may be useful when loading pretrained embeddings
+                   for avoiding finetuning them. This parameter has effect only
+                   for `representation` is `dense` as `sparse` one-hot encodings
+                    are not trainable.
+            :type embeddings_trainable: Boolean
+            :param pretrained_embeddings: by default `dense` embeddings
+                   are initialized randomly, but this parameter allow to specify
+                   a path to a file containing embeddings in the GloVe format.
+                   When the file containing the embeddings is loaded, only the
+                   embeddings with labels present in the vocabulary are kept,
+                   the others are discarded. If the vocabulary contains strings
+                   that have no match in the embeddings file, their embeddings
+                   are initialized with the average of all other embedding plus
+                   some random noise to make them different from each other.
+                   This parameter has effect only if `representation` is `dense`.
+            :type pretrained_embeddings: str (filepath)
+            :param embeddings_on_cpu: by default embedings matrices are stored
+                   on GPU memory if a GPU is used, as it allows
+                   for faster access, but in some cases the embedding matrix
+                   may be really big and this parameter forces the placement
+                   of the embedding matrix in regular memroy and the CPU is used
+                   to resolve them, slightly slowing down the process
+                   as a result of data transfer between CPU and GPU memory.
+            :param dropout: determines if there should be a dropout layer before
+                   returning the encoder output.
+            :type dropout: Boolean
+            :param initializer: the initializer to use. If `None`, the default
+                   initialized of each variable is used (`glorot_uniform`
+                   in most cases). Options are: `constant`, `identity`, `zeros`,
+                    `ones`, `orthogonal`, `normal`, `uniform`,
+                    `truncated_normal`, `variance_scaling`, `glorot_normal`,
+                    `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
+                    Alternatively it is possible to specify a dictionary with
+                    a key `type` that identifies the type of initialzier and
+                    other keys for its parameters, e.g.
+                    `{type: normal, mean: 0, stddev: 0}`.
+                    To know the parameters of each initializer, please refer to
+                    TensorFlow's documentation.
+            :type initializer: str
+            :param regularize: if `True` the embedding wieghts are added to
+                   the set of weights that get reularized by a regularization
+                   loss (if the `regularization_lambda` in `training`
+                   is greater than 0).
+            :type regularize: Boolean
+            :param reduce_output: defines how to reduce the output tensor along
+                   the `s` sequence length dimention if the rank of the tensor
+                   is greater than 2. Available values are: `sum`,
+                   `mean` or `avg`, `max`, `concat` (concatenates along
+                   the first dimension), `last` (returns the last vector of the
+                   first dimension) and `None` or `null` (which does not reduce
+                   and returns the full tensor).
+            :type reduce_output: str
+        """
         self.reduce_output = reduce_output
 
         self.embed_sequence = EmbedSequence(
@@ -63,6 +136,19 @@ class EmbedEncoder:
             dropout_rate,
             is_training=True
     ):
+        """
+            :param input_sequence: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int32
+            :type input_sequence: Tensor
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+            :param is_training: Tesnor (tf.bool) specifying if in training mode
+                   (important for dropout)
+            :type is_training: Tensor
+        """
         # ================ Embeddings ================
         embedded_sequence, embedding_size = self.embed_sequence(
             input_sequence,
@@ -96,48 +182,147 @@ class ParallelCNN(object):
             num_fc_layers=None,
             fc_size=256,
             norm=None,
-            dropout=False,
             activation='relu',
+            dropout=False,
             initializer=None,
             regularize=True,
             reduce_output='max',
             **kwargs):
         """
-            :param input_sequence: The input sequence fed into the parallel cnn
-            :type input_sequence:
-            :param regularizer: The method of regularization that is being
-            :type regularizer:
-            :param dropout_rate: Probability of dropping a neuron in a layer
-            :type dropout_rate: Float
-            :param vocab: Vocabulary in the dataset
-            :type vocab: List
-            :param representation: Either dense or sparse representations
-            :type representation: Str (one of 'dense' or 'sparse')
-            :param embedding_size: The dimension of the embedding that has been chosen
-            :type embedding_size: Integer
-            :param filter_sizes: Size of the filter used in the convolutions
-            :type filter_sizes: Tuple (Integer)
-            :param num_filters: Number of filters to apply on the input for a given filter size
-            :type num_filters: Tuple (Integer)
-            :param fc_sizes: Fully connected dimensions at the end of the convolution layers
-            :type fc_sizes: Tuple (Integer)
-            :param norms: TODO
-            :type norms:
-            :param activations: Type of activation function being used in the model
-            :type activations: Str
-            :param regularize: TODO
-            :type regularize:
-            :param embeddings_trainable: Argument that determines if the embeddings in the model are trainable end to end
-            :type embeddings_trainable: Boolean
-            :param pretrained_embeddings: Represents whether the embedd
-            :type pretrained_embeddings: Boolean
-            :param embeddings_on_cpu: TODO: clarify (Whether the embeddings should be trained on the CPU)
-            :type embeddings_on_cpu: Boolean
-            :param should_embed: Represents a boolean value determining if there is a need to embed the input sequence
+            :param should_embed: If True the input sequence is expected
+                   to be made of integers and will be mapped into embeddings
             :type should_embed: Boolean
-            :param is_training: Whether this is training or not
-            :type is_training: Boolean
-            :returns: hidden, hidden_size - the hidden layer and hidden size
+            :param vocab: Vocabulary of the input feature to encode
+            :type vocab: List
+            :param representation: the possible values are `dense` and `sparse`.
+                   `dense` means the mebeddings are initialized randomly,
+                   `sparse` meanse they are initialized to be one-hot encodings.
+            :type representation: Str (one of 'dense' or 'sparse')
+            :param embedding_size: it is the maximum embedding size, the actual
+                   size will be `min(vocaularyb_size, embedding_size)`
+                   for `dense` representations and exacly `vocaularyb_size`
+                   for the `sparse` encoding, where `vocabulary_size` is
+                   the number of different strings appearing in the training set
+                   in the column the feature is named after (plus 1 for `<UNK>`).
+            :type embedding_size: Integer
+            :param embeddings_trainable: If `True` embeddings are trained during
+                   the training process, if `False` embeddings are fixed.
+                   It may be useful when loading pretrained embeddings
+                   for avoiding finetuning them. This parameter has effect only
+                   for `representation` is `dense` as `sparse` one-hot encodings
+                    are not trainable.
+            :type embeddings_trainable: Boolean
+            :param pretrained_embeddings: by default `dense` embeddings
+                   are initialized randomly, but this parameter allow to specify
+                   a path to a file containing embeddings in the GloVe format.
+                   When the file containing the embeddings is loaded, only the
+                   embeddings with labels present in the vocabulary are kept,
+                   the others are discarded. If the vocabulary contains strings
+                   that have no match in the embeddings file, their embeddings
+                   are initialized with the average of all other embedding plus
+                   some random noise to make them different from each other.
+                   This parameter has effect only if `representation` is `dense`.
+            :type pretrained_embeddings: str (filepath)
+            :param embeddings_on_cpu: by default embedings matrices are stored
+                   on GPU memory if a GPU is used, as it allows
+                   for faster access, but in some cases the embedding matrix
+                   may be really big and this parameter forces the placement
+                   of the embedding matrix in regular memroy and the CPU is used
+                   to resolve them, slightly slowing down the process
+                   as a result of data transfer between CPU and GPU memory.
+            :param conv_layers: it is a list of dictionaries containing
+                   the parameters of all the convolutional layers. The length
+                   of the list determines the number of parallel convolutional
+                   layers and the content of each dictionary determines
+                   the parameters for a specific layer. The available parameters
+                   for each layer are: `filter_size`, `num_filters`, `pool`,
+                   `norm`, `activation` and `regularize`. If any of those values
+                   is missing from the dictionary, the default one specified
+                   as a parameter of the encoder will be used instead. If both
+                   `conv_layers` and `num_conv_layers` are `None`, a default
+                   list will be assigned to `conv_layers` with the value
+                   `[{filter_size: 2}, {filter_size: 3}, {filter_size: 4},
+                   {filter_size: 5}]`.
+            :type conv_layers: List
+            :param num_conv_layers: if `conv_layers` is `None`, this is
+                   the number of parallel convolutional layers.
+            :type num_conv_layers: Integer
+            :param filter_size:  if a `filter_size` is not already specified in
+                   `conv_layers` this is the default `filter_size` that
+                   will be used for each layer. It indicates how wide is
+                   the 1d convolutional filter.
+            :type filter_size: Integer
+            :param num_filters: if a `num_filters` is not already specified in
+                   `conv_layers` this is the default `num_filters` that
+                   will be used for each layer. It indicates the number
+                   of filters, and by consequence the output channels of
+                   the 1d convolution.
+            :type num_filters: Integer
+            :param pool_size: if a `pool_size` is not already specified
+                  in `conv_layers` this is the default `pool_size` that
+                  will be used for each layer. It indicates the size of
+                  the max pooling that will be performed along the `s` sequence
+                  dimension after the convolution operation.
+            :type pool_size: Integer
+            :param fc_layers: it is a list of dictionaries containing
+                   the parameters of all the fully connected layers. The length
+                   of the list determines the number of stacked fully connected
+                   layers and the content of each dictionary determines
+                   the parameters for a specific layer. The available parameters
+                   for each layer are: `fc_size`, `norm`, `activation` and
+                   `regularize`. If any of those values is missing from
+                   the dictionary, the default one specified as a parameter of
+                   the encoder will be used instead. If both `fc_layers` and
+                   `num_fc_layers` are `None`, a default list will be assigned
+                   to `fc_layers` with the value
+                   `[{fc_size: 512}, {fc_size: 256}]`.
+                   (only applies if `reduce_output` is not `None`).
+            :type fc_layers: List
+            :param num_fc_layers: if `fc_layers` is `None`, this is the number
+                   of stacked fully connected layers (only applies if
+                   `reduce_output` is not `None`).
+            :type num_fc_layers: Integer
+            :param fc_size: if a `fc_size` is not already specified in
+                   `fc_layers` this is the default `fc_size` that will be used
+                   for each layer. It indicates the size of the output
+                   of a fully connected layer.
+            :type fc_size: Integer
+            :param norm: if a `norm` is not already specified in `conv_layers`
+                   or `fc_layers` this is the default `norm` that will be used
+                   for each layer. It indicates the norm of the output.
+            :type norm: str
+            :param activation: Default activation function to use
+            :type activation: Str
+            :param dropout: determines if there should be a dropout layer before
+                   returning the encoder output.
+            :type dropout: Boolean
+            :param initializer: the initializer to use. If `None` it uses
+                   `glorot_uniform`. Options are: `constant`, `identity`,
+                   `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
+                   `truncated_normal`, `variance_scaling`, `glorot_normal`,
+                   `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
+                   `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
+                   Alternatively it is possible to specify a dictionary with
+                   a key `type` that identifies the type of initialzier and
+                   other keys for its parameters,
+                   e.g. `{type: normal, mean: 0, stddev: 0}`.
+                   To know the parameters of each initializer, please refer
+                   to TensorFlow's documentation.
+            :type initializer: str
+            :param regularize: if a `regularize` is not already specified in
+                   `conv_layers` or `fc_layers` this is the default `regularize`
+                   that will be used for each layer. It indicates if
+                   the layer weights should be considered when computing
+                   a regularization loss.
+            :type regularize:
+            :param reduce_output: defines how to reduce the output tensor of
+                   the convolutional layers along the `s` sequence length
+                   dimention if the rank of the tensor is greater than 2.
+                   Available values are: `sum`, `mean` or `avg`, `max`, `concat`
+                   (concatenates along the first dimension), `last` (returns
+                   the last vector of the first dimension) and `None` or `null`
+                   (which does not reduce and returns the full tensor).
+            :type reduce_output: str
             """
 
         self.should_embed = should_embed
@@ -226,6 +411,19 @@ class ParallelCNN(object):
             dropout_rate,
             is_training=True
     ):
+        """
+            :param input_sequence: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int32
+            :type input_sequence: Tensor
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+            :param is_training: Tesnor (tf.bool) specifying if in training mode
+                   (important for dropout)
+            :type is_training: Tensor
+        """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_input_sequence, embedding_size = self.embed_sequence(
@@ -456,6 +654,19 @@ class StackedCNN:
             dropout_rate,
             is_training=True
     ):
+        """
+            :param input_sequence: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int32
+            :type input_sequence: Tensor
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+            :param is_training: Tesnor (tf.bool) specifying if in training mode
+                   (important for dropout)
+            :type is_training: Tensor
+        """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_input_sequence, self.embedding_size = self.embed_sequence(
@@ -527,8 +738,8 @@ class StackedParallelCNN:
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
-            activation='relu',
             norm=None,
+            activation='relu',
             dropout=False,
             initializer=None,
             regularize=True,
@@ -673,6 +884,19 @@ class StackedParallelCNN:
             dropout_rate,
             is_training=True
     ):
+        """
+            :param input_sequence: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int32
+            :type input_sequence: Tensor
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+            :param is_training: Tesnor (tf.bool) specifying if in training mode
+                   (important for dropout)
+            :type is_training: Tensor
+        """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_input_sequence, self.embedding_size = self.embed_sequence(
@@ -813,6 +1037,19 @@ class RNN:
             dropout_rate,
             is_training=True
     ):
+        """
+            :param input_sequence: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int32
+            :type input_sequence: Tensor
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+            :param is_training: Tesnor (tf.bool) specifying if in training mode
+                   (important for dropout)
+            :type is_training: Tensor
+        """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_input_sequence, self.embedding_size = self.embed_sequence(
@@ -870,6 +1107,11 @@ class CNNRNN:
             reduce_output='last',
             **kwargs
     ):
+        """
+            :param should_embed: If True the input sequence is expected
+                   to be made of integers and will be mapped into embeddings
+            :type should_embed: Boolean
+        """
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
             self.conv_layers = conv_layers
@@ -932,6 +1174,19 @@ class CNNRNN:
             dropout_rate,
             is_training=True
     ):
+        """
+            :param input_sequence: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int32
+            :type input_sequence: Tensor
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+            :param is_training: Tesnor (tf.bool) specifying if in training mode
+                   (important for dropout)
+            :type is_training: Tensor
+        """
         # ================ Embeddings ================
         if self.should_embed:
             embedded_input_sequence, self.embedding_size = self.embed_sequence(
