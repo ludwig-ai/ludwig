@@ -589,6 +589,9 @@ def preprocess_for_prediction(
         :param only_predictions: If False does not load output features
         :returns: Dataset, Metadata
         """
+    filename = os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
+    print('******************')
+    print(filename)
     model_definition = load_json(
         os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
     )

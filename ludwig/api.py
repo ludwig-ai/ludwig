@@ -44,6 +44,7 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.data.preprocessing import replace_text_feature_level
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.globals import set_disable_progressbar
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
@@ -98,7 +99,7 @@ class LudwigModel:
     If you have already trained a model you cal load it and use it to predict
 
     ```python
-    ludwig_model = LudwigModel.load(model_dir, metadata_json)
+    ludwig_model = LudwigModel.load(model_dir)
     ```
 
     Predict:
@@ -133,11 +134,11 @@ class LudwigModel:
             )
         else:
             self.model_definition = merge_with_defaults(model_definition)
-        self.metadata = None
+        self.train_set_metadata = None
         self.model = None
 
     @staticmethod
-    def load(model_dir, metadata_json, logging_level=logging.ERROR):
+    def load(model_dir, logging_level=logging.ERROR):
         """This function allows for loading pretrained models
 
 
@@ -146,11 +147,6 @@ class LudwigModel:
         :param model_dir: (string) path to the directory containing the model.
                If the model was trained by the `train` or `experiment` command,
                the model is in `results_dir/experiment_dir/model`.
-        :param metadata_json: (string) path to the JSON file created during
-               training that contains the mappings needed for mapping raw data
-               into numeric values. It's located in the same directory of the
-               training CSV data, with the same name of the training dataset
-               file, but with `.json` extention.
         :param logging_level: (int, default: `logging.ERROR`) logging level to
                use for logging. Use logging constants like `logging.DEBUG`,
                `logging.INFO` and `logging.ERROR`. By default only errors will
@@ -165,7 +161,7 @@ class LudwigModel:
         # Example usage
 
         ```python
-        ludwig_model = LudwigModel.load(model_dir, metadata_json)
+        ludwig_model = LudwigModel.load(model_dir)
         ```
 
         """
@@ -177,7 +173,12 @@ class LudwigModel:
         model, model_definition = load_model_and_definition(model_dir)
         ludwig_model = LudwigModel(model_definition)
         ludwig_model.model = model
-        ludwig_model.metadata = load_metadata(metadata_json)
+        ludwig_model.train_set_metadata = load_metadata(
+            os.path.join(
+                model_dir,
+                TRAIN_SET_METADATA_FILE_NAME
+            )
+        )
         return ludwig_model
 
     def save(self, save_path):
@@ -198,17 +199,24 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None or self.model.session or
-                self.model_definition is None or self.metadata is None):
+        if (self.model is None or self.model.session is None or
+                self.model_definition is None or self.train_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
 
         model_hyperparameters_path = os.path.join(
-            save_path, MODEL_HYPERPARAMETERS_FILE_NAME
+            save_path,
+            MODEL_HYPERPARAMETERS_FILE_NAME
         )
 
         self.model.save_weights(self.model.session, model_weights_path)
+
+        train_set_metadata_path = os.path.join(
+            save_path,
+            TRAIN_SET_METADATA_FILE_NAME
+        )
+        save_json(train_set_metadata_path, self.train_set_metadata)
 
         self.model.save_hyperparameters(
             self.model.hyperparameters,
@@ -236,7 +244,7 @@ class LudwigModel:
             data_train_hdf5=None,
             data_validation_hdf5=None,
             data_test_hdf5=None,
-            metadata_json=None,
+            train_set_metadata_json=None,
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
@@ -285,7 +293,7 @@ class LudwigModel:
                intermediate preprocess  version of the input CSV created the
                first time a CSV file is used in the same directory with the same
                name and a hdf5 extension
-        :param metadata_json: (string) input metadata JSON file. It is an
+        :param train_set_metadata_json: (string) input metadata JSON file. It is an
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
@@ -384,7 +392,7 @@ class LudwigModel:
             data_train_hdf5=data_train_hdf5,
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
-            metadata_json=metadata_json,
+            metadata_json=train_set_metadata_json,
             random_seed=random_seed)
 
         save_json(description_fn, description)
@@ -403,7 +411,7 @@ class LudwigModel:
                 training_set,
                 validation_set,
                 test_set,
-                metadata
+                train_set_metadata
             ) = preprocess_for_training(
                 self.model_definition,
                 dataset_type,
@@ -411,7 +419,7 @@ class LudwigModel:
                 data_train_df=data_train_df,
                 data_validation_df=data_validation_df,
                 data_test_df=data_test_df,
-                metadata_json=metadata_json,
+                metadata_json=train_set_metadata_json,
                 skip_save_processed_input=True,
                 preprocessing_params=
                 self.model_definition['preprocessing'],
@@ -421,7 +429,7 @@ class LudwigModel:
                 training_set,
                 validation_set,
                 test_set,
-                metadata
+                train_set_metadata
             ) = preprocess_for_training(
                 self.model_definition,
                 dataset_type,
@@ -433,7 +441,7 @@ class LudwigModel:
                 data_train_hdf5=data_train_hdf5,
                 data_validation_hdf5=data_validation_hdf5,
                 data_test_hdf5=data_test_hdf5,
-                metadata_json=metadata_json,
+                metadata_json=train_set_metadata_json,
                 skip_save_processed_input=skip_save_processed_input,
                 preprocessing_params=
                 self.model_definition['preprocessing'],
@@ -444,7 +452,10 @@ class LudwigModel:
         logging.info('Test set: {0}'.format(test_set.size))
 
         # update model definition with metadata properties
-        update_model_definition_with_metadata(self.model_definition, metadata)
+        update_model_definition_with_metadata(
+            self.model_definition,
+            train_set_metadata
+        )
 
         # run the experiment
         model, result = train(
@@ -461,6 +472,13 @@ class LudwigModel:
             random_seed=random_seed,
             debug=debug
         )
+
+        train_set_metadata_path = os.path.join(
+            model_dir,
+            TRAIN_SET_METADATA_FILE_NAME
+        )
+        save_json(train_set_metadata_path, train_set_metadata)
+
         train_trainset_stats, train_valisest_stats, train_testset_stats = result
         train_stats = {
             'train': train_trainset_stats,
@@ -509,14 +527,14 @@ class LudwigModel:
 
         # set parameters
         self.model = model
-        self.metadata = metadata
+        self.train_set_metadata = train_set_metadata
 
         return train_stats
 
     def initialize_model(
             self,
-            metadata=None,
-            metadata_json=None,
+            train_set_metadata=None,
+            train_set_metadata_json=None,
             gpus=None,
             gpu_fraction=1,
             random_seed=default_random_seed,
@@ -531,13 +549,13 @@ class LudwigModel:
 
         # Inputs
 
-        :param metadata: (dict) it contains metadata information for the input
-               and output features the model is going to be trained on. It's the
-               same content of the metadata json file that is created while
-               training.
-        :param metadata_json: (string)  path to the JSON metadata file created
-               while training. it contains metadata information for the input
-               and output features the model is going to be trained on
+        :param train_set_metadata: (dict) it contains metadata information for
+               the input and output features the model is going to be trained
+               on. It's the same content of the metadata json file that is
+               created while training.
+        :param train_set_metadata_json: (string)  path to the JSON metadata file
+               created while training. it contains metadata information for the
+               input and output features the model is going to be trained on
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of GPU memory to
@@ -555,15 +573,17 @@ class LudwigModel:
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
 
-        if metadata is None and metadata_json is None:
+        if train_set_metadata is None and train_set_metadata_json is None:
             raise ValueError(
-                'One of metadata and metadata_json must be different from None.'
+                'train_set_metadata or train_set_metadata_json must not None.'
             )
-        if metadata_json is not None:
-            metadata = load_metadata(metadata_json)
+        if train_set_metadata_json is not None:
+            train_set_metadata = load_metadata(train_set_metadata_json)
 
         # update model definition with metadata properties
-        update_model_definition_with_metadata(self.model_definition, metadata)
+        update_model_definition_with_metadata(
+            self.model_definition,
+            train_set_metadata)
 
         # build model
         model = Model(
@@ -579,7 +599,7 @@ class LudwigModel:
 
         # set parameters
         self.model = model
-        self.metadata = metadata
+        self.train_set_metadata = train_set_metadata
 
     def train_online(
             self,
@@ -649,7 +669,7 @@ class LudwigModel:
             set_disable_progressbar(True)
 
         if (self.model is None or self.model_definition is None
-                or self.metadata is None):
+                or self.train_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
         if data_df is None:
@@ -684,7 +704,7 @@ class LudwigModel:
         preprocessed_data = build_data(
             data_df,
             features_to_load,
-            self.metadata,
+            self.train_set_metadata,
             self.model_definition['preprocessing']
         )
         replace_text_feature_level(self.model_definition, [preprocessed_data])
@@ -723,7 +743,7 @@ class LudwigModel:
             set_disable_progressbar(True)
 
         if (self.model is None or self.model_definition is None or
-                self.metadata is None):
+                self.train_set_metadata is None):
             raise ValueError('Model has not been trained or loaded')
 
         if data_df is None:
@@ -744,7 +764,7 @@ class LudwigModel:
         preprocessed_data = build_data(
             data_df,
             features_to_load,
-            self.metadata,
+            self.train_set_metadata,
             self.model_definition['preprocessing']
         )
         replace_text_feature_level(self.model_definition, [preprocessed_data])
@@ -774,7 +794,7 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 predict_results,
                 self.model_definition['output_features'],
-                self.metadata
+                self.train_set_metadata
             )
         elif (
                 return_type == 'dataframe' or
@@ -784,7 +804,7 @@ class LudwigModel:
             postprocessed_predictions = postprocess_df(
                 predict_results,
                 self.model_definition['output_features'],
-                self.metadata
+                self.train_set_metadata
             )
         else:
             logging.warning(
@@ -794,7 +814,7 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 predict_results,
                 self.model_definition['output_features'],
-                self.metadata
+                self.train_set_metadata
             )
 
         return postprocessed_predictions, predict_results
@@ -846,16 +866,16 @@ class LudwigModel:
 
         # Return
 
-        :return: (DataFrame or dict) a dataframe containing the predictions for each
-                 output feature and their probabilities (for types that return
-                 them) will be returned. For instance in a 3 way multiclass
-                 classification problem with a category field names `class` as
-                 output feature with possible values `one`, `two` and `three`,
-                 the dataframe will have as many rows as input datapoints and
-                 five columns: `class_predictions`, `class_UNK_probability`,
-                 `class_one_probability`, `class_two_probability`,
-                 `class_three_probability`. (The UNK class is always present in
-                 categorical features).
+        :return: (DataFrame or dict) a dataframe containing the predictions for
+                 each output feature and their probabilities (for types that
+                 return them) will be returned. For instance in a 3 way
+                 multiclass classification problem with a category field names
+                 `class` as output feature with possible values `one`, `two`
+                 and `three`, the dataframe will have as many rows as input
+                 datapoints and five columns: `class_predictions`,
+                 `class_UNK_probability`, `class_one_probability`,
+                 `class_two_probability`, `class_three_probability`. (The UNK
+                 class is always present in categorical features).
                  If the `return_type` is a dictionary, the returned object be
                  a dictionary contaning one entry for each output feature.
                  Each entry is itself a dictionary containing aligned
@@ -1009,7 +1029,7 @@ def test_train_online(
         **kwargs
 ):
     model_definition = merge_with_defaults(model_definition)
-    data, metadata = build_dataset(
+    data, train_set_metadata = build_dataset(
         data_csv,
         (model_definition['input_features'] +
          model_definition['output_features']),
@@ -1018,7 +1038,7 @@ def test_train_online(
 
     ludwig_model = LudwigModel(model_definition, logging_level=logging_level)
     ludwig_model.initialize_model(
-        metadata=metadata,
+        train_set_metadata=train_set_metadata,
         logging_level=logging_level
     )
 
@@ -1051,7 +1071,6 @@ def test_train_online(
 
 def test_predict(
         data_csv,
-        metadata_json,
         model_path,
         batch_size=128,
         gpus=None,
@@ -1061,7 +1080,6 @@ def test_predict(
 ):
     ludwig_model = LudwigModel.load(
         model_path,
-        metadata_json,
         logging_level=logging_level
     )
 
@@ -1094,7 +1112,10 @@ def main(sys_argv):
     # Data parameters
     # ---------------
     parser.add_argument('--data_csv', help='input data CSV file')
-    parser.add_argument('--metadata_json', help='input metadata JSON file')
+    parser.add_argument(
+        '--train_set_metadata_json',
+        help='input metadata JSON file'
+    )
 
     # ----------------
     # Model parameters

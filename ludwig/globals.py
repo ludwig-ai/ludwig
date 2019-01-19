@@ -20,6 +20,7 @@ MODEL_WEIGHTS_FILE_NAME = 'model_weights'
 MODEL_WEIGHTS_PROGRESS_FILE_NAME = 'model_weights_progress'
 MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'
 TRAINING_PROGRESS_FILE_NAME = 'training_progress.p'
+TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'
 
 DISABLE_PROGRESSBAR = False
 
