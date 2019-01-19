@@ -657,6 +657,9 @@ class Model:
                                                          len(result[field_name][
                                                                  stat_config[
                                                                      'output']])
+                    elif aggregation_method == 'avg_exp':
+                        output_stats[field_name][stat] += \
+                            result[field_name][stat_config['output']].sum()
                     elif aggregation_method == APPEND:
                         output_stats[field_name][stat].append(
                             result[field_name][stat_config['output']]
@@ -708,6 +711,9 @@ class Model:
                     elif output_config[stat]['aggregation'] == 'seq_sum':
                         output_stats[field_name][stat] /= \
                         seq_set_size[field_name][stat]
+                    elif output_config[stat]['aggregation'] == 'avg_exp':
+                        output_stats[field_name][stat] = np.exp(
+                            output_stats[field_name][stat] / set_size)
                     elif output_config[stat]['aggregation'] == APPEND:
                         if len(output_stats[field_name][stat]) > 0 and len(
                                 output_stats[field_name][stat][0].shape) > 1:

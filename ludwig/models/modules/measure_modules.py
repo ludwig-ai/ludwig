@@ -120,7 +120,16 @@ def edit_distance(targets, target_seq_length, predictions_sequence,
 
 
 def perplexity(cross_entropy_loss):
-    return tf.exp(cross_entropy_loss)
+    # This seem weird but is correct:
+    # we are returning the cross entropy loss as it will be later summed,
+    # divided by the size of the dataset and finally exponentiated,
+    # because perplexity has a avg_exp aggregation strategy
+    # in the output config in SequenceOutputFeature.
+    # This implies that in Model update_output_stats_batch()
+    # the values read from the perplexity node will be summed
+    # and in Model update_output_stats() they will be divided
+    # by the set size first and exponentiated.
+    return cross_entropy_loss
 
 
 def error(targets, predictions, output_feature_name):
