@@ -30,6 +30,7 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.utils.data_utils import save_json
@@ -237,10 +238,23 @@ def full_train(
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
     model.close_session()
 
+    save_json(
+        os.path.join(
+            model_dir,
+            TRAIN_SET_METADATA_FILE_NAME
+        ),
+        metadata
+    )
+
     # save training and test statistics
-    save_json(training_stats_fn, {'train': train_trainset_stats,
-                                  'validation': train_valisest_stats,
-                                  'test': train_testset_stats})
+    save_json(
+        training_stats_fn,
+        {
+            'train': train_trainset_stats,
+            'validation': train_valisest_stats,
+            'test': train_testset_stats
+        }
+    )
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']

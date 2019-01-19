@@ -29,6 +29,7 @@ import yaml
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.predict import predict
 from ludwig.predict import print_prediction_results
@@ -248,6 +249,14 @@ def experiment(
         train_valisest_stats,
         train_testset_stats
     ) = training_results
+
+    save_json(
+        os.path.join(
+            model_dir,
+            TRAIN_SET_METADATA_FILE_NAME
+        ),
+        metadata
+    )
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
