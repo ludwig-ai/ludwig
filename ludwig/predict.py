@@ -28,8 +28,10 @@ from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import load_model_and_definition
-from ludwig.utils.data_utils import save_json, save_csv
+from ludwig.utils.data_utils import save_json
+from ludwig.utils.data_utils import save_csv
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -40,7 +42,6 @@ def full_predict(
         model_path,
         data_csv=None,
         data_hdf5=None,
-        metadata_json=None,
         dataset_type='generic',
         split='test',
         batch_size=128,
@@ -66,14 +67,19 @@ def full_predict(
     logging.info('Output path: {}'.format(experiment_dir_name))
     logging.info('')
 
+    train_set_metadata_json_fp = os.path.join(
+        model_path,
+        TRAIN_SET_METADATA_FILE_NAME
+    )
+
     # preprocessing
-    dataset, metadata = preprocess_for_prediction(
+    dataset, train_set_metadata = preprocess_for_prediction(
         model_path,
         split,
         dataset_type,
         data_csv,
         data_hdf5,
-        metadata_json,
+        train_set_metadata_json_fp,
         only_predictions
     )
 
@@ -99,7 +105,7 @@ def full_predict(
     postprocessed_output = postprocess(
         prediction_results,
         model_definition['output_features'],
-        metadata,
+        train_set_metadata,
         experiment_dir_name,
         skip_save_unprocessed_output
     )
@@ -242,7 +248,7 @@ def cli(sys_argv):
              'same directory with the same name and a hdf5 extension'
     )
     parser.add_argument(
-        '--metadata_json',
+        '--train_set_metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file '
              'containing the mappings of the input CSV created the first time '
              'a CSV file is used in the same directory with the same name and '

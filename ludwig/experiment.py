@@ -58,7 +58,7 @@ def experiment(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        metadata_json=None,
+        train_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -107,9 +107,9 @@ def experiment(
     :param data_test_hdf5: If the test set is in the hdf5 format, this is
            used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param metadata_json: If the dataset is in hdf5 format, this is
+    :param train_set_metadata_json: If the dataset is in hdf5 format, this is
            the associated json file containing metadata.
-    :type metadata_json: filepath (str)
+    :type train_set_metadata_json: filepath (str)
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -192,7 +192,7 @@ def experiment(
         data_train_hdf5,
         data_validation_hdf5,
         data_test_hdf5,
-        metadata_json,
+        train_set_metadata_json,
         random_seed
     )
     save_json(description_fn, description)
@@ -207,7 +207,12 @@ def experiment(
     logging.info('')
 
     # preprocess
-    training_set, validation_set, test_set, metadata = preprocess_for_training(
+    (
+        training_set,
+        validation_set,
+        test_set,
+        train_set_metadata
+    ) = preprocess_for_training(
         model_definition,
         data_csv=data_csv,
         data_train_csv=data_train_csv,
@@ -217,7 +222,7 @@ def experiment(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        metadata_json=metadata_json,
+        metadata_json=train_set_metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition[
             'preprocessing'],
@@ -227,7 +232,7 @@ def experiment(
     logging.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
-    update_model_definition_with_metadata(model_definition, metadata)
+    update_model_definition_with_metadata(model_definition, train_set_metadata)
 
     # run the experiment
     model, training_results = train(
@@ -255,7 +260,7 @@ def experiment(
             model_dir,
             TRAIN_SET_METADATA_FILE_NAME
         ),
-        metadata
+        train_set_metadata
     )
 
     # grab the results of the model with highest validation test performance
@@ -316,7 +321,7 @@ def experiment(
     postprocessed_output = postprocess(
         test_results,
         model_definition['output_features'],
-        metadata,
+        train_set_metadata,
         experiment_dir_name,
         skip_save_unprocessed_output
     )
