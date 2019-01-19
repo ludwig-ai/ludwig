@@ -456,10 +456,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 predictions_sequence_length,
                 self.name
             )
-            # TODO double check this, can't the loss contain also regularization
-            # components? If so, the eval loss is not only the probability of
-            # the sequence, so this should use the probability of the ground
-            # truth.
             perplexity_val = perplexity(eval_loss)
 
         return (
@@ -559,7 +555,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         }),
         (PERPLEXITY, {
             'output': PERPLEXITY,
-            'aggregation': SUM,
+            'aggregation': 'avg_exp',
             'value': 0,
             'type': MEASURE
         }),
