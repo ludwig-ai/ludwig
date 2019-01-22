@@ -15,6 +15,7 @@
 # ==============================================================================
 import logging
 import os
+import glob
 import sys
 from string import Template
 
@@ -58,7 +59,6 @@ def run_experiment(input_features, output_features, data_csv):
 
 def test_experiment_1(delete_temp_data=True):
     # Single sequence input, single category output
-
     input_features = Template('[{name: utterance, type: sequence,'
                               'vocab_size: 10, max_len: 10, '
                               'encoder: ${encoder}, reduce_output: sum}]')
@@ -66,9 +66,8 @@ def test_experiment_1(delete_temp_data=True):
                       " reduce_input: sum}] "
 
     # Generate test data
-    rel_path = generate_data(
-        input_features.substitute(encoder='rnn'),
-        output_features, 'test_csv.csv')
+    rel_path = generate_data(input_features.substitute(encoder='rnn'),
+                             output_features, 'test_csv.csv')
     for encoder in encoders:
         run_experiment(input_features.substitute(encoder=encoder),
                        output_features,
@@ -195,6 +194,54 @@ def test_experiment_4(delete_temp_data=True):
         os.remove(rel_path)
 
 
+def test_experiment_tied_weights(delete_temp_data=True):
+    # Single sequence input, single category output
+    input_features = Template('[{name: utterance1, type: text,'
+                              'vocab_size: 10, max_len: 10, '
+                              'encoder: ${encoder}, reduce_output: sum},'
+                              '{name: utterance2, type: text, vocab_size: 10,'
+                              'max_len: 10, encoder: ${encoder}, '
+                              'reduce_output: sum, tied_weights: utterance1}]')
+    output_features = "[{name: intent, type: category, vocab_size: 2," \
+                      " reduce_input: sum}] "
+
+    # Generate test data
+    rel_path = generate_data(
+        input_features.substitute(encoder='rnn'),
+        output_features, 'test_csv.csv')
+    for encoder in encoders:
+        run_experiment(input_features.substitute(encoder=encoder),
+                       output_features,
+                       data_csv=rel_path)
+
+    # Delete the generated data
+    if delete_temp_data is True:
+        os.remove(rel_path)
+
+
+def test_experiment_attention(delete_temp_data=True):
+    # Machine translation with attention
+    input_features = '[{name: english, type: sequence, vocab_size: 10,' \
+                     ' max_len: 10, encoder: rnn, cell_type: lstm} ]'
+    output_features = Template("[{name: spanish, type: sequence,"
+                               " vocab_size: 10, max_len: 10,"
+                               " decoder: generator, cell_type: lstm,"
+                               " attention: ${attention}}] ")
+
+    # Generate test data
+    rel_path = generate_data(
+        input_features, output_features.substitute(attention='bahdanau'),
+        'test_csv.csv')
+
+    for attention in ['bahdanau', 'luong']:
+        run_experiment(input_features, output_features.substitute(
+            attention=attention), data_csv=rel_path)
+
+    # Delete the generated data
+    if delete_temp_data is True:
+        os.remove(rel_path)
+
+
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
     logger = logging.getLogger()
@@ -204,3 +251,5 @@ if __name__ == '__main__':
     test_experiment_2()
     test_experiment_3()
     test_experiment_4()
+    test_experiment_tied_weights()
+    test_experiment_attention()
