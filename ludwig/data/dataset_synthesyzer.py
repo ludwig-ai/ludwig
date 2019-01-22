@@ -18,10 +18,15 @@ import argparse
 import csv
 import random
 import string
+import uuid
+import os
+
+import numpy as np
 
 import yaml
 
 from ludwig.utils.misc import get_from_registry
+from skimage.io import imsave
 
 letters = string.ascii_letters
 
@@ -164,7 +169,37 @@ def generate_timeseries(feature):
 
 
 def generate_image(feature):
-    return ''
+    # Read num_channels, width, height
+    num_channels = feature['num_channels']
+    width = feature['width']
+    height = feature['height']
+    image_dest_folder = feature['destination_folder']
+
+    if width <= 0 or height <= 0 or num_channels < 1:
+        raise ValueError('Invalid arguments for generating images')
+
+    # Create a Random Image
+    if num_channels == 1:
+        img = np.random.rand(width, height) * 255
+    else:
+        img = np.random.rand(width, height, num_channels) * 255.0
+
+    # Generate a unique random filename
+    image_filename = uuid.uuid4().hex[:10].upper() + '.jpg'
+
+    # Save the image to disk either in a specified location/new folder
+    try:
+        if not os.path.exists(image_dest_folder):
+            os.mkdir(image_dest_folder)
+
+        image_dest_path = os.path.join(image_dest_folder, image_filename)
+        imsave(image_dest_path, img.astype('uint8'))
+
+    except IOError as e:
+        raise IOError('Unable to create a folder for images/save image to disk.'
+                      '{0}'.format(e))
+
+    return image_dest_path
 
 
 generators_registry = {
