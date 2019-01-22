@@ -210,6 +210,7 @@ class LudwigModel:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
 
+        # TODO save metadata here
         self.model.save_weights(self.model.session, model_weights_path)
 
         train_set_metadata_path = os.path.join(
@@ -477,6 +478,7 @@ class LudwigModel:
             model_dir,
             TRAIN_SET_METADATA_FILE_NAME
         )
+
         save_json(train_set_metadata_path, train_set_metadata)
 
         train_trainset_stats, train_valisest_stats, train_testset_stats = result
