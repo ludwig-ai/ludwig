@@ -27,6 +27,7 @@ import numpy as np
 
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import load_model_and_definition
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -39,7 +40,6 @@ def collect_activations(
         tensors,
         data_csv=None,
         data_hdf5=None,
-        metadata_json=None,
         dataset_type='generic',
         split='test',
         batch_size=128,
@@ -62,8 +62,6 @@ def collect_activations(
     :param split: Split type
     :param batch_size: Batch size
     :param output_directory: Output directory
-    :param metadata_json: Model metadata that is fed to the *preprocess*
-           function
     :param gpus: The total number of GPUs that the model intends to use
     :param gpu_fraction: The fraction of each GPU that the model intends on
            using
@@ -86,14 +84,19 @@ def collect_activations(
     logging.info('Output path: {}'.format(experiment_dir_name))
     logging.info('\n')
 
+    train_set_metadata_fp = os.path.join(
+        model_path,
+        TRAIN_SET_METADATA_FILE_NAME
+    )
+
     # preprocessing
-    dataset, metadata = preprocess_for_prediction(
+    dataset, train_set_metadata = preprocess_for_prediction(
         model_path,
         split,
         dataset_type,
         data_csv,
         data_hdf5,
-        metadata_json
+        train_set_metadata_fp
     )
 
     model, model_definition = load_model_and_definition(model_path)
@@ -165,8 +168,6 @@ def cli_collect_activations(sys_argv):
     --data_csv: Filepath for the input csv
     --data_hdf5: Filepath for the input hdf5 file, if there is a csv file, this
                  is not read
-    --metadata_json: If the dataset is in hdf5 format, this is the associated
-                     json file containing metadata.
     --d: Refers to the dataset type of the file being read, by default is
          *generic*
     --s: Refers to the split of the data, can be one of: train, test,
@@ -193,7 +194,6 @@ def cli_collect_activations(sys_argv):
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--data_csv', help='input data CSV file')
     group.add_argument('--data_hdf5', help='input data HDF5 file')
-    parser.add_argument('--metadata_json', help='input metadata JSON file')
 
     parser.add_argument(
         '-s',
