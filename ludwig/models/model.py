@@ -64,9 +64,13 @@ class Model:
     """
 
     def __init__(self, input_features, output_features, combiner, training,
-                 preprocessing,
+                 preprocessing, use_horovod=False,
                  random_seed=default_random_seed, debug=False, **kwargs):
         self.debug = debug
+        self.horovod = None
+        if use_horovod:
+            import horovod.tensorflow
+            self.horovod = horovod.tensorflow
         self.weights_save_path = None
         self.hyperparameters = {}
         self.session = None
@@ -82,6 +86,9 @@ class Model:
         self.hyperparameters['preprocessing'] = preprocessing
         self.hyperparameters['random_seed'] = random_seed
         self.hyperparameters.update(kwargs)
+
+        if self.horovod:
+            self.horovod.init()
 
         tf.reset_default_graph()
         graph = tf.Graph()
@@ -133,7 +140,8 @@ class Model:
             # ================ Optimizer ================
             self.optimize, self.learning_rate = optimize(
                 self.train_reg_mean_loss, training,
-                self.learning_rate, self.global_step)
+                self.learning_rate, self.global_step,
+                self.horovod)
 
             tf.summary.scalar('train_reg_mean_loss', self.train_reg_mean_loss)
 
@@ -145,8 +153,12 @@ class Model:
 
     def initialize_session(self, gpus=None, gpu_fraction=1):
         if self.session is None:
-            self.session = tf.Session(config=get_tf_config(gpus, gpu_fraction),
-                                      graph=self.graph)
+            if self.horovod:
+                self.broadcast_op = self.horovod.broadcast_global_variables(0)
+
+            self.session = tf.Session(
+                config=get_tf_config(gpus, gpu_fraction, self.horovod),
+                graph=self.graph)
             self.session.run(self.graph_initialize)
 
             if self.debug:
@@ -264,16 +276,25 @@ class Model:
         # ====== Setup session =======
         session = self.initialize_session(gpus, gpu_fraction)
 
-        train_writer = tf.summary.FileWriter(
-            os.path.join(save_path, 'log', 'train'), self.session.graph)
+        if not self.horovod or self.horovod.rank() == 0:
+            train_writer = tf.summary.FileWriter(
+                os.path.join(save_path, 'log', 'train'), session.graph)
+
+        if self.debug:
+            session = tf_debug.LocalCLIDebugWrapperSession(session)
+            session.add_tensor_filter(
+                'has_inf_or_nan', tf_debug.has_inf_or_nan)
+
+        session.run(self.graph_initialize)
 
         # ================ Resume logic ================
         if resume:
             progress_tracker = self.resume_training(
                 save_path, model_weights_path)
-            self.resume_session(
-                session, save_path, model_weights_path,
-                model_weights_progress_path)
+            if not self.horovod or self.horovod.rank() == 0:
+                self.resume_session(
+                    session, save_path, model_weights_path,
+                    model_weights_progress_path)
         else:
             train_stats, vali_stats, test_stats = self.initialize_training_stats(
                 output_features)
@@ -292,27 +313,38 @@ class Model:
                 vali_stats=vali_stats,
                 test_stats=test_stats
             )
-            session.run(self.graph_initialize)
+            # if not self.horovod or self.horovod.rank() == 0:
+            #    session.run(self.graph_initialize)
+
+        session.graph.finalize()
+        # horovod broadcasting after init or restore
+        if self.horovod:
+            session.run(self.broadcast_op)
 
         set_random_seed(random_seed)
         batcher = self.initialize_batcher(
-            training_set,
-            batch_size,
-            bucketing_field)
+            training_set, batch_size, bucketing_field)
 
         # ================ Training Loop ================
         while progress_tracker.epoch < self.epochs:
             # epoch init
             start_time = time.time()
-            logging.info('\nEpoch {epoch:{digits}d}'.format(
-                epoch=progress_tracker.epoch + 1, digits=digits_per_epochs))
+            if not self.horovod or self.horovod.rank() == 0:
+                logging.info('\nEpoch {epoch:{digits}d}'.format(
+                    epoch=progress_tracker.epoch + 1, digits=digits_per_epochs))
             # needed because batch size may change
             batcher.batch_size = progress_tracker.batch_size
 
+            # TODO steps per epoch in case of horovod should be /workers
+            # TODO print only on rank() == 0
+            # TODO batcher should partition the data so that each worker reads from a different partition
+            # TODO warmup learning rate (first start with normal and then increase it to lr * workers https://github.com/uber/horovod/blob/master/horovod/keras/callbacks.py#L202
+
             # ================ Train ================
-            bar = tqdm(desc='Training', total=batcher.steps_per_epoch,
-                       file=sys.stdout,
-                       disable=get_disable_progressbar())
+            if not self.horovod or self.horovod.rank() == 0:
+                bar = tqdm(desc='Training', total=batcher.steps_per_epoch,
+                           file=sys.stdout,
+                           disable=get_disable_progressbar())
 
             # training step loop
             while not batcher.last_batch():
@@ -328,13 +360,18 @@ class Model:
                         is_training=True
                     )
                 )
-                train_writer.add_summary(summary, progress_tracker.steps)
+                if not self.horovod or self.horovod.rank() == 0:
+                    # it is initialized only if self.horovod is not None and rank == 0
+                    train_writer.add_summary(summary, progress_tracker.steps)
 
                 progress_tracker.steps += 1
-                bar.update(1)
+                if not self.horovod or self.horovod.rank() == 0:
+                    bar.update(1)
 
             # post training
-            bar.close()
+            if not self.horovod or self.horovod.rank() == 0:
+                bar.close()
+
             # train_memory_usage = session.run(self.memory_usage) if self.memory_usage is not None else 0
             progress_tracker.epoch += 1
             batcher.reset()
@@ -369,8 +406,9 @@ class Model:
             # eval_memory_usage = session.run(self.memory_usage) if self.memory_usage is not None else 0
             elapsed_time = (time.time() - start_time) * 1000.0
 
-            logging.info('Took {time}'.format(
-                time=time_utils.strdelta(elapsed_time)))
+            if not self.horovod or self.horovod.rank() == 0:
+                logging.info('Took {time}'.format(
+                    time=time_utils.strdelta(elapsed_time)))
             # logging.info(
             #     'Training memory: {} | Evaluation memory: {}'.format(
             #         convert_size(train_memory_usage) if train_memory_usage > 0 else 'n/a',
@@ -383,10 +421,11 @@ class Model:
                 if output_feature != 'combined' or (
                         output_feature == 'combined' and len(
                         output_features) > 1):
-                    logging.info(tabulate(table,
-                                          headers='firstrow',
-                                          tablefmt='fancy_grid',
-                                          floatfmt='.4f'))
+                    if not self.horovod or self.horovod.rank() == 0:
+                        logging.info(tabulate(table,
+                                              headers='firstrow',
+                                              tablefmt='fancy_grid',
+                                              floatfmt='.4f'))
 
             if should_validate:
                 should_break = self.check_progress_on_validation(
@@ -411,10 +450,11 @@ class Model:
                     self.hyperparameters, model_hyperparameters_path)
 
             # ========== Save training progress ==========
-            save_object(os.path.join(
-                save_path, TRAINING_PROGRESS_FILE_NAME), progress_tracker)
-            if not skip_save_progress_weights:
-                self.save_weights(session, model_weights_progress_path)
+            if not self.horovod or self.horovod.rank() == 0:
+                save_object(os.path.join(
+                    save_path, TRAINING_PROGRESS_FILE_NAME), progress_tracker)
+                if not skip_save_progress_weights:
+                    self.save_weights(session, model_weights_progress_path)
 
             logging.info('')
 
@@ -497,7 +537,8 @@ class Model:
 
         set_size = dataset.size
         if set_size == 0:
-            logging.warning('No datapoints to evaluate on.')
+            if not self.horovod or self.horovod.rank() == 0:
+                logging.warning('No datapoints to evaluate on.')
             return output_stats
         seq_set_size = {output_feature['name']: {} for output_feature in
                         self.hyperparameters['output_features'] if
@@ -710,7 +751,7 @@ class Model:
                         output_stats[field_name][stat] /= set_size
                     elif output_config[stat]['aggregation'] == 'seq_sum':
                         output_stats[field_name][stat] /= \
-                        seq_set_size[field_name][stat]
+                            seq_set_size[field_name][stat]
                     elif output_config[stat]['aggregation'] == 'avg_exp':
                         output_stats[field_name][stat] = np.exp(
                             output_stats[field_name][stat] / set_size)
@@ -784,8 +825,9 @@ class Model:
                     progress_tracker.best_valid_measure):
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
             progress_tracker.best_valid_measure = \
-            progress_tracker.vali_stats[validation_field][validation_measure][
-                -1]
+                progress_tracker.vali_stats[validation_field][
+                    validation_measure][
+                    -1]
             self.save_weights(session, model_weights_path)
             self.save_hyperparameters(self.hyperparameters,
                                       model_hyperparameters_path)
@@ -793,19 +835,22 @@ class Model:
         progress_tracker.last_improvement = progress_tracker.epoch - \
                                             progress_tracker.last_improvement_epoch
         if progress_tracker.last_improvement == 0:
-            logging.info('Validation {} on {} improved, model saved'.format(
-                validation_measure,
-                validation_field))
+            if not self.horovod or self.horovod.rank() == 0:
+                logging.info('Validation {} on {} improved, model saved'.format(
+                    validation_measure,
+                    validation_field))
         else:
-            logging.info('Last improvement of {} on {} happened {} epoch{} ago'.
-                         format(validation_measure,
-                                validation_field,
-                                progress_tracker.last_improvement,
-                                '' if progress_tracker.last_improvement == 1 else 's'))
+            if not self.horovod or self.horovod.rank() == 0:
+                logging.info(
+                    'Last improvement of {} on {} happened {} epoch{} ago'.
+                    format(validation_measure,
+                           validation_field,
+                           progress_tracker.last_improvement,
+                           '' if progress_tracker.last_improvement == 1 else 's'))
 
         # ========== Reduce Learning Rate Plateau logic ========
         if reduce_learning_rate_on_plateau > 0:
-            reduce_learning_rate(
+            self.reduce_learning_rate(
                 progress_tracker,
                 reduce_learning_rate_on_plateau,
                 reduce_learning_rate_on_plateau_patience,
@@ -814,7 +859,7 @@ class Model:
 
         # ========== Increase Batch Size Plateau logic =========
         if increase_batch_size_on_plateau > 0:
-            increase_batch_size(
+            self.increase_batch_size(
                 progress_tracker,
                 increase_batch_size_on_plateau_patience,
                 increase_batch_size_on_plateau,
@@ -825,10 +870,11 @@ class Model:
         # ========== Early Stop logic ==========
         if early_stop > 0:
             if progress_tracker.last_improvement >= early_stop:
-                logging.info(
-                    '\nEARLY STOPPING due to lack of validation improvement,'
-                    'it has been {0} epochs since last validation accuracy '
-                    'improvement\n'.format(
+                if not self.horovod or self.horovod.rank() == 0:
+                    logging.info(
+                        "\nEARLY STOPPING due to lack of validation improvement,"
+                        "it has been {0} epochs since last validation accuracy "
+                        "improvement\n".format(
                         progress_tracker.epoch -
                         progress_tracker.last_improvement_epoch))
                 should_break = True
@@ -900,12 +946,15 @@ class Model:
 
         # collect tensors
         collected_tensors = {
-        tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
-        for tensor_name in tensor_names}
+            tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
+            for tensor_name in tensor_names}
 
         return collected_tensors
 
     def save_weights(self, session, save_path):
+        if self.horovod is not None:
+            if self.horovod.rank() == 0:
+                self.weights_save_path = self.saver.save(session, save_path)
         self.weights_save_path = self.saver.save(session, save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
@@ -950,7 +999,8 @@ class Model:
         sys.exit(1)
 
     def resume_training(self, save_path, model_weights_path):
-        logging.info('Resuming training of model: {0}'.format(save_path))
+        if not self.horovod or self.horovod.rank() == 0:
+            logging.info('Resuming training of model: {0}'.format(save_path))
         self.weights_save_path = model_weights_path
         progress_tracker = load_object(os.path.join(
             save_path, TRAINING_PROGRESS_FILE_NAME))
@@ -1043,81 +1093,87 @@ class Model:
         else:
             self.restore(session, model_weights_path)
 
+    def reduce_learning_rate(
+            self,
+            progress_tracker,
+            reduce_learning_rate_on_plateau,
+            reduce_learning_rate_on_plateau_patience,
+            reduce_learning_rate_on_plateau_rate
+    ):
+        if progress_tracker.last_improvement >= reduce_learning_rate_on_plateau_patience:
+            if progress_tracker.num_reductions_lr >= reduce_learning_rate_on_plateau:
+                if not self.horovod or self.horovod.rank() == 0:
+                    logging.info('\n')
+                    logging.info("It has been " +
+                                 str(progress_tracker.last_improvement) +
+                                 'epochs since last validation accuracy improvement '
+                                 'and the learning rate was already reduced ' +
+                                 str(progress_tracker.num_reductions_lr) +
+                                 'times, not reducing it anymore')
+                    logging.info('\n')
+            else:
+                if not self.horovod or self.horovod.rank() == 0:
+                    logging.info('\n')
+                    logging.info('PLATEAU REACHED, reducing learning rate'
+                                 ' due to lack of validation improvement, it has been' +
+                                 str(progress_tracker.last_improvement) +
+                                 'epochs since last validation accuracy improvement'
+                                 'or since the learning rate was reduced')
 
-def reduce_learning_rate(
-        progress_tracker,
-        reduce_learning_rate_on_plateau,
-        reduce_learning_rate_on_plateau_patience,
-        reduce_learning_rate_on_plateau_rate
-):
-    if progress_tracker.last_improvement >= reduce_learning_rate_on_plateau_patience:
-        if progress_tracker.num_reductions_lr >= reduce_learning_rate_on_plateau:
-            logging.info('\n')
-            logging.info('It has been ' +
-                         str(progress_tracker.last_improvement) +
-                         'epochs since last validation accuracy improvement '
-                         'and the learning rate was already reduced ' +
-                         str(progress_tracker.num_reductions_lr) +
-                         'times, not reducing it anymore')
-            logging.info('\n')
-        else:
-            logging.info('\n')
-            logging.info('PLATEAU REACHED, reducing learning rate'
-                         ' due to lack of validation improvement, it has been' +
-                         str(progress_tracker.last_improvement) +
-                         'epochs since last validation accuracy improvement'
-                         'or since the learning rate was reduced')
+                progress_tracker.learning_rate *= reduce_learning_rate_on_plateau_rate
+                progress_tracker.last_improvement_epoch = progress_tracker.epoch
+                progress_tracker.last_improvement = 0
+                progress_tracker.num_reductions_lr += 1
 
-            progress_tracker.learning_rate *= reduce_learning_rate_on_plateau_rate
-            progress_tracker.last_improvement_epoch = progress_tracker.epoch
-            progress_tracker.last_improvement = 0
-            progress_tracker.num_reductions_lr += 1
+    def increase_batch_size(
+            self,
+            progress_tracker,
+            increase_batch_size_on_plateau_patience,
+            increase_batch_size_on_plateau,
+            increase_batch_size_on_plateau_max,
+            increase_batch_size_on_plateau_rate
+    ):
+        if progress_tracker.last_improvement >= increase_batch_size_on_plateau_patience:
+            if progress_tracker.num_increases_bs >= increase_batch_size_on_plateau:
+                if not self.horovod or self.horovod.rank() == 0:
+                    logging.info('\n')
+                    logging.info("It has been " +
+                                 str(progress_tracker.last_improvement) +
+                                 'epochs since last validation accuracy improvement '
+                                 'and the learning rate was already reduced ' +
+                                 str(progress_tracker.num_increases_bs) +
+                                 'times, not reducing it anymore')
+                    logging.info('\n')
 
+            elif progress_tracker.batch_size == increase_batch_size_on_plateau_max:
+                if not self.horovod or self.horovod.rank() == 0:
+                    logging.info('\n')
+                    logging.info("It has been" +
+                                 str(progress_tracker.last_improvement) +
+                                 'epochs since last validation accuracy improvement'
+                                 'and the batch size was already increased' +
+                                 str(progress_tracker.num_increases_bs) +
+                                 'times and currently is' +
+                                 str(progress_tracker.batch_size) +
+                                 ', the maximum allowed')
+                    logging.info('\n')
+            else:
+                if not self.horovod or self.horovod.rank() == 0:
+                    logging.info('\n')
+                    logging.info('PLATEAU REACHED'
+                                 'increasing batch size due to lack of'
+                                 'validation improvement, it has been' +
+                                 str(progress_tracker.last_improvement) +
+                                 'epochs since last validation accuracy improvement'
+                                 'or since the batch size was increased')
 
-def increase_batch_size(
-        progress_tracker,
-        increase_batch_size_on_plateau_patience,
-        increase_batch_size_on_plateau,
-        increase_batch_size_on_plateau_max,
-        increase_batch_size_on_plateau_rate
-):
-    if progress_tracker.last_improvement >= increase_batch_size_on_plateau_patience:
-        if progress_tracker.num_increases_bs >= increase_batch_size_on_plateau:
-            logging.info('\n')
-            logging.info('It has been ' +
-                         str(progress_tracker.last_improvement) +
-                         'epochs since last validation accuracy improvement '
-                         'and the learning rate was already reduced ' +
-                         str(progress_tracker.num_increases_bs) +
-                         'times, not reducing it anymore')
-            logging.info('\n')
-
-        elif progress_tracker.batch_size == increase_batch_size_on_plateau_max:
-            logging.info('\n')
-            logging.info('It has been' +
-                         str(progress_tracker.last_improvement) +
-                         'epochs since last validation accuracy improvement'
-                         'and the batch size was already increased' +
-                         str(progress_tracker.num_increases_bs) +
-                         'times and currently is' +
-                         str(progress_tracker.batch_size) +
-                         ', the maximum allowed')
-            logging.info('\n')
-        else:
-            logging.info('\n')
-            logging.info('PLATEAU REACHED'
-                         'increasing batch size due to lack of'
-                         'validation improvement, it has been' +
-                         str(progress_tracker.last_improvement) +
-                         'epochs since last validation accuracy improvement'
-                         'or since the batch size was increased')
-            progress_tracker.batch_size = min(
-                increase_batch_size_on_plateau_rate * progress_tracker.batch_size,
-                increase_batch_size_on_plateau_max
-            )
-            progress_tracker.last_improvement_epoch = progress_tracker.epoch
-            progress_tracker.last_improvement = 0
-            progress_tracker.num_increases_bs += 1
+                progress_tracker.batch_size = min(
+                    increase_batch_size_on_plateau_rate * progress_tracker.batch_size,
+                    increase_batch_size_on_plateau_max
+                )
+                progress_tracker.last_improvement_epoch = progress_tracker.epoch
+                progress_tracker.last_improvement = 0
+                progress_tracker.num_increases_bs += 1
 
 
 class ProgressTracker:

@@ -30,7 +30,6 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.utils.data_utils import save_json
@@ -54,7 +53,7 @@ def full_train(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        train_set_metadata_json=None,
+        metadata_json=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -64,6 +63,7 @@ def full_train(
         output_directory='results',
         gpus=None,
         gpu_fraction=1.0,
+        use_horovod=False,
         random_seed=42,
         debug=False,
         **kwargs
@@ -102,9 +102,9 @@ def full_train(
     :param data_test_hdf5: If the test set is in the hdf5 format, this is
            used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param train_set_metadata_json: If the dataset is in hdf5 format, this is
+    :param metadata_json: If the dataset is in hdf5 format, this is
            the associated json file containing metadata.
-    :type train_set_metadata_json: filepath (str)
+    :type metadata_json: filepath (str)
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -183,7 +183,7 @@ def full_train(
         data_train_hdf5,
         data_validation_hdf5,
         data_test_hdf5,
-        train_set_metadata_json,
+        metadata_json,
         random_seed
     )
     save_json(description_fn, description)
@@ -198,12 +198,7 @@ def full_train(
     logging.info('\n')
 
     # preprocess
-    (
-        training_set,
-        validation_set,
-        test_set,
-        train_set_metadata
-    ) = preprocess_for_training(
+    training_set, validation_set, test_set, metadata = preprocess_for_training(
         model_definition,
         data_csv=data_csv,
         data_train_csv=data_train_csv,
@@ -213,7 +208,7 @@ def full_train(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        metadata_json=train_set_metadata_json,
+        metadata_json=metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition['preprocessing'],
         random_seed=random_seed
@@ -223,10 +218,7 @@ def full_train(
     logging.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
-    update_model_definition_with_metadata(
-        model_definition,
-        train_set_metadata
-    )
+    update_model_definition_with_metadata(model_definition, metadata)
 
     # run the experiment
     model, result = train(
@@ -240,29 +232,17 @@ def full_train(
         skip_save_progress_weights=skip_save_progress_weights,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
+        use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug
     )
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
     model.close_session()
 
-    save_json(
-        os.path.join(
-            model_dir,
-            TRAIN_SET_METADATA_FILE_NAME
-        ),
-        train_set_metadata
-    )
-
     # save training and test statistics
-    save_json(
-        training_stats_fn,
-        {
-            'train': train_trainset_stats,
-            'validation': train_valisest_stats,
-            'test': train_testset_stats
-        }
-    )
+    save_json(training_stats_fn, {'train': train_trainset_stats,
+                                  'validation': train_valisest_stats,
+                                  'test': train_testset_stats})
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -301,6 +281,7 @@ def train(
         skip_save_progress_weights=False,
         gpus=None,
         gpu_fraction=1.0,
+        use_horovod=False,
         random_seed=default_random_seed,
         debug=False
 ):
@@ -349,6 +330,7 @@ def train(
             model_definition['combiner'],
             model_definition['training'],
             model_definition['preprocessing'],
+            use_horovod=use_horovod,
             random_seed=random_seed,
             debug=debug
         )
@@ -368,7 +350,7 @@ def train(
     )
 
 
-def update_model_definition_with_metadata(model_definition, train_set_metadata):
+def update_model_definition_with_metadata(model_definition, metadata):
     # populate input features fields depending on data
     # model_definition = merge_with_defaults(model_definition)
     for input_feature in model_definition['input_features']:
@@ -379,7 +361,7 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
         feature.populate_defaults(input_feature)
         feature.update_model_definition_with_metadata(
             input_feature,
-            train_set_metadata[input_feature['name']],
+            metadata[input_feature['name']],
             model_definition=model_definition
         )
 
@@ -392,7 +374,7 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
         feature.populate_defaults(output_feature)
         feature.update_model_definition_with_metadata(
             output_feature,
-            train_set_metadata[output_feature['name']]
+            metadata[output_feature['name']]
         )
 
     for feature in (
@@ -400,7 +382,7 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
             model_definition['output_features']
     ):
         if 'preprocessing' in feature:
-            feature['preprocessing'] = train_set_metadata[feature['name']][
+            feature['preprocessing'] = metadata[feature['name']][
                 'preprocessing'
             ]
 
@@ -525,7 +507,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '--train_set_metadata_json',
+        '--metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file '
              'containing the mappings of the input CSV created the first time a'
              ' CSV file is used in the same directory with the same name and a '
@@ -601,6 +583,13 @@ def cli(sys_argv):
         type=float,
         default=1.0,
         help='fraction of gpu memory to initialize the process with'
+    )
+    parser.add_argument(
+        '-uh',
+        '--use_horovod',
+        action='store_true',
+        default=False,
+        help='uses horovod for distributed training'
     )
     parser.add_argument(
         '-dbg',
