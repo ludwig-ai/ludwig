@@ -169,10 +169,10 @@ Refer to the [User Guide](user_guide.md) for more details.
 If you have new data and you want your previously trained model to predict target output values, you can type the following command in your console:
 
 ```
-ludwig predict --data_csv path/to/data.csv --model_path /path/to/model --metadata_json path/to/metadata.json
+ludwig predict --data_csv path/to/data.csv --model_path /path/to/model --train_set_metadata_json path/to/metadata.json
 ```
 
-where the `dataset_metadata.json` file contains the description on how to transform raw data to tensors and is created during the training process.
+where the `train_set_metadata_json.json` file contains the description on how to transform raw data to tensors and is created during the training process.
 
 Running this command will return model predictions and some test performance statistics if the dataset contains ground truth information to compare to.
 Those can be visualized by the `visualize` tool, which can also be used to compare performances and predictions of different models, for instance:
