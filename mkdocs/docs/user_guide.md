@@ -76,9 +76,9 @@ optional arguments:
                         preprocess version of the input CSV created the first
                         time a CSV file is used in the same directory with the
                         same name and a hdf5 extension
-  --metadata_json METADATA_JSON
-                        input metadata JSON file. It is an intermediate
-                        preprocess file contaning the mappings of the input
+  --train_set_metadata_json TRAIN_SET_METADATA_JSON
+                        input train set metadata JSON file. It is an intermediate
+                        preprocess file containing the mappings of the input
                         CSV created the first time a CSV file is used in the
                         same directory with the same name and a json extension
   -sspi, --skip_save_processed_input
@@ -94,7 +94,7 @@ optional arguments:
                         path of a the model directory to resume training of
   -sspw SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress_weights SKIP_SAVE_PROGRESS_WEIGHTS
                         doesn't save weights after each epoch. By default
-                        ludwig saves weights after each epochfor enabling
+                        ludwig saves weights after each epoch for enabling
                         resuming of training, but if the model is really big
                         that can be time consuming and will save twice as much
                         space, use this parameter to skip it.
@@ -201,9 +201,9 @@ optional arguments:
                         version of the input CSV created the first time a CSV
                         file is used in the same directory with the same name
                         and a hdf5 extension
-  --metadata_json METADATA_JSON
-                        input metadata JSON file. It is an intermediate
-                        preprocess file contaning the mappings of the input
+  --train_set_metadata_json TRAIN_SET_METADATA_JSON
+                        input train set metadata JSON file. It is an intermediate
+                        preprocess file containing the mappings of the input
                         CSV created the first time a CSV file is used in the
                         same directory with the same name and a json extension
   -s {training,validation,test,full}, --split {training,validation,test,full}
@@ -310,9 +310,9 @@ optional arguments:
                         preprocess version of the input CSV created the first
                         time a CSV file is used in the same directory with the
                         same name and a hdf5 extension
-  --metadata_json METADATA_JSON
-                        input metadata JSON file. It is an intermediate
-                        preprocess file contaning the mappings of the input
+  --train_set_metadata_json TRAIN_SET_METADATA_JSON
+                        input train set metadata JSON file. It is an intermediate
+                        preprocess file containing the mappings of the input
                         CSV created the first time a CSV file is used in the
                         same directory with the same name and a json extension
   -sspi, --skip_save_processed_input
@@ -495,8 +495,6 @@ optional arguments:
   --data_csv DATA_CSV   input data CSV file
   --data_hdf5 DATA_HDF5
                         input data HDF5 file
-  --metadata_json METADATA_JSON
-                        input metadata JSON file
   -s {training,validation,test,full}, --split {training,validation,test,full}
                         the split to test the model on
   -m MODEL_PATH, --model_path MODEL_PATH
