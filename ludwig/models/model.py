@@ -148,13 +148,13 @@ class Model:
             self.merged = tf.summary.merge_all()
             self.graph = graph
             self.graph_initialize = tf.global_variables_initializer()
+            if self.horovod:
+                self.broadcast_op = self.horovod.broadcast_global_variables(0)
             # self.memory_usage = tf.contrib.memory_stats.MaxBytesInUse() if tf.test.is_gpu_available() else None
             self.saver = tf.train.Saver()
 
     def initialize_session(self, gpus=None, gpu_fraction=1):
         if self.session is None:
-            if self.horovod:
-                self.broadcast_op = self.horovod.broadcast_global_variables(0)
 
             self.session = tf.Session(
                 config=get_tf_config(gpus, gpu_fraction, self.horovod),
@@ -285,8 +285,6 @@ class Model:
             session.add_tensor_filter(
                 'has_inf_or_nan', tf_debug.has_inf_or_nan)
 
-        session.run(self.graph_initialize)
-
         # ================ Resume logic ================
         if resume:
             progress_tracker = self.resume_training(
@@ -313,10 +311,7 @@ class Model:
                 vali_stats=vali_stats,
                 test_stats=test_stats
             )
-            # if not self.horovod or self.horovod.rank() == 0:
-            #    session.run(self.graph_initialize)
 
-        session.graph.finalize()
         # horovod broadcasting after init or restore
         if self.horovod:
             session.run(self.broadcast_op)
