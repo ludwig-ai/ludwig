@@ -20,7 +20,8 @@ import os
 import h5py
 import numpy as np
 import tensorflow as tf
-from imageio import imread
+
+from skimage.io import imread
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
