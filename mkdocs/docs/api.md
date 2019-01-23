@@ -1,10 +1,11 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L48)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L47)</span>
 # LudwigModel class
 
 ```python
 ludwig.LudwigModel(
   model_definition,
-  model_definition_file=None
+  model_definition_file=None,
+  logging_level=40
 )
 ```
 
@@ -17,7 +18,8 @@ ludwig.LudwigModel(
 
 ```python
 load(
-  metadata_json
+  metadata_json,
+  logging_level=40
 )
 ```
 
@@ -33,6 +35,7 @@ predict(
   batch_size=128,
   gpus=None,
   gpu_fraction=1,
+  logging_level=40,
   debug=False
 )
 ```
@@ -49,6 +52,7 @@ test(
   batch_size=128,
   gpus=None,
   gpu_fraction=1,
+  logging_level=40,
   debug=False
 )
 ```
@@ -82,6 +86,7 @@ train(
   gpus=None,
   gpu_fraction=1.0,
   random_seed=42,
-  debug=False
+  debug=False,
+  logging_level=40
 )
 ```
