@@ -24,6 +24,7 @@ import yaml
 
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
 from ludwig.experiment import experiment
+from ludwig.predict import full_predict
 
 encoders = ['embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
             'stacked_cnn']
@@ -57,7 +58,7 @@ def run_experiment(input_features, output_features, data_csv):
                )
 
 
-def test_experiment_1(delete_temp_data=True):
+def test_experiment_intent_classification(delete_temp_data=True):
     # Single sequence input, single category output
     input_features = Template('[{name: utterance, type: sequence,'
                               'vocab_size: 10, max_len: 10, '
@@ -78,7 +79,7 @@ def test_experiment_1(delete_temp_data=True):
         os.remove(rel_path)
 
 
-def test_experiment_2(delete_temp_data=True):
+def test_experiment_seq_seq1(delete_temp_data=True):
     # Single Sequence input, single sequence output
     # Only the following encoders are working
     input_features_template = Template(
@@ -105,7 +106,7 @@ def test_experiment_2(delete_temp_data=True):
         os.remove(rel_path)
 
 
-def test_experiment_3(delete_temp_data=True):
+def test_experiment_multi_input_intent_classification(delete_temp_data=True):
     # Multiple inputs, Single category output
     input_features_string = Template(
         "[{type: text, name: random_text, vocab_size: 100, max_len: 20,"
@@ -133,7 +134,7 @@ def test_experiment_3(delete_temp_data=True):
         os.remove(rel_path)
 
 
-def test_experiment_4(delete_temp_data=True):
+def test_experiment_multiple_seq_seq(delete_temp_data=True):
     # Multiple inputs, Multiple outputs
     input_features = "[{type: text, name: random_text, vocab_size: 100," \
                      " max_len: 20, encoder: stacked_cnn}, {type: numerical," \
@@ -194,7 +195,7 @@ def test_experiment_4(delete_temp_data=True):
         os.remove(rel_path)
 
 
-def test_experiment_5(delete_temp_data=True):
+def test_experiment_image_inputs(delete_temp_data=True):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features_template = Template(
@@ -280,16 +281,43 @@ def test_experiment_attention(delete_temp_data=True):
         os.remove(rel_path)
 
 
-if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
-    logger = logging.getLogger()
-    logger.setLevel(logging.WARNING)
+def test_experiment_model_resume(delete_temp_data=True):
+    # Single sequence input, single category output
+    input_features = '[{name: utterance, type: sequence, vocab_size: 10,' \
+                     ' max_len: 10, encoder: rnn, reduce_output: sum}]'
+    output_features = "[{name: intent, type: category, vocab_size: 2," \
+                      " reduce_input: sum}] "
 
-    test_experiment_1()
-    test_experiment_2()
-    test_experiment_3()
-    test_experiment_4()
-    test_experiment_5()
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, 'test_csv.csv')
+
+    model_definition = model_definition_template.substitute(
+        input_name=input_features, output_name=output_features
+    )
+
+    exp_dir_name = experiment(yaml.load(model_definition), data_csv=rel_path)
+    logging.info('Experiment Directory: {0}'.format(exp_dir_name))
+
+    experiment(yaml.load(model_definition), data_csv=rel_path,
+               model_resume_path=exp_dir_name)
+
+    full_predict(os.path.join(exp_dir_name, 'model'), data_csv=rel_path)
+
+    # Delete the generated data
+    if delete_temp_data is True:
+        os.remove(rel_path)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    test_experiment_intent_classification()
+    test_experiment_seq_seq1()
+    test_experiment_multi_input_intent_classification()
+    test_experiment_multiple_seq_seq()
+    test_experiment_image_inputs()
     test_experiment_tied_weights()
     test_experiment_attention()
-
+    test_experiment_model_resume()
