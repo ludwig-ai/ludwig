@@ -544,12 +544,13 @@ class Model:
         batcher = self.initialize_batcher(
             dataset, batch_size, bucketing_field, should_shuffle=False)
 
-        bar = tqdm(
-            desc='Evaluation' if name is None else 'Evaluation {0: <5.5}'.format(
-                name),
-            total=batcher.steps_per_epoch, file=sys.stdout,
-            disable=get_disable_progressbar()
-        )
+        if not self.horovod or self.horovod.rank() == 0:
+            bar = tqdm(
+                desc='Evaluation' if name is None else 'Evaluation {0: <5.5}'.format(
+                    name),
+                total=batcher.steps_per_epoch, file=sys.stdout,
+                disable=get_disable_progressbar()
+            )
 
         while not batcher.last_batch():
             batch = batcher.next_batch()
@@ -566,9 +567,11 @@ class Model:
                 output_stats, seq_set_size,
                 collect_predictions, only_predictions,
                 result)
-            bar.update(1)
+            if not self.horovod or self.horovod.rank() == 0:
+                bar.update(1)
 
-        bar.close()
+        if not self.horovod or self.horovod.rank() == 0:
+            bar.close()
         output_stats = self.update_output_stats(output_stats, set_size,
                                                 seq_set_size,
                                                 collect_predictions,
