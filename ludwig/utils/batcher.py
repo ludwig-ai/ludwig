@@ -150,7 +150,7 @@ class BucketedBatcher(object):
         self.indices = np.array([0] * len(self.buckets_idcs))
 
 
-class HorovodBatcher(object):
+class DistributedBatcher(object):
     def __init__(self, dataset, partition_number, horovod, batch_size=128,
                  should_shuffle=True, ignore_last=False):
         self.should_shuffle = should_shuffle

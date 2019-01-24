@@ -51,7 +51,7 @@ from ludwig.models.modules.measure_modules import get_initial_validation_value, 
 from ludwig.models.modules.optimization_modules import optimize
 from ludwig.models.outputs import build_outputs
 from ludwig.utils import time_utils
-from ludwig.utils.batcher import Batcher, BucketedBatcher, HorovodBatcher
+from ludwig.utils.batcher import Batcher, BucketedBatcher, DistributedBatcher
 from ludwig.utils.data_utils import load_json, load_object, save_object
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.math_utils import learning_rate_warmup
@@ -1059,10 +1059,10 @@ class Model:
     def initialize_batcher(self, dataset, batch_size=128, bucketing_field=None,
                            should_shuffle=True, ignore_last=False):
         if self.horovod:
-            batcher = HorovodBatcher(dataset, self.horovod.rank(),
-                                     self.horovod, batch_size,
-                                     should_shuffle=should_shuffle,
-                                     ignore_last=ignore_last)
+            batcher = DistributedBatcher(dataset, self.horovod.rank(),
+                                         self.horovod, batch_size,
+                                         should_shuffle=should_shuffle,
+                                         ignore_last=ignore_last)
         elif bucketing_field is not None:
             input_features = self.hyperparameters['input_features']
             bucketing_feature = [
