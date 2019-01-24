@@ -248,6 +248,8 @@ class Model:
         :type increase_batch_size_on_plateau_rate: Float
         :param increase_batch_size_on_plateau_max: The maximum size of the batch.
         :type increase_batch_size_on_plateau_max: Integer
+        :param learning_rate_warmup_epochs: The number of epochs to warmup the learning rate for.
+        :type learning_rate_warmup_epochs: Integer
         :param resume: Resume training a model that was being trained.
         :type resume: Boolean
         :param skip_save_progress_weights:
