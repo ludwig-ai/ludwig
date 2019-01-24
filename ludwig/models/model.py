@@ -54,6 +54,7 @@ from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher, BucketedBatcher, HorovodBatcher
 from ludwig.utils.data_utils import load_json, load_object, save_object
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.math_utils import learning_rate_warmup
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.tf_utils import get_tf_config
 
@@ -204,6 +205,7 @@ class Model:
               increase_batch_size_on_plateau_patience=5,
               increase_batch_size_on_plateau_rate=2,
               increase_batch_size_on_plateau_max=512,
+              learning_rate_warmup_epochs=5,  # used when training with Horovod
               resume=False, skip_save_progress_weights=False,
               gpus=None, gpu_fraction=1, random_seed=default_random_seed,
               **kwargs):
@@ -330,8 +332,6 @@ class Model:
             # needed because batch size may change
             batcher.batch_size = progress_tracker.batch_size
 
-            # TODO warmup learning rate (first start with normal and then increase it to lr * workers https://github.com/uber/horovod/blob/master/horovod/keras/callbacks.py#L202
-
             # ================ Train ================
             if is_on_master():
                 bar = tqdm(desc='Training', total=batcher.steps_per_epoch,
@@ -342,18 +342,28 @@ class Model:
             while not batcher.last_batch():
                 batch = batcher.next_batch()
 
+                if self.horovod:
+                    current_learning_rate = learning_rate_warmup(
+                        progress_tracker.learning_rate,
+                        progress_tracker.epoch,
+                        learning_rate_warmup_epochs,
+                        self.horovod.size(),
+                        batcher.steps_per_epoch)
+                else:
+                    current_learning_rate = progress_tracker.learning_rate
+
                 summary, _ = session.run(
                     [self.merged, self.optimize],
                     feed_dict=self.feed_dict(
                         batch,
                         regularization_lambda=regularization_lambda,
-                        learning_rate=progress_tracker.learning_rate,
+                        learning_rate=current_learning_rate,
                         dropout_rate=dropout_rate,
                         is_training=True
                     )
                 )
                 if is_on_master():
-                    # it is initialized only if self.horovod is not None and rank == 0
+                    # it is initialized only on master
                     train_writer.add_summary(summary, progress_tracker.steps)
 
                 progress_tracker.steps += 1
