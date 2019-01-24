@@ -28,7 +28,7 @@ import yaml
 
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_training
-from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import LUDWIG_VERSION, set_on_master, get_on_master
 from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.predict import predict
 from ludwig.predict import print_prediction_results
@@ -166,16 +166,18 @@ def experiment(
         if os.path.exists(model_resume_path):
             experiment_dir_name = model_resume_path
         else:
-            logging.info(
-                'Model resume path does not exists, '
-                'starting training from scratch'
-            )
+            if get_on_master():
+                logging.info(
+                    'Model resume path does not exists, '
+                    'starting training from scratch'
+                )
             model_resume_path = None
     if model_resume_path is None:
         experiment_dir_name = get_experiment_dir_name(
             output_directory,
             experiment_name,
-            model_name
+            model_name,
+            append_suffix=not use_horovod
         )
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
@@ -198,13 +200,14 @@ def experiment(
     save_json(description_fn, description)
 
     # print description
-    logging.info('Experiment name: {}'.format(experiment_name))
-    logging.info('Model name: {}'.format(model_name))
-    logging.info('Output path: {}'.format(experiment_dir_name))
-    logging.info('')
-    for key, value in description.items():
-        logging.info('{}: {}'.format(key, pformat(value, indent=4)))
-    logging.info('')
+    if get_on_master():
+        logging.info('Experiment name: {}'.format(experiment_name))
+        logging.info('Model name: {}'.format(model_name))
+        logging.info('Output path: {}'.format(experiment_dir_name))
+        logging.info('')
+        for key, value in description.items():
+            logging.info('{}: {}'.format(key, pformat(value, indent=4)))
+        logging.info('')
 
     # preprocess
     training_set, validation_set, test_set, metadata = preprocess_for_training(
@@ -222,9 +225,10 @@ def experiment(
         preprocessing_params=model_definition[
             'preprocessing'],
         random_seed=random_seed)
-    logging.info('Training set: {0}'.format(training_set.size))
-    logging.info('Validation set: {0}'.format(validation_set.size))
-    logging.info('Test set: {0}'.format(test_set.size))
+    if get_on_master():
+        logging.info('Training set: {0}'.format(training_set.size))
+        logging.info('Validation set: {0}'.format(validation_set.size))
+        logging.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
     update_model_definition_with_metadata(model_definition, metadata)
@@ -268,19 +272,21 @@ def experiment(
     ][validation_measure][epoch_best_vali_measure]
 
     # print the results of the model with highest validation test performance
-    logging.info('Best validation model epoch: {0}'.format(
-        epoch_best_vali_measure + 1)
-    )
-    logging.info('Best validation model {0} on validation set {1}: {2}'.format(
-        validation_measure,
-        validation_field,
-        best_vali_measure)
-    )
-    logging.info('Best validation model {0} on test set {1}: {2}'.format(
-        validation_measure,
-        validation_field,
-        best_vali_measure_epoch_test_measure)
-    )
+    if get_on_master():
+        logging.info('Best validation model epoch: {0}'.format(
+            epoch_best_vali_measure + 1)
+        )
+        logging.info(
+            'Best validation model {0} on validation set {1}: {2}'.format(
+                validation_measure,
+                validation_field,
+                best_vali_measure)
+        )
+        logging.info('Best validation model {0} on test set {1}: {2}'.format(
+            validation_measure,
+            validation_field,
+            best_vali_measure_epoch_test_measure)
+        )
 
     # save training statistics
     save_json(
@@ -313,13 +319,15 @@ def experiment(
         experiment_dir_name,
         skip_save_unprocessed_output
     )
-    print_prediction_results(test_results)
+    if get_on_master():
+        print_prediction_results(test_results)
 
     save_prediction_outputs(postprocessed_output, experiment_dir_name)
     save_prediction_statistics(test_results, experiment_dir_name)
 
-    logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
-    logging.info('Saved to: {}'.format(experiment_dir_name))
+    if get_on_master():
+        logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
+        logging.info('Saved to: {}'.format(experiment_dir_name))
 
 
 def cli(sys_argv):
@@ -510,7 +518,10 @@ def cli(sys_argv):
         format='%(message)s'
     )
 
-    print_ludwig('Experiment', LUDWIG_VERSION)
+    set_on_master(args.use_horovod)
+
+    if get_on_master():
+        print_ludwig('Experiment', LUDWIG_VERSION)
 
     experiment(**vars(args))
 

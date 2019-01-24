@@ -29,7 +29,7 @@ import yaml
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import LUDWIG_VERSION, set_on_master, get_on_master
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.utils.data_utils import save_json
@@ -155,17 +155,19 @@ def full_train(
         if os.path.exists(model_resume_path):
             experiment_dir_name = model_resume_path
         else:
-            logging.info(
-                'Model resume path does not exists, '
-                'starting training from scratch'
-            )
+            if get_on_master():
+                logging.info(
+                    'Model resume path does not exists, '
+                    'starting training from scratch'
+                )
             model_resume_path = None
 
     if model_resume_path is None:
         experiment_dir_name = get_experiment_dir_name(
             output_directory,
             experiment_name,
-            model_name
+            model_name,
+            append_suffix=not use_horovod
         )
 
     description_fn, training_stats_fn, model_dir = get_file_names(
@@ -189,13 +191,14 @@ def full_train(
     save_json(description_fn, description)
 
     # print description
-    logging.info('Experiment name: {}'.format(experiment_name))
-    logging.info('Model name: {}'.format(model_name))
-    logging.info('Output path: {}'.format(experiment_dir_name))
-    logging.info('\n')
-    for key, value in description.items():
-        logging.info('{}: {}'.format(key, pformat(value, indent=4)))
-    logging.info('\n')
+    if get_on_master():
+        logging.info('Experiment name: {}'.format(experiment_name))
+        logging.info('Model name: {}'.format(model_name))
+        logging.info('Output path: {}'.format(experiment_dir_name))
+        logging.info('\n')
+        for key, value in description.items():
+            logging.info('{}: {}'.format(key, pformat(value, indent=4)))
+        logging.info('\n')
 
     # preprocess
     training_set, validation_set, test_set, metadata = preprocess_for_training(
@@ -213,9 +216,10 @@ def full_train(
         preprocessing_params=model_definition['preprocessing'],
         random_seed=random_seed
     )
-    logging.info('Training set: {0}'.format(training_set.size))
-    logging.info('Validation set: {0}'.format(validation_set.size))
-    logging.info('Test set: {0}'.format(test_set.size))
+    if get_on_master():
+        logging.info('Training set: {0}'.format(training_set.size))
+        logging.info('Validation set: {0}'.format(validation_set.size))
+        logging.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
     update_model_definition_with_metadata(model_definition, metadata)
@@ -256,18 +260,20 @@ def full_train(
         validation_measure][epoch_max_vali_measure]
 
     # results of the model with highest validation test performance
-    logging.info(
-        'Best validation model epoch:'.format(epoch_max_vali_measure + 1)
-    )
-    logging.info('Best validation model {0} on validation set {1}: {2}'.format(
-        validation_measure, validation_field, max_vali_measure
-    ))
-    logging.info('Best validation model {0} on test set {1}: {2}'.format(
-        validation_measure, validation_field,
-        max_vali_measure_epoch_test_measure
-    ))
-    logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
-    logging.info('Saved to: {0}'.format(experiment_dir_name))
+    if get_on_master():
+        logging.info(
+            'Best validation model epoch:'.format(epoch_max_vali_measure + 1)
+        )
+        logging.info(
+            'Best validation model {0} on validation set {1}: {2}'.format(
+                validation_measure, validation_field, max_vali_measure
+            ))
+        logging.info('Best validation model {0} on test set {1}: {2}'.format(
+            validation_measure, validation_field,
+            max_vali_measure_epoch_test_measure
+        ))
+        logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
+        logging.info('Saved to: {0}'.format(experiment_dir_name))
 
 
 def train(
@@ -318,12 +324,14 @@ def train(
     """
     if model_load_path is not None:
         # Load model
-        print_boxed('LOADING MODEL')
-        logging.info('Loading model: {}\n'.format(model_load_path))
+        if get_on_master():
+            print_boxed('LOADING MODEL')
+            logging.info('Loading model: {}\n'.format(model_load_path))
         model, _ = load_model_and_definition(model_load_path)
     else:
         # Build model
-        print_boxed('BUILDING MODEL')
+        if get_on_master():
+            print_boxed('BUILDING MODEL')
         model = Model(
             model_definition['input_features'],
             model_definition['output_features'],
@@ -336,7 +344,8 @@ def train(
         )
 
     # Train model
-    print_boxed('TRAINING')
+    if get_on_master():
+        print_boxed('TRAINING')
     return model, model.train(
         training_set,
         validation_set=validation_set,
@@ -390,7 +399,8 @@ def update_model_definition_with_metadata(model_definition, metadata):
 def get_experiment_dir_name(
         output_directory,
         experiment_name,
-        model_name='run'
+        model_name='run',
+        append_suffix=True
 ):
     results_dir = output_directory
     # create results dir if it doesn't exist
@@ -403,20 +413,25 @@ def get_experiment_dir_name(
         experiment_name + ('_' if model_name else '') + model_name
     )
 
-    # look for an unused suffix
-    suffix = 0
-    found_previous_results = os.path.isdir(
-        '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
-    )
-
-    while found_previous_results:
-        suffix += 1
+    if append_suffix:
+        # look for an unused suffix
+        suffix = 0
         found_previous_results = os.path.isdir(
             '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
         )
 
-    # found an unused suffix, build the basic dir name
-    return '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
+        while found_previous_results:
+            suffix += 1
+            found_previous_results = os.path.isdir(
+                '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
+            )
+
+        # found an unused suffix, build the basic dir name
+        dir_name = '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
+    else:
+        dir_name = base_dir_name
+
+    return dir_name
 
 
 def get_file_names(experiment_dir_name):
@@ -613,7 +628,10 @@ def cli(sys_argv):
         format='%(message)s'
     )
 
-    print_ludwig('Train', LUDWIG_VERSION)
+    set_on_master(args.use_horovod)
+
+    if get_on_master():
+        print_ludwig('Train', LUDWIG_VERSION)
 
     full_train(**vars(args))
 

@@ -24,6 +24,8 @@ TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'
 
 DISABLE_PROGRESSBAR = False
 
+ON_MASTER = True
+
 
 def set_disable_progressbar(value):
     global DISABLE_PROGRESSBAR
@@ -32,3 +34,23 @@ def set_disable_progressbar(value):
 
 def get_disable_progressbar():
     return DISABLE_PROGRESSBAR
+
+
+def set_on_master(use_horovod):
+    global ON_MASTER
+    if use_horovod:
+        try:
+            import horovod.tensorflow
+            horovod.tensorflow.init()
+            ON_MASTER = horovod.tensorflow.rank() == 0
+        except ImportError:
+            raise ValueError("use_horovod parameter specified, "
+                             "but cannot import horovod.tensorflow. "
+                             "Try to install horovod with: "
+                             "pip install horovod")
+    else:
+        ON_MASTER = True
+
+
+def get_on_master():
+    return ON_MASTER
