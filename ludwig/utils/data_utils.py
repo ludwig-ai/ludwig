@@ -171,20 +171,23 @@ def split_data(split, data):
     return data[:split_length], data[split_length:]
 
 
-def shuffle_unison_inplace(list_of_lists):
+def shuffle_unison_inplace(list_of_lists, random_state=None):
     if list_of_lists:
         assert all(len(l) == len(list_of_lists[0]) for l in list_of_lists)
-        p = np.random.permutation(len(list_of_lists[0]))
+        if random_state is not None:
+            random_state.permutation(len(list_of_lists[0]))
+        else:
+            p = np.random.permutation(len(list_of_lists[0]))
         return [l[p] for l in list_of_lists]
     return None
 
 
-def shuffle_dict_unison_inplace(np_dict):
+def shuffle_dict_unison_inplace(np_dict, random_state=None):
     keys = list(np_dict.keys())
     list_of_lists = list(np_dict.values())
 
     # shuffle up the list of lists according to previous fct
-    shuffled_list = shuffle_unison_inplace(list_of_lists)
+    shuffled_list = shuffle_unison_inplace(list_of_lists, random_state)
 
     recon = {}
     for ii in range(len(keys)):

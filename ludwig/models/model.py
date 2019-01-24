@@ -51,7 +51,7 @@ from ludwig.models.modules.measure_modules import get_initial_validation_value, 
 from ludwig.models.modules.optimization_modules import optimize
 from ludwig.models.outputs import build_outputs
 from ludwig.utils import time_utils
-from ludwig.utils.batcher import Batcher, BucketedBatcher
+from ludwig.utils.batcher import Batcher, BucketedBatcher, HorovodBatcher
 from ludwig.utils.data_utils import load_json, load_object, save_object
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import set_random_seed
@@ -330,9 +330,6 @@ class Model:
             # needed because batch size may change
             batcher.batch_size = progress_tracker.batch_size
 
-            # TODO steps per epoch in case of horovod should be /workers
-            # TODO print only on rank() == 0
-            # TODO batcher should partition the data so that each worker reads from a different partition
             # TODO warmup learning rate (first start with normal and then increase it to lr * workers https://github.com/uber/horovod/blob/master/horovod/keras/callbacks.py#L202
 
             # ================ Train ================
@@ -369,7 +366,7 @@ class Model:
 
             # train_memory_usage = session.run(self.memory_usage) if self.memory_usage is not None else 0
             progress_tracker.epoch += 1
-            batcher.reset()
+            batcher.reset()  # todo this may be useless, doublecheck
 
             # ================ Eval ================
             # init tables
@@ -415,7 +412,7 @@ class Model:
             for output_feature, table in tables.items():
                 if output_feature != 'combined' or (
                         output_feature == 'combined' and len(
-                        output_features) > 1):
+                    output_features) > 1):
                     if is_on_master():
                         logging.info(tabulate(table,
                                               headers='firstrow',
@@ -842,10 +839,10 @@ class Model:
             if is_on_master():
                 logging.info(
                     'Last improvement of {} on {} happened {} epoch{} ago'.
-                    format(validation_measure,
-                           validation_field,
-                           progress_tracker.last_improvement,
-                           '' if progress_tracker.last_improvement == 1 else 's'))
+                        format(validation_measure,
+                               validation_field,
+                               progress_tracker.last_improvement,
+                               '' if progress_tracker.last_improvement == 1 else 's'))
 
         # ========== Reduce Learning Rate Plateau logic ========
         if reduce_learning_rate_on_plateau > 0:
@@ -874,8 +871,8 @@ class Model:
                         "\nEARLY STOPPING due to lack of validation improvement,"
                         "it has been {0} epochs since last validation accuracy "
                         "improvement\n".format(
-                        progress_tracker.epoch -
-                        progress_tracker.last_improvement_epoch))
+                            progress_tracker.epoch -
+                            progress_tracker.last_improvement_epoch))
                 should_break = True
         return should_break
 
@@ -952,7 +949,7 @@ class Model:
 
     def save_weights(self, session, save_path):
         if is_on_master():
-                self.weights_save_path = self.saver.save(session, save_path)
+            self.weights_save_path = self.saver.save(session, save_path)
         self.weights_save_path = self.saver.save(session, save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
@@ -1049,7 +1046,12 @@ class Model:
 
     def initialize_batcher(self, dataset, batch_size=128, bucketing_field=None,
                            should_shuffle=True, ignore_last=False):
-        if bucketing_field is not None:
+        if self.horovod:
+            batcher = HorovodBatcher(dataset, self.horovod.rank(),
+                                     self.horovod, batch_size,
+                                     should_shuffle=should_shuffle,
+                                     ignore_last=ignore_last)
+        elif bucketing_field is not None:
             input_features = self.hyperparameters['input_features']
             bucketing_feature = [
                 feature for feature in input_features if
