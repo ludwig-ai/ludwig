@@ -28,7 +28,7 @@ import yaml
 
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_training
-from ludwig.globals import LUDWIG_VERSION, set_on_master, get_on_master
+from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.predict import predict
 from ludwig.predict import print_prediction_results
@@ -166,7 +166,7 @@ def experiment(
         if os.path.exists(model_resume_path):
             experiment_dir_name = model_resume_path
         else:
-            if get_on_master():
+            if is_on_master():
                 logging.info(
                     'Model resume path does not exists, '
                     'starting training from scratch'
@@ -200,7 +200,7 @@ def experiment(
     save_json(description_fn, description)
 
     # print description
-    if get_on_master():
+    if is_on_master():
         logging.info('Experiment name: {}'.format(experiment_name))
         logging.info('Model name: {}'.format(model_name))
         logging.info('Output path: {}'.format(experiment_dir_name))
@@ -225,7 +225,7 @@ def experiment(
         preprocessing_params=model_definition[
             'preprocessing'],
         random_seed=random_seed)
-    if get_on_master():
+    if is_on_master():
         logging.info('Training set: {0}'.format(training_set.size))
         logging.info('Validation set: {0}'.format(validation_set.size))
         logging.info('Test set: {0}'.format(test_set.size))
@@ -272,7 +272,7 @@ def experiment(
     ][validation_measure][epoch_best_vali_measure]
 
     # print the results of the model with highest validation test performance
-    if get_on_master():
+    if is_on_master():
         logging.info('Best validation model epoch: {0}'.format(
             epoch_best_vali_measure + 1)
         )
@@ -319,13 +319,13 @@ def experiment(
         experiment_dir_name,
         skip_save_unprocessed_output
     )
-    if get_on_master():
+    if is_on_master():
         print_prediction_results(test_results)
 
     save_prediction_outputs(postprocessed_output, experiment_dir_name)
     save_prediction_statistics(test_results, experiment_dir_name)
 
-    if get_on_master():
+    if is_on_master():
         logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
         logging.info('Saved to: {}'.format(experiment_dir_name))
 
@@ -520,7 +520,7 @@ def cli(sys_argv):
 
     set_on_master(args.use_horovod)
 
-    if get_on_master():
+    if is_on_master():
         print_ludwig('Experiment', LUDWIG_VERSION)
 
     experiment(**vars(args))

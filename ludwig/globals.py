@@ -32,7 +32,7 @@ def set_disable_progressbar(value):
     DISABLE_PROGRESSBAR = value
 
 
-def get_disable_progressbar():
+def is_progressbar_disabled():
     return DISABLE_PROGRESSBAR
 
 
@@ -52,5 +52,5 @@ def set_on_master(use_horovod):
         ON_MASTER = True
 
 
-def get_on_master():
+def is_on_master():
     return ON_MASTER

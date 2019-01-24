@@ -29,7 +29,7 @@ import yaml
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.globals import LUDWIG_VERSION, set_on_master, get_on_master
+from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.utils.data_utils import save_json
@@ -155,7 +155,7 @@ def full_train(
         if os.path.exists(model_resume_path):
             experiment_dir_name = model_resume_path
         else:
-            if get_on_master():
+            if is_on_master():
                 logging.info(
                     'Model resume path does not exists, '
                     'starting training from scratch'
@@ -191,7 +191,7 @@ def full_train(
     save_json(description_fn, description)
 
     # print description
-    if get_on_master():
+    if is_on_master():
         logging.info('Experiment name: {}'.format(experiment_name))
         logging.info('Model name: {}'.format(model_name))
         logging.info('Output path: {}'.format(experiment_dir_name))
@@ -216,7 +216,7 @@ def full_train(
         preprocessing_params=model_definition['preprocessing'],
         random_seed=random_seed
     )
-    if get_on_master():
+    if is_on_master():
         logging.info('Training set: {0}'.format(training_set.size))
         logging.info('Validation set: {0}'.format(validation_set.size))
         logging.info('Test set: {0}'.format(test_set.size))
@@ -260,7 +260,7 @@ def full_train(
         validation_measure][epoch_max_vali_measure]
 
     # results of the model with highest validation test performance
-    if get_on_master():
+    if is_on_master():
         logging.info(
             'Best validation model epoch:'.format(epoch_max_vali_measure + 1)
         )
@@ -324,13 +324,13 @@ def train(
     """
     if model_load_path is not None:
         # Load model
-        if get_on_master():
+        if is_on_master():
             print_boxed('LOADING MODEL')
             logging.info('Loading model: {}\n'.format(model_load_path))
         model, _ = load_model_and_definition(model_load_path)
     else:
         # Build model
-        if get_on_master():
+        if is_on_master():
             print_boxed('BUILDING MODEL')
         model = Model(
             model_definition['input_features'],
@@ -344,7 +344,7 @@ def train(
         )
 
     # Train model
-    if get_on_master():
+    if is_on_master():
         print_boxed('TRAINING')
     return model, model.train(
         training_set,
@@ -630,7 +630,7 @@ def cli(sys_argv):
 
     set_on_master(args.use_horovod)
 
-    if get_on_master():
+    if is_on_master():
         print_ludwig('Train', LUDWIG_VERSION)
 
     full_train(**vars(args))
