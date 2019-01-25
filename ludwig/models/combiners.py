@@ -148,6 +148,24 @@ class SequenceConcatCombiner:
                 if fe_name is not self.main_sequence_feature:
                     if fe_properties['type'] in SEQUENCE_TYPES and \
                             len(fe_properties['representation'].shape) == 3:
+
+                        # The following check makes sense when
+                        # both representations have a specified
+                        # sequence length dimension. If they do not,
+                        # then this check is simply checking if None == None
+                        # and will not catch discrepancies in the different
+                        # feature lentgh dimension. Those errors will show up
+                        # at training time. Possible solutions to this is
+                        # to enforce a length second dimension in
+                        # sequential feature placeholders, but that
+                        # does not work with BucketedBatcher that requires
+                        # the second dimension to be undefined in order to be
+                        # able to trim the datapoints and speed up computation.
+                        # So for now we are keeping things like this, make sure
+                        # to write in the documentation that training time
+                        # dimensions mismatch may occur if the sequential
+                        # features have different lantghs for some datapoints.
+
                         if fe_properties['representation'].shape[
                             1] != representations_size:
                             raise ValueError(
