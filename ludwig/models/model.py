@@ -269,6 +269,8 @@ class Model:
         signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
         stat_names = self.get_stat_names(output_features)
+        if self.horovod:
+            learning_rate *= self.horovod.size()
 
         # ====== Setup file names =======
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
