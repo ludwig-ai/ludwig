@@ -92,6 +92,6 @@ def learning_rate_warmup(learning_rate, epoch, warmup_epochs, num_workers,
                                   size
             lr'(epoch = warmup) = lr
     """
-    epoch += 1. / steps_per_epoch
+    epoch_adjusted = float(epoch) + (1. / steps_per_epoch)
     return learning_rate / num_workers * \
-           (epoch * (num_workers - 1) / warmup_epochs + 1)
+           (epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
