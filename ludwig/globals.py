@@ -46,8 +46,8 @@ def set_on_master(use_horovod):
         except ImportError:
             raise ValueError("use_horovod parameter specified, "
                              "but cannot import horovod.tensorflow. "
-                             "Try to install horovod with: "
-                             "pip install horovod")
+                             "Install horovod following the instructions at: "
+                             " https://github.com/uber/horovod")
     else:
         ON_MASTER = True
 
