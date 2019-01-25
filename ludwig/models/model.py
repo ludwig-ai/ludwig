@@ -322,7 +322,7 @@ class Model:
 
         set_random_seed(random_seed)
         batcher = self.initialize_batcher(
-            training_set, batch_size, bucketing_field)
+            training_set, batch_size, bucketing_field, training=True)
 
         # ================ Training Loop ================
         while progress_tracker.epoch < self.epochs:
@@ -391,20 +391,24 @@ class Model:
 
             # eval measures on train set
             self.evaluation(session, training_set, 'train',
-                            regularization_lambda, progress_tracker.train_stats,
+                            regularization_lambda,
+                            progress_tracker.train_stats,
                             tables, progress_tracker.batch_size,
                             bucketing_field)
 
             # eval measures on validation set
             self.evaluation(session, validation_set, 'vali',
-                            regularization_lambda, progress_tracker.vali_stats,
+                            regularization_lambda,
+                            progress_tracker.vali_stats,
                             tables, progress_tracker.batch_size,
                             bucketing_field)
 
             # eval measures on test set
-            self.evaluation(session, test_set, 'test', regularization_lambda,
-                            progress_tracker.test_stats, tables,
-                            progress_tracker.batch_size, bucketing_field)
+            self.evaluation(session, test_set, 'test',
+                            regularization_lambda,
+                            progress_tracker.test_stats,
+                            tables, progress_tracker.batch_size,
+                            bucketing_field)
 
             # mbiu and end of epoch prints
             # eval_memory_usage = session.run(self.memory_usage) if self.memory_usage is not None else 0
@@ -475,7 +479,8 @@ class Model:
                      gpus=None,
                      gpu_fraction=1):
         session = self.initialize_session(gpus, gpu_fraction)
-        batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
+        batcher = self.initialize_batcher(dataset, batch_size, bucketing_field,
+                                          training=True)
 
         # training step loop
         bar = tqdm(
@@ -604,7 +609,8 @@ class Model:
         collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
 
         batcher = self.initialize_batcher(
-            dataset, batch_size, bucketing_field, should_shuffle=False)
+            dataset, batch_size, bucketing_field, should_shuffle=False,
+            training=False)
 
         bar = tqdm(
             desc='Collecting Tensors',
@@ -1057,8 +1063,9 @@ class Model:
         return stat_names
 
     def initialize_batcher(self, dataset, batch_size=128, bucketing_field=None,
-                           should_shuffle=True, ignore_last=False):
-        if self.horovod:
+                           should_shuffle=True, ignore_last=False,
+                           training=False):
+        if self.horovod and training:
             batcher = DistributedBatcher(dataset, self.horovod.rank(),
                                          self.horovod, batch_size,
                                          should_shuffle=should_shuffle,
