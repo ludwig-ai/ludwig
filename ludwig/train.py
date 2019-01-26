@@ -213,7 +213,7 @@ def full_train(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        metadata_json=train_set_metadata_json,
+        train_set_metadata_json=train_set_metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition['preprocessing'],
         random_seed=random_seed
