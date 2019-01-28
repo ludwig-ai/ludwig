@@ -333,6 +333,8 @@ def experiment(
     logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
     logging.info('Saved to: {}'.format(experiment_dir_name))
 
+    return experiment_dir_name
+
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
