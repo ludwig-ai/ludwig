@@ -17,6 +17,8 @@ import logging
 import os
 import glob
 import sys
+import pytest
+import uuid
 from string import Template
 
 import pandas as pd
@@ -33,10 +35,16 @@ model_definition_template = Template(
     '{input_features: ${input_name}, output_features: ${output_name}, '
     'training: {epochs: 2}}')
 
-csv_filename = 'temp_test_csv.csv'
-
 
 def generate_data(input_features, output_features, filename='test_csv.csv'):
+    """
+    Helper method to generate synthetic data based on input, output feature
+    specs
+    :param input_features: schema
+    :param output_features: schema
+    :param filename: path to the file where data is stored
+    :return:
+    """
     features = yaml.load(input_features) + yaml.load(output_features)
     df = build_synthetic_dataset(1000, features)
     data = [next(df) for _ in range(1000)]
@@ -49,6 +57,13 @@ def generate_data(input_features, output_features, filename='test_csv.csv'):
 
 
 def run_experiment(input_features, output_features, data_csv):
+    """
+    Helper method to avoid code repetition in running an experiment
+    :param input_features: input schema
+    :param output_features: output schema
+    :param data_csv: path to data
+    :return: None
+    """
     model_definition = model_definition_template.substitute(
         input_name=input_features,
         output_name=output_features
@@ -61,6 +76,12 @@ def run_experiment(input_features, output_features, data_csv):
 
 
 def delete_temporary_data(csv_path):
+    """
+    Helper method to delete temporary data created for running tests. Deletes
+    the csv and hdf5/json data (if any)
+    :param csv_path: path to the csv data file
+    :return: None
+    """
     if os.path.exists(csv_path):
         os.remove(csv_path)
 
@@ -73,7 +94,20 @@ def delete_temporary_data(csv_path):
         os.remove(hdf5_path)
 
 
-def test_experiment_intent_classification(delete_temp_data=True):
+@pytest.fixture(scope='module')
+def csv_filename():
+    """
+    This methods returns a random filename for the tests to use for generating
+    temporary data. After the data is used, all the temporary data is deleted.
+    :return: None
+    """
+    csv_filename = uuid.uuid4().hex[:10].upper() + '.csv'
+    yield csv_filename
+
+    delete_temporary_data(csv_filename)
+
+
+def test_experiment_intent_classification(csv_filename):
     # Single sequence input, single category output
     input_features = Template('[{name: utterance, type: sequence,'
                               'vocab_size: 10, max_len: 10, '
@@ -89,14 +123,8 @@ def test_experiment_intent_classification(delete_temp_data=True):
                        output_features,
                        data_csv=rel_path)
 
-    # Delete the generated data
-    if delete_temp_data is True:
-        delete_temporary_data(rel_path)
 
-
-def test_experiment_seq_seq1(delete_temp_data=True):
-    # import pdb
-    # pdb.set_trace()
+def test_experiment_seq_seq1(csv_filename):
     # Single Sequence input, single sequence output
     # Only the following encoders are working
     input_features_template = Template(
@@ -118,12 +146,8 @@ def test_experiment_seq_seq1(delete_temp_data=True):
         input_features = input_features_template.substitute(encoder=encoder)
         run_experiment(input_features, output_features, data_csv=rel_path)
 
-    # Delete the generated data
-    if delete_temp_data is True:
-        delete_temporary_data(rel_path)
 
-
-def test_experiment_multi_input_intent_classification(delete_temp_data=True):
+def test_experiment_multi_input_intent_classification(csv_filename):
     # Multiple inputs, Single category output
     input_features_string = Template(
         "[{type: text, name: random_text, vocab_size: 100, max_len: 20,"
@@ -146,12 +170,8 @@ def test_experiment_multi_input_intent_classification(delete_temp_data=True):
 
         run_experiment(input_features, output_features_string, rel_path)
 
-    # Delete the generated data
-    if delete_temp_data is True:
-        delete_temporary_data(rel_path)
 
-
-def test_experiment_multiple_seq_seq(delete_temp_data=True):
+def test_experiment_multiple_seq_seq(csv_filename):
     # Multiple inputs, Multiple outputs
     input_features = "[{type: text, name: random_text, vocab_size: 100," \
                      " max_len: 20, encoder: stacked_cnn}, {type: numerical," \
@@ -208,11 +228,8 @@ def test_experiment_multiple_seq_seq(delete_temp_data=True):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, rel_path)
 
-    if delete_temp_data is True:
-        delete_temporary_data(rel_path)
 
-
-def test_experiment_image_inputs(delete_temp_data=True):
+def test_experiment_image_inputs(csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features_template = Template(
@@ -243,16 +260,14 @@ def test_experiment_image_inputs(delete_temp_data=True):
     run_experiment(input_features, output_features, rel_path)
 
     # Delete the temporary data created
-    if delete_temp_data is True:
-        all_images = glob.glob(os.path.join(image_dest_folder, '*.jpg'))
-        for im in all_images:
-            os.remove(im)
+    all_images = glob.glob(os.path.join(image_dest_folder, '*.jpg'))
+    for im in all_images:
+        os.remove(im)
 
-        os.rmdir(image_dest_folder)
-        delete_temporary_data(rel_path)
+    os.rmdir(image_dest_folder)
 
         
-def test_experiment_tied_weights(delete_temp_data=True):
+def test_experiment_tied_weights(csv_filename):
     # Single sequence input, single category output
     input_features = Template('[{name: utterance1, type: text,'
                               'vocab_size: 10, max_len: 10, '
@@ -272,12 +287,8 @@ def test_experiment_tied_weights(delete_temp_data=True):
                        output_features,
                        data_csv=rel_path)
 
-    # Delete the generated data
-    if delete_temp_data is True:
-        delete_temporary_data(rel_path)
 
-
-def test_experiment_attention(delete_temp_data=True):
+def test_experiment_attention(csv_filename):
     # Machine translation with attention
     input_features = '[{name: english, type: sequence, vocab_size: 10,' \
                      ' max_len: 10, encoder: rnn, cell_type: lstm} ]'
@@ -295,12 +306,8 @@ def test_experiment_attention(delete_temp_data=True):
         run_experiment(input_features, output_features.substitute(
             attention=attention), data_csv=rel_path)
 
-    # Delete the generated data
-    if delete_temp_data is True:
-        delete_temporary_data(csv_filename)
 
-
-def test_experiment_sequence_combiner(delete_temp_data=True):
+def test_experiment_sequence_combiner(csv_filename):
     # Machine translation with attention
     input_features_template = Template(
         '[{name: english, type: sequence, vocab_size: 10,'
@@ -338,13 +345,10 @@ def test_experiment_sequence_combiner(delete_temp_data=True):
                    skip_save_unprocessed_output=True, data_csv=rel_path
                    )
 
-    # Delete the generated data
-    if delete_temp_data is True:
-        delete_temporary_data(rel_path)
 
-
-def test_experiment_model_resume(delete_temp_data=True):
+def test_experiment_model_resume(csv_filename):
     # Single sequence input, single category output
+    # Tests saving a model file, loading it to rerun training and predict
     input_features = '[{name: utterance, type: sequence, vocab_size: 10,' \
                      ' max_len: 10, encoder: rnn, reduce_output: sum}]'
     output_features = "[{name: intent, type: category, vocab_size: 2," \
@@ -365,12 +369,11 @@ def test_experiment_model_resume(delete_temp_data=True):
 
     full_predict(os.path.join(exp_dir_name, 'model'), data_csv=rel_path)
 
-    # Delete the generated data
-    if delete_temp_data is True:
-        delete_temporary_data(rel_path)
-
 
 if __name__ == '__main__':
+    """
+    Main method for easy debugging/direct execution of the tests
+    """
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
