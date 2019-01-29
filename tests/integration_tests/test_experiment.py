@@ -224,8 +224,9 @@ def test_experiment_image_inputs(delete_temp_data=True):
         " resnet_size: 8, destination_folder: ${folder}}]")
 
     # Resnet encoder
-    input_features = input_features_template.substitute(encoder='resnet',
-                                                        folder=image_dest_folder)
+    input_features = input_features_template.substitute(
+        encoder='resnet',
+        folder=image_dest_folder)
     output_features = "[{type: category, name: intent, reduce_input: sum," \
                       " vocab_size: 2}," \
                       "{type: numerical, name: random_num_output}]"
@@ -234,8 +235,9 @@ def test_experiment_image_inputs(delete_temp_data=True):
     run_experiment(input_features, output_features, rel_path)
 
     # Stacked CNN encoder
-    input_features = input_features_template.substitute(encoder='stacked_cnn',
-                                                        folder=image_dest_folder)
+    input_features = input_features_template.substitute(
+        encoder='stacked_cnn',
+        folder=image_dest_folder)
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, rel_path)
@@ -295,6 +297,49 @@ def test_experiment_attention(delete_temp_data=True):
 
     # Delete the generated data
     if delete_temp_data is True:
+        delete_temporary_data(csv_filename)
+
+
+def test_experiment_sequence_combiner(delete_temp_data=True):
+    # Machine translation with attention
+    input_features_template = Template(
+        '[{name: english, type: sequence, vocab_size: 10,'
+        ' max_len: 10, min_len: 10, encoder: rnn, cell_type: lstm,'
+        ' reduce_output: null}, {name: spanish, type: sequence, vocab_size: 10,'
+        ' max_len: 10, min_len: 10, encoder: rnn, cell_type: lstm,'
+        ' reduce_output: null}, {name: category,'
+        ' type: category, vocab_size: 10} ]')
+
+    output_features_string = "[{type: category, name: intent, reduce_input:" \
+                             " sum, vocab_size: 10}]"
+
+    model_definition_template2 = Template(
+        '{input_features: ${input_name}, output_features: ${output_name}, '
+        'training: {epochs: 2}, combiner: {type: sequence_concat, encoder: rnn,'
+        'main_sequence_feature: random_sequence}}')
+
+    # Generate test data
+    rel_path = generate_data(
+        input_features_template.substitute(encoder1='rnn', encoder2='rnn'),
+        output_features_string, csv_filename)
+
+    for encoder1, encoder2 in zip(encoders, encoders):
+        input_features = input_features_template.substitute(
+            encoder1=encoder1,
+            encoder2=encoder2)
+
+        model_definition = model_definition_template2.substitute(
+            input_name=input_features,
+            output_name=output_features_string
+        )
+
+        experiment(yaml.load(model_definition), skip_save_processed_input=True,
+                   skip_save_progress_weights=True,
+                   skip_save_unprocessed_output=True, data_csv=rel_path
+                   )
+
+    # Delete the generated data
+    if delete_temp_data is True:
         delete_temporary_data(rel_path)
 
 
@@ -338,3 +383,4 @@ if __name__ == '__main__':
     test_experiment_tied_weights()
     test_experiment_attention()
     test_experiment_model_resume()
+    test_experiment_sequence_combiner()
