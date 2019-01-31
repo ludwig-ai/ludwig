@@ -43,7 +43,7 @@ class TimeseriesBaseFeature(BaseFeature):
         'timeseries_length_limit': 256,
         'padding_value': 0,
         'padding': 'right',
-        'format': 'whitespace',
+        'format': 'space',
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }

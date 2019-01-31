@@ -533,7 +533,7 @@ The preprocessing process is personalizable to fit the specifics of your data fo
 The reason for that is that each data type is mapped into tensors in a different way and expects the content to be formatted in a specific way.
 Different datatypes may have different formatters that format the values of a cell.
 
-For instance the value of a cell of a sequence feature column by default is managed by a whitespace formatter, that splits the content of the value into a list of strings using whitespace.
+For instance the value of a cell of a sequence feature column by default is managed by a space formatter, that splits the content of the value into a list of strings using space.
 
 | before formatter       | after formatter          |
 |------------------------|--------------------------|
@@ -602,7 +602,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
 Set features are transoformed into into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on whitespaces).
+The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
@@ -614,7 +614,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 Bag features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).
 
 Sequence features are transoformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the lenght of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on whitespaces).
+The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
@@ -1153,7 +1153,7 @@ You can set either of them as `validation_measure` in the `training` section of 
 #### Set Features Preprocessing
 
 Set features are transoformed into into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on whitespaces).
+The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
@@ -1166,7 +1166,7 @@ he parameters available for preprocessing arehe parameters available for preproc
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The calue should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `0`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
-- `format` (default `whitespace`): defines how to map from the raw string content of the CSV column to a set of elements. The default value `whitespace` splits the string on whitespaces. Other options are: `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
+- `format` (default `space`): defines how to map from the raw string content of the CSV column to a set of elements. The default value `space` splits the string on spaces. Other options are: `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
 - `lowercase` (default `False`): if the string has to be lowercased before being handled by the formatter.
 
 #### Set Input Features and Encoders
@@ -1301,7 +1301,7 @@ As there is no decoder there is also no measure available yet for bag feature.
 #### Sequence Features Preprocessing
 
 Sequence features are transoformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the lenght of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on whitespaces).
+The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
@@ -1318,7 +1318,7 @@ he parameters available for preprocessing arehe parameters available for preproc
 - `padding_symbol` (default `<PAD>`): the string used as a padding symboly. Is is mapped to the integer ID 0 in the vocabulary.
 - `unknown_symbol` (default `<UNK>`): the string used as a unknown symboly. Is is mapped to the integer ID 1 in the vocabulary.
 - `lowercase` (default `False`): if the string has to be lowercased before being handled by the formatter.
-- `format` (default `whitespace`): defines how to map from the raw string content of the CSV column to a sequence of elements. The default value `whitespace` splits the string on whitespaces. Other options are: `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
+- `format` (default `space`): defines how to map from the raw string content of the CSV column to a sequence of elements. The default value `space` splits the string on spaces. Other options are: `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
 - `most_common` (default `20000`): the maximum number of most common tokens to be considered. if the data contains more than this amount, the most unfrequent tokens will be treated as unknown.
 - `sequence_length_limit` (default `256`): the maximum length of the sequence. Sequences that are longer than this value will be truncated, while sequences that are shorter will be padded.
 
@@ -1926,7 +1926,7 @@ The parameters available for preprocessing are:
 - `unknown_symbol` (default `<UNK>`): the string used as a unknown symboly. Is is mapped to the integer ID 1 in the vocabulary.
 - `lowercase` (default `False`): if the string has to be lowercased before being handled by the formatter.
 - `word_sequence_length_limit` (default `256`): the maximum length of the text in words. Texts that are longer than this value will be truncated, while texts that are shorter will be padded.
-- `format_words` (default `whitespace`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `words` splits the string using a spaCy model and removes stopwords. Other options are: `whitespace`, `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
+- `format_words` (default `space`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `words` splits the string using a spaCy model and removes stopwords. Other options are: `space`, `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
 - `most_common_words` (default `20000`): the maximum number of most common words to be considered. If the data contains more than this amount, the most unfrequent words will be treated as unknown.
 - `char_sequence_length_limit` (default `1024`): the maximum length of the text in characters. Texts that are longer than this value will be truncated, while sequences that are shorter will be padded.
 - `format_characters` (default `characters`): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is `characters` and the behavior is to split the string at each character.

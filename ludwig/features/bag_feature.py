@@ -35,7 +35,7 @@ class BagBaseFeature(BaseFeature):
         self.type = BAG
 
     preprocessing_defaults = {
-        'format': 'whitespace',
+        'format': 'space',
         'most_common': False,
         'lowercase': 10000,
         'missing_value_strategy': FILL_WITH_CONST,
