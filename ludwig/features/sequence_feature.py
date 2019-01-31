@@ -61,7 +61,7 @@ class SequenceBaseFeature(BaseFeature):
         'padding_symbol': PADDING_SYMBOL,
         'unknown_symbol': UNKNOWN_SYMBOL,
         'padding': 'right',
-        'format': 'whitespace',
+        'format': 'space',
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''

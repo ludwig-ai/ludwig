@@ -38,7 +38,7 @@ class SetBaseFeature(BaseFeature):
         self.type = IMAGE
 
     preprocessing_defaults = {
-        'format': 'whitespace',
+        'format': 'space',
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
