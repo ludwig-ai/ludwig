@@ -188,10 +188,9 @@ def full_train(
         metadata_json,
         random_seed
     )
-    save_json(description_fn, description)
-
-    # print description
     if is_on_master():
+        save_json(description_fn, description)
+        # print description
         logging.info('Experiment name: {}'.format(experiment_name))
         logging.info('Model name: {}'.format(model_name))
         logging.info('Output path: {}'.format(experiment_dir_name))
@@ -212,7 +211,7 @@ def full_train(
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
         metadata_json=metadata_json,
-        skip_save_processed_input=skip_save_processed_input,
+        skip_save_processed_input=skip_save_processed_input or not is_on_master(),
         preprocessing_params=model_definition['preprocessing'],
         random_seed=random_seed
     )
@@ -243,10 +242,12 @@ def full_train(
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
     model.close_session()
 
-    # save training and test statistics
-    save_json(training_stats_fn, {'train': train_trainset_stats,
-                                  'validation': train_valisest_stats,
-                                  'test': train_testset_stats})
+    # save training statistics
+    if is_on_master():
+        save_json(training_stats_fn,
+                  {'train': train_trainset_stats,
+                   'validation': train_valisest_stats,
+                   'test': train_testset_stats})
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -404,8 +405,9 @@ def get_experiment_dir_name(
 ):
     results_dir = output_directory
     # create results dir if it doesn't exist
-    if not os.path.isdir(results_dir):
-        os.mkdir(results_dir)
+    if is_on_master():
+        if not os.path.isdir(results_dir):
+            os.mkdir(results_dir)
 
     # create a base dir name
     base_dir_name = os.path.join(
@@ -435,8 +437,9 @@ def get_experiment_dir_name(
 
 
 def get_file_names(experiment_dir_name):
-    if not os.path.exists(experiment_dir_name):
-        os.mkdir(experiment_dir_name)
+    if is_on_master():
+        if not os.path.exists(experiment_dir_name):
+            os.mkdir(experiment_dir_name)
 
     description_fn = os.path.join(experiment_dir_name, 'description.json')
     training_stats_fn = os.path.join(

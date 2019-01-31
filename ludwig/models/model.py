@@ -40,6 +40,7 @@ from tqdm import tqdm
 
 from ludwig.constants import *
 from ludwig.features.feature_registries import output_type_registry
+from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME, \
     MODEL_HYPERPARAMETERS_FILE_NAME, TRAINING_PROGRESS_FILE_NAME, \
     MODEL_WEIGHTS_PROGRESS_FILE_NAME, is_progressbar_disabled, is_on_master
@@ -55,7 +56,7 @@ from ludwig.utils.batcher import Batcher, BucketedBatcher, DistributedBatcher
 from ludwig.utils.data_utils import load_json, load_object, save_object
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.math_utils import learning_rate_warmup
-from ludwig.utils.misc import set_random_seed
+from ludwig.utils.misc import set_random_seed, sum_dicts
 from ludwig.utils.tf_utils import get_tf_config
 
 
@@ -67,11 +68,14 @@ class Model:
     def __init__(self, input_features, output_features, combiner, training,
                  preprocessing, use_horovod=False,
                  random_seed=default_random_seed, debug=False, **kwargs):
-        self.debug = debug
         self.horovod = None
         if use_horovod:
             import horovod.tensorflow
             self.horovod = horovod.tensorflow
+            from mpi4py import MPI
+            self.comm = MPI.COMM_WORLD
+
+        self.debug = debug
         self.weights_save_path = None
         self.hyperparameters = {}
         self.session = None
@@ -324,7 +328,7 @@ class Model:
 
         set_random_seed(random_seed)
         batcher = self.initialize_batcher(
-            training_set, batch_size, bucketing_field, training=True)
+            training_set, batch_size, bucketing_field)
 
         # ================ Training Loop ================
         while progress_tracker.epoch < self.epochs:
@@ -455,9 +459,10 @@ class Model:
                     break
             else:
                 # there's no validation, so we save the model at each iteration
-                self.save_weights(session, model_weights_path)
-                self.save_hyperparameters(
-                    self.hyperparameters, model_hyperparameters_path)
+                if is_on_master():
+                    self.save_weights(session, model_weights_path)
+                    self.save_hyperparameters(
+                        self.hyperparameters, model_hyperparameters_path)
 
             # ========== Save training progress ==========
             if is_on_master():
@@ -481,8 +486,7 @@ class Model:
                      gpus=None,
                      gpu_fraction=1):
         session = self.initialize_session(gpus, gpu_fraction)
-        batcher = self.initialize_batcher(dataset, batch_size, bucketing_field,
-                                          training=True)
+        batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
 
         # training step loop
         bar = tqdm(
@@ -554,9 +558,7 @@ class Model:
             return output_stats
         seq_set_size = {output_feature['name']: {} for output_feature in
                         self.hyperparameters['output_features'] if
-                        output_feature['type'] == SEQUENCE or output_feature[
-                            'type'] == TIMESERIES or output_feature[
-                            'type'] == TEXT}
+                        output_feature['type'] in SEQUENCE_TYPES}
 
         batcher = self.initialize_batcher(
             dataset, batch_size, bucketing_field, should_shuffle=False)
@@ -589,6 +591,11 @@ class Model:
 
         if is_on_master():
             bar.close()
+
+        if self.horovod:
+            output_stats, seq_set_size = self.merge_workers_outputs(
+                output_stats, seq_set_size)
+
         output_stats = self.update_output_stats(output_stats, set_size,
                                                 seq_set_size,
                                                 collect_predictions,
@@ -604,6 +611,25 @@ class Model:
 
         return output_stats
 
+    def merge_workers_outputs(self, output_stats, seq_set_size):
+
+        print('output_stats before merge: ', output_stats)
+        print('seq_set_size before merge: ', seq_set_size)
+
+        # gather outputs from all workers
+        all_workers_output_stats = self.comm.allgather(output_stats)
+        all_workers_seq_set_size = self.comm.allgather(seq_set_size)
+
+        # merge them into a single one
+        merged_output_stats = sum_dicts(all_workers_output_stats,
+                                        dict_type=OrderedDict)
+        merged_seq_set_size = sum_dicts(all_workers_seq_set_size)
+
+        print('output_stats after merge: ', merged_output_stats)
+        print('set_size seq_set_size merge: ', merged_seq_set_size)
+
+        return merged_output_stats, merged_seq_set_size
+
     def batch_collect_activations(self, session, dataset, batch_size,
                                   tensor_names, bucketing_field=None):
         output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
@@ -611,8 +637,7 @@ class Model:
         collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
 
         batcher = self.initialize_batcher(
-            dataset, batch_size, bucketing_field, should_shuffle=False,
-            training=False)
+            dataset, batch_size, bucketing_field, should_shuffle=False)
 
         bar = tqdm(
             desc='Collecting Tensors',
@@ -708,12 +733,9 @@ class Model:
                     elif aggregation_method == 'seq_sum':
                         output_stats[field_name][stat] += \
                             result[field_name][stat_config['output']].sum()
-                        seq_set_size[field_name][stat] = seq_set_size[
-                                                             field_name].get(
-                            stat, 0) + \
-                                                         len(result[field_name][
-                                                                 stat_config[
-                                                                     'output']])
+                        seq_set_size[field_name][stat] = \
+                            seq_set_size[field_name].get(stat, 0) + \
+                            len(result[field_name][stat_config['output']])
                     elif aggregation_method == 'avg_exp':
                         output_stats[field_name][stat] += \
                             result[field_name][stat_config['output']].sum()
@@ -844,9 +866,10 @@ class Model:
                 progress_tracker.vali_stats[validation_field][
                     validation_measure][
                     -1]
-            self.save_weights(session, model_weights_path)
-            self.save_hyperparameters(self.hyperparameters,
-                                      model_hyperparameters_path)
+            if is_on_master():
+                self.save_weights(session, model_weights_path)
+                self.save_hyperparameters(self.hyperparameters,
+                                          model_hyperparameters_path)
 
         progress_tracker.last_improvement = progress_tracker.epoch - \
                                             progress_tracker.last_improvement_epoch
@@ -1065,9 +1088,8 @@ class Model:
         return stat_names
 
     def initialize_batcher(self, dataset, batch_size=128, bucketing_field=None,
-                           should_shuffle=True, ignore_last=False,
-                           training=False):
-        if self.horovod and training:
+                           should_shuffle=True, ignore_last=False):
+        if self.horovod:
             batcher = DistributedBatcher(dataset, self.horovod.rank(),
                                          self.horovod, batch_size,
                                          should_shuffle=should_shuffle,

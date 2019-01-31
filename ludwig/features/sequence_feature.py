@@ -676,10 +676,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = [(
+                postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token] for token in pred]
                     for pred in preds
-                )]
+                ]
             else:
                 postprocessed[PREDICTIONS] = preds
 

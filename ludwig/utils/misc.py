@@ -100,6 +100,24 @@ def merge_dict(dct, merge_dct):
     return dct
 
 
+def sum_dicts(dicts, dict_type=dict):
+    summed_dict = dict_type()
+    for d in dicts:
+        for key, value in d.items():
+            if key in summed_dict:
+                prev_value = summed_dict[key]
+                if isinstance(value, (dict, OrderedDict)):
+                    summed_dict[key] = sum_dicts([prev_value, value],
+                                                 dict_type=type(value))
+                elif isinstance(value, numpy.ndarray):
+                    summed_dict[key] = numpy.concatenate((prev_value, value))
+                else:
+                    summed_dict[key] = prev_value + value
+            else:
+                summed_dict[key] = value
+    return summed_dict
+
+
 def get_from_registry(key, registry):
     if hasattr(key, 'lower'):
         key = key.lower()

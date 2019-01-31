@@ -197,10 +197,9 @@ def experiment(
         metadata_json,
         random_seed
     )
-    save_json(description_fn, description)
-
-    # print description
     if is_on_master():
+        save_json(description_fn, description)
+        # print description
         logging.info('Experiment name: {}'.format(experiment_name))
         logging.info('Model name: {}'.format(model_name))
         logging.info('Output path: {}'.format(experiment_dir_name))
@@ -221,10 +220,10 @@ def experiment(
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
         metadata_json=metadata_json,
-        skip_save_processed_input=skip_save_processed_input,
-        preprocessing_params=model_definition[
-            'preprocessing'],
-        random_seed=random_seed)
+        skip_save_processed_input=skip_save_processed_input or not is_on_master(),
+        preprocessing_params=model_definition['preprocessing'],
+        random_seed=random_seed
+    )
     if is_on_master():
         logging.info('Training set: {0}'.format(training_set.size))
         logging.info('Validation set: {0}'.format(validation_set.size))
@@ -254,6 +253,13 @@ def experiment(
         train_valisest_stats,
         train_testset_stats
     ) = training_results
+
+    # save training statistics
+    if is_on_master():
+        save_json(training_stats_fn,
+                  {'train': train_trainset_stats,
+                   'validation': train_valisest_stats,
+                   'test': train_testset_stats})
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -288,16 +294,6 @@ def experiment(
             best_vali_measure_epoch_test_measure)
         )
 
-    # save training statistics
-    save_json(
-        training_stats_fn,
-        {
-            'train': train_trainset_stats,
-            'validation': train_valisest_stats,
-            'test': train_testset_stats
-        }
-    )
-
     # predict
     test_results = predict(
         test_set,
@@ -317,15 +313,15 @@ def experiment(
         model_definition['output_features'],
         metadata,
         experiment_dir_name,
-        skip_save_unprocessed_output
+        skip_save_unprocessed_output or not is_on_master()
     )
+
     if is_on_master():
         print_prediction_results(test_results)
 
-    save_prediction_outputs(postprocessed_output, experiment_dir_name)
-    save_prediction_statistics(test_results, experiment_dir_name)
+        save_prediction_outputs(postprocessed_output, experiment_dir_name)
+        save_prediction_statistics(test_results, experiment_dir_name)
 
-    if is_on_master():
         logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
         logging.info('Saved to: {}'.format(experiment_dir_name))
 
