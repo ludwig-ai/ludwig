@@ -16,7 +16,6 @@
 import logging
 import os
 import glob
-import sys
 import pytest
 import uuid
 from string import Template
@@ -370,20 +369,39 @@ def test_experiment_model_resume(csv_filename):
     full_predict(os.path.join(exp_dir_name, 'model'), data_csv=rel_path)
 
 
+def test_experiment_various_feature_types(csv_filename):
+    input_features_template = Template(
+        '[{name: binary_input, type: binary}, '
+        '{name: bag_input, type: bag, max_len: 5, vocab_size: 10,'
+        ' encoder: ${encoder}}]')
+    # {name: intent_binary, type: binary},
+    output_features = "[ {name: set_output, type: set, max_len: 3," \
+                      " vocab_size: 5}] "
+
+    # Generate test data
+    rel_path = generate_data(
+        input_features_template.substitute(encoder='rnn'),
+        output_features, csv_filename)
+    for encoder in encoders:
+        run_experiment(input_features_template.substitute(encoder=encoder),
+                       output_features, data_csv=rel_path)
+
+    input_features_template = Template(
+        '[{name: time_series, type: timeseries, max_len: 10}]')
+    output_features = "[ {name: binary_output, type: binary}, ]"
+
+    # Generate test data
+    rel_path = generate_data(
+        input_features_template.substitute(encoder='rnn'),
+        output_features, csv_filename)
+    for encoder in encoders:
+        run_experiment(input_features_template.substitute(encoder=encoder),
+                       output_features, data_csv=rel_path)
+
+
 if __name__ == '__main__':
     """
-    Main method for easy debugging/direct execution of the tests
+    To run tests individually, run:
+    ```pytest tests/integration_tests/test_experiment.py::test_name```
     """
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
-    test_experiment_intent_classification()
-    test_experiment_seq_seq1()
-    test_experiment_multi_input_intent_classification()
-    test_experiment_multiple_seq_seq()
-    test_experiment_image_inputs()
-    test_experiment_tied_weights()
-    test_experiment_attention()
-    test_experiment_model_resume()
-    test_experiment_sequence_combiner()
+    pass
