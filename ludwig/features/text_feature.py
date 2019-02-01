@@ -418,10 +418,10 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
             if level_idx2str in metadata:
-                postprocessed[PREDICTIONS] = [(
+                postprocessed[PREDICTIONS] = [
                     [metadata[level_idx2str][token] for token in pred]
                     for pred in preds
-                )]
+                ]
             else:
                 postprocessed[PREDICTIONS] = preds
 
