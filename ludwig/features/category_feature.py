@@ -556,9 +556,10 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = (
-                    [metadata['idx2str'][pred] for pred in preds]
-                )
+                postprocessed[PREDICTIONS] = [
+                    metadata['idx2str'][pred] for pred in preds
+                ]
+
             else:
                 postprocessed[PREDICTIONS] = preds
 

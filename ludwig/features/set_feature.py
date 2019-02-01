@@ -368,10 +368,10 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
-                postprocessed[PREDICTIONS] = (
-                    [[metadata['idx2str'][i] for i, pred in enumerate(pred_set)
-                      if pred == True] for pred_set in preds]
-                )
+                postprocessed[PREDICTIONS] = [
+                    [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
+                     if pred == True] for pred_set in preds
+                ]
             else:
                 postprocessed[PREDICTIONS] = preds
 
