@@ -232,8 +232,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         # ================ Placeholder ================
         targets = self._get_output_placeholder()
-        logging.debug('  targets_placeholder: {0}'.format(targets))
         output_tensors[self.name] = targets
+        logging.debug('  targets_placeholder: {0}'.format(targets))
 
         # ================ Predictions ================
         predictions = self._get_predictions(
@@ -309,7 +309,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             'output': ERROR,
             'aggregation': APPEND,
             'value': [],
-            'type': PREDICTION
+            'type': MEASURE
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,
