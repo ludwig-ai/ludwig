@@ -288,7 +288,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         }),
         (OVERALL_ACCURACY, {
             'output': CORRECT_OVERALL_PREDICTIONS,
-            'aggregation': 'seq_sum',
+            'aggregation': SEQ_SUM,
             'value': 0,
             'type': MEASURE
         }),
