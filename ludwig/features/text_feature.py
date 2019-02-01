@@ -310,6 +310,12 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             'value': 0,
             'type': MEASURE
         }),
+        (LAST_PREDICTIONS, {
+            'output': LAST_PREDICTIONS,
+            'aggregation': APPEND,
+            'value': [],
+            'type': PREDICTION
+        }),
         (PREDICTIONS, {
             'output': PREDICTIONS,
             'aggregation': APPEND,
@@ -400,18 +406,20 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         postprocessed = {}
         npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+        level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
 
         if 'per_class_stats' in result:
             mapped_class_per_stats = {}
             for key, value in result['per_class_stats'].items():
-                mapped_class_per_stats[metadata['idx2str'][int(key)]] = value
+                mapped_class_per_stats[
+                    metadata[level_idx2str][int(key)]] = value
             result['per_class_stats'] = mapped_class_per_stats
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
-            if 'idx2str' in metadata:
+            if level_idx2str in metadata:
                 postprocessed[PREDICTIONS] = [(
-                    [metadata['idx2str'][token] for token in pred]
+                    [metadata[level_idx2str][token] for token in pred]
                     for pred in preds
                 )]
             else:
@@ -424,9 +432,10 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
 
         if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
             last_preds = result[LAST_PREDICTIONS]
-            if 'idx2str' in metadata:
+            if level_idx2str in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
-                    metadata['idx2str'][last_pred] for last_pred in last_preds
+                    metadata[level_idx2str][last_pred] for last_pred in
+                    last_preds
                 ]
             else:
                 postprocessed[LAST_PREDICTIONS] = last_preds
@@ -461,6 +470,8 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
 
         if LENGTHS in result:
             del result[LENGTHS]
+
+        return postprocessed
 
     @staticmethod
     def populate_defaults(output_feature):
