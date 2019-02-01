@@ -419,7 +419,7 @@ class LudwigModel:
                 data_train_df=data_train_df,
                 data_validation_df=data_validation_df,
                 data_test_df=data_test_df,
-                metadata_json=train_set_metadata_json,
+                train_set_metadata_json=train_set_metadata_json,
                 skip_save_processed_input=True,
                 preprocessing_params=
                 self.model_definition['preprocessing'],
@@ -441,7 +441,7 @@ class LudwigModel:
                 data_train_hdf5=data_train_hdf5,
                 data_validation_hdf5=data_validation_hdf5,
                 data_test_hdf5=data_test_hdf5,
-                metadata_json=train_set_metadata_json,
+                train_set_metadata_json=train_set_metadata_json,
                 skip_save_processed_input=skip_save_processed_input,
                 preprocessing_params=
                 self.model_definition['preprocessing'],

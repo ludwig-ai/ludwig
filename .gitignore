@@ -4,6 +4,7 @@
 
 results/
 ludwig/results/
+results_*/
 
 # ailabs-utils
 ailabs_util

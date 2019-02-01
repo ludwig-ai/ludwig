@@ -68,3 +68,5 @@ PREDICTION = 'prediction'
 
 SUM = 'sum'
 APPEND = 'append'
+SEQ_SUM = 'seq_sum'
+AVG_EXP = 'avg_exp'

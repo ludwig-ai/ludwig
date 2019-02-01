@@ -282,7 +282,8 @@ def average_precision_score(conditions, prediction_scores, average='micro',
                             sample_weight=None):
     # average == [micro, macro, sampled, weidhted]
     return metrics.average_precision_score(conditions, prediction_scores,
-                                           average, sample_weight)
+                                           average=average,
+                                           sample_weight=sample_weight)
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser(

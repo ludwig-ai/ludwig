@@ -61,7 +61,7 @@ class SequenceBaseFeature(BaseFeature):
         'padding_symbol': PADDING_SYMBOL,
         'unknown_symbol': UNKNOWN_SYMBOL,
         'padding': 'right',
-        'format': 'whitespace',
+        'format': 'space',
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
@@ -543,7 +543,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         }),
         (OVERALL_ACCURACY, {
             'output': CORRECT_OVERALL_PREDICTIONS,
-            'aggregation': 'seq_sum',
+            'aggregation': SEQ_SUM,
             'value': 0,
             'type': MEASURE
         }),
@@ -555,7 +555,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         }),
         (PERPLEXITY, {
             'output': PERPLEXITY,
-            'aggregation': 'avg_exp',
+            'aggregation': AVG_EXP,
             'value': 0,
             'type': MEASURE
         }),

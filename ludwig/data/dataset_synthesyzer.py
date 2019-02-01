@@ -16,17 +16,16 @@
 # ==============================================================================
 import argparse
 import csv
+import os
 import random
 import string
 import uuid
-import os
 
 import numpy as np
-
 import yaml
+from skimage.io import imsave
 
 from ludwig.utils.misc import get_from_registry
-from skimage.io import imsave
 
 letters = string.ascii_letters
 
@@ -127,7 +126,8 @@ def generate_numerical(feature):
 
 
 def generate_binary(feature):
-    return random.choice([True, False])
+    p = feature['prob'] if 'prob' in feature else 0.5
+    return np.random.choice([True, False], p=[p, 1 - p])
 
 
 def generate_sequence(feature):

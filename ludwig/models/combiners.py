@@ -136,7 +136,7 @@ class SequenceConcatCombiner:
             feature_encodings[self.main_sequence_feature]
 
         representation = main_sequence_feature_encoding['representation']
-        representations_size = representation.shape[2]
+        representations_size = representation.shape[2].value
         representations = [representation]
 
         scope_name = 'sequence_concat_combiner'
@@ -148,33 +148,33 @@ class SequenceConcatCombiner:
                 if fe_name is not self.main_sequence_feature:
                     if fe_properties['type'] in SEQUENCE_TYPES and \
                             len(fe_properties['representation'].shape) == 3:
-
                         # The following check makes sense when
                         # both representations have a specified
                         # sequence length dimension. If they do not,
                         # then this check is simply checking if None == None
                         # and will not catch discrepancies in the different
-                        # feature lentgh dimension. Those errors will show up
+                        # feature length dimension. Those errors will show up
                         # at training time. Possible solutions to this is
                         # to enforce a length second dimension in
                         # sequential feature placeholders, but that
                         # does not work with BucketedBatcher that requires
                         # the second dimension to be undefined in order to be
-                        # able to trim the datapoints and speed up computation.
+                        # able to trim the data points and speed up computation.
                         # So for now we are keeping things like this, make sure
                         # to write in the documentation that training time
                         # dimensions mismatch may occur if the sequential
-                        # features have different lantghs for some datapoints.
+                        # features have different lengths for some data points.
+                        if fe_properties['representation'].shape[1] != \
+                                representation.shape[1]:
 
-                        if fe_properties['representation'].shape[
-                            1] != representations_size:
                             raise ValueError(
                                 'The sequence length of the input feature {} '
-                                'is {} and is different from the sequence length '
-                                'of the main sequence feature {} which is {}.\n'
-                                'Shape of {}: {}, shape of {}: {}.\n'
-                                'Sequence lengths of all sequential features must be the same '
-                                'in order to be concatenated by the sequence concat combiner. '
+                                'is {} and is different from the sequence '
+                                'length of the main sequence feature {} which '
+                                'is {}.\n Shape of {}: {}, shape of {}: {}.\n'
+                                'Sequence lengths of all sequential features '
+                                'must be the same  in order to be concatenated '
+                                'by the sequence concat combiner. '
                                 'Try to impose the same max sequence length '
                                 'as a preprocessing parameter to both features '
                                 'or to reduce the output of {}.'.format(
@@ -219,8 +219,8 @@ class SequenceConcatCombiner:
 
                     else:
                         raise ValueError(
-                            'The representation of {} has rank {} and cannot be concatenated '
-                            'by a sequence concat combiner. '
+                            'The representation of {} has rank {} and cannot be'
+                            ' concatenated by a sequence concat combiner. '
                             'Only rank 2 and rank 3 tensors are supported.'.format(
                                 fe_properties['name'],
                                 len(fe_properties['representation'].shape)

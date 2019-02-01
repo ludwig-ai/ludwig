@@ -29,6 +29,7 @@ UNKNOWN_SYMBOL = '<UNK>'
 PADDING_SYMBOL = '<PAD>'
 
 SPLIT_REGEX = re.compile(r'\s+')
+SPLIT_PUNCTUATION = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
 
@@ -71,7 +72,7 @@ def match_replace(string_to_match, list_regex):
     return string_to_match, matched
 
 
-def create_vocabulary(data, format='whitespace', custom_vocabulary=(),
+def create_vocabulary(data, format='space', custom_vocabulary=(),
                       add_unknown=True, add_padding=True,
                       lowercase=True,
                       num_most_frequent=None):
@@ -184,9 +185,12 @@ def json_string_to_list(s):
     return json.loads(str.replace(s, '\'', '\''))
 
 
-def whitespace_string_to_list(s):
+def space_string_to_list(s):
     return SPLIT_REGEX.split(s.strip())
 
+
+def space_punctuation_string_to_list(s):
+    return SPLIT_PUNCTUATION_REGEX.split(s.strip())
 
 def underscore_string_to_list(s):
     return UNDERSCORE_REGEX.split(s.strip())
@@ -241,13 +245,10 @@ def characters_to_list(s):
     return s
 
 
-def characters_lowercase_to_list(s):
-    return s.lower()
-
-
 format_registry = {
     'json': json_string_to_list,
-    'whitespace': whitespace_string_to_list,
+    'space': space_string_to_list,
+    'space_punct': space_punctuation_string_to_list,
     'underscore': underscore_string_to_list,
     'comma': comma_string_to_list,
     'untokenized': untokenized_string_to_list,
@@ -263,7 +264,8 @@ format_registry = {
 
 format_dtype_registry = {
     'json': np.int32,
-    'whitespace': np.int32,
+    'space': np.int32,
+    'space_punct': np.int32,
     'underscore': np.int32,
     'comma': np.int32,
     'untokenized': np.int32,

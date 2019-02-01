@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import os
 from collections import OrderedDict
 
 import numpy as np
@@ -37,7 +38,7 @@ class SetBaseFeature(BaseFeature):
         self.type = IMAGE
 
     preprocessing_defaults = {
-        'format': 'whitespace',
+        'format': 'space',
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
@@ -360,7 +361,39 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             experiment_dir_name,
             skip_save_unprocessed_output=False
     ):
-        pass
+        postprocessed = {}
+        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        name = output_feature['name']
+
+        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
+            preds = result[PREDICTIONS]
+            if 'idx2str' in metadata:
+                postprocessed[PREDICTIONS] = [
+                    [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
+                     if pred == True] for pred_set in preds
+                ]
+            else:
+                postprocessed[PREDICTIONS] = preds
+
+            if not skip_save_unprocessed_output:
+                np.save(npy_filename.format(name, PREDICTIONS), preds)
+
+            del result[PREDICTIONS]
+
+        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
+            probs = result[PROBABILITIES]
+            prob = [[prob for prob in prob_set if
+                     prob >= output_feature['threshold']] for prob_set in probs]
+            postprocessed[PROBABILITIES] = probs
+            postprocessed['probability'] = prob
+
+            if not skip_save_unprocessed_output:
+                np.save(npy_filename.format(name, PROBABILITIES), probs)
+                np.save(npy_filename.format(name, 'probability'), probs)
+
+            del result[PROBABILITIES]
+
+        return postprocessed
 
     @staticmethod
     def populate_defaults(output_feature):

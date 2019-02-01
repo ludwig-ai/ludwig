@@ -29,6 +29,7 @@ import yaml
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.predict import predict
 from ludwig.predict import print_prediction_results
@@ -57,7 +58,7 @@ def experiment(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        metadata_json=None,
+        train_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -107,9 +108,9 @@ def experiment(
     :param data_test_hdf5: If the test set is in the hdf5 format, this is
            used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param metadata_json: If the dataset is in hdf5 format, this is
+    :param train_set_metadata_json: If the dataset is in hdf5 format, this is
            the associated json file containing metadata.
-    :type metadata_json: filepath (str)
+    :type train_set_metadata_json: filepath (str)
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -194,7 +195,7 @@ def experiment(
         data_train_hdf5,
         data_validation_hdf5,
         data_test_hdf5,
-        metadata_json,
+        train_set_metadata_json,
         random_seed
     )
     if is_on_master():
@@ -209,7 +210,12 @@ def experiment(
         logging.info('')
 
     # preprocess
-    training_set, validation_set, test_set, metadata = preprocess_for_training(
+    (
+        training_set,
+        validation_set,
+        test_set,
+        train_set_metadata
+    ) = preprocess_for_training(
         model_definition,
         data_csv=data_csv,
         data_train_csv=data_train_csv,
@@ -219,9 +225,10 @@ def experiment(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        metadata_json=metadata_json,
-        skip_save_processed_input=skip_save_processed_input or not is_on_master(),
-        preprocessing_params=model_definition['preprocessing'],
+        train_set_metadata_json=train_set_metadata_json,
+        skip_save_processed_input=skip_save_processed_input,
+        preprocessing_params=model_definition[
+            'preprocessing'],
         random_seed=random_seed
     )
     if is_on_master():
@@ -230,7 +237,7 @@ def experiment(
         logging.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
-    update_model_definition_with_metadata(model_definition, metadata)
+    update_model_definition_with_metadata(model_definition, train_set_metadata)
 
     # run the experiment
     model, training_results = train(
@@ -254,12 +261,15 @@ def experiment(
         train_testset_stats
     ) = training_results
 
-    # save training statistics
     if is_on_master():
-        save_json(training_stats_fn,
-                  {'train': train_trainset_stats,
-                   'validation': train_valisest_stats,
-                   'test': train_testset_stats})
+        # save train set metadata
+        save_json(
+            os.path.join(
+                model_dir,
+                TRAIN_SET_METADATA_FILE_NAME
+            ),
+            train_set_metadata
+        )
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -294,6 +304,17 @@ def experiment(
             best_vali_measure_epoch_test_measure)
         )
 
+    # save training statistics
+    if is_on_master():
+        save_json(
+            training_stats_fn,
+            {
+                'train': train_trainset_stats,
+                'validation': train_valisest_stats,
+                'test': train_testset_stats
+            }
+        )
+
     # predict
     test_results = predict(
         test_set,
@@ -311,7 +332,7 @@ def experiment(
     postprocessed_output = postprocess(
         test_results,
         model_definition['output_features'],
-        metadata,
+        train_set_metadata,
         experiment_dir_name,
         skip_save_unprocessed_output or not is_on_master()
     )
@@ -324,6 +345,8 @@ def experiment(
 
         logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
         logging.info('Saved to: {}'.format(experiment_dir_name))
+
+    return experiment_dir_name
 
 
 def cli(sys_argv):
