@@ -127,7 +127,7 @@ def generate_numerical(feature):
 
 def generate_binary(feature):
     p = feature['prob'] if 'prob' in feature else 0.5
-    return random.choice([True, False], p=[p, 1 - p])
+    return np.random.choice([True, False], p=[p, 1 - p])
 
 
 def generate_sequence(feature):
