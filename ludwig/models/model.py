@@ -1011,11 +1011,11 @@ class Model:
         self.saver.restore(session, weights_path)
 
     @staticmethod
-    def load(load_path):
+    def load(load_path, use_horovod=False):
         hyperparameter_file = os.path.join(
             load_path, MODEL_HYPERPARAMETERS_FILE_NAME)
         hyperparameters = load_json(hyperparameter_file)
-        model = Model(**hyperparameters)
+        model = Model(use_horovod=use_horovod, **hyperparameters)
         model.weights_save_path = os.path.join(
             load_path, MODEL_WEIGHTS_FILE_NAME)
         return model
@@ -1237,9 +1237,9 @@ class ProgressTracker:
         self.test_stats = test_stats
 
 
-def load_model_and_definition(model_dir):
+def load_model_and_definition(model_dir, use_horovod=False):
     # Load model definition and weights
     model_definition = load_json(os.path.join(
         model_dir, MODEL_HYPERPARAMETERS_FILE_NAME))
-    model = Model.load(model_dir)
+    model = Model.load(model_dir, use_horovod=use_horovod)
     return model, model_definition
