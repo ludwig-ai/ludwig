@@ -53,6 +53,7 @@ from ludwig.train import get_file_names
 from ludwig.train import train
 from ludwig.train import update_model_definition_with_metadata
 from ludwig.utils.data_utils import save_json
+from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description
@@ -136,6 +137,25 @@ class LudwigModel:
             self.model_definition = merge_with_defaults(model_definition)
         self.train_set_metadata = None
         self.model = None
+
+    @staticmethod
+    def _read_data(data_csv, data_dict):
+        """
+        :param data_csv: path to the csv data
+        :param data_dict: raw data
+        :return: pandas dataframe with the data
+        """
+        if data_csv is not None:
+            data_df = read_csv(data_csv)
+        elif data_dict is not None:
+            data_df = pd.DataFrame(data_dict)
+        else:
+            raise ValueError(
+                'No input data specified. '
+                'One of data_df, data_csv or data_dict must be provided'
+            )
+
+        return data_df
 
     @staticmethod
     def load(model_dir, logging_level=logging.ERROR):
@@ -674,15 +694,7 @@ class LudwigModel:
             raise ValueError('Model has not been initialized or loaded')
 
         if data_df is None:
-            if data_csv is not None:
-                data_df = pd.read_csv(data_csv)
-            elif data_dict is not None:
-                data_df = pd.DataFrame(data_dict)
-            else:
-                raise ValueError(
-                    'No input data specified. '
-                    'One of data_df, data_csv or data_dict must be provided'
-                )
+            data_df = self._read_data(data_csv, data_dict)
 
         if batch_size is None:
             batch_size = self.model_definition['training']['batch_size']
@@ -748,15 +760,7 @@ class LudwigModel:
             raise ValueError('Model has not been trained or loaded')
 
         if data_df is None:
-            if data_csv is not None:
-                data_df = pd.read_csv(data_csv)
-            elif data_csv is not None:
-                data_df = pd.DataFrame(data_dict)
-            else:
-                raise ValueError(
-                    'No input data specified. '
-                    'One of data_df, data_csv and data_dict must be provided'
-                )
+            data_df = self._read_data(data_csv, data_dict)
 
         logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
         features_to_load = self.model_definition['input_features']
