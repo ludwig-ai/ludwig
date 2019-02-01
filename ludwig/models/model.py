@@ -648,7 +648,7 @@ class Model:
                     if aggregation_method == SUM:
                         output_stats[field_name][stat] += \
                             result[field_name][stat_config['output']].sum()
-                    elif aggregation_method == 'seq_sum':
+                    elif aggregation_method == SEQ_SUM:
                         output_stats[field_name][stat] += \
                             result[field_name][stat_config['output']].sum()
                         seq_set_size[field_name][stat] = seq_set_size[
@@ -657,7 +657,7 @@ class Model:
                                                          len(result[field_name][
                                                                  stat_config[
                                                                      'output']])
-                    elif aggregation_method == 'avg_exp':
+                    elif aggregation_method == AVG_EXP:
                         output_stats[field_name][stat] += \
                             result[field_name][stat_config['output']].sum()
                     elif aggregation_method == APPEND:
@@ -708,10 +708,10 @@ class Model:
                         (output_type == MEASURE and not only_predictions):
                     if output_config[stat]['aggregation'] == SUM:
                         output_stats[field_name][stat] /= set_size
-                    elif output_config[stat]['aggregation'] == 'seq_sum':
+                    elif output_config[stat]['aggregation'] == SEQ_SUM:
                         output_stats[field_name][stat] /= \
                         seq_set_size[field_name][stat]
-                    elif output_config[stat]['aggregation'] == 'avg_exp':
+                    elif output_config[stat]['aggregation'] == AVG_EXP:
                         output_stats[field_name][stat] = np.exp(
                             output_stats[field_name][stat] / set_size)
                     elif output_config[stat]['aggregation'] == APPEND:
