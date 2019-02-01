@@ -612,10 +612,6 @@ class Model:
         return output_stats
 
     def merge_workers_outputs(self, output_stats, seq_set_size):
-
-        print('output_stats before merge: ', output_stats)
-        print('seq_set_size before merge: ', seq_set_size)
-
         # gather outputs from all workers
         all_workers_output_stats = self.comm.allgather(output_stats)
         all_workers_seq_set_size = self.comm.allgather(seq_set_size)
@@ -624,9 +620,6 @@ class Model:
         merged_output_stats = sum_dicts(all_workers_output_stats,
                                         dict_type=OrderedDict)
         merged_seq_set_size = sum_dicts(all_workers_seq_set_size)
-
-        print('output_stats after merge: ', merged_output_stats)
-        print('set_size seq_set_size merge: ', merged_seq_set_size)
 
         return merged_output_stats, merged_seq_set_size
 
