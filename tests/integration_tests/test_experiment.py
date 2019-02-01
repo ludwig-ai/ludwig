@@ -93,7 +93,7 @@ def delete_temporary_data(csv_path):
         os.remove(hdf5_path)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def csv_filename():
     """
     This methods returns a random filename for the tests to use for generating
@@ -127,10 +127,10 @@ def test_experiment_seq_seq1(csv_filename):
     # Single Sequence input, single sequence output
     # Only the following encoders are working
     input_features_template = Template(
-        '[{name: utterance, type: sequence, reduce_output: null,'
+        '[{name: utterance, type: text, reduce_output: null,'
         ' vocab_size: 10, min_len: 10, max_len: 10, encoder: ${encoder}}]')
 
-    output_features = '[{name: iob, type: sequence, reduce_input: null,' \
+    output_features = '[{name: iob, type: text, reduce_input: null,' \
                       ' vocab_size: 3, min_len: 10, max_len: 10,' \
                       ' decoder: tagger}]'
     # Generate test data
@@ -386,6 +386,8 @@ def test_experiment_various_feature_types(csv_filename):
         run_experiment(input_features_template.substitute(encoder=encoder),
                        output_features, data_csv=rel_path)
 
+
+def test_experiment_timeseries(csv_filename):
     input_features_template = Template(
         '[{name: time_series, type: timeseries, max_len: 10}]')
     output_features = "[ {name: binary_output, type: binary}, ]"
