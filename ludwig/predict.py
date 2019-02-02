@@ -27,11 +27,11 @@ from pprint import pformat
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.globals import LUDWIG_VERSION
+from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import load_model_and_definition
-from ludwig.utils.data_utils import save_json
 from ludwig.utils.data_utils import save_csv
+from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -50,6 +50,7 @@ def full_predict(
         only_predictions=False,
         gpus=None,
         gpu_fraction=1.0,
+        use_horovod=False,
         debug=False,
         **kwargs
 ):
@@ -60,12 +61,13 @@ def full_predict(
         experiment_dir_name = output_directory + '_' + str(suffix)
         suffix += 1
 
-    logging.info('Dataset type: {}'.format(dataset_type))
-    logging.info('Dataset path: {}'.format(
-        data_csv if data_csv is not None else data_hdf5))
-    logging.info('Model path: {}'.format(model_path))
-    logging.info('Output path: {}'.format(experiment_dir_name))
-    logging.info('')
+    if is_on_master():
+        logging.info('Dataset type: {}'.format(dataset_type))
+        logging.info('Dataset path: {}'.format(
+            data_csv if data_csv is not None else data_hdf5))
+        logging.info('Model path: {}'.format(model_path))
+        logging.info('Output path: {}'.format(experiment_dir_name))
+        logging.info('')
 
     train_set_metadata_json_fp = os.path.join(
         model_path,
@@ -84,8 +86,10 @@ def full_predict(
     )
 
     # run the prediction
-    print_boxed('LOADING MODEL')
-    model, model_definition = load_model_and_definition(model_path)
+    if is_on_master():
+        print_boxed('LOADING MODEL')
+    model, model_definition = load_model_and_definition(model_path,
+                                                        use_horovod=use_horovod)
 
     prediction_results = predict(
         dataset,
@@ -99,24 +103,25 @@ def full_predict(
     )
     model.close_session()
 
-    os.mkdir(experiment_dir_name)
+    if is_on_master():
+        os.mkdir(experiment_dir_name)
 
-    # postprocess
-    postprocessed_output = postprocess(
-        prediction_results,
-        model_definition['output_features'],
-        train_set_metadata,
-        experiment_dir_name,
-        skip_save_unprocessed_output
-    )
+        # postprocess
+        postprocessed_output = postprocess(
+            prediction_results,
+            model_definition['output_features'],
+            train_set_metadata,
+            experiment_dir_name,
+            skip_save_unprocessed_output or not is_on_master()
+        )
 
-    save_prediction_outputs(postprocessed_output, experiment_dir_name)
+        save_prediction_outputs(postprocessed_output, experiment_dir_name)
 
-    if not only_predictions:
-        print_prediction_results(prediction_results)
-        save_prediction_statistics(prediction_results, experiment_dir_name)
+        if not only_predictions:
+            print_prediction_results(prediction_results)
+            save_prediction_statistics(prediction_results, experiment_dir_name)
 
-    logging.info('Saved to: {0}'.format(experiment_dir_name))
+        logging.info('Saved to: {0}'.format(experiment_dir_name))
 
 
 def predict(
@@ -155,7 +160,8 @@ def predict(
                   alongside with statistics on the quality of those predictions
                   (if only_predictions is False).
         """
-    print_boxed('PREDICT')
+    if is_on_master():
+        print_boxed('PREDICT')
     test_stats = model.predict(
         dataset,
         batch_size,
@@ -326,6 +332,13 @@ def cli(sys_argv):
         help='fraction of gpu memory to initialize the process with'
     )
     parser.add_argument(
+        '-uh',
+        '--use_horovod',
+        action='store_true',
+        default=False,
+        help='uses horovod for distributed training'
+    )
+    parser.add_argument(
         '-dbg',
         '--debug',
         action='store_true',
@@ -348,7 +361,10 @@ def cli(sys_argv):
         format='%(message)s'
     )
 
-    print_ludwig('Predict', LUDWIG_VERSION)
+    set_on_master(args.use_horovod)
+
+    if is_on_master():
+        print_ludwig('Predict', LUDWIG_VERSION)
 
     full_predict(**vars(args))
 

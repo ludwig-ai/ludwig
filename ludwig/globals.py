@@ -24,11 +24,33 @@ TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'
 
 DISABLE_PROGRESSBAR = False
 
+ON_MASTER = True
+
 
 def set_disable_progressbar(value):
     global DISABLE_PROGRESSBAR
     DISABLE_PROGRESSBAR = value
 
 
-def get_disable_progressbar():
+def is_progressbar_disabled():
     return DISABLE_PROGRESSBAR
+
+
+def set_on_master(use_horovod):
+    global ON_MASTER
+    if use_horovod:
+        try:
+            import horovod.tensorflow
+            horovod.tensorflow.init()
+            ON_MASTER = horovod.tensorflow.rank() == 0
+        except ImportError:
+            raise ValueError("use_horovod parameter specified, "
+                             "but cannot import horovod.tensorflow. "
+                             "Install horovod following the instructions at: "
+                             " https://github.com/uber/horovod")
+    else:
+        ON_MASTER = True
+
+
+def is_on_master():
+    return ON_MASTER

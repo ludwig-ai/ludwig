@@ -148,3 +148,59 @@ class BucketedBatcher(object):
 
     def reset(self):
         self.indices = np.array([0] * len(self.buckets_idcs))
+
+
+class DistributedBatcher(object):
+    def __init__(self, dataset, partition_number, horovod, batch_size=128,
+                 should_shuffle=True, ignore_last=False):
+        self.should_shuffle = should_shuffle
+
+        # store our dataset as well
+        partition_size = dataset.size // horovod.size()
+        if partition_number == horovod.size() - 1:
+            self.partition = (partition_size * partition_number, dataset.size)
+        else:
+            self.partition = (partition_size * partition_number,
+                              partition_size * (partition_number + 1))
+        self.dataset = dataset
+        if should_shuffle:
+            shuffle_inplace(self.dataset.get_dataset())
+
+        self.ignore_last = ignore_last
+        self.batch_size = batch_size
+        self.total_size = self.partition[1] - self.partition[0]
+        self.steps_per_epoch = int(math.ceil(self.total_size / self.batch_size))
+        self.index = self.partition[0]
+        self.max_index = self.partition[1]
+        self.epoch = 0
+
+    def next_batch(self):
+        if self.last_batch():
+            if self.should_shuffle:
+                self.dataset = shuffle_dict_unison_inplace(
+                    self.dataset,
+                    np.random.RandomState(self.epoch)
+                )
+            self.reset()
+            self.epoch += 1
+
+        sub_batch = {}
+        for features_name in self.dataset.features:
+            sub_batch[features_name] = self.dataset.get(
+                features_name,
+                range(
+                    self.index,
+                    min(self.index + self.batch_size, self.max_index)
+                )
+            )
+
+        self.index += self.batch_size
+        return sub_batch
+
+    def last_batch(self):
+        return self.index >= self.max_index or (
+                self.ignore_last and
+                self.index + self.batch_size >= self.max_index)
+
+    def reset(self):
+        self.index = self.partition[0]
