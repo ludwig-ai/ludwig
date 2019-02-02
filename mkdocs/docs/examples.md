@@ -274,14 +274,72 @@ Siamese Netowrk
 Visual Question Answering
 -------------------------
 
-Time series prediction
+Time series forecasting
+-------------------------
+
+While direct timeseries prediction is a work in progress Ludwig can ingest timeseries input feature data and make numerical predictions. Below is an example of a model trained to forecast timeseries at five different horizons.
+
 ----------------------
+| timeseries_data       |   y1  |   y2  |   y3  |   y4  |   y5  |
+|-----------------------|-------|-------|-------|-------|-------|
+| 15.07 14.89 14.45 ... | 16.92 | 16.67 | 16.48 | 17.00 | 17.02 |
+| 14.89 14.45 14.30 ... | 16.67 | 16.48 | 17.00 | 17.02 | 16.48 |
+| 14.45 14.3 14.94 ...  | 16.48 | 17.00 | 17.02 | 16.48 | 15.82 |
+
+```
+ludwig experiment \
+--data_csv timeseries_data.csv \
+  --model_definition model_definition.yaml
+```
+
+With `model_definition.yaml`:
+
+```yaml
+input_features:
+    -
+        name: timeseries_data
+        type: timeseries
+output_features:
+    -
+        name: y1
+        type: numerical
+    -
+        name: y2
+        type: numerical
+    -
+        name: y3
+        type: numerical
+    -
+        name: y4
+        type: numerical
+    -
+        name: y5
+        type: numerical
+```
 
 User Rating prediction
 ----------------------
 
 Example that uses Sets/Bags
 ---------------------------
+
+| image_path                | tags  |
+|---------------------------|-------|
+| imagenet/image_000001.jpg | car, man   |
+| imagenet/image_000002.jpg | happy, dog, tie   |
+| imagenet/image_000003.jpg | boat, water  |
+
+```yaml
+input_features:
+    -
+        name: image_path
+        type: image
+        encoder: stacked_cnn
+output_features:
+    -
+        name: tags
+        type: set
+```
 
 Example of Multi-Task Learning
 ------------------------------
