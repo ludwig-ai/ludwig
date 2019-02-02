@@ -16,14 +16,15 @@
 import tensorflow as tf
 
 
-def optimize(loss, training_parameters, learning_rate, global_step):
+def optimize(loss, training_parameters, learning_rate, global_step,
+             horovod=None):
     if training_parameters is not None and training_parameters['decay'] == True:
         learning_rate = tf.train.exponential_decay(
             learning_rate, global_step,
             training_parameters['decay_steps'],
             training_parameters['decay_rate'],
-            staircase=training_parameters['staircase']
-        )
+            staircase=training_parameters['staircase'])
+
     with tf.variable_scope('optimizer'):
         if training_parameters is not None:
             optimizer_args = dict(training_parameters['optimizer'])
@@ -34,6 +35,10 @@ def optimize(loss, training_parameters, learning_rate, global_step):
                                           **optimizer_args)
             else:
                 optimizer = optimizer_fun(learning_rate, **optimizer_args)
+
+            if horovod:
+                optimizer = horovod.DistributedOptimizer(optimizer)
+
             optimize = optimizer.minimize(loss,
                                           global_step=global_step)
             if 'gradient_clipping' in training_parameters and \
@@ -47,6 +52,10 @@ def optimize(loss, training_parameters, learning_rate, global_step):
                 optimize = tf.group(apply_grads, increment_global_step)
         else:
             optimizer = tf.train.AdamOptimizer(learning_rate)
+
+            if horovod:
+                optimizer = horovod.DistributedOptimizer(optimizer)
+
             optimize = optimizer.minimize(loss,
                                           global_step=global_step)
 

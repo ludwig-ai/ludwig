@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import glob
 import logging
 import os
-import glob
-import pytest
 import uuid
 from string import Template
 
 import pandas as pd
+import pytest
 import yaml
 
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
@@ -265,7 +265,7 @@ def test_experiment_image_inputs(csv_filename):
 
     os.rmdir(image_dest_folder)
 
-        
+
 def test_experiment_tied_weights(csv_filename):
     # Single sequence input, single category output
     input_features = Template('[{name: utterance1, type: text,'

@@ -689,7 +689,7 @@ def preprocess_for_prediction(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='This script takes csv files as input and outputs a HDF5 '
-                    'and JSON file containing  a dataset and the train set ' 
+                    'and JSON file containing  a dataset and the train set '
                     'metadata associated with it'
     )
 

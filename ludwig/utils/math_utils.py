@@ -67,3 +67,31 @@ def convert_size(size_bytes):
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
     return '{} {}'.format(s, size_name[i])
+
+
+def learning_rate_warmup(learning_rate, epoch, warmup_epochs, num_workers,
+                         steps_per_epoch):
+    """Implements gradual learning rate warmup:
+    `lr = initial_lr / hvd.size()` ---> `lr = initial_lr`
+     `initial_lr` is the learning rate of the model optimizer at the start
+     of the training. This technique was described in the paper
+     "Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour".
+     See https://arxiv.org/pdf/1706.02677.pdf for details.
+
+     Inspired by Horovod's implementation:
+     https://github.com/uber/horovod/blob/master/horovod/keras/callbacks.py#L202
+     Math recap:
+                                                     batch
+            epoch               = full_epochs + ---------------
+                                                steps_per_epoch
+                                   lr     size - 1
+            lr'(epoch)          = ---- * (-------- * epoch + 1)
+                                  size     warmup
+                                   lr
+            lr'(epoch = 0)      = ----
+                                  size
+            lr'(epoch = warmup) = lr
+    """
+    epoch_adjusted = float(epoch) + (1. / steps_per_epoch)
+    return learning_rate / num_workers * \
+           (epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
