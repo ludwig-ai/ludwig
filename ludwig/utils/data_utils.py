@@ -24,6 +24,9 @@ import random
 
 import h5py
 import numpy as np
+import pandas as pd
+
+from pandas.errors import ParserError
 
 
 def load_csv(data_fp):
@@ -31,6 +34,23 @@ def load_csv(data_fp):
     with open(data_fp, 'rb') as f:
         data = list(csv.reader(f))
     return data
+
+
+def read_csv(data_fp):
+    """
+    Helper method to read a csv file. Wraps around pd.read_csv to handle some
+    exceptions. Can extend to cover cases as necessary
+    :param data_fp: path to the csv file
+    :return: Pandas dataframe with the data
+    """
+    try:
+        df = pd.read_csv(data_fp)
+    except ParserError:
+        logging.WARNING('Failed to parse the CSV with pandas default way,'
+                        ' trying \ as escape character.')
+        df = pd.read_csv(data_fp, escapechar='\\')
+
+    return df
 
 
 def save_csv(data_fp, data):

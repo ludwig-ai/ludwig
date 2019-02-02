@@ -33,6 +33,7 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels
 from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import split_dataset_tvt
 from ludwig.utils.data_utils import text_feature_data_field
 from ludwig.utils.defaults import default_preprocessing_parameters
@@ -50,7 +51,7 @@ def build_dataset(
         random_seed=default_random_seed,
         **kwargs
 ):
-    dataset_df = pd.read_csv(dataset_csv)
+    dataset_df = read_csv(dataset_csv)
     dataset_df.csv = dataset_csv
     return build_dataset_df(
         dataset_df,

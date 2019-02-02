@@ -20,6 +20,8 @@ import logging
 import numpy as np
 import pandas as pd
 
+from ludwig.utils.data_utils import read_csv
+
 
 def concatenate(train_csv, vali_csv, test_csv, output_csv):
     concatenated_df = concatenate_csv(train_csv, vali_csv, test_csv)
@@ -31,15 +33,15 @@ def concatenate(train_csv, vali_csv, test_csv, output_csv):
 
 def concatenate_csv(train_csv, vali_csv, test_csv):
     logging.info('Loading training csv...')
-    train_df = pd.read_csv(train_csv)
+    train_df = read_csv(train_csv)
     logging.info('done')
 
     logging.info('Loading validation csv..')
-    vali_df = pd.read_csv(vali_csv) if vali_csv is not None else None
+    vali_df = read_csv(vali_csv) if vali_csv is not None else None
     logging.info('done')
 
     logging.info('Loading test csv..')
-    test_df = pd.read_csv(test_csv) if test_csv is not None else None
+    test_df = read_csv(test_csv) if test_csv is not None else None
     logging.info('done')
 
     logging.info('Concatenating csvs..')
