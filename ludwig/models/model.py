@@ -1263,8 +1263,9 @@ class Model:
         self.weights_save_path = self.saver.save(session, save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
-        # removing pretrained embeddings paths from hyperparameters because the
-        # weights are already saved in the model, when loading model next time
+        # removing pretrained embeddings paths from hyperparameters
+        # because the weights are already saved in the model, no need to reload
+        # from their path when loading the model next time
 
         local_hyperparamters = copy.deepcopy(hyperparameters)
         for feature in (local_hyperparamters['input_features'] +
