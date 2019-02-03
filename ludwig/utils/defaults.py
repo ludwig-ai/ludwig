@@ -45,7 +45,7 @@ default_training_params = {
     'epochs': 200,
     'regularizer': 'l2',
     'regularization_lambda': 0,
-    'learning_rate': 0.01,
+    'learning_rate': 0.001,
     'batch_size': 128,
     'dropout_rate': 0.0,
     'early_stop': 3,
