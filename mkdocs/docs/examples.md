@@ -274,6 +274,33 @@ Siamese Netowrk
 Visual Question Answering
 -------------------------
 
+------------------------------------
+| image_path              |   question                                | answer |
+|-------------------------|-------------------------------------------|--------|
+| imdata/image_000001.jpg | Is there snow on the mountains?           | yes    |
+| imdata/image_000002.jpg | What color are the wheels                 | blue   |
+| imdata/image_000003.jpg | What kind of utensil is in the glass bowl | knife  |
+
+```yaml
+input_features:
+    -
+        name: image_path
+        type: image
+        encoder: stacked_cnn
+    -
+        name: question
+        type: text
+        encoder: parallel_cnn
+        level: word
+output_features:
+    -
+        name: answer
+        type: sequence
+        decoder: generator
+        cell_type: lstm
+```
+
+
 Time series forecasting
 -------------------------
 
@@ -317,8 +344,35 @@ output_features:
         type: numerical
 ```
 
-User Rating prediction
+Movie Rating prediction
 ----------------------
+
+| year | duration  | nominations |  categories        | rating
+|------|-----------|-------------|--------------------|-------|
+| 1921 |   3240    |     0       | comedy drama       |  8.4  |
+| 1925 |   5700    |     1       | adventure comedy   |  8.3  |
+| 1927 |   9180    |     4       | drama comedy scifi |  8.4  |
+
+```yaml
+input_features:
+    -
+        name: year
+        type: numerical
+    -
+        name: duration
+        type: numerical
+    -
+        name: nominations
+        type: numerical
+    -
+        name: categories
+        type: set
+        
+output_features:
+    -
+        name: rating
+        type: numerical
+```
 
 Example that uses Sets/Bags
 ---------------------------
