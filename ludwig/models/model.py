@@ -948,11 +948,11 @@ class Model:
 
             if not only_predictions:
                 if feature_type in [CATEGORY, BINARY]:
-                    correct_predictions = result[
-                        field_name][CORRECT_PREDICTIONS]
+                    correct_predictions = \
+                        result[field_name][CORRECT_PREDICTIONS]
                 elif feature_type == SEQUENCE:
-                    correct_predictions = result[
-                        field_name][CORRECT_ROWWISE_PREDICTIONS]
+                    correct_predictions = \
+                        result[field_name][CORRECT_ROWWISE_PREDICTIONS]
                 else:
                     correct_predictions = None
 
