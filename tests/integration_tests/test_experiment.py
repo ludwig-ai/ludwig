@@ -49,7 +49,6 @@ def generate_data(input_features, output_features, filename='test_csv.csv'):
     data = [next(df) for _ in range(1000)]
 
     dataframe = pd.DataFrame(data[1:], columns=data[0])
-
     dataframe.to_csv(filename, index=False)
 
     return filename
@@ -399,6 +398,66 @@ def test_experiment_timeseries(csv_filename):
     for encoder in encoders:
         run_experiment(input_features_template.substitute(encoder=encoder),
                        output_features, data_csv=rel_path)
+
+
+def test_movie_rating_prediction(csv_filename):
+    input_features= '[{name: year, type: numerical, min: 1900, max: 2030},' \
+                    '{name: duration, type: numerical, min: 3600, max: 12000},'\
+                    '{name: nominations, type: numerical, min: 0, max: 25},'\
+                    '{name: categories, type: set, max_len: 5, vocab_size: 10}]'
+    output_features = "[ {name: rating, type: numerical, min: 1, max: 10}]"
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+def test_example_with_set_output(csv_filename):
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    input_features_template = Template(
+        '[{name: image_path, type: image, encoder: ${encoder}, width: 15, '
+        'height: 15, num_channels: 3, resnet_size: 8, destination_folder: '
+        '${folder}}]')
+
+    output_features = "[ {name: tags, type: set, max_len: 5, vocab_size: 10}]"
+
+    for encoder in ['resnet', 'stacked_cnn']:
+        input_features = input_features_template.substitute(
+            encoder=encoder,
+            folder=image_dest_folder)
+
+        rel_path = generate_data(input_features, output_features, csv_filename)
+        run_experiment(input_features, output_features, rel_path)
+
+    # Delete the temporary data created
+    all_images = glob.glob(os.path.join(image_dest_folder, '*.jpg'))
+    for im in all_images:
+        os.remove(im)
+
+    os.rmdir(image_dest_folder)
+
+
+def test_visual_question_answering(csv_filename):
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    input_features= Template(
+        '[{name: image_path, type: image, encoder: stacked_cnn, width: 15, '
+        'height: 15, num_channels: 3, resnet_size: 8, destination_folder: '
+        '${folder}}, {name: question, type: text, vocab_size: 20, max_len: 10,'
+        'encoder: parallel_cnn, level: word}]').substitute(
+        folder=image_dest_folder)
+
+    output_features = "[ {name: answer, type: sequence, max_len: 5, " \
+                      "vocab_size: 10, decoder: generator, cell_type: lstm}]"
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, rel_path)
+
+    # Delete the temporary data created
+    all_images = glob.glob(os.path.join(image_dest_folder, '*.jpg'))
+    for im in all_images:
+        os.remove(im)
+
+    os.rmdir(image_dest_folder)
 
 
 if __name__ == '__main__':
