@@ -195,10 +195,11 @@ Ludwig also provides a simple programmatic API that allows you to train or load 
 ```python
 from ludwig import LudwigModel
 
+# train a model
 model_definition = {...}
 model = LudwigModel(model_definition)
 train_stats = model.train(training_dataframe)
-# or
+# or load a model
 model = LudwigModel.load(model_path)
 
 # obtain predictions
