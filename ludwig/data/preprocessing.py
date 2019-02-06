@@ -317,6 +317,8 @@ def preprocess_for_training(
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
 ):
+    print(' ZZZZZZZ ')
+    print(data_csv)
     # Check if hdf5 and json already exist
     data_hdf5_fp = None
     data_train_hdf5_fp = None
