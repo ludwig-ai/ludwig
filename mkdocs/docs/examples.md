@@ -268,14 +268,17 @@ output_features:
         cell_type: lstm
 ```
 
-Siamese Network
----------------
-------------------------------------------------------------------------------------
-| image_path_1                     |   image_path_2                   | similarity |
+One-shot Learning with Siamese Networks
+--------------------------------------
+
+This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset. The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
+
+| image_1                          |   image_2                        | similarity |
 |----------------------------------|----------------------------------|------------|
 | balinese/character01/0108_13.png | balinese/character01/0108_18.png | 1          |
 | balinese/character01/0108_13.png | balinese/character08/0115_12.png | 0          |
 | balinese/character01/0108_04.png | balinese/character01/0108_08.png | 1          |
+| balinese/character01/0108_11.png | balinese/character05/0112_02.png | 0          |
 
 ```
 ludwig experiment \
@@ -288,13 +291,19 @@ With `model_definition.yaml`:
 ```yaml
 input_features:
     -
-        name: image_path_1
+        name: image_1
         type: image
         encoder: stacked_cnn
+        resize_image: true
+        width: 28
+        height: 28
     -
-        name: image_path_2
+        name: image_2
         type: image
         encoder: stacked_cnn
+        resize_image: true
+        width: 28
+        height: 28
         tied_weights: image_path_1
 
 output_features:
@@ -306,12 +315,12 @@ output_features:
 Visual Question Answering
 -------------------------
 
-------------------------------------
 | image_path              |   question                                | answer |
 |-------------------------|-------------------------------------------|--------|
 | imdata/image_000001.jpg | Is there snow on the mountains?           | yes    |
 | imdata/image_000002.jpg | What color are the wheels                 | blue   |
 | imdata/image_000003.jpg | What kind of utensil is in the glass bowl | knife  |
+
 
 ```yaml
 input_features:
@@ -334,11 +343,10 @@ output_features:
 
 
 Time series forecasting
--------------------------
+-----------------------
 
 While direct timeseries prediction is a work in progress Ludwig can ingest timeseries input feature data and make numerical predictions. Below is an example of a model trained to forecast timeseries at five different horizons.
 
-----------------------
 | timeseries_data       |   y1  |   y2  |   y3  |   y4  |   y5  |
 |-----------------------|-------|-------|-------|-------|-------|
 | 15.07 14.89 14.45 ... | 16.92 | 16.67 | 16.48 | 17.00 | 17.02 |
@@ -376,14 +384,14 @@ output_features:
         type: numerical
 ```
 
-Movie Rating prediction
+Movie rating prediction
 ----------------------
 
-| year | duration  | nominations |  categories        | rating
-|------|-----------|-------------|--------------------|-------|
-| 1921 |   3240    |     0       | comedy drama       |  8.4  |
-| 1925 |   5700    |     1       | adventure comedy   |  8.3  |
-| 1927 |   9180    |     4       | drama comedy scifi |  8.4  |
+| year | duration  | nominations |  categories        | rating |
+|------|-----------|-------------|--------------------|--------|
+| 1921 |   3240    |     0       | comedy drama       |  8.4   |
+| 1925 |   5700    |     1       | adventure comedy   |  8.3   |
+| 1927 |   9180    |     4       | drama comedy scifi |  8.4   |
 
 ```yaml
 input_features:
@@ -409,11 +417,11 @@ output_features:
 Example that uses Sets/Bags
 ---------------------------
 
-| image_path                | tags  |
-|---------------------------|-------|
-| imagenet/image_000001.jpg | car, man   |
-| imagenet/image_000002.jpg | happy, dog, tie   |
-| imagenet/image_000003.jpg | boat, water  |
+| image_path                | tags          |
+|---------------------------|---------------|
+| imagenet/image_000001.jpg | car man       |
+| imagenet/image_000002.jpg | happy dog tie |
+| imagenet/image_000003.jpg | boat water    |
 
 ```yaml
 input_features:
