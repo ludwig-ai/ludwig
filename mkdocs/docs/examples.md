@@ -31,6 +31,7 @@ input_features:
         type: text
         encoder: parallel_cnn
         level: word
+
 output_features:
     -
         name: class
@@ -62,6 +63,7 @@ input_features:
         encoder: rnn
         cell_type: lstm
         reduce_output: null
+
 output_features:
     -
         name: tag
@@ -96,6 +98,7 @@ input_features:
         bidirectional: true
         num_layers: 2
         reduce_output: None
+
 output_features:
     -
         name: intent
@@ -136,6 +139,7 @@ input_features:
         type: sequence
         encoder: rnn
         cell_type: lstm
+
 output_features:
     -
         name: italian
@@ -169,6 +173,7 @@ input_features:
         type: sequence
         encoder: rnn
         cell_type: lstm
+
 output_features:
     -
         name: user2
@@ -202,6 +207,7 @@ input_features:
         type: text
         encoder: parallel_cnn
         level: word
+
 output_features:
     -
         name: sentiment
@@ -231,6 +237,7 @@ input_features:
         name: image_path
         type: image
         encoder: stacked_cnn
+
 output_features:
     -
         name: class
@@ -260,6 +267,7 @@ input_features:
         name: image_path
         type: image
         encoder: stacked_cnn
+
 output_features:
     -
         name: caption
@@ -306,6 +314,11 @@ input_features:
         height: 28
         tied_weights: image_path_1
 
+combiner:
+    type: concat
+    num_fc_layers: 2
+    fc_size: 256
+
 output_features:
     -
         name: similarity
@@ -333,6 +346,7 @@ input_features:
         type: text
         encoder: parallel_cnn
         level: word
+
 output_features:
     -
         name: answer
@@ -366,6 +380,7 @@ input_features:
     -
         name: timeseries_data
         type: timeseries
+
 output_features:
     -
         name: y1
@@ -429,6 +444,7 @@ input_features:
         name: image_path
         type: image
         encoder: stacked_cnn
+
 output_features:
     -
         name: tags
