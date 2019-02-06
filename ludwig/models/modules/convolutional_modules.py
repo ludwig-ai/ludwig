@@ -481,11 +481,11 @@ class ConvStack2D:
             layers=None,
             num_layers=None,
             default_filter_size=3,
-            default_num_filters=3,
+            default_num_filters=256,
             default_pool_size=2,
             default_activation='relu',
             default_stride=1,
-            default_pool_stride=1,
+            default_pool_stride=None,
             default_norm=None,
             default_dropout=False,
             default_initializer=None,
@@ -494,9 +494,9 @@ class ConvStack2D:
         if layers is None:
             if num_layers is None:
                 self.layers = [
-                    {'filter_size': 3, 'num_filters': 3, 'pool_size': 2},
-                    {'filter_size': 7, 'num_filters': 3, 'pool_size': 2},
-                    {'filter_size': 7, 'num_filters': 3, 'pool_size': 2}
+                    {'filter_size': 3, 'num_filters': 256, 'pool_size': 2},
+                    {'filter_size': 7, 'num_filters': 256, 'pool_size': 2},
+                    {'filter_size': 7, 'num_filters': 256, 'pool_size': 2}
                 ]
             else:
                 self.layers = []
@@ -569,11 +569,16 @@ class ConvStack2D:
                 # Pooling
                 if layer['pool_size'] is not None:
                     pool_size = layer['pool_size']
+                    pool_kernel_size = [1, pool_size, pool_size, 1]
                     pool_stride = layer['pool_stride']
+                    if pool_stride is not None:
+                        pool_kernel_stride = [1, pool_size, pool_size, 1]
+                    else:
+                        pool_kernel_stride = [1, pool_stride, pool_stride, 1]
                     layer_output = tf.nn.max_pool(
                         layer_output,
-                        ksize=[1, pool_size, pool_size, 1],
-                        strides=[1, pool_stride, pool_stride, 1],
+                        ksize=pool_kernel_size,
+                        strides=pool_kernel_stride,
                         padding='SAME',
                         name='pool_{}'.format(i)
                     )
