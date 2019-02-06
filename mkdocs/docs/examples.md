@@ -268,8 +268,40 @@ output_features:
         cell_type: lstm
 ```
 
-Siamese Netowrk
+Siamese Network
 ---------------
+------------------------------------------------------------------------------------
+| image_path_1                     |   image_path_2                   | similarity |
+|----------------------------------|----------------------------------|------------|
+| balinese/character01/0108_13.png | balinese/character01/0108_18.png | 1          |
+| balinese/character01/0108_13.png | balinese/character08/0115_12.png | 0          |
+| balinese/character01/0108_04.png | balinese/character01/0108_08.png | 1          |
+
+```
+ludwig experiment \
+--data_csv balinese_characters.csv \
+  --model_definition model_definition.yaml
+```
+
+With `model_definition.yaml`:
+
+```yaml
+input_features:
+    -
+        name: image_path_1
+        type: image
+        encoder: stacked_cnn
+    -
+        name: image_path_2
+        type: image
+        encoder: stacked_cnn
+        tied_weights: image_path_1
+
+output_features:
+    -
+        name: similarity
+        type: binary
+```
 
 Visual Question Answering
 -------------------------
