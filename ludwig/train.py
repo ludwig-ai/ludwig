@@ -354,7 +354,7 @@ def train(
     else:
         # Build model
         if is_on_master():
-            print_boxed('BUILDING MODEL')
+            print_boxed('BUILDING MODEL', print_fun=logging.debug)
         model = Model(
             model_definition['input_features'],
             model_definition['output_features'],
