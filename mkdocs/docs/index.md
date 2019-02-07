@@ -5,7 +5,7 @@ All you need to provide is a CSV file containing your data, a list of columns to
 Simple to use commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
 
 A programmatic API is also available in order to use Ludwig from your python code.
-A suite of visualization tools allows to analyze models' training and test performance and to compare them.
+A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
 
 Ludwig is built with extensibility principles in mind and is based on data type abstractions, making it easy to add support for new data types as well as new model architectures.
 
@@ -13,9 +13,9 @@ It can be used by practitioners to quickly train and test deep learning models a
 
 Core Features:
 
-- No coding: no coding skills are required to train and use a model.
-- Compositional: type-based approach to deep learning model construction.
-- Flexible: experienced users have deep control over model building and training, while newcomers will find it easy to apporach.
-- Extensible: easy to add new models and new data types.
-- Visualizations: provides standard visualizations to understand and compare performances and predictions.
-- Open Source: Apache License 2.0.
+- No coding: no coding skills are required to train and use a model
+- Compositional: type-based approach to deep learning model construction
+- Flexible: experienced users have deep control over model building and training, while beginners will find it easy to apporach
+- Extensible: easy to add new models and new data types
+- Visualizations: provides standard visualizations to understand and compare performances and predictions
+- Open Source: Apache License 2.0
