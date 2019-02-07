@@ -1,0 +1,26 @@
+// Bordered & Pulled
+// -------------------------
+
+.#{$mi-css-prefix}-border {
+  border: solid .08em $mi-border-color;
+  border-radius: .1em;
+  padding: .2em .25em .15em;
+}
+
+.#{$mi-css-prefix}-pull-left {
+  float: left;
+}
+
+.#{$mi-css-prefix}-pull-right {
+  float: right;
+}
+
+.#{$mi-css-prefix} {
+  &.#{$mi-css-prefix}-pull-left {
+    margin-right: .3em;
+  }
+
+  &.#{$mi-css-prefix}-pull-right {
+    margin-left: .3em;
+  }
+}
