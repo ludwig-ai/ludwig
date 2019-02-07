@@ -1,31 +1,6 @@
 Getting Started
 ===============
 
-Introduction
-------------
-
-Ludwig is a toolbox built on top of TensorFlow that allows to train and test deep learning models without the need to write code.
-
-All you need to provide is a CSV file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
-Simple to use commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
-
-A programmatic API is also available in order to use Ludwig from your python code.
-A suite of visualization tools allows to analyze models' training and test performance and to compare them.
-
-Ludwig is built with extensibility principles in mind and is based on data type abstractions, making it easy to add support for new data types as well as new model architectures.
-
-It can be used by practitioners to quickly train and test deep learning models as well as by researchers to obtain strong baselines to compare against and have an experimentation setting that ensures comparability by performing standard data preprocessing and visualization.
-
-Core Features:
-
-- No coding: no coding skills are required to train and use a model.
-- Compositional: type-based approach to deep learning model construction.
-- Flexible: experienced users have deep control over model building and training, while newcomers will find it easy to apporach.
-- Extensible: easy to add new models and new data types.
-- Visualizations: provides standard visualizations to understand and compare performances and predictions.
-- Open Source: Apache License 2.0.
-
-
 Installation
 ------------
 
@@ -47,14 +22,14 @@ Ludwig's requirements are the following:
 - PyYAML
 
 Ludwig has been developed and tested with python 3 in mind.
-If you don’t have python 3 installed, install it
+If you don’t have python 3 installed, install it by running:
 
 ```
 sudo apt install python3  # on ubuntu
 brew install python3  # on mac
 ```
 
-At the time of writing TensorFlow is not compatible with python 3.7, so the suggested version of python for Ludwig is 3.6.
+At the time of writing this document, TensorFlow is not compatible with python 3.7, so the recommended version of python for Ludwig is 3.6. You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
 
 In order to install Ludwig just run:
 
@@ -63,7 +38,7 @@ pip install ludwig
 python -m spacy download en
 ```
 
-or install it after cloning the repository:
+or install it by building the source code from the repository:
 
 ```
 git clone git@github.com:uber/ludwig.git
@@ -226,7 +201,7 @@ Roadmap
 
 We will prioritize new features depending on the feedback of the community, but we are already planning to add:
 
-- batchet that uses TensorFlow data pipelines.
+- batcher that uses TensorFlow data pipelines.
 - add additional text and sequence encoders (attention, co-attention, hierarchical attention, bert).
 - add additional image encoders (ResNet, DenseNet, Inception).
 - add image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).
@@ -234,7 +209,7 @@ We will prioritize new features depending on the feedback of the community, but 
 - add additional measures and losses.
 - add additional data formatters and dataset-specific preprocessing scripts.
 
-We also want address some of the current limitations:
+We also want to address some of the current limitations:
 
 - currently all the dataset needs to be loaded in memory in order to train a model. Image features already have a way to dynamically read batches of datapoints from disk, and we want to extend this capability to other datatypes.
 - there is currently no way to serve automatically trained ludwig models, we want to add a small server and a simple user interface in order to provide a live demo capability.
