@@ -636,6 +636,11 @@ Moreover, there is no need for any mapping in the JSON file.
 Image features are transoformed into into a float valued tensor of size `n x h x w x c` (where `n` is the size of the dataset and `h x w` is a specific resizing of the image that can be set, and `c` is the number of channels) and added to HDF5 with a key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.
 
+### CSV Format
+Ludwig uses Pandas under the hood to read the CSV files. Pandas tries to automatically identify the separator (generally ',') from the data.
+We are using '\' as the default escape character. For example, if ',' is the column separator and one of your data columns has a ',' in it, Pandas would fail to load the data properly.
+To handle such cases, we expect your data columns to be escaped with backslashes (replace ',' in the data with '\\,')
+
 Data Postprocessing
 -------------------
 
