@@ -54,7 +54,10 @@ class ImageBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        an_image = imread(dataset_df[feature['name']][0])
+        csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
+        an_image = imread(
+            os.path.join(csv_path, dataset_df[feature['name']][0])
+        )
         im_height = an_image.shape[0]
         im_width = an_image.shape[1]
 
@@ -82,7 +85,10 @@ class ImageBaseFeature(BaseFeature):
                 dtype=np.int8
             )
             for i in range(len(dataset_df)):
-                filename = dataset_df[feature['name']][i]
+                filename = os.path.join(
+                    csv_path,
+                    dataset_df[feature['name']][i]
+                )
                 img = imread(filename)
                 if img.ndim == 2:
                     img = img.reshape((img.shape[0], img.shape[1], 1))
@@ -105,7 +111,10 @@ class ImageBaseFeature(BaseFeature):
                     dtype=np.uint8
                 )
                 for i in range(len(dataset_df)):
-                    filename = dataset_df[feature['name']][i]
+                    filename = os.path.join(
+                        csv_path,
+                        dataset_df[feature['name']][i]
+                    )
                     img = imread(filename)
                     if img.ndim == 2:
                         img = img.reshape((img.shape[0], img.shape[1], 1))

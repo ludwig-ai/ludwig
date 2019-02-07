@@ -234,14 +234,16 @@ def test_experiment_image_inputs(csv_filename):
         "[{type: text, name: random_text, vocab_size: 100,"
         " max_len: 20, encoder: stacked_cnn}, {type: numerical,"
         " name: random_number}, "
-        "{type: image, name: random_image, width: 25,"
+        "{type: image, name: random_image, width: 25, in_memory: ${in_memory},"
         " height: 25, num_channels: 3, encoder: ${encoder},"
         " resnet_size: 8, destination_folder: ${folder}}]")
 
     # Resnet encoder
     input_features = input_features_template.substitute(
         encoder='resnet',
-        folder=image_dest_folder)
+        folder=image_dest_folder,
+        in_memory='true',
+    )
     output_features = "[{type: category, name: intent, reduce_input: sum," \
                       " vocab_size: 2}," \
                       "{type: numerical, name: random_num_output}]"
@@ -252,7 +254,19 @@ def test_experiment_image_inputs(csv_filename):
     # Stacked CNN encoder
     input_features = input_features_template.substitute(
         encoder='stacked_cnn',
-        folder=image_dest_folder)
+        folder=image_dest_folder,
+        in_memory='true',
+    )
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, rel_path)
+
+    # Stacked CNN encoder
+    input_features = input_features_template.substitute(
+        encoder='stacked_cnn',
+        folder=image_dest_folder,
+        in_memory='false',
+    )
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, rel_path)
