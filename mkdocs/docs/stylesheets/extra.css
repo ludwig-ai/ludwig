@@ -41,7 +41,7 @@ body {
 }
 
 a, .md-typeset a, md-nav__link, md-nav__link:hover {
-    color: #ede4ec;
+    color: #ececec;
 }
 
 a footnote-ref::before {
@@ -70,6 +70,10 @@ a footnote-ref::before {
 
 .md-footer-copyright {
     color: #666;
+}
+
+.md-footer-nav__link:hover {
+    color: white;
 }
 
 .md-typeset blockquote {
@@ -115,7 +119,7 @@ button[data-md-color-primary="grey"] {
 
 [data-md-color-primary="grey"] .md-typeset a {
     font-weight: bold;
-    color: #ede4ec;
+    color: #ececec;
 }
 
 [data-md-color-primary="grey"] .md-header {
@@ -129,7 +133,7 @@ button[data-md-color-primary="grey"] {
 [data-md-color-primary="grey"] .md-nav__link:active,
 [data-md-color-primary="grey"] .md-nav__link--active {
     font-weight: bold;
-    color: #ede4ec;
+    color: #ececec;
 }
 
 [data-md-color-primary="grey"] .md-nav__item--nested > .md-nav__link {
@@ -157,35 +161,35 @@ html body .md-typeset .headerlink {
 .md-typeset h1[id]:hover .headerlink:hover,
 .md-typeset h1[id]:target .headerlink,
 .md-typeset h1[id] .headerlink:focus {
-    color: #ede4ec;
+    color: #ececec;
 }
 
 .md-typeset h2[id]:hover .headerlink:hover,
 .md-typeset h2[id]:target .headerlink,
 .md-typeset h2[id] .headerlink:focus {
-    color: #ede4ec;
+    color: #ececec;
 }
 
 .md-typeset h3[id]:hover .headerlink:hover,
 .md-typeset h3[id]:target .headerlink,
 .md-typeset h3[id] .headerlink:focus {
-    color: #ede4ec;
+    color: #ececec;
 }
 
 .md-typeset h4[id]:hover .headerlink:hover,
 .md-typeset h4[id]:target .headerlink,
 .md-typeset h4[id] .headerlink:focus {
-    color: #ede4ec;
+    color: #ececec;
 }
 
 .md-typeset h5[id]:hover .headerlink:hover,
 .md-typeset h5[id]:target .headerlink,
 .md-typeset h5[id] .headerlink:focus {
-    color: #ede4ec;
+    color: #ececec;
 }
 
 .md-typeset h6[id]:hover .headerlink:hover,
 .md-typeset h6[id]:target .headerlink,
 .md-typeset h6[id] .headerlink:focus {
-    color: #ede4ec;
+    color: #ececec;
 }
