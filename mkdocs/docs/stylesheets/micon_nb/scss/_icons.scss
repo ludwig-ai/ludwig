@@ -1,0 +1,5526 @@
+/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen
+readers do not read off random characters that represent icons */
+
+.#{$mi-css-prefix}-Accept:before, .#{$mi-css-prefix}-AcceptLegacy:before, .#{$mi-css-prefix}-CheckmarkListviewLegacy:before, .#{$mi-css-prefix}-CheckmarkMenuLegacy:before {
+  content: mi-content($mi-var-Accept);
+}
+
+.#{$mi-css-prefix}-Accident:before {
+  content: mi-content($mi-var-Accident);
+}
+
+.#{$mi-css-prefix}-AccidentSolid:before {
+  content: mi-content($mi-var-AccidentSolid);
+}
+
+.#{$mi-css-prefix}-Accounts:before, .#{$mi-css-prefix}-AccountsLegacy:before {
+  content: mi-content($mi-var-Accounts);
+}
+
+.#{$mi-css-prefix}-ActionCenter:before {
+  content: mi-content($mi-var-ActionCenter);
+}
+
+.#{$mi-css-prefix}-ActionCenterAsterisk:before {
+  content: mi-content($mi-var-ActionCenterAsterisk);
+}
+
+.#{$mi-css-prefix}-ActionCenterMirrored:before {
+  content: mi-content($mi-var-ActionCenterMirrored);
+}
+
+.#{$mi-css-prefix}-ActionCenterNotification:before {
+  content: mi-content($mi-var-ActionCenterNotification);
+}
+
+.#{$mi-css-prefix}-ActionCenterNotificationMirrored:before {
+  content: mi-content($mi-var-ActionCenterNotificationMirrored);
+}
+
+.#{$mi-css-prefix}-ActionCenterQuiet:before {
+  content: mi-content($mi-var-ActionCenterQuiet);
+}
+
+.#{$mi-css-prefix}-ActionCenterQuietNotification:before {
+  content: mi-content($mi-var-ActionCenterQuietNotification);
+}
+
+.#{$mi-css-prefix}-Add:before, .#{$mi-css-prefix}-AddLegacy:before {
+  content: mi-content($mi-var-Add);
+}
+
+.#{$mi-css-prefix}-AddFriend:before, .#{$mi-css-prefix}-AddFriendLegacy:before {
+  content: mi-content($mi-var-AddFriend);
+}
+
+.#{$mi-css-prefix}-AddRemoteDevice:before {
+  content: mi-content($mi-var-AddRemoteDevice);
+}
+
+.#{$mi-css-prefix}-AddSurfaceHub:before {
+  content: mi-content($mi-var-AddSurfaceHub);
+}
+
+.#{$mi-css-prefix}-AddTo:before {
+  content: mi-content($mi-var-AddTo);
+}
+
+.#{$mi-css-prefix}-AdjustHologram:before {
+  content: mi-content($mi-var-AdjustHologram);
+}
+
+.#{$mi-css-prefix}-Admin:before, .#{$mi-css-prefix}-AdminLegacy:before {
+  content: mi-content($mi-var-Admin);
+}
+
+.#{$mi-css-prefix}-Airplane:before {
+  content: mi-content($mi-var-Airplane);
+}
+
+.#{$mi-css-prefix}-AirplaneSolid:before {
+  content: mi-content($mi-var-AirplaneSolid);
+}
+
+.#{$mi-css-prefix}-AlignCenter:before, .#{$mi-css-prefix}-AlignCenterLegacy:before {
+  content: mi-content($mi-var-AlignCenter);
+}
+
+.#{$mi-css-prefix}-AlignLeft:before, .#{$mi-css-prefix}-AlignLeftLegacy:before {
+  content: mi-content($mi-var-AlignLeft);
+}
+
+.#{$mi-css-prefix}-AlignRight:before, .#{$mi-css-prefix}-AlignRightLegacy:before {
+  content: mi-content($mi-var-AlignRight);
+}
+
+.#{$mi-css-prefix}-AllApps:before, .#{$mi-css-prefix}-AllAppsLegacy:before {
+  content: mi-content($mi-var-AllApps);
+}
+
+.#{$mi-css-prefix}-AllAppsMirrored:before, .#{$mi-css-prefix}-AllAppsLegacyMirrored:before {
+  content: mi-content($mi-var-AllAppsMirrored);
+}
+
+.#{$mi-css-prefix}-Annotation:before {
+  content: mi-content($mi-var-Annotation);
+}
+
+.#{$mi-css-prefix}-AppIconDefault:before {
+  content: mi-content($mi-var-AppIconDefault);
+}
+
+.#{$mi-css-prefix}-Apps:before {
+  content: mi-content($mi-var-Apps);
+}
+
+.#{$mi-css-prefix}-AreaChart:before {
+  content: mi-content($mi-var-AreaChart);
+}
+
+.#{$mi-css-prefix}-ArrowDown8:before {
+  content: mi-content($mi-var-ArrowDown8);
+}
+
+.#{$mi-css-prefix}-ArrowLeft8:before {
+  content: mi-content($mi-var-ArrowLeft8);
+}
+
+.#{$mi-css-prefix}-ArrowRight8:before {
+  content: mi-content($mi-var-ArrowRight8);
+}
+
+.#{$mi-css-prefix}-ArrowUp8:before {
+  content: mi-content($mi-var-ArrowUp8);
+}
+
+.#{$mi-css-prefix}-AspectRatio:before {
+  content: mi-content($mi-var-AspectRatio);
+}
+
+.#{$mi-css-prefix}-Asterisk:before {
+  content: mi-content($mi-var-Asterisk);
+}
+
+.#{$mi-css-prefix}-AsteriskBadge12:before {
+  content: mi-content($mi-var-AsteriskBadge12);
+}
+
+.#{$mi-css-prefix}-Attach:before, .#{$mi-css-prefix}-AttachLegacy:before {
+  content: mi-content($mi-var-Attach);
+}
+
+.#{$mi-css-prefix}-AttachCamera:before, .#{$mi-css-prefix}-AttachCameraLegacy:before {
+  content: mi-content($mi-var-AttachCamera);
+}
+
+.#{$mi-css-prefix}-Audio:before, .#{$mi-css-prefix}-AudioLegacy:before {
+  content: mi-content($mi-var-Audio);
+}
+
+.#{$mi-css-prefix}-Back:before, .#{$mi-css-prefix}-ArrowHTMLLegacy:before, .#{$mi-css-prefix}-BackBttnArrow20Legacy:before, .#{$mi-css-prefix}-BackBttnArrow42Legacy:before, .#{$mi-css-prefix}-BackLegacy:before {
+  content: mi-content($mi-var-Back);
+}
+
+.#{$mi-css-prefix}-BackMirrored:before {
+  content: mi-content($mi-var-BackMirrored);
+}
+
+.#{$mi-css-prefix}-BackSpaceQWERTY:before, .#{$mi-css-prefix}-CalculatorBackspace:before, .#{$mi-css-prefix}-BackSpaceQWERTY:before {
+  content: mi-content($mi-var-BackSpaceQWERTY);
+}
+
+.#{$mi-css-prefix}-BackSpaceQWERTYLg:before {
+  content: mi-content($mi-var-BackSpaceQWERTYLg);
+}
+
+.#{$mi-css-prefix}-BackSpaceQWERTYMd:before {
+  content: mi-content($mi-var-BackSpaceQWERTYMd);
+}
+
+.#{$mi-css-prefix}-BackSpaceQWERTYSm:before {
+  content: mi-content($mi-var-BackSpaceQWERTYSm);
+}
+
+.#{$mi-css-prefix}-BackToWindow:before, .#{$mi-css-prefix}-BackToWindowLegacy:before {
+  content: mi-content($mi-var-BackToWindow);
+}
+
+.#{$mi-css-prefix}-BackgroundToggle:before {
+  content: mi-content($mi-var-BackgroundToggle);
+}
+
+.#{$mi-css-prefix}-Badge:before {
+  content: mi-content($mi-var-Badge);
+}
+
+.#{$mi-css-prefix}-BandBattery0:before {
+  content: mi-content($mi-var-BandBattery0);
+}
+
+.#{$mi-css-prefix}-BandBattery1:before {
+  content: mi-content($mi-var-BandBattery1);
+}
+
+.#{$mi-css-prefix}-BandBattery2:before {
+  content: mi-content($mi-var-BandBattery2);
+}
+
+.#{$mi-css-prefix}-BandBattery3:before {
+  content: mi-content($mi-var-BandBattery3);
+}
+
+.#{$mi-css-prefix}-BandBattery4:before {
+  content: mi-content($mi-var-BandBattery4);
+}
+
+.#{$mi-css-prefix}-BandBattery5:before {
+  content: mi-content($mi-var-BandBattery5);
+}
+
+.#{$mi-css-prefix}-BandBattery6:before {
+  content: mi-content($mi-var-BandBattery6);
+}
+
+.#{$mi-css-prefix}-Bank:before {
+  content: mi-content($mi-var-Bank);
+}
+
+.#{$mi-css-prefix}-BarcodeScanner:before {
+  content: mi-content($mi-var-BarcodeScanner);
+}
+
+.#{$mi-css-prefix}-Battery0:before {
+  content: mi-content($mi-var-Battery0);
+}
+
+.#{$mi-css-prefix}-Battery1:before {
+  content: mi-content($mi-var-Battery1);
+}
+
+.#{$mi-css-prefix}-Battery10:before {
+  content: mi-content($mi-var-Battery10);
+}
+
+.#{$mi-css-prefix}-Battery2:before {
+  content: mi-content($mi-var-Battery2);
+}
+
+.#{$mi-css-prefix}-Battery3:before {
+  content: mi-content($mi-var-Battery3);
+}
+
+.#{$mi-css-prefix}-Battery4:before {
+  content: mi-content($mi-var-Battery4);
+}
+
+.#{$mi-css-prefix}-Battery5:before {
+  content: mi-content($mi-var-Battery5);
+}
+
+.#{$mi-css-prefix}-Battery6:before {
+  content: mi-content($mi-var-Battery6);
+}
+
+.#{$mi-css-prefix}-Battery7:before {
+  content: mi-content($mi-var-Battery7);
+}
+
+.#{$mi-css-prefix}-Battery8:before {
+  content: mi-content($mi-var-Battery8);
+}
+
+.#{$mi-css-prefix}-Battery9:before {
+  content: mi-content($mi-var-Battery9);
+}
+
+.#{$mi-css-prefix}-BatteryCharging0:before {
+  content: mi-content($mi-var-BatteryCharging0);
+}
+
+.#{$mi-css-prefix}-BatteryCharging1:before {
+  content: mi-content($mi-var-BatteryCharging1);
+}
+
+.#{$mi-css-prefix}-BatteryCharging10:before {
+  content: mi-content($mi-var-BatteryCharging10);
+}
+
+.#{$mi-css-prefix}-BatteryCharging2:before {
+  content: mi-content($mi-var-BatteryCharging2);
+}
+
+.#{$mi-css-prefix}-BatteryCharging3:before {
+  content: mi-content($mi-var-BatteryCharging3);
+}
+
+.#{$mi-css-prefix}-BatteryCharging4:before {
+  content: mi-content($mi-var-BatteryCharging4);
+}
+
+.#{$mi-css-prefix}-BatteryCharging5:before {
+  content: mi-content($mi-var-BatteryCharging5);
+}
+
+.#{$mi-css-prefix}-BatteryCharging6:before {
+  content: mi-content($mi-var-BatteryCharging6);
+}
+
+.#{$mi-css-prefix}-BatteryCharging7:before {
+  content: mi-content($mi-var-BatteryCharging7);
+}
+
+.#{$mi-css-prefix}-BatteryCharging8:before {
+  content: mi-content($mi-var-BatteryCharging8);
+}
+
+.#{$mi-css-prefix}-BatteryCharging9:before {
+  content: mi-content($mi-var-BatteryCharging9);
+}
+
+.#{$mi-css-prefix}-BatterySaver0:before {
+  content: mi-content($mi-var-BatterySaver0);
+}
+
+.#{$mi-css-prefix}-BatterySaver1:before {
+  content: mi-content($mi-var-BatterySaver1);
+}
+
+.#{$mi-css-prefix}-BatterySaver10:before {
+  content: mi-content($mi-var-BatterySaver10);
+}
+
+.#{$mi-css-prefix}-BatterySaver2:before {
+  content: mi-content($mi-var-BatterySaver2);
+}
+
+.#{$mi-css-prefix}-BatterySaver3:before {
+  content: mi-content($mi-var-BatterySaver3);
+}
+
+.#{$mi-css-prefix}-BatterySaver4:before {
+  content: mi-content($mi-var-BatterySaver4);
+}
+
+.#{$mi-css-prefix}-BatterySaver5:before {
+  content: mi-content($mi-var-BatterySaver5);
+}
+
+.#{$mi-css-prefix}-BatterySaver6:before {
+  content: mi-content($mi-var-BatterySaver6);
+}
+
+.#{$mi-css-prefix}-BatterySaver7:before {
+  content: mi-content($mi-var-BatterySaver7);
+}
+
+.#{$mi-css-prefix}-BatterySaver8:before {
+  content: mi-content($mi-var-BatterySaver8);
+}
+
+.#{$mi-css-prefix}-BatterySaver9:before {
+  content: mi-content($mi-var-BatterySaver9);
+}
+
+.#{$mi-css-prefix}-BatteryUnknown:before {
+  content: mi-content($mi-var-BatteryUnknown);
+}
+
+.#{$mi-css-prefix}-Beta:before {
+  content: mi-content($mi-var-Beta);
+}
+
+.#{$mi-css-prefix}-BidiLtr:before {
+  content: mi-content($mi-var-BidiLtr);
+}
+
+.#{$mi-css-prefix}-BidiRtl:before {
+  content: mi-content($mi-var-BidiRtl);
+}
+
+.#{$mi-css-prefix}-BlockContact:before, .#{$mi-css-prefix}-BlockContactLegacy:before {
+  content: mi-content($mi-var-BlockContact);
+}
+
+.#{$mi-css-prefix}-Blocked:before, .#{$mi-css-prefix}-BlockedLegacy:before {
+  content: mi-content($mi-var-Blocked);
+}
+
+.#{$mi-css-prefix}-BlockedLegacy:before, .#{$mi-css-prefix}-Blocked:before, .#{$mi-css-prefix}-BlockedLegacy:before {
+  content: mi-content($mi-var-BlockedLegacy);
+}
+
+.#{$mi-css-prefix}-BlueLight:before {
+  content: mi-content($mi-var-BlueLight);
+}
+
+.#{$mi-css-prefix}-Bluetooth:before {
+  content: mi-content($mi-var-Bluetooth);
+}
+
+.#{$mi-css-prefix}-BodyCam:before {
+  content: mi-content($mi-var-BodyCam);
+}
+
+.#{$mi-css-prefix}-Bold:before, .#{$mi-css-prefix}-BoldLegacy:before {
+  content: mi-content($mi-var-Bold);
+}
+
+.#{$mi-css-prefix}-BoldF:before, .#{$mi-css-prefix}-BoldFLegacy:before {
+  content: mi-content($mi-var-BoldF);
+}
+
+.#{$mi-css-prefix}-BoldFLegacy:before, .#{$mi-css-prefix}-BoldF:before, .#{$mi-css-prefix}-BoldFLegacy:before {
+  content: mi-content($mi-var-BoldFLegacy);
+}
+
+.#{$mi-css-prefix}-BoldG:before, .#{$mi-css-prefix}-BoldGLegacy:before {
+  content: mi-content($mi-var-BoldG);
+}
+
+.#{$mi-css-prefix}-BoldGLegacy:before, .#{$mi-css-prefix}-BoldG:before, .#{$mi-css-prefix}-BoldGLegacy:before {
+  content: mi-content($mi-var-BoldGLegacy);
+}
+
+.#{$mi-css-prefix}-BoldKorean:before, .#{$mi-css-prefix}-BoldKoreanLegacy:before {
+  content: mi-content($mi-var-BoldKorean);
+}
+
+.#{$mi-css-prefix}-BoldKoreanLegacy:before, .#{$mi-css-prefix}-BoldKorean:before, .#{$mi-css-prefix}-BoldKoreanLegacy:before {
+  content: mi-content($mi-var-BoldKoreanLegacy);
+}
+
+.#{$mi-css-prefix}-BoldN:before, .#{$mi-css-prefix}-BoldNLegacy:before {
+  content: mi-content($mi-var-BoldN);
+}
+
+.#{$mi-css-prefix}-BoldNLegacy:before, .#{$mi-css-prefix}-BoldN:before, .#{$mi-css-prefix}-BoldNLegacy:before {
+  content: mi-content($mi-var-BoldNLegacy);
+}
+
+.#{$mi-css-prefix}-BoldRussion:before, .#{$mi-css-prefix}-BoldRussionLegacy:before {
+  content: mi-content($mi-var-BoldRussion);
+}
+
+.#{$mi-css-prefix}-BoldRussionLegacy:before, .#{$mi-css-prefix}-BoldRussion:before, .#{$mi-css-prefix}-BoldRussionLegacy:before {
+  content: mi-content($mi-var-BoldRussionLegacy);
+}
+
+.#{$mi-css-prefix}-Bookmarks:before, .#{$mi-css-prefix}-BookmarksLegacy:before {
+  content: mi-content($mi-var-Bookmarks);
+}
+
+.#{$mi-css-prefix}-BookmarksMirrored:before, .#{$mi-css-prefix}-BookmarksLegacyMirrored:before {
+  content: mi-content($mi-var-BookmarksMirrored);
+}
+
+.#{$mi-css-prefix}-Brightness:before {
+  content: mi-content($mi-var-Brightness);
+}
+
+.#{$mi-css-prefix}-Broom:before {
+  content: mi-content($mi-var-Broom);
+}
+
+.#{$mi-css-prefix}-BrowsePhotos:before, .#{$mi-css-prefix}-BrowsePhotosLegacy:before {
+  content: mi-content($mi-var-BrowsePhotos);
+}
+
+.#{$mi-css-prefix}-BrushSize:before {
+  content: mi-content($mi-var-BrushSize);
+}
+
+.#{$mi-css-prefix}-Bug:before {
+  content: mi-content($mi-var-Bug);
+}
+
+.#{$mi-css-prefix}-BuildingEnergy:before {
+  content: mi-content($mi-var-BuildingEnergy);
+}
+
+.#{$mi-css-prefix}-BulletedList:before, .#{$mi-css-prefix}-BulletedListLegacy:before, .#{$mi-css-prefix}-ListLegacy:before {
+  content: mi-content($mi-var-BulletedList);
+}
+
+.#{$mi-css-prefix}-BulletedListMirrored:before, .#{$mi-css-prefix}-BulletedListLegacyMirrored:before, .#{$mi-css-prefix}-ListLegacyMirrored:before {
+  content: mi-content($mi-var-BulletedListMirrored);
+}
+
+.#{$mi-css-prefix}-Bullseye:before {
+  content: mi-content($mi-var-Bullseye);
+}
+
+.#{$mi-css-prefix}-BumperLeft:before {
+  content: mi-content($mi-var-BumperLeft);
+}
+
+.#{$mi-css-prefix}-BumperRight:before {
+  content: mi-content($mi-var-BumperRight);
+}
+
+.#{$mi-css-prefix}-Bus:before {
+  content: mi-content($mi-var-Bus);
+}
+
+.#{$mi-css-prefix}-BusSolid:before {
+  content: mi-content($mi-var-BusSolid);
+}
+
+.#{$mi-css-prefix}-ButtonA:before {
+  content: mi-content($mi-var-ButtonA);
+}
+
+.#{$mi-css-prefix}-ButtonB:before {
+  content: mi-content($mi-var-ButtonB);
+}
+
+.#{$mi-css-prefix}-ButtonMenu:before {
+  content: mi-content($mi-var-ButtonMenu);
+}
+
+.#{$mi-css-prefix}-ButtonView2:before {
+  content: mi-content($mi-var-ButtonView2);
+}
+
+.#{$mi-css-prefix}-ButtonX:before {
+  content: mi-content($mi-var-ButtonX);
+}
+
+.#{$mi-css-prefix}-ButtonY:before {
+  content: mi-content($mi-var-ButtonY);
+}
+
+.#{$mi-css-prefix}-CC:before, .#{$mi-css-prefix}-CCLegacy:before {
+  content: mi-content($mi-var-CC);
+}
+
+.#{$mi-css-prefix}-CCEuro:before, .#{$mi-css-prefix}-CCEuroLegacy:before {
+  content: mi-content($mi-var-CCEuro);
+}
+
+.#{$mi-css-prefix}-CCEuroLegacy:before, .#{$mi-css-prefix}-CCEuro:before, .#{$mi-css-prefix}-CCEuroLegacy:before {
+  content: mi-content($mi-var-CCEuroLegacy);
+}
+
+.#{$mi-css-prefix}-CCJapan:before, .#{$mi-css-prefix}-CCJapanLegacy:before {
+  content: mi-content($mi-var-CCJapan);
+}
+
+.#{$mi-css-prefix}-CCJapanLegacy:before, .#{$mi-css-prefix}-CCJapan:before, .#{$mi-css-prefix}-CCJapanLegacy:before {
+  content: mi-content($mi-var-CCJapanLegacy);
+}
+
+.#{$mi-css-prefix}-Cafe:before {
+  content: mi-content($mi-var-Cafe);
+}
+
+.#{$mi-css-prefix}-Calculator:before, .#{$mi-css-prefix}-CalculatorLegacy:before {
+  content: mi-content($mi-var-Calculator);
+}
+
+.#{$mi-css-prefix}-CalculatorAddition:before {
+  content: mi-content($mi-var-CalculatorAddition);
+}
+
+.#{$mi-css-prefix}-CalculatorBackspace:before, .#{$mi-css-prefix}-BackSpaceQWERTY:before {
+  content: mi-content($mi-var-CalculatorBackspace);
+}
+
+.#{$mi-css-prefix}-CalculatorDivide:before {
+  content: mi-content($mi-var-CalculatorDivide);
+}
+
+.#{$mi-css-prefix}-CalculatorEqualTo:before {
+  content: mi-content($mi-var-CalculatorEqualTo);
+}
+
+.#{$mi-css-prefix}-CalculatorMultiply:before {
+  content: mi-content($mi-var-CalculatorMultiply);
+}
+
+.#{$mi-css-prefix}-CalculatorNegate:before {
+  content: mi-content($mi-var-CalculatorNegate);
+}
+
+.#{$mi-css-prefix}-CalculatorPercentage:before {
+  content: mi-content($mi-var-CalculatorPercentage);
+}
+
+.#{$mi-css-prefix}-CalculatorSquareroot:before {
+  content: mi-content($mi-var-CalculatorSquareroot);
+}
+
+.#{$mi-css-prefix}-CalculatorSubtract:before {
+  content: mi-content($mi-var-CalculatorSubtract);
+}
+
+.#{$mi-css-prefix}-Calendar:before, .#{$mi-css-prefix}-CalendarLegacy:before {
+  content: mi-content($mi-var-Calendar);
+}
+
+.#{$mi-css-prefix}-CalendarDay:before, .#{$mi-css-prefix}-CalendarDayLegacy:before {
+  content: mi-content($mi-var-CalendarDay);
+}
+
+.#{$mi-css-prefix}-CalendarMirrored:before, .#{$mi-css-prefix}-CalendarLegacyMirrored:before {
+  content: mi-content($mi-var-CalendarMirrored);
+}
+
+.#{$mi-css-prefix}-CalendarReply:before, .#{$mi-css-prefix}-CalendarReplyLegacy:before {
+  content: mi-content($mi-var-CalendarReply);
+}
+
+.#{$mi-css-prefix}-CalendarSolid:before {
+  content: mi-content($mi-var-CalendarSolid);
+}
+
+.#{$mi-css-prefix}-CalendarWeek:before, .#{$mi-css-prefix}-CalendarWeekLegacy:before {
+  content: mi-content($mi-var-CalendarWeek);
+}
+
+.#{$mi-css-prefix}-CallForwardInternational:before {
+  content: mi-content($mi-var-CallForwardInternational);
+}
+
+.#{$mi-css-prefix}-CallForwardInternationalMirrored:before {
+  content: mi-content($mi-var-CallForwardInternationalMirrored);
+}
+
+.#{$mi-css-prefix}-CallForwardRoaming:before {
+  content: mi-content($mi-var-CallForwardRoaming);
+}
+
+.#{$mi-css-prefix}-CallForwardRoamingMirrored:before {
+  content: mi-content($mi-var-CallForwardRoamingMirrored);
+}
+
+.#{$mi-css-prefix}-CallForwarding:before {
+  content: mi-content($mi-var-CallForwarding);
+}
+
+.#{$mi-css-prefix}-CallForwardingMirrored:before {
+  content: mi-content($mi-var-CallForwardingMirrored);
+}
+
+.#{$mi-css-prefix}-CalligraphyFill:before {
+  content: mi-content($mi-var-CalligraphyFill);
+}
+
+.#{$mi-css-prefix}-CalligraphyPen:before {
+  content: mi-content($mi-var-CalligraphyPen);
+}
+
+.#{$mi-css-prefix}-Calories:before {
+  content: mi-content($mi-var-Calories);
+}
+
+.#{$mi-css-prefix}-Camera:before, .#{$mi-css-prefix}-CameraLegacy:before {
+  content: mi-content($mi-var-Camera);
+}
+
+.#{$mi-css-prefix}-Cancel:before, .#{$mi-css-prefix}-CancelLegacy:before {
+  content: mi-content($mi-var-Cancel);
+}
+
+.#{$mi-css-prefix}-Caption:before, .#{$mi-css-prefix}-CaptionLegacy:before {
+  content: mi-content($mi-var-Caption);
+}
+
+.#{$mi-css-prefix}-Car:before, .#{$mi-css-prefix}-DrivingMode:before {
+  content: mi-content($mi-var-Car);
+}
+
+.#{$mi-css-prefix}-CaretBottomRightSolidCenter8:before {
+  content: mi-content($mi-var-CaretBottomRightSolidCenter8);
+}
+
+.#{$mi-css-prefix}-CaretDownSolid8:before {
+  content: mi-content($mi-var-CaretDownSolid8);
+}
+
+.#{$mi-css-prefix}-CaretLeftSolid8:before {
+  content: mi-content($mi-var-CaretLeftSolid8);
+}
+
+.#{$mi-css-prefix}-CaretRight8:before {
+  content: mi-content($mi-var-CaretRight8);
+}
+
+.#{$mi-css-prefix}-CaretRightSolid8:before {
+  content: mi-content($mi-var-CaretRightSolid8);
+}
+
+.#{$mi-css-prefix}-CaretUpSolid8:before {
+  content: mi-content($mi-var-CaretUpSolid8);
+}
+
+.#{$mi-css-prefix}-CashDrawer:before {
+  content: mi-content($mi-var-CashDrawer);
+}
+
+.#{$mi-css-prefix}-CellPhone:before, .#{$mi-css-prefix}-CellPhoneLegacy:before, .#{$mi-css-prefix}-MobileContactLegacy:before {
+  content: mi-content($mi-var-CellPhone);
+}
+
+.#{$mi-css-prefix}-Certificate:before {
+  content: mi-content($mi-var-Certificate);
+}
+
+.#{$mi-css-prefix}-CharacterAppearance:before {
+  content: mi-content($mi-var-CharacterAppearance);
+}
+
+.#{$mi-css-prefix}-Characters:before, .#{$mi-css-prefix}-CharactersLegacy:before {
+  content: mi-content($mi-var-Characters);
+}
+
+.#{$mi-css-prefix}-ChatBubbles:before {
+  content: mi-content($mi-var-ChatBubbles);
+}
+
+.#{$mi-css-prefix}-CheckList:before {
+  content: mi-content($mi-var-CheckList);
+}
+
+.#{$mi-css-prefix}-CheckMark:before, .#{$mi-css-prefix}-CheckMarkLegacy:before, .#{$mi-css-prefix}-CheckMarkZeroWidthLegacy:before {
+  content: mi-content($mi-var-CheckMark);
+}
+
+.#{$mi-css-prefix}-Checkbox:before, .#{$mi-css-prefix}-CheckboxLegacy:before {
+  content: mi-content($mi-var-Checkbox);
+}
+
+.#{$mi-css-prefix}-Checkbox14:before {
+  content: mi-content($mi-var-Checkbox14);
+}
+
+.#{$mi-css-prefix}-CheckboxComposite:before, .#{$mi-css-prefix}-CheckboxCompositeLegacy:before {
+  content: mi-content($mi-var-CheckboxComposite);
+}
+
+.#{$mi-css-prefix}-CheckboxComposite14:before {
+  content: mi-content($mi-var-CheckboxComposite14);
+}
+
+.#{$mi-css-prefix}-CheckboxCompositeReversed:before, .#{$mi-css-prefix}-CheckboxCompositeReversedLegacy:before {
+  content: mi-content($mi-var-CheckboxCompositeReversed);
+}
+
+.#{$mi-css-prefix}-CheckboxFill:before, .#{$mi-css-prefix}-CheckboxFillLegacy:before, .#{$mi-css-prefix}-CheckboxFillZeroWidthLegacy:before, .#{$mi-css-prefix}-PresenceChicklet:before, .#{$mi-css-prefix}-PresenceChickletLegacy:before, .#{$mi-css-prefix}-ResizeMouseLarge:before {
+  content: mi-content($mi-var-CheckboxFill);
+}
+
+.#{$mi-css-prefix}-CheckboxIndeterminate:before, .#{$mi-css-prefix}-CheckboxIndeterminateLegacy:before {
+  content: mi-content($mi-var-CheckboxIndeterminate);
+}
+
+.#{$mi-css-prefix}-CheckboxIndeterminateCombo:before {
+  content: mi-content($mi-var-CheckboxIndeterminateCombo);
+}
+
+.#{$mi-css-prefix}-CheckboxIndeterminateCombo14:before {
+  content: mi-content($mi-var-CheckboxIndeterminateCombo14);
+}
+
+.#{$mi-css-prefix}-ChecklistMirrored:before {
+  content: mi-content($mi-var-ChecklistMirrored);
+}
+
+.#{$mi-css-prefix}-ChevronDown:before, .#{$mi-css-prefix}-ChevronDown1Legacy:before, .#{$mi-css-prefix}-ChevronDown2Legacy:before, .#{$mi-css-prefix}-ChevronDown3Legacy:before, .#{$mi-css-prefix}-ChevronDown4Legacy:before, .#{$mi-css-prefix}-ChevronFlipDownLegacy:before, .#{$mi-css-prefix}-ScrollChevronDownBoldLegacy:before, .#{$mi-css-prefix}-ScrollChevronDownLegacy:before {
+  content: mi-content($mi-var-ChevronDown);
+}
+
+.#{$mi-css-prefix}-ChevronDownMed:before {
+  content: mi-content($mi-var-ChevronDownMed);
+}
+
+.#{$mi-css-prefix}-ChevronDownSmall:before, .#{$mi-css-prefix}-ChevronDownSmLegacy:before {
+  content: mi-content($mi-var-ChevronDownSmall);
+}
+
+.#{$mi-css-prefix}-ChevronLeft:before, .#{$mi-css-prefix}-ChevronFlipLeftLegacy:before, .#{$mi-css-prefix}-ChevronLeft1Legacy:before, .#{$mi-css-prefix}-ChevronLeft2Legacy:before, .#{$mi-css-prefix}-ChevronLeft3Legacy:before, .#{$mi-css-prefix}-ChevronLeft4Legacy:before, .#{$mi-css-prefix}-ScrollChevronLeftBoldLegacy:before, .#{$mi-css-prefix}-ScrollChevronLeftLegacy:before {
+  content: mi-content($mi-var-ChevronLeft);
+}
+
+.#{$mi-css-prefix}-ChevronLeftMed:before {
+  content: mi-content($mi-var-ChevronLeftMed);
+}
+
+.#{$mi-css-prefix}-ChevronLeftSmall:before, .#{$mi-css-prefix}-ChevronLeftSmLegacy:before {
+  content: mi-content($mi-var-ChevronLeftSmall);
+}
+
+.#{$mi-css-prefix}-ChevronRight:before, .#{$mi-css-prefix}-ChevronFlipRightLegacy:before, .#{$mi-css-prefix}-ChevronRight1Legacy:before, .#{$mi-css-prefix}-ChevronRight2Legacy:before, .#{$mi-css-prefix}-ChevronRight3Legacy:before, .#{$mi-css-prefix}-ChevronRight4Legacy:before, .#{$mi-css-prefix}-ScrollChevronRightBoldLegacy:before, .#{$mi-css-prefix}-ScrollChevronRightLegacy:before {
+  content: mi-content($mi-var-ChevronRight);
+}
+
+.#{$mi-css-prefix}-ChevronRightMed:before {
+  content: mi-content($mi-var-ChevronRightMed);
+}
+
+.#{$mi-css-prefix}-ChevronRightSmall:before, .#{$mi-css-prefix}-ChevronRightSmLegacy:before {
+  content: mi-content($mi-var-ChevronRightSmall);
+}
+
+.#{$mi-css-prefix}-ChevronUp:before, .#{$mi-css-prefix}-ChevronFlipUpLegacy:before, .#{$mi-css-prefix}-ChevronUp1Legacy:before, .#{$mi-css-prefix}-ChevronUp2Legacy:before, .#{$mi-css-prefix}-ChevronUp3Legacy:before, .#{$mi-css-prefix}-ChevronUp4Legacy:before, .#{$mi-css-prefix}-ScrollChevronUpBoldLegacy:before, .#{$mi-css-prefix}-ScrollChevronUpLegacy:before {
+  content: mi-content($mi-var-ChevronUp);
+}
+
+.#{$mi-css-prefix}-ChevronUpMed:before {
+  content: mi-content($mi-var-ChevronUpMed);
+}
+
+.#{$mi-css-prefix}-ChevronUpSmall:before {
+  content: mi-content($mi-var-ChevronUpSmall);
+}
+
+.#{$mi-css-prefix}-ChineseBoPoMoFo:before {
+  content: mi-content($mi-var-ChineseBoPoMoFo);
+}
+
+.#{$mi-css-prefix}-ChineseChangjie:before {
+  content: mi-content($mi-var-ChineseChangjie);
+}
+
+.#{$mi-css-prefix}-ChinesePinyin:before {
+  content: mi-content($mi-var-ChinesePinyin);
+}
+
+.#{$mi-css-prefix}-ChinesePunctuation:before {
+  content: mi-content($mi-var-ChinesePunctuation);
+}
+
+.#{$mi-css-prefix}-ChineseQuick:before {
+  content: mi-content($mi-var-ChineseQuick);
+}
+
+.#{$mi-css-prefix}-ChipCardCreditCardReader:before {
+  content: mi-content($mi-var-ChipCardCreditCardReader);
+}
+
+.#{$mi-css-prefix}-ChromeAnnotate:before {
+  content: mi-content($mi-var-ChromeAnnotate);
+}
+
+.#{$mi-css-prefix}-ChromeAnnotateContrast:before {
+  content: mi-content($mi-var-ChromeAnnotateContrast);
+}
+
+.#{$mi-css-prefix}-ChromeBack:before {
+  content: mi-content($mi-var-ChromeBack);
+}
+
+.#{$mi-css-prefix}-ChromeBackContrast:before {
+  content: mi-content($mi-var-ChromeBackContrast);
+}
+
+.#{$mi-css-prefix}-ChromeBackContrastMirrored:before {
+  content: mi-content($mi-var-ChromeBackContrastMirrored);
+}
+
+.#{$mi-css-prefix}-ChromeBackMirrored:before {
+  content: mi-content($mi-var-ChromeBackMirrored);
+}
+
+.#{$mi-css-prefix}-ChromeBackToWindow:before {
+  content: mi-content($mi-var-ChromeBackToWindow);
+}
+
+.#{$mi-css-prefix}-ChromeBackToWindowContrast:before {
+  content: mi-content($mi-var-ChromeBackToWindowContrast);
+}
+
+.#{$mi-css-prefix}-ChromeClose:before {
+  content: mi-content($mi-var-ChromeClose);
+}
+
+.#{$mi-css-prefix}-ChromeCloseContrast:before {
+  content: mi-content($mi-var-ChromeCloseContrast);
+}
+
+.#{$mi-css-prefix}-ChromeFullScreen:before {
+  content: mi-content($mi-var-ChromeFullScreen);
+}
+
+.#{$mi-css-prefix}-ChromeFullScreenContrast:before {
+  content: mi-content($mi-var-ChromeFullScreenContrast);
+}
+
+.#{$mi-css-prefix}-ChromeMaximize:before {
+  content: mi-content($mi-var-ChromeMaximize);
+}
+
+.#{$mi-css-prefix}-ChromeMaximizeContrast:before {
+  content: mi-content($mi-var-ChromeMaximizeContrast);
+}
+
+.#{$mi-css-prefix}-ChromeMinimize:before {
+  content: mi-content($mi-var-ChromeMinimize);
+}
+
+.#{$mi-css-prefix}-ChromeMinimizeContrast:before {
+  content: mi-content($mi-var-ChromeMinimizeContrast);
+}
+
+.#{$mi-css-prefix}-ChromeRestore:before {
+  content: mi-content($mi-var-ChromeRestore);
+}
+
+.#{$mi-css-prefix}-ChromeRestoreContrast:before {
+  content: mi-content($mi-var-ChromeRestoreContrast);
+}
+
+.#{$mi-css-prefix}-ChromeSwitch:before {
+  content: mi-content($mi-var-ChromeSwitch);
+}
+
+.#{$mi-css-prefix}-ChromeSwitchContast:before {
+  content: mi-content($mi-var-ChromeSwitchContast);
+}
+
+.#{$mi-css-prefix}-CircleFill:before {
+  content: mi-content($mi-var-CircleFill);
+}
+
+.#{$mi-css-prefix}-CircleFillBadge12:before {
+  content: mi-content($mi-var-CircleFillBadge12);
+}
+
+.#{$mi-css-prefix}-CircleRing:before {
+  content: mi-content($mi-var-CircleRing);
+}
+
+.#{$mi-css-prefix}-CircleRingBadge12:before {
+  content: mi-content($mi-var-CircleRingBadge12);
+}
+
+.#{$mi-css-prefix}-CityNext:before {
+  content: mi-content($mi-var-CityNext);
+}
+
+.#{$mi-css-prefix}-CityNext2:before {
+  content: mi-content($mi-var-CityNext2);
+}
+
+.#{$mi-css-prefix}-Clear:before, .#{$mi-css-prefix}-ClearLegacy:before {
+  content: mi-content($mi-var-Clear);
+}
+
+.#{$mi-css-prefix}-ClearAllInk:before {
+  content: mi-content($mi-var-ClearAllInk);
+}
+
+.#{$mi-css-prefix}-ClearAllInkMirrored:before {
+  content: mi-content($mi-var-ClearAllInkMirrored);
+}
+
+.#{$mi-css-prefix}-ClearSelection:before, .#{$mi-css-prefix}-ClearSelectionLegacy:before {
+  content: mi-content($mi-var-ClearSelection);
+}
+
+.#{$mi-css-prefix}-ClearSelectionMirrored:before, .#{$mi-css-prefix}-ClearSelectionLegacyMirrored:before {
+  content: mi-content($mi-var-ClearSelectionMirrored);
+}
+
+.#{$mi-css-prefix}-Click:before {
+  content: mi-content($mi-var-Click);
+}
+
+.#{$mi-css-prefix}-ClipboardList:before {
+  content: mi-content($mi-var-ClipboardList);
+}
+
+.#{$mi-css-prefix}-ClipboardListMirrored:before {
+  content: mi-content($mi-var-ClipboardListMirrored);
+}
+
+.#{$mi-css-prefix}-ClippingTool:before {
+  content: mi-content($mi-var-ClippingTool);
+}
+
+.#{$mi-css-prefix}-Clock:before, .#{$mi-css-prefix}-ClockLegacy:before {
+  content: mi-content($mi-var-Clock);
+}
+
+.#{$mi-css-prefix}-ClockLegacy:before, .#{$mi-css-prefix}-Clock:before, .#{$mi-css-prefix}-ClockLegacy:before {
+  content: mi-content($mi-var-ClockLegacy);
+}
+
+.#{$mi-css-prefix}-ClosePane:before, .#{$mi-css-prefix}-ClosePaneLegacy:before {
+  content: mi-content($mi-var-ClosePane);
+}
+
+.#{$mi-css-prefix}-ClosePaneMirrored:before, .#{$mi-css-prefix}-ClosePaneLegacyMirrored:before {
+  content: mi-content($mi-var-ClosePaneMirrored);
+}
+
+.#{$mi-css-prefix}-Cloud:before {
+  content: mi-content($mi-var-Cloud);
+}
+
+.#{$mi-css-prefix}-CloudPrinter:before {
+  content: mi-content($mi-var-CloudPrinter);
+}
+
+.#{$mi-css-prefix}-CloudSeach:before {
+  content: mi-content($mi-var-CloudSeach);
+}
+
+.#{$mi-css-prefix}-Code:before {
+  content: mi-content($mi-var-Code);
+}
+
+.#{$mi-css-prefix}-CollapseContent:before {
+  content: mi-content($mi-var-CollapseContent);
+}
+
+.#{$mi-css-prefix}-CollapseContentSingle:before {
+  content: mi-content($mi-var-CollapseContentSingle);
+}
+
+.#{$mi-css-prefix}-CollateLandscape:before {
+  content: mi-content($mi-var-CollateLandscape);
+}
+
+.#{$mi-css-prefix}-CollateLandscapeSeparated:before {
+  content: mi-content($mi-var-CollateLandscapeSeparated);
+}
+
+.#{$mi-css-prefix}-CollatePortrait:before {
+  content: mi-content($mi-var-CollatePortrait);
+}
+
+.#{$mi-css-prefix}-CollatePortraitSeparated:before {
+  content: mi-content($mi-var-CollatePortraitSeparated);
+}
+
+.#{$mi-css-prefix}-Color:before, .#{$mi-css-prefix}-ColorLegacy:before {
+  content: mi-content($mi-var-Color);
+}
+
+.#{$mi-css-prefix}-ColorOff:before {
+  content: mi-content($mi-var-ColorOff);
+}
+
+.#{$mi-css-prefix}-CommaKey:before {
+  content: mi-content($mi-var-CommaKey);
+}
+
+.#{$mi-css-prefix}-CommandPrompt:before {
+  content: mi-content($mi-var-CommandPrompt);
+}
+
+.#{$mi-css-prefix}-Comment:before, .#{$mi-css-prefix}-CommentLegacy:before {
+  content: mi-content($mi-var-Comment);
+}
+
+.#{$mi-css-prefix}-Communications:before {
+  content: mi-content($mi-var-Communications);
+}
+
+.#{$mi-css-prefix}-CompanionApp:before {
+  content: mi-content($mi-var-CompanionApp);
+}
+
+.#{$mi-css-prefix}-CompanionDeviceFramework:before {
+  content: mi-content($mi-var-CompanionDeviceFramework);
+}
+
+.#{$mi-css-prefix}-Completed:before {
+  content: mi-content($mi-var-Completed);
+}
+
+.#{$mi-css-prefix}-CompletedSolid:before {
+  content: mi-content($mi-var-CompletedSolid);
+}
+
+.#{$mi-css-prefix}-Component:before {
+  content: mi-content($mi-var-Component);
+}
+
+.#{$mi-css-prefix}-Connect:before {
+  content: mi-content($mi-var-Connect);
+}
+
+.#{$mi-css-prefix}-ConnectApp:before, .#{$mi-css-prefix}-MiracastLogoLarge:before {
+  content: mi-content($mi-var-ConnectApp);
+}
+
+.#{$mi-css-prefix}-Connected:before {
+  content: mi-content($mi-var-Connected);
+}
+
+.#{$mi-css-prefix}-Construction:before {
+  content: mi-content($mi-var-Construction);
+}
+
+.#{$mi-css-prefix}-ConstructionCone:before {
+  content: mi-content($mi-var-ConstructionCone);
+}
+
+.#{$mi-css-prefix}-ConstructionSolid:before {
+  content: mi-content($mi-var-ConstructionSolid);
+}
+
+.#{$mi-css-prefix}-Contact:before, .#{$mi-css-prefix}-Contact3Legacy:before, .#{$mi-css-prefix}-ContactLegacy:before {
+  content: mi-content($mi-var-Contact);
+}
+
+.#{$mi-css-prefix}-Contact2:before, .#{$mi-css-prefix}-Contact2Legacy:before {
+  content: mi-content($mi-var-Contact2);
+}
+
+.#{$mi-css-prefix}-ContactInfo:before, .#{$mi-css-prefix}-ContactInfoLegacy:before {
+  content: mi-content($mi-var-ContactInfo);
+}
+
+.#{$mi-css-prefix}-ContactInfoMirrored:before {
+  content: mi-content($mi-var-ContactInfoMirrored);
+}
+
+.#{$mi-css-prefix}-ContactPresence:before, .#{$mi-css-prefix}-ContactPresenceLegacy:before {
+  content: mi-content($mi-var-ContactPresence);
+}
+
+.#{$mi-css-prefix}-ContactSolid:before {
+  content: mi-content($mi-var-ContactSolid);
+}
+
+.#{$mi-css-prefix}-Copy:before, .#{$mi-css-prefix}-CopyLegacy:before {
+  content: mi-content($mi-var-Copy);
+}
+
+.#{$mi-css-prefix}-CopyTo:before {
+  content: mi-content($mi-var-CopyTo);
+}
+
+.#{$mi-css-prefix}-Courthouse:before {
+  content: mi-content($mi-var-Courthouse);
+}
+
+.#{$mi-css-prefix}-Crop:before, .#{$mi-css-prefix}-CropLegacy:before {
+  content: mi-content($mi-var-Crop);
+}
+
+.#{$mi-css-prefix}-CtrlSpatialLeft:before {
+  content: mi-content($mi-var-CtrlSpatialLeft);
+}
+
+.#{$mi-css-prefix}-CtrlSpatialRight:before {
+  content: mi-content($mi-var-CtrlSpatialRight);
+}
+
+.#{$mi-css-prefix}-Cut:before, .#{$mi-css-prefix}-CutLegacy:before {
+  content: mi-content($mi-var-Cut);
+}
+
+.#{$mi-css-prefix}-DMC:before {
+  content: mi-content($mi-var-DMC);
+}
+
+.#{$mi-css-prefix}-DashKey:before {
+  content: mi-content($mi-var-DashKey);
+}
+
+.#{$mi-css-prefix}-DataSense:before {
+  content: mi-content($mi-var-DataSense);
+}
+
+.#{$mi-css-prefix}-DataSenseBar:before {
+  content: mi-content($mi-var-DataSenseBar);
+}
+
+.#{$mi-css-prefix}-DateTime:before {
+  content: mi-content($mi-var-DateTime);
+}
+
+.#{$mi-css-prefix}-DateTimeMirrored:before {
+  content: mi-content($mi-var-DateTimeMirrored);
+}
+
+.#{$mi-css-prefix}-DecreaseIndent:before, .#{$mi-css-prefix}-DecreaseIndentLegacy:before {
+  content: mi-content($mi-var-DecreaseIndent);
+}
+
+.#{$mi-css-prefix}-DecreaseIndentLegacy:before, .#{$mi-css-prefix}-DecreaseIndent:before, .#{$mi-css-prefix}-DecreaseIndentLegacy:before {
+  content: mi-content($mi-var-DecreaseIndentLegacy);
+}
+
+.#{$mi-css-prefix}-DecreaseIndentLegacyMirrored:before, .#{$mi-css-prefix}-DecreaseIndentMirrored:before, .#{$mi-css-prefix}-DecreaseIndentLegacyMirrored:before {
+  content: mi-content($mi-var-DecreaseIndentLegacyMirrored);
+}
+
+.#{$mi-css-prefix}-DecreaseIndentMirrored:before, .#{$mi-css-prefix}-DecreaseIndentLegacyMirrored:before {
+  content: mi-content($mi-var-DecreaseIndentMirrored);
+}
+
+.#{$mi-css-prefix}-DefaultAPN:before {
+  content: mi-content($mi-var-DefaultAPN);
+}
+
+.#{$mi-css-prefix}-DefenderApp:before {
+  content: mi-content($mi-var-DefenderApp);
+}
+
+.#{$mi-css-prefix}-DefenderBadge12:before {
+  content: mi-content($mi-var-DefenderBadge12);
+}
+
+.#{$mi-css-prefix}-Delete:before, .#{$mi-css-prefix}-DeleteLegacy:before {
+  content: mi-content($mi-var-Delete);
+}
+
+.#{$mi-css-prefix}-Design:before {
+  content: mi-content($mi-var-Design);
+}
+
+.#{$mi-css-prefix}-DetachablePC:before {
+  content: mi-content($mi-var-DetachablePC);
+}
+
+.#{$mi-css-prefix}-DevUpdate:before {
+  content: mi-content($mi-var-DevUpdate);
+}
+
+.#{$mi-css-prefix}-DeveloperTools:before {
+  content: mi-content($mi-var-DeveloperTools);
+}
+
+.#{$mi-css-prefix}-DeviceDiscovery:before {
+  content: mi-content($mi-var-DeviceDiscovery);
+}
+
+.#{$mi-css-prefix}-DeviceLaptopNoPic:before {
+  content: mi-content($mi-var-DeviceLaptopNoPic);
+}
+
+.#{$mi-css-prefix}-DeviceLaptopPic:before {
+  content: mi-content($mi-var-DeviceLaptopPic);
+}
+
+.#{$mi-css-prefix}-DeviceMonitorLeftPic:before {
+  content: mi-content($mi-var-DeviceMonitorLeftPic);
+}
+
+.#{$mi-css-prefix}-DeviceMonitorNoPic:before {
+  content: mi-content($mi-var-DeviceMonitorNoPic);
+}
+
+.#{$mi-css-prefix}-DeviceMonitorRightPic:before {
+  content: mi-content($mi-var-DeviceMonitorRightPic);
+}
+
+.#{$mi-css-prefix}-Devices:before {
+  content: mi-content($mi-var-Devices);
+}
+
+.#{$mi-css-prefix}-Devices2:before, .#{$mi-css-prefix}-DevicesLegacy:before {
+  content: mi-content($mi-var-Devices2);
+}
+
+.#{$mi-css-prefix}-Devices3:before {
+  content: mi-content($mi-var-Devices3);
+}
+
+.#{$mi-css-prefix}-Devices4:before {
+  content: mi-content($mi-var-Devices4);
+}
+
+.#{$mi-css-prefix}-DevicesLegacy:before, .#{$mi-css-prefix}-Devices2:before, .#{$mi-css-prefix}-DevicesLegacy:before {
+  content: mi-content($mi-var-DevicesLegacy);
+}
+
+.#{$mi-css-prefix}-Diagnostic:before {
+  content: mi-content($mi-var-Diagnostic);
+}
+
+.#{$mi-css-prefix}-Dial1:before {
+  content: mi-content($mi-var-Dial1);
+}
+
+.#{$mi-css-prefix}-Dial10:before {
+  content: mi-content($mi-var-Dial10);
+}
+
+.#{$mi-css-prefix}-Dial11:before {
+  content: mi-content($mi-var-Dial11);
+}
+
+.#{$mi-css-prefix}-Dial12:before {
+  content: mi-content($mi-var-Dial12);
+}
+
+.#{$mi-css-prefix}-Dial13:before {
+  content: mi-content($mi-var-Dial13);
+}
+
+.#{$mi-css-prefix}-Dial14:before {
+  content: mi-content($mi-var-Dial14);
+}
+
+.#{$mi-css-prefix}-Dial15:before {
+  content: mi-content($mi-var-Dial15);
+}
+
+.#{$mi-css-prefix}-Dial16:before {
+  content: mi-content($mi-var-Dial16);
+}
+
+.#{$mi-css-prefix}-Dial2:before {
+  content: mi-content($mi-var-Dial2);
+}
+
+.#{$mi-css-prefix}-Dial3:before {
+  content: mi-content($mi-var-Dial3);
+}
+
+.#{$mi-css-prefix}-Dial4:before {
+  content: mi-content($mi-var-Dial4);
+}
+
+.#{$mi-css-prefix}-Dial5:before {
+  content: mi-content($mi-var-Dial5);
+}
+
+.#{$mi-css-prefix}-Dial6:before {
+  content: mi-content($mi-var-Dial6);
+}
+
+.#{$mi-css-prefix}-Dial7:before {
+  content: mi-content($mi-var-Dial7);
+}
+
+.#{$mi-css-prefix}-Dial8:before {
+  content: mi-content($mi-var-Dial8);
+}
+
+.#{$mi-css-prefix}-Dial9:before {
+  content: mi-content($mi-var-Dial9);
+}
+
+.#{$mi-css-prefix}-DialShape1:before {
+  content: mi-content($mi-var-DialShape1);
+}
+
+.#{$mi-css-prefix}-DialShape2:before {
+  content: mi-content($mi-var-DialShape2);
+}
+
+.#{$mi-css-prefix}-DialShape3:before {
+  content: mi-content($mi-var-DialShape3);
+}
+
+.#{$mi-css-prefix}-DialShape4:before {
+  content: mi-content($mi-var-DialShape4);
+}
+
+.#{$mi-css-prefix}-DialUp:before {
+  content: mi-content($mi-var-DialUp);
+}
+
+.#{$mi-css-prefix}-Dialpad:before {
+  content: mi-content($mi-var-Dialpad);
+}
+
+.#{$mi-css-prefix}-Dictionary:before {
+  content: mi-content($mi-var-Dictionary);
+}
+
+.#{$mi-css-prefix}-DictionaryAdd:before {
+  content: mi-content($mi-var-DictionaryAdd);
+}
+
+.#{$mi-css-prefix}-DictionaryCloud:before {
+  content: mi-content($mi-var-DictionaryCloud);
+}
+
+.#{$mi-css-prefix}-DirectAccess:before {
+  content: mi-content($mi-var-DirectAccess);
+}
+
+.#{$mi-css-prefix}-Directions:before, .#{$mi-css-prefix}-DirectionsLegacy:before {
+  content: mi-content($mi-var-Directions);
+}
+
+.#{$mi-css-prefix}-DisableUpdates:before, .#{$mi-css-prefix}-DisableUpdatesLegacy:before {
+  content: mi-content($mi-var-DisableUpdates);
+}
+
+.#{$mi-css-prefix}-DisconnectDisplay:before {
+  content: mi-content($mi-var-DisconnectDisplay);
+}
+
+.#{$mi-css-prefix}-DisconnectDrive:before, .#{$mi-css-prefix}-DisconnectDriveLegacy:before {
+  content: mi-content($mi-var-DisconnectDrive);
+}
+
+.#{$mi-css-prefix}-Dislike:before, .#{$mi-css-prefix}-DislikeLegacy:before {
+  content: mi-content($mi-var-Dislike);
+}
+
+.#{$mi-css-prefix}-Dock:before {
+  content: mi-content($mi-var-Dock);
+}
+
+.#{$mi-css-prefix}-DockBottom:before, .#{$mi-css-prefix}-DockBottomLegacy:before {
+  content: mi-content($mi-var-DockBottom);
+}
+
+.#{$mi-css-prefix}-DockLeft:before, .#{$mi-css-prefix}-DockLeftLegacy:before {
+  content: mi-content($mi-var-DockLeft);
+}
+
+.#{$mi-css-prefix}-DockLeftMirrored:before, .#{$mi-css-prefix}-DockLeftLegacyMirrored:before {
+  content: mi-content($mi-var-DockLeftMirrored);
+}
+
+.#{$mi-css-prefix}-DockRight:before, .#{$mi-css-prefix}-DockRightLegacy:before {
+  content: mi-content($mi-var-DockRight);
+}
+
+.#{$mi-css-prefix}-DockRightMirrored:before, .#{$mi-css-prefix}-DockRightLegacyMirrored:before {
+  content: mi-content($mi-var-DockRightMirrored);
+}
+
+.#{$mi-css-prefix}-Document:before, .#{$mi-css-prefix}-DocumentLegacy:before {
+  content: mi-content($mi-var-Document);
+}
+
+.#{$mi-css-prefix}-DoublePinyin:before {
+  content: mi-content($mi-var-DoublePinyin);
+}
+
+.#{$mi-css-prefix}-Down:before, .#{$mi-css-prefix}-DownLegacy:before {
+  content: mi-content($mi-var-Down);
+}
+
+.#{$mi-css-prefix}-DownShiftKey:before {
+  content: mi-content($mi-var-DownShiftKey);
+}
+
+.#{$mi-css-prefix}-Download:before, .#{$mi-css-prefix}-DownloadLegacy:before {
+  content: mi-content($mi-var-Download);
+}
+
+.#{$mi-css-prefix}-DownloadMap:before {
+  content: mi-content($mi-var-DownloadMap);
+}
+
+.#{$mi-css-prefix}-Dpad:before {
+  content: mi-content($mi-var-Dpad);
+}
+
+.#{$mi-css-prefix}-Draw:before {
+  content: mi-content($mi-var-Draw);
+}
+
+.#{$mi-css-prefix}-DrawSolid:before {
+  content: mi-content($mi-var-DrawSolid);
+}
+
+.#{$mi-css-prefix}-Drop:before {
+  content: mi-content($mi-var-Drop);
+}
+
+.#{$mi-css-prefix}-DullSound:before {
+  content: mi-content($mi-var-DullSound);
+}
+
+.#{$mi-css-prefix}-DullSoundKey:before {
+  content: mi-content($mi-var-DullSoundKey);
+}
+
+.#{$mi-css-prefix}-DuplexLandscapeOneSided:before {
+  content: mi-content($mi-var-DuplexLandscapeOneSided);
+}
+
+.#{$mi-css-prefix}-DuplexLandscapeOneSidedMirrored:before {
+  content: mi-content($mi-var-DuplexLandscapeOneSidedMirrored);
+}
+
+.#{$mi-css-prefix}-DuplexLandscapeTwoSidedLongEdge:before {
+  content: mi-content($mi-var-DuplexLandscapeTwoSidedLongEdge);
+}
+
+.#{$mi-css-prefix}-DuplexLandscapeTwoSidedLongEdgeMirrored:before {
+  content: mi-content($mi-var-DuplexLandscapeTwoSidedLongEdgeMirrored);
+}
+
+.#{$mi-css-prefix}-DuplexLandscapeTwoSidedShortEdge:before {
+  content: mi-content($mi-var-DuplexLandscapeTwoSidedShortEdge);
+}
+
+.#{$mi-css-prefix}-DuplexLandscapeTwoSidedShortEdgeMirrored:before {
+  content: mi-content($mi-var-DuplexLandscapeTwoSidedShortEdgeMirrored);
+}
+
+.#{$mi-css-prefix}-DuplexPortraitOneSided:before {
+  content: mi-content($mi-var-DuplexPortraitOneSided);
+}
+
+.#{$mi-css-prefix}-DuplexPortraitOneSidedMirrored:before {
+  content: mi-content($mi-var-DuplexPortraitOneSidedMirrored);
+}
+
+.#{$mi-css-prefix}-DuplexPortraitTwoSidedLongEdge:before {
+  content: mi-content($mi-var-DuplexPortraitTwoSidedLongEdge);
+}
+
+.#{$mi-css-prefix}-DuplexPortraitTwoSidedLongEdgeMirrored:before {
+  content: mi-content($mi-var-DuplexPortraitTwoSidedLongEdgeMirrored);
+}
+
+.#{$mi-css-prefix}-DuplexPortraitTwoSidedShortEdge:before {
+  content: mi-content($mi-var-DuplexPortraitTwoSidedShortEdge);
+}
+
+.#{$mi-css-prefix}-DuplexPortraitTwoSidedShortEdgeMirrored:before {
+  content: mi-content($mi-var-DuplexPortraitTwoSidedShortEdgeMirrored);
+}
+
+.#{$mi-css-prefix}-DynamicLock:before {
+  content: mi-content($mi-var-DynamicLock);
+}
+
+.#{$mi-css-prefix}-EMI:before {
+  content: mi-content($mi-var-EMI);
+}
+
+.#{$mi-css-prefix}-Ear:before {
+  content: mi-content($mi-var-Ear);
+}
+
+.#{$mi-css-prefix}-Earbud:before {
+  content: mi-content($mi-var-Earbud);
+}
+
+.#{$mi-css-prefix}-EaseOfAccess:before, .#{$mi-css-prefix}-EaseOfAccessLegacy:before {
+  content: mi-content($mi-var-EaseOfAccess);
+}
+
+.#{$mi-css-prefix}-Edit:before, .#{$mi-css-prefix}-EditLegacy:before {
+  content: mi-content($mi-var-Edit);
+}
+
+.#{$mi-css-prefix}-EditMirrored:before, .#{$mi-css-prefix}-EditLegacyMirrored:before {
+  content: mi-content($mi-var-EditMirrored);
+}
+
+.#{$mi-css-prefix}-Education:before {
+  content: mi-content($mi-var-Education);
+}
+
+.#{$mi-css-prefix}-Emoji:before, .#{$mi-css-prefix}-EmojiLegacy:before {
+  content: mi-content($mi-var-Emoji);
+}
+
+.#{$mi-css-prefix}-Emoji2:before, .#{$mi-css-prefix}-Emoji2Legacy:before {
+  content: mi-content($mi-var-Emoji2);
+}
+
+.#{$mi-css-prefix}-EmojiSwatch:before {
+  content: mi-content($mi-var-EmojiSwatch);
+}
+
+.#{$mi-css-prefix}-EmojiTabCelebrationObjects:before {
+  content: mi-content($mi-var-EmojiTabCelebrationObjects);
+}
+
+.#{$mi-css-prefix}-EmojiTabFavorites:before {
+  content: mi-content($mi-var-EmojiTabFavorites);
+}
+
+.#{$mi-css-prefix}-EmojiTabFoodPlants:before {
+  content: mi-content($mi-var-EmojiTabFoodPlants);
+}
+
+.#{$mi-css-prefix}-EmojiTabPeople:before {
+  content: mi-content($mi-var-EmojiTabPeople);
+}
+
+.#{$mi-css-prefix}-EmojiTabSmilesAnimals:before {
+  content: mi-content($mi-var-EmojiTabSmilesAnimals);
+}
+
+.#{$mi-css-prefix}-EmojiTabSymbols:before {
+  content: mi-content($mi-var-EmojiTabSymbols);
+}
+
+.#{$mi-css-prefix}-EmojiTabTextSmiles:before {
+  content: mi-content($mi-var-EmojiTabTextSmiles);
+}
+
+.#{$mi-css-prefix}-EmojiTabTransitPlaces:before {
+  content: mi-content($mi-var-EmojiTabTransitPlaces);
+}
+
+.#{$mi-css-prefix}-EndPoint:before, .#{$mi-css-prefix}-Flag:before, .#{$mi-css-prefix}-EndPoint:before, .#{$mi-css-prefix}-FlagLegacy:before {
+  content: mi-content($mi-var-EndPoint);
+}
+
+.#{$mi-css-prefix}-EndPointSolid:before {
+  content: mi-content($mi-var-EndPointSolid);
+}
+
+.#{$mi-css-prefix}-EnglishPunctuation:before {
+  content: mi-content($mi-var-EnglishPunctuation);
+}
+
+.#{$mi-css-prefix}-Equalizer:before {
+  content: mi-content($mi-var-Equalizer);
+}
+
+.#{$mi-css-prefix}-EraseTool:before {
+  content: mi-content($mi-var-EraseTool);
+}
+
+.#{$mi-css-prefix}-EraseToolFill:before {
+  content: mi-content($mi-var-EraseToolFill);
+}
+
+.#{$mi-css-prefix}-EraseToolFill2:before {
+  content: mi-content($mi-var-EraseToolFill2);
+}
+
+.#{$mi-css-prefix}-Error:before {
+  content: mi-content($mi-var-Error);
+}
+
+.#{$mi-css-prefix}-ErrorBadge:before {
+  content: mi-content($mi-var-ErrorBadge);
+}
+
+.#{$mi-css-prefix}-ErrorBadge12:before {
+  content: mi-content($mi-var-ErrorBadge12);
+}
+
+.#{$mi-css-prefix}-Ethernet:before {
+  content: mi-content($mi-var-Ethernet);
+}
+
+.#{$mi-css-prefix}-EthernetError:before {
+  content: mi-content($mi-var-EthernetError);
+}
+
+.#{$mi-css-prefix}-EthernetWarning:before {
+  content: mi-content($mi-var-EthernetWarning);
+}
+
+.#{$mi-css-prefix}-ExpandTile:before, .#{$mi-css-prefix}-ExpandTileLegacy:before {
+  content: mi-content($mi-var-ExpandTile);
+}
+
+.#{$mi-css-prefix}-ExpandTileMirrored:before, .#{$mi-css-prefix}-ExpandTileLegacyMirrored:before {
+  content: mi-content($mi-var-ExpandTileMirrored);
+}
+
+.#{$mi-css-prefix}-ExploitProtectionSettings:before {
+  content: mi-content($mi-var-ExploitProtectionSettings);
+}
+
+.#{$mi-css-prefix}-ExploreContent:before {
+  content: mi-content($mi-var-ExploreContent);
+}
+
+.#{$mi-css-prefix}-ExploreContentSingle:before {
+  content: mi-content($mi-var-ExploreContentSingle);
+}
+
+.#{$mi-css-prefix}-Export:before, .#{$mi-css-prefix}-ImportLegacyMirrored:before, .#{$mi-css-prefix}-ImportMirrored:before {
+  content: mi-content($mi-var-Export);
+}
+
+.#{$mi-css-prefix}-EyeGaze:before {
+  content: mi-content($mi-var-EyeGaze);
+}
+
+.#{$mi-css-prefix}-Eyedropper:before {
+  content: mi-content($mi-var-Eyedropper);
+}
+
+.#{$mi-css-prefix}-Family:before {
+  content: mi-content($mi-var-Family);
+}
+
+.#{$mi-css-prefix}-FastForward:before {
+  content: mi-content($mi-var-FastForward);
+}
+
+.#{$mi-css-prefix}-Favicon:before {
+  content: mi-content($mi-var-Favicon);
+}
+
+.#{$mi-css-prefix}-FavoriteLegacy:before, .#{$mi-css-prefix}-FavoriteStarFill:before, .#{$mi-css-prefix}-Favorite2Legacy:before, .#{$mi-css-prefix}-FavoriteLegacy:before, .#{$mi-css-prefix}-RatingStarFillLegacy:before, .#{$mi-css-prefix}-RatingStarFillReducedPaddingHTMLLegacy:before, .#{$mi-css-prefix}-RatingStarFillSmallLegacy:before, .#{$mi-css-prefix}-RatingStarFillZeroWidthLegacy:before, .#{$mi-css-prefix}-SolidStarLegacy:before {
+  content: mi-content($mi-var-FavoriteLegacy);
+}
+
+.#{$mi-css-prefix}-FavoriteList:before {
+  content: mi-content($mi-var-FavoriteList);
+}
+
+.#{$mi-css-prefix}-FavoriteStar:before, .#{$mi-css-prefix}-FavoriteInlineLegacy:before, .#{$mi-css-prefix}-OutlineStarLegacy:before, .#{$mi-css-prefix}-RatingStarLegacy:before, .#{$mi-css-prefix}-Unfavorite2Legacy:before {
+  content: mi-content($mi-var-FavoriteStar);
+}
+
+.#{$mi-css-prefix}-FavoriteStarFill:before, .#{$mi-css-prefix}-Favorite2Legacy:before, .#{$mi-css-prefix}-FavoriteLegacy:before, .#{$mi-css-prefix}-RatingStarFillLegacy:before, .#{$mi-css-prefix}-RatingStarFillReducedPaddingHTMLLegacy:before, .#{$mi-css-prefix}-RatingStarFillSmallLegacy:before, .#{$mi-css-prefix}-RatingStarFillZeroWidthLegacy:before, .#{$mi-css-prefix}-SolidStarLegacy:before {
+  content: mi-content($mi-var-FavoriteStarFill);
+}
+
+.#{$mi-css-prefix}-Feedback:before {
+  content: mi-content($mi-var-Feedback);
+}
+
+.#{$mi-css-prefix}-FeedbackApp:before {
+  content: mi-content($mi-var-FeedbackApp);
+}
+
+.#{$mi-css-prefix}-Ferry:before {
+  content: mi-content($mi-var-Ferry);
+}
+
+.#{$mi-css-prefix}-FerrySolid:before {
+  content: mi-content($mi-var-FerrySolid);
+}
+
+.#{$mi-css-prefix}-FileExplorer:before {
+  content: mi-content($mi-var-FileExplorer);
+}
+
+.#{$mi-css-prefix}-FileExplorerApp:before {
+  content: mi-content($mi-var-FileExplorerApp);
+}
+
+.#{$mi-css-prefix}-Filter:before, .#{$mi-css-prefix}-FilterLegacy:before {
+  content: mi-content($mi-var-Filter);
+}
+
+.#{$mi-css-prefix}-FingerInking:before {
+  content: mi-content($mi-var-FingerInking);
+}
+
+.#{$mi-css-prefix}-Fingerprint:before {
+  content: mi-content($mi-var-Fingerprint);
+}
+
+.#{$mi-css-prefix}-FitPage:before {
+  content: mi-content($mi-var-FitPage);
+}
+
+.#{$mi-css-prefix}-Flag:before, .#{$mi-css-prefix}-EndPoint:before, .#{$mi-css-prefix}-FlagLegacy:before {
+  content: mi-content($mi-var-Flag);
+}
+
+.#{$mi-css-prefix}-Flashlight:before {
+  content: mi-content($mi-var-Flashlight);
+}
+
+.#{$mi-css-prefix}-FlickDown:before {
+  content: mi-content($mi-var-FlickDown);
+}
+
+.#{$mi-css-prefix}-FlickLeft:before {
+  content: mi-content($mi-var-FlickLeft);
+}
+
+.#{$mi-css-prefix}-FlickRight:before {
+  content: mi-content($mi-var-FlickRight);
+}
+
+.#{$mi-css-prefix}-FlickUp:before {
+  content: mi-content($mi-var-FlickUp);
+}
+
+.#{$mi-css-prefix}-Folder:before {
+  content: mi-content($mi-var-Folder);
+}
+
+.#{$mi-css-prefix}-FolderFill:before, .#{$mi-css-prefix}-FolderLegacy:before {
+  content: mi-content($mi-var-FolderFill);
+}
+
+.#{$mi-css-prefix}-FolderHorizontal:before {
+  content: mi-content($mi-var-FolderHorizontal);
+}
+
+.#{$mi-css-prefix}-FolderOpen:before {
+  content: mi-content($mi-var-FolderOpen);
+}
+
+.#{$mi-css-prefix}-Font:before, .#{$mi-css-prefix}-FontLegacy:before {
+  content: mi-content($mi-var-Font);
+}
+
+.#{$mi-css-prefix}-FontColor:before, .#{$mi-css-prefix}-FontColorLegacy:before {
+  content: mi-content($mi-var-FontColor);
+}
+
+.#{$mi-css-prefix}-FontColorKorean:before, .#{$mi-css-prefix}-FontColorKoreanLegacy:before {
+  content: mi-content($mi-var-FontColorKorean);
+}
+
+.#{$mi-css-prefix}-FontColorKoreanLegacy:before, .#{$mi-css-prefix}-FontColorKorean:before, .#{$mi-css-prefix}-FontColorKoreanLegacy:before {
+  content: mi-content($mi-var-FontColorKoreanLegacy);
+}
+
+.#{$mi-css-prefix}-FontDecrease:before, .#{$mi-css-prefix}-FontDecreaseLegacy:before {
+  content: mi-content($mi-var-FontDecrease);
+}
+
+.#{$mi-css-prefix}-FontIncrease:before, .#{$mi-css-prefix}-FontIncreaseLegacy:before {
+  content: mi-content($mi-var-FontIncrease);
+}
+
+.#{$mi-css-prefix}-FontSize:before, .#{$mi-css-prefix}-FontSizeLegacy:before {
+  content: mi-content($mi-var-FontSize);
+}
+
+.#{$mi-css-prefix}-FontStyleKorean:before, .#{$mi-css-prefix}-FontStyleKoreanLegacy:before {
+  content: mi-content($mi-var-FontStyleKorean);
+}
+
+.#{$mi-css-prefix}-FontStyleKoreanLegacy:before, .#{$mi-css-prefix}-FontStyleKorean:before, .#{$mi-css-prefix}-FontStyleKoreanLegacy:before {
+  content: mi-content($mi-var-FontStyleKoreanLegacy);
+}
+
+.#{$mi-css-prefix}-Forward:before, .#{$mi-css-prefix}-ArrowHTMLLegacyMirrored:before, .#{$mi-css-prefix}-BackBttnMirroredArrow20Legacy:before, .#{$mi-css-prefix}-BackBttnMirroredArrow42Legacy:before, .#{$mi-css-prefix}-ForwardLegacy:before {
+  content: mi-content($mi-var-Forward);
+}
+
+.#{$mi-css-prefix}-ForwardMirrored:before {
+  content: mi-content($mi-var-ForwardMirrored);
+}
+
+.#{$mi-css-prefix}-ForwardSm:before {
+  content: mi-content($mi-var-ForwardSm);
+}
+
+.#{$mi-css-prefix}-FourBars:before, .#{$mi-css-prefix}-FourBarsLegacy:before {
+  content: mi-content($mi-var-FourBars);
+}
+
+.#{$mi-css-prefix}-FreeFormClipping:before {
+  content: mi-content($mi-var-FreeFormClipping);
+}
+
+.#{$mi-css-prefix}-Frigid:before {
+  content: mi-content($mi-var-Frigid);
+}
+
+.#{$mi-css-prefix}-FullAlpha:before {
+  content: mi-content($mi-var-FullAlpha);
+}
+
+.#{$mi-css-prefix}-FullCircleMask:before {
+  content: mi-content($mi-var-FullCircleMask);
+}
+
+.#{$mi-css-prefix}-FullHiragana:before {
+  content: mi-content($mi-var-FullHiragana);
+}
+
+.#{$mi-css-prefix}-FullKatakana:before {
+  content: mi-content($mi-var-FullKatakana);
+}
+
+.#{$mi-css-prefix}-FullScreen:before, .#{$mi-css-prefix}-FullScreenLegacy:before {
+  content: mi-content($mi-var-FullScreen);
+}
+
+.#{$mi-css-prefix}-FuzzyReading:before {
+  content: mi-content($mi-var-FuzzyReading);
+}
+
+.#{$mi-css-prefix}-GIF:before {
+  content: mi-content($mi-var-GIF);
+}
+
+.#{$mi-css-prefix}-Game:before {
+  content: mi-content($mi-var-Game);
+}
+
+.#{$mi-css-prefix}-GameConsole:before {
+  content: mi-content($mi-var-GameConsole);
+}
+
+.#{$mi-css-prefix}-GiftboxOpen:before {
+  content: mi-content($mi-var-GiftboxOpen);
+}
+
+.#{$mi-css-prefix}-GlobalNavigationButton:before {
+  content: mi-content($mi-var-GlobalNavigationButton);
+}
+
+.#{$mi-css-prefix}-Globe:before, .#{$mi-css-prefix}-GlobeLegacy:before {
+  content: mi-content($mi-var-Globe);
+}
+
+.#{$mi-css-prefix}-Go:before, .#{$mi-css-prefix}-GoLegacy:before {
+  content: mi-content($mi-var-Go);
+}
+
+.#{$mi-css-prefix}-GoMirrored:before, .#{$mi-css-prefix}-GoLegacyMirrored:before {
+  content: mi-content($mi-var-GoMirrored);
+}
+
+.#{$mi-css-prefix}-GoToStart:before, .#{$mi-css-prefix}-GoToStartLegacy:before {
+  content: mi-content($mi-var-GoToStart);
+}
+
+.#{$mi-css-prefix}-GotoToday:before, .#{$mi-css-prefix}-GotoTodayLegacy:before {
+  content: mi-content($mi-var-GotoToday);
+}
+
+.#{$mi-css-prefix}-GridView:before {
+  content: mi-content($mi-var-GridView);
+}
+
+.#{$mi-css-prefix}-GripperBarHorizontal:before {
+  content: mi-content($mi-var-GripperBarHorizontal);
+}
+
+.#{$mi-css-prefix}-GripperBarVertical:before {
+  content: mi-content($mi-var-GripperBarVertical);
+}
+
+.#{$mi-css-prefix}-GripperResize:before {
+  content: mi-content($mi-var-GripperResize);
+}
+
+.#{$mi-css-prefix}-GripperResizeMirrored:before {
+  content: mi-content($mi-var-GripperResizeMirrored);
+}
+
+.#{$mi-css-prefix}-GripperTool:before {
+  content: mi-content($mi-var-GripperTool);
+}
+
+.#{$mi-css-prefix}-Groceries:before {
+  content: mi-content($mi-var-Groceries);
+}
+
+.#{$mi-css-prefix}-Group:before {
+  content: mi-content($mi-var-Group);
+}
+
+.#{$mi-css-prefix}-GroupList:before {
+  content: mi-content($mi-var-GroupList);
+}
+
+.#{$mi-css-prefix}-GuestUser:before {
+  content: mi-content($mi-var-GuestUser);
+}
+
+.#{$mi-css-prefix}-HMD:before {
+  content: mi-content($mi-var-HMD);
+}
+
+.#{$mi-css-prefix}-HWPInsert:before {
+  content: mi-content($mi-var-HWPInsert);
+}
+
+.#{$mi-css-prefix}-HWPJoin:before {
+  content: mi-content($mi-var-HWPJoin);
+}
+
+.#{$mi-css-prefix}-HWPNewLine:before {
+  content: mi-content($mi-var-HWPNewLine);
+}
+
+.#{$mi-css-prefix}-HWPOverwrite:before {
+  content: mi-content($mi-var-HWPOverwrite);
+}
+
+.#{$mi-css-prefix}-HWPScratchOut:before {
+  content: mi-content($mi-var-HWPScratchOut);
+}
+
+.#{$mi-css-prefix}-HWPSplit:before {
+  content: mi-content($mi-var-HWPSplit);
+}
+
+.#{$mi-css-prefix}-HWPStrikeThrough:before {
+  content: mi-content($mi-var-HWPStrikeThrough);
+}
+
+.#{$mi-css-prefix}-HalfAlpha:before {
+  content: mi-content($mi-var-HalfAlpha);
+}
+
+.#{$mi-css-prefix}-HalfDullSound:before {
+  content: mi-content($mi-var-HalfDullSound);
+}
+
+.#{$mi-css-prefix}-HalfKatakana:before {
+  content: mi-content($mi-var-HalfKatakana);
+}
+
+.#{$mi-css-prefix}-HalfStarLeft:before {
+  content: mi-content($mi-var-HalfStarLeft);
+}
+
+.#{$mi-css-prefix}-HalfStarRight:before {
+  content: mi-content($mi-var-HalfStarRight);
+}
+
+.#{$mi-css-prefix}-Handwriting:before {
+  content: mi-content($mi-var-Handwriting);
+}
+
+.#{$mi-css-prefix}-HangUp:before, .#{$mi-css-prefix}-HangUpLegacy:before {
+  content: mi-content($mi-var-HangUp);
+}
+
+.#{$mi-css-prefix}-HardDrive:before {
+  content: mi-content($mi-var-HardDrive);
+}
+
+.#{$mi-css-prefix}-HeadlessDevice:before {
+  content: mi-content($mi-var-HeadlessDevice);
+}
+
+.#{$mi-css-prefix}-Headphone:before {
+  content: mi-content($mi-var-Headphone);
+}
+
+.#{$mi-css-prefix}-Headphone0:before {
+  content: mi-content($mi-var-Headphone0);
+}
+
+.#{$mi-css-prefix}-Headphone1:before {
+  content: mi-content($mi-var-Headphone1);
+}
+
+.#{$mi-css-prefix}-Headphone2:before {
+  content: mi-content($mi-var-Headphone2);
+}
+
+.#{$mi-css-prefix}-Headphone3:before {
+  content: mi-content($mi-var-Headphone3);
+}
+
+.#{$mi-css-prefix}-Headset:before {
+  content: mi-content($mi-var-Headset);
+}
+
+.#{$mi-css-prefix}-Health:before {
+  content: mi-content($mi-var-Health);
+}
+
+.#{$mi-css-prefix}-Heart:before, .#{$mi-css-prefix}-HeartLegacy:before {
+  content: mi-content($mi-var-Heart);
+}
+
+.#{$mi-css-prefix}-HeartBroken:before {
+  content: mi-content($mi-var-HeartBroken);
+}
+
+.#{$mi-css-prefix}-HeartBrokenLegacy:before, .#{$mi-css-prefix}-HeartBrokenZeroWidthLegacy:before {
+  content: mi-content($mi-var-HeartBrokenLegacy);
+}
+
+.#{$mi-css-prefix}-HeartFill:before, .#{$mi-css-prefix}-HeartFillLegacy:before, .#{$mi-css-prefix}-HeartFillZeroWidthLegacy:before {
+  content: mi-content($mi-var-HeartFill);
+}
+
+.#{$mi-css-prefix}-Help:before, .#{$mi-css-prefix}-HelpLegacy:before {
+  content: mi-content($mi-var-Help);
+}
+
+.#{$mi-css-prefix}-HelpMirrored:before, .#{$mi-css-prefix}-HelpLegacyMirrored:before {
+  content: mi-content($mi-var-HelpMirrored);
+}
+
+.#{$mi-css-prefix}-HideBcc:before, .#{$mi-css-prefix}-HideBccLegacy:before {
+  content: mi-content($mi-var-HideBcc);
+}
+
+.#{$mi-css-prefix}-Highlight:before, .#{$mi-css-prefix}-HighlightLegacy:before {
+  content: mi-content($mi-var-Highlight);
+}
+
+.#{$mi-css-prefix}-HighlightFill:before {
+  content: mi-content($mi-var-HighlightFill);
+}
+
+.#{$mi-css-prefix}-HighlightFill2:before {
+  content: mi-content($mi-var-HighlightFill2);
+}
+
+.#{$mi-css-prefix}-History:before {
+  content: mi-content($mi-var-History);
+}
+
+.#{$mi-css-prefix}-HolePunchLandscapeBottom:before {
+  content: mi-content($mi-var-HolePunchLandscapeBottom);
+}
+
+.#{$mi-css-prefix}-HolePunchLandscapeLeft:before {
+  content: mi-content($mi-var-HolePunchLandscapeLeft);
+}
+
+.#{$mi-css-prefix}-HolePunchLandscapeRight:before {
+  content: mi-content($mi-var-HolePunchLandscapeRight);
+}
+
+.#{$mi-css-prefix}-HolePunchLandscapeTop:before {
+  content: mi-content($mi-var-HolePunchLandscapeTop);
+}
+
+.#{$mi-css-prefix}-HolePunchOff:before {
+  content: mi-content($mi-var-HolePunchOff);
+}
+
+.#{$mi-css-prefix}-HolePunchPortraitBottom:before {
+  content: mi-content($mi-var-HolePunchPortraitBottom);
+}
+
+.#{$mi-css-prefix}-HolePunchPortraitLeft:before {
+  content: mi-content($mi-var-HolePunchPortraitLeft);
+}
+
+.#{$mi-css-prefix}-HolePunchPortraitRight:before {
+  content: mi-content($mi-var-HolePunchPortraitRight);
+}
+
+.#{$mi-css-prefix}-HolePunchPortraitTop:before {
+  content: mi-content($mi-var-HolePunchPortraitTop);
+}
+
+.#{$mi-css-prefix}-HoloLensSelected:before {
+  content: mi-content($mi-var-HoloLensSelected);
+}
+
+.#{$mi-css-prefix}-Home:before, .#{$mi-css-prefix}-HomeLegacy:before {
+  content: mi-content($mi-var-Home);
+}
+
+.#{$mi-css-prefix}-HomeGroup:before {
+  content: mi-content($mi-var-HomeGroup);
+}
+
+.#{$mi-css-prefix}-HomeSolid:before {
+  content: mi-content($mi-var-HomeSolid);
+}
+
+.#{$mi-css-prefix}-HorizontalTabKey:before {
+  content: mi-content($mi-var-HorizontalTabKey);
+}
+
+.#{$mi-css-prefix}-IBeam:before {
+  content: mi-content($mi-var-IBeam);
+}
+
+.#{$mi-css-prefix}-IBeamOutline:before {
+  content: mi-content($mi-var-IBeamOutline);
+}
+
+.#{$mi-css-prefix}-IOT:before {
+  content: mi-content($mi-var-IOT);
+}
+
+.#{$mi-css-prefix}-ImageExport:before {
+  content: mi-content($mi-var-ImageExport);
+}
+
+.#{$mi-css-prefix}-Import:before, .#{$mi-css-prefix}-ExportMirrored:before, .#{$mi-css-prefix}-ImportLegacy:before {
+  content: mi-content($mi-var-Import);
+}
+
+.#{$mi-css-prefix}-ImportAll:before, .#{$mi-css-prefix}-ImportAllLegacy:before {
+  content: mi-content($mi-var-ImportAll);
+}
+
+.#{$mi-css-prefix}-ImportAllMirrored:before, .#{$mi-css-prefix}-ImportAllLegacyMirrored:before {
+  content: mi-content($mi-var-ImportAllMirrored);
+}
+
+.#{$mi-css-prefix}-Important:before, .#{$mi-css-prefix}-ImportantLegacy:before {
+  content: mi-content($mi-var-Important);
+}
+
+.#{$mi-css-prefix}-ImportantBadge12:before {
+  content: mi-content($mi-var-ImportantBadge12);
+}
+
+.#{$mi-css-prefix}-InPrivate:before {
+  content: mi-content($mi-var-InPrivate);
+}
+
+.#{$mi-css-prefix}-IncidentTriangle:before {
+  content: mi-content($mi-var-IncidentTriangle);
+}
+
+.#{$mi-css-prefix}-IncreaseIndent:before, .#{$mi-css-prefix}-IncreaseIndentLegacy:before {
+  content: mi-content($mi-var-IncreaseIndent);
+}
+
+.#{$mi-css-prefix}-IncreaseIndentLegacy:before, .#{$mi-css-prefix}-IncreaseIndent:before, .#{$mi-css-prefix}-IncreaseIndentLegacy:before {
+  content: mi-content($mi-var-IncreaseIndentLegacy);
+}
+
+.#{$mi-css-prefix}-IncreaseIndentLegacyMirrored:before, .#{$mi-css-prefix}-IncreaseIndentMirrored:before, .#{$mi-css-prefix}-IncreaseIndentLegacyMirrored:before {
+  content: mi-content($mi-var-IncreaseIndentLegacyMirrored);
+}
+
+.#{$mi-css-prefix}-IncreaseIndentMirrored:before, .#{$mi-css-prefix}-IncreaseIndentLegacyMirrored:before {
+  content: mi-content($mi-var-IncreaseIndentMirrored);
+}
+
+.#{$mi-css-prefix}-Info:before {
+  content: mi-content($mi-var-Info);
+}
+
+.#{$mi-css-prefix}-Info2:before {
+  content: mi-content($mi-var-Info2);
+}
+
+.#{$mi-css-prefix}-InfoSolid:before {
+  content: mi-content($mi-var-InfoSolid);
+}
+
+.#{$mi-css-prefix}-InkingCaret:before {
+  content: mi-content($mi-var-InkingCaret);
+}
+
+.#{$mi-css-prefix}-InkingColorFill:before {
+  content: mi-content($mi-var-InkingColorFill);
+}
+
+.#{$mi-css-prefix}-InkingColorOutline:before {
+  content: mi-content($mi-var-InkingColorOutline);
+}
+
+.#{$mi-css-prefix}-InkingTool:before {
+  content: mi-content($mi-var-InkingTool);
+}
+
+.#{$mi-css-prefix}-InkingToolFill:before {
+  content: mi-content($mi-var-InkingToolFill);
+}
+
+.#{$mi-css-prefix}-InkingToolFill2:before {
+  content: mi-content($mi-var-InkingToolFill2);
+}
+
+.#{$mi-css-prefix}-Input:before {
+  content: mi-content($mi-var-Input);
+}
+
+.#{$mi-css-prefix}-InsiderHubApp:before {
+  content: mi-content($mi-var-InsiderHubApp);
+}
+
+.#{$mi-css-prefix}-InteractiveDashboard:before {
+  content: mi-content($mi-var-InteractiveDashboard);
+}
+
+.#{$mi-css-prefix}-Italic:before, .#{$mi-css-prefix}-ItalicLegacy:before {
+  content: mi-content($mi-var-Italic);
+}
+
+.#{$mi-css-prefix}-ItalicC:before, .#{$mi-css-prefix}-ItalicCLegacy:before {
+  content: mi-content($mi-var-ItalicC);
+}
+
+.#{$mi-css-prefix}-ItalicCLegacy:before, .#{$mi-css-prefix}-ItalicC:before, .#{$mi-css-prefix}-ItalicCLegacy:before {
+  content: mi-content($mi-var-ItalicCLegacy);
+}
+
+.#{$mi-css-prefix}-ItalicI:before, .#{$mi-css-prefix}-ItalicILegacy:before {
+  content: mi-content($mi-var-ItalicI);
+}
+
+.#{$mi-css-prefix}-ItalicILegacy:before, .#{$mi-css-prefix}-ItalicI:before, .#{$mi-css-prefix}-ItalicILegacy:before {
+  content: mi-content($mi-var-ItalicILegacy);
+}
+
+.#{$mi-css-prefix}-ItalicK:before, .#{$mi-css-prefix}-ItalicKLegacy:before {
+  content: mi-content($mi-var-ItalicK);
+}
+
+.#{$mi-css-prefix}-ItalicKLegacy:before, .#{$mi-css-prefix}-ItalicK:before, .#{$mi-css-prefix}-ItalicKLegacy:before {
+  content: mi-content($mi-var-ItalicKLegacy);
+}
+
+.#{$mi-css-prefix}-ItalicKorean:before, .#{$mi-css-prefix}-ItalicKoreanLegacy:before {
+  content: mi-content($mi-var-ItalicKorean);
+}
+
+.#{$mi-css-prefix}-ItalicKoreanLegacy:before, .#{$mi-css-prefix}-ItalicKorean:before, .#{$mi-css-prefix}-ItalicKoreanLegacy:before {
+  content: mi-content($mi-var-ItalicKoreanLegacy);
+}
+
+.#{$mi-css-prefix}-ItalicRussian:before, .#{$mi-css-prefix}-ItalicRussianLegacy:before {
+  content: mi-content($mi-var-ItalicRussian);
+}
+
+.#{$mi-css-prefix}-ItalicRussianLegacy:before, .#{$mi-css-prefix}-ItalicRussian:before, .#{$mi-css-prefix}-ItalicRussianLegacy:before {
+  content: mi-content($mi-var-ItalicRussianLegacy);
+}
+
+.#{$mi-css-prefix}-Japanese:before {
+  content: mi-content($mi-var-Japanese);
+}
+
+.#{$mi-css-prefix}-JpnRomanji:before {
+  content: mi-content($mi-var-JpnRomanji);
+}
+
+.#{$mi-css-prefix}-JpnRomanjiLock:before {
+  content: mi-content($mi-var-JpnRomanjiLock);
+}
+
+.#{$mi-css-prefix}-JpnRomanjiShift:before {
+  content: mi-content($mi-var-JpnRomanjiShift);
+}
+
+.#{$mi-css-prefix}-JpnRomanjiShiftLock:before {
+  content: mi-content($mi-var-JpnRomanjiShiftLock);
+}
+
+.#{$mi-css-prefix}-Key12On:before {
+  content: mi-content($mi-var-Key12On);
+}
+
+.#{$mi-css-prefix}-KeyBoardLegacy:before, .#{$mi-css-prefix}-KeyboardClassic:before, .#{$mi-css-prefix}-KeyBoardLegacy:before {
+  content: mi-content($mi-var-KeyBoardLegacy);
+}
+
+.#{$mi-css-prefix}-Keyboard12Key:before {
+  content: mi-content($mi-var-Keyboard12Key);
+}
+
+.#{$mi-css-prefix}-KeyboardBrightness:before {
+  content: mi-content($mi-var-KeyboardBrightness);
+}
+
+.#{$mi-css-prefix}-KeyboardClassic:before, .#{$mi-css-prefix}-KeyBoardLegacy:before {
+  content: mi-content($mi-var-KeyboardClassic);
+}
+
+.#{$mi-css-prefix}-KeyboardDismiss:before {
+  content: mi-content($mi-var-KeyboardDismiss);
+}
+
+.#{$mi-css-prefix}-KeyboardDock:before {
+  content: mi-content($mi-var-KeyboardDock);
+}
+
+.#{$mi-css-prefix}-KeyboardFull:before {
+  content: mi-content($mi-var-KeyboardFull);
+}
+
+.#{$mi-css-prefix}-KeyboardLeftAligned:before {
+  content: mi-content($mi-var-KeyboardLeftAligned);
+}
+
+.#{$mi-css-prefix}-KeyboardLeftDock:before {
+  content: mi-content($mi-var-KeyboardLeftDock);
+}
+
+.#{$mi-css-prefix}-KeyboardLeftHanded:before {
+  content: mi-content($mi-var-KeyboardLeftHanded);
+}
+
+.#{$mi-css-prefix}-KeyboardLowerBrightness:before {
+  content: mi-content($mi-var-KeyboardLowerBrightness);
+}
+
+.#{$mi-css-prefix}-KeyboardNarrow:before {
+  content: mi-content($mi-var-KeyboardNarrow);
+}
+
+.#{$mi-css-prefix}-KeyboardOneHanded:before {
+  content: mi-content($mi-var-KeyboardOneHanded);
+}
+
+.#{$mi-css-prefix}-KeyboardRightAligned:before {
+  content: mi-content($mi-var-KeyboardRightAligned);
+}
+
+.#{$mi-css-prefix}-KeyboardRightDock:before {
+  content: mi-content($mi-var-KeyboardRightDock);
+}
+
+.#{$mi-css-prefix}-KeyboardRightHanded:before {
+  content: mi-content($mi-var-KeyboardRightHanded);
+}
+
+.#{$mi-css-prefix}-KeyboardSettings:before {
+  content: mi-content($mi-var-KeyboardSettings);
+}
+
+.#{$mi-css-prefix}-KeyboardShortcut:before {
+  content: mi-content($mi-var-KeyboardShortcut);
+}
+
+.#{$mi-css-prefix}-KeyboardSplit:before, .#{$mi-css-prefix}-KeyboardSplitLegacy:before {
+  content: mi-content($mi-var-KeyboardSplit);
+}
+
+.#{$mi-css-prefix}-KeyboardStandard:before, .#{$mi-css-prefix}-KeyboardStandardLegacy:before {
+  content: mi-content($mi-var-KeyboardStandard);
+}
+
+.#{$mi-css-prefix}-KeyboardUndock:before {
+  content: mi-content($mi-var-KeyboardUndock);
+}
+
+.#{$mi-css-prefix}-KnowledgeArticle:before {
+  content: mi-content($mi-var-KnowledgeArticle);
+}
+
+.#{$mi-css-prefix}-Korean:before {
+  content: mi-content($mi-var-Korean);
+}
+
+.#{$mi-css-prefix}-LEDLight:before {
+  content: mi-content($mi-var-LEDLight);
+}
+
+.#{$mi-css-prefix}-Label:before {
+  content: mi-content($mi-var-Label);
+}
+
+.#{$mi-css-prefix}-LandscapeOrientation:before {
+  content: mi-content($mi-var-LandscapeOrientation);
+}
+
+.#{$mi-css-prefix}-LandscapeOrientationMirrored:before {
+  content: mi-content($mi-var-LandscapeOrientationMirrored);
+}
+
+.#{$mi-css-prefix}-LangJPN:before {
+  content: mi-content($mi-var-LangJPN);
+}
+
+.#{$mi-css-prefix}-LanguageChs:before {
+  content: mi-content($mi-var-LanguageChs);
+}
+
+.#{$mi-css-prefix}-LanguageCht:before {
+  content: mi-content($mi-var-LanguageCht);
+}
+
+.#{$mi-css-prefix}-LanguageJpn:before {
+  content: mi-content($mi-var-LanguageJpn);
+}
+
+.#{$mi-css-prefix}-LanguageKor:before {
+  content: mi-content($mi-var-LanguageKor);
+}
+
+.#{$mi-css-prefix}-LaptopSecure:before {
+  content: mi-content($mi-var-LaptopSecure);
+}
+
+.#{$mi-css-prefix}-LaptopSelected:before {
+  content: mi-content($mi-var-LaptopSelected);
+}
+
+.#{$mi-css-prefix}-LargeErase:before {
+  content: mi-content($mi-var-LargeErase);
+}
+
+.#{$mi-css-prefix}-Layout:before, .#{$mi-css-prefix}-LayoutLegacy:before {
+  content: mi-content($mi-var-Layout);
+}
+
+.#{$mi-css-prefix}-LayoutLegacy:before, .#{$mi-css-prefix}-Layout:before, .#{$mi-css-prefix}-LayoutLegacy:before {
+  content: mi-content($mi-var-LayoutLegacy);
+}
+
+.#{$mi-css-prefix}-Leaf:before {
+  content: mi-content($mi-var-Leaf);
+}
+
+.#{$mi-css-prefix}-LeaveChat:before, .#{$mi-css-prefix}-LeaveChatLegacy:before {
+  content: mi-content($mi-var-LeaveChat);
+}
+
+.#{$mi-css-prefix}-LeaveChatMirrored:before {
+  content: mi-content($mi-var-LeaveChatMirrored);
+}
+
+.#{$mi-css-prefix}-LeftArrowKeyTime0:before {
+  content: mi-content($mi-var-LeftArrowKeyTime0);
+}
+
+.#{$mi-css-prefix}-LeftDoubleQuote:before {
+  content: mi-content($mi-var-LeftDoubleQuote);
+}
+
+.#{$mi-css-prefix}-LeftQuote:before {
+  content: mi-content($mi-var-LeftQuote);
+}
+
+.#{$mi-css-prefix}-LeftStick:before {
+  content: mi-content($mi-var-LeftStick);
+}
+
+.#{$mi-css-prefix}-Lexicon:before {
+  content: mi-content($mi-var-Lexicon);
+}
+
+.#{$mi-css-prefix}-Library:before, .#{$mi-css-prefix}-LibraryLegacy:before {
+  content: mi-content($mi-var-Library);
+}
+
+.#{$mi-css-prefix}-Light:before {
+  content: mi-content($mi-var-Light);
+}
+
+.#{$mi-css-prefix}-Lightbulb:before, .#{$mi-css-prefix}-ToolTip:before, .#{$mi-css-prefix}-Lightbulb:before {
+  content: mi-content($mi-var-Lightbulb);
+}
+
+.#{$mi-css-prefix}-LightningBolt:before {
+  content: mi-content($mi-var-LightningBolt);
+}
+
+.#{$mi-css-prefix}-Like:before, .#{$mi-css-prefix}-LikeInlineLegacy:before, .#{$mi-css-prefix}-LikeLegacy:before {
+  content: mi-content($mi-var-Like);
+}
+
+.#{$mi-css-prefix}-LikeDislike:before, .#{$mi-css-prefix}-LikeDislikeLegacy:before {
+  content: mi-content($mi-var-LikeDislike);
+}
+
+.#{$mi-css-prefix}-LineDisplay:before {
+  content: mi-content($mi-var-LineDisplay);
+}
+
+.#{$mi-css-prefix}-Link:before, .#{$mi-css-prefix}-LinkLegacy:before {
+  content: mi-content($mi-var-Link);
+}
+
+.#{$mi-css-prefix}-List:before {
+  content: mi-content($mi-var-List);
+}
+
+.#{$mi-css-prefix}-ListMirrored:before {
+  content: mi-content($mi-var-ListMirrored);
+}
+
+.#{$mi-css-prefix}-Location:before, .#{$mi-css-prefix}-LocationLegacy:before {
+  content: mi-content($mi-var-Location);
+}
+
+.#{$mi-css-prefix}-Lock:before, .#{$mi-css-prefix}-LockLegacy:before {
+  content: mi-content($mi-var-Lock);
+}
+
+.#{$mi-css-prefix}-LockFeedback:before {
+  content: mi-content($mi-var-LockFeedback);
+}
+
+.#{$mi-css-prefix}-LockScreenGlance:before {
+  content: mi-content($mi-var-LockScreenGlance);
+}
+
+.#{$mi-css-prefix}-LockscreenDesktop:before {
+  content: mi-content($mi-var-LockscreenDesktop);
+}
+
+.#{$mi-css-prefix}-LowerBrightness:before {
+  content: mi-content($mi-var-LowerBrightness);
+}
+
+.#{$mi-css-prefix}-MagStripeReader:before {
+  content: mi-content($mi-var-MagStripeReader);
+}
+
+.#{$mi-css-prefix}-Mail:before, .#{$mi-css-prefix}-MailLegacy:before {
+  content: mi-content($mi-var-Mail);
+}
+
+.#{$mi-css-prefix}-MailBadge12:before {
+  content: mi-content($mi-var-MailBadge12);
+}
+
+.#{$mi-css-prefix}-MailFill:before, .#{$mi-css-prefix}-MailFillLegacy:before, .#{$mi-css-prefix}-MailMessageLegacy:before {
+  content: mi-content($mi-var-MailFill);
+}
+
+.#{$mi-css-prefix}-MailForward:before, .#{$mi-css-prefix}-MailForwardLegacy:before {
+  content: mi-content($mi-var-MailForward);
+}
+
+.#{$mi-css-prefix}-MailForwardMirrored:before, .#{$mi-css-prefix}-MailForwardLegacyMirrored:before {
+  content: mi-content($mi-var-MailForwardMirrored);
+}
+
+.#{$mi-css-prefix}-MailReply:before, .#{$mi-css-prefix}-MailReplyLegacy:before {
+  content: mi-content($mi-var-MailReply);
+}
+
+.#{$mi-css-prefix}-MailReplyAll:before, .#{$mi-css-prefix}-MailReplyAllLegacy:before {
+  content: mi-content($mi-var-MailReplyAll);
+}
+
+.#{$mi-css-prefix}-MailReplyAllMirrored:before, .#{$mi-css-prefix}-MailReplyAllLegacyMirrored:before {
+  content: mi-content($mi-var-MailReplyAllMirrored);
+}
+
+.#{$mi-css-prefix}-MailReplyMirrored:before, .#{$mi-css-prefix}-MailReplyLegacyMirrored:before {
+  content: mi-content($mi-var-MailReplyMirrored);
+}
+
+.#{$mi-css-prefix}-Manage:before, .#{$mi-css-prefix}-ManageLegacy:before {
+  content: mi-content($mi-var-Manage);
+}
+
+.#{$mi-css-prefix}-MapCompassBottom:before {
+  content: mi-content($mi-var-MapCompassBottom);
+}
+
+.#{$mi-css-prefix}-MapCompassTop:before {
+  content: mi-content($mi-var-MapCompassTop);
+}
+
+.#{$mi-css-prefix}-MapDirections:before {
+  content: mi-content($mi-var-MapDirections);
+}
+
+.#{$mi-css-prefix}-MapDrive:before, .#{$mi-css-prefix}-MapDriveLegacy:before {
+  content: mi-content($mi-var-MapDrive);
+}
+
+.#{$mi-css-prefix}-MapLayers:before {
+  content: mi-content($mi-var-MapLayers);
+}
+
+.#{$mi-css-prefix}-MapPin:before, .#{$mi-css-prefix}-MapLegacy:before {
+  content: mi-content($mi-var-MapPin);
+}
+
+.#{$mi-css-prefix}-MapPin2:before, .#{$mi-css-prefix}-MapPinLegacy:before {
+  content: mi-content($mi-var-MapPin2);
+}
+
+.#{$mi-css-prefix}-MapPinLegacy:before, .#{$mi-css-prefix}-MapPin2:before, .#{$mi-css-prefix}-MapPinLegacy:before {
+  content: mi-content($mi-var-MapPinLegacy);
+}
+
+.#{$mi-css-prefix}-Marker:before {
+  content: mi-content($mi-var-Marker);
+}
+
+.#{$mi-css-prefix}-Marquee:before {
+  content: mi-content($mi-var-Marquee);
+}
+
+.#{$mi-css-prefix}-Media:before {
+  content: mi-content($mi-var-Media);
+}
+
+.#{$mi-css-prefix}-MediaStorageTower:before {
+  content: mi-content($mi-var-MediaStorageTower);
+}
+
+.#{$mi-css-prefix}-Megaphone:before {
+  content: mi-content($mi-var-Megaphone);
+}
+
+.#{$mi-css-prefix}-Memo:before, .#{$mi-css-prefix}-MemoLegacy:before {
+  content: mi-content($mi-var-Memo);
+}
+
+.#{$mi-css-prefix}-Message:before, .#{$mi-css-prefix}-CommentInlineLegacy:before, .#{$mi-css-prefix}-MessageLegacy:before {
+  content: mi-content($mi-var-Message);
+}
+
+.#{$mi-css-prefix}-MicClipping:before {
+  content: mi-content($mi-var-MicClipping);
+}
+
+.#{$mi-css-prefix}-MicError:before {
+  content: mi-content($mi-var-MicError);
+}
+
+.#{$mi-css-prefix}-MicOff:before {
+  content: mi-content($mi-var-MicOff);
+}
+
+.#{$mi-css-prefix}-MicOn:before {
+  content: mi-content($mi-var-MicOn);
+}
+
+.#{$mi-css-prefix}-MicSleep:before {
+  content: mi-content($mi-var-MicSleep);
+}
+
+.#{$mi-css-prefix}-Microphone:before, .#{$mi-css-prefix}-MicrophoneLegacy:before {
+  content: mi-content($mi-var-Microphone);
+}
+
+.#{$mi-css-prefix}-MicrophoneListening:before {
+  content: mi-content($mi-var-MicrophoneListening);
+}
+
+.#{$mi-css-prefix}-MiracastLogoSmall:before {
+  content: mi-content($mi-var-MiracastLogoSmall);
+}
+
+.#{$mi-css-prefix}-MixVolumes:before {
+  content: mi-content($mi-var-MixVolumes);
+}
+
+.#{$mi-css-prefix}-MobActionCenter:before {
+  content: mi-content($mi-var-MobActionCenter);
+}
+
+.#{$mi-css-prefix}-MobAirplane:before {
+  content: mi-content($mi-var-MobAirplane);
+}
+
+.#{$mi-css-prefix}-MobBattery0:before {
+  content: mi-content($mi-var-MobBattery0);
+}
+
+.#{$mi-css-prefix}-MobBattery1:before {
+  content: mi-content($mi-var-MobBattery1);
+}
+
+.#{$mi-css-prefix}-MobBattery10:before {
+  content: mi-content($mi-var-MobBattery10);
+}
+
+.#{$mi-css-prefix}-MobBattery2:before {
+  content: mi-content($mi-var-MobBattery2);
+}
+
+.#{$mi-css-prefix}-MobBattery3:before {
+  content: mi-content($mi-var-MobBattery3);
+}
+
+.#{$mi-css-prefix}-MobBattery4:before {
+  content: mi-content($mi-var-MobBattery4);
+}
+
+.#{$mi-css-prefix}-MobBattery5:before {
+  content: mi-content($mi-var-MobBattery5);
+}
+
+.#{$mi-css-prefix}-MobBattery6:before {
+  content: mi-content($mi-var-MobBattery6);
+}
+
+.#{$mi-css-prefix}-MobBattery7:before {
+  content: mi-content($mi-var-MobBattery7);
+}
+
+.#{$mi-css-prefix}-MobBattery8:before {
+  content: mi-content($mi-var-MobBattery8);
+}
+
+.#{$mi-css-prefix}-MobBattery9:before {
+  content: mi-content($mi-var-MobBattery9);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging0:before {
+  content: mi-content($mi-var-MobBatteryCharging0);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging1:before {
+  content: mi-content($mi-var-MobBatteryCharging1);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging10:before {
+  content: mi-content($mi-var-MobBatteryCharging10);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging2:before {
+  content: mi-content($mi-var-MobBatteryCharging2);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging3:before {
+  content: mi-content($mi-var-MobBatteryCharging3);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging4:before {
+  content: mi-content($mi-var-MobBatteryCharging4);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging5:before {
+  content: mi-content($mi-var-MobBatteryCharging5);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging6:before {
+  content: mi-content($mi-var-MobBatteryCharging6);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging7:before {
+  content: mi-content($mi-var-MobBatteryCharging7);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging8:before {
+  content: mi-content($mi-var-MobBatteryCharging8);
+}
+
+.#{$mi-css-prefix}-MobBatteryCharging9:before {
+  content: mi-content($mi-var-MobBatteryCharging9);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver0:before {
+  content: mi-content($mi-var-MobBatterySaver0);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver1:before {
+  content: mi-content($mi-var-MobBatterySaver1);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver10:before {
+  content: mi-content($mi-var-MobBatterySaver10);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver2:before {
+  content: mi-content($mi-var-MobBatterySaver2);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver3:before {
+  content: mi-content($mi-var-MobBatterySaver3);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver4:before {
+  content: mi-content($mi-var-MobBatterySaver4);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver5:before {
+  content: mi-content($mi-var-MobBatterySaver5);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver6:before {
+  content: mi-content($mi-var-MobBatterySaver6);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver7:before {
+  content: mi-content($mi-var-MobBatterySaver7);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver8:before {
+  content: mi-content($mi-var-MobBatterySaver8);
+}
+
+.#{$mi-css-prefix}-MobBatterySaver9:before {
+  content: mi-content($mi-var-MobBatterySaver9);
+}
+
+.#{$mi-css-prefix}-MobBatteryUnknown:before {
+  content: mi-content($mi-var-MobBatteryUnknown);
+}
+
+.#{$mi-css-prefix}-MobBluetooth:before {
+  content: mi-content($mi-var-MobBluetooth);
+}
+
+.#{$mi-css-prefix}-MobCallForwarding:before {
+  content: mi-content($mi-var-MobCallForwarding);
+}
+
+.#{$mi-css-prefix}-MobCallForwardingMirrored:before {
+  content: mi-content($mi-var-MobCallForwardingMirrored);
+}
+
+.#{$mi-css-prefix}-MobDrivingMode:before {
+  content: mi-content($mi-var-MobDrivingMode);
+}
+
+.#{$mi-css-prefix}-MobLocation:before {
+  content: mi-content($mi-var-MobLocation);
+}
+
+.#{$mi-css-prefix}-MobQuietHours:before {
+  content: mi-content($mi-var-MobQuietHours);
+}
+
+.#{$mi-css-prefix}-MobSIMError:before {
+  content: mi-content($mi-var-MobSIMError);
+}
+
+.#{$mi-css-prefix}-MobSIMLock:before {
+  content: mi-content($mi-var-MobSIMLock);
+}
+
+.#{$mi-css-prefix}-MobSIMMissing:before {
+  content: mi-content($mi-var-MobSIMMissing);
+}
+
+.#{$mi-css-prefix}-MobSignal1:before {
+  content: mi-content($mi-var-MobSignal1);
+}
+
+.#{$mi-css-prefix}-MobSignal2:before {
+  content: mi-content($mi-var-MobSignal2);
+}
+
+.#{$mi-css-prefix}-MobSignal3:before {
+  content: mi-content($mi-var-MobSignal3);
+}
+
+.#{$mi-css-prefix}-MobSignal4:before {
+  content: mi-content($mi-var-MobSignal4);
+}
+
+.#{$mi-css-prefix}-MobSignal5:before {
+  content: mi-content($mi-var-MobSignal5);
+}
+
+.#{$mi-css-prefix}-MobWifi1:before {
+  content: mi-content($mi-var-MobWifi1);
+}
+
+.#{$mi-css-prefix}-MobWifi2:before {
+  content: mi-content($mi-var-MobWifi2);
+}
+
+.#{$mi-css-prefix}-MobWifi3:before {
+  content: mi-content($mi-var-MobWifi3);
+}
+
+.#{$mi-css-prefix}-MobWifi4:before {
+  content: mi-content($mi-var-MobWifi4);
+}
+
+.#{$mi-css-prefix}-MobWifiHotspot:before {
+  content: mi-content($mi-var-MobWifiHotspot);
+}
+
+.#{$mi-css-prefix}-MobWifiWarning1:before {
+  content: mi-content($mi-var-MobWifiWarning1);
+}
+
+.#{$mi-css-prefix}-MobWifiWarning2:before {
+  content: mi-content($mi-var-MobWifiWarning2);
+}
+
+.#{$mi-css-prefix}-MobWifiWarning3:before {
+  content: mi-content($mi-var-MobWifiWarning3);
+}
+
+.#{$mi-css-prefix}-MobWifiWarning4:before {
+  content: mi-content($mi-var-MobWifiWarning4);
+}
+
+.#{$mi-css-prefix}-MobeSIM:before {
+  content: mi-content($mi-var-MobeSIM);
+}
+
+.#{$mi-css-prefix}-MobeSIMBusy:before {
+  content: mi-content($mi-var-MobeSIMBusy);
+}
+
+.#{$mi-css-prefix}-MobeSIMLocked:before {
+  content: mi-content($mi-var-MobeSIMLocked);
+}
+
+.#{$mi-css-prefix}-MobeSIMNoProfile:before {
+  content: mi-content($mi-var-MobeSIMNoProfile);
+}
+
+.#{$mi-css-prefix}-MobileLocked:before {
+  content: mi-content($mi-var-MobileLocked);
+}
+
+.#{$mi-css-prefix}-MobileSelected:before {
+  content: mi-content($mi-var-MobileSelected);
+}
+
+.#{$mi-css-prefix}-MobileTablet:before {
+  content: mi-content($mi-var-MobileTablet);
+}
+
+.#{$mi-css-prefix}-More:before, .#{$mi-css-prefix}-MoreLegacy:before {
+  content: mi-content($mi-var-More);
+}
+
+.#{$mi-css-prefix}-Mouse:before {
+  content: mi-content($mi-var-Mouse);
+}
+
+.#{$mi-css-prefix}-MoveToFolder:before, .#{$mi-css-prefix}-MoveToFolderLegacy:before {
+  content: mi-content($mi-var-MoveToFolder);
+}
+
+.#{$mi-css-prefix}-Movies:before {
+  content: mi-content($mi-var-Movies);
+}
+
+.#{$mi-css-prefix}-MultiSelect:before, .#{$mi-css-prefix}-MultiSelectLegacy:before {
+  content: mi-content($mi-var-MultiSelect);
+}
+
+.#{$mi-css-prefix}-MultiSelectMirrored:before, .#{$mi-css-prefix}-MultiSelectLegacyMirrored:before {
+  content: mi-content($mi-var-MultiSelectMirrored);
+}
+
+.#{$mi-css-prefix}-MultimediaDMP:before {
+  content: mi-content($mi-var-MultimediaDMP);
+}
+
+.#{$mi-css-prefix}-MultimediaDMS:before {
+  content: mi-content($mi-var-MultimediaDMS);
+}
+
+.#{$mi-css-prefix}-MultimediaDVR:before {
+  content: mi-content($mi-var-MultimediaDVR);
+}
+
+.#{$mi-css-prefix}-MultimediaPMP:before {
+  content: mi-content($mi-var-MultimediaPMP);
+}
+
+.#{$mi-css-prefix}-Multitask:before {
+  content: mi-content($mi-var-Multitask);
+}
+
+.#{$mi-css-prefix}-Multitask16:before {
+  content: mi-content($mi-var-Multitask16);
+}
+
+.#{$mi-css-prefix}-MultitaskExpanded:before {
+  content: mi-content($mi-var-MultitaskExpanded);
+}
+
+.#{$mi-css-prefix}-MusicAlbum:before {
+  content: mi-content($mi-var-MusicAlbum);
+}
+
+.#{$mi-css-prefix}-MusicInfo:before, .#{$mi-css-prefix}-MusicInfoLegacy:before {
+  content: mi-content($mi-var-MusicInfo);
+}
+
+.#{$mi-css-prefix}-MusicNote:before {
+  content: mi-content($mi-var-MusicNote);
+}
+
+.#{$mi-css-prefix}-MusicSharing:before {
+  content: mi-content($mi-var-MusicSharing);
+}
+
+.#{$mi-css-prefix}-MusicSharingOff:before {
+  content: mi-content($mi-var-MusicSharingOff);
+}
+
+.#{$mi-css-prefix}-Mute:before, .#{$mi-css-prefix}-MuteLegacy:before {
+  content: mi-content($mi-var-Mute);
+}
+
+.#{$mi-css-prefix}-MyNetwork:before {
+  content: mi-content($mi-var-MyNetwork);
+}
+
+.#{$mi-css-prefix}-NUIFPContinueSlideAction:before {
+  content: mi-content($mi-var-NUIFPContinueSlideAction);
+}
+
+.#{$mi-css-prefix}-NUIFPContinueSlideHand:before {
+  content: mi-content($mi-var-NUIFPContinueSlideHand);
+}
+
+.#{$mi-css-prefix}-NUIFPPressAction:before {
+  content: mi-content($mi-var-NUIFPPressAction);
+}
+
+.#{$mi-css-prefix}-NUIFPPressHand:before {
+  content: mi-content($mi-var-NUIFPPressHand);
+}
+
+.#{$mi-css-prefix}-NUIFPPressRepeatAction:before {
+  content: mi-content($mi-var-NUIFPPressRepeatAction);
+}
+
+.#{$mi-css-prefix}-NUIFPRollLeftAction:before {
+  content: mi-content($mi-var-NUIFPRollLeftAction);
+}
+
+.#{$mi-css-prefix}-NUIFPRollLeftHand:before {
+  content: mi-content($mi-var-NUIFPRollLeftHand);
+}
+
+.#{$mi-css-prefix}-NUIFPRollRightHand:before {
+  content: mi-content($mi-var-NUIFPRollRightHand);
+}
+
+.#{$mi-css-prefix}-NUIFPRollRightHandAction:before {
+  content: mi-content($mi-var-NUIFPRollRightHandAction);
+}
+
+.#{$mi-css-prefix}-NUIFPStartSlideAction:before {
+  content: mi-content($mi-var-NUIFPStartSlideAction);
+}
+
+.#{$mi-css-prefix}-NUIFPStartSlideHand:before, .#{$mi-css-prefix}-NUIFPPressRepeatHand:before {
+  content: mi-content($mi-var-NUIFPStartSlideHand);
+}
+
+.#{$mi-css-prefix}-NUIFace:before {
+  content: mi-content($mi-var-NUIFace);
+}
+
+.#{$mi-css-prefix}-NUIIris:before {
+  content: mi-content($mi-var-NUIIris);
+}
+
+.#{$mi-css-prefix}-Narrator:before {
+  content: mi-content($mi-var-Narrator);
+}
+
+.#{$mi-css-prefix}-NarratorForward:before {
+  content: mi-content($mi-var-NarratorForward);
+}
+
+.#{$mi-css-prefix}-NarratorForwardMirrored:before {
+  content: mi-content($mi-var-NarratorForwardMirrored);
+}
+
+.#{$mi-css-prefix}-NearbySharing:before {
+  content: mi-content($mi-var-NearbySharing);
+}
+
+.#{$mi-css-prefix}-Network:before {
+  content: mi-content($mi-var-Network);
+}
+
+.#{$mi-css-prefix}-NetworkAdapter:before {
+  content: mi-content($mi-var-NetworkAdapter);
+}
+
+.#{$mi-css-prefix}-NetworkConnected:before {
+  content: mi-content($mi-var-NetworkConnected);
+}
+
+.#{$mi-css-prefix}-NetworkConnectedCheckmark:before {
+  content: mi-content($mi-var-NetworkConnectedCheckmark);
+}
+
+.#{$mi-css-prefix}-NetworkOffline:before {
+  content: mi-content($mi-var-NetworkOffline);
+}
+
+.#{$mi-css-prefix}-NetworkPrinter:before {
+  content: mi-content($mi-var-NetworkPrinter);
+}
+
+.#{$mi-css-prefix}-NetworkSharing:before {
+  content: mi-content($mi-var-NetworkSharing);
+}
+
+.#{$mi-css-prefix}-NetworkTower:before {
+  content: mi-content($mi-var-NetworkTower);
+}
+
+.#{$mi-css-prefix}-NewFolder:before, .#{$mi-css-prefix}-NewFolderLegacy:before {
+  content: mi-content($mi-var-NewFolder);
+}
+
+.#{$mi-css-prefix}-NewWindow:before, .#{$mi-css-prefix}-NewWindowLegacy:before {
+  content: mi-content($mi-var-NewWindow);
+}
+
+.#{$mi-css-prefix}-Next:before, .#{$mi-css-prefix}-NextLegacy:before {
+  content: mi-content($mi-var-Next);
+}
+
+.#{$mi-css-prefix}-NoiseCancelation:before {
+  content: mi-content($mi-var-NoiseCancelation);
+}
+
+.#{$mi-css-prefix}-NoiseCancelationOff:before {
+  content: mi-content($mi-var-NoiseCancelationOff);
+}
+
+.#{$mi-css-prefix}-OEM:before {
+  content: mi-content($mi-var-OEM);
+}
+
+.#{$mi-css-prefix}-OneBar:before, .#{$mi-css-prefix}-OneBarLegacy:before {
+  content: mi-content($mi-var-OneBar);
+}
+
+.#{$mi-css-prefix}-OpenFile:before, .#{$mi-css-prefix}-OpenFileLegacy:before {
+  content: mi-content($mi-var-OpenFile);
+}
+
+.#{$mi-css-prefix}-OpenFolderHorizontal:before {
+  content: mi-content($mi-var-OpenFolderHorizontal);
+}
+
+.#{$mi-css-prefix}-OpenInNewWindow:before, .#{$mi-css-prefix}-OpenInNewWindowLegacy:before {
+  content: mi-content($mi-var-OpenInNewWindow);
+}
+
+.#{$mi-css-prefix}-OpenLocal:before, .#{$mi-css-prefix}-OpenLocalLegacy:before {
+  content: mi-content($mi-var-OpenLocal);
+}
+
+.#{$mi-css-prefix}-OpenPane:before, .#{$mi-css-prefix}-OpenPaneLegacy:before {
+  content: mi-content($mi-var-OpenPane);
+}
+
+.#{$mi-css-prefix}-OpenPaneMirrored:before, .#{$mi-css-prefix}-OpenPaneLegacyMirrored:before {
+  content: mi-content($mi-var-OpenPaneMirrored);
+}
+
+.#{$mi-css-prefix}-OpenWith:before, .#{$mi-css-prefix}-OpenWithLegacy:before {
+  content: mi-content($mi-var-OpenWith);
+}
+
+.#{$mi-css-prefix}-OpenWithMirrored:before, .#{$mi-css-prefix}-OpenWithLegacyMirrored:before {
+  content: mi-content($mi-var-OpenWithMirrored);
+}
+
+.#{$mi-css-prefix}-Orientation:before, .#{$mi-css-prefix}-OrientationLegacy:before {
+  content: mi-content($mi-var-Orientation);
+}
+
+.#{$mi-css-prefix}-OtherUser:before, .#{$mi-css-prefix}-OtherUserLegacy:before {
+  content: mi-content($mi-var-OtherUser);
+}
+
+.#{$mi-css-prefix}-OutlineHalfStarLeft:before {
+  content: mi-content($mi-var-OutlineHalfStarLeft);
+}
+
+.#{$mi-css-prefix}-OutlineHalfStarRight:before {
+  content: mi-content($mi-var-OutlineHalfStarRight);
+}
+
+.#{$mi-css-prefix}-OutlineQuarterStarLeft:before {
+  content: mi-content($mi-var-OutlineQuarterStarLeft);
+}
+
+.#{$mi-css-prefix}-OutlineQuarterStarRight:before {
+  content: mi-content($mi-var-OutlineQuarterStarRight);
+}
+
+.#{$mi-css-prefix}-OutlineStarLeftHalf:before {
+  content: mi-content($mi-var-OutlineStarLeftHalf);
+}
+
+.#{$mi-css-prefix}-OutlineStarRightHalf:before {
+  content: mi-content($mi-var-OutlineStarRightHalf);
+}
+
+.#{$mi-css-prefix}-OutlineThreeQuarterStarLeft:before {
+  content: mi-content($mi-var-OutlineThreeQuarterStarLeft);
+}
+
+.#{$mi-css-prefix}-OutlineThreeQuarterStarRight:before {
+  content: mi-content($mi-var-OutlineThreeQuarterStarRight);
+}
+
+.#{$mi-css-prefix}-PC1:before, .#{$mi-css-prefix}-PC1Legacy:before {
+  content: mi-content($mi-var-PC1);
+}
+
+.#{$mi-css-prefix}-PINPad:before {
+  content: mi-content($mi-var-PINPad);
+}
+
+.#{$mi-css-prefix}-PLAP:before {
+  content: mi-content($mi-var-PLAP);
+}
+
+.#{$mi-css-prefix}-PPSFourLandscape:before {
+  content: mi-content($mi-var-PPSFourLandscape);
+}
+
+.#{$mi-css-prefix}-PPSFourPortrait:before {
+  content: mi-content($mi-var-PPSFourPortrait);
+}
+
+.#{$mi-css-prefix}-PPSOneLandscape:before {
+  content: mi-content($mi-var-PPSOneLandscape);
+}
+
+.#{$mi-css-prefix}-PPSOnePortrait:before {
+  content: mi-content($mi-var-PPSOnePortrait);
+}
+
+.#{$mi-css-prefix}-PPSTwoLandscape:before {
+  content: mi-content($mi-var-PPSTwoLandscape);
+}
+
+.#{$mi-css-prefix}-PPSTwoPortrait:before {
+  content: mi-content($mi-var-PPSTwoPortrait);
+}
+
+.#{$mi-css-prefix}-Package:before {
+  content: mi-content($mi-var-Package);
+}
+
+.#{$mi-css-prefix}-Page:before, .#{$mi-css-prefix}-PageLegacy:before {
+  content: mi-content($mi-var-Page);
+}
+
+.#{$mi-css-prefix}-PageLeft:before {
+  content: mi-content($mi-var-PageLeft);
+}
+
+.#{$mi-css-prefix}-PageMarginLandscapeModerate:before {
+  content: mi-content($mi-var-PageMarginLandscapeModerate);
+}
+
+.#{$mi-css-prefix}-PageMarginLandscapeNarrow:before {
+  content: mi-content($mi-var-PageMarginLandscapeNarrow);
+}
+
+.#{$mi-css-prefix}-PageMarginLandscapeNormal:before {
+  content: mi-content($mi-var-PageMarginLandscapeNormal);
+}
+
+.#{$mi-css-prefix}-PageMarginLandscapeWide:before {
+  content: mi-content($mi-var-PageMarginLandscapeWide);
+}
+
+.#{$mi-css-prefix}-PageMarginPortraitModerate:before {
+  content: mi-content($mi-var-PageMarginPortraitModerate);
+}
+
+.#{$mi-css-prefix}-PageMarginPortraitNarrow:before {
+  content: mi-content($mi-var-PageMarginPortraitNarrow);
+}
+
+.#{$mi-css-prefix}-PageMarginPortraitNormal:before {
+  content: mi-content($mi-var-PageMarginPortraitNormal);
+}
+
+.#{$mi-css-prefix}-PageMarginPortraitWide:before {
+  content: mi-content($mi-var-PageMarginPortraitWide);
+}
+
+.#{$mi-css-prefix}-PageMirrored:before {
+  content: mi-content($mi-var-PageMirrored);
+}
+
+.#{$mi-css-prefix}-PageRight:before {
+  content: mi-content($mi-var-PageRight);
+}
+
+.#{$mi-css-prefix}-PageSolid:before, .#{$mi-css-prefix}-PageFillLegacy:before {
+  content: mi-content($mi-var-PageSolid);
+}
+
+.#{$mi-css-prefix}-PaginationDotOutline10:before {
+  content: mi-content($mi-var-PaginationDotOutline10);
+}
+
+.#{$mi-css-prefix}-PaginationDotSolid10:before {
+  content: mi-content($mi-var-PaginationDotSolid10);
+}
+
+.#{$mi-css-prefix}-PanMode:before {
+  content: mi-content($mi-var-PanMode);
+}
+
+.#{$mi-css-prefix}-ParkingLocation:before {
+  content: mi-content($mi-var-ParkingLocation);
+}
+
+.#{$mi-css-prefix}-ParkingLocationMirrored:before {
+  content: mi-content($mi-var-ParkingLocationMirrored);
+}
+
+.#{$mi-css-prefix}-ParkingLocationSolid:before {
+  content: mi-content($mi-var-ParkingLocationSolid);
+}
+
+.#{$mi-css-prefix}-PartyLeader:before {
+  content: mi-content($mi-var-PartyLeader);
+}
+
+.#{$mi-css-prefix}-PassiveAuthentication:before {
+  content: mi-content($mi-var-PassiveAuthentication);
+}
+
+.#{$mi-css-prefix}-PasswordKeyHide:before {
+  content: mi-content($mi-var-PasswordKeyHide);
+}
+
+.#{$mi-css-prefix}-PasswordKeyShow:before {
+  content: mi-content($mi-var-PasswordKeyShow);
+}
+
+.#{$mi-css-prefix}-Paste:before, .#{$mi-css-prefix}-PasteLegacy:before {
+  content: mi-content($mi-var-Paste);
+}
+
+.#{$mi-css-prefix}-Pause:before, .#{$mi-css-prefix}-PauseLegacy:before {
+  content: mi-content($mi-var-Pause);
+}
+
+.#{$mi-css-prefix}-PauseBadge12:before {
+  content: mi-content($mi-var-PauseBadge12);
+}
+
+.#{$mi-css-prefix}-PaymentCard:before {
+  content: mi-content($mi-var-PaymentCard);
+}
+
+.#{$mi-css-prefix}-PenPalette:before {
+  content: mi-content($mi-var-PenPalette);
+}
+
+.#{$mi-css-prefix}-PenPaletteMirrored:before {
+  content: mi-content($mi-var-PenPaletteMirrored);
+}
+
+.#{$mi-css-prefix}-PenTips:before {
+  content: mi-content($mi-var-PenTips);
+}
+
+.#{$mi-css-prefix}-PenTipsMirrored:before {
+  content: mi-content($mi-var-PenTipsMirrored);
+}
+
+.#{$mi-css-prefix}-PenWorkspace:before {
+  content: mi-content($mi-var-PenWorkspace);
+}
+
+.#{$mi-css-prefix}-PenWorkspaceMirrored:before {
+  content: mi-content($mi-var-PenWorkspaceMirrored);
+}
+
+.#{$mi-css-prefix}-Pencil:before {
+  content: mi-content($mi-var-Pencil);
+}
+
+.#{$mi-css-prefix}-PencilFill:before {
+  content: mi-content($mi-var-PencilFill);
+}
+
+.#{$mi-css-prefix}-People:before, .#{$mi-css-prefix}-PeopleLegacy:before {
+  content: mi-content($mi-var-People);
+}
+
+.#{$mi-css-prefix}-PeriodKey:before {
+  content: mi-content($mi-var-PeriodKey);
+}
+
+.#{$mi-css-prefix}-Permissions:before, .#{$mi-css-prefix}-PermissionsLegacy:before {
+  content: mi-content($mi-var-Permissions);
+}
+
+.#{$mi-css-prefix}-PersonalFolder:before {
+  content: mi-content($mi-var-PersonalFolder);
+}
+
+.#{$mi-css-prefix}-Personalize:before {
+  content: mi-content($mi-var-Personalize);
+}
+
+.#{$mi-css-prefix}-Phone:before, .#{$mi-css-prefix}-PhoneLegacy:before {
+  content: mi-content($mi-var-Phone);
+}
+
+.#{$mi-css-prefix}-PhoneBook:before, .#{$mi-css-prefix}-PhoneBookLegacy:before {
+  content: mi-content($mi-var-PhoneBook);
+}
+
+.#{$mi-css-prefix}-Photo:before {
+  content: mi-content($mi-var-Photo);
+}
+
+.#{$mi-css-prefix}-Photo2:before {
+  content: mi-content($mi-var-Photo2);
+}
+
+.#{$mi-css-prefix}-Picture:before, .#{$mi-css-prefix}-PictureLegacy:before {
+  content: mi-content($mi-var-Picture);
+}
+
+.#{$mi-css-prefix}-PieSingle:before {
+  content: mi-content($mi-var-PieSingle);
+}
+
+.#{$mi-css-prefix}-Pin:before, .#{$mi-css-prefix}-PinLegacy:before {
+  content: mi-content($mi-var-Pin);
+}
+
+.#{$mi-css-prefix}-PinFill:before {
+  content: mi-content($mi-var-PinFill);
+}
+
+.#{$mi-css-prefix}-Pinned:before {
+  content: mi-content($mi-var-Pinned);
+}
+
+.#{$mi-css-prefix}-PinnedFill:before {
+  content: mi-content($mi-var-PinnedFill);
+}
+
+.#{$mi-css-prefix}-PinyinIMELogo:before {
+  content: mi-content($mi-var-PinyinIMELogo);
+}
+
+.#{$mi-css-prefix}-PlaceFolder:before, .#{$mi-css-prefix}-PlaceFolderLegacy:before {
+  content: mi-content($mi-var-PlaceFolder);
+}
+
+.#{$mi-css-prefix}-PlaceFolderLegacy:before, .#{$mi-css-prefix}-PlaceFolder:before, .#{$mi-css-prefix}-PlaceFolderLegacy:before {
+  content: mi-content($mi-var-PlaceFolderLegacy);
+}
+
+.#{$mi-css-prefix}-Play:before, .#{$mi-css-prefix}-PlayLegacy:before {
+  content: mi-content($mi-var-Play);
+}
+
+.#{$mi-css-prefix}-Play36:before {
+  content: mi-content($mi-var-Play36);
+}
+
+.#{$mi-css-prefix}-PlayBadge12:before {
+  content: mi-content($mi-var-PlayBadge12);
+}
+
+.#{$mi-css-prefix}-PlayOn:before, .#{$mi-css-prefix}-PlayOnLegacy:before {
+  content: mi-content($mi-var-PlayOn);
+}
+
+.#{$mi-css-prefix}-PlayOnLegacy:before, .#{$mi-css-prefix}-PlayOn:before, .#{$mi-css-prefix}-PlayOnLegacy:before {
+  content: mi-content($mi-var-PlayOnLegacy);
+}
+
+.#{$mi-css-prefix}-PlaySolid:before {
+  content: mi-content($mi-var-PlaySolid);
+}
+
+.#{$mi-css-prefix}-PlaybackRate1x:before {
+  content: mi-content($mi-var-PlaybackRate1x);
+}
+
+.#{$mi-css-prefix}-PlaybackRateOther:before {
+  content: mi-content($mi-var-PlaybackRateOther);
+}
+
+.#{$mi-css-prefix}-PlayerSettings:before {
+  content: mi-content($mi-var-PlayerSettings);
+}
+
+.#{$mi-css-prefix}-PointErase:before {
+  content: mi-content($mi-var-PointErase);
+}
+
+.#{$mi-css-prefix}-PointEraseMirrored:before {
+  content: mi-content($mi-var-PointEraseMirrored);
+}
+
+.#{$mi-css-prefix}-PointerHand:before {
+  content: mi-content($mi-var-PointerHand);
+}
+
+.#{$mi-css-prefix}-PoliceCar:before {
+  content: mi-content($mi-var-PoliceCar);
+}
+
+.#{$mi-css-prefix}-PostUpdate:before, .#{$mi-css-prefix}-PostUpdateLegacy:before {
+  content: mi-content($mi-var-PostUpdate);
+}
+
+.#{$mi-css-prefix}-PowerButton:before {
+  content: mi-content($mi-var-PowerButton);
+}
+
+.#{$mi-css-prefix}-PresenceChicklet:before, .#{$mi-css-prefix}-CheckboxFill:before, .#{$mi-css-prefix}-CheckboxFillLegacy:before, .#{$mi-css-prefix}-CheckboxFillZeroWidthLegacy:before, .#{$mi-css-prefix}-PresenceChicklet:before, .#{$mi-css-prefix}-PresenceChickletLegacy:before, .#{$mi-css-prefix}-ResizeMouseLarge:before {
+  content: mi-content($mi-var-PresenceChicklet);
+}
+
+.#{$mi-css-prefix}-PresenceChickletVideo:before, .#{$mi-css-prefix}-PresenceChickletVideoLegacy:before {
+  content: mi-content($mi-var-PresenceChickletVideo);
+}
+
+.#{$mi-css-prefix}-Preview:before, .#{$mi-css-prefix}-PreviewLegacy:before {
+  content: mi-content($mi-var-Preview);
+}
+
+.#{$mi-css-prefix}-PreviewLink:before, .#{$mi-css-prefix}-PreviewLinkLegacy:before {
+  content: mi-content($mi-var-PreviewLink);
+}
+
+.#{$mi-css-prefix}-Previous:before, .#{$mi-css-prefix}-PreviousLegacy:before {
+  content: mi-content($mi-var-Previous);
+}
+
+.#{$mi-css-prefix}-Print:before, .#{$mi-css-prefix}-PrintLegacy:before {
+  content: mi-content($mi-var-Print);
+}
+
+.#{$mi-css-prefix}-PrintAllPages:before {
+  content: mi-content($mi-var-PrintAllPages);
+}
+
+.#{$mi-css-prefix}-PrintCustomRange:before {
+  content: mi-content($mi-var-PrintCustomRange);
+}
+
+.#{$mi-css-prefix}-PrintDefault:before {
+  content: mi-content($mi-var-PrintDefault);
+}
+
+.#{$mi-css-prefix}-Printer3D:before {
+  content: mi-content($mi-var-Printer3D);
+}
+
+.#{$mi-css-prefix}-Printer3DLegacy:before {
+  content: mi-content($mi-var-Printer3DLegacy);
+}
+
+.#{$mi-css-prefix}-PrintfaxPrinterFile:before {
+  content: mi-content($mi-var-PrintfaxPrinterFile);
+}
+
+.#{$mi-css-prefix}-Priority:before, .#{$mi-css-prefix}-PriorityLegacy:before {
+  content: mi-content($mi-var-Priority);
+}
+
+.#{$mi-css-prefix}-Process:before {
+  content: mi-content($mi-var-Process);
+}
+
+.#{$mi-css-prefix}-Processing:before {
+  content: mi-content($mi-var-Processing);
+}
+
+.#{$mi-css-prefix}-ProgressRingDots:before {
+  content: mi-content($mi-var-ProgressRingDots);
+}
+
+.#{$mi-css-prefix}-Project:before {
+  content: mi-content($mi-var-Project);
+}
+
+.#{$mi-css-prefix}-Projector:before {
+  content: mi-content($mi-var-Projector);
+}
+
+.#{$mi-css-prefix}-ProtectedDocument:before, .#{$mi-css-prefix}-ProtectedDocumentLegacy:before {
+  content: mi-content($mi-var-ProtectedDocument);
+}
+
+.#{$mi-css-prefix}-Protractor:before {
+  content: mi-content($mi-var-Protractor);
+}
+
+.#{$mi-css-prefix}-ProvisioningPackage:before {
+  content: mi-content($mi-var-ProvisioningPackage);
+}
+
+.#{$mi-css-prefix}-PuncKey:before {
+  content: mi-content($mi-var-PuncKey);
+}
+
+.#{$mi-css-prefix}-PuncKey0:before {
+  content: mi-content($mi-var-PuncKey0);
+}
+
+.#{$mi-css-prefix}-PuncKey1:before {
+  content: mi-content($mi-var-PuncKey1);
+}
+
+.#{$mi-css-prefix}-PuncKey2:before {
+  content: mi-content($mi-var-PuncKey2);
+}
+
+.#{$mi-css-prefix}-PuncKey3:before {
+  content: mi-content($mi-var-PuncKey3);
+}
+
+.#{$mi-css-prefix}-PuncKey4:before {
+  content: mi-content($mi-var-PuncKey4);
+}
+
+.#{$mi-css-prefix}-PuncKey5:before {
+  content: mi-content($mi-var-PuncKey5);
+}
+
+.#{$mi-css-prefix}-PuncKey6:before {
+  content: mi-content($mi-var-PuncKey6);
+}
+
+.#{$mi-css-prefix}-PuncKey7:before {
+  content: mi-content($mi-var-PuncKey7);
+}
+
+.#{$mi-css-prefix}-PuncKey8:before {
+  content: mi-content($mi-var-PuncKey8);
+}
+
+.#{$mi-css-prefix}-PuncKey9:before {
+  content: mi-content($mi-var-PuncKey9);
+}
+
+.#{$mi-css-prefix}-PuncKeyLeftBottom:before {
+  content: mi-content($mi-var-PuncKeyLeftBottom);
+}
+
+.#{$mi-css-prefix}-PuncKeyRightBottom:before {
+  content: mi-content($mi-var-PuncKeyRightBottom);
+}
+
+.#{$mi-css-prefix}-Puzzle:before {
+  content: mi-content($mi-var-Puzzle);
+}
+
+.#{$mi-css-prefix}-QWERTYOff:before {
+  content: mi-content($mi-var-QWERTYOff);
+}
+
+.#{$mi-css-prefix}-QWERTYOn:before {
+  content: mi-content($mi-var-QWERTYOn);
+}
+
+.#{$mi-css-prefix}-QuarentinedItems:before {
+  content: mi-content($mi-var-QuarentinedItems);
+}
+
+.#{$mi-css-prefix}-QuarentinedItemsMirrored:before {
+  content: mi-content($mi-var-QuarentinedItemsMirrored);
+}
+
+.#{$mi-css-prefix}-QuarterStarLeft:before {
+  content: mi-content($mi-var-QuarterStarLeft);
+}
+
+.#{$mi-css-prefix}-QuarterStarRight:before {
+  content: mi-content($mi-var-QuarterStarRight);
+}
+
+.#{$mi-css-prefix}-QuickNote:before {
+  content: mi-content($mi-var-QuickNote);
+}
+
+.#{$mi-css-prefix}-QuietHours:before {
+  content: mi-content($mi-var-QuietHours);
+}
+
+.#{$mi-css-prefix}-QuietHoursBadge12:before {
+  content: mi-content($mi-var-QuietHoursBadge12);
+}
+
+.#{$mi-css-prefix}-Radar:before {
+  content: mi-content($mi-var-Radar);
+}
+
+.#{$mi-css-prefix}-RadioBtnOff:before {
+  content: mi-content($mi-var-RadioBtnOff);
+}
+
+.#{$mi-css-prefix}-RadioBtnOn:before {
+  content: mi-content($mi-var-RadioBtnOn);
+}
+
+.#{$mi-css-prefix}-RadioBullet:before {
+  content: mi-content($mi-var-RadioBullet);
+}
+
+.#{$mi-css-prefix}-RadioBullet2:before {
+  content: mi-content($mi-var-RadioBullet2);
+}
+
+.#{$mi-css-prefix}-Read:before, .#{$mi-css-prefix}-ReadLegacy:before {
+  content: mi-content($mi-var-Read);
+}
+
+.#{$mi-css-prefix}-ReadingList:before {
+  content: mi-content($mi-var-ReadingList);
+}
+
+.#{$mi-css-prefix}-ReceiptPrinter:before {
+  content: mi-content($mi-var-ReceiptPrinter);
+}
+
+.#{$mi-css-prefix}-Recent:before, .#{$mi-css-prefix}-LengthLegacy:before {
+  content: mi-content($mi-var-Recent);
+}
+
+.#{$mi-css-prefix}-Record:before, .#{$mi-css-prefix}-RecordLegacy:before {
+  content: mi-content($mi-var-Record);
+}
+
+.#{$mi-css-prefix}-RectangularClipping:before {
+  content: mi-content($mi-var-RectangularClipping);
+}
+
+.#{$mi-css-prefix}-RedEye:before {
+  content: mi-content($mi-var-RedEye);
+}
+
+.#{$mi-css-prefix}-Redo:before, .#{$mi-css-prefix}-RedoLegacy:before {
+  content: mi-content($mi-var-Redo);
+}
+
+.#{$mi-css-prefix}-ReduceTile:before, .#{$mi-css-prefix}-ReduceTileLegacy:before {
+  content: mi-content($mi-var-ReduceTile);
+}
+
+.#{$mi-css-prefix}-ReduceTileLegacy:before, .#{$mi-css-prefix}-ReduceTile:before, .#{$mi-css-prefix}-ReduceTileLegacy:before {
+  content: mi-content($mi-var-ReduceTileLegacy);
+}
+
+.#{$mi-css-prefix}-ReduceTileLegacyMirrored:before, .#{$mi-css-prefix}-ReduceTileMirrored:before, .#{$mi-css-prefix}-ReduceTileLegacyMirrored:before {
+  content: mi-content($mi-var-ReduceTileLegacyMirrored);
+}
+
+.#{$mi-css-prefix}-ReduceTileMirrored:before, .#{$mi-css-prefix}-ReduceTileLegacyMirrored:before {
+  content: mi-content($mi-var-ReduceTileMirrored);
+}
+
+.#{$mi-css-prefix}-Refresh:before, .#{$mi-css-prefix}-RefreshLegacy:before, .#{$mi-css-prefix}-RepeatAll:before, .#{$mi-css-prefix}-RepeatAllLegacy:before {
+  content: mi-content($mi-var-Refresh);
+}
+
+.#{$mi-css-prefix}-Relationship:before {
+  content: mi-content($mi-var-Relationship);
+}
+
+.#{$mi-css-prefix}-RememberedDevice:before {
+  content: mi-content($mi-var-RememberedDevice);
+}
+
+.#{$mi-css-prefix}-Reminder:before {
+  content: mi-content($mi-var-Reminder);
+}
+
+.#{$mi-css-prefix}-ReminderFill:before {
+  content: mi-content($mi-var-ReminderFill);
+}
+
+.#{$mi-css-prefix}-Remote:before, .#{$mi-css-prefix}-RemoteLegacy:before {
+  content: mi-content($mi-var-Remote);
+}
+
+.#{$mi-css-prefix}-Remove:before, .#{$mi-css-prefix}-RemoveLegacy:before {
+  content: mi-content($mi-var-Remove);
+}
+
+.#{$mi-css-prefix}-RemoveFrom:before {
+  content: mi-content($mi-var-RemoveFrom);
+}
+
+.#{$mi-css-prefix}-Rename:before, .#{$mi-css-prefix}-RenameLegacy:before {
+  content: mi-content($mi-var-Rename);
+}
+
+.#{$mi-css-prefix}-Repair:before, .#{$mi-css-prefix}-RepairLegacy:before {
+  content: mi-content($mi-var-Repair);
+}
+
+.#{$mi-css-prefix}-RepeatOne:before, .#{$mi-css-prefix}-RepeatOneLegacy:before {
+  content: mi-content($mi-var-RepeatOne);
+}
+
+.#{$mi-css-prefix}-Replay:before {
+  content: mi-content($mi-var-Replay);
+}
+
+.#{$mi-css-prefix}-Reply:before, .#{$mi-css-prefix}-ReplyLegacy:before {
+  content: mi-content($mi-var-Reply);
+}
+
+.#{$mi-css-prefix}-ReplyMirrored:before {
+  content: mi-content($mi-var-ReplyMirrored);
+}
+
+.#{$mi-css-prefix}-ReportDocument:before {
+  content: mi-content($mi-var-ReportDocument);
+}
+
+.#{$mi-css-prefix}-ReportHacked:before, .#{$mi-css-prefix}-ReportHackedLegacy:before {
+  content: mi-content($mi-var-ReportHacked);
+}
+
+.#{$mi-css-prefix}-ResetDevice:before {
+  content: mi-content($mi-var-ResetDevice);
+}
+
+.#{$mi-css-prefix}-ResetDrive:before {
+  content: mi-content($mi-var-ResetDrive);
+}
+
+.#{$mi-css-prefix}-Reshare:before, .#{$mi-css-prefix}-ReshareLegacy:before {
+  content: mi-content($mi-var-Reshare);
+}
+
+.#{$mi-css-prefix}-ResizeMouseMedium:before {
+  content: mi-content($mi-var-ResizeMouseMedium);
+}
+
+.#{$mi-css-prefix}-ResizeMouseMediumMirrored:before {
+  content: mi-content($mi-var-ResizeMouseMediumMirrored);
+}
+
+.#{$mi-css-prefix}-ResizeMouseSmall:before {
+  content: mi-content($mi-var-ResizeMouseSmall);
+}
+
+.#{$mi-css-prefix}-ResizeMouseSmallMirrored:before {
+  content: mi-content($mi-var-ResizeMouseSmallMirrored);
+}
+
+.#{$mi-css-prefix}-ResizeMouseTall:before {
+  content: mi-content($mi-var-ResizeMouseTall);
+}
+
+.#{$mi-css-prefix}-ResizeMouseTallMirrored:before {
+  content: mi-content($mi-var-ResizeMouseTallMirrored);
+}
+
+.#{$mi-css-prefix}-ResizeMouseWide:before {
+  content: mi-content($mi-var-ResizeMouseWide);
+}
+
+.#{$mi-css-prefix}-ResizeTouchLarger:before {
+  content: mi-content($mi-var-ResizeTouchLarger);
+}
+
+.#{$mi-css-prefix}-ResizeTouchNarrower:before {
+  content: mi-content($mi-var-ResizeTouchNarrower);
+}
+
+.#{$mi-css-prefix}-ResizeTouchNarrowerMirrored:before {
+  content: mi-content($mi-var-ResizeTouchNarrowerMirrored);
+}
+
+.#{$mi-css-prefix}-ResizeTouchShorter:before {
+  content: mi-content($mi-var-ResizeTouchShorter);
+}
+
+.#{$mi-css-prefix}-ResizeTouchSmaller:before {
+  content: mi-content($mi-var-ResizeTouchSmaller);
+}
+
+.#{$mi-css-prefix}-Resolution:before, .#{$mi-css-prefix}-ResolutionLegacy:before {
+  content: mi-content($mi-var-Resolution);
+}
+
+.#{$mi-css-prefix}-ResolutionLegacy:before, .#{$mi-css-prefix}-Resolution:before, .#{$mi-css-prefix}-ResolutionLegacy:before {
+  content: mi-content($mi-var-ResolutionLegacy);
+}
+
+.#{$mi-css-prefix}-ReturnKey:before {
+  content: mi-content($mi-var-ReturnKey);
+}
+
+.#{$mi-css-prefix}-ReturnKeyLg:before {
+  content: mi-content($mi-var-ReturnKeyLg);
+}
+
+.#{$mi-css-prefix}-ReturnKeySm:before {
+  content: mi-content($mi-var-ReturnKeySm);
+}
+
+.#{$mi-css-prefix}-ReturnToWindow:before, .#{$mi-css-prefix}-ReturnToWindowLegacy:before {
+  content: mi-content($mi-var-ReturnToWindow);
+}
+
+.#{$mi-css-prefix}-RevToggleKey:before {
+  content: mi-content($mi-var-RevToggleKey);
+}
+
+.#{$mi-css-prefix}-Rewind:before {
+  content: mi-content($mi-var-Rewind);
+}
+
+.#{$mi-css-prefix}-RightArrowKeyTime0:before {
+  content: mi-content($mi-var-RightArrowKeyTime0);
+}
+
+.#{$mi-css-prefix}-RightArrowKeyTime1:before {
+  content: mi-content($mi-var-RightArrowKeyTime1);
+}
+
+.#{$mi-css-prefix}-RightArrowKeyTime2:before {
+  content: mi-content($mi-var-RightArrowKeyTime2);
+}
+
+.#{$mi-css-prefix}-RightArrowKeyTime3:before {
+  content: mi-content($mi-var-RightArrowKeyTime3);
+}
+
+.#{$mi-css-prefix}-RightArrowKeyTime4:before {
+  content: mi-content($mi-var-RightArrowKeyTime4);
+}
+
+.#{$mi-css-prefix}-RightDoubleQuote:before {
+  content: mi-content($mi-var-RightDoubleQuote);
+}
+
+.#{$mi-css-prefix}-RightQuote:before {
+  content: mi-content($mi-var-RightQuote);
+}
+
+.#{$mi-css-prefix}-RightStick:before {
+  content: mi-content($mi-var-RightStick);
+}
+
+.#{$mi-css-prefix}-Ringer:before {
+  content: mi-content($mi-var-Ringer);
+}
+
+.#{$mi-css-prefix}-RingerBadge12:before {
+  content: mi-content($mi-var-RingerBadge12);
+}
+
+.#{$mi-css-prefix}-RingerSilent:before {
+  content: mi-content($mi-var-RingerSilent);
+}
+
+.#{$mi-css-prefix}-RoamingDomestic:before {
+  content: mi-content($mi-var-RoamingDomestic);
+}
+
+.#{$mi-css-prefix}-RoamingInternational:before {
+  content: mi-content($mi-var-RoamingInternational);
+}
+
+.#{$mi-css-prefix}-Robot:before {
+  content: mi-content($mi-var-Robot);
+}
+
+.#{$mi-css-prefix}-Rotate:before {
+  content: mi-content($mi-var-Rotate);
+}
+
+.#{$mi-css-prefix}-RotateCamera:before, .#{$mi-css-prefix}-RotateCameraLegacy:before {
+  content: mi-content($mi-var-RotateCamera);
+}
+
+.#{$mi-css-prefix}-RotateLegacy:before {
+  content: mi-content($mi-var-RotateLegacy);
+}
+
+.#{$mi-css-prefix}-RotateMapLeft:before {
+  content: mi-content($mi-var-RotateMapLeft);
+}
+
+.#{$mi-css-prefix}-RotateMapRight:before {
+  content: mi-content($mi-var-RotateMapRight);
+}
+
+.#{$mi-css-prefix}-RotationLock:before {
+  content: mi-content($mi-var-RotationLock);
+}
+
+.#{$mi-css-prefix}-Ruler:before {
+  content: mi-content($mi-var-Ruler);
+}
+
+.#{$mi-css-prefix}-SDCard:before {
+  content: mi-content($mi-var-SDCard);
+}
+
+.#{$mi-css-prefix}-SIMError:before {
+  content: mi-content($mi-var-SIMError);
+}
+
+.#{$mi-css-prefix}-SIMLock:before {
+  content: mi-content($mi-var-SIMLock);
+}
+
+.#{$mi-css-prefix}-SIMMissing:before {
+  content: mi-content($mi-var-SIMMissing);
+}
+
+.#{$mi-css-prefix}-SIPMove:before {
+  content: mi-content($mi-var-SIPMove);
+}
+
+.#{$mi-css-prefix}-SIPRedock:before {
+  content: mi-content($mi-var-SIPRedock);
+}
+
+.#{$mi-css-prefix}-SIPUndock:before {
+  content: mi-content($mi-var-SIPUndock);
+}
+
+.#{$mi-css-prefix}-Safe:before {
+  content: mi-content($mi-var-Safe);
+}
+
+.#{$mi-css-prefix}-Save:before, .#{$mi-css-prefix}-SaveLegacy:before {
+  content: mi-content($mi-var-Save);
+}
+
+.#{$mi-css-prefix}-SaveAs:before, .#{$mi-css-prefix}-SaveAsLegacy:before {
+  content: mi-content($mi-var-SaveAs);
+}
+
+.#{$mi-css-prefix}-SaveCopy:before {
+  content: mi-content($mi-var-SaveCopy);
+}
+
+.#{$mi-css-prefix}-SaveLocal:before, .#{$mi-css-prefix}-SaveLocalLegacy:before {
+  content: mi-content($mi-var-SaveLocal);
+}
+
+.#{$mi-css-prefix}-Scan:before, .#{$mi-css-prefix}-ScanLegacy:before {
+  content: mi-content($mi-var-Scan);
+}
+
+.#{$mi-css-prefix}-ScreenTime:before {
+  content: mi-content($mi-var-ScreenTime);
+}
+
+.#{$mi-css-prefix}-ScrollMode:before {
+  content: mi-content($mi-var-ScrollMode);
+}
+
+.#{$mi-css-prefix}-ScrollUpDown:before {
+  content: mi-content($mi-var-ScrollUpDown);
+}
+
+.#{$mi-css-prefix}-Search:before, .#{$mi-css-prefix}-FindLegacy:before, .#{$mi-css-prefix}-SearchboxLegacy:before {
+  content: mi-content($mi-var-Search);
+}
+
+.#{$mi-css-prefix}-SearchAndApps:before {
+  content: mi-content($mi-var-SearchAndApps);
+}
+
+.#{$mi-css-prefix}-SelectAll:before, .#{$mi-css-prefix}-SelectAllLegacy:before {
+  content: mi-content($mi-var-SelectAll);
+}
+
+.#{$mi-css-prefix}-SemanticZoom:before, .#{$mi-css-prefix}-SemanticZoomLegacy:before {
+  content: mi-content($mi-var-SemanticZoom);
+}
+
+.#{$mi-css-prefix}-SemanticZoomLegacy:before, .#{$mi-css-prefix}-SemanticZoom:before, .#{$mi-css-prefix}-SemanticZoomLegacy:before {
+  content: mi-content($mi-var-SemanticZoomLegacy);
+}
+
+.#{$mi-css-prefix}-Send:before, .#{$mi-css-prefix}-SendLegacy:before {
+  content: mi-content($mi-var-Send);
+}
+
+.#{$mi-css-prefix}-SendFill:before {
+  content: mi-content($mi-var-SendFill);
+}
+
+.#{$mi-css-prefix}-SendFillMirrored:before {
+  content: mi-content($mi-var-SendFillMirrored);
+}
+
+.#{$mi-css-prefix}-SendMirrored:before {
+  content: mi-content($mi-var-SendMirrored);
+}
+
+.#{$mi-css-prefix}-Sensor:before {
+  content: mi-content($mi-var-Sensor);
+}
+
+.#{$mi-css-prefix}-Set:before {
+  content: mi-content($mi-var-Set);
+}
+
+.#{$mi-css-prefix}-SetSolid:before {
+  content: mi-content($mi-var-SetSolid);
+}
+
+.#{$mi-css-prefix}-SetTile:before, .#{$mi-css-prefix}-SetTileLegacy:before {
+  content: mi-content($mi-var-SetTile);
+}
+
+.#{$mi-css-prefix}-SetlockScreen:before, .#{$mi-css-prefix}-SetlockScreenLegacy:before {
+  content: mi-content($mi-var-SetlockScreen);
+}
+
+.#{$mi-css-prefix}-Settings:before, .#{$mi-css-prefix}-SettingsLegacy:before {
+  content: mi-content($mi-var-Settings);
+}
+
+.#{$mi-css-prefix}-SettingsBattery:before {
+  content: mi-content($mi-var-SettingsBattery);
+}
+
+.#{$mi-css-prefix}-SettingsDisplaySound:before {
+  content: mi-content($mi-var-SettingsDisplaySound);
+}
+
+.#{$mi-css-prefix}-Share:before {
+  content: mi-content($mi-var-Share);
+}
+
+.#{$mi-css-prefix}-ShareBroadband:before {
+  content: mi-content($mi-var-ShareBroadband);
+}
+
+.#{$mi-css-prefix}-Shield:before {
+  content: mi-content($mi-var-Shield);
+}
+
+.#{$mi-css-prefix}-Shop:before, .#{$mi-css-prefix}-ShopLegacy:before {
+  content: mi-content($mi-var-Shop);
+}
+
+.#{$mi-css-prefix}-ShoppingCart:before {
+  content: mi-content($mi-var-ShoppingCart);
+}
+
+.#{$mi-css-prefix}-ShowAllFiles1:before, .#{$mi-css-prefix}-ShowAllFiles1Legacy:before {
+  content: mi-content($mi-var-ShowAllFiles1);
+}
+
+.#{$mi-css-prefix}-ShowAllFiles1Legacy:before, .#{$mi-css-prefix}-ShowAllFiles1:before, .#{$mi-css-prefix}-ShowAllFiles1Legacy:before {
+  content: mi-content($mi-var-ShowAllFiles1Legacy);
+}
+
+.#{$mi-css-prefix}-ShowAllFiles3:before, .#{$mi-css-prefix}-ShowAllFiles3Legacy:before {
+  content: mi-content($mi-var-ShowAllFiles3);
+}
+
+.#{$mi-css-prefix}-ShowAllFiles3Legacy:before, .#{$mi-css-prefix}-ShowAllFiles3:before, .#{$mi-css-prefix}-ShowAllFiles3Legacy:before {
+  content: mi-content($mi-var-ShowAllFiles3Legacy);
+}
+
+.#{$mi-css-prefix}-ShowBcc:before, .#{$mi-css-prefix}-ShowBccLegacy:before {
+  content: mi-content($mi-var-ShowBcc);
+}
+
+.#{$mi-css-prefix}-ShowResults:before, .#{$mi-css-prefix}-ShowResultsLegacy:before {
+  content: mi-content($mi-var-ShowResults);
+}
+
+.#{$mi-css-prefix}-ShowResultsMirrored:before, .#{$mi-css-prefix}-ShowResultsLegacyMirrored:before {
+  content: mi-content($mi-var-ShowResultsMirrored);
+}
+
+.#{$mi-css-prefix}-Shuffle:before, .#{$mi-css-prefix}-ShuffleLegacy:before {
+  content: mi-content($mi-var-Shuffle);
+}
+
+.#{$mi-css-prefix}-SignalBars1:before {
+  content: mi-content($mi-var-SignalBars1);
+}
+
+.#{$mi-css-prefix}-SignalBars2:before {
+  content: mi-content($mi-var-SignalBars2);
+}
+
+.#{$mi-css-prefix}-SignalBars3:before {
+  content: mi-content($mi-var-SignalBars3);
+}
+
+.#{$mi-css-prefix}-SignalBars4:before {
+  content: mi-content($mi-var-SignalBars4);
+}
+
+.#{$mi-css-prefix}-SignalBars5:before {
+  content: mi-content($mi-var-SignalBars5);
+}
+
+.#{$mi-css-prefix}-SignalError:before {
+  content: mi-content($mi-var-SignalError);
+}
+
+.#{$mi-css-prefix}-SignalNotConnected:before {
+  content: mi-content($mi-var-SignalNotConnected);
+}
+
+.#{$mi-css-prefix}-SignalRoaming:before {
+  content: mi-content($mi-var-SignalRoaming);
+}
+
+.#{$mi-css-prefix}-SignatureCapture:before {
+  content: mi-content($mi-var-SignatureCapture);
+}
+
+.#{$mi-css-prefix}-Size:before {
+  content: mi-content($mi-var-Size);
+}
+
+.#{$mi-css-prefix}-SkipBack10:before {
+  content: mi-content($mi-var-SkipBack10);
+}
+
+.#{$mi-css-prefix}-SkipForward30:before {
+  content: mi-content($mi-var-SkipForward30);
+}
+
+.#{$mi-css-prefix}-SliderThumb:before {
+  content: mi-content($mi-var-SliderThumb);
+}
+
+.#{$mi-css-prefix}-Slideshow:before, .#{$mi-css-prefix}-SlideshowLegacy:before {
+  content: mi-content($mi-var-Slideshow);
+}
+
+.#{$mi-css-prefix}-SlowMotionOn:before {
+  content: mi-content($mi-var-SlowMotionOn);
+}
+
+.#{$mi-css-prefix}-SmallErase:before {
+  content: mi-content($mi-var-SmallErase);
+}
+
+.#{$mi-css-prefix}-Smartcard:before {
+  content: mi-content($mi-var-Smartcard);
+}
+
+.#{$mi-css-prefix}-SmartcardVirtual:before {
+  content: mi-content($mi-var-SmartcardVirtual);
+}
+
+.#{$mi-css-prefix}-Sort:before, .#{$mi-css-prefix}-SortLegacy:before {
+  content: mi-content($mi-var-Sort);
+}
+
+.#{$mi-css-prefix}-SpatialVolume0:before {
+  content: mi-content($mi-var-SpatialVolume0);
+}
+
+.#{$mi-css-prefix}-SpatialVolume1:before {
+  content: mi-content($mi-var-SpatialVolume1);
+}
+
+.#{$mi-css-prefix}-SpatialVolume2:before {
+  content: mi-content($mi-var-SpatialVolume2);
+}
+
+.#{$mi-css-prefix}-SpatialVolume3:before {
+  content: mi-content($mi-var-SpatialVolume3);
+}
+
+.#{$mi-css-prefix}-Speakers:before {
+  content: mi-content($mi-var-Speakers);
+}
+
+.#{$mi-css-prefix}-Speech:before {
+  content: mi-content($mi-var-Speech);
+}
+
+.#{$mi-css-prefix}-SpeedHigh:before {
+  content: mi-content($mi-var-SpeedHigh);
+}
+
+.#{$mi-css-prefix}-SpeedMedium:before {
+  content: mi-content($mi-var-SpeedMedium);
+}
+
+.#{$mi-css-prefix}-SpeedOff:before {
+  content: mi-content($mi-var-SpeedOff);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeBookBinding:before {
+  content: mi-content($mi-var-StaplingLandscapeBookBinding);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeBottomLeft:before {
+  content: mi-content($mi-var-StaplingLandscapeBottomLeft);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeBottomRight:before {
+  content: mi-content($mi-var-StaplingLandscapeBottomRight);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeTopLeft:before {
+  content: mi-content($mi-var-StaplingLandscapeTopLeft);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeTopRight:before {
+  content: mi-content($mi-var-StaplingLandscapeTopRight);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeTwoBottom:before {
+  content: mi-content($mi-var-StaplingLandscapeTwoBottom);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeTwoLeft:before {
+  content: mi-content($mi-var-StaplingLandscapeTwoLeft);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeTwoRight:before {
+  content: mi-content($mi-var-StaplingLandscapeTwoRight);
+}
+
+.#{$mi-css-prefix}-StaplingLandscapeTwoTop:before {
+  content: mi-content($mi-var-StaplingLandscapeTwoTop);
+}
+
+.#{$mi-css-prefix}-StaplingOff:before {
+  content: mi-content($mi-var-StaplingOff);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitBookBinding:before {
+  content: mi-content($mi-var-StaplingPortraitBookBinding);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitBottomLeft:before {
+  content: mi-content($mi-var-StaplingPortraitBottomLeft);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitBottomRight:before {
+  content: mi-content($mi-var-StaplingPortraitBottomRight);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitTopLeft:before {
+  content: mi-content($mi-var-StaplingPortraitTopLeft);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitTopRight:before {
+  content: mi-content($mi-var-StaplingPortraitTopRight);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitTwoBottom:before {
+  content: mi-content($mi-var-StaplingPortraitTwoBottom);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitTwoLeft:before {
+  content: mi-content($mi-var-StaplingPortraitTwoLeft);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitTwoRight:before {
+  content: mi-content($mi-var-StaplingPortraitTwoRight);
+}
+
+.#{$mi-css-prefix}-StaplingPortraitTwoTop:before {
+  content: mi-content($mi-var-StaplingPortraitTwoTop);
+}
+
+.#{$mi-css-prefix}-StartPoint:before {
+  content: mi-content($mi-var-StartPoint);
+}
+
+.#{$mi-css-prefix}-StartPointSolid:before {
+  content: mi-content($mi-var-StartPointSolid);
+}
+
+.#{$mi-css-prefix}-StatusCheckmark:before {
+  content: mi-content($mi-var-StatusCheckmark);
+}
+
+.#{$mi-css-prefix}-StatusCheckmark7:before {
+  content: mi-content($mi-var-StatusCheckmark7);
+}
+
+.#{$mi-css-prefix}-StatusCheckmarkLeft:before {
+  content: mi-content($mi-var-StatusCheckmarkLeft);
+}
+
+.#{$mi-css-prefix}-StatusCircle:before {
+  content: mi-content($mi-var-StatusCircle);
+}
+
+.#{$mi-css-prefix}-StatusCircle7:before {
+  content: mi-content($mi-var-StatusCircle7);
+}
+
+.#{$mi-css-prefix}-StatusCircleBlock:before {
+  content: mi-content($mi-var-StatusCircleBlock);
+}
+
+.#{$mi-css-prefix}-StatusCircleBlock2:before {
+  content: mi-content($mi-var-StatusCircleBlock2);
+}
+
+.#{$mi-css-prefix}-StatusCircleCheckmark:before {
+  content: mi-content($mi-var-StatusCircleCheckmark);
+}
+
+.#{$mi-css-prefix}-StatusCircleErrorX:before {
+  content: mi-content($mi-var-StatusCircleErrorX);
+}
+
+.#{$mi-css-prefix}-StatusCircleExclamation:before {
+  content: mi-content($mi-var-StatusCircleExclamation);
+}
+
+.#{$mi-css-prefix}-StatusCircleInfo:before {
+  content: mi-content($mi-var-StatusCircleInfo);
+}
+
+.#{$mi-css-prefix}-StatusCircleInner:before {
+  content: mi-content($mi-var-StatusCircleInner);
+}
+
+.#{$mi-css-prefix}-StatusCircleLeft:before {
+  content: mi-content($mi-var-StatusCircleLeft);
+}
+
+.#{$mi-css-prefix}-StatusCircleOuter:before {
+  content: mi-content($mi-var-StatusCircleOuter);
+}
+
+.#{$mi-css-prefix}-StatusCircleQuestionMark:before {
+  content: mi-content($mi-var-StatusCircleQuestionMark);
+}
+
+.#{$mi-css-prefix}-StatusCircleRing:before {
+  content: mi-content($mi-var-StatusCircleRing);
+}
+
+.#{$mi-css-prefix}-StatusCircleSync:before {
+  content: mi-content($mi-var-StatusCircleSync);
+}
+
+.#{$mi-css-prefix}-StatusConnecting1:before {
+  content: mi-content($mi-var-StatusConnecting1);
+}
+
+.#{$mi-css-prefix}-StatusConnecting2:before {
+  content: mi-content($mi-var-StatusConnecting2);
+}
+
+.#{$mi-css-prefix}-StatusDataTransfer:before {
+  content: mi-content($mi-var-StatusDataTransfer);
+}
+
+.#{$mi-css-prefix}-StatusDataTransferVPN:before {
+  content: mi-content($mi-var-StatusDataTransferVPN);
+}
+
+.#{$mi-css-prefix}-StatusDualSIM1:before {
+  content: mi-content($mi-var-StatusDualSIM1);
+}
+
+.#{$mi-css-prefix}-StatusDualSIM1VPN:before {
+  content: mi-content($mi-var-StatusDualSIM1VPN);
+}
+
+.#{$mi-css-prefix}-StatusDualSIM2:before {
+  content: mi-content($mi-var-StatusDualSIM2);
+}
+
+.#{$mi-css-prefix}-StatusDualSIM2VPN:before {
+  content: mi-content($mi-var-StatusDualSIM2VPN);
+}
+
+.#{$mi-css-prefix}-StatusError:before {
+  content: mi-content($mi-var-StatusError);
+}
+
+.#{$mi-css-prefix}-StatusErrorCircle7:before {
+  content: mi-content($mi-var-StatusErrorCircle7);
+}
+
+.#{$mi-css-prefix}-StatusErrorFull:before {
+  content: mi-content($mi-var-StatusErrorFull);
+}
+
+.#{$mi-css-prefix}-StatusErrorLeft:before {
+  content: mi-content($mi-var-StatusErrorLeft);
+}
+
+.#{$mi-css-prefix}-StatusExclamationCircle7:before {
+  content: mi-content($mi-var-StatusExclamationCircle7);
+}
+
+.#{$mi-css-prefix}-StatusInfo:before {
+  content: mi-content($mi-var-StatusInfo);
+}
+
+.#{$mi-css-prefix}-StatusInfoLeft:before {
+  content: mi-content($mi-var-StatusInfoLeft);
+}
+
+.#{$mi-css-prefix}-StatusPause7:before {
+  content: mi-content($mi-var-StatusPause7);
+}
+
+.#{$mi-css-prefix}-StatusSGLTE:before {
+  content: mi-content($mi-var-StatusSGLTE);
+}
+
+.#{$mi-css-prefix}-StatusSGLTECell:before {
+  content: mi-content($mi-var-StatusSGLTECell);
+}
+
+.#{$mi-css-prefix}-StatusSGLTEDataVPN:before {
+  content: mi-content($mi-var-StatusSGLTEDataVPN);
+}
+
+.#{$mi-css-prefix}-StatusTriangle:before {
+  content: mi-content($mi-var-StatusTriangle);
+}
+
+.#{$mi-css-prefix}-StatusTriangleExclamation:before {
+  content: mi-content($mi-var-StatusTriangleExclamation);
+}
+
+.#{$mi-css-prefix}-StatusTriangleInner:before {
+  content: mi-content($mi-var-StatusTriangleInner);
+}
+
+.#{$mi-css-prefix}-StatusTriangleLeft:before {
+  content: mi-content($mi-var-StatusTriangleLeft);
+}
+
+.#{$mi-css-prefix}-StatusTriangleOuter:before {
+  content: mi-content($mi-var-StatusTriangleOuter);
+}
+
+.#{$mi-css-prefix}-StatusUnsecure:before {
+  content: mi-content($mi-var-StatusUnsecure);
+}
+
+.#{$mi-css-prefix}-StatusVPN:before {
+  content: mi-content($mi-var-StatusVPN);
+}
+
+.#{$mi-css-prefix}-StatusWarning:before {
+  content: mi-content($mi-var-StatusWarning);
+}
+
+.#{$mi-css-prefix}-StatusWarningLeft:before {
+  content: mi-content($mi-var-StatusWarningLeft);
+}
+
+.#{$mi-css-prefix}-Sticker2:before {
+  content: mi-content($mi-var-Sticker2);
+}
+
+.#{$mi-css-prefix}-StockDown:before {
+  content: mi-content($mi-var-StockDown);
+}
+
+.#{$mi-css-prefix}-StockUp:before {
+  content: mi-content($mi-var-StockUp);
+}
+
+.#{$mi-css-prefix}-Stop:before, .#{$mi-css-prefix}-StopLegacy:before {
+  content: mi-content($mi-var-Stop);
+}
+
+.#{$mi-css-prefix}-StopPoint:before {
+  content: mi-content($mi-var-StopPoint);
+}
+
+.#{$mi-css-prefix}-StopPointSolid:before {
+  content: mi-content($mi-var-StopPointSolid);
+}
+
+.#{$mi-css-prefix}-StopSlideshow:before, .#{$mi-css-prefix}-StopSlideshowLegacy:before {
+  content: mi-content($mi-var-StopSlideshow);
+}
+
+.#{$mi-css-prefix}-StopSlideshowLegacy:before, .#{$mi-css-prefix}-StopSlideshow:before, .#{$mi-css-prefix}-StopSlideshowLegacy:before {
+  content: mi-content($mi-var-StopSlideshowLegacy);
+}
+
+.#{$mi-css-prefix}-Stopwatch:before {
+  content: mi-content($mi-var-Stopwatch);
+}
+
+.#{$mi-css-prefix}-StorageNetworkWireless:before {
+  content: mi-content($mi-var-StorageNetworkWireless);
+}
+
+.#{$mi-css-prefix}-StorageOptical:before {
+  content: mi-content($mi-var-StorageOptical);
+}
+
+.#{$mi-css-prefix}-StorageTape:before {
+  content: mi-content($mi-var-StorageTape);
+}
+
+.#{$mi-css-prefix}-Streaming:before {
+  content: mi-content($mi-var-Streaming);
+}
+
+.#{$mi-css-prefix}-StreamingEnterprise:before {
+  content: mi-content($mi-var-StreamingEnterprise);
+}
+
+.#{$mi-css-prefix}-Street:before, .#{$mi-css-prefix}-StreetLegacy:before {
+  content: mi-content($mi-var-Street);
+}
+
+.#{$mi-css-prefix}-StreetsideSplitExpand:before {
+  content: mi-content($mi-var-StreetsideSplitExpand);
+}
+
+.#{$mi-css-prefix}-StreetsideSplitMinimize:before {
+  content: mi-content($mi-var-StreetsideSplitMinimize);
+}
+
+.#{$mi-css-prefix}-StrokeErase:before {
+  content: mi-content($mi-var-StrokeErase);
+}
+
+.#{$mi-css-prefix}-StrokeErase2:before {
+  content: mi-content($mi-var-StrokeErase2);
+}
+
+.#{$mi-css-prefix}-StrokeEraseMirrored:before {
+  content: mi-content($mi-var-StrokeEraseMirrored);
+}
+
+.#{$mi-css-prefix}-Subtitles:before {
+  content: mi-content($mi-var-Subtitles);
+}
+
+.#{$mi-css-prefix}-SubtitlesAudio:before {
+  content: mi-content($mi-var-SubtitlesAudio);
+}
+
+.#{$mi-css-prefix}-SurfaceHub:before {
+  content: mi-content($mi-var-SurfaceHub);
+}
+
+.#{$mi-css-prefix}-SurfaceHubSelected:before {
+  content: mi-content($mi-var-SurfaceHubSelected);
+}
+
+.#{$mi-css-prefix}-Sustainable:before {
+  content: mi-content($mi-var-Sustainable);
+}
+
+.#{$mi-css-prefix}-Swipe:before {
+  content: mi-content($mi-var-Swipe);
+}
+
+.#{$mi-css-prefix}-SwipeRevealArt:before {
+  content: mi-content($mi-var-SwipeRevealArt);
+}
+
+.#{$mi-css-prefix}-Switch:before, .#{$mi-css-prefix}-SwitchLegacy:before {
+  content: mi-content($mi-var-Switch);
+}
+
+.#{$mi-css-prefix}-SwitchApps:before, .#{$mi-css-prefix}-SwitchAppsLegacy:before {
+  content: mi-content($mi-var-SwitchApps);
+}
+
+.#{$mi-css-prefix}-SwitchUser:before {
+  content: mi-content($mi-var-SwitchUser);
+}
+
+.#{$mi-css-prefix}-Sync:before, .#{$mi-css-prefix}-SyncLegacy:before {
+  content: mi-content($mi-var-Sync);
+}
+
+.#{$mi-css-prefix}-SyncBadge12:before {
+  content: mi-content($mi-var-SyncBadge12);
+}
+
+.#{$mi-css-prefix}-SyncError:before {
+  content: mi-content($mi-var-SyncError);
+}
+
+.#{$mi-css-prefix}-SyncFolder:before, .#{$mi-css-prefix}-SyncFolderLegacy:before {
+  content: mi-content($mi-var-SyncFolder);
+}
+
+.#{$mi-css-prefix}-System:before {
+  content: mi-content($mi-var-System);
+}
+
+.#{$mi-css-prefix}-TVMonitor:before {
+  content: mi-content($mi-var-TVMonitor);
+}
+
+.#{$mi-css-prefix}-TVMonitorSelected:before {
+  content: mi-content($mi-var-TVMonitorSelected);
+}
+
+.#{$mi-css-prefix}-Tablet:before {
+  content: mi-content($mi-var-Tablet);
+}
+
+.#{$mi-css-prefix}-TabletMode:before {
+  content: mi-content($mi-var-TabletMode);
+}
+
+.#{$mi-css-prefix}-TabletSelected:before {
+  content: mi-content($mi-var-TabletSelected);
+}
+
+.#{$mi-css-prefix}-Tag:before, .#{$mi-css-prefix}-TagLegacy:before {
+  content: mi-content($mi-var-Tag);
+}
+
+.#{$mi-css-prefix}-TapAndSend:before {
+  content: mi-content($mi-var-TapAndSend);
+}
+
+.#{$mi-css-prefix}-TaskView:before {
+  content: mi-content($mi-var-TaskView);
+}
+
+.#{$mi-css-prefix}-TaskViewExpanded:before {
+  content: mi-content($mi-var-TaskViewExpanded);
+}
+
+.#{$mi-css-prefix}-TaskViewSettings:before {
+  content: mi-content($mi-var-TaskViewSettings);
+}
+
+.#{$mi-css-prefix}-TaskbarPhone:before {
+  content: mi-content($mi-var-TaskbarPhone);
+}
+
+.#{$mi-css-prefix}-ThisPC:before {
+  content: mi-content($mi-var-ThisPC);
+}
+
+.#{$mi-css-prefix}-ThoughtBubble:before {
+  content: mi-content($mi-var-ThoughtBubble);
+}
+
+.#{$mi-css-prefix}-ThreeBars:before, .#{$mi-css-prefix}-ThreeBarsLegacy:before {
+  content: mi-content($mi-var-ThreeBars);
+}
+
+.#{$mi-css-prefix}-ThreeQuarterStarLeft:before {
+  content: mi-content($mi-var-ThreeQuarterStarLeft);
+}
+
+.#{$mi-css-prefix}-ThreeQuarterStarRight:before {
+  content: mi-content($mi-var-ThreeQuarterStarRight);
+}
+
+.#{$mi-css-prefix}-Tiles:before {
+  content: mi-content($mi-var-Tiles);
+}
+
+.#{$mi-css-prefix}-TiltDown:before {
+  content: mi-content($mi-var-TiltDown);
+}
+
+.#{$mi-css-prefix}-TiltUp:before {
+  content: mi-content($mi-var-TiltUp);
+}
+
+.#{$mi-css-prefix}-TimeLanguage:before {
+  content: mi-content($mi-var-TimeLanguage);
+}
+
+.#{$mi-css-prefix}-ToggleBorder:before {
+  content: mi-content($mi-var-ToggleBorder);
+}
+
+.#{$mi-css-prefix}-ToggleFilled:before {
+  content: mi-content($mi-var-ToggleFilled);
+}
+
+.#{$mi-css-prefix}-ToggleThumb:before {
+  content: mi-content($mi-var-ToggleThumb);
+}
+
+.#{$mi-css-prefix}-TollSolid:before {
+  content: mi-content($mi-var-TollSolid);
+}
+
+.#{$mi-css-prefix}-ToolTip:before, .#{$mi-css-prefix}-Lightbulb:before {
+  content: mi-content($mi-var-ToolTip);
+}
+
+.#{$mi-css-prefix}-Touch:before {
+  content: mi-content($mi-var-Touch);
+}
+
+.#{$mi-css-prefix}-TouchPointer:before, .#{$mi-css-prefix}-TouchPointerLegacy:before {
+  content: mi-content($mi-var-TouchPointer);
+}
+
+.#{$mi-css-prefix}-Touchpad:before {
+  content: mi-content($mi-var-Touchpad);
+}
+
+.#{$mi-css-prefix}-Touchscreen:before {
+  content: mi-content($mi-var-Touchscreen);
+}
+
+.#{$mi-css-prefix}-Trackers:before {
+  content: mi-content($mi-var-Trackers);
+}
+
+.#{$mi-css-prefix}-TrackersMirrored:before {
+  content: mi-content($mi-var-TrackersMirrored);
+}
+
+.#{$mi-css-prefix}-TrafficCongestionSolid:before {
+  content: mi-content($mi-var-TrafficCongestionSolid);
+}
+
+.#{$mi-css-prefix}-TrafficLight:before {
+  content: mi-content($mi-var-TrafficLight);
+}
+
+.#{$mi-css-prefix}-Train:before {
+  content: mi-content($mi-var-Train);
+}
+
+.#{$mi-css-prefix}-TrainSolid:before {
+  content: mi-content($mi-var-TrainSolid);
+}
+
+.#{$mi-css-prefix}-TreeFolderFolder:before {
+  content: mi-content($mi-var-TreeFolderFolder);
+}
+
+.#{$mi-css-prefix}-TreeFolderFolderFill:before {
+  content: mi-content($mi-var-TreeFolderFolderFill);
+}
+
+.#{$mi-css-prefix}-TreeFolderFolderOpen:before {
+  content: mi-content($mi-var-TreeFolderFolderOpen);
+}
+
+.#{$mi-css-prefix}-TreeFolderFolderOpenFill:before {
+  content: mi-content($mi-var-TreeFolderFolderOpenFill);
+}
+
+.#{$mi-css-prefix}-TriggerLeft:before {
+  content: mi-content($mi-var-TriggerLeft);
+}
+
+.#{$mi-css-prefix}-TriggerRight:before {
+  content: mi-content($mi-var-TriggerRight);
+}
+
+.#{$mi-css-prefix}-Trim:before, .#{$mi-css-prefix}-TrimLegacy:before {
+  content: mi-content($mi-var-Trim);
+}
+
+.#{$mi-css-prefix}-TwoBars:before, .#{$mi-css-prefix}-TwoBarsLegacy:before {
+  content: mi-content($mi-var-TwoBars);
+}
+
+.#{$mi-css-prefix}-TwoPage:before, .#{$mi-css-prefix}-TwoPageLegacy:before {
+  content: mi-content($mi-var-TwoPage);
+}
+
+.#{$mi-css-prefix}-Type:before, .#{$mi-css-prefix}-TypeLegacy:before {
+  content: mi-content($mi-var-Type);
+}
+
+.#{$mi-css-prefix}-TypingIndicatorLegacy:before {
+  content: mi-content($mi-var-TypingIndicatorLegacy);
+}
+
+.#{$mi-css-prefix}-USB:before {
+  content: mi-content($mi-var-USB);
+}
+
+.#{$mi-css-prefix}-USBSafeConnect:before {
+  content: mi-content($mi-var-USBSafeConnect);
+}
+
+.#{$mi-css-prefix}-Underline:before, .#{$mi-css-prefix}-UnderlineLegacy:before {
+  content: mi-content($mi-var-Underline);
+}
+
+.#{$mi-css-prefix}-UnderlineLKorean:before, .#{$mi-css-prefix}-UnderlineLKoreanLegacy:before {
+  content: mi-content($mi-var-UnderlineLKorean);
+}
+
+.#{$mi-css-prefix}-UnderlineLKoreanLegacy:before, .#{$mi-css-prefix}-UnderlineLKorean:before, .#{$mi-css-prefix}-UnderlineLKoreanLegacy:before {
+  content: mi-content($mi-var-UnderlineLKoreanLegacy);
+}
+
+.#{$mi-css-prefix}-UnderlineRussian:before, .#{$mi-css-prefix}-UnderlineRussianLegacy:before {
+  content: mi-content($mi-var-UnderlineRussian);
+}
+
+.#{$mi-css-prefix}-UnderlineRussianLegacy:before, .#{$mi-css-prefix}-UnderlineRussian:before, .#{$mi-css-prefix}-UnderlineRussianLegacy:before {
+  content: mi-content($mi-var-UnderlineRussianLegacy);
+}
+
+.#{$mi-css-prefix}-UnderlineS:before, .#{$mi-css-prefix}-UnderlineSLegacy:before {
+  content: mi-content($mi-var-UnderlineS);
+}
+
+.#{$mi-css-prefix}-UnderlineSLegacy:before, .#{$mi-css-prefix}-UnderlineS:before, .#{$mi-css-prefix}-UnderlineSLegacy:before {
+  content: mi-content($mi-var-UnderlineSLegacy);
+}
+
+.#{$mi-css-prefix}-UnderlineU:before, .#{$mi-css-prefix}-UnderlineULegacy:before {
+  content: mi-content($mi-var-UnderlineU);
+}
+
+.#{$mi-css-prefix}-UnderlineULegacy:before, .#{$mi-css-prefix}-UnderlineU:before, .#{$mi-css-prefix}-UnderlineULegacy:before {
+  content: mi-content($mi-var-UnderlineULegacy);
+}
+
+.#{$mi-css-prefix}-UnderscoreSpace:before {
+  content: mi-content($mi-var-UnderscoreSpace);
+}
+
+.#{$mi-css-prefix}-Undo:before, .#{$mi-css-prefix}-UndoLegacy:before {
+  content: mi-content($mi-var-Undo);
+}
+
+.#{$mi-css-prefix}-Unfavorite:before, .#{$mi-css-prefix}-UnfavoriteLegacy:before {
+  content: mi-content($mi-var-Unfavorite);
+}
+
+.#{$mi-css-prefix}-Unit:before {
+  content: mi-content($mi-var-Unit);
+}
+
+.#{$mi-css-prefix}-Unknown:before {
+  content: mi-content($mi-var-Unknown);
+}
+
+.#{$mi-css-prefix}-UnknownMirrored:before {
+  content: mi-content($mi-var-UnknownMirrored);
+}
+
+.#{$mi-css-prefix}-Unlock:before, .#{$mi-css-prefix}-UnlockLegacy:before {
+  content: mi-content($mi-var-Unlock);
+}
+
+.#{$mi-css-prefix}-Unpin:before, .#{$mi-css-prefix}-UnpinLegacy:before {
+  content: mi-content($mi-var-Unpin);
+}
+
+.#{$mi-css-prefix}-UnsyncFolder:before, .#{$mi-css-prefix}-UnsyncFolderLegacy:before {
+  content: mi-content($mi-var-UnsyncFolder);
+}
+
+.#{$mi-css-prefix}-Up:before, .#{$mi-css-prefix}-UpLegacy:before {
+  content: mi-content($mi-var-Up);
+}
+
+.#{$mi-css-prefix}-UpArrowShiftKey:before {
+  content: mi-content($mi-var-UpArrowShiftKey);
+}
+
+.#{$mi-css-prefix}-UpShiftKey:before {
+  content: mi-content($mi-var-UpShiftKey);
+}
+
+.#{$mi-css-prefix}-UpdateRestore:before {
+  content: mi-content($mi-var-UpdateRestore);
+}
+
+.#{$mi-css-prefix}-Upload:before, .#{$mi-css-prefix}-UploadLegacy:before, .#{$mi-css-prefix}-UploadSkyDriveLegacy:before {
+  content: mi-content($mi-var-Upload);
+}
+
+.#{$mi-css-prefix}-UserAPN:before {
+  content: mi-content($mi-var-UserAPN);
+}
+
+.#{$mi-css-prefix}-VPN:before {
+  content: mi-content($mi-var-VPN);
+}
+
+.#{$mi-css-prefix}-VerticalBattery0:before {
+  content: mi-content($mi-var-VerticalBattery0);
+}
+
+.#{$mi-css-prefix}-VerticalBattery1:before {
+  content: mi-content($mi-var-VerticalBattery1);
+}
+
+.#{$mi-css-prefix}-VerticalBattery10:before {
+  content: mi-content($mi-var-VerticalBattery10);
+}
+
+.#{$mi-css-prefix}-VerticalBattery2:before {
+  content: mi-content($mi-var-VerticalBattery2);
+}
+
+.#{$mi-css-prefix}-VerticalBattery3:before {
+  content: mi-content($mi-var-VerticalBattery3);
+}
+
+.#{$mi-css-prefix}-VerticalBattery4:before {
+  content: mi-content($mi-var-VerticalBattery4);
+}
+
+.#{$mi-css-prefix}-VerticalBattery5:before {
+  content: mi-content($mi-var-VerticalBattery5);
+}
+
+.#{$mi-css-prefix}-VerticalBattery6:before {
+  content: mi-content($mi-var-VerticalBattery6);
+}
+
+.#{$mi-css-prefix}-VerticalBattery7:before {
+  content: mi-content($mi-var-VerticalBattery7);
+}
+
+.#{$mi-css-prefix}-VerticalBattery8:before {
+  content: mi-content($mi-var-VerticalBattery8);
+}
+
+.#{$mi-css-prefix}-VerticalBattery9:before {
+  content: mi-content($mi-var-VerticalBattery9);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging0:before {
+  content: mi-content($mi-var-VerticalBatteryCharging0);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging1:before {
+  content: mi-content($mi-var-VerticalBatteryCharging1);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging10:before {
+  content: mi-content($mi-var-VerticalBatteryCharging10);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging2:before {
+  content: mi-content($mi-var-VerticalBatteryCharging2);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging3:before {
+  content: mi-content($mi-var-VerticalBatteryCharging3);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging4:before {
+  content: mi-content($mi-var-VerticalBatteryCharging4);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging5:before {
+  content: mi-content($mi-var-VerticalBatteryCharging5);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging6:before {
+  content: mi-content($mi-var-VerticalBatteryCharging6);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging7:before {
+  content: mi-content($mi-var-VerticalBatteryCharging7);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging8:before {
+  content: mi-content($mi-var-VerticalBatteryCharging8);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryCharging9:before {
+  content: mi-content($mi-var-VerticalBatteryCharging9);
+}
+
+.#{$mi-css-prefix}-VerticalBatteryUnknown:before {
+  content: mi-content($mi-var-VerticalBatteryUnknown);
+}
+
+.#{$mi-css-prefix}-Vibrate:before {
+  content: mi-content($mi-var-Vibrate);
+}
+
+.#{$mi-css-prefix}-Video:before, .#{$mi-css-prefix}-VideoInlineLegacy:before, .#{$mi-css-prefix}-VideoLegacy:before {
+  content: mi-content($mi-var-Video);
+}
+
+.#{$mi-css-prefix}-Video360:before {
+  content: mi-content($mi-var-Video360);
+}
+
+.#{$mi-css-prefix}-VideoChat:before, .#{$mi-css-prefix}-VideoChatLegacy:before {
+  content: mi-content($mi-var-VideoChat);
+}
+
+.#{$mi-css-prefix}-VideoSolid:before {
+  content: mi-content($mi-var-VideoSolid);
+}
+
+.#{$mi-css-prefix}-View:before, .#{$mi-css-prefix}-RevealPasswordLegacy:before, .#{$mi-css-prefix}-ViewLegacy:before {
+  content: mi-content($mi-var-View);
+}
+
+.#{$mi-css-prefix}-ViewAll:before, .#{$mi-css-prefix}-ShowAllFilesLegacy:before, .#{$mi-css-prefix}-ViewAllLegacy:before {
+  content: mi-content($mi-var-ViewAll);
+}
+
+.#{$mi-css-prefix}-ViewDashboard:before {
+  content: mi-content($mi-var-ViewDashboard);
+}
+
+.#{$mi-css-prefix}-Volume:before, .#{$mi-css-prefix}-VolumeLegacy:before {
+  content: mi-content($mi-var-Volume);
+}
+
+.#{$mi-css-prefix}-Volume0:before {
+  content: mi-content($mi-var-Volume0);
+}
+
+.#{$mi-css-prefix}-Volume1:before {
+  content: mi-content($mi-var-Volume1);
+}
+
+.#{$mi-css-prefix}-Volume2:before {
+  content: mi-content($mi-var-Volume2);
+}
+
+.#{$mi-css-prefix}-Volume3:before {
+  content: mi-content($mi-var-Volume3);
+}
+
+.#{$mi-css-prefix}-VolumeBars:before {
+  content: mi-content($mi-var-VolumeBars);
+}
+
+.#{$mi-css-prefix}-Walk:before {
+  content: mi-content($mi-var-Walk);
+}
+
+.#{$mi-css-prefix}-WalkSolid:before {
+  content: mi-content($mi-var-WalkSolid);
+}
+
+.#{$mi-css-prefix}-Warning:before {
+  content: mi-content($mi-var-Warning);
+}
+
+.#{$mi-css-prefix}-Webcam:before, .#{$mi-css-prefix}-WebcamLegacy:before {
+  content: mi-content($mi-var-Webcam);
+}
+
+.#{$mi-css-prefix}-Webcam2:before {
+  content: mi-content($mi-var-Webcam2);
+}
+
+.#{$mi-css-prefix}-Website:before {
+  content: mi-content($mi-var-Website);
+}
+
+.#{$mi-css-prefix}-Wheel:before {
+  content: mi-content($mi-var-Wheel);
+}
+
+.#{$mi-css-prefix}-Wifi:before {
+  content: mi-content($mi-var-Wifi);
+}
+
+.#{$mi-css-prefix}-Wifi1:before {
+  content: mi-content($mi-var-Wifi1);
+}
+
+.#{$mi-css-prefix}-Wifi2:before {
+  content: mi-content($mi-var-Wifi2);
+}
+
+.#{$mi-css-prefix}-Wifi3:before {
+  content: mi-content($mi-var-Wifi3);
+}
+
+.#{$mi-css-prefix}-WifiAttentionOverlay:before {
+  content: mi-content($mi-var-WifiAttentionOverlay);
+}
+
+.#{$mi-css-prefix}-WifiCall0:before {
+  content: mi-content($mi-var-WifiCall0);
+}
+
+.#{$mi-css-prefix}-WifiCall1:before {
+  content: mi-content($mi-var-WifiCall1);
+}
+
+.#{$mi-css-prefix}-WifiCall2:before {
+  content: mi-content($mi-var-WifiCall2);
+}
+
+.#{$mi-css-prefix}-WifiCall3:before {
+  content: mi-content($mi-var-WifiCall3);
+}
+
+.#{$mi-css-prefix}-WifiCall4:before {
+  content: mi-content($mi-var-WifiCall4);
+}
+
+.#{$mi-css-prefix}-WifiCallBars:before {
+  content: mi-content($mi-var-WifiCallBars);
+}
+
+.#{$mi-css-prefix}-WifiError0:before {
+  content: mi-content($mi-var-WifiError0);
+}
+
+.#{$mi-css-prefix}-WifiError1:before {
+  content: mi-content($mi-var-WifiError1);
+}
+
+.#{$mi-css-prefix}-WifiError2:before {
+  content: mi-content($mi-var-WifiError2);
+}
+
+.#{$mi-css-prefix}-WifiError3:before {
+  content: mi-content($mi-var-WifiError3);
+}
+
+.#{$mi-css-prefix}-WifiError4:before {
+  content: mi-content($mi-var-WifiError4);
+}
+
+.#{$mi-css-prefix}-WifiEthernet:before {
+  content: mi-content($mi-var-WifiEthernet);
+}
+
+.#{$mi-css-prefix}-WifiHotspot:before, .#{$mi-css-prefix}-InternetSharing:before {
+  content: mi-content($mi-var-WifiHotspot);
+}
+
+.#{$mi-css-prefix}-WifiWarning0:before {
+  content: mi-content($mi-var-WifiWarning0);
+}
+
+.#{$mi-css-prefix}-WifiWarning1:before {
+  content: mi-content($mi-var-WifiWarning1);
+}
+
+.#{$mi-css-prefix}-WifiWarning2:before {
+  content: mi-content($mi-var-WifiWarning2);
+}
+
+.#{$mi-css-prefix}-WifiWarning3:before {
+  content: mi-content($mi-var-WifiWarning3);
+}
+
+.#{$mi-css-prefix}-WifiWarning4:before {
+  content: mi-content($mi-var-WifiWarning4);
+}
+
+.#{$mi-css-prefix}-WindDirection:before {
+  content: mi-content($mi-var-WindDirection);
+}
+
+.#{$mi-css-prefix}-WindowsInsider:before {
+  content: mi-content($mi-var-WindowsInsider);
+}
+
+.#{$mi-css-prefix}-WiredUSB:before {
+  content: mi-content($mi-var-WiredUSB);
+}
+
+.#{$mi-css-prefix}-WirelessUSB:before {
+  content: mi-content($mi-var-WirelessUSB);
+}
+
+.#{$mi-css-prefix}-Work:before {
+  content: mi-content($mi-var-Work);
+}
+
+.#{$mi-css-prefix}-WorkSolid:before {
+  content: mi-content($mi-var-WorkSolid);
+}
+
+.#{$mi-css-prefix}-World:before, .#{$mi-css-prefix}-WorldLegacy:before {
+  content: mi-content($mi-var-World);
+}
+
+.#{$mi-css-prefix}-XboxOneConsole:before {
+  content: mi-content($mi-var-XboxOneConsole);
+}
+
+.#{$mi-css-prefix}-ZeroBars:before, .#{$mi-css-prefix}-ZeroBarsLegacy:before {
+  content: mi-content($mi-var-ZeroBars);
+}
+
+.#{$mi-css-prefix}-Zoom:before, .#{$mi-css-prefix}-ZoomLegacy:before {
+  content: mi-content($mi-var-Zoom);
+}
+
+.#{$mi-css-prefix}-ZoomIn:before, .#{$mi-css-prefix}-ZoomInLegacy:before {
+  content: mi-content($mi-var-ZoomIn);
+}
+
+.#{$mi-css-prefix}-ZoomMode:before {
+  content: mi-content($mi-var-ZoomMode);
+}
+
+.#{$mi-css-prefix}-ZoomOut:before, .#{$mi-css-prefix}-ZoomOutLegacy:before {
+  content: mi-content($mi-var-ZoomOut);
+}
+
+.#{$mi-css-prefix}-eSIM:before {
+  content: mi-content($mi-var-eSIM);
+}
+
+.#{$mi-css-prefix}-eSIMBusy:before {
+  content: mi-content($mi-var-eSIMBusy);
+}
+
+.#{$mi-css-prefix}-eSIMLocked:before {
+  content: mi-content($mi-var-eSIMLocked);
+}
+
+.#{$mi-css-prefix}-eSIMNoProfile:before {
+  content: mi-content($mi-var-eSIMNoProfile);
+}
+
+.#{$mi-css-prefix}-uniE80B:before, .#{$mi-css-prefix}-E80B:before, .#{$mi-css-prefix}-uniE80B:before {
+  content: mi-content($mi-var-uniE80B);
+}
+
+.#{$mi-css-prefix}-uniEA0D:before, .#{$mi-css-prefix}-EA0D:before, .#{$mi-css-prefix}-uniEA0D:before {
+  content: mi-content($mi-var-uniEA0D);
+}
+
+.#{$mi-css-prefix}-uniEA3F:before, .#{$mi-css-prefix}-EA3F:before, .#{$mi-css-prefix}-uniEA3F:before {
+  content: mi-content($mi-var-uniEA3F);
+}
+
+.#{$mi-css-prefix}-uniEA90:before, .#{$mi-css-prefix}-EA90:before, .#{$mi-css-prefix}-uniEA90:before {
+  content: mi-content($mi-var-uniEA90);
+}
+
+.#{$mi-css-prefix}-uniEAC2:before, .#{$mi-css-prefix}-EAC2:before, .#{$mi-css-prefix}-uniEAC2:before {
+  content: mi-content($mi-var-uniEAC2);
+}
+
+.#{$mi-css-prefix}-uniEC6C:before, .#{$mi-css-prefix}-EC6C:before, .#{$mi-css-prefix}-uniEC6C:before {
+  content: mi-content($mi-var-uniEC6C);
+}
+
+.#{$mi-css-prefix}-uniEEA3:before, .#{$mi-css-prefix}-EEA3:before, .#{$mi-css-prefix}-uniEEA3:before {
+  content: mi-content($mi-var-uniEEA3);
+}
+
+.#{$mi-css-prefix}-uniF2B7:before, .#{$mi-css-prefix}-F2B7:before, .#{$mi-css-prefix}-uniF2B7:before {
+  content: mi-content($mi-var-uniF2B7);
+}
+
+.#{$mi-css-prefix}-uniF5AA:before, .#{$mi-css-prefix}-F5AA:before, .#{$mi-css-prefix}-uniF5AA:before {
+  content: mi-content($mi-var-uniF5AA);
+}
+
+.#{$mi-css-prefix}-uniF614:before, .#{$mi-css-prefix}-F614:before, .#{$mi-css-prefix}-uniF614:before {
+  content: mi-content($mi-var-uniF614);
+}
+
+.#{$mi-css-prefix}-uniF615:before, .#{$mi-css-prefix}-F615:before, .#{$mi-css-prefix}-uniF615:before {
+  content: mi-content($mi-var-uniF615);
+}
+
+.#{$mi-css-prefix}-uniF616:before, .#{$mi-css-prefix}-F616:before, .#{$mi-css-prefix}-uniF616:before {
+  content: mi-content($mi-var-uniF616);
+}
+
+.#{$mi-css-prefix}-uniF617:before, .#{$mi-css-prefix}-F617:before, .#{$mi-css-prefix}-uniF617:before {
+  content: mi-content($mi-var-uniF617);
+}
+
+.#{$mi-css-prefix}-uniF657:before, .#{$mi-css-prefix}-F657:before, .#{$mi-css-prefix}-uniF657:before {
+  content: mi-content($mi-var-uniF657);
+}
+
+.#{$mi-css-prefix}-uniF658:before, .#{$mi-css-prefix}-F658:before, .#{$mi-css-prefix}-uniF658:before {
+  content: mi-content($mi-var-uniF658);
+}
+
+.#{$mi-css-prefix}-uniF659:before, .#{$mi-css-prefix}-F659:before, .#{$mi-css-prefix}-uniF659:before {
+  content: mi-content($mi-var-uniF659);
+}
+
+.#{$mi-css-prefix}-uniF65A:before, .#{$mi-css-prefix}-F65A:before, .#{$mi-css-prefix}-uniF65A:before {
+  content: mi-content($mi-var-uniF65A);
+}
+
+.#{$mi-css-prefix}-uniF65B:before, .#{$mi-css-prefix}-F65B:before, .#{$mi-css-prefix}-uniF65B:before {
+  content: mi-content($mi-var-uniF65B);
+}
+
+.#{$mi-css-prefix}-uniF65C:before, .#{$mi-css-prefix}-F65C:before, .#{$mi-css-prefix}-uniF65C:before {
+  content: mi-content($mi-var-uniF65C);
+}
+
+.#{$mi-css-prefix}-uniF69E:before, .#{$mi-css-prefix}-F69E:before, .#{$mi-css-prefix}-uniF69E:before {
+  content: mi-content($mi-var-uniF69E);
+}
+
+.#{$mi-css-prefix}-uniF6FA:before, .#{$mi-css-prefix}-F6FA:before, .#{$mi-css-prefix}-uniF6FA:before {
+  content: mi-content($mi-var-uniF6FA);
+}
+
+.#{$mi-css-prefix}-uniF712:before, .#{$mi-css-prefix}-F712:before, .#{$mi-css-prefix}-uniF712:before {
+  content: mi-content($mi-var-uniF712);
+}
+
+.#{$mi-css-prefix}-uniF71C:before, .#{$mi-css-prefix}-F71C:before, .#{$mi-css-prefix}-uniF71C:before {
+  content: mi-content($mi-var-uniF71C);
+}
+
+.#{$mi-css-prefix}-uniF71D:before, .#{$mi-css-prefix}-F71D:before, .#{$mi-css-prefix}-uniF71D:before {
+  content: mi-content($mi-var-uniF71D);
+}
+
+.#{$mi-css-prefix}-uniF71E:before, .#{$mi-css-prefix}-F71E:before, .#{$mi-css-prefix}-uniF71E:before {
+  content: mi-content($mi-var-uniF71E);
+}
+
+.#{$mi-css-prefix}-uniF738:before, .#{$mi-css-prefix}-F738:before, .#{$mi-css-prefix}-uniF738:before {
+  content: mi-content($mi-var-uniF738);
+}
+
+.#{$mi-css-prefix}-uniF739:before, .#{$mi-css-prefix}-F739:before, .#{$mi-css-prefix}-uniF739:before {
+  content: mi-content($mi-var-uniF739);
+}
+
+.#{$mi-css-prefix}-uniF73D:before, .#{$mi-css-prefix}-F73D:before, .#{$mi-css-prefix}-uniF73D:before {
+  content: mi-content($mi-var-uniF73D);
+}
+
+.#{$mi-css-prefix}-uniF73E:before, .#{$mi-css-prefix}-F73E:before, .#{$mi-css-prefix}-uniF73E:before {
+  content: mi-content($mi-var-uniF73E);
+}
+
+.#{$mi-css-prefix}-uniF73F:before, .#{$mi-css-prefix}-F73F:before, .#{$mi-css-prefix}-uniF73F:before {
+  content: mi-content($mi-var-uniF73F);
+}
+
+.#{$mi-css-prefix}-uniF740:before, .#{$mi-css-prefix}-F740:before, .#{$mi-css-prefix}-uniF740:before {
+  content: mi-content($mi-var-uniF740);
+}
+
+.#{$mi-css-prefix}-uniF741:before, .#{$mi-css-prefix}-F741:before, .#{$mi-css-prefix}-uniF741:before {
+  content: mi-content($mi-var-uniF741);
+}
+
+.#{$mi-css-prefix}-uniF742:before, .#{$mi-css-prefix}-F742:before, .#{$mi-css-prefix}-uniF742:before {
+  content: mi-content($mi-var-uniF742);
+}
+
+.#{$mi-css-prefix}-uniF743:before, .#{$mi-css-prefix}-F743:before, .#{$mi-css-prefix}-uniF743:before {
+  content: mi-content($mi-var-uniF743);
+}
+
+.#{$mi-css-prefix}-uniF744:before, .#{$mi-css-prefix}-F744:before, .#{$mi-css-prefix}-uniF744:before {
+  content: mi-content($mi-var-uniF744);
+}
+
+.#{$mi-css-prefix}-uniF745:before, .#{$mi-css-prefix}-F745:before, .#{$mi-css-prefix}-uniF745:before {
+  content: mi-content($mi-var-uniF745);
+}
+
+.#{$mi-css-prefix}-uniF746:before, .#{$mi-css-prefix}-F746:before, .#{$mi-css-prefix}-uniF746:before {
+  content: mi-content($mi-var-uniF746);
+}
+
+.#{$mi-css-prefix}-uniF785:before, .#{$mi-css-prefix}-F785:before, .#{$mi-css-prefix}-uniF785:before {
+  content: mi-content($mi-var-uniF785);
+}

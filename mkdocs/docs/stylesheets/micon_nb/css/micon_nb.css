@@ -1,0 +1,5757 @@
+/*!
+ * License - Micon v3.0.168 http://xtoolkit.github.io/Micon/ (MIT License)
+ * License - template: https://fontawesome.com/license/free (Code: MIT License)
+ */
+/* FONT PATH
+ * -------------------------- */
+@font-face {
+    font-family: 'micon_nb';
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/micon_nb.eot");
+    src: url("../fonts/micon_nb.eot?#iefix") format("embedded-opentype"), url("../fonts/micon_nb.woff2") format("woff2"), url("../fonts/micon_nb.woff") format("woff"), url("../fonts/micon_nb.ttf") format("truetype"), url("../fonts/micon_nb.svg#micon_nb") format("svg");
+}
+
+.mi {
+    font-family: 'micon_nb';
+    font-weight: 400;
+}
+
+.mi {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: inline-block;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+}
+
+.mi-lg {
+    font-size: 1.33333em;
+    line-height: 0.75em;
+    vertical-align: -.0667em;
+}
+
+.mi-xs {
+    font-size: .75em;
+}
+
+.mi-sm {
+    font-size: .875em;
+}
+
+.mi-1x {
+    font-size: 1em;
+}
+
+.mi-2x {
+    font-size: 2em;
+}
+
+.mi-3x {
+    font-size: 3em;
+}
+
+.mi-4x {
+    font-size: 4em;
+}
+
+.mi-5x {
+    font-size: 5em;
+}
+
+.mi-6x {
+    font-size: 6em;
+}
+
+.mi-7x {
+    font-size: 7em;
+}
+
+.mi-8x {
+    font-size: 8em;
+}
+
+.mi-9x {
+    font-size: 9em;
+}
+
+.mi-10x {
+    font-size: 10em;
+}
+
+.mi-fw {
+    text-align: center;
+    width: 1.25em;
+}
+
+.mi-ul {
+    list-style-type: none;
+    margin-left: 2.5em;
+    padding-left: 0;
+}
+
+.mi-ul > li {
+    position: relative;
+}
+
+.mi-li {
+    left: -2em;
+    position: absolute;
+    text-align: center;
+    width: 2em;
+    line-height: inherit;
+}
+
+.mi-border {
+    border: solid 0.08em #eee;
+    border-radius: .1em;
+    padding: .2em .25em .15em;
+}
+
+.mi-pull-left {
+    float: left;
+}
+
+.mi-pull-right {
+    float: right;
+}
+
+.mi.mi-pull-left {
+    margin-right: .3em;
+}
+
+.mi.mi-pull-right {
+    margin-left: .3em;
+}
+
+.mi-spin {
+    animation: mi-spin 2s infinite linear;
+}
+
+.mi-pulse {
+    animation: mi-spin 1s infinite steps(8);
+}
+
+@keyframes mi-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.mi-rotate-90 {
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=1)";
+    transform: rotate(90deg);
+}
+
+.mi-rotate-180 {
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2)";
+    transform: rotate(180deg);
+}
+
+.mi-rotate-270 {
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)";
+    transform: rotate(270deg);
+}
+
+.mi-flip-horizontal {
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=0, mirror=1)";
+    transform: scale(-1, 1);
+}
+
+.mi-flip-vertical {
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2, mirror=1)";
+    transform: scale(1, -1);
+}
+
+.mi-flip-horizontal.mi-flip-vertical {
+    -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=2, mirror=1)";
+    transform: scale(-1, -1);
+}
+
+:root .mi-rotate-90,
+:root .mi-rotate-180,
+:root .mi-rotate-270,
+:root .mi-flip-horizontal,
+:root .mi-flip-vertical {
+    filter: none;
+}
+
+.mi-stack {
+    display: inline-block;
+    height: 2em;
+    line-height: 2em;
+    position: relative;
+    vertical-align: middle;
+    width: 2.5em;
+}
+
+.mi-stack-1x,
+.mi-stack-2x {
+    left: 0;
+    position: absolute;
+    text-align: center;
+    width: 100%;
+}
+
+.mi-stack-1x {
+    line-height: inherit;
+}
+
+.mi-stack-2x {
+    font-size: 2em;
+}
+
+.mi-inverse {
+    color: #fff;
+}
+
+/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen
+readers do not read off random characters that represent icons */
+.mi-Accept:before, .mi-AcceptLegacy:before, .mi-CheckmarkListviewLegacy:before, .mi-CheckmarkMenuLegacy:before {
+    content: "\EA01";
+}
+
+.mi-Accident:before {
+    content: "\EA02";
+}
+
+.mi-AccidentSolid:before {
+    content: "\EA03";
+}
+
+.mi-Accounts:before, .mi-AccountsLegacy:before {
+    content: "\EA04";
+}
+
+.mi-ActionCenter:before {
+    content: "\EA05";
+}
+
+.mi-ActionCenterAsterisk:before {
+    content: "\EA06";
+}
+
+.mi-ActionCenterMirrored:before {
+    content: "\EA07";
+}
+
+.mi-ActionCenterNotification:before {
+    content: "\EA08";
+}
+
+.mi-ActionCenterNotificationMirrored:before {
+    content: "\EA09";
+}
+
+.mi-ActionCenterQuiet:before {
+    content: "\EA0A";
+}
+
+.mi-ActionCenterQuietNotification:before {
+    content: "\EA0B";
+}
+
+.mi-Add:before, .mi-AddLegacy:before {
+    content: "\EA0C";
+}
+
+.mi-AddFriend:before, .mi-AddFriendLegacy:before {
+    content: "\EA0D";
+}
+
+.mi-AddRemoteDevice:before {
+    content: "\EA0E";
+}
+
+.mi-AddSurfaceHub:before {
+    content: "\EA0F";
+}
+
+.mi-AddTo:before {
+    content: "\EA10";
+}
+
+.mi-AdjustHologram:before {
+    content: "\EA11";
+}
+
+.mi-Admin:before, .mi-AdminLegacy:before {
+    content: "\EA12";
+}
+
+.mi-Airplane:before {
+    content: "\EA13";
+}
+
+.mi-AirplaneSolid:before {
+    content: "\EA14";
+}
+
+.mi-AlignCenter:before, .mi-AlignCenterLegacy:before {
+    content: "\EA15";
+}
+
+.mi-AlignLeft:before, .mi-AlignLeftLegacy:before {
+    content: "\EA16";
+}
+
+.mi-AlignRight:before, .mi-AlignRightLegacy:before {
+    content: "\EA17";
+}
+
+.mi-AllApps:before, .mi-AllAppsLegacy:before {
+    content: "\EA18";
+}
+
+.mi-AllAppsMirrored:before, .mi-AllAppsLegacyMirrored:before {
+    content: "\EA19";
+}
+
+.mi-Annotation:before {
+    content: "\EA1A";
+}
+
+.mi-AppIconDefault:before {
+    content: "\EA1B";
+}
+
+.mi-Apps:before {
+    content: "\EA1C";
+}
+
+.mi-AreaChart:before {
+    content: "\EA1D";
+}
+
+.mi-ArrowDown8:before {
+    content: "\EA1E";
+}
+
+.mi-ArrowLeft8:before {
+    content: "\EA1F";
+}
+
+.mi-ArrowRight8:before {
+    content: "\EA20";
+}
+
+.mi-ArrowUp8:before {
+    content: "\EA21";
+}
+
+.mi-AspectRatio:before {
+    content: "\EA22";
+}
+
+.mi-Asterisk:before {
+    content: "\EA23";
+}
+
+.mi-AsteriskBadge12:before {
+    content: "\EA24";
+}
+
+.mi-Attach:before, .mi-AttachLegacy:before {
+    content: "\EA25";
+}
+
+.mi-AttachCamera:before, .mi-AttachCameraLegacy:before {
+    content: "\EA26";
+}
+
+.mi-Audio:before, .mi-AudioLegacy:before {
+    content: "\EA27";
+}
+
+.mi-Back:before, .mi-ArrowHTMLLegacy:before, .mi-BackBttnArrow20Legacy:before, .mi-BackBttnArrow42Legacy:before, .mi-BackLegacy:before {
+    content: "\EA28";
+}
+
+.mi-BackMirrored:before {
+    content: "\EA29";
+}
+
+.mi-BackSpaceQWERTY:before, .mi-CalculatorBackspace:before, .mi-BackSpaceQWERTY:before {
+    content: "\EA2A";
+}
+
+.mi-BackSpaceQWERTYLg:before {
+    content: "\EA2B";
+}
+
+.mi-BackSpaceQWERTYMd:before {
+    content: "\EA2C";
+}
+
+.mi-BackSpaceQWERTYSm:before {
+    content: "\EA2D";
+}
+
+.mi-BackToWindow:before, .mi-BackToWindowLegacy:before {
+    content: "\EA2E";
+}
+
+.mi-BackgroundToggle:before {
+    content: "\EA2F";
+}
+
+.mi-Badge:before {
+    content: "\EA30";
+}
+
+.mi-BandBattery0:before {
+    content: "\EA31";
+}
+
+.mi-BandBattery1:before {
+    content: "\EA32";
+}
+
+.mi-BandBattery2:before {
+    content: "\EA33";
+}
+
+.mi-BandBattery3:before {
+    content: "\EA34";
+}
+
+.mi-BandBattery4:before {
+    content: "\EA35";
+}
+
+.mi-BandBattery5:before {
+    content: "\EA36";
+}
+
+.mi-BandBattery6:before {
+    content: "\EA37";
+}
+
+.mi-Bank:before {
+    content: "\EA38";
+}
+
+.mi-BarcodeScanner:before {
+    content: "\EA39";
+}
+
+.mi-Battery0:before {
+    content: "\EA3A";
+}
+
+.mi-Battery1:before {
+    content: "\EA3B";
+}
+
+.mi-Battery10:before {
+    content: "\EA3C";
+}
+
+.mi-Battery2:before {
+    content: "\EA3D";
+}
+
+.mi-Battery3:before {
+    content: "\EA3E";
+}
+
+.mi-Battery4:before {
+    content: "\EA3F";
+}
+
+.mi-Battery5:before {
+    content: "\EA40";
+}
+
+.mi-Battery6:before {
+    content: "\EA41";
+}
+
+.mi-Battery7:before {
+    content: "\EA42";
+}
+
+.mi-Battery8:before {
+    content: "\EA43";
+}
+
+.mi-Battery9:before {
+    content: "\EA44";
+}
+
+.mi-BatteryCharging0:before {
+    content: "\EA45";
+}
+
+.mi-BatteryCharging1:before {
+    content: "\EA46";
+}
+
+.mi-BatteryCharging10:before {
+    content: "\EA47";
+}
+
+.mi-BatteryCharging2:before {
+    content: "\EA48";
+}
+
+.mi-BatteryCharging3:before {
+    content: "\EA49";
+}
+
+.mi-BatteryCharging4:before {
+    content: "\EA4A";
+}
+
+.mi-BatteryCharging5:before {
+    content: "\EA4B";
+}
+
+.mi-BatteryCharging6:before {
+    content: "\EA4C";
+}
+
+.mi-BatteryCharging7:before {
+    content: "\EA4D";
+}
+
+.mi-BatteryCharging8:before {
+    content: "\EA4E";
+}
+
+.mi-BatteryCharging9:before {
+    content: "\EA4F";
+}
+
+.mi-BatterySaver0:before {
+    content: "\EA50";
+}
+
+.mi-BatterySaver1:before {
+    content: "\EA51";
+}
+
+.mi-BatterySaver10:before {
+    content: "\EA52";
+}
+
+.mi-BatterySaver2:before {
+    content: "\EA53";
+}
+
+.mi-BatterySaver3:before {
+    content: "\EA54";
+}
+
+.mi-BatterySaver4:before {
+    content: "\EA55";
+}
+
+.mi-BatterySaver5:before {
+    content: "\EA56";
+}
+
+.mi-BatterySaver6:before {
+    content: "\EA57";
+}
+
+.mi-BatterySaver7:before {
+    content: "\EA58";
+}
+
+.mi-BatterySaver8:before {
+    content: "\EA59";
+}
+
+.mi-BatterySaver9:before {
+    content: "\EA5A";
+}
+
+.mi-BatteryUnknown:before {
+    content: "\EA5B";
+}
+
+.mi-Beta:before {
+    content: "\EA5C";
+}
+
+.mi-BidiLtr:before {
+    content: "\EA5D";
+}
+
+.mi-BidiRtl:before {
+    content: "\EA5E";
+}
+
+.mi-BlockContact:before, .mi-BlockContactLegacy:before {
+    content: "\EA5F";
+}
+
+.mi-Blocked:before, .mi-BlockedLegacy:before {
+    content: "\EA60";
+}
+
+.mi-BlockedLegacy:before, .mi-Blocked:before, .mi-BlockedLegacy:before {
+    content: "\EA61";
+}
+
+.mi-BlueLight:before {
+    content: "\EA62";
+}
+
+.mi-Bluetooth:before {
+    content: "\EA63";
+}
+
+.mi-BodyCam:before {
+    content: "\EA64";
+}
+
+.mi-Bold:before, .mi-BoldLegacy:before {
+    content: "\EA65";
+}
+
+.mi-BoldF:before, .mi-BoldFLegacy:before {
+    content: "\EA66";
+}
+
+.mi-BoldFLegacy:before, .mi-BoldF:before, .mi-BoldFLegacy:before {
+    content: "\EA67";
+}
+
+.mi-BoldG:before, .mi-BoldGLegacy:before {
+    content: "\EA68";
+}
+
+.mi-BoldGLegacy:before, .mi-BoldG:before, .mi-BoldGLegacy:before {
+    content: "\EA69";
+}
+
+.mi-BoldKorean:before, .mi-BoldKoreanLegacy:before {
+    content: "\EA6A";
+}
+
+.mi-BoldKoreanLegacy:before, .mi-BoldKorean:before, .mi-BoldKoreanLegacy:before {
+    content: "\EA6B";
+}
+
+.mi-BoldN:before, .mi-BoldNLegacy:before {
+    content: "\EA6C";
+}
+
+.mi-BoldNLegacy:before, .mi-BoldN:before, .mi-BoldNLegacy:before {
+    content: "\EA6D";
+}
+
+.mi-BoldRussion:before, .mi-BoldRussionLegacy:before {
+    content: "\EA6E";
+}
+
+.mi-BoldRussionLegacy:before, .mi-BoldRussion:before, .mi-BoldRussionLegacy:before {
+    content: "\EA6F";
+}
+
+.mi-Bookmarks:before, .mi-BookmarksLegacy:before {
+    content: "\EA70";
+}
+
+.mi-BookmarksMirrored:before, .mi-BookmarksLegacyMirrored:before {
+    content: "\EA71";
+}
+
+.mi-Brightness:before {
+    content: "\EA72";
+}
+
+.mi-Broom:before {
+    content: "\EA73";
+}
+
+.mi-BrowsePhotos:before, .mi-BrowsePhotosLegacy:before {
+    content: "\EA74";
+}
+
+.mi-BrushSize:before {
+    content: "\EA75";
+}
+
+.mi-Bug:before {
+    content: "\EA76";
+}
+
+.mi-BuildingEnergy:before {
+    content: "\EA77";
+}
+
+.mi-BulletedList:before, .mi-BulletedListLegacy:before, .mi-ListLegacy:before {
+    content: "\EA78";
+}
+
+.mi-BulletedListMirrored:before, .mi-BulletedListLegacyMirrored:before, .mi-ListLegacyMirrored:before {
+    content: "\EA79";
+}
+
+.mi-Bullseye:before {
+    content: "\EA7A";
+}
+
+.mi-BumperLeft:before {
+    content: "\EA7B";
+}
+
+.mi-BumperRight:before {
+    content: "\EA7C";
+}
+
+.mi-Bus:before {
+    content: "\EA7D";
+}
+
+.mi-BusSolid:before {
+    content: "\EA7E";
+}
+
+.mi-ButtonA:before {
+    content: "\EA7F";
+}
+
+.mi-ButtonB:before {
+    content: "\EA80";
+}
+
+.mi-ButtonMenu:before {
+    content: "\EA81";
+}
+
+.mi-ButtonView2:before {
+    content: "\EA82";
+}
+
+.mi-ButtonX:before {
+    content: "\EA83";
+}
+
+.mi-ButtonY:before {
+    content: "\EA84";
+}
+
+.mi-CC:before, .mi-CCLegacy:before {
+    content: "\EA85";
+}
+
+.mi-CCEuro:before, .mi-CCEuroLegacy:before {
+    content: "\EA86";
+}
+
+.mi-CCEuroLegacy:before, .mi-CCEuro:before, .mi-CCEuroLegacy:before {
+    content: "\EA87";
+}
+
+.mi-CCJapan:before, .mi-CCJapanLegacy:before {
+    content: "\EA88";
+}
+
+.mi-CCJapanLegacy:before, .mi-CCJapan:before, .mi-CCJapanLegacy:before {
+    content: "\EA89";
+}
+
+.mi-Cafe:before {
+    content: "\EA8A";
+}
+
+.mi-Calculator:before, .mi-CalculatorLegacy:before {
+    content: "\EA8B";
+}
+
+.mi-CalculatorAddition:before {
+    content: "\EA8C";
+}
+
+.mi-CalculatorBackspace:before, .mi-BackSpaceQWERTY:before {
+    content: "\EA8D";
+}
+
+.mi-CalculatorDivide:before {
+    content: "\EA8E";
+}
+
+.mi-CalculatorEqualTo:before {
+    content: "\EA8F";
+}
+
+.mi-CalculatorMultiply:before {
+    content: "\EA90";
+}
+
+.mi-CalculatorNegate:before {
+    content: "\EA91";
+}
+
+.mi-CalculatorPercentage:before {
+    content: "\EA92";
+}
+
+.mi-CalculatorSquareroot:before {
+    content: "\EA93";
+}
+
+.mi-CalculatorSubtract:before {
+    content: "\EA94";
+}
+
+.mi-Calendar:before, .mi-CalendarLegacy:before {
+    content: "\EA95";
+}
+
+.mi-CalendarDay:before, .mi-CalendarDayLegacy:before {
+    content: "\EA96";
+}
+
+.mi-CalendarMirrored:before, .mi-CalendarLegacyMirrored:before {
+    content: "\EA97";
+}
+
+.mi-CalendarReply:before, .mi-CalendarReplyLegacy:before {
+    content: "\EA98";
+}
+
+.mi-CalendarSolid:before {
+    content: "\EA99";
+}
+
+.mi-CalendarWeek:before, .mi-CalendarWeekLegacy:before {
+    content: "\EA9A";
+}
+
+.mi-CallForwardInternational:before {
+    content: "\EA9B";
+}
+
+.mi-CallForwardInternationalMirrored:before {
+    content: "\EA9C";
+}
+
+.mi-CallForwardRoaming:before {
+    content: "\EA9D";
+}
+
+.mi-CallForwardRoamingMirrored:before {
+    content: "\EA9E";
+}
+
+.mi-CallForwarding:before {
+    content: "\EA9F";
+}
+
+.mi-CallForwardingMirrored:before {
+    content: "\EAA0";
+}
+
+.mi-CalligraphyFill:before {
+    content: "\EAA1";
+}
+
+.mi-CalligraphyPen:before {
+    content: "\EAA2";
+}
+
+.mi-Calories:before {
+    content: "\EAA3";
+}
+
+.mi-Camera:before, .mi-CameraLegacy:before {
+    content: "\EAA4";
+}
+
+.mi-Cancel:before, .mi-CancelLegacy:before {
+    content: "\EAA5";
+}
+
+.mi-Caption:before, .mi-CaptionLegacy:before {
+    content: "\EAA6";
+}
+
+.mi-Car:before, .mi-DrivingMode:before {
+    content: "\EAA7";
+}
+
+.mi-CaretBottomRightSolidCenter8:before {
+    content: "\EAA8";
+}
+
+.mi-CaretDownSolid8:before {
+    content: "\EAA9";
+}
+
+.mi-CaretLeftSolid8:before {
+    content: "\EAAA";
+}
+
+.mi-CaretRight8:before {
+    content: "\EAAB";
+}
+
+.mi-CaretRightSolid8:before {
+    content: "\EAAC";
+}
+
+.mi-CaretUpSolid8:before {
+    content: "\EAAD";
+}
+
+.mi-CashDrawer:before {
+    content: "\EAAE";
+}
+
+.mi-CellPhone:before, .mi-CellPhoneLegacy:before, .mi-MobileContactLegacy:before {
+    content: "\EAAF";
+}
+
+.mi-Certificate:before {
+    content: "\EAB0";
+}
+
+.mi-CharacterAppearance:before {
+    content: "\EAB1";
+}
+
+.mi-Characters:before, .mi-CharactersLegacy:before {
+    content: "\EAB2";
+}
+
+.mi-ChatBubbles:before {
+    content: "\EAB3";
+}
+
+.mi-CheckList:before {
+    content: "\EAB4";
+}
+
+.mi-CheckMark:before, .mi-CheckMarkLegacy:before, .mi-CheckMarkZeroWidthLegacy:before {
+    content: "\EAB5";
+}
+
+.mi-Checkbox:before, .mi-CheckboxLegacy:before {
+    content: "\EAB6";
+}
+
+.mi-Checkbox14:before {
+    content: "\EAB7";
+}
+
+.mi-CheckboxComposite:before, .mi-CheckboxCompositeLegacy:before {
+    content: "\EAB8";
+}
+
+.mi-CheckboxComposite14:before {
+    content: "\EAB9";
+}
+
+.mi-CheckboxCompositeReversed:before, .mi-CheckboxCompositeReversedLegacy:before {
+    content: "\EABA";
+}
+
+.mi-CheckboxFill:before, .mi-CheckboxFillLegacy:before, .mi-CheckboxFillZeroWidthLegacy:before, .mi-PresenceChicklet:before, .mi-PresenceChickletLegacy:before, .mi-ResizeMouseLarge:before {
+    content: "\EABB";
+}
+
+.mi-CheckboxIndeterminate:before, .mi-CheckboxIndeterminateLegacy:before {
+    content: "\EABC";
+}
+
+.mi-CheckboxIndeterminateCombo:before {
+    content: "\EABD";
+}
+
+.mi-CheckboxIndeterminateCombo14:before {
+    content: "\EABE";
+}
+
+.mi-ChecklistMirrored:before {
+    content: "\EABF";
+}
+
+.mi-ChevronDown:before, .mi-ChevronDown1Legacy:before, .mi-ChevronDown2Legacy:before, .mi-ChevronDown3Legacy:before, .mi-ChevronDown4Legacy:before, .mi-ChevronFlipDownLegacy:before, .mi-ScrollChevronDownBoldLegacy:before, .mi-ScrollChevronDownLegacy:before {
+    content: "\EAC0";
+}
+
+.mi-ChevronDownMed:before {
+    content: "\EAC1";
+}
+
+.mi-ChevronDownSmall:before, .mi-ChevronDownSmLegacy:before {
+    content: "\EAC2";
+}
+
+.mi-ChevronLeft:before, .mi-ChevronFlipLeftLegacy:before, .mi-ChevronLeft1Legacy:before, .mi-ChevronLeft2Legacy:before, .mi-ChevronLeft3Legacy:before, .mi-ChevronLeft4Legacy:before, .mi-ScrollChevronLeftBoldLegacy:before, .mi-ScrollChevronLeftLegacy:before {
+    content: "\EAC3";
+}
+
+.mi-ChevronLeftMed:before {
+    content: "\EAC4";
+}
+
+.mi-ChevronLeftSmall:before, .mi-ChevronLeftSmLegacy:before {
+    content: "\EAC5";
+}
+
+.mi-ChevronRight:before, .mi-ChevronFlipRightLegacy:before, .mi-ChevronRight1Legacy:before, .mi-ChevronRight2Legacy:before, .mi-ChevronRight3Legacy:before, .mi-ChevronRight4Legacy:before, .mi-ScrollChevronRightBoldLegacy:before, .mi-ScrollChevronRightLegacy:before {
+    content: "\EAC6";
+}
+
+.mi-ChevronRightMed:before {
+    content: "\EAC7";
+}
+
+.mi-ChevronRightSmall:before, .mi-ChevronRightSmLegacy:before {
+    content: "\EAC8";
+}
+
+.mi-ChevronUp:before, .mi-ChevronFlipUpLegacy:before, .mi-ChevronUp1Legacy:before, .mi-ChevronUp2Legacy:before, .mi-ChevronUp3Legacy:before, .mi-ChevronUp4Legacy:before, .mi-ScrollChevronUpBoldLegacy:before, .mi-ScrollChevronUpLegacy:before {
+    content: "\EAC9";
+}
+
+.mi-ChevronUpMed:before {
+    content: "\EACA";
+}
+
+.mi-ChevronUpSmall:before {
+    content: "\EACB";
+}
+
+.mi-ChineseBoPoMoFo:before {
+    content: "\EACC";
+}
+
+.mi-ChineseChangjie:before {
+    content: "\EACD";
+}
+
+.mi-ChinesePinyin:before {
+    content: "\EACE";
+}
+
+.mi-ChinesePunctuation:before {
+    content: "\EACF";
+}
+
+.mi-ChineseQuick:before {
+    content: "\EAD0";
+}
+
+.mi-ChipCardCreditCardReader:before {
+    content: "\EAD1";
+}
+
+.mi-ChromeAnnotate:before {
+    content: "\EAD2";
+}
+
+.mi-ChromeAnnotateContrast:before {
+    content: "\EAD3";
+}
+
+.mi-ChromeBack:before {
+    content: "\EAD4";
+}
+
+.mi-ChromeBackContrast:before {
+    content: "\EAD5";
+}
+
+.mi-ChromeBackContrastMirrored:before {
+    content: "\EAD6";
+}
+
+.mi-ChromeBackMirrored:before {
+    content: "\EAD7";
+}
+
+.mi-ChromeBackToWindow:before {
+    content: "\EAD8";
+}
+
+.mi-ChromeBackToWindowContrast:before {
+    content: "\EAD9";
+}
+
+.mi-ChromeClose:before {
+    content: "\EADA";
+}
+
+.mi-ChromeCloseContrast:before {
+    content: "\EADB";
+}
+
+.mi-ChromeFullScreen:before {
+    content: "\EADC";
+}
+
+.mi-ChromeFullScreenContrast:before {
+    content: "\EADD";
+}
+
+.mi-ChromeMaximize:before {
+    content: "\EADE";
+}
+
+.mi-ChromeMaximizeContrast:before {
+    content: "\EADF";
+}
+
+.mi-ChromeMinimize:before {
+    content: "\EAE0";
+}
+
+.mi-ChromeMinimizeContrast:before {
+    content: "\EAE1";
+}
+
+.mi-ChromeRestore:before {
+    content: "\EAE2";
+}
+
+.mi-ChromeRestoreContrast:before {
+    content: "\EAE3";
+}
+
+.mi-ChromeSwitch:before {
+    content: "\EAE4";
+}
+
+.mi-ChromeSwitchContast:before {
+    content: "\EAE5";
+}
+
+.mi-CircleFill:before {
+    content: "\EAE6";
+}
+
+.mi-CircleFillBadge12:before {
+    content: "\EAE7";
+}
+
+.mi-CircleRing:before {
+    content: "\EAE8";
+}
+
+.mi-CircleRingBadge12:before {
+    content: "\EAE9";
+}
+
+.mi-CityNext:before {
+    content: "\EAEA";
+}
+
+.mi-CityNext2:before {
+    content: "\EAEB";
+}
+
+.mi-Clear:before, .mi-ClearLegacy:before {
+    content: "\EAEC";
+}
+
+.mi-ClearAllInk:before {
+    content: "\EAED";
+}
+
+.mi-ClearAllInkMirrored:before {
+    content: "\EAEE";
+}
+
+.mi-ClearSelection:before, .mi-ClearSelectionLegacy:before {
+    content: "\EAEF";
+}
+
+.mi-ClearSelectionMirrored:before, .mi-ClearSelectionLegacyMirrored:before {
+    content: "\EAF0";
+}
+
+.mi-Click:before {
+    content: "\EAF1";
+}
+
+.mi-ClipboardList:before {
+    content: "\EAF2";
+}
+
+.mi-ClipboardListMirrored:before {
+    content: "\EAF3";
+}
+
+.mi-ClippingTool:before {
+    content: "\EAF4";
+}
+
+.mi-Clock:before, .mi-ClockLegacy:before {
+    content: "\EAF5";
+}
+
+.mi-ClockLegacy:before, .mi-Clock:before, .mi-ClockLegacy:before {
+    content: "\EAF6";
+}
+
+.mi-ClosePane:before, .mi-ClosePaneLegacy:before {
+    content: "\EAF7";
+}
+
+.mi-ClosePaneMirrored:before, .mi-ClosePaneLegacyMirrored:before {
+    content: "\EAF8";
+}
+
+.mi-Cloud:before {
+    content: "\EAF9";
+}
+
+.mi-CloudPrinter:before {
+    content: "\EAFA";
+}
+
+.mi-CloudSeach:before {
+    content: "\EAFB";
+}
+
+.mi-Code:before {
+    content: "\EAFC";
+}
+
+.mi-CollapseContent:before {
+    content: "\EAFD";
+}
+
+.mi-CollapseContentSingle:before {
+    content: "\EAFE";
+}
+
+.mi-CollateLandscape:before {
+    content: "\EAFF";
+}
+
+.mi-CollateLandscapeSeparated:before {
+    content: "\EB00";
+}
+
+.mi-CollatePortrait:before {
+    content: "\EB01";
+}
+
+.mi-CollatePortraitSeparated:before {
+    content: "\EB02";
+}
+
+.mi-Color:before, .mi-ColorLegacy:before {
+    content: "\EB03";
+}
+
+.mi-ColorOff:before {
+    content: "\EB04";
+}
+
+.mi-CommaKey:before {
+    content: "\EB05";
+}
+
+.mi-CommandPrompt:before {
+    content: "\EB06";
+}
+
+.mi-Comment:before, .mi-CommentLegacy:before {
+    content: "\EB07";
+}
+
+.mi-Communications:before {
+    content: "\EB08";
+}
+
+.mi-CompanionApp:before {
+    content: "\EB09";
+}
+
+.mi-CompanionDeviceFramework:before {
+    content: "\EB0A";
+}
+
+.mi-Completed:before {
+    content: "\EB0B";
+}
+
+.mi-CompletedSolid:before {
+    content: "\EB0C";
+}
+
+.mi-Component:before {
+    content: "\EB0D";
+}
+
+.mi-Connect:before {
+    content: "\EB0E";
+}
+
+.mi-ConnectApp:before, .mi-MiracastLogoLarge:before {
+    content: "\EB0F";
+}
+
+.mi-Connected:before {
+    content: "\EB10";
+}
+
+.mi-Construction:before {
+    content: "\EB11";
+}
+
+.mi-ConstructionCone:before {
+    content: "\EB12";
+}
+
+.mi-ConstructionSolid:before {
+    content: "\EB13";
+}
+
+.mi-Contact:before, .mi-Contact3Legacy:before, .mi-ContactLegacy:before {
+    content: "\EB14";
+}
+
+.mi-Contact2:before, .mi-Contact2Legacy:before {
+    content: "\EB15";
+}
+
+.mi-ContactInfo:before, .mi-ContactInfoLegacy:before {
+    content: "\EB16";
+}
+
+.mi-ContactInfoMirrored:before {
+    content: "\EB17";
+}
+
+.mi-ContactPresence:before, .mi-ContactPresenceLegacy:before {
+    content: "\EB18";
+}
+
+.mi-ContactSolid:before {
+    content: "\EB19";
+}
+
+.mi-Copy:before, .mi-CopyLegacy:before {
+    content: "\EB1A";
+}
+
+.mi-CopyTo:before {
+    content: "\EB1B";
+}
+
+.mi-Courthouse:before {
+    content: "\EB1C";
+}
+
+.mi-Crop:before, .mi-CropLegacy:before {
+    content: "\EB1D";
+}
+
+.mi-CtrlSpatialLeft:before {
+    content: "\EB1E";
+}
+
+.mi-CtrlSpatialRight:before {
+    content: "\EB1F";
+}
+
+.mi-Cut:before, .mi-CutLegacy:before {
+    content: "\EB20";
+}
+
+.mi-DMC:before {
+    content: "\EB21";
+}
+
+.mi-DashKey:before {
+    content: "\EB22";
+}
+
+.mi-DataSense:before {
+    content: "\EB23";
+}
+
+.mi-DataSenseBar:before {
+    content: "\EB24";
+}
+
+.mi-DateTime:before {
+    content: "\EB25";
+}
+
+.mi-DateTimeMirrored:before {
+    content: "\EB26";
+}
+
+.mi-DecreaseIndent:before, .mi-DecreaseIndentLegacy:before {
+    content: "\EB27";
+}
+
+.mi-DecreaseIndentLegacy:before, .mi-DecreaseIndent:before, .mi-DecreaseIndentLegacy:before {
+    content: "\EB28";
+}
+
+.mi-DecreaseIndentLegacyMirrored:before, .mi-DecreaseIndentMirrored:before, .mi-DecreaseIndentLegacyMirrored:before {
+    content: "\EB29";
+}
+
+.mi-DecreaseIndentMirrored:before, .mi-DecreaseIndentLegacyMirrored:before {
+    content: "\EB2A";
+}
+
+.mi-DefaultAPN:before {
+    content: "\EB2B";
+}
+
+.mi-DefenderApp:before {
+    content: "\EB2C";
+}
+
+.mi-DefenderBadge12:before {
+    content: "\EB2D";
+}
+
+.mi-Delete:before, .mi-DeleteLegacy:before {
+    content: "\EB2E";
+}
+
+.mi-Design:before {
+    content: "\EB2F";
+}
+
+.mi-DetachablePC:before {
+    content: "\EB30";
+}
+
+.mi-DevUpdate:before {
+    content: "\EB31";
+}
+
+.mi-DeveloperTools:before {
+    content: "\EB32";
+}
+
+.mi-DeviceDiscovery:before {
+    content: "\EB33";
+}
+
+.mi-DeviceLaptopNoPic:before {
+    content: "\EB34";
+}
+
+.mi-DeviceLaptopPic:before {
+    content: "\EB35";
+}
+
+.mi-DeviceMonitorLeftPic:before {
+    content: "\EB36";
+}
+
+.mi-DeviceMonitorNoPic:before {
+    content: "\EB37";
+}
+
+.mi-DeviceMonitorRightPic:before {
+    content: "\EB38";
+}
+
+.mi-Devices:before {
+    content: "\EB39";
+}
+
+.mi-Devices2:before, .mi-DevicesLegacy:before {
+    content: "\EB3A";
+}
+
+.mi-Devices3:before {
+    content: "\EB3B";
+}
+
+.mi-Devices4:before {
+    content: "\EB3C";
+}
+
+.mi-DevicesLegacy:before, .mi-Devices2:before, .mi-DevicesLegacy:before {
+    content: "\EB3D";
+}
+
+.mi-Diagnostic:before {
+    content: "\EB3E";
+}
+
+.mi-Dial1:before {
+    content: "\EB3F";
+}
+
+.mi-Dial10:before {
+    content: "\EB40";
+}
+
+.mi-Dial11:before {
+    content: "\EB41";
+}
+
+.mi-Dial12:before {
+    content: "\EB42";
+}
+
+.mi-Dial13:before {
+    content: "\EB43";
+}
+
+.mi-Dial14:before {
+    content: "\EB44";
+}
+
+.mi-Dial15:before {
+    content: "\EB45";
+}
+
+.mi-Dial16:before {
+    content: "\EB46";
+}
+
+.mi-Dial2:before {
+    content: "\EB47";
+}
+
+.mi-Dial3:before {
+    content: "\EB48";
+}
+
+.mi-Dial4:before {
+    content: "\EB49";
+}
+
+.mi-Dial5:before {
+    content: "\EB4A";
+}
+
+.mi-Dial6:before {
+    content: "\EB4B";
+}
+
+.mi-Dial7:before {
+    content: "\EB4C";
+}
+
+.mi-Dial8:before {
+    content: "\EB4D";
+}
+
+.mi-Dial9:before {
+    content: "\EB4E";
+}
+
+.mi-DialShape1:before {
+    content: "\EB4F";
+}
+
+.mi-DialShape2:before {
+    content: "\EB50";
+}
+
+.mi-DialShape3:before {
+    content: "\EB51";
+}
+
+.mi-DialShape4:before {
+    content: "\EB52";
+}
+
+.mi-DialUp:before {
+    content: "\EB53";
+}
+
+.mi-Dialpad:before {
+    content: "\EB54";
+}
+
+.mi-Dictionary:before {
+    content: "\EB55";
+}
+
+.mi-DictionaryAdd:before {
+    content: "\EB56";
+}
+
+.mi-DictionaryCloud:before {
+    content: "\EB57";
+}
+
+.mi-DirectAccess:before {
+    content: "\EB58";
+}
+
+.mi-Directions:before, .mi-DirectionsLegacy:before {
+    content: "\EB59";
+}
+
+.mi-DisableUpdates:before, .mi-DisableUpdatesLegacy:before {
+    content: "\EB5A";
+}
+
+.mi-DisconnectDisplay:before {
+    content: "\EB5B";
+}
+
+.mi-DisconnectDrive:before, .mi-DisconnectDriveLegacy:before {
+    content: "\EB5C";
+}
+
+.mi-Dislike:before, .mi-DislikeLegacy:before {
+    content: "\EB5D";
+}
+
+.mi-Dock:before {
+    content: "\EB5E";
+}
+
+.mi-DockBottom:before, .mi-DockBottomLegacy:before {
+    content: "\EB5F";
+}
+
+.mi-DockLeft:before, .mi-DockLeftLegacy:before {
+    content: "\EB60";
+}
+
+.mi-DockLeftMirrored:before, .mi-DockLeftLegacyMirrored:before {
+    content: "\EB61";
+}
+
+.mi-DockRight:before, .mi-DockRightLegacy:before {
+    content: "\EB62";
+}
+
+.mi-DockRightMirrored:before, .mi-DockRightLegacyMirrored:before {
+    content: "\EB63";
+}
+
+.mi-Document:before, .mi-DocumentLegacy:before {
+    content: "\EB64";
+}
+
+.mi-DoublePinyin:before {
+    content: "\EB65";
+}
+
+.mi-Down:before, .mi-DownLegacy:before {
+    content: "\EB66";
+}
+
+.mi-DownShiftKey:before {
+    content: "\EB67";
+}
+
+.mi-Download:before, .mi-DownloadLegacy:before {
+    content: "\EB68";
+}
+
+.mi-DownloadMap:before {
+    content: "\EB69";
+}
+
+.mi-Dpad:before {
+    content: "\EB6A";
+}
+
+.mi-Draw:before {
+    content: "\EB6B";
+}
+
+.mi-DrawSolid:before {
+    content: "\EB6C";
+}
+
+.mi-Drop:before {
+    content: "\EB6D";
+}
+
+.mi-DullSound:before {
+    content: "\EB6E";
+}
+
+.mi-DullSoundKey:before {
+    content: "\EB6F";
+}
+
+.mi-DuplexLandscapeOneSided:before {
+    content: "\EB70";
+}
+
+.mi-DuplexLandscapeOneSidedMirrored:before {
+    content: "\EB71";
+}
+
+.mi-DuplexLandscapeTwoSidedLongEdge:before {
+    content: "\EB72";
+}
+
+.mi-DuplexLandscapeTwoSidedLongEdgeMirrored:before {
+    content: "\EB73";
+}
+
+.mi-DuplexLandscapeTwoSidedShortEdge:before {
+    content: "\EB74";
+}
+
+.mi-DuplexLandscapeTwoSidedShortEdgeMirrored:before {
+    content: "\EB75";
+}
+
+.mi-DuplexPortraitOneSided:before {
+    content: "\EB76";
+}
+
+.mi-DuplexPortraitOneSidedMirrored:before {
+    content: "\EB77";
+}
+
+.mi-DuplexPortraitTwoSidedLongEdge:before {
+    content: "\EB78";
+}
+
+.mi-DuplexPortraitTwoSidedLongEdgeMirrored:before {
+    content: "\EB79";
+}
+
+.mi-DuplexPortraitTwoSidedShortEdge:before {
+    content: "\EB7A";
+}
+
+.mi-DuplexPortraitTwoSidedShortEdgeMirrored:before {
+    content: "\EB7B";
+}
+
+.mi-DynamicLock:before {
+    content: "\EB7C";
+}
+
+.mi-EMI:before {
+    content: "\EB7D";
+}
+
+.mi-Ear:before {
+    content: "\EB7E";
+}
+
+.mi-Earbud:before {
+    content: "\EB7F";
+}
+
+.mi-EaseOfAccess:before, .mi-EaseOfAccessLegacy:before {
+    content: "\EB80";
+}
+
+.mi-Edit:before, .mi-EditLegacy:before {
+    content: "\EB81";
+}
+
+.mi-EditMirrored:before, .mi-EditLegacyMirrored:before {
+    content: "\EB82";
+}
+
+.mi-Education:before {
+    content: "\EB83";
+}
+
+.mi-Emoji:before, .mi-EmojiLegacy:before {
+    content: "\EB84";
+}
+
+.mi-Emoji2:before, .mi-Emoji2Legacy:before {
+    content: "\EB85";
+}
+
+.mi-EmojiSwatch:before {
+    content: "\EB86";
+}
+
+.mi-EmojiTabCelebrationObjects:before {
+    content: "\EB87";
+}
+
+.mi-EmojiTabFavorites:before {
+    content: "\EB88";
+}
+
+.mi-EmojiTabFoodPlants:before {
+    content: "\EB89";
+}
+
+.mi-EmojiTabPeople:before {
+    content: "\EB8A";
+}
+
+.mi-EmojiTabSmilesAnimals:before {
+    content: "\EB8B";
+}
+
+.mi-EmojiTabSymbols:before {
+    content: "\EB8C";
+}
+
+.mi-EmojiTabTextSmiles:before {
+    content: "\EB8D";
+}
+
+.mi-EmojiTabTransitPlaces:before {
+    content: "\EB8E";
+}
+
+.mi-EndPoint:before, .mi-Flag:before, .mi-EndPoint:before, .mi-FlagLegacy:before {
+    content: "\EB8F";
+}
+
+.mi-EndPointSolid:before {
+    content: "\EB90";
+}
+
+.mi-EnglishPunctuation:before {
+    content: "\EB91";
+}
+
+.mi-Equalizer:before {
+    content: "\EB92";
+}
+
+.mi-EraseTool:before {
+    content: "\EB93";
+}
+
+.mi-EraseToolFill:before {
+    content: "\EB94";
+}
+
+.mi-EraseToolFill2:before {
+    content: "\EB95";
+}
+
+.mi-Error:before {
+    content: "\EB96";
+}
+
+.mi-ErrorBadge:before {
+    content: "\EB97";
+}
+
+.mi-ErrorBadge12:before {
+    content: "\EB98";
+}
+
+.mi-Ethernet:before {
+    content: "\EB99";
+}
+
+.mi-EthernetError:before {
+    content: "\EB9A";
+}
+
+.mi-EthernetWarning:before {
+    content: "\EB9B";
+}
+
+.mi-ExpandTile:before, .mi-ExpandTileLegacy:before {
+    content: "\EB9C";
+}
+
+.mi-ExpandTileMirrored:before, .mi-ExpandTileLegacyMirrored:before {
+    content: "\EB9D";
+}
+
+.mi-ExploitProtectionSettings:before {
+    content: "\EB9E";
+}
+
+.mi-ExploreContent:before {
+    content: "\EB9F";
+}
+
+.mi-ExploreContentSingle:before {
+    content: "\EBA0";
+}
+
+.mi-Export:before, .mi-ImportLegacyMirrored:before, .mi-ImportMirrored:before {
+    content: "\EBA1";
+}
+
+.mi-EyeGaze:before {
+    content: "\EBA2";
+}
+
+.mi-Eyedropper:before {
+    content: "\EBA3";
+}
+
+.mi-Family:before {
+    content: "\EBA4";
+}
+
+.mi-FastForward:before {
+    content: "\EBA5";
+}
+
+.mi-Favicon:before {
+    content: "\EBA6";
+}
+
+.mi-FavoriteLegacy:before, .mi-FavoriteStarFill:before, .mi-Favorite2Legacy:before, .mi-FavoriteLegacy:before, .mi-RatingStarFillLegacy:before, .mi-RatingStarFillReducedPaddingHTMLLegacy:before, .mi-RatingStarFillSmallLegacy:before, .mi-RatingStarFillZeroWidthLegacy:before, .mi-SolidStarLegacy:before {
+    content: "\EBA7";
+}
+
+.mi-FavoriteList:before {
+    content: "\EBA8";
+}
+
+.mi-FavoriteStar:before, .mi-FavoriteInlineLegacy:before, .mi-OutlineStarLegacy:before, .mi-RatingStarLegacy:before, .mi-Unfavorite2Legacy:before {
+    content: "\EBA9";
+}
+
+.mi-FavoriteStarFill:before, .mi-Favorite2Legacy:before, .mi-FavoriteLegacy:before, .mi-RatingStarFillLegacy:before, .mi-RatingStarFillReducedPaddingHTMLLegacy:before, .mi-RatingStarFillSmallLegacy:before, .mi-RatingStarFillZeroWidthLegacy:before, .mi-SolidStarLegacy:before {
+    content: "\EBAA";
+}
+
+.mi-Feedback:before {
+    content: "\EBAB";
+}
+
+.mi-FeedbackApp:before {
+    content: "\EBAC";
+}
+
+.mi-Ferry:before {
+    content: "\EBAD";
+}
+
+.mi-FerrySolid:before {
+    content: "\EBAE";
+}
+
+.mi-FileExplorer:before {
+    content: "\EBAF";
+}
+
+.mi-FileExplorerApp:before {
+    content: "\EBB0";
+}
+
+.mi-Filter:before, .mi-FilterLegacy:before {
+    content: "\EBB1";
+}
+
+.mi-FingerInking:before {
+    content: "\EBB2";
+}
+
+.mi-Fingerprint:before {
+    content: "\EBB3";
+}
+
+.mi-FitPage:before {
+    content: "\EBB4";
+}
+
+.mi-Flag:before, .mi-EndPoint:before, .mi-FlagLegacy:before {
+    content: "\EBB5";
+}
+
+.mi-Flashlight:before {
+    content: "\EBB6";
+}
+
+.mi-FlickDown:before {
+    content: "\EBB7";
+}
+
+.mi-FlickLeft:before {
+    content: "\EBB8";
+}
+
+.mi-FlickRight:before {
+    content: "\EBB9";
+}
+
+.mi-FlickUp:before {
+    content: "\EBBA";
+}
+
+.mi-Folder:before {
+    content: "\EBBB";
+}
+
+.mi-FolderFill:before, .mi-FolderLegacy:before {
+    content: "\EBBC";
+}
+
+.mi-FolderHorizontal:before {
+    content: "\EBBD";
+}
+
+.mi-FolderOpen:before {
+    content: "\EBBE";
+}
+
+.mi-Font:before, .mi-FontLegacy:before {
+    content: "\EBBF";
+}
+
+.mi-FontColor:before, .mi-FontColorLegacy:before {
+    content: "\EBC0";
+}
+
+.mi-FontColorKorean:before, .mi-FontColorKoreanLegacy:before {
+    content: "\EBC1";
+}
+
+.mi-FontColorKoreanLegacy:before, .mi-FontColorKorean:before, .mi-FontColorKoreanLegacy:before {
+    content: "\EBC2";
+}
+
+.mi-FontDecrease:before, .mi-FontDecreaseLegacy:before {
+    content: "\EBC3";
+}
+
+.mi-FontIncrease:before, .mi-FontIncreaseLegacy:before {
+    content: "\EBC4";
+}
+
+.mi-FontSize:before, .mi-FontSizeLegacy:before {
+    content: "\EBC5";
+}
+
+.mi-FontStyleKorean:before, .mi-FontStyleKoreanLegacy:before {
+    content: "\EBC6";
+}
+
+.mi-FontStyleKoreanLegacy:before, .mi-FontStyleKorean:before, .mi-FontStyleKoreanLegacy:before {
+    content: "\EBC7";
+}
+
+.mi-Forward:before, .mi-ArrowHTMLLegacyMirrored:before, .mi-BackBttnMirroredArrow20Legacy:before, .mi-BackBttnMirroredArrow42Legacy:before, .mi-ForwardLegacy:before {
+    content: "\EBC8";
+}
+
+.mi-ForwardMirrored:before {
+    content: "\EBC9";
+}
+
+.mi-ForwardSm:before {
+    content: "\EBCA";
+}
+
+.mi-FourBars:before, .mi-FourBarsLegacy:before {
+    content: "\EBCB";
+}
+
+.mi-FreeFormClipping:before {
+    content: "\EBCC";
+}
+
+.mi-Frigid:before {
+    content: "\EBCD";
+}
+
+.mi-FullAlpha:before {
+    content: "\EBCE";
+}
+
+.mi-FullCircleMask:before {
+    content: "\EBCF";
+}
+
+.mi-FullHiragana:before {
+    content: "\EBD0";
+}
+
+.mi-FullKatakana:before {
+    content: "\EBD1";
+}
+
+.mi-FullScreen:before, .mi-FullScreenLegacy:before {
+    content: "\EBD2";
+}
+
+.mi-FuzzyReading:before {
+    content: "\EBD3";
+}
+
+.mi-GIF:before {
+    content: "\EBD4";
+}
+
+.mi-Game:before {
+    content: "\EBD5";
+}
+
+.mi-GameConsole:before {
+    content: "\EBD6";
+}
+
+.mi-GiftboxOpen:before {
+    content: "\EBD7";
+}
+
+.mi-GlobalNavigationButton:before {
+    content: "\EBD8";
+}
+
+.mi-Globe:before, .mi-GlobeLegacy:before {
+    content: "\EBD9";
+}
+
+.mi-Go:before, .mi-GoLegacy:before {
+    content: "\EBDA";
+}
+
+.mi-GoMirrored:before, .mi-GoLegacyMirrored:before {
+    content: "\EBDB";
+}
+
+.mi-GoToStart:before, .mi-GoToStartLegacy:before {
+    content: "\EBDC";
+}
+
+.mi-GotoToday:before, .mi-GotoTodayLegacy:before {
+    content: "\EBDD";
+}
+
+.mi-GridView:before {
+    content: "\EBDE";
+}
+
+.mi-GripperBarHorizontal:before {
+    content: "\EBDF";
+}
+
+.mi-GripperBarVertical:before {
+    content: "\EBE0";
+}
+
+.mi-GripperResize:before {
+    content: "\EBE1";
+}
+
+.mi-GripperResizeMirrored:before {
+    content: "\EBE2";
+}
+
+.mi-GripperTool:before {
+    content: "\EBE3";
+}
+
+.mi-Groceries:before {
+    content: "\EBE4";
+}
+
+.mi-Group:before {
+    content: "\EBE5";
+}
+
+.mi-GroupList:before {
+    content: "\EBE6";
+}
+
+.mi-GuestUser:before {
+    content: "\EBE7";
+}
+
+.mi-HMD:before {
+    content: "\EBE8";
+}
+
+.mi-HWPInsert:before {
+    content: "\EBE9";
+}
+
+.mi-HWPJoin:before {
+    content: "\EBEA";
+}
+
+.mi-HWPNewLine:before {
+    content: "\EBEB";
+}
+
+.mi-HWPOverwrite:before {
+    content: "\EBEC";
+}
+
+.mi-HWPScratchOut:before {
+    content: "\EBED";
+}
+
+.mi-HWPSplit:before {
+    content: "\EBEE";
+}
+
+.mi-HWPStrikeThrough:before {
+    content: "\EBEF";
+}
+
+.mi-HalfAlpha:before {
+    content: "\EBF0";
+}
+
+.mi-HalfDullSound:before {
+    content: "\EBF1";
+}
+
+.mi-HalfKatakana:before {
+    content: "\EBF2";
+}
+
+.mi-HalfStarLeft:before {
+    content: "\EBF3";
+}
+
+.mi-HalfStarRight:before {
+    content: "\EBF4";
+}
+
+.mi-Handwriting:before {
+    content: "\EBF5";
+}
+
+.mi-HangUp:before, .mi-HangUpLegacy:before {
+    content: "\EBF6";
+}
+
+.mi-HardDrive:before {
+    content: "\EBF7";
+}
+
+.mi-HeadlessDevice:before {
+    content: "\EBF8";
+}
+
+.mi-Headphone:before {
+    content: "\EBF9";
+}
+
+.mi-Headphone0:before {
+    content: "\EBFA";
+}
+
+.mi-Headphone1:before {
+    content: "\EBFB";
+}
+
+.mi-Headphone2:before {
+    content: "\EBFC";
+}
+
+.mi-Headphone3:before {
+    content: "\EBFD";
+}
+
+.mi-Headset:before {
+    content: "\EBFE";
+}
+
+.mi-Health:before {
+    content: "\EBFF";
+}
+
+.mi-Heart:before, .mi-HeartLegacy:before {
+    content: "\EC00";
+}
+
+.mi-HeartBroken:before {
+    content: "\EC01";
+}
+
+.mi-HeartBrokenLegacy:before, .mi-HeartBrokenZeroWidthLegacy:before {
+    content: "\EC02";
+}
+
+.mi-HeartFill:before, .mi-HeartFillLegacy:before, .mi-HeartFillZeroWidthLegacy:before {
+    content: "\EC03";
+}
+
+.mi-Help:before, .mi-HelpLegacy:before {
+    content: "\EC04";
+}
+
+.mi-HelpMirrored:before, .mi-HelpLegacyMirrored:before {
+    content: "\EC05";
+}
+
+.mi-HideBcc:before, .mi-HideBccLegacy:before {
+    content: "\EC06";
+}
+
+.mi-Highlight:before, .mi-HighlightLegacy:before {
+    content: "\EC07";
+}
+
+.mi-HighlightFill:before {
+    content: "\EC08";
+}
+
+.mi-HighlightFill2:before {
+    content: "\EC09";
+}
+
+.mi-History:before {
+    content: "\EC0A";
+}
+
+.mi-HolePunchLandscapeBottom:before {
+    content: "\EC0B";
+}
+
+.mi-HolePunchLandscapeLeft:before {
+    content: "\EC0C";
+}
+
+.mi-HolePunchLandscapeRight:before {
+    content: "\EC0D";
+}
+
+.mi-HolePunchLandscapeTop:before {
+    content: "\EC0E";
+}
+
+.mi-HolePunchOff:before {
+    content: "\EC0F";
+}
+
+.mi-HolePunchPortraitBottom:before {
+    content: "\EC10";
+}
+
+.mi-HolePunchPortraitLeft:before {
+    content: "\EC11";
+}
+
+.mi-HolePunchPortraitRight:before {
+    content: "\EC12";
+}
+
+.mi-HolePunchPortraitTop:before {
+    content: "\EC13";
+}
+
+.mi-HoloLensSelected:before {
+    content: "\EC14";
+}
+
+.mi-Home:before, .mi-HomeLegacy:before {
+    content: "\EC15";
+}
+
+.mi-HomeGroup:before {
+    content: "\EC16";
+}
+
+.mi-HomeSolid:before {
+    content: "\EC17";
+}
+
+.mi-HorizontalTabKey:before {
+    content: "\EC18";
+}
+
+.mi-IBeam:before {
+    content: "\EC19";
+}
+
+.mi-IBeamOutline:before {
+    content: "\EC1A";
+}
+
+.mi-IOT:before {
+    content: "\EC1B";
+}
+
+.mi-ImageExport:before {
+    content: "\EC1C";
+}
+
+.mi-Import:before, .mi-ExportMirrored:before, .mi-ImportLegacy:before {
+    content: "\EC1D";
+}
+
+.mi-ImportAll:before, .mi-ImportAllLegacy:before {
+    content: "\EC1E";
+}
+
+.mi-ImportAllMirrored:before, .mi-ImportAllLegacyMirrored:before {
+    content: "\EC1F";
+}
+
+.mi-Important:before, .mi-ImportantLegacy:before {
+    content: "\EC20";
+}
+
+.mi-ImportantBadge12:before {
+    content: "\EC21";
+}
+
+.mi-InPrivate:before {
+    content: "\EC22";
+}
+
+.mi-IncidentTriangle:before {
+    content: "\EC23";
+}
+
+.mi-IncreaseIndent:before, .mi-IncreaseIndentLegacy:before {
+    content: "\EC24";
+}
+
+.mi-IncreaseIndentLegacy:before, .mi-IncreaseIndent:before, .mi-IncreaseIndentLegacy:before {
+    content: "\EC25";
+}
+
+.mi-IncreaseIndentLegacyMirrored:before, .mi-IncreaseIndentMirrored:before, .mi-IncreaseIndentLegacyMirrored:before {
+    content: "\EC26";
+}
+
+.mi-IncreaseIndentMirrored:before, .mi-IncreaseIndentLegacyMirrored:before {
+    content: "\EC27";
+}
+
+.mi-Info:before {
+    content: "\EC28";
+}
+
+.mi-Info2:before {
+    content: "\EC29";
+}
+
+.mi-InfoSolid:before {
+    content: "\EC2A";
+}
+
+.mi-InkingCaret:before {
+    content: "\EC2B";
+}
+
+.mi-InkingColorFill:before {
+    content: "\EC2C";
+}
+
+.mi-InkingColorOutline:before {
+    content: "\EC2D";
+}
+
+.mi-InkingTool:before {
+    content: "\EC2E";
+}
+
+.mi-InkingToolFill:before {
+    content: "\EC2F";
+}
+
+.mi-InkingToolFill2:before {
+    content: "\EC30";
+}
+
+.mi-Input:before {
+    content: "\EC31";
+}
+
+.mi-InsiderHubApp:before {
+    content: "\EC32";
+}
+
+.mi-InteractiveDashboard:before {
+    content: "\EC33";
+}
+
+.mi-Italic:before, .mi-ItalicLegacy:before {
+    content: "\EC34";
+}
+
+.mi-ItalicC:before, .mi-ItalicCLegacy:before {
+    content: "\EC35";
+}
+
+.mi-ItalicCLegacy:before, .mi-ItalicC:before, .mi-ItalicCLegacy:before {
+    content: "\EC36";
+}
+
+.mi-ItalicI:before, .mi-ItalicILegacy:before {
+    content: "\EC37";
+}
+
+.mi-ItalicILegacy:before, .mi-ItalicI:before, .mi-ItalicILegacy:before {
+    content: "\EC38";
+}
+
+.mi-ItalicK:before, .mi-ItalicKLegacy:before {
+    content: "\EC39";
+}
+
+.mi-ItalicKLegacy:before, .mi-ItalicK:before, .mi-ItalicKLegacy:before {
+    content: "\EC3A";
+}
+
+.mi-ItalicKorean:before, .mi-ItalicKoreanLegacy:before {
+    content: "\EC3B";
+}
+
+.mi-ItalicKoreanLegacy:before, .mi-ItalicKorean:before, .mi-ItalicKoreanLegacy:before {
+    content: "\EC3C";
+}
+
+.mi-ItalicRussian:before, .mi-ItalicRussianLegacy:before {
+    content: "\EC3D";
+}
+
+.mi-ItalicRussianLegacy:before, .mi-ItalicRussian:before, .mi-ItalicRussianLegacy:before {
+    content: "\EC3E";
+}
+
+.mi-Japanese:before {
+    content: "\EC3F";
+}
+
+.mi-JpnRomanji:before {
+    content: "\EC40";
+}
+
+.mi-JpnRomanjiLock:before {
+    content: "\EC41";
+}
+
+.mi-JpnRomanjiShift:before {
+    content: "\EC42";
+}
+
+.mi-JpnRomanjiShiftLock:before {
+    content: "\EC43";
+}
+
+.mi-Key12On:before {
+    content: "\EC44";
+}
+
+.mi-KeyBoardLegacy:before, .mi-KeyboardClassic:before, .mi-KeyBoardLegacy:before {
+    content: "\EC45";
+}
+
+.mi-Keyboard12Key:before {
+    content: "\EC46";
+}
+
+.mi-KeyboardBrightness:before {
+    content: "\EC47";
+}
+
+.mi-KeyboardClassic:before, .mi-KeyBoardLegacy:before {
+    content: "\EC48";
+}
+
+.mi-KeyboardDismiss:before {
+    content: "\EC49";
+}
+
+.mi-KeyboardDock:before {
+    content: "\EC4A";
+}
+
+.mi-KeyboardFull:before {
+    content: "\EC4B";
+}
+
+.mi-KeyboardLeftAligned:before {
+    content: "\EC4C";
+}
+
+.mi-KeyboardLeftDock:before {
+    content: "\EC4D";
+}
+
+.mi-KeyboardLeftHanded:before {
+    content: "\EC4E";
+}
+
+.mi-KeyboardLowerBrightness:before {
+    content: "\EC4F";
+}
+
+.mi-KeyboardNarrow:before {
+    content: "\EC50";
+}
+
+.mi-KeyboardOneHanded:before {
+    content: "\EC51";
+}
+
+.mi-KeyboardRightAligned:before {
+    content: "\EC52";
+}
+
+.mi-KeyboardRightDock:before {
+    content: "\EC53";
+}
+
+.mi-KeyboardRightHanded:before {
+    content: "\EC54";
+}
+
+.mi-KeyboardSettings:before {
+    content: "\EC55";
+}
+
+.mi-KeyboardShortcut:before {
+    content: "\EC56";
+}
+
+.mi-KeyboardSplit:before, .mi-KeyboardSplitLegacy:before {
+    content: "\EC57";
+}
+
+.mi-KeyboardStandard:before, .mi-KeyboardStandardLegacy:before {
+    content: "\EC58";
+}
+
+.mi-KeyboardUndock:before {
+    content: "\EC59";
+}
+
+.mi-KnowledgeArticle:before {
+    content: "\EC5A";
+}
+
+.mi-Korean:before {
+    content: "\EC5B";
+}
+
+.mi-LEDLight:before {
+    content: "\EC5C";
+}
+
+.mi-Label:before {
+    content: "\EC5D";
+}
+
+.mi-LandscapeOrientation:before {
+    content: "\EC5E";
+}
+
+.mi-LandscapeOrientationMirrored:before {
+    content: "\EC5F";
+}
+
+.mi-LangJPN:before {
+    content: "\EC60";
+}
+
+.mi-LanguageChs:before {
+    content: "\EC61";
+}
+
+.mi-LanguageCht:before {
+    content: "\EC62";
+}
+
+.mi-LanguageJpn:before {
+    content: "\EC63";
+}
+
+.mi-LanguageKor:before {
+    content: "\EC64";
+}
+
+.mi-LaptopSecure:before {
+    content: "\EC65";
+}
+
+.mi-LaptopSelected:before {
+    content: "\EC66";
+}
+
+.mi-LargeErase:before {
+    content: "\EC67";
+}
+
+.mi-Layout:before, .mi-LayoutLegacy:before {
+    content: "\EC68";
+}
+
+.mi-LayoutLegacy:before, .mi-Layout:before, .mi-LayoutLegacy:before {
+    content: "\EC69";
+}
+
+.mi-Leaf:before {
+    content: "\EC6A";
+}
+
+.mi-LeaveChat:before, .mi-LeaveChatLegacy:before {
+    content: "\EC6B";
+}
+
+.mi-LeaveChatMirrored:before {
+    content: "\EC6C";
+}
+
+.mi-LeftArrowKeyTime0:before {
+    content: "\EC6D";
+}
+
+.mi-LeftDoubleQuote:before {
+    content: "\EC6E";
+}
+
+.mi-LeftQuote:before {
+    content: "\EC6F";
+}
+
+.mi-LeftStick:before {
+    content: "\EC70";
+}
+
+.mi-Lexicon:before {
+    content: "\EC71";
+}
+
+.mi-Library:before, .mi-LibraryLegacy:before {
+    content: "\EC72";
+}
+
+.mi-Light:before {
+    content: "\EC73";
+}
+
+.mi-Lightbulb:before, .mi-ToolTip:before, .mi-Lightbulb:before {
+    content: "\EC74";
+}
+
+.mi-LightningBolt:before {
+    content: "\EC75";
+}
+
+.mi-Like:before, .mi-LikeInlineLegacy:before, .mi-LikeLegacy:before {
+    content: "\EC76";
+}
+
+.mi-LikeDislike:before, .mi-LikeDislikeLegacy:before {
+    content: "\EC77";
+}
+
+.mi-LineDisplay:before {
+    content: "\EC78";
+}
+
+.mi-Link:before, .mi-LinkLegacy:before {
+    content: "\EC79";
+}
+
+.mi-List:before {
+    content: "\EC7A";
+}
+
+.mi-ListMirrored:before {
+    content: "\EC7B";
+}
+
+.mi-Location:before, .mi-LocationLegacy:before {
+    content: "\EC7C";
+}
+
+.mi-Lock:before, .mi-LockLegacy:before {
+    content: "\EC7D";
+}
+
+.mi-LockFeedback:before {
+    content: "\EC7E";
+}
+
+.mi-LockScreenGlance:before {
+    content: "\EC7F";
+}
+
+.mi-LockscreenDesktop:before {
+    content: "\EC80";
+}
+
+.mi-LowerBrightness:before {
+    content: "\EC81";
+}
+
+.mi-MagStripeReader:before {
+    content: "\EC82";
+}
+
+.mi-Mail:before, .mi-MailLegacy:before {
+    content: "\EC83";
+}
+
+.mi-MailBadge12:before {
+    content: "\EC84";
+}
+
+.mi-MailFill:before, .mi-MailFillLegacy:before, .mi-MailMessageLegacy:before {
+    content: "\EC85";
+}
+
+.mi-MailForward:before, .mi-MailForwardLegacy:before {
+    content: "\EC86";
+}
+
+.mi-MailForwardMirrored:before, .mi-MailForwardLegacyMirrored:before {
+    content: "\EC87";
+}
+
+.mi-MailReply:before, .mi-MailReplyLegacy:before {
+    content: "\EC88";
+}
+
+.mi-MailReplyAll:before, .mi-MailReplyAllLegacy:before {
+    content: "\EC89";
+}
+
+.mi-MailReplyAllMirrored:before, .mi-MailReplyAllLegacyMirrored:before {
+    content: "\EC8A";
+}
+
+.mi-MailReplyMirrored:before, .mi-MailReplyLegacyMirrored:before {
+    content: "\EC8B";
+}
+
+.mi-Manage:before, .mi-ManageLegacy:before {
+    content: "\EC8C";
+}
+
+.mi-MapCompassBottom:before {
+    content: "\EC8D";
+}
+
+.mi-MapCompassTop:before {
+    content: "\EC8E";
+}
+
+.mi-MapDirections:before {
+    content: "\EC8F";
+}
+
+.mi-MapDrive:before, .mi-MapDriveLegacy:before {
+    content: "\EC90";
+}
+
+.mi-MapLayers:before {
+    content: "\EC91";
+}
+
+.mi-MapPin:before, .mi-MapLegacy:before {
+    content: "\EC92";
+}
+
+.mi-MapPin2:before, .mi-MapPinLegacy:before {
+    content: "\EC93";
+}
+
+.mi-MapPinLegacy:before, .mi-MapPin2:before, .mi-MapPinLegacy:before {
+    content: "\EC94";
+}
+
+.mi-Marker:before {
+    content: "\EC95";
+}
+
+.mi-Marquee:before {
+    content: "\EC96";
+}
+
+.mi-Media:before {
+    content: "\EC97";
+}
+
+.mi-MediaStorageTower:before {
+    content: "\EC98";
+}
+
+.mi-Megaphone:before {
+    content: "\EC99";
+}
+
+.mi-Memo:before, .mi-MemoLegacy:before {
+    content: "\EC9A";
+}
+
+.mi-Message:before, .mi-CommentInlineLegacy:before, .mi-MessageLegacy:before {
+    content: "\EC9B";
+}
+
+.mi-MicClipping:before {
+    content: "\EC9C";
+}
+
+.mi-MicError:before {
+    content: "\EC9D";
+}
+
+.mi-MicOff:before {
+    content: "\EC9E";
+}
+
+.mi-MicOn:before {
+    content: "\EC9F";
+}
+
+.mi-MicSleep:before {
+    content: "\ECA0";
+}
+
+.mi-Microphone:before, .mi-MicrophoneLegacy:before {
+    content: "\ECA1";
+}
+
+.mi-MicrophoneListening:before {
+    content: "\ECA2";
+}
+
+.mi-MiracastLogoSmall:before {
+    content: "\ECA3";
+}
+
+.mi-MixVolumes:before {
+    content: "\ECA4";
+}
+
+.mi-MobActionCenter:before {
+    content: "\ECA5";
+}
+
+.mi-MobAirplane:before {
+    content: "\ECA6";
+}
+
+.mi-MobBattery0:before {
+    content: "\ECA7";
+}
+
+.mi-MobBattery1:before {
+    content: "\ECA8";
+}
+
+.mi-MobBattery10:before {
+    content: "\ECA9";
+}
+
+.mi-MobBattery2:before {
+    content: "\ECAA";
+}
+
+.mi-MobBattery3:before {
+    content: "\ECAB";
+}
+
+.mi-MobBattery4:before {
+    content: "\ECAC";
+}
+
+.mi-MobBattery5:before {
+    content: "\ECAD";
+}
+
+.mi-MobBattery6:before {
+    content: "\ECAE";
+}
+
+.mi-MobBattery7:before {
+    content: "\ECAF";
+}
+
+.mi-MobBattery8:before {
+    content: "\ECB0";
+}
+
+.mi-MobBattery9:before {
+    content: "\ECB1";
+}
+
+.mi-MobBatteryCharging0:before {
+    content: "\ECB2";
+}
+
+.mi-MobBatteryCharging1:before {
+    content: "\ECB3";
+}
+
+.mi-MobBatteryCharging10:before {
+    content: "\ECB4";
+}
+
+.mi-MobBatteryCharging2:before {
+    content: "\ECB5";
+}
+
+.mi-MobBatteryCharging3:before {
+    content: "\ECB6";
+}
+
+.mi-MobBatteryCharging4:before {
+    content: "\ECB7";
+}
+
+.mi-MobBatteryCharging5:before {
+    content: "\ECB8";
+}
+
+.mi-MobBatteryCharging6:before {
+    content: "\ECB9";
+}
+
+.mi-MobBatteryCharging7:before {
+    content: "\ECBA";
+}
+
+.mi-MobBatteryCharging8:before {
+    content: "\ECBB";
+}
+
+.mi-MobBatteryCharging9:before {
+    content: "\ECBC";
+}
+
+.mi-MobBatterySaver0:before {
+    content: "\ECBD";
+}
+
+.mi-MobBatterySaver1:before {
+    content: "\ECBE";
+}
+
+.mi-MobBatterySaver10:before {
+    content: "\ECBF";
+}
+
+.mi-MobBatterySaver2:before {
+    content: "\ECC0";
+}
+
+.mi-MobBatterySaver3:before {
+    content: "\ECC1";
+}
+
+.mi-MobBatterySaver4:before {
+    content: "\ECC2";
+}
+
+.mi-MobBatterySaver5:before {
+    content: "\ECC3";
+}
+
+.mi-MobBatterySaver6:before {
+    content: "\ECC4";
+}
+
+.mi-MobBatterySaver7:before {
+    content: "\ECC5";
+}
+
+.mi-MobBatterySaver8:before {
+    content: "\ECC6";
+}
+
+.mi-MobBatterySaver9:before {
+    content: "\ECC7";
+}
+
+.mi-MobBatteryUnknown:before {
+    content: "\ECC8";
+}
+
+.mi-MobBluetooth:before {
+    content: "\ECC9";
+}
+
+.mi-MobCallForwarding:before {
+    content: "\ECCA";
+}
+
+.mi-MobCallForwardingMirrored:before {
+    content: "\ECCB";
+}
+
+.mi-MobDrivingMode:before {
+    content: "\ECCC";
+}
+
+.mi-MobLocation:before {
+    content: "\ECCD";
+}
+
+.mi-MobQuietHours:before {
+    content: "\ECCE";
+}
+
+.mi-MobSIMError:before {
+    content: "\ECCF";
+}
+
+.mi-MobSIMLock:before {
+    content: "\ECD0";
+}
+
+.mi-MobSIMMissing:before {
+    content: "\ECD1";
+}
+
+.mi-MobSignal1:before {
+    content: "\ECD2";
+}
+
+.mi-MobSignal2:before {
+    content: "\ECD3";
+}
+
+.mi-MobSignal3:before {
+    content: "\ECD4";
+}
+
+.mi-MobSignal4:before {
+    content: "\ECD5";
+}
+
+.mi-MobSignal5:before {
+    content: "\ECD6";
+}
+
+.mi-MobWifi1:before {
+    content: "\ECD7";
+}
+
+.mi-MobWifi2:before {
+    content: "\ECD8";
+}
+
+.mi-MobWifi3:before {
+    content: "\ECD9";
+}
+
+.mi-MobWifi4:before {
+    content: "\ECDA";
+}
+
+.mi-MobWifiHotspot:before {
+    content: "\ECDB";
+}
+
+.mi-MobWifiWarning1:before {
+    content: "\ECDC";
+}
+
+.mi-MobWifiWarning2:before {
+    content: "\ECDD";
+}
+
+.mi-MobWifiWarning3:before {
+    content: "\ECDE";
+}
+
+.mi-MobWifiWarning4:before {
+    content: "\ECDF";
+}
+
+.mi-MobeSIM:before {
+    content: "\ECE0";
+}
+
+.mi-MobeSIMBusy:before {
+    content: "\ECE1";
+}
+
+.mi-MobeSIMLocked:before {
+    content: "\ECE2";
+}
+
+.mi-MobeSIMNoProfile:before {
+    content: "\ECE3";
+}
+
+.mi-MobileLocked:before {
+    content: "\ECE4";
+}
+
+.mi-MobileSelected:before {
+    content: "\ECE5";
+}
+
+.mi-MobileTablet:before {
+    content: "\ECE6";
+}
+
+.mi-More:before, .mi-MoreLegacy:before {
+    content: "\ECE7";
+}
+
+.mi-Mouse:before {
+    content: "\ECE8";
+}
+
+.mi-MoveToFolder:before, .mi-MoveToFolderLegacy:before {
+    content: "\ECE9";
+}
+
+.mi-Movies:before {
+    content: "\ECEA";
+}
+
+.mi-MultiSelect:before, .mi-MultiSelectLegacy:before {
+    content: "\ECEB";
+}
+
+.mi-MultiSelectMirrored:before, .mi-MultiSelectLegacyMirrored:before {
+    content: "\ECEC";
+}
+
+.mi-MultimediaDMP:before {
+    content: "\ECED";
+}
+
+.mi-MultimediaDMS:before {
+    content: "\ECEE";
+}
+
+.mi-MultimediaDVR:before {
+    content: "\ECEF";
+}
+
+.mi-MultimediaPMP:before {
+    content: "\ECF0";
+}
+
+.mi-Multitask:before {
+    content: "\ECF1";
+}
+
+.mi-Multitask16:before {
+    content: "\ECF2";
+}
+
+.mi-MultitaskExpanded:before {
+    content: "\ECF3";
+}
+
+.mi-MusicAlbum:before {
+    content: "\ECF4";
+}
+
+.mi-MusicInfo:before, .mi-MusicInfoLegacy:before {
+    content: "\ECF5";
+}
+
+.mi-MusicNote:before {
+    content: "\ECF6";
+}
+
+.mi-MusicSharing:before {
+    content: "\ECF7";
+}
+
+.mi-MusicSharingOff:before {
+    content: "\ECF8";
+}
+
+.mi-Mute:before, .mi-MuteLegacy:before {
+    content: "\ECF9";
+}
+
+.mi-MyNetwork:before {
+    content: "\ECFA";
+}
+
+.mi-NUIFPContinueSlideAction:before {
+    content: "\ECFB";
+}
+
+.mi-NUIFPContinueSlideHand:before {
+    content: "\ECFC";
+}
+
+.mi-NUIFPPressAction:before {
+    content: "\ECFD";
+}
+
+.mi-NUIFPPressHand:before {
+    content: "\ECFE";
+}
+
+.mi-NUIFPPressRepeatAction:before {
+    content: "\ECFF";
+}
+
+.mi-NUIFPRollLeftAction:before {
+    content: "\ED00";
+}
+
+.mi-NUIFPRollLeftHand:before {
+    content: "\ED01";
+}
+
+.mi-NUIFPRollRightHand:before {
+    content: "\ED02";
+}
+
+.mi-NUIFPRollRightHandAction:before {
+    content: "\ED03";
+}
+
+.mi-NUIFPStartSlideAction:before {
+    content: "\ED04";
+}
+
+.mi-NUIFPStartSlideHand:before, .mi-NUIFPPressRepeatHand:before {
+    content: "\ED05";
+}
+
+.mi-NUIFace:before {
+    content: "\ED06";
+}
+
+.mi-NUIIris:before {
+    content: "\ED07";
+}
+
+.mi-Narrator:before {
+    content: "\ED08";
+}
+
+.mi-NarratorForward:before {
+    content: "\ED09";
+}
+
+.mi-NarratorForwardMirrored:before {
+    content: "\ED0A";
+}
+
+.mi-NearbySharing:before {
+    content: "\ED0B";
+}
+
+.mi-Network:before {
+    content: "\ED0C";
+}
+
+.mi-NetworkAdapter:before {
+    content: "\ED0D";
+}
+
+.mi-NetworkConnected:before {
+    content: "\ED0E";
+}
+
+.mi-NetworkConnectedCheckmark:before {
+    content: "\ED0F";
+}
+
+.mi-NetworkOffline:before {
+    content: "\ED10";
+}
+
+.mi-NetworkPrinter:before {
+    content: "\ED11";
+}
+
+.mi-NetworkSharing:before {
+    content: "\ED12";
+}
+
+.mi-NetworkTower:before {
+    content: "\ED13";
+}
+
+.mi-NewFolder:before, .mi-NewFolderLegacy:before {
+    content: "\ED14";
+}
+
+.mi-NewWindow:before, .mi-NewWindowLegacy:before {
+    content: "\ED15";
+}
+
+.mi-Next:before, .mi-NextLegacy:before {
+    content: "\ED16";
+}
+
+.mi-NoiseCancelation:before {
+    content: "\ED17";
+}
+
+.mi-NoiseCancelationOff:before {
+    content: "\ED18";
+}
+
+.mi-OEM:before {
+    content: "\ED19";
+}
+
+.mi-OneBar:before, .mi-OneBarLegacy:before {
+    content: "\ED1A";
+}
+
+.mi-OpenFile:before, .mi-OpenFileLegacy:before {
+    content: "\ED1B";
+}
+
+.mi-OpenFolderHorizontal:before {
+    content: "\ED1C";
+}
+
+.mi-OpenInNewWindow:before, .mi-OpenInNewWindowLegacy:before {
+    content: "\ED1D";
+}
+
+.mi-OpenLocal:before, .mi-OpenLocalLegacy:before {
+    content: "\ED1E";
+}
+
+.mi-OpenPane:before, .mi-OpenPaneLegacy:before {
+    content: "\ED1F";
+}
+
+.mi-OpenPaneMirrored:before, .mi-OpenPaneLegacyMirrored:before {
+    content: "\ED20";
+}
+
+.mi-OpenWith:before, .mi-OpenWithLegacy:before {
+    content: "\ED21";
+}
+
+.mi-OpenWithMirrored:before, .mi-OpenWithLegacyMirrored:before {
+    content: "\ED22";
+}
+
+.mi-Orientation:before, .mi-OrientationLegacy:before {
+    content: "\ED23";
+}
+
+.mi-OtherUser:before, .mi-OtherUserLegacy:before {
+    content: "\ED24";
+}
+
+.mi-OutlineHalfStarLeft:before {
+    content: "\ED25";
+}
+
+.mi-OutlineHalfStarRight:before {
+    content: "\ED26";
+}
+
+.mi-OutlineQuarterStarLeft:before {
+    content: "\ED27";
+}
+
+.mi-OutlineQuarterStarRight:before {
+    content: "\ED28";
+}
+
+.mi-OutlineStarLeftHalf:before {
+    content: "\ED29";
+}
+
+.mi-OutlineStarRightHalf:before {
+    content: "\ED2A";
+}
+
+.mi-OutlineThreeQuarterStarLeft:before {
+    content: "\ED2B";
+}
+
+.mi-OutlineThreeQuarterStarRight:before {
+    content: "\ED2C";
+}
+
+.mi-PC1:before, .mi-PC1Legacy:before {
+    content: "\ED2D";
+}
+
+.mi-PINPad:before {
+    content: "\ED2E";
+}
+
+.mi-PLAP:before {
+    content: "\ED2F";
+}
+
+.mi-PPSFourLandscape:before {
+    content: "\ED30";
+}
+
+.mi-PPSFourPortrait:before {
+    content: "\ED31";
+}
+
+.mi-PPSOneLandscape:before {
+    content: "\ED32";
+}
+
+.mi-PPSOnePortrait:before {
+    content: "\ED33";
+}
+
+.mi-PPSTwoLandscape:before {
+    content: "\ED34";
+}
+
+.mi-PPSTwoPortrait:before {
+    content: "\ED35";
+}
+
+.mi-Package:before {
+    content: "\ED36";
+}
+
+.mi-Page:before, .mi-PageLegacy:before {
+    content: "\ED37";
+}
+
+.mi-PageLeft:before {
+    content: "\ED38";
+}
+
+.mi-PageMarginLandscapeModerate:before {
+    content: "\ED39";
+}
+
+.mi-PageMarginLandscapeNarrow:before {
+    content: "\ED3A";
+}
+
+.mi-PageMarginLandscapeNormal:before {
+    content: "\ED3B";
+}
+
+.mi-PageMarginLandscapeWide:before {
+    content: "\ED3C";
+}
+
+.mi-PageMarginPortraitModerate:before {
+    content: "\ED3D";
+}
+
+.mi-PageMarginPortraitNarrow:before {
+    content: "\ED3E";
+}
+
+.mi-PageMarginPortraitNormal:before {
+    content: "\ED3F";
+}
+
+.mi-PageMarginPortraitWide:before {
+    content: "\ED40";
+}
+
+.mi-PageMirrored:before {
+    content: "\ED41";
+}
+
+.mi-PageRight:before {
+    content: "\ED42";
+}
+
+.mi-PageSolid:before, .mi-PageFillLegacy:before {
+    content: "\ED43";
+}
+
+.mi-PaginationDotOutline10:before {
+    content: "\ED44";
+}
+
+.mi-PaginationDotSolid10:before {
+    content: "\ED45";
+}
+
+.mi-PanMode:before {
+    content: "\ED46";
+}
+
+.mi-ParkingLocation:before {
+    content: "\ED47";
+}
+
+.mi-ParkingLocationMirrored:before {
+    content: "\ED48";
+}
+
+.mi-ParkingLocationSolid:before {
+    content: "\ED49";
+}
+
+.mi-PartyLeader:before {
+    content: "\ED4A";
+}
+
+.mi-PassiveAuthentication:before {
+    content: "\ED4B";
+}
+
+.mi-PasswordKeyHide:before {
+    content: "\ED4C";
+}
+
+.mi-PasswordKeyShow:before {
+    content: "\ED4D";
+}
+
+.mi-Paste:before, .mi-PasteLegacy:before {
+    content: "\ED4E";
+}
+
+.mi-Pause:before, .mi-PauseLegacy:before {
+    content: "\ED4F";
+}
+
+.mi-PauseBadge12:before {
+    content: "\ED50";
+}
+
+.mi-PaymentCard:before {
+    content: "\ED51";
+}
+
+.mi-PenPalette:before {
+    content: "\ED52";
+}
+
+.mi-PenPaletteMirrored:before {
+    content: "\ED53";
+}
+
+.mi-PenTips:before {
+    content: "\ED54";
+}
+
+.mi-PenTipsMirrored:before {
+    content: "\ED55";
+}
+
+.mi-PenWorkspace:before {
+    content: "\ED56";
+}
+
+.mi-PenWorkspaceMirrored:before {
+    content: "\ED57";
+}
+
+.mi-Pencil:before {
+    content: "\ED58";
+}
+
+.mi-PencilFill:before {
+    content: "\ED59";
+}
+
+.mi-People:before, .mi-PeopleLegacy:before {
+    content: "\ED5A";
+}
+
+.mi-PeriodKey:before {
+    content: "\ED5B";
+}
+
+.mi-Permissions:before, .mi-PermissionsLegacy:before {
+    content: "\ED5C";
+}
+
+.mi-PersonalFolder:before {
+    content: "\ED5D";
+}
+
+.mi-Personalize:before {
+    content: "\ED5E";
+}
+
+.mi-Phone:before, .mi-PhoneLegacy:before {
+    content: "\ED5F";
+}
+
+.mi-PhoneBook:before, .mi-PhoneBookLegacy:before {
+    content: "\ED60";
+}
+
+.mi-Photo:before {
+    content: "\ED61";
+}
+
+.mi-Photo2:before {
+    content: "\ED62";
+}
+
+.mi-Picture:before, .mi-PictureLegacy:before {
+    content: "\ED63";
+}
+
+.mi-PieSingle:before {
+    content: "\ED64";
+}
+
+.mi-Pin:before, .mi-PinLegacy:before {
+    content: "\ED65";
+}
+
+.mi-PinFill:before {
+    content: "\ED66";
+}
+
+.mi-Pinned:before {
+    content: "\ED67";
+}
+
+.mi-PinnedFill:before {
+    content: "\ED68";
+}
+
+.mi-PinyinIMELogo:before {
+    content: "\ED69";
+}
+
+.mi-PlaceFolder:before, .mi-PlaceFolderLegacy:before {
+    content: "\ED6A";
+}
+
+.mi-PlaceFolderLegacy:before, .mi-PlaceFolder:before, .mi-PlaceFolderLegacy:before {
+    content: "\ED6B";
+}
+
+.mi-Play:before, .mi-PlayLegacy:before {
+    content: "\ED6C";
+}
+
+.mi-Play36:before {
+    content: "\ED6D";
+}
+
+.mi-PlayBadge12:before {
+    content: "\ED6E";
+}
+
+.mi-PlayOn:before, .mi-PlayOnLegacy:before {
+    content: "\ED6F";
+}
+
+.mi-PlayOnLegacy:before, .mi-PlayOn:before, .mi-PlayOnLegacy:before {
+    content: "\ED70";
+}
+
+.mi-PlaySolid:before {
+    content: "\ED71";
+}
+
+.mi-PlaybackRate1x:before {
+    content: "\ED72";
+}
+
+.mi-PlaybackRateOther:before {
+    content: "\ED73";
+}
+
+.mi-PlayerSettings:before {
+    content: "\ED74";
+}
+
+.mi-PointErase:before {
+    content: "\ED75";
+}
+
+.mi-PointEraseMirrored:before {
+    content: "\ED76";
+}
+
+.mi-PointerHand:before {
+    content: "\ED77";
+}
+
+.mi-PoliceCar:before {
+    content: "\ED78";
+}
+
+.mi-PostUpdate:before, .mi-PostUpdateLegacy:before {
+    content: "\ED79";
+}
+
+.mi-PowerButton:before {
+    content: "\ED7A";
+}
+
+.mi-PresenceChicklet:before, .mi-CheckboxFill:before, .mi-CheckboxFillLegacy:before, .mi-CheckboxFillZeroWidthLegacy:before, .mi-PresenceChicklet:before, .mi-PresenceChickletLegacy:before, .mi-ResizeMouseLarge:before {
+    content: "\ED7B";
+}
+
+.mi-PresenceChickletVideo:before, .mi-PresenceChickletVideoLegacy:before {
+    content: "\ED7C";
+}
+
+.mi-Preview:before, .mi-PreviewLegacy:before {
+    content: "\ED7D";
+}
+
+.mi-PreviewLink:before, .mi-PreviewLinkLegacy:before {
+    content: "\ED7E";
+}
+
+.mi-Previous:before, .mi-PreviousLegacy:before {
+    content: "\ED7F";
+}
+
+.mi-Print:before, .mi-PrintLegacy:before {
+    content: "\ED80";
+}
+
+.mi-PrintAllPages:before {
+    content: "\ED81";
+}
+
+.mi-PrintCustomRange:before {
+    content: "\ED82";
+}
+
+.mi-PrintDefault:before {
+    content: "\ED83";
+}
+
+.mi-Printer3D:before {
+    content: "\ED84";
+}
+
+.mi-Printer3DLegacy:before {
+    content: "\ED85";
+}
+
+.mi-PrintfaxPrinterFile:before {
+    content: "\ED86";
+}
+
+.mi-Priority:before, .mi-PriorityLegacy:before {
+    content: "\ED87";
+}
+
+.mi-Process:before {
+    content: "\ED88";
+}
+
+.mi-Processing:before {
+    content: "\ED89";
+}
+
+.mi-ProgressRingDots:before {
+    content: "\ED8A";
+}
+
+.mi-Project:before {
+    content: "\ED8B";
+}
+
+.mi-Projector:before {
+    content: "\ED8C";
+}
+
+.mi-ProtectedDocument:before, .mi-ProtectedDocumentLegacy:before {
+    content: "\ED8D";
+}
+
+.mi-Protractor:before {
+    content: "\ED8E";
+}
+
+.mi-ProvisioningPackage:before {
+    content: "\ED8F";
+}
+
+.mi-PuncKey:before {
+    content: "\ED90";
+}
+
+.mi-PuncKey0:before {
+    content: "\ED91";
+}
+
+.mi-PuncKey1:before {
+    content: "\ED92";
+}
+
+.mi-PuncKey2:before {
+    content: "\ED93";
+}
+
+.mi-PuncKey3:before {
+    content: "\ED94";
+}
+
+.mi-PuncKey4:before {
+    content: "\ED95";
+}
+
+.mi-PuncKey5:before {
+    content: "\ED96";
+}
+
+.mi-PuncKey6:before {
+    content: "\ED97";
+}
+
+.mi-PuncKey7:before {
+    content: "\ED98";
+}
+
+.mi-PuncKey8:before {
+    content: "\ED99";
+}
+
+.mi-PuncKey9:before {
+    content: "\ED9A";
+}
+
+.mi-PuncKeyLeftBottom:before {
+    content: "\ED9B";
+}
+
+.mi-PuncKeyRightBottom:before {
+    content: "\ED9C";
+}
+
+.mi-Puzzle:before {
+    content: "\ED9D";
+}
+
+.mi-QWERTYOff:before {
+    content: "\ED9E";
+}
+
+.mi-QWERTYOn:before {
+    content: "\ED9F";
+}
+
+.mi-QuarentinedItems:before {
+    content: "\EDA0";
+}
+
+.mi-QuarentinedItemsMirrored:before {
+    content: "\EDA1";
+}
+
+.mi-QuarterStarLeft:before {
+    content: "\EDA2";
+}
+
+.mi-QuarterStarRight:before {
+    content: "\EDA3";
+}
+
+.mi-QuickNote:before {
+    content: "\EDA4";
+}
+
+.mi-QuietHours:before {
+    content: "\EDA5";
+}
+
+.mi-QuietHoursBadge12:before {
+    content: "\EDA6";
+}
+
+.mi-Radar:before {
+    content: "\EDA7";
+}
+
+.mi-RadioBtnOff:before {
+    content: "\EDA8";
+}
+
+.mi-RadioBtnOn:before {
+    content: "\EDA9";
+}
+
+.mi-RadioBullet:before {
+    content: "\EDAA";
+}
+
+.mi-RadioBullet2:before {
+    content: "\EDAB";
+}
+
+.mi-Read:before, .mi-ReadLegacy:before {
+    content: "\EDAC";
+}
+
+.mi-ReadingList:before {
+    content: "\EDAD";
+}
+
+.mi-ReceiptPrinter:before {
+    content: "\EDAE";
+}
+
+.mi-Recent:before, .mi-LengthLegacy:before {
+    content: "\EDAF";
+}
+
+.mi-Record:before, .mi-RecordLegacy:before {
+    content: "\EDB0";
+}
+
+.mi-RectangularClipping:before {
+    content: "\EDB1";
+}
+
+.mi-RedEye:before {
+    content: "\EDB2";
+}
+
+.mi-Redo:before, .mi-RedoLegacy:before {
+    content: "\EDB3";
+}
+
+.mi-ReduceTile:before, .mi-ReduceTileLegacy:before {
+    content: "\EDB4";
+}
+
+.mi-ReduceTileLegacy:before, .mi-ReduceTile:before, .mi-ReduceTileLegacy:before {
+    content: "\EDB5";
+}
+
+.mi-ReduceTileLegacyMirrored:before, .mi-ReduceTileMirrored:before, .mi-ReduceTileLegacyMirrored:before {
+    content: "\EDB6";
+}
+
+.mi-ReduceTileMirrored:before, .mi-ReduceTileLegacyMirrored:before {
+    content: "\EDB7";
+}
+
+.mi-Refresh:before, .mi-RefreshLegacy:before, .mi-RepeatAll:before, .mi-RepeatAllLegacy:before {
+    content: "\EDB8";
+}
+
+.mi-Relationship:before {
+    content: "\EDB9";
+}
+
+.mi-RememberedDevice:before {
+    content: "\EDBA";
+}
+
+.mi-Reminder:before {
+    content: "\EDBB";
+}
+
+.mi-ReminderFill:before {
+    content: "\EDBC";
+}
+
+.mi-Remote:before, .mi-RemoteLegacy:before {
+    content: "\EDBD";
+}
+
+.mi-Remove:before, .mi-RemoveLegacy:before {
+    content: "\EDBE";
+}
+
+.mi-RemoveFrom:before {
+    content: "\EDBF";
+}
+
+.mi-Rename:before, .mi-RenameLegacy:before {
+    content: "\EDC0";
+}
+
+.mi-Repair:before, .mi-RepairLegacy:before {
+    content: "\EDC1";
+}
+
+.mi-RepeatOne:before, .mi-RepeatOneLegacy:before {
+    content: "\EDC2";
+}
+
+.mi-Replay:before {
+    content: "\EDC3";
+}
+
+.mi-Reply:before, .mi-ReplyLegacy:before {
+    content: "\EDC4";
+}
+
+.mi-ReplyMirrored:before {
+    content: "\EDC5";
+}
+
+.mi-ReportDocument:before {
+    content: "\EDC6";
+}
+
+.mi-ReportHacked:before, .mi-ReportHackedLegacy:before {
+    content: "\EDC7";
+}
+
+.mi-ResetDevice:before {
+    content: "\EDC8";
+}
+
+.mi-ResetDrive:before {
+    content: "\EDC9";
+}
+
+.mi-Reshare:before, .mi-ReshareLegacy:before {
+    content: "\EDCA";
+}
+
+.mi-ResizeMouseMedium:before {
+    content: "\EDCB";
+}
+
+.mi-ResizeMouseMediumMirrored:before {
+    content: "\EDCC";
+}
+
+.mi-ResizeMouseSmall:before {
+    content: "\EDCD";
+}
+
+.mi-ResizeMouseSmallMirrored:before {
+    content: "\EDCE";
+}
+
+.mi-ResizeMouseTall:before {
+    content: "\EDCF";
+}
+
+.mi-ResizeMouseTallMirrored:before {
+    content: "\EDD0";
+}
+
+.mi-ResizeMouseWide:before {
+    content: "\EDD1";
+}
+
+.mi-ResizeTouchLarger:before {
+    content: "\EDD2";
+}
+
+.mi-ResizeTouchNarrower:before {
+    content: "\EDD3";
+}
+
+.mi-ResizeTouchNarrowerMirrored:before {
+    content: "\EDD4";
+}
+
+.mi-ResizeTouchShorter:before {
+    content: "\EDD5";
+}
+
+.mi-ResizeTouchSmaller:before {
+    content: "\EDD6";
+}
+
+.mi-Resolution:before, .mi-ResolutionLegacy:before {
+    content: "\EDD7";
+}
+
+.mi-ResolutionLegacy:before, .mi-Resolution:before, .mi-ResolutionLegacy:before {
+    content: "\EDD8";
+}
+
+.mi-ReturnKey:before {
+    content: "\EDD9";
+}
+
+.mi-ReturnKeyLg:before {
+    content: "\EDDA";
+}
+
+.mi-ReturnKeySm:before {
+    content: "\EDDB";
+}
+
+.mi-ReturnToWindow:before, .mi-ReturnToWindowLegacy:before {
+    content: "\EDDC";
+}
+
+.mi-RevToggleKey:before {
+    content: "\EDDD";
+}
+
+.mi-Rewind:before {
+    content: "\EDDE";
+}
+
+.mi-RightArrowKeyTime0:before {
+    content: "\EDDF";
+}
+
+.mi-RightArrowKeyTime1:before {
+    content: "\EDE0";
+}
+
+.mi-RightArrowKeyTime2:before {
+    content: "\EDE1";
+}
+
+.mi-RightArrowKeyTime3:before {
+    content: "\EDE2";
+}
+
+.mi-RightArrowKeyTime4:before {
+    content: "\EDE3";
+}
+
+.mi-RightDoubleQuote:before {
+    content: "\EDE4";
+}
+
+.mi-RightQuote:before {
+    content: "\EDE5";
+}
+
+.mi-RightStick:before {
+    content: "\EDE6";
+}
+
+.mi-Ringer:before {
+    content: "\EDE7";
+}
+
+.mi-RingerBadge12:before {
+    content: "\EDE8";
+}
+
+.mi-RingerSilent:before {
+    content: "\EDE9";
+}
+
+.mi-RoamingDomestic:before {
+    content: "\EDEA";
+}
+
+.mi-RoamingInternational:before {
+    content: "\EDEB";
+}
+
+.mi-Robot:before {
+    content: "\EDEC";
+}
+
+.mi-Rotate:before {
+    content: "\EDED";
+}
+
+.mi-RotateCamera:before, .mi-RotateCameraLegacy:before {
+    content: "\EDEE";
+}
+
+.mi-RotateLegacy:before {
+    content: "\EDEF";
+}
+
+.mi-RotateMapLeft:before {
+    content: "\EDF0";
+}
+
+.mi-RotateMapRight:before {
+    content: "\EDF1";
+}
+
+.mi-RotationLock:before {
+    content: "\EDF2";
+}
+
+.mi-Ruler:before {
+    content: "\EDF3";
+}
+
+.mi-SDCard:before {
+    content: "\EDF4";
+}
+
+.mi-SIMError:before {
+    content: "\EDF5";
+}
+
+.mi-SIMLock:before {
+    content: "\EDF6";
+}
+
+.mi-SIMMissing:before {
+    content: "\EDF7";
+}
+
+.mi-SIPMove:before {
+    content: "\EDF8";
+}
+
+.mi-SIPRedock:before {
+    content: "\EDF9";
+}
+
+.mi-SIPUndock:before {
+    content: "\EDFA";
+}
+
+.mi-Safe:before {
+    content: "\EDFB";
+}
+
+.mi-Save:before, .mi-SaveLegacy:before {
+    content: "\EDFC";
+}
+
+.mi-SaveAs:before, .mi-SaveAsLegacy:before {
+    content: "\EDFD";
+}
+
+.mi-SaveCopy:before {
+    content: "\EDFE";
+}
+
+.mi-SaveLocal:before, .mi-SaveLocalLegacy:before {
+    content: "\EDFF";
+}
+
+.mi-Scan:before, .mi-ScanLegacy:before {
+    content: "\EE00";
+}
+
+.mi-ScreenTime:before {
+    content: "\EE01";
+}
+
+.mi-ScrollMode:before {
+    content: "\EE02";
+}
+
+.mi-ScrollUpDown:before {
+    content: "\EE03";
+}
+
+.mi-Search:before, .mi-FindLegacy:before, .mi-SearchboxLegacy:before {
+    content: "\EE04";
+}
+
+.mi-SearchAndApps:before {
+    content: "\EE05";
+}
+
+.mi-SelectAll:before, .mi-SelectAllLegacy:before {
+    content: "\EE06";
+}
+
+.mi-SemanticZoom:before, .mi-SemanticZoomLegacy:before {
+    content: "\EE07";
+}
+
+.mi-SemanticZoomLegacy:before, .mi-SemanticZoom:before, .mi-SemanticZoomLegacy:before {
+    content: "\EE08";
+}
+
+.mi-Send:before, .mi-SendLegacy:before {
+    content: "\EE09";
+}
+
+.mi-SendFill:before {
+    content: "\EE0A";
+}
+
+.mi-SendFillMirrored:before {
+    content: "\EE0B";
+}
+
+.mi-SendMirrored:before {
+    content: "\EE0C";
+}
+
+.mi-Sensor:before {
+    content: "\EE0D";
+}
+
+.mi-Set:before {
+    content: "\EE0E";
+}
+
+.mi-SetSolid:before {
+    content: "\EE0F";
+}
+
+.mi-SetTile:before, .mi-SetTileLegacy:before {
+    content: "\EE10";
+}
+
+.mi-SetlockScreen:before, .mi-SetlockScreenLegacy:before {
+    content: "\EE11";
+}
+
+.mi-Settings:before, .mi-SettingsLegacy:before {
+    content: "\EE12";
+}
+
+.mi-SettingsBattery:before {
+    content: "\EE13";
+}
+
+.mi-SettingsDisplaySound:before {
+    content: "\EE14";
+}
+
+.mi-Share:before {
+    content: "\EE15";
+}
+
+.mi-ShareBroadband:before {
+    content: "\EE16";
+}
+
+.mi-Shield:before {
+    content: "\EE17";
+}
+
+.mi-Shop:before, .mi-ShopLegacy:before {
+    content: "\EE18";
+}
+
+.mi-ShoppingCart:before {
+    content: "\EE19";
+}
+
+.mi-ShowAllFiles1:before, .mi-ShowAllFiles1Legacy:before {
+    content: "\EE1A";
+}
+
+.mi-ShowAllFiles1Legacy:before, .mi-ShowAllFiles1:before, .mi-ShowAllFiles1Legacy:before {
+    content: "\EE1B";
+}
+
+.mi-ShowAllFiles3:before, .mi-ShowAllFiles3Legacy:before {
+    content: "\EE1C";
+}
+
+.mi-ShowAllFiles3Legacy:before, .mi-ShowAllFiles3:before, .mi-ShowAllFiles3Legacy:before {
+    content: "\EE1D";
+}
+
+.mi-ShowBcc:before, .mi-ShowBccLegacy:before {
+    content: "\EE1E";
+}
+
+.mi-ShowResults:before, .mi-ShowResultsLegacy:before {
+    content: "\EE1F";
+}
+
+.mi-ShowResultsMirrored:before, .mi-ShowResultsLegacyMirrored:before {
+    content: "\EE20";
+}
+
+.mi-Shuffle:before, .mi-ShuffleLegacy:before {
+    content: "\EE21";
+}
+
+.mi-SignalBars1:before {
+    content: "\EE22";
+}
+
+.mi-SignalBars2:before {
+    content: "\EE23";
+}
+
+.mi-SignalBars3:before {
+    content: "\EE24";
+}
+
+.mi-SignalBars4:before {
+    content: "\EE25";
+}
+
+.mi-SignalBars5:before {
+    content: "\EE26";
+}
+
+.mi-SignalError:before {
+    content: "\EE27";
+}
+
+.mi-SignalNotConnected:before {
+    content: "\EE28";
+}
+
+.mi-SignalRoaming:before {
+    content: "\EE29";
+}
+
+.mi-SignatureCapture:before {
+    content: "\EE2A";
+}
+
+.mi-Size:before {
+    content: "\EE2B";
+}
+
+.mi-SkipBack10:before {
+    content: "\EE2C";
+}
+
+.mi-SkipForward30:before {
+    content: "\EE2D";
+}
+
+.mi-SliderThumb:before {
+    content: "\EE2E";
+}
+
+.mi-Slideshow:before, .mi-SlideshowLegacy:before {
+    content: "\EE2F";
+}
+
+.mi-SlowMotionOn:before {
+    content: "\EE30";
+}
+
+.mi-SmallErase:before {
+    content: "\EE31";
+}
+
+.mi-Smartcard:before {
+    content: "\EE32";
+}
+
+.mi-SmartcardVirtual:before {
+    content: "\EE33";
+}
+
+.mi-Sort:before, .mi-SortLegacy:before {
+    content: "\EE34";
+}
+
+.mi-SpatialVolume0:before {
+    content: "\EE35";
+}
+
+.mi-SpatialVolume1:before {
+    content: "\EE36";
+}
+
+.mi-SpatialVolume2:before {
+    content: "\EE37";
+}
+
+.mi-SpatialVolume3:before {
+    content: "\EE38";
+}
+
+.mi-Speakers:before {
+    content: "\EE39";
+}
+
+.mi-Speech:before {
+    content: "\EE3A";
+}
+
+.mi-SpeedHigh:before {
+    content: "\EE3B";
+}
+
+.mi-SpeedMedium:before {
+    content: "\EE3C";
+}
+
+.mi-SpeedOff:before {
+    content: "\EE3D";
+}
+
+.mi-StaplingLandscapeBookBinding:before {
+    content: "\EE3E";
+}
+
+.mi-StaplingLandscapeBottomLeft:before {
+    content: "\EE3F";
+}
+
+.mi-StaplingLandscapeBottomRight:before {
+    content: "\EE40";
+}
+
+.mi-StaplingLandscapeTopLeft:before {
+    content: "\EE41";
+}
+
+.mi-StaplingLandscapeTopRight:before {
+    content: "\EE42";
+}
+
+.mi-StaplingLandscapeTwoBottom:before {
+    content: "\EE43";
+}
+
+.mi-StaplingLandscapeTwoLeft:before {
+    content: "\EE44";
+}
+
+.mi-StaplingLandscapeTwoRight:before {
+    content: "\EE45";
+}
+
+.mi-StaplingLandscapeTwoTop:before {
+    content: "\EE46";
+}
+
+.mi-StaplingOff:before {
+    content: "\EE47";
+}
+
+.mi-StaplingPortraitBookBinding:before {
+    content: "\EE48";
+}
+
+.mi-StaplingPortraitBottomLeft:before {
+    content: "\EE49";
+}
+
+.mi-StaplingPortraitBottomRight:before {
+    content: "\EE4A";
+}
+
+.mi-StaplingPortraitTopLeft:before {
+    content: "\EE4B";
+}
+
+.mi-StaplingPortraitTopRight:before {
+    content: "\EE4C";
+}
+
+.mi-StaplingPortraitTwoBottom:before {
+    content: "\EE4D";
+}
+
+.mi-StaplingPortraitTwoLeft:before {
+    content: "\EE4E";
+}
+
+.mi-StaplingPortraitTwoRight:before {
+    content: "\EE4F";
+}
+
+.mi-StaplingPortraitTwoTop:before {
+    content: "\EE50";
+}
+
+.mi-StartPoint:before {
+    content: "\EE51";
+}
+
+.mi-StartPointSolid:before {
+    content: "\EE52";
+}
+
+.mi-StatusCheckmark:before {
+    content: "\EE53";
+}
+
+.mi-StatusCheckmark7:before {
+    content: "\EE54";
+}
+
+.mi-StatusCheckmarkLeft:before {
+    content: "\EE55";
+}
+
+.mi-StatusCircle:before {
+    content: "\EE56";
+}
+
+.mi-StatusCircle7:before {
+    content: "\EE57";
+}
+
+.mi-StatusCircleBlock:before {
+    content: "\EE58";
+}
+
+.mi-StatusCircleBlock2:before {
+    content: "\EE59";
+}
+
+.mi-StatusCircleCheckmark:before {
+    content: "\EE5A";
+}
+
+.mi-StatusCircleErrorX:before {
+    content: "\EE5B";
+}
+
+.mi-StatusCircleExclamation:before {
+    content: "\EE5C";
+}
+
+.mi-StatusCircleInfo:before {
+    content: "\EE5D";
+}
+
+.mi-StatusCircleInner:before {
+    content: "\EE5E";
+}
+
+.mi-StatusCircleLeft:before {
+    content: "\EE5F";
+}
+
+.mi-StatusCircleOuter:before {
+    content: "\EE60";
+}
+
+.mi-StatusCircleQuestionMark:before {
+    content: "\EE61";
+}
+
+.mi-StatusCircleRing:before {
+    content: "\EE62";
+}
+
+.mi-StatusCircleSync:before {
+    content: "\EE63";
+}
+
+.mi-StatusConnecting1:before {
+    content: "\EE64";
+}
+
+.mi-StatusConnecting2:before {
+    content: "\EE65";
+}
+
+.mi-StatusDataTransfer:before {
+    content: "\EE66";
+}
+
+.mi-StatusDataTransferVPN:before {
+    content: "\EE67";
+}
+
+.mi-StatusDualSIM1:before {
+    content: "\EE68";
+}
+
+.mi-StatusDualSIM1VPN:before {
+    content: "\EE69";
+}
+
+.mi-StatusDualSIM2:before {
+    content: "\EE6A";
+}
+
+.mi-StatusDualSIM2VPN:before {
+    content: "\EE6B";
+}
+
+.mi-StatusError:before {
+    content: "\EE6C";
+}
+
+.mi-StatusErrorCircle7:before {
+    content: "\EE6D";
+}
+
+.mi-StatusErrorFull:before {
+    content: "\EE6E";
+}
+
+.mi-StatusErrorLeft:before {
+    content: "\EE6F";
+}
+
+.mi-StatusExclamationCircle7:before {
+    content: "\EE70";
+}
+
+.mi-StatusInfo:before {
+    content: "\EE71";
+}
+
+.mi-StatusInfoLeft:before {
+    content: "\EE72";
+}
+
+.mi-StatusPause7:before {
+    content: "\EE73";
+}
+
+.mi-StatusSGLTE:before {
+    content: "\EE74";
+}
+
+.mi-StatusSGLTECell:before {
+    content: "\EE75";
+}
+
+.mi-StatusSGLTEDataVPN:before {
+    content: "\EE76";
+}
+
+.mi-StatusTriangle:before {
+    content: "\EE77";
+}
+
+.mi-StatusTriangleExclamation:before {
+    content: "\EE78";
+}
+
+.mi-StatusTriangleInner:before {
+    content: "\EE79";
+}
+
+.mi-StatusTriangleLeft:before {
+    content: "\EE7A";
+}
+
+.mi-StatusTriangleOuter:before {
+    content: "\EE7B";
+}
+
+.mi-StatusUnsecure:before {
+    content: "\EE7C";
+}
+
+.mi-StatusVPN:before {
+    content: "\EE7D";
+}
+
+.mi-StatusWarning:before {
+    content: "\EE7E";
+}
+
+.mi-StatusWarningLeft:before {
+    content: "\EE7F";
+}
+
+.mi-Sticker2:before {
+    content: "\EE80";
+}
+
+.mi-StockDown:before {
+    content: "\EE81";
+}
+
+.mi-StockUp:before {
+    content: "\EE82";
+}
+
+.mi-Stop:before, .mi-StopLegacy:before {
+    content: "\EE83";
+}
+
+.mi-StopPoint:before {
+    content: "\EE84";
+}
+
+.mi-StopPointSolid:before {
+    content: "\EE85";
+}
+
+.mi-StopSlideshow:before, .mi-StopSlideshowLegacy:before {
+    content: "\EE86";
+}
+
+.mi-StopSlideshowLegacy:before, .mi-StopSlideshow:before, .mi-StopSlideshowLegacy:before {
+    content: "\EE87";
+}
+
+.mi-Stopwatch:before {
+    content: "\EE88";
+}
+
+.mi-StorageNetworkWireless:before {
+    content: "\EE89";
+}
+
+.mi-StorageOptical:before {
+    content: "\EE8A";
+}
+
+.mi-StorageTape:before {
+    content: "\EE8B";
+}
+
+.mi-Streaming:before {
+    content: "\EE8C";
+}
+
+.mi-StreamingEnterprise:before {
+    content: "\EE8D";
+}
+
+.mi-Street:before, .mi-StreetLegacy:before {
+    content: "\EE8E";
+}
+
+.mi-StreetsideSplitExpand:before {
+    content: "\EE8F";
+}
+
+.mi-StreetsideSplitMinimize:before {
+    content: "\EE90";
+}
+
+.mi-StrokeErase:before {
+    content: "\EE91";
+}
+
+.mi-StrokeErase2:before {
+    content: "\EE92";
+}
+
+.mi-StrokeEraseMirrored:before {
+    content: "\EE93";
+}
+
+.mi-Subtitles:before {
+    content: "\EE94";
+}
+
+.mi-SubtitlesAudio:before {
+    content: "\EE95";
+}
+
+.mi-SurfaceHub:before {
+    content: "\EE96";
+}
+
+.mi-SurfaceHubSelected:before {
+    content: "\EE97";
+}
+
+.mi-Sustainable:before {
+    content: "\EE98";
+}
+
+.mi-Swipe:before {
+    content: "\EE99";
+}
+
+.mi-SwipeRevealArt:before {
+    content: "\EE9A";
+}
+
+.mi-Switch:before, .mi-SwitchLegacy:before {
+    content: "\EE9B";
+}
+
+.mi-SwitchApps:before, .mi-SwitchAppsLegacy:before {
+    content: "\EE9C";
+}
+
+.mi-SwitchUser:before {
+    content: "\EE9D";
+}
+
+.mi-Sync:before, .mi-SyncLegacy:before {
+    content: "\EE9E";
+}
+
+.mi-SyncBadge12:before {
+    content: "\EE9F";
+}
+
+.mi-SyncError:before {
+    content: "\EEA0";
+}
+
+.mi-SyncFolder:before, .mi-SyncFolderLegacy:before {
+    content: "\EEA1";
+}
+
+.mi-System:before {
+    content: "\EEA2";
+}
+
+.mi-TVMonitor:before {
+    content: "\EEA3";
+}
+
+.mi-TVMonitorSelected:before {
+    content: "\EEA4";
+}
+
+.mi-Tablet:before {
+    content: "\EEA5";
+}
+
+.mi-TabletMode:before {
+    content: "\EEA6";
+}
+
+.mi-TabletSelected:before {
+    content: "\EEA7";
+}
+
+.mi-Tag:before, .mi-TagLegacy:before {
+    content: "\EEA8";
+}
+
+.mi-TapAndSend:before {
+    content: "\EEA9";
+}
+
+.mi-TaskView:before {
+    content: "\EEAA";
+}
+
+.mi-TaskViewExpanded:before {
+    content: "\EEAB";
+}
+
+.mi-TaskViewSettings:before {
+    content: "\EEAC";
+}
+
+.mi-TaskbarPhone:before {
+    content: "\EEAD";
+}
+
+.mi-ThisPC:before {
+    content: "\EEAE";
+}
+
+.mi-ThoughtBubble:before {
+    content: "\EEAF";
+}
+
+.mi-ThreeBars:before, .mi-ThreeBarsLegacy:before {
+    content: "\EEB0";
+}
+
+.mi-ThreeQuarterStarLeft:before {
+    content: "\EEB1";
+}
+
+.mi-ThreeQuarterStarRight:before {
+    content: "\EEB2";
+}
+
+.mi-Tiles:before {
+    content: "\EEB3";
+}
+
+.mi-TiltDown:before {
+    content: "\EEB4";
+}
+
+.mi-TiltUp:before {
+    content: "\EEB5";
+}
+
+.mi-TimeLanguage:before {
+    content: "\EEB6";
+}
+
+.mi-ToggleBorder:before {
+    content: "\EEB7";
+}
+
+.mi-ToggleFilled:before {
+    content: "\EEB8";
+}
+
+.mi-ToggleThumb:before {
+    content: "\EEB9";
+}
+
+.mi-TollSolid:before {
+    content: "\EEBA";
+}
+
+.mi-ToolTip:before, .mi-Lightbulb:before {
+    content: "\EEBB";
+}
+
+.mi-Touch:before {
+    content: "\EEBC";
+}
+
+.mi-TouchPointer:before, .mi-TouchPointerLegacy:before {
+    content: "\EEBD";
+}
+
+.mi-Touchpad:before {
+    content: "\EEBE";
+}
+
+.mi-Touchscreen:before {
+    content: "\EEBF";
+}
+
+.mi-Trackers:before {
+    content: "\EEC0";
+}
+
+.mi-TrackersMirrored:before {
+    content: "\EEC1";
+}
+
+.mi-TrafficCongestionSolid:before {
+    content: "\EEC2";
+}
+
+.mi-TrafficLight:before {
+    content: "\EEC3";
+}
+
+.mi-Train:before {
+    content: "\EEC4";
+}
+
+.mi-TrainSolid:before {
+    content: "\EEC5";
+}
+
+.mi-TreeFolderFolder:before {
+    content: "\EEC6";
+}
+
+.mi-TreeFolderFolderFill:before {
+    content: "\EEC7";
+}
+
+.mi-TreeFolderFolderOpen:before {
+    content: "\EEC8";
+}
+
+.mi-TreeFolderFolderOpenFill:before {
+    content: "\EEC9";
+}
+
+.mi-TriggerLeft:before {
+    content: "\EECA";
+}
+
+.mi-TriggerRight:before {
+    content: "\EECB";
+}
+
+.mi-Trim:before, .mi-TrimLegacy:before {
+    content: "\EECC";
+}
+
+.mi-TwoBars:before, .mi-TwoBarsLegacy:before {
+    content: "\EECD";
+}
+
+.mi-TwoPage:before, .mi-TwoPageLegacy:before {
+    content: "\EECE";
+}
+
+.mi-Type:before, .mi-TypeLegacy:before {
+    content: "\EECF";
+}
+
+.mi-TypingIndicatorLegacy:before {
+    content: "\EED0";
+}
+
+.mi-USB:before {
+    content: "\EED1";
+}
+
+.mi-USBSafeConnect:before {
+    content: "\EED2";
+}
+
+.mi-Underline:before, .mi-UnderlineLegacy:before {
+    content: "\EED3";
+}
+
+.mi-UnderlineLKorean:before, .mi-UnderlineLKoreanLegacy:before {
+    content: "\EED4";
+}
+
+.mi-UnderlineLKoreanLegacy:before, .mi-UnderlineLKorean:before, .mi-UnderlineLKoreanLegacy:before {
+    content: "\EED5";
+}
+
+.mi-UnderlineRussian:before, .mi-UnderlineRussianLegacy:before {
+    content: "\EED6";
+}
+
+.mi-UnderlineRussianLegacy:before, .mi-UnderlineRussian:before, .mi-UnderlineRussianLegacy:before {
+    content: "\EED7";
+}
+
+.mi-UnderlineS:before, .mi-UnderlineSLegacy:before {
+    content: "\EED8";
+}
+
+.mi-UnderlineSLegacy:before, .mi-UnderlineS:before, .mi-UnderlineSLegacy:before {
+    content: "\EED9";
+}
+
+.mi-UnderlineU:before, .mi-UnderlineULegacy:before {
+    content: "\EEDA";
+}
+
+.mi-UnderlineULegacy:before, .mi-UnderlineU:before, .mi-UnderlineULegacy:before {
+    content: "\EEDB";
+}
+
+.mi-UnderscoreSpace:before {
+    content: "\EEDC";
+}
+
+.mi-Undo:before, .mi-UndoLegacy:before {
+    content: "\EEDD";
+}
+
+.mi-Unfavorite:before, .mi-UnfavoriteLegacy:before {
+    content: "\EEDE";
+}
+
+.mi-Unit:before {
+    content: "\EEDF";
+}
+
+.mi-Unknown:before {
+    content: "\EEE0";
+}
+
+.mi-UnknownMirrored:before {
+    content: "\EEE1";
+}
+
+.mi-Unlock:before, .mi-UnlockLegacy:before {
+    content: "\EEE2";
+}
+
+.mi-Unpin:before, .mi-UnpinLegacy:before {
+    content: "\EEE3";
+}
+
+.mi-UnsyncFolder:before, .mi-UnsyncFolderLegacy:before {
+    content: "\EEE4";
+}
+
+.mi-Up:before, .mi-UpLegacy:before {
+    content: "\EEE5";
+}
+
+.mi-UpArrowShiftKey:before {
+    content: "\EEE6";
+}
+
+.mi-UpShiftKey:before {
+    content: "\EEE7";
+}
+
+.mi-UpdateRestore:before {
+    content: "\EEE8";
+}
+
+.mi-Upload:before, .mi-UploadLegacy:before, .mi-UploadSkyDriveLegacy:before {
+    content: "\EEE9";
+}
+
+.mi-UserAPN:before {
+    content: "\EEEA";
+}
+
+.mi-VPN:before {
+    content: "\EEEB";
+}
+
+.mi-VerticalBattery0:before {
+    content: "\EEEC";
+}
+
+.mi-VerticalBattery1:before {
+    content: "\EEED";
+}
+
+.mi-VerticalBattery10:before {
+    content: "\EEEE";
+}
+
+.mi-VerticalBattery2:before {
+    content: "\EEEF";
+}
+
+.mi-VerticalBattery3:before {
+    content: "\EEF0";
+}
+
+.mi-VerticalBattery4:before {
+    content: "\EEF1";
+}
+
+.mi-VerticalBattery5:before {
+    content: "\EEF2";
+}
+
+.mi-VerticalBattery6:before {
+    content: "\EEF3";
+}
+
+.mi-VerticalBattery7:before {
+    content: "\EEF4";
+}
+
+.mi-VerticalBattery8:before {
+    content: "\EEF5";
+}
+
+.mi-VerticalBattery9:before {
+    content: "\EEF6";
+}
+
+.mi-VerticalBatteryCharging0:before {
+    content: "\EEF7";
+}
+
+.mi-VerticalBatteryCharging1:before {
+    content: "\EEF8";
+}
+
+.mi-VerticalBatteryCharging10:before {
+    content: "\EEF9";
+}
+
+.mi-VerticalBatteryCharging2:before {
+    content: "\EEFA";
+}
+
+.mi-VerticalBatteryCharging3:before {
+    content: "\EEFB";
+}
+
+.mi-VerticalBatteryCharging4:before {
+    content: "\EEFC";
+}
+
+.mi-VerticalBatteryCharging5:before {
+    content: "\EEFD";
+}
+
+.mi-VerticalBatteryCharging6:before {
+    content: "\EEFE";
+}
+
+.mi-VerticalBatteryCharging7:before {
+    content: "\EEFF";
+}
+
+.mi-VerticalBatteryCharging8:before {
+    content: "\EF00";
+}
+
+.mi-VerticalBatteryCharging9:before {
+    content: "\EF01";
+}
+
+.mi-VerticalBatteryUnknown:before {
+    content: "\EF02";
+}
+
+.mi-Vibrate:before {
+    content: "\EF03";
+}
+
+.mi-Video:before, .mi-VideoInlineLegacy:before, .mi-VideoLegacy:before {
+    content: "\EF04";
+}
+
+.mi-Video360:before {
+    content: "\EF05";
+}
+
+.mi-VideoChat:before, .mi-VideoChatLegacy:before {
+    content: "\EF06";
+}
+
+.mi-VideoSolid:before {
+    content: "\EF07";
+}
+
+.mi-View:before, .mi-RevealPasswordLegacy:before, .mi-ViewLegacy:before {
+    content: "\EF08";
+}
+
+.mi-ViewAll:before, .mi-ShowAllFilesLegacy:before, .mi-ViewAllLegacy:before {
+    content: "\EF09";
+}
+
+.mi-ViewDashboard:before {
+    content: "\EF0A";
+}
+
+.mi-Volume:before, .mi-VolumeLegacy:before {
+    content: "\EF0B";
+}
+
+.mi-Volume0:before {
+    content: "\EF0C";
+}
+
+.mi-Volume1:before {
+    content: "\EF0D";
+}
+
+.mi-Volume2:before {
+    content: "\EF0E";
+}
+
+.mi-Volume3:before {
+    content: "\EF0F";
+}
+
+.mi-VolumeBars:before {
+    content: "\EF10";
+}
+
+.mi-Walk:before {
+    content: "\EF11";
+}
+
+.mi-WalkSolid:before {
+    content: "\EF12";
+}
+
+.mi-Warning:before {
+    content: "\EF13";
+}
+
+.mi-Webcam:before, .mi-WebcamLegacy:before {
+    content: "\EF14";
+}
+
+.mi-Webcam2:before {
+    content: "\EF15";
+}
+
+.mi-Website:before {
+    content: "\EF16";
+}
+
+.mi-Wheel:before {
+    content: "\EF17";
+}
+
+.mi-Wifi:before {
+    content: "\EF18";
+}
+
+.mi-Wifi1:before {
+    content: "\EF19";
+}
+
+.mi-Wifi2:before {
+    content: "\EF1A";
+}
+
+.mi-Wifi3:before {
+    content: "\EF1B";
+}
+
+.mi-WifiAttentionOverlay:before {
+    content: "\EF1C";
+}
+
+.mi-WifiCall0:before {
+    content: "\EF1D";
+}
+
+.mi-WifiCall1:before {
+    content: "\EF1E";
+}
+
+.mi-WifiCall2:before {
+    content: "\EF1F";
+}
+
+.mi-WifiCall3:before {
+    content: "\EF20";
+}
+
+.mi-WifiCall4:before {
+    content: "\EF21";
+}
+
+.mi-WifiCallBars:before {
+    content: "\EF22";
+}
+
+.mi-WifiError0:before {
+    content: "\EF23";
+}
+
+.mi-WifiError1:before {
+    content: "\EF24";
+}
+
+.mi-WifiError2:before {
+    content: "\EF25";
+}
+
+.mi-WifiError3:before {
+    content: "\EF26";
+}
+
+.mi-WifiError4:before {
+    content: "\EF27";
+}
+
+.mi-WifiEthernet:before {
+    content: "\EF28";
+}
+
+.mi-WifiHotspot:before, .mi-InternetSharing:before {
+    content: "\EF29";
+}
+
+.mi-WifiWarning0:before {
+    content: "\EF2A";
+}
+
+.mi-WifiWarning1:before {
+    content: "\EF2B";
+}
+
+.mi-WifiWarning2:before {
+    content: "\EF2C";
+}
+
+.mi-WifiWarning3:before {
+    content: "\EF2D";
+}
+
+.mi-WifiWarning4:before {
+    content: "\EF2E";
+}
+
+.mi-WindDirection:before {
+    content: "\EF2F";
+}
+
+.mi-WindowsInsider:before {
+    content: "\EF30";
+}
+
+.mi-WiredUSB:before {
+    content: "\EF31";
+}
+
+.mi-WirelessUSB:before {
+    content: "\EF32";
+}
+
+.mi-Work:before {
+    content: "\EF33";
+}
+
+.mi-WorkSolid:before {
+    content: "\EF34";
+}
+
+.mi-World:before, .mi-WorldLegacy:before {
+    content: "\EF35";
+}
+
+.mi-XboxOneConsole:before {
+    content: "\EF36";
+}
+
+.mi-ZeroBars:before, .mi-ZeroBarsLegacy:before {
+    content: "\EF37";
+}
+
+.mi-Zoom:before, .mi-ZoomLegacy:before {
+    content: "\EF38";
+}
+
+.mi-ZoomIn:before, .mi-ZoomInLegacy:before {
+    content: "\EF39";
+}
+
+.mi-ZoomMode:before {
+    content: "\EF3A";
+}
+
+.mi-ZoomOut:before, .mi-ZoomOutLegacy:before {
+    content: "\EF3B";
+}
+
+.mi-eSIM:before {
+    content: "\EF3C";
+}
+
+.mi-eSIMBusy:before {
+    content: "\EF3D";
+}
+
+.mi-eSIMLocked:before {
+    content: "\EF3E";
+}
+
+.mi-eSIMNoProfile:before {
+    content: "\EF3F";
+}
+
+.mi-uniE80B:before, .mi-E80B:before, .mi-uniE80B:before {
+    content: "\EF40";
+}
+
+.mi-uniEA0D:before, .mi-EA0D:before, .mi-uniEA0D:before {
+    content: "\EF41";
+}
+
+.mi-uniEA3F:before, .mi-EA3F:before, .mi-uniEA3F:before {
+    content: "\EF42";
+}
+
+.mi-uniEA90:before, .mi-EA90:before, .mi-uniEA90:before {
+    content: "\EF43";
+}
+
+.mi-uniEAC2:before, .mi-EAC2:before, .mi-uniEAC2:before {
+    content: "\EF44";
+}
+
+.mi-uniEC6C:before, .mi-EC6C:before, .mi-uniEC6C:before {
+    content: "\EF45";
+}
+
+.mi-uniEEA3:before, .mi-EEA3:before, .mi-uniEEA3:before {
+    content: "\EF46";
+}
+
+.mi-uniF2B7:before, .mi-F2B7:before, .mi-uniF2B7:before {
+    content: "\EF47";
+}
+
+.mi-uniF5AA:before, .mi-F5AA:before, .mi-uniF5AA:before {
+    content: "\EF48";
+}
+
+.mi-uniF614:before, .mi-F614:before, .mi-uniF614:before {
+    content: "\EF49";
+}
+
+.mi-uniF615:before, .mi-F615:before, .mi-uniF615:before {
+    content: "\EF4A";
+}
+
+.mi-uniF616:before, .mi-F616:before, .mi-uniF616:before {
+    content: "\EF4B";
+}
+
+.mi-uniF617:before, .mi-F617:before, .mi-uniF617:before {
+    content: "\EF4C";
+}
+
+.mi-uniF657:before, .mi-F657:before, .mi-uniF657:before {
+    content: "\EF4D";
+}
+
+.mi-uniF658:before, .mi-F658:before, .mi-uniF658:before {
+    content: "\EF4E";
+}
+
+.mi-uniF659:before, .mi-F659:before, .mi-uniF659:before {
+    content: "\EF4F";
+}
+
+.mi-uniF65A:before, .mi-F65A:before, .mi-uniF65A:before {
+    content: "\EF50";
+}
+
+.mi-uniF65B:before, .mi-F65B:before, .mi-uniF65B:before {
+    content: "\EF51";
+}
+
+.mi-uniF65C:before, .mi-F65C:before, .mi-uniF65C:before {
+    content: "\EF52";
+}
+
+.mi-uniF69E:before, .mi-F69E:before, .mi-uniF69E:before {
+    content: "\EF53";
+}
+
+.mi-uniF6FA:before, .mi-F6FA:before, .mi-uniF6FA:before {
+    content: "\EF54";
+}
+
+.mi-uniF712:before, .mi-F712:before, .mi-uniF712:before {
+    content: "\EF55";
+}
+
+.mi-uniF71C:before, .mi-F71C:before, .mi-uniF71C:before {
+    content: "\EF56";
+}
+
+.mi-uniF71D:before, .mi-F71D:before, .mi-uniF71D:before {
+    content: "\EF57";
+}
+
+.mi-uniF71E:before, .mi-F71E:before, .mi-uniF71E:before {
+    content: "\EF58";
+}
+
+.mi-uniF738:before, .mi-F738:before, .mi-uniF738:before {
+    content: "\EF59";
+}
+
+.mi-uniF739:before, .mi-F739:before, .mi-uniF739:before {
+    content: "\EF5A";
+}
+
+.mi-uniF73D:before, .mi-F73D:before, .mi-uniF73D:before {
+    content: "\EF5B";
+}
+
+.mi-uniF73E:before, .mi-F73E:before, .mi-uniF73E:before {
+    content: "\EF5C";
+}
+
+.mi-uniF73F:before, .mi-F73F:before, .mi-uniF73F:before {
+    content: "\EF5D";
+}
+
+.mi-uniF740:before, .mi-F740:before, .mi-uniF740:before {
+    content: "\EF5E";
+}
+
+.mi-uniF741:before, .mi-F741:before, .mi-uniF741:before {
+    content: "\EF5F";
+}
+
+.mi-uniF742:before, .mi-F742:before, .mi-uniF742:before {
+    content: "\EF60";
+}
+
+.mi-uniF743:before, .mi-F743:before, .mi-uniF743:before {
+    content: "\EF61";
+}
+
+.mi-uniF744:before, .mi-F744:before, .mi-uniF744:before {
+    content: "\EF62";
+}
+
+.mi-uniF745:before, .mi-F745:before, .mi-uniF745:before {
+    content: "\EF63";
+}
+
+.mi-uniF746:before, .mi-F746:before, .mi-uniF746:before {
+    content: "\EF64";
+}
+
+.mi-uniF785:before, .mi-F785:before, .mi-uniF785:before {
+    content: "\EF65";
+}
+
+.sr-only {
+    border: 0;
+    clip: rect(0, 0, 0, 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+}
+
+.sr-only-focusable:active, .sr-only-focusable:focus {
+    clip: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    position: static;
+    width: auto;
+}
