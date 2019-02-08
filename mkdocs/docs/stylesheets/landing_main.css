@@ -270,6 +270,7 @@ pre > code {
     padding: 0;
     margin: 0;
     border: 0;
+    text-align: left;
 }
 
 pre.prettyprint > code {
@@ -1172,8 +1173,22 @@ h1.intro-header::before {
     transition: all 0.5s ease-in-out;
 }
 
-#glcanvas {
+.canvas-container {
     position: fixed;
+    left: 0px;
+    right: 0px;
+    top: 72px;
+    bottom: 0px;
+    z-index: -1;
+    background-color: black;
+}
+
+.glcanvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
     z-index: -1;
 }
 

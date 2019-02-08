@@ -93,7 +93,12 @@
 <!-- home
 ================================================== -->
 <section id="home">
-    <canvas height="100vh" id="glcanvas" width="100vw"></canvas>
+
+
+    <div class="canvas-container">
+        <canvas height="100vh" id="glcanvas" width="100vw"></canvas>
+    </div>
+
     <div class="overlay"></div>
     <div class="home-content">
 
@@ -403,17 +408,21 @@ predictions = model.predict(test_dataframe)</code></pre>
                     Copyright © 2019 Uber Technologies Inc.
                 </div>
 
-                Website powered by
-                <a href="https://www.mkdocs.org">MkDocs</a>
-                and
-                <a href="https://squidfunk.github.io/mkdocs-material/">
-                    Material for MkDocs</a>, design by <a href="http://www.styleshout.com/">styleshout</a>
+                Website by <a href="http://w4nderlu.st">w4nderlust</a> powered by
+                <a href="https://www.mkdocs.org">MkDocs</a>,
+                <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>,
+                <a href="http://www.styleshout.com/">styleshout</a> and
+                <a href="http://cables.gl/">cables</a>.
                 </div>
 
 
         </div>
         </div>
 </footer>
+
+<div id="preloader">
+    <div id="loader"></div>
+</div>
 
 <!-- Java Script
 ================================================== -->
@@ -447,7 +456,7 @@ predictions = model.predict(test_dataframe)</code></pre>
 
     document.addEventListener('DOMContentLoaded', function (event) {
         CABLES.patch = new CABLES.Patch({
-            patchFile: 'js/wave_lines.json',
+            patchFile: 'js/Ludwig.json',
             prefixAssetPath: '',
             glCanvasId: 'glcanvas',
             glCanvasResizeToWindow: true,
