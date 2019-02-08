@@ -7,14 +7,14 @@ var Ops = Ops || {};
 Ops.Gl = Ops.Gl || {};
 Ops.Math = Ops.Math || {};
 Ops.Anim = Ops.Anim || {};
-Ops.Array = Ops.Array || {};
 Ops.Trigger = Ops.Trigger || {};
+Ops.Gl.Matrix = Ops.Gl.Matrix || {};
 Ops.Gl.Shader = Ops.Gl.Shader || {};
 Ops.Gl.Meshes = Ops.Gl.Meshes || {};
-Ops.Gl.Matrix = Ops.Gl.Matrix || {};
 Ops.Gl.ShaderEffects = Ops.Gl.ShaderEffects || {};
 Ops.Gl.TextureEffects = Ops.Gl.TextureEffects || {};
 Ops.Gl.TextureEffects.Noise = Ops.Gl.TextureEffects.Noise || {};
+
 
 
 // **************************************************************
@@ -230,11 +230,10 @@ Ops.Gl.Matrix.OrbitControls = function () {
     const restricted = op.inValueBool("restricted", true);
     const pointerLock = op.inValueBool("Pointerlock", false);
 
-
     const trigger = op.outTrigger("trigger");
-    const outRadius = op.addOutPort(new CABLES.Port(op, "radius", CABLES.OP_PORT_TYPE_VALUE));
-    const outYDeg = op.addOutPort(new CABLES.Port(op, "Rot Y", CABLES.OP_PORT_TYPE_VALUE));
-    const outXDeg = op.addOutPort(new CABLES.Port(op, "Rot X", CABLES.OP_PORT_TYPE_VALUE));
+    const outRadius = op.outValue("radius");
+    const outYDeg = op.outValue("Rot Y");
+    const outXDeg = op.outValue("Rot X");
 
     const inReset = op.inTriggerButton("Reset");
 
@@ -501,19 +500,19 @@ Ops.Gl.Matrix.OrbitControls = function () {
         // cgl.canvas.style.cursor='url(/ui/img/rotate.png),pointer';
     }
 
-    initialRadius.onValueChange(function () {
+    initialRadius.onChange = function () {
         radius = initialRadius.get();
         reset();
-    });
+    };
 
-    initialX.onValueChange(function () {
+    initialX.onChange = function () {
         px = percX = (initialX.get() * Math.PI * 2);
-    });
+    };
 
-    initialAxis.onValueChange(function () {
+    initialAxis.onChange = function () {
         py = percY = (initialAxis.get() - 0.5);
         eye = circlePos(percY);
-    });
+    };
 
     var onMouseWheel = function (event) {
         if (allowZooming.get()) {
@@ -546,11 +545,11 @@ Ops.Gl.Matrix.OrbitControls = function () {
     };
 
 
-    this.setElement = function (ele) {
+    function setElement(ele) {
         unbind();
         element = ele;
         bind();
-    };
+    }
 
     function bind() {
         element.addEventListener('mousemove', onmousemove);
@@ -584,7 +583,7 @@ Ops.Gl.Matrix.OrbitControls = function () {
     }
 
     eye = circlePos(0);
-    this.setElement(cgl.canvas);
+    setElement(cgl.canvas);
 
 
     bind();
@@ -1117,13 +1116,17 @@ Ops.Gl.TextureEffects.ImageCompose = function () {
 
     const tfilter = op.inValueSelect("filter", ['nearest', 'linear', 'mipmap'], "linear");
     const twrap = op.inValueSelect("wrap", ['clamp to edge', 'repeat', 'mirrored repeat']);
-    const bgAlpha = op.inValueSlider("Background Alpha", 1);
     const fpTexture = op.inValueBool("HDR");
 
     const trigger = op.outTrigger("trigger");
     const texOut = op.outTexture("texture_out");
 
+    const bgAlpha = op.inValueSlider("Background Alpha", 1);
     const outRatio = op.outValue("Aspect Ratio");
+
+    op.setPortGroup("Texture Size", [useVPSize, width, height]);
+    op.setPortGroup("Texture Settings", [twrap, tfilter, fpTexture]);
+
 
     texOut.set(null);
     var cgl = op.patch.cgl;
@@ -1194,6 +1197,8 @@ Ops.Gl.TextureEffects.ImageCompose = function () {
             tex.setSize(w, h);
             outRatio.set(w / h);
             effect.setSourceTexture(tex);
+            texOut.set(null);
+            texOut.set(tex);
         }
 
         if (texOut.get())
@@ -1405,55 +1410,6 @@ Ops.Anim.Timer2.prototype = new CABLES.Op();
 CABLES.OPS["aac7f721-208f-411a-adb3-79adae2e471a"] = {f: Ops.Anim.Timer2, objName: "Ops.Anim.Timer2"};
 
 
-// **************************************************************
-//
-// Ops.Gl.DepthTest
-//
-// **************************************************************
-
-Ops.Gl.DepthTest = function () {
-    CABLES.Op.apply(this, arguments);
-    const op = this;
-    const attachments = {};
-
-    var render = op.inTrigger("Render");
-    var enable = op.inValueBool("Enable depth testing", true);
-    var meth = op.inValueSelect("Depth Test Method", ['never', 'always', 'less', 'less or equal', 'greater', 'greater or equal', 'equal', 'not equal'], 'less or equal');
-    var write = op.inValueBool("Write to depth buffer", true);
-    var trigger = op.outTrigger("Next");
-
-    var cgl = op.patch.cgl;
-    var compareMethod = cgl.gl.LEQUAL;
-
-    meth.onChange = updateFunc;
-
-    function updateFunc() {
-        if (meth.get() == 'never') compareMethod = cgl.gl.NEVER;
-        else if (meth.get() == 'always') compareMethod = cgl.gl.ALWAYS;
-        else if (meth.get() == 'less') compareMethod = cgl.gl.LESS;
-        else if (meth.get() == 'less or equal') compareMethod = cgl.gl.LEQUAL;
-        else if (meth.get() == 'greater') compareMethod = cgl.gl.GREATER;
-        else if (meth.get() == 'greater or equal') compareMethod = cgl.gl.GEQUAL;
-        else if (meth.get() == 'equal') compareMethod = cgl.gl.EQUAL;
-        else if (meth.get() == 'not equal') compareMethod = cgl.gl.NOTEQUAL;
-    }
-
-    render.onTriggered = function () {
-        cgl.pushDepthTest(enable.get());
-        cgl.pushDepthWrite(write.get());
-        cgl.pushDepthFunc(compareMethod);
-
-        trigger.trigger();
-
-        cgl.popDepthTest();
-        cgl.popDepthWrite();
-        cgl.popDepthFunc();
-    };
-
-};
-
-Ops.Gl.DepthTest.prototype = new CABLES.Op();
-CABLES.OPS["3996ed5d-8143-4bec-9cfd-c1b193a295af"] = {f: Ops.Gl.DepthTest, objName: "Ops.Gl.DepthTest"};
 
 
 // **************************************************************
@@ -1467,23 +1423,16 @@ Ops.Gl.Meshes.LinesArray = function () {
     const op = this;
     const attachments = {};
     var render = op.inTrigger('render');
-    var width = op.addInPort(new CABLES.Port(op, "width"));
-    var height = op.addInPort(new CABLES.Port(op, "height"));
+    var width = op.addInPort(new CABLES.Port(op, "width"), 10);
+    var height = op.addInPort(new CABLES.Port(op, "height"), 1);
     var doLog = op.inValueBool("Logarithmic", false);
-    var pivotX = op.addInPort(new CABLES.Port(op, "pivot x", CABLES.OP_PORT_TYPE_VALUE, {
-        display: 'dropdown',
-        values: ["center", "left", "right"]
-    }));
-    var pivotY = op.addInPort(new CABLES.Port(op, "pivot y", CABLES.OP_PORT_TYPE_VALUE, {
-        display: 'dropdown',
-        values: ["center", "top", "bottom"]
-    }));
-    var nColumns = op.addInPort(new CABLES.Port(op, "num columns"));
-    var nRows = op.addInPort(new CABLES.Port(op, "num rows"));
-    var axis = op.addInPort(new CABLES.Port(op, "axis", CABLES.OP_PORT_TYPE_VALUE, {
-        display: 'dropdown',
-        values: ["xy", "xz"]
-    }));
+    var pivotX = op.inValueSelect("pivot x", ["center", "left", "right"]);
+    var pivotY = op.inValueSelect("pivot y", ["center", "top", "bottom"]);
+
+    var nColumns = op.addInPort(new CABLES.Port(op, "num columns"), 10);
+    var nRows = op.addInPort(new CABLES.Port(op, "num rows"), 10);
+
+    var axis = op.inValueSelect("axis", ["xy", "xz"]);
     var trigger = op.outTrigger('trigger');
     var outPointArrays = op.outArray("Point Arrays");
 
@@ -1492,21 +1441,19 @@ Ops.Gl.Meshes.LinesArray = function () {
     pivotX.set('center');
     pivotY.set('center');
 
-    width.set(1.0);
-    height.set(1.0);
-    nRows.set(10);
-    nColumns.set(10);
-
     var meshes = [];
 
-    axis.onChange = rebuildDelayed;
-    pivotX.onChange = rebuildDelayed;
-    pivotY.onChange = rebuildDelayed;
-    width.onChange = rebuildDelayed;
-    height.onChange = rebuildDelayed;
-    nRows.onChange = rebuildDelayed;
-    nColumns.onChange = rebuildDelayed;
-    doLog.onChange = rebuildDelayed;
+    op.setPortGroup("Size", [width, height]);
+    op.setPortGroup("Alignment", [pivotX, pivotY]);
+
+    axis.onChange =
+        pivotX.onChange =
+            pivotY.onChange =
+                width.onChange =
+                    height.onChange =
+                        nRows.onChange =
+                            nColumns.onChange =
+                                doLog.onChange = rebuildDelayed;
 
 
     rebuild();
@@ -1664,7 +1611,7 @@ CABLES.OPS["a75265c2-957b-4719-9d03-7bbf00ace364"] = {f: Ops.Gl.Meshes.LinesArra
 Ops.Gl.TextureEffects.Noise.Noise = function () {
     CABLES.Op.apply(this, arguments);
     const op = this;
-    const attachments = {noise_frag: "IN vec2 texCoord;\nUNI sampler2D tex;\nUNI float amount;\nUNI float time;\n\n{{BLENDCODE}}\n{{MODULES_HEAD}}\n{{LIB_RANDOM_OLD}}\n\nvoid main()\n{\n    vec4 rnd;\n\n    #ifndef RGB\n        float r=cgl_random(texCoord.xy+vec2(time));\n        rnd=vec4( r,r,r,1.0 );\n    #endif\n\n    #ifdef RGB\n        rnd=vec4(cgl_random3(texCoord.xy+vec2(time)),1.0);\n    #endif\n\n    vec4 base=texture(tex,texCoord);\n    vec4 col=vec4( _blend(base.rgb,rnd.rgb) ,1.0);\n\n    outColor=vec4( mix( col.rgb, base.rgb ,1.0-base.a*amount),1.0);\n}",};
+    const attachments = {noise_frag: "IN vec2 texCoord;\nUNI sampler2D tex;\nUNI float amount;\nUNI float time;\n\n{{BLENDCODE}}\n{{MODULES_HEAD}}\n\n{{CGL.RANDOM_TEX}}\n\nvoid main()\n{\n    vec4 rnd;\n\n    #ifndef RGB\n        float r=cgl_random(texCoord.xy+vec2(time));\n        rnd=vec4( r,r,r,1.0 );\n    #endif\n\n    #ifdef RGB\n        rnd=vec4(cgl_random3(texCoord.xy+vec2(time)),1.0);\n    #endif\n\n    vec4 base=texture(tex,texCoord);\n    vec4 col=vec4( _blend(base.rgb,rnd.rgb) ,1.0);\n\n    outColor=vec4( mix( col.rgb, base.rgb ,1.0-base.a*amount),1.0);\n}",};
     const
         render = op.inTrigger('Render'),
         blendMode = CGL.TextureEffect.AddBlendSelect(op, "Blend Mode", "normal"),
@@ -1685,9 +1632,15 @@ Ops.Gl.TextureEffects.Noise.Noise = function () {
 
     CGL.TextureEffect.setupBlending(op, shader, blendMode, amount);
 
+    op.toWorkPortsNeedToBeLinked(render);
+
     inRGB.onChange = function () {
         if (inRGB.get()) shader.define("RGB");
         else shader.removeDefine("RGB");
+    };
+
+    shader.bindTextures = function () {
+        cgl.setTexture(0, cgl.currentTextureEffect.getCurrentSourceTexture().tex);
     };
 
     render.onTriggered = function () {
@@ -1699,13 +1652,12 @@ Ops.Gl.TextureEffects.Noise.Noise = function () {
         cgl.setShader(shader);
         cgl.currentTextureEffect.bind();
 
-        cgl.setTexture(0, cgl.currentTextureEffect.getCurrentSourceTexture().tex);
-
         cgl.currentTextureEffect.finish();
         cgl.setPreviousShader();
 
         trigger.trigger();
     };
+
 
 
 };
@@ -1717,67 +1669,6 @@ CABLES.OPS["81253441-cc73-42fa-b903-6d23806873d9"] = {
 };
 
 
-// **************************************************************
-//
-// Ops.Array.ArrayGetNumber
-//
-// **************************************************************
-
-Ops.Array.ArrayGetNumber = function () {
-    CABLES.Op.apply(this, arguments);
-    const op = this;
-    const attachments = {};
-    var array = op.inArray("array");
-    var index = op.inValueInt("index");
-    var value = op.outValue("value");
-
-    array.ignoreValueSerialize = true;
-
-    index.onChange = update;
-    array.onChange = update;
-
-    function update() {
-        if (array.get()) value.set(array.get()[index.get()]);
-    }
-
-
-};
-
-Ops.Array.ArrayGetNumber.prototype = new CABLES.Op();
-CABLES.OPS["d1189078-70cf-437d-9a37-b2ebe89acdaf"] = {f: Ops.Array.ArrayGetNumber, objName: "Ops.Array.ArrayGetNumber"};
-
-
-// **************************************************************
-//
-// Ops.Math.SmoothStep
-//
-// **************************************************************
-
-Ops.Math.SmoothStep = function () {
-    CABLES.Op.apply(this, arguments);
-    const op = this;
-    const attachments = {};
-    const
-        result = op.outValue("result"),
-        number = op.inValueFloat("number", 0),
-        min = op.inValueFloat("min", 0),
-        max = op.inValueFloat("max", 1);
-
-    var subAdd = 0;
-    number.onChange = max.onChange = min.onChange = exec;
-    exec();
-
-    function exec() {
-
-        var x = Math.max(0, Math.min(1, (number.get() - min.get()) / (max.get() - min.get())));
-        result.set(x * x * (3 - 2 * x)); // smoothstep
-    }
-
-
-};
-
-Ops.Math.SmoothStep.prototype = new CABLES.Op();
-CABLES.OPS["2197ee92-2777-42c5-83d4-6ad65a2c4cf3"] = {f: Ops.Math.SmoothStep, objName: "Ops.Math.SmoothStep"};
 
 
 // **************************************************************
@@ -1866,9 +1757,15 @@ Ops.Math.Multiply = function () {
     CABLES.Op.apply(this, arguments);
     const op = this;
     const attachments = {};
-    const number1 = op.addInPort(new CABLES.Port(op, "number1"));
-    const number2 = op.addInPort(new CABLES.Port(op, "number2"));
-    const result = op.addOutPort(new CABLES.Port(op, "result"));
+    const number1 = op.inValueFloat("number1");
+    const number2 = op.inValueFloat("number2");
+    const result = op.outValue("result");
+
+    number1.set(1);
+    number2.set(2);
+
+    number1.onChange = update;
+    number2.onChange = update;
 
     function update() {
         const n1 = number1.get();
@@ -1880,16 +1777,624 @@ Ops.Math.Multiply = function () {
         result.set(n1 * n2);
     }
 
-    number1.onChange = update;
-    number2.onChange = update;
-
-    number1.set(1);
-    number2.set(2);
 
 
 };
 
 Ops.Math.Multiply.prototype = new CABLES.Op();
 CABLES.OPS["1bbdae06-fbb2-489b-9bcc-36c9d65bd441"] = {f: Ops.Math.Multiply, objName: "Ops.Math.Multiply"};
+
+
+// **************************************************************
+//
+// Ops.Gl.TextureEffects.ChromaticAberration
+//
+// **************************************************************
+
+Ops.Gl.TextureEffects.ChromaticAberration = function () {
+    CABLES.Op.apply(this, arguments);
+    const op = this;
+    const attachments = {
+        chromatic_frag: "\nIN vec2 texCoord;\nUNI sampler2D tex;\nUNI float pixel;\nUNI float onePixel;\nUNI float amount;\nUNI float lensDistort;\n\n#ifdef MASK\nUNI sampler2D texMask;\n#endif\n\n{{CGL.BLENDMODES}}\n\nvoid main()\n{\n   vec4 base=texture(tex,texCoord);\n   vec4 col=texture(tex,texCoord);\n\n   vec2 tc=texCoord;;\n   float pix = pixel;\n   if(lensDistort>0.0)\n   {\n       float dist = distance(texCoord, vec2(0.5,0.5));\n       tc-=0.5;\n       tc *=smoothstep(-0.9,1.0*lensDistort,1.0-dist);\n       tc+=0.5;\n   }\n\n    #ifdef MASK\n        vec4 m=texture(texMask,texCoord);\n        pix*=m.r*m.a;\n    #endif\n\n    #ifdef SMOOTH\n    #ifdef WEBGL2\n        float numSamples=round(pix/onePixel/4.0+1.0);\n        col.r=0.0;\n        col.b=0.0;\n\n        for(float off=0.0;off<numSamples;off++)\n        {\n            float diff=(pix/numSamples)*off;\n            col.r+=texture(tex,vec2(tc.x+diff,tc.y)).r/numSamples;\n            col.b+=texture(tex,vec2(tc.x-diff,tc.y)).b/numSamples;\n        }\n    #endif\n    #endif\n\n    #ifndef SMOOTH\n        col.r=texture(tex,vec2(tc.x+pix,tc.y)).r;\n        col.b=texture(tex,vec2(tc.x-pix,tc.y)).b;\n    #endif\n\n//   outColor = col;\n   outColor= cgl_blend(base,col,amount);\n\n}\n",
+    };
+    const
+        render = op.inTrigger('render'),
+        blendMode = CGL.TextureEffect.AddBlendSelect(op, "Blend Mode", "normal"),
+        amount = op.inValueSlider("Amount", 1),
+        pixel = op.inValue("Pixel", 5),
+        lensDistort = op.inValueSlider("Lens Distort", 0),
+        doSmooth = op.inValueBool("Smooth", false),
+        textureMask = op.inTexture("Mask"),
+        trigger = op.outTrigger('trigger');
+
+    const cgl = op.patch.cgl;
+    const shader = new CGL.Shader(cgl);
+
+    CGL.TextureEffect.setupBlending(op, shader, blendMode, amount);
+
+    shader.setSource(shader.getDefaultVertexShader(), attachments.chromatic_frag);
+    const textureUniform = new CGL.Uniform(shader, 't', 'tex', 0),
+        uniPixel = new CGL.Uniform(shader, 'f', 'pixel', 0),
+        uniOnePixel = new CGL.Uniform(shader, 'f', 'onePixel', 0),
+        unitexMask = new CGL.Uniform(shader, 't', 'texMask', 1),
+        uniAmount = new CGL.Uniform(shader, 'f', 'amount', amount),
+        unilensDistort = new CGL.Uniform(shader, 'f', 'lensDistort', lensDistort);
+
+    doSmooth.onChange = function () {
+        if (doSmooth.get()) shader.define("SMOOTH");
+        else shader.removeDefine("SMOOTH");
+    };
+
+    textureMask.onChange = function () {
+        if (textureMask.get()) shader.define("MASK");
+        else shader.removeDefine("MASK");
+    };
+
+    render.onTriggered = function () {
+        if (!CGL.TextureEffect.checkOpInEffect(op)) return;
+
+        var texture = cgl.currentTextureEffect.getCurrentSourceTexture();
+
+        uniPixel.setValue(pixel.get() * (1 / texture.width));
+        uniOnePixel.setValue(1 / texture.width);
+
+        cgl.setShader(shader);
+        cgl.currentTextureEffect.bind();
+
+        cgl.setTexture(0, texture.tex);
+
+        if (textureMask.get()) cgl.setTexture(1, textureMask.get().tex);
+
+        cgl.currentTextureEffect.finish();
+        cgl.setPreviousShader();
+
+        trigger.trigger();
+    };
+
+
+};
+
+Ops.Gl.TextureEffects.ChromaticAberration.prototype = new CABLES.Op();
+CABLES.OPS["38ac43a1-1757-48f4-9450-29f07ac0d376"] = {
+    f: Ops.Gl.TextureEffects.ChromaticAberration,
+    objName: "Ops.Gl.TextureEffects.ChromaticAberration"
+};
+
+
+// **************************************************************
+//
+// Ops.Gl.Render2Textures
+//
+// **************************************************************
+
+Ops.Gl.Render2Textures = function () {
+    CABLES.Op.apply(this, arguments);
+    const op = this;
+    const attachments = {};
+    const render = op.inTrigger("Render");
+    const trigger = op.outTrigger("Next");
+    const msaa = op.inValueSelect("MSAA", ["none", "2x", "4x", "8x"], "none");
+    const useVPSize = op.addInPort(new CABLES.Port(op, "use viewport size", CABLES.OP_PORT_TYPE_VALUE, {display: 'bool'}));
+
+    const width = op.inValueInt("texture width");
+    const height = op.inValueInt("texture height");
+    const tfilter = op.inValueSelect("Filter", ['nearest', 'linear', 'mipmap'], "none");
+
+    const tex0 = op.outTexture("texture 0");
+    const tex1 = op.outTexture("texture 1");
+    const tex2 = op.outTexture("texture 2");
+    const tex3 = op.outTexture("texture 3");
+
+    const texDepth = op.outTexture("textureDepth");
+
+    const fpTexture = op.inValueBool("HDR");
+    const depth = op.inValueBool("Depth", true);
+    const clear = op.inValueBool("Clear", true);
+
+
+    const cgl = op.patch.cgl;
+
+    var fb = null;
+    width.set(512);
+    height.set(512);
+    useVPSize.set(true);
+    tfilter.set('linear');
+    var reInitFb = true;
+
+    render.onTriggered = doRender;
+    tfilter.onValueChange(onFilterChange);
+    useVPSize.onChange = updateVpSize;
+
+    fpTexture.onChange = reInitLater;
+    depth.onChange = reInitLater();
+    clear.onChange = reInitLater();
+    var onFilterChange = reInitLater();
+    msaa.onChange = reInitLater();
+
+    updateVpSize();
+
+    function updateVpSize() {
+        if (useVPSize.get()) {
+            width.setUiAttribs({hidePort: true, greyout: true});
+            height.setUiAttribs({hidePort: true, greyout: true});
+        } else {
+            width.setUiAttribs({hidePort: false, greyout: false});
+            height.setUiAttribs({hidePort: false, greyout: false});
+        }
+    }
+
+    function reInitLater() {
+        reInitFb = true;
+    }
+
+    function doRender() {
+        if (!fb || reInitFb) {
+            if (fb) fb.delete();
+            if (cgl.glVersion >= 2) {
+                var ms = true;
+                var msSamples = 4;
+
+                if (msaa.get() == "none") {
+                    msSamples = 0;
+                    ms = false;
+                }
+                if (msaa.get() == "2x") msSamples = 2;
+                if (msaa.get() == "4x") msSamples = 4;
+                if (msaa.get() == "8x") msSamples = 8;
+
+                fb = new CGL.Framebuffer2(cgl, 8, 8,
+                    {
+                        numRenderBuffers: 4,
+                        isFloatingPointTexture: fpTexture.get(),
+                        multisampling: ms,
+                        depth: depth.get(),
+                        multisamplingSamples: msSamples,
+                        clear: clear.get()
+                    });
+            } else {
+                fb = new CGL.Framebuffer(cgl, 8, 8, {isFloatingPointTexture: fpTexture.get()});
+            }
+
+            if (tfilter.get() == 'nearest') fb.setFilter(CGL.Texture.FILTER_NEAREST);
+            else if (tfilter.get() == 'linear') fb.setFilter(CGL.Texture.FILTER_LINEAR);
+            else if (tfilter.get() == 'mipmap') fb.setFilter(CGL.Texture.FILTER_MIPMAP);
+
+            tex0.set(fb.getTextureColorNum(0));
+            tex1.set(fb.getTextureColorNum(1));
+            tex2.set(fb.getTextureColorNum(2));
+            tex3.set(fb.getTextureColorNum(3));
+            texDepth.set(fb.getTextureDepth());
+            reInitFb = false;
+        }
+
+        if (useVPSize.val) {
+            width.set(cgl.getViewPort()[2]);
+            height.set(cgl.getViewPort()[3]);
+        }
+
+        if (fb.getWidth() != Math.ceil(width.get()) || fb.getHeight() != Math.ceil(height.get())) fb.setSize(width.get(), height.get());
+
+        fb.renderStart(cgl);
+        trigger.trigger();
+        fb.renderEnd(cgl);
+
+        cgl.resetViewPort();
+    }
+
+
+};
+
+Ops.Gl.Render2Textures.prototype = new CABLES.Op();
+CABLES.OPS["72f95dbd-7b36-4e88-9d59-1bb2d3f2144e"] = {f: Ops.Gl.Render2Textures, objName: "Ops.Gl.Render2Textures"};
+
+
+// **************************************************************
+//
+// Ops.Gl.Meshes.FullscreenRectangle
+//
+// **************************************************************
+
+Ops.Gl.Meshes.FullscreenRectangle = function () {
+    CABLES.Op.apply(this, arguments);
+    const op = this;
+    const attachments = {
+        shader_frag: "\nUNI sampler2D tex;\nIN vec2 texCoord;\n\nvoid main()\n{\n   outColor= texture(tex,vec2(texCoord.x,(1.0-texCoord.y)));\n}\n",
+        shader_vert: "{{MODULES_HEAD}}\n\nIN vec3 vPosition;\nUNI mat4 projMatrix;\nUNI mat4 mvMatrix;\n\nOUT vec2 texCoord;\nIN vec2 attrTexCoord;\n\nvoid main()\n{\n   vec4 pos=vec4(vPosition,  1.0);\n\n   texCoord=attrTexCoord;\n\n   gl_Position = projMatrix * mvMatrix * pos;\n}\n",
+    };
+    const
+        render = op.inTrigger('render'),
+        centerInCanvas = op.inValueBool("Center in Canvas"),
+        flipY = op.inValueBool("Flip Y"),
+        inTexture = op.inTexture("Texture"),
+        trigger = op.outTrigger('trigger');
+
+    const cgl = op.patch.cgl;
+    var mesh = null;
+    var geom = new CGL.Geometry("fullscreen rectangle");
+    var x = 0, y = 0, z = 0, w = 0, h = 0;
+
+    centerInCanvas.onChange = rebuild;
+    flipY.onChange = rebuild;
+
+    var shader = null;
+    render.onTriggered = doRender;
+
+    op.toWorkPortsNeedToBeLinked(render);
+
+    inTexture.onChange = function () {
+        var tex = inTexture.get();
+        // shader=null;
+        if (tex && !shader) {
+            shader = new CGL.Shader(cgl, 'fullscreenrectangle');
+            shader.setModules(['MODULE_VERTEX_POSITION', 'MODULE_COLOR', 'MODULE_BEGIN_FRAG']);
+
+            shader.setSource(attachments.shader_vert, attachments.shader_frag);
+            shader.fullscreenRectUniform = new CGL.Uniform(shader, 't', 'tex', 0);
+        }
+
+        if (!tex) {
+            shader = null;
+        }
+    };
+
+    op.preRender = function () {
+        if (shader) shader.bind();
+        if (mesh) mesh.render(shader);
+        doRender();
+    };
+
+    function doRender() {
+        if (cgl.getViewPort()[2] != w || cgl.getViewPort()[3] != h) rebuild();
+
+        cgl.pushPMatrix();
+        mat4.identity(cgl.pMatrix);
+        mat4.ortho(cgl.pMatrix, 0, w, h, 0, -10.0, 1000);
+
+        cgl.pushModelMatrix();
+        mat4.identity(cgl.mMatrix);
+
+        cgl.pushViewMatrix();
+        mat4.identity(cgl.vMatrix);
+
+        if (centerInCanvas.get()) {
+            var x = 0;
+            var y = 0;
+            if (w < cgl.canvasWidth) x = (cgl.canvasWidth - w) / 2;
+            if (h < cgl.canvasHeight) y = (cgl.canvasHeight - h) / 2;
+
+            cgl.setViewPort(x, y, w, h);
+        }
+
+        if (shader) {
+            if (inTexture.get()) {
+                cgl.setTexture(0, inTexture.get().tex);
+                // cgl.gl.bindTexture(cgl.gl.TEXTURE_2D, inTexture.get().tex);
+            }
+
+            mesh.render(shader);
+        } else {
+            mesh.render(cgl.getShader());
+        }
+
+        cgl.gl.clear(cgl.gl.DEPTH_BUFFER_BIT);
+
+        cgl.popPMatrix();
+        cgl.popModelMatrix();
+        cgl.popViewMatrix();
+
+        trigger.trigger();
+    }
+
+
+    function rebuild() {
+        const currentViewPort = cgl.getViewPort();
+        if (currentViewPort[2] == w && currentViewPort[3] == h) return;
+
+        var xx = 0, xy = 0;
+
+        w = currentViewPort[2];
+        h = currentViewPort[3];
+
+        geom.vertices = new Float32Array([
+            xx + w, xy + h, 0.0,
+            xx, xy + h, 0.0,
+            xx + w, xy, 0.0,
+            xx, xy, 0.0
+        ]);
+
+        if (flipY.get())
+            geom.setTexCoords(new Float32Array([
+                1.0, 0.0,
+                0.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0
+            ]));
+        else
+            geom.setTexCoords(new Float32Array([
+                1.0, 1.0,
+                0.0, 1.0,
+                1.0, 0.0,
+                0.0, 0.0
+            ]));
+
+        geom.verticesIndices = new Float32Array([
+            2, 1, 0,
+            3, 1, 2
+        ]);
+
+
+        geom.vertexNormals = new Float32Array([
+            0, 0, 1,
+            0, 0, 1,
+            0, 0, 1,
+            0, 0, 1,
+        ]);
+        geom.tangents = new Float32Array([
+            -1, 0, 0,
+            -1, 0, 0,
+            -1, 0, 0,
+            -1, 0, 0]);
+        geom.biTangents == new Float32Array([
+            0, -1, 0,
+            0, -1, 0,
+            0, -1, 0,
+            0, -1, 0]);
+
+        // norms.push(0,0,1);
+        // tangents.push(-1,0,0);
+        // biTangents.push(0,-1,0);
+
+
+        if (!mesh) mesh = new CGL.Mesh(cgl, geom);
+        else mesh.setGeom(geom);
+    }
+
+
+};
+
+Ops.Gl.Meshes.FullscreenRectangle.prototype = new CABLES.Op();
+CABLES.OPS["255bd15b-cc91-4a12-9b4e-53c710cbb282"] = {
+    f: Ops.Gl.Meshes.FullscreenRectangle,
+    objName: "Ops.Gl.Meshes.FullscreenRectangle"
+};
+
+
+// **************************************************************
+//
+// Ops.Gl.TextureEffects.DrawImage
+//
+// **************************************************************
+
+Ops.Gl.TextureEffects.DrawImage = function () {
+    CABLES.Op.apply(this, arguments);
+    const op = this;
+    const attachments = {
+        drawimage_frag: "#ifdef HAS_TEXTURES\n  IN vec2 texCoord;\n  UNI sampler2D tex;\n  UNI sampler2D image;\n#endif\n\nIN mat3 transform;\nUNI float rotate;\n{{BLENDCODE}}\n\n#ifdef HAS_TEXTUREALPHA\n   UNI sampler2D imageAlpha;\n#endif\n\nUNI float amount;\n\nvoid main()\n{\n   vec4 blendRGBA=vec4(0.0,0.0,0.0,1.0);\n   #ifdef HAS_TEXTURES\n       vec2 tc=texCoord;\n\n       #ifdef TEX_FLIP_X\n           tc.x=1.0-tc.x;\n       #endif\n       #ifdef TEX_FLIP_Y\n           tc.y=1.0-tc.y;\n       #endif\n\n       #ifdef TEX_TRANSFORM\n           vec3 coordinates=vec3(tc.x, tc.y,1.0);\n           tc=(transform * coordinates ).xy;\n       #endif\n\n       blendRGBA=texture(image,tc);\n\n       vec3 blend=blendRGBA.rgb;\n       vec4 baseRGBA=texture(tex,texCoord);\n       vec3 base=baseRGBA.rgb;\n\n       vec3 colNew=_blend(base,blend);\n\n       #ifdef REMOVE_ALPHA_SRC\n           blendRGBA.a=1.0;\n       #endif\n\n       #ifdef HAS_TEXTUREALPHA\n           vec4 colImgAlpha=texture(imageAlpha,texCoord);\n           float colImgAlphaAlpha=colImgAlpha.a;\n\n           #ifdef ALPHA_FROM_LUMINANCE\n               vec3 gray = vec3(dot(vec3(0.2126,0.7152,0.0722), colImgAlpha.rgb ));\n               colImgAlphaAlpha=(gray.r+gray.g+gray.b)/3.0;\n           #endif\n\n           blendRGBA.a=colImgAlphaAlpha*blendRGBA.a;\n           \n           #ifdef INVERT_ALPHA\n           blendRGBA.a=1.0-blendRGBA.a;\n           #endif\n       #endif\n\n\n   #endif\n\n   blendRGBA.rgb=mix( colNew, base ,1.0-blendRGBA.a*amount);\n   blendRGBA.a=1.0;\n\n\n   outColor= blendRGBA;\n}",
+        drawimage_vert: "IN vec3 vPosition;\nIN vec2 attrTexCoord;\nIN vec3 attrVertNormal;\nOUT vec2 texCoord;\nOUT vec3 norm;\nUNI mat4 projMatrix;\nUNI mat4 mvMatrix;\n\nUNI float posX;\nUNI float posY;\nUNI float scale;\nUNI float rotate;\n\nOUT mat3 transform;\n\nvoid main()\n{\n    texCoord=attrTexCoord;\n    norm=attrVertNormal;\n\n    #ifdef TEX_TRANSFORM\n    vec3 coordinates=vec3(attrTexCoord.x, attrTexCoord.y,1.0);\n    float angle = radians( rotate );\n    vec2 scale= vec2(scale,scale);\n    vec2 translate= vec2(posX,posY);\n\n    transform = mat3(   scale.x * cos( angle ), scale.x * sin( angle ), 0.0,\n                        - scale.y * sin( angle ), scale.y * cos( angle ), 0.0,\n                        - 0.5 * scale.x * cos( angle ) + 0.5 * scale.y * sin( angle ) - 0.5 * translate.x*2.0 + 0.5,  - 0.5 * scale.x * sin( angle ) - 0.5 * scale.y * cos( angle ) - 0.5 * translate.y*2.0 + 0.5, 1.0);\n    #endif\n\n    gl_Position = projMatrix * mvMatrix * vec4(vPosition,  1.0);\n}",
+    };
+    var render = op.inTrigger('render');
+    var amount = op.addInPort(new CABLES.Port(op, "amount", CABLES.OP_PORT_TYPE_VALUE, {display: 'range'}));
+    var blendMode = CGL.TextureEffect.AddBlendSelect(op, "blendMode");
+
+    var image = op.addInPort(new CABLES.Port(op, "image", CABLES.OP_PORT_TYPE_TEXTURE, {preview: true}));
+
+    var imageAlpha = op.addInPort(new CABLES.Port(op, "imageAlpha", CABLES.OP_PORT_TYPE_TEXTURE, {preview: true}));
+    var alphaSrc = op.inValueSelect("alphaSrc", ['alpha channel', 'luminance']);
+    var removeAlphaSrc = op.addInPort(new CABLES.Port(op, "removeAlphaSrc", CABLES.OP_PORT_TYPE_VALUE, {display: 'bool'}));
+
+    var invAlphaChannel = op.addInPort(new CABLES.Port(op, "invert alpha channel", CABLES.OP_PORT_TYPE_VALUE, {display: 'bool'}));
+
+
+    var trigger = op.outTrigger('trigger');
+
+    op.toWorkPortsNeedToBeLinked(image);
+
+
+    blendMode.set('normal');
+    var cgl = op.patch.cgl;
+    var shader = new CGL.Shader(cgl, 'drawimage');
+
+    amount.set(1.0);
+
+    render.onTriggered = doRender;
+
+    var srcFrag = attachments.drawimage_frag.replace('{{BLENDCODE}}', CGL.TextureEffect.getBlendCode());
+
+    shader.setSource(attachments.drawimage_vert, srcFrag);
+    var textureUniform = new CGL.Uniform(shader, 't', 'tex', 0);
+    var textureDisplaceUniform = new CGL.Uniform(shader, 't', 'image', 1);
+    var textureAlpha = new CGL.Uniform(shader, 't', 'imageAlpha', 2);
+
+    invAlphaChannel.onChange = function () {
+        if (invAlphaChannel.get()) shader.define('INVERT_ALPHA');
+        else shader.removeDefine('INVERT_ALPHA');
+    };
+
+    removeAlphaSrc.onChange = function () {
+        if (removeAlphaSrc.get()) shader.define('REMOVE_ALPHA_SRC');
+        else shader.removeDefine('REMOVE_ALPHA_SRC');
+    };
+    removeAlphaSrc.set(true);
+
+    alphaSrc.onChange = function () {
+        if (alphaSrc.get() == 'luminance') shader.define('ALPHA_FROM_LUMINANCE');
+        else shader.removeDefine('ALPHA_FROM_LUMINANCE');
+    };
+
+    alphaSrc.set("alpha channel");
+
+
+    {
+        //
+        // texture flip
+        //
+        var flipX = op.addInPort(new CABLES.Port(op, "flip x", CABLES.OP_PORT_TYPE_VALUE, {display: 'bool'}));
+        var flipY = op.addInPort(new CABLES.Port(op, "flip y", CABLES.OP_PORT_TYPE_VALUE, {display: 'bool'}));
+
+        flipX.onChange = function () {
+            if (flipX.get()) shader.define('TEX_FLIP_X');
+            else shader.removeDefine('TEX_FLIP_X');
+        };
+
+        flipY.onChange = function () {
+            if (flipY.get()) shader.define('TEX_FLIP_Y');
+            else shader.removeDefine('TEX_FLIP_Y');
+        };
+    }
+
+    {
+        //
+        // texture transform
+        //
+        var scale = op.addInPort(new CABLES.Port(op, "scale", CABLES.OP_PORT_TYPE_VALUE, {display: 'range'}));
+        var posX = op.addInPort(new CABLES.Port(op, "pos x", CABLES.OP_PORT_TYPE_VALUE, {}));
+        var posY = op.addInPort(new CABLES.Port(op, "pos y", CABLES.OP_PORT_TYPE_VALUE, {}));
+        var rotate = op.addInPort(new CABLES.Port(op, "rotate", CABLES.OP_PORT_TYPE_VALUE, {}));
+
+        scale.set(1.0);
+
+        var uniScale = new CGL.Uniform(shader, 'f', 'scale', scale.get());
+        var uniPosX = new CGL.Uniform(shader, 'f', 'posX', posX.get());
+        var uniPosY = new CGL.Uniform(shader, 'f', 'posY', posY.get());
+        var uniRotate = new CGL.Uniform(shader, 'f', 'rotate', rotate.get());
+
+        function updateTransform() {
+            if (scale.get() != 1.0 || posX.get() != 0.0 || posY.get() != 0.0 || rotate.get() != 0.0) {
+                if (!shader.hasDefine('TEX_TRANSFORM')) shader.define('TEX_TRANSFORM');
+                uniScale.setValue(parseFloat(scale.get()));
+                uniPosX.setValue(posX.get());
+                uniPosY.setValue(posY.get());
+                uniRotate.setValue(rotate.get());
+            } else {
+                // shader.removeDefine('TEX_TRANSFORM');
+            }
+        }
+
+        scale.onChange = updateTransform;
+        posX.onChange = updateTransform;
+        posY.onChange = updateTransform;
+        rotate.onChange = updateTransform;
+    }
+
+    CGL.TextureEffect.setupBlending(op, shader, blendMode, amount);
+
+
+    var amountUniform = new CGL.Uniform(shader, 'f', 'amount', amount);
+    var oldHadImageAlpha = false;
+
+    function doRender() {
+        if (!CGL.TextureEffect.checkOpInEffect(op)) return;
+
+        if (imageAlpha.get() && !oldHadImageAlpha || !imageAlpha.get() && oldHadImageAlpha) {
+            if (imageAlpha.get() && imageAlpha.get().tex) {
+                shader.define('HAS_TEXTUREALPHA');
+                oldHadImageAlpha = true;
+            } else {
+                shader.removeDefine('HAS_TEXTUREALPHA');
+                oldHadImageAlpha = false;
+            }
+        }
+
+        if (image.get() && image.get().tex && amount.get() > 0.0) {
+            cgl.setShader(shader);
+            cgl.currentTextureEffect.bind();
+
+            cgl.setTexture(0, cgl.currentTextureEffect.getCurrentSourceTexture().tex);
+
+            if (image.get() && image.get().tex) cgl.setTexture(1, image.get().tex);
+            else cgl.setTexture(1, null);
+
+            if (imageAlpha.get() && imageAlpha.get().tex) cgl.setTexture(2, imageAlpha.get().tex);
+            else cgl.setTexture(2, null);
+
+            cgl.currentTextureEffect.finish();
+            cgl.setPreviousShader();
+        }
+
+        trigger.trigger();
+    }
+
+
+};
+
+Ops.Gl.TextureEffects.DrawImage.prototype = new CABLES.Op();
+CABLES.OPS["8248b866-9492-48c8-897d-3097c6fe6fe8"] = {
+    f: Ops.Gl.TextureEffects.DrawImage,
+    objName: "Ops.Gl.TextureEffects.DrawImage"
+};
+
+
+// **************************************************************
+//
+// Ops.Math.Max
+//
+// **************************************************************
+
+Ops.Math.Max = function () {
+    CABLES.Op.apply(this, arguments);
+    const op = this;
+    const attachments = {};
+    const
+        result = op.outValue("result"),
+        value = op.inValueFloat("value"),
+        max = op.inValueFloat("Maximum");
+
+    max.onChange = exec;
+    value.onChange = exec;
+
+    value.set(1);
+    max.set(1);
+
+    function exec() {
+        var v = Math.max(value.get(), max.get());
+        if (v == v) result.set(v);
+    }
+
+
+};
+
+Ops.Math.Max.prototype = new CABLES.Op();
+CABLES.OPS["07f0be49-c226-4029-8039-3b620145dc2a"] = {f: Ops.Math.Max, objName: "Ops.Math.Max"};
+
+
+// **************************************************************
+//
+// Ops.Math.Cosine
+//
+// **************************************************************
+
+Ops.Math.Cosine = function () {
+    CABLES.Op.apply(this, arguments);
+    const op = this;
+    const attachments = {};
+// input
+    var value = op.inValue('Value');
+
+    var phase = op.inValue('Phase', 0.0);
+    var mul = op.inValue('Frequency', 1.0);
+    var amplitude = op.inValue('Amplitude', 1.0);
+    var invert = op.inValueBool("asine", false);
+
+// output
+    var result = op.outValue('Result');
+
+    var calculate = Math.cos;
+
+    value.onChange = function () {
+        result.set(
+            amplitude.get() * calculate((value.get() * mul.get()) + phase.get())
+        );
+    };
+
+    invert.onChange = function () {
+        if (invert.get()) calculate = Math.acos;
+        else calculate = Math.cos;
+    }
+
+
+};
+
+Ops.Math.Cosine.prototype = new CABLES.Op();
+CABLES.OPS["b51166c4-e0a8-441a-b724-1531effdc52f"] = {f: Ops.Math.Cosine, objName: "Ops.Math.Cosine"};
 
 
