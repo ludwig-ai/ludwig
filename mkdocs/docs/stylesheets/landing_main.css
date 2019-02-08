@@ -2003,6 +2003,9 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
     vertical-align: bottom;
 }
 
+img.centered-img {
+    display: block;
+}
 
 /* ------------------------------------------------------------------- 
  * responsive:
