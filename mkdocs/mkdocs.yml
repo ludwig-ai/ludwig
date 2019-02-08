@@ -19,14 +19,15 @@ nav:
   - User Guide: 'user_guide.md'
   - Developer Guide: 'developer_guide.md'
   - API: 'api.md'
+  - FAQ: 'faq.md'
 
 # Configuration
 site_dir: '../docs/'
 theme:
   name: 'material'
   language: 'en'
-  logo: 'ludwig_logo.svg'
-  favicon: 'ludwig_logo.png'
+  logo: 'images/ludwig_logo.svg'
+  favicon: 'images/ludwig_logo.png'
   custom_dir: 'custom/'
   palette:
     primary: 'grey'
