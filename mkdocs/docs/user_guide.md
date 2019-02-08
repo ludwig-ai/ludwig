@@ -2209,6 +2209,7 @@ train_stats = model.train(data_csv=csv_file_path)
 train_stats = model.train(data_df=dataframe)
 ```
 
+`model_definition` is a ``dictionary that has the same key-value stracture of a model definition YAML file, as it's technically equivalent as parsing the YAML file into a Python dictionary.
 `train_stats` will be a dictionary contaning statistics about the training.
 The contents are exactly the same of the `training_statistics.json` file produced by the `experiment` and `train` commands.
 
