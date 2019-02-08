@@ -1,46 +1,17 @@
-Developer Guide
-===============
-
 Codebase Structure
-------------------
-
-Tests
--------
-
-We are using ```pytest``` to run tests. 
-
-### Checklist
-
-Before running tests, make sure 
-1. Your environment is properly setup   
-2. You build the latest code by running ```python setup.py install``` from the Ludwig root directory 
-3. you have write access on the machine. Some of the tests
-require saving data to disk
-
-### Running tests
-
-To run all tests, just run
-```pytest``` from the ludwig root directory.
-
-To run a single test, run
-``` 
-pytest path_to_filename::test_method_name
-```
-
-### Example
-
-```
-pytest tests/integration_tests/test_experiment.py::test_visual_question_answering
-```
+==================
 
 Adding an Encoder
------------------
+=================
 
-### 1. Add a new encoder class
+ 1. Add a new encoder class
+---------------------------
+
 Souce code for encoders lives under `ludwig/models/modules`.
 New encoder objects should be defined in the corresponding files, for example all new sequence encoders should be added to `ludwig/models/modules/sequence_encoders.py`.
 
 All the encoder parameters should be provided as arguments in the constructor with their default values set. For example `RNN` encoder takes the following list of arguments in its constructor
+
 ```python
 def __init__(
             self,
@@ -66,6 +37,7 @@ def __init__(
 Typically all the dependencies are initialized in the encoder's constructor (in the case of the RNN encoder these are EmbedSequence and RecurrentStack modules) so that at the end of the constructor call all the layers are fully described.
 
 Actual creation of tensorflow variables takes place inside the `__call__` method of the encoder. All encoders should have the following signature:
+
 ```python
 __call__(
     self,
@@ -78,7 +50,6 @@ __call__(
 
 __Inputs__
 
-
 - __input_placeholder__ (tf.Tensor): input tensor.
 - __regularizer__ (A (Tensor -> Tensor or None) function): regularizer function passed to `tf.get_variable` method.
 - __dropout__ (tf.Tensor(dtype: tf.float32)): dropout rate.
@@ -87,15 +58,15 @@ __Inputs__
 
 __Return__
 
-
 - __hidden__ (tf.Tensor(dtype: tf.float32)): feature encodings.
 - __hidden_size__ (int): feature encodings size.
-
 
 Encoders are initialized as class member variables in input feature object constructors and called inside `build_input` methods.
 
 
-### 2. Add the new encoder class to the corresponding encoder registry
+ 2. Add the new encoder class to the corresponding encoder registry
+-------------------------------------------------------------------
+
 Mapping between encoder keywords in the model definition and encoder classes is done by encoder registries: for example sequence encoder registry is defined in `ludwig/features/sequence_feature.py`
 
 ```
@@ -110,12 +81,16 @@ sequence_encoder_registry = {
 ```
 
 Adding a Decoder
-----------------
-### 1. Add a new decoder class
+================
+
+ 1. Add a new decoder class
+---------------------------
+
 Souce code for decoders lives under `ludwig/models/modules`.
 New decoder objects should be defined in the corresponding files, for example all new sequence decoders should be added to `ludwig/models/modules/sequence_decoders.py`.
 
 All the decoder parameters should be provided as arguments in the constructor with their default values set. For example `Generator` decoder takes the following list of arguments in its constructor:
+
 ```python
 __init__(
     self,
@@ -134,7 +109,9 @@ __init__(
 
 Decoders are initialized as class member variables in output feature object constructors and called inside `build_output` methods.
 
-### 2. Add the new decoder class to the corresponding decoder registry
+ 2. Add the new decoder class to the corresponding decoder registry
+-------------------------------------------------------------------
+
 Mapping between decoder keywords in the model definition and decoder classes is done by decoder registries: for example sequence decoder registry is defined in `ludwig/features/sequence_feature.py`
 
 ```python
@@ -145,9 +122,11 @@ sequence_decoder_registry = {
 ```
 
 Adding a new Feature Type
--------------------------
-----------------
-### 1. Add a new feature class
+=========================
+
+ 1. Add a new feature class
+---------------------------
+
 Souce code for feature classes lives under `ludwig/features`.
 Input and output feature classes are defined in the same file, for example `CategoryInputFeature` and `CategoryOutputFeature` are defined in `ludwig/features/category_feature.py`.
 
@@ -159,8 +138,9 @@ Feature parameters are provided in a dictionary of key-value pairs as an argumen
 
 All input and output features should implement `build_input` and `build_output` methods correspondingly with the following signatures:
 
----
-## build_input
+
+### build_input
+
 ```python
 build_input(
     self,
@@ -192,9 +172,8 @@ __Return__
 }
 ```
 
+### build_output
 
----
-## build_output
 ```python
 build_output(
     self,
@@ -216,9 +195,43 @@ __Return__
 - __eval_loss__ (tf.Tensor(dtype: tf.float32)): mean loss for evaluation dataset.
 - __output_tensors__ (dict): dictionary containing feature specific output tensors (predictions, probabilities, losses, etc).
 
-### 2. Add the new feature class to the corresponding feature registry
+ 2. Add the new feature class to the corresponding feature registry
+-------------------------------------------------------------------
+
 Input and output feature registries are defined in `ludwig/features/feature_registries.py`.
 
 
 Style Guidelines
-----------------
+================
+
+Tests
+=====
+
+We are using ```pytest``` to run tests. 
+
+Checklist
+---------
+
+Before running tests, make sure 
+1. Your environment is properly setup   
+2. You build the latest code by running ```python setup.py install``` from the Ludwig root directory 
+3. you have write access on the machine. Some of the tests
+require saving data to disk
+
+Running tests
+-------------
+
+To run all tests, just run
+```pytest``` from the ludwig root directory.
+
+To run a single test, run
+``` 
+pytest path_to_filename::test_method_name
+```
+
+Example
+-------
+
+```
+pytest tests/integration_tests/test_experiment.py::test_visual_question_answering
+```

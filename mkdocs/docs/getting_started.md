@@ -1,8 +1,6 @@
-Getting Started
-===============
-
 Introduction
-------------
+============
+
 Ludwig is a toolbox built on top of TensorFlow that allows to train and test deep learning models without the need to write code.
 
 All you need to provide is a CSV file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
@@ -25,7 +23,7 @@ Core Features:
 - Open Source: Apache License 2.0
 
 Installation
-------------
+============
 
 Ludwig's requirements are the following:
 
@@ -81,7 +79,7 @@ Please follow the instructions on [Horovod's repository](https://github.com/uber
 
 
 Basic Principles
-----------------
+================
 
 Ludwig provides two main functionalities: training models and using them to predict.
 It is based on datatype abstraction, so that the same data preprocessing and postprocessing will be performed on different datasets that share data types and the same encoding and decoding models developed for one task can be reused for different tasks.
@@ -107,7 +105,8 @@ The model definition can contain additional information, in particular how to pr
 This allows ease of use for novices and flexibility of experts.
 
 
-### Training
+Training
+--------
 
 For example, given a text classification dataset like the following:
 
@@ -156,13 +155,15 @@ The commands will display a graph that looks like the following, where you can s
 Several visualizations are available, please refer to [Visualizations](user_guide.md#visualizations) for more details.
 
 
-### Distributed Training
+Distributed Training
+--------------------
 
 You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
 Refer to the [User Guide](user_guide.md) for more details.
 
 
-### Predict
+Predict
+-------
 
 If you have new data and you want your previously trained model to predict target output values, you can type the following command in your console:
 
@@ -186,7 +187,8 @@ will return a bar plot comparing the models on different measures:
 A handy `ludwig experiment` command that performs training and prediction one after the other is also available.
 
 
-### Programmatic API
+Programmatic API
+----------------
 
 Ludwig also provides a simple programmatic API that allows you to train or load a model and use it to obtain predictions on new data:
 
@@ -209,7 +211,7 @@ model.close()
 More details are provided in the [User Guide](user_guide.md) and in the [API documentation](api.md).
 
 Extensibility
--------------
+=============
 
 Ludwig is built from the ground up with extensibility in mind.
 It is easy to add an additional datatype that is not currently supported by just implementing a  the abstract classes that contain a functions to preprocess the data, encode it and decode it.
@@ -220,7 +222,7 @@ Refer to the [Developer Guide](developer_guide.md) for further details.
 
 
 Roadmap
--------
+=======
 
 We will prioritize new features depending on the feedback of the community, but we are already planning to add:
 
@@ -240,7 +242,7 @@ We also want to address some of the current limitations:
 
 
 Credits
--------
+=======
 
 Ludwig is designed and developed by [Piero Molino](jttp://w4nderlu.st) at [Uber AI](http://uber.ai).
 
