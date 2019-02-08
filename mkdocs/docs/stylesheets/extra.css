@@ -76,6 +76,23 @@ a footnote-ref::before {
     color: white;
 }
 
+.footer-logo-smallpad {
+    display: block;
+    margin: 0 0 1rem 0;
+    padding: 0;
+    outline: 0;
+    border: none;
+    width: 70px;
+    height: 21px;
+    background: url("../images/ludwig_logo.svg") no-repeat center;
+    background-size: 70px 21px;
+    font: 0/0 a;
+    text-shadow: none;
+    color: transparent;
+    -webkit-transition: all 0.5s ease-in-out;
+    transition: all 0.5s ease-in-out;
+}
+
 .md-typeset blockquote {
     padding-left: 1.2rem;
     border-left: 0.4rem solid rgba(230, 230, 230, 0.26);

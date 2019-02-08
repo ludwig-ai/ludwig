@@ -1,0 +1,83 @@
+{% import "partials/language.html" as lang with context %}
+
+<!-- Application footer -->
+<footer class="md-footer">
+
+    <!-- Link to previous and/or next page -->
+    {% if page.previous_page or page.next_page %}
+    <div class="md-footer-nav">
+        <nav class="md-footer-nav__inner md-grid">
+
+            <!-- Link to previous page -->
+            {% if page.previous_page %}
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--prev"
+               href="{{ page.previous_page.url | url }}"
+               rel="prev"
+               title="{{ page.previous_page.title }}">
+                <div class="md-flex__cell md-flex__cell--shrink">
+                    <i class="md-icon md-icon--arrow-back
+                    md-footer-nav__button"></i>
+                </div>
+                <div class="md-flex__cell md-flex__cell--stretch
+                  md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  {{ lang.t("footer.previous") }}
+                </span>
+                {{ page.previous_page.title }}
+              </span>
+                </div>
+            </a>
+            {% endif %}
+
+            <!-- Link to next page -->
+            {% if page.next_page %}
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--next"
+               href="{{ page.next_page.url | url }}"
+               rel="next"
+               title="{{ page.next_page.title }}">
+                <div class="md-flex__cell md-flex__cell--stretch
+                  md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  {{ lang.t("footer.next") }}
+                </span>
+                {{ page.next_page.title }}
+              </span>
+                </div>
+                <div class="md-flex__cell md-flex__cell--shrink">
+                    <i class="md-icon md-icon--arrow-forward
+                    md-footer-nav__button"></i>
+                </div>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    <!-- Further information -->
+    <div class="md-footer-meta md-typeset">
+        <div class="md-footer-meta__inner md-grid">
+
+            <!-- Copyright and theme information -->
+            <div class="md-footer-copyright">
+                <div class="footer-logo-smallpad"></div>
+                {% if config.copyright %}
+                <div class="md-footer-copyright__highlight">
+                    {{ config.copyright }}
+                </div>
+                {% endif %}
+                Website by <a href="http://w4nderlu.st">w4nderlust</a> powered by
+                <a href="https://www.mkdocs.org">MkDocs</a>,
+                <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>,
+                <a href="http://www.styleshout.com/">styleshout</a> and
+                <a href="http://cables.gl/">cables</a>.
+            </div>
+
+            <!-- Social links -->
+            {% block social %}
+            {% include "partials/social.html" %}
+            {% endblock %}
+        </div>
+    </div>
+</footer>
