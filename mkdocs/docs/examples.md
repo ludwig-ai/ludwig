@@ -1,14 +1,11 @@
-Examples
-========
-
-In this section you will find several examples of how to build models with Ludwig for a variety of tasks.
+In this section there are several examples of how to build models with Ludwig for a variety of tasks.
 For each task we show an example dataset and a sample model definition that can be used to train a model from that data.
 
 Basic Kaggle-completition-like example (titanic / house pricing)
-----------------------------------------------------------------
+===
 
 Text Classification
--------------------
+===
 
 | text                                                                                             | class       |
 |--------------------------------------------------------------------------------------------------|-------------|
@@ -39,7 +36,7 @@ output_features:
 ```
 
 Named Entity Recognition Tagging
---------------------------------
+===
 
 | utterance                                         | tag                                            |
 |---------------------------------------------------|------------------------------------------------|
@@ -72,7 +69,7 @@ output_features:
 ```
 
 Natural Language Understanding
-------------------------------
+===
 
 | utterance                      | intent                            | slots       |
 |--------------------------------|-----------------------------------|-------------|
@@ -113,10 +110,10 @@ output_features:
 ```
 
 Language Modeling
------------------
+===
 
 Machine Translation
--------------------
+===
 
 | english                   | italian                   |
 |---------------------------|---------------------------|
@@ -150,7 +147,7 @@ output_features:
 ```
 
 Chit-Chat Dialogue Modeling through Sequence2Sequence
------------------------------------------------------
+===
 
 | user1                     | user2                                      |
 |---------------------------|--------------------------------------------|
@@ -184,7 +181,7 @@ output_features:
 ```
 
 Sentiment Analysis
-------------------
+===
 
 | review                          | sentiment |
 |---------------------------------|-----------|
@@ -215,7 +212,7 @@ output_features:
 ```
 
 Image Classification
---------------------
+===
 
 | image_path                | class |
 |---------------------------|-------|
@@ -245,7 +242,7 @@ output_features:
 ```
 
 Image Captioning
-----------------
+===
 
 | image_path                | caption                   |
 |---------------------------|---------------------------|
@@ -277,7 +274,7 @@ output_features:
 ```
 
 One-shot Learning with Siamese Networks
---------------------------------------
+===
 
 This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset. The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
 
@@ -326,7 +323,7 @@ output_features:
 ```
 
 Visual Question Answering
--------------------------
+===
 
 | image_path              |   question                                | answer |
 |-------------------------|-------------------------------------------|--------|
@@ -357,7 +354,7 @@ output_features:
 
 
 Time series forecasting
------------------------
+===
 
 While direct timeseries prediction is a work in progress Ludwig can ingest timeseries input feature data and make numerical predictions. Below is an example of a model trained to forecast timeseries at five different horizons.
 
@@ -400,7 +397,7 @@ output_features:
 ```
 
 Movie rating prediction
-----------------------
+===
 
 | year | duration  | nominations |  categories        | rating |
 |------|-----------|-------------|--------------------|--------|
@@ -430,7 +427,7 @@ output_features:
 ```
 
 Example that uses Sets/Bags
----------------------------
+===
 
 | image_path                | tags          |
 |---------------------------|---------------|
@@ -452,7 +449,7 @@ output_features:
 ```
 
 Multi-Task Learning
--------------------
+===
 
 This example is inspired by the classic paper [Natural Language Processing (Almost) from Scratch](https://arxiv.org/abs/1103.0398) by Collobert et al..
 
