@@ -182,7 +182,7 @@ ludwig visualize --visualization compare_performance --test_stats path/to/test_s
 
 will return a bar plot comparing the models on different measures:
 
-![Performance Comparison](images/getting_started_performance_comparison.png "Performance Comparison")
+![Performance Comparison](images/compare_performance.png "Performance Comparison")
 
 A handy `ludwig experiment` command that performs training and prediction one after the other is also available.
 

@@ -34,7 +34,7 @@ from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
 
 
-def compare_classifiers_performance(
+def compare_performance(
         prediction_statistics,
         field, model_names=None,
         **kwargs
@@ -1770,7 +1770,7 @@ def cli(sys_argv):
         '-v',
         '--visualization',
         default='confidence_filtering',
-        choices=['compare_classifiers_performance',
+        choices=['compare_performance',
                  'compare_classifiers_performance_from_prob',
                  'compare_classifiers_performance_from_pred',
                  'compare_classifiers_performance_subset',
@@ -1918,8 +1918,8 @@ def cli(sys_argv):
         format='%(message)s'
     )
 
-    if args.visualization == 'compare_classifiers_performance':
-        compare_classifiers_performance(**vars(args))
+    if args.visualization == 'compare_performance':
+        compare_performance(**vars(args))
     elif args.visualization == 'compare_classifiers_performance_from_prob':
         compare_classifiers_performance_from_prob(**vars(args))
     elif args.visualization == 'compare_classifiers_performance_from_pred':
