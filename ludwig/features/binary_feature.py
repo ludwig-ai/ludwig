@@ -297,7 +297,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         pass
 
     @staticmethod
-    def calculate_overall_stats(test_stats, output_feature, dataset):
+    def calculate_overall_stats(
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
+    ):
         feature_name = output_feature['name']
         confusion_matrix = ConfusionMatrix(
             dataset.get(feature_name),

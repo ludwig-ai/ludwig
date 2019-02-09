@@ -641,7 +641,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             )]
 
     @staticmethod
-    def calculate_overall_stats(test_stats, output_feature, dataset):
+    def calculate_overall_stats(
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
+    ):
         feature_name = output_feature['name']
         sequences = dataset.get(feature_name)
         last_elem_sequence = sequences[np.arange(sequences.shape[0]),

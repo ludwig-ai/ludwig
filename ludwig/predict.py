@@ -93,6 +93,7 @@ def full_predict(
 
     prediction_results = predict(
         dataset,
+        train_set_metadata,
         model,
         model_definition,
         batch_size,
@@ -126,6 +127,7 @@ def full_predict(
 
 def predict(
         dataset,
+        train_set_metadata,
         model,
         model_definition,
         batch_size=128,
@@ -174,20 +176,22 @@ def predict(
         calculate_overall_stats(
             test_stats,
             model_definition['output_features'],
-            dataset
+            dataset,
+            train_set_metadata
         )
 
     return test_stats
 
 
-def calculate_overall_stats(test_stats, output_features, dataset):
+def calculate_overall_stats(test_stats, output_features, dataset,
+                            train_set_metadata):
     for output_feature in output_features:
         feature = get_from_registry(
             output_feature['type'],
             output_type_registry
         )
         feature.calculate_overall_stats(
-            test_stats, output_feature, dataset
+            test_stats, output_feature, dataset, train_set_metadata
         )
 
 
