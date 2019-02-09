@@ -539,17 +539,18 @@ def multiclass_multimetric_plot(scores, metrics, labels=None, title=None):
 
     colors = plt.get_cmap('tab10').colors
     ax.set_xlabel('class')
+    print(ticks)
     ax.set_xticks(ticks + width)
     if labels is not None:
-        ax.set_xticklabels(labels, rotation=45)
+        ax.set_xticklabels(labels, rotation=90)
     else:
-        ax.set_xticklabels(ticks, rotation=45)
+        ax.set_xticklabels(ticks, rotation=90)
 
     for i, score in enumerate(scores):
         ax.bar(ticks + i * width, score, width, label=metrics[i],
                color=colors[i])
 
-    ax.legend(loc='upper right')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     plt.show()
 
@@ -667,6 +668,7 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
     ax.grid(which='both')
     ax.grid(which='minor', alpha=0.5)
     ax.grid(which='major', alpha=0.75)
+    ax.set_xticklabels([], minor=True)
 
     if title is not None:
         ax.set_title(title)
@@ -679,8 +681,8 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
         maximum = max([max(score) for score in scores])
     else:
         ax.set_xlim([0, 1])
-        ax.set_xticks(np.linspace(0.0, 1.0, num=21))
-        ax.set_xticks(np.linspace(0.0, 1.0, num=11), minor=True)
+        ax.set_xticks(np.linspace(0.0, 1.0, num=21), minor=True)
+        ax.set_xticks(np.linspace(0.0, 1.0, num=11))
         maximum = 1
     ax.set_yticks(ticks + 0.4 - width / 2)
     ax.set_yticklabels(algoritm_names if algoritm_names is not None else '')
@@ -705,7 +707,9 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
             txt.set_path_effects(
                 [PathEffects.withStroke(linewidth=2, foreground='black')])
 
-    ax.legend()
+    plt.setp(ax.get_xminorticklabels(), visible=False)
+
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     plt.show()
 
@@ -721,8 +725,6 @@ def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
     ax.grid(which='minor', alpha=0.5)
     ax.grid(which='major', alpha=0.75)
 
-    ax.margins(0)
-
     if title is not None:
         ax.set_title(title)
 
@@ -736,9 +738,9 @@ def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
                 label=algorithm_names[
                     i] if algorithm_names is not None and i < len(
                     algorithm_names) else 'Algorithm {}'.format(i),
-                color=colors[i])
+                color=colors[i], linewidth=2, marker='o')
 
-    ax.legend()
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     plt.show()
 

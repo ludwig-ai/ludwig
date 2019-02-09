@@ -35,19 +35,20 @@ from ludwig.utils.print_utils import logging_level_registry
 
 
 def compare_classifiers_performance(
-        test_stats,
-        field, algorithms=None,
+        prediction_statistics,
+        field, model_names=None,
         **kwargs
 ):
-    if len(test_stats) < 1:
-        logging.error('No test_stats provided')
+    if len(prediction_statistics) < 1:
+        logging.error('No prediction_statistics provided')
         return
 
-    test_stats_per_algorithm = [load_json(test_stats_f)
-                                for test_stats_f in test_stats]
+    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
+                                            for prediction_statistics_f in
+                                            prediction_statistics]
 
     fields_set = set()
-    for ls in test_stats_per_algorithm:
+    for ls in prediction_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
@@ -57,13 +58,14 @@ def compare_classifiers_performance(
         hits_at_ks = []
         edit_distances = []
 
-        for test_stats in test_stats_per_algorithm:
-            if ACCURACY in test_stats[field]:
-                accuracies.append(test_stats[field][ACCURACY])
-            if HITS_AT_K in test_stats[field]:
-                hits_at_ks.append(test_stats[field][HITS_AT_K])
-            if EDIT_DISTANCE in test_stats[field]:
-                edit_distances.append(test_stats[field][EDIT_DISTANCE])
+        for prediction_statistics in prediction_statistics_per_model_name:
+            if ACCURACY in prediction_statistics[field]:
+                accuracies.append(prediction_statistics[field][ACCURACY])
+            if HITS_AT_K in prediction_statistics[field]:
+                hits_at_ks.append(prediction_statistics[field][HITS_AT_K])
+            if EDIT_DISTANCE in prediction_statistics[field]:
+                edit_distances.append(
+                    prediction_statistics[field][EDIT_DISTANCE])
 
         measures = []
         measures_names = []
@@ -80,7 +82,7 @@ def compare_classifiers_performance(
         visualization_utils.compare_classifiers_plot(
             measures,
             measures_names,
-            algorithms,
+            model_names,
             title='Performance comparison on {}'.format(field)
         )
 
@@ -91,7 +93,7 @@ def compare_classifiers_performance_from_prob(
         field,
         top_n_classes,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -140,7 +142,7 @@ def compare_classifiers_performance_from_prob(
     visualization_utils.compare_classifiers_plot(
         [accuracies, hits_at_ks, mrrs],
         [ACCURACY, HITS_AT_K, 'mrr'],
-        algorithms
+        model_names
     )
 
 
@@ -150,7 +152,7 @@ def compare_classifiers_performance_from_pred(
         ground_truth_metadata,
         field,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(predictions) < 1:
@@ -186,7 +188,7 @@ def compare_classifiers_performance_from_pred(
     visualization_utils.compare_classifiers_plot(
         [accuracies, precisions, recalls, f1s],
         [ACCURACY, 'precision', 'recall', 'f1'],
-        algorithms
+        model_names
     )
 
 
@@ -197,7 +199,7 @@ def compare_classifiers_performance_subset(
         top_n_classes,
         labels_limit,
         subset,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -236,13 +238,14 @@ def compare_classifiers_performance_subset(
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = gt[subset_indices]
             logging.info(
-                'Subset for algorithm {} is {:.2f}% of the data'.format(
-                    algorithms[i] if algorithms and i < len(algorithms) else i,
+                'Subset for model_name {} is {:.2f}% of the data'.format(
+                    model_names[i] if model_names and i < len(
+                        model_names) else i,
                     len(gt_subset) / len(gt) * 100
                 )
             )
-            algorithms[i] = '{} ({:.2f}%)'.format(
-                algorithms[i] if algorithms and i < len(algorithms) else i,
+            model_names[i] = '{} ({:.2f}%)'.format(
+                model_names[i] if model_names and i < len(model_names) else i,
                 len(gt_subset) / len(gt) * 100
             )
 
@@ -261,7 +264,7 @@ def compare_classifiers_performance_subset(
 
     title = None
     if subset == 'ground_truth':
-        title = 'Classifier performance on first {} '.format(
+        title = 'Classifier performance on first {} class{} ({:.2f}%)'.format(
             k, 'es' if k > 1 else '', len(gt_subset) / len(gt) * 100
         )
     elif subset == PREDICTIONS:
@@ -273,7 +276,7 @@ def compare_classifiers_performance_subset(
     visualization_utils.compare_classifiers_plot(
         [accuracies, hits_at_ks],
         [ACCURACY, HITS_AT_K],
-        algorithms,
+        model_names,
         title=title
     )
 
@@ -284,7 +287,7 @@ def compare_classifiers_performance_changing_k(
         field,
         top_k,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -320,7 +323,7 @@ def compare_classifiers_performance_changing_k(
     visualization_utils.compare_classifiers_line_plot(
         np.arange(1, k + 1),
         hits_at_ks, 'hits@k',
-        algorithms,
+        model_names,
         title='Classifier comparison (hits@k)'
     )
 
@@ -330,7 +333,7 @@ def compare_classifiers_predictions(
         ground_truth,
         field,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(predictions) < 2:
@@ -341,9 +344,11 @@ def compare_classifiers_predictions(
     ground_truth_field = field
     predictions_1_fn = predictions[0]
     predictions_2_fn = predictions[1]
-    name_c1 = (algorithms[0] if algorithms is not None and len(algorithms) > 0
+    name_c1 = (
+        model_names[0] if model_names is not None and len(model_names) > 0
                else 'c1')
-    name_c2 = (algorithms[1] if algorithms is not None and len(algorithms) > 1
+    name_c2 = (
+        model_names[1] if model_names is not None and len(model_names) > 1
                else 'c2')
 
     gt = load_from_file(ground_truth_fn, ground_truth_field)
@@ -441,7 +446,7 @@ def compare_classifiers_predictions_distribution(
         ground_truth,
         field,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(predictions) < 1:
@@ -467,7 +472,7 @@ def compare_classifiers_predictions_distribution(
     prob_predictions = [alg_count_prediction / alg_count_prediction.sum()
                         for alg_count_prediction in counts_predictions]
 
-    visualization_utils.radar_chart(prob_gt, prob_predictions, algorithms)
+    visualization_utils.radar_chart(prob_gt, prob_predictions, model_names)
 
 
 def confidence_filtering(
@@ -475,7 +480,7 @@ def confidence_filtering(
         ground_truth,
         field,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -527,7 +532,7 @@ def confidence_filtering(
         thresholds,
         accuracies,
         dataset_kept,
-        algorithms,
+        model_names,
         title='Confidence Filtering'
     )
 
@@ -537,7 +542,7 @@ def confidence_filtering_2d(
         ground_truth,
         threshold_fields,
         labels_limit,
-        algorithms=None,  # DOTO this param is unused?
+        model_names=None,  # DOTO this param is unused?
         **kwargs
 ):
     if len(probabilities) < 2:
@@ -630,7 +635,7 @@ def confidence_filtering_data_vs_acc(
         ground_truth,
         field,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -679,7 +684,7 @@ def confidence_filtering_data_vs_acc(
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
-        algorithms,
+        model_names,
         title='Confidence Filtering (Data vs Accuracy)'
     )
 
@@ -689,7 +694,7 @@ def confidence_filtering_data_vs_acc_2d(
         ground_truth,
         threshold_fields,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 2:
@@ -793,7 +798,7 @@ def confidence_filtering_data_vs_acc_2d(
     visualization_utils.confidence_fitlering_data_vs_acc_multiline_plot(
         accuracies,
         dataset_kept,
-        algorithms,
+        model_names,
         title='Coverage vs Accuracy'
     )
     # ==========#
@@ -803,7 +808,7 @@ def confidence_filtering_data_vs_acc_2d(
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         [max_accuracies],
         [thresholds],
-        algorithms,
+        model_names,
         title='Coverage vs Accuracy'
     )
 
@@ -824,12 +829,12 @@ def confidence_filtering_data_vs_acc_2d(
                                              selected_acc.shape)
         t1_maxes.append(thresholds[threshold_indices[0]])
         t2_maxes.append(thresholds[threshold_indices[1]])
-    algorithm_name = algorithms[0] if algorithms is not None and len(
-        algorithms) > 0 else ''
+    model_name_name = model_names[0] if model_names is not None and len(
+        model_names) > 0 else ''
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         [max_accuracies, t1_maxes, t2_maxes],
         [fixed_step_coverage, fixed_step_coverage, fixed_step_coverage],
-        algorithm_names=[algorithm_name, name_t1, name_t2],
+        model_name_names=[model_name_name, name_t1, name_t2],
         dotted=[False, True, True],
         title='Coverage vs Accuracy'
     )
@@ -842,7 +847,7 @@ def confidence_filtering_data_vs_acc_subset(
         top_n_classes,
         labels_limit,
         subset,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -882,8 +887,9 @@ def confidence_filtering_data_vs_acc_subset(
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = gt[subset_indices]
             logging.info(
-                'Subset for algorithm {} is {:.2f}% of the data'.format(
-                    algorithms[i] if algorithms and i < len(algorithms) else i,
+                'Subset for model_name {} is {:.2f}% of the data'.format(
+                    model_names[i] if model_names and i < len(
+                        model_names) else i,
                     len(gt_subset) / len(gt) * 100
                 )
             )
@@ -913,7 +919,7 @@ def confidence_filtering_data_vs_acc_subset(
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
-        algorithms,
+        model_names,
         title='Confidence Filtering (Data vs Accuracy)'
     )
 
@@ -925,7 +931,7 @@ def confidence_filtering_data_vs_acc_subset_per_class(
         top_n_classes,
         labels_limit,
         subset,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -966,9 +972,9 @@ def confidence_filtering_data_vs_acc_subset_per_class(
                 subset_indices = np.argmax(prob, axis=1) == curr_k
                 gt_subset = gt[subset_indices]
                 logging.info(
-                    'Subset for algorithm {} is {:.2f}% of the data'.format(
-                        algorithms[i] if algorithms and i < len(
-                            algorithms) else i,
+                    'Subset for model_name {} is {:.2f}% of the data'.format(
+                        model_names[i] if model_names and i < len(
+                            model_names) else i,
                         len(gt_subset) / len(gt) * 100
                     )
                 )
@@ -996,7 +1002,7 @@ def confidence_filtering_data_vs_acc_subset_per_class(
             dataset_kept.append(dataset_kept_alg)
 
         visualization_utils.confidence_fitlering_data_vs_acc_plot(
-            accuracies, dataset_kept, algorithms,
+            accuracies, dataset_kept, model_names,
             title='Confidence Filtering (Data vs Accuracy) '
                   'for class {}'.format(curr_k)
         )
@@ -1009,7 +1015,7 @@ def data_vs_acc_subset(
         top_n_classes,
         labels_limit,
         subset,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(predictions) < 1:
@@ -1054,7 +1060,7 @@ def data_vs_acc_subset(
     table = [['model', '% accuracy', '% data']]
     for i in range(len(accuracies)):
         table.append(
-            [algorithms[i] if algorithms and i < len(algorithms) else i,
+            [model_names[i] if model_names and i < len(model_names) else i,
              accuracies[i], data_percentage[i]]
         )
 
@@ -1070,7 +1076,7 @@ def data_vs_acc_subset(
     visualization_utils.compare_classifiers_plot(
         [accuracies, data_percentage],
         ['% accuracy', '% data'],
-        algorithms,
+        model_names,
         adaptive=True,
         title='Accuracy and Data comparison'
     )
@@ -1083,7 +1089,7 @@ def data_vs_acc_subset_per_class(
         top_n_classes,
         labels_limit,
         subset,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(predictions) < 1:
@@ -1129,7 +1135,7 @@ def data_vs_acc_subset_per_class(
         table = [['model', '% accuracy', '% data']]
         for i in range(len(accuracies)):
             table.append(
-                [algorithms[i] if algorithms and i < len(algorithms) else i,
+                [model_names[i] if model_names and i < len(model_names) else i,
                  accuracies[i],
                  data_percentage[i]]
             )
@@ -1146,7 +1152,7 @@ def data_vs_acc_subset_per_class(
         visualization_utils.compare_classifiers_plot(
             [accuracies, data_percentage],
             ['% accuracy', '% data'],
-            algorithms,
+            model_names,
             adaptive=True,
             title='Accuracy vs Data comparison for class {}'.format(curr_k)
         )
@@ -1158,7 +1164,7 @@ def binary_threshold_vs_metric(
         field,
         metrics,
         positive_label=1,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -1218,7 +1224,7 @@ def binary_threshold_vs_metric(
         visualization_utils.threshold_vs_metric_plot(
             thresholds,
             scores,
-            algorithms,
+            model_names,
             title='Binary threshold vs {}'.format(metric)
         )
 
@@ -1228,7 +1234,7 @@ def roc_curves(
         ground_truth,
         field,
         positive_label=1,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -1250,23 +1256,27 @@ def roc_curves(
         )
         fpr_tprs.append((fpr, tpr))
 
-    visualization_utils.roc_curves(fpr_tprs, algorithms, title='ROC curves')
+    visualization_utils.roc_curves(fpr_tprs, model_names, title='ROC curves')
 
 
-def roc_curves_from_test_stats(test_stats, field, algorithms=None, **kwargs):
-    if len(test_stats) < 1:
-        logging.error('No test_stats provided')
+def roc_curves_from_prediction_statistics(prediction_statistics, field,
+                                          model_names=None, **kwargs):
+    if len(prediction_statistics) < 1:
+        logging.error('No prediction_statistics provided')
         return
 
-    test_stats_per_algorithm = [load_json(test_stats_f)
-                                for test_stats_f in test_stats]
+    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
+                                            for prediction_statistics_f in
+                                            prediction_statistics]
     fpr_tprs = []
-    for curr_test_stats in test_stats_per_algorithm:
-        fpr = curr_test_stats[field]['roc_curve']['false_positive_rate']
-        tpr = curr_test_stats[field]['roc_curve']['true_positive_rate']
+    for curr_prediction_statistics in prediction_statistics_per_model_name:
+        fpr = curr_prediction_statistics[field]['roc_curve'][
+            'false_positive_rate']
+        tpr = curr_prediction_statistics[field]['roc_curve'][
+            'true_positive_rate']
         fpr_tprs.append((fpr, tpr))
 
-    visualization_utils.roc_curves(fpr_tprs, algorithms, title='ROC curves')
+    visualization_utils.roc_curves(fpr_tprs, model_names, title='ROC curves')
 
 
 def calibration_1_vs_all(
@@ -1275,7 +1285,7 @@ def calibration_1_vs_all(
         field,
         top_n_classes,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -1338,14 +1348,14 @@ def calibration_1_vs_all(
         visualization_utils.calibration_plot(
             fraction_positives_class,
             mean_predicted_vals_class,
-            algorithms
+            model_names
         )
         visualization_utils.predictions_distribution_plot(
             probs_class,
-            algorithms
+            model_names
         )
 
-    visualization_utils.brier_plot(np.array(brier_scores), algorithms)
+    visualization_utils.brier_plot(np.array(brier_scores), model_names)
 
 
 def calibration_multiclass(
@@ -1353,7 +1363,7 @@ def calibration_multiclass(
         ground_truth,
         field,
         labels_limit,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -1405,18 +1415,18 @@ def calibration_multiclass(
     visualization_utils.calibration_plot(
         fraction_positives,
         mean_predicted_vals,
-        algorithms
+        model_names
     )
     visualization_utils.compare_classifiers_plot(
         [brier_scores],
         ['brier'],
-        algorithms,
+        model_names,
         adaptive=True,
         decimals=8
     )
     for i, brier_score in enumerate(brier_scores):
-        if i < len(algorithms):
-            format_str = '{}: '.format(algorithms[i])
+        if i < len(model_names):
+            format_str = '{}: '.format(model_names[i])
             format_str += '{}'
         else:
             format_str = '{}'
@@ -1424,34 +1434,36 @@ def calibration_multiclass(
 
 
 def confusion_matrix(
-        test_stats,
+        prediction_statistics,
         field,
         top_n_classes,
         normalize,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
-    if len(test_stats) < 1:
-        logging.error('No test_stats provided')
+    if len(prediction_statistics) < 1:
+        logging.error('No prediction_statistics provided')
         return
 
-    test_stats_per_algorithm = [load_json(test_stats_f)
-                                for test_stats_f in test_stats]
+    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
+                                            for prediction_statistics_f in
+                                            prediction_statistics]
 
     fields_set = set()
-    for ls in test_stats_per_algorithm:
+    for ls in prediction_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
 
-    for i, test_stats in enumerate(test_stats_per_algorithm):
+    for i, prediction_statistics in enumerate(
+            prediction_statistics_per_model_name):
         for field in fields:
-            if 'confusion_matrix' in test_stats[field]:
+            if 'confusion_matrix' in prediction_statistics[field]:
                 confusion_matrix = np.array(
-                    test_stats[field]['confusion_matrix']
+                    prediction_statistics[field]['confusion_matrix']
                 )
-                algorithm_name = algorithms[i] if (
-                        algorithms is not None and i < len(algorithms)
+                model_name_name = model_names[i] if (
+                        model_names is not None and i < len(model_names)
                 ) else ''
 
                 for k in top_n_classes:
@@ -1467,7 +1479,7 @@ def confusion_matrix(
                     visualization_utils.confusion_matrix_plot(
                         cm,
                         title='{} Confusion Matrix top {} {}'.format(
-                            algorithm_name, k,
+                            model_name_name, k,
                             field
                         )
                     )
@@ -1487,43 +1499,50 @@ def confusion_matrix(
 
 
 def multiclass_multimetric(
-        test_stats,
+        prediction_statistics,
         field,
+        ground_truth_metadata,
         top_n_classes,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
-    if len(test_stats) < 1:
-        logging.error('No test_stats provided')
+    if len(prediction_statistics) < 1:
+        logging.error('No prediction_statistics provided')
         return
 
-    test_stats_per_algorithm = [load_json(test_stats_f)
-                                for test_stats_f in test_stats]
+    metadata = load_json(ground_truth_metadata)
+    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
+                                            for prediction_statistics_f in
+                                            prediction_statistics]
 
     fields_set = set()
-    for ls in test_stats_per_algorithm:
+    for ls in prediction_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
 
-    for i, test_stats in enumerate(test_stats_per_algorithm):
+    for i, prediction_statistics in enumerate(
+            prediction_statistics_per_model_name):
         for field in fields:
-            algorithm_name = (
-                algorithms[i]
-                if algorithms is not None and i < len(algorithms)
+            model_name_name = (
+                model_names[i]
+                if model_names is not None and i < len(model_names)
                 else ''
             )
-            per_class_stats = test_stats[field]['per_class_stats']
+            per_class_stats = prediction_statistics[field]['per_class_stats']
             precisions = []
             recalls = []
             f1_scores = []
             labels = []
-            for class_id in sorted(map(int, per_class_stats.keys())):
-                class_stats = per_class_stats[str(class_id)]
+            for _, class_name in sorted(
+                    [(metadata[field]['str2idx'][key], key)
+                     for key in per_class_stats.keys()],
+                    key=lambda tup: tup[0]):
+                class_stats = per_class_stats[class_name]
                 precisions.append(class_stats['precision'])
                 recalls.append(class_stats['recall'])
                 f1_scores.append(class_stats['f1_score'])
-                labels.append(str(class_id))
+                labels.append(class_name)
             for k in top_n_classes:
                 k = min(k, len(precisions)) if k > 0 else len(precisions)
                 ps = precisions[0:k]
@@ -1535,7 +1554,7 @@ def multiclass_multimetric(
                     ['precision', 'recall', 'f1 score'],
                     labels=ls,
                     title='{} Multiclass Precision / Recall / '
-                          'F1 Score top {} {}'.format(algorithm_name, k, field)
+                          'F1 Score top {} {}'.format(model_name_name, k, field)
                 )
 
             p_np = np.nan_to_num(np.array(precisions, dtype=np.float32))
@@ -1544,7 +1563,7 @@ def multiclass_multimetric(
             labels_np = np.nan_to_num(np.array(labels))
 
             sorted_indices = f1_np.argsort()
-            higher_f1s = sorted_indices[-5:][::-1]
+            higher_f1s = sorted_indices[-k:][::-1]
             visualization_utils.multiclass_multimetric_plot(
                 [p_np[higher_f1s],
                  r_np[higher_f1s],
@@ -1552,9 +1571,10 @@ def multiclass_multimetric(
                 ['precision', 'recall', 'f1 score'],
                 labels=labels_np[higher_f1s].tolist(),
                 title='{} Multiclass Precision / Recall / '
-                      'F1 Score best 5 classes {}'.format(algorithm_name, field)
+                      'F1 Score best {} classes {}'.format(
+                    model_name_name, k, field)
             )
-            lower_f1s = sorted_indices[:5]
+            lower_f1s = sorted_indices[:k]
             visualization_utils.multiclass_multimetric_plot(
                 [p_np[lower_f1s],
                  r_np[lower_f1s],
@@ -1562,7 +1582,7 @@ def multiclass_multimetric(
                 ['precision', 'recall', 'f1 score'],
                 labels=labels_np[lower_f1s].tolist(),
                 title='{} Multiclass Precision / Recall / F1 Score worst '
-                      '5 classes {}'.format(algorithm_name, field)
+                      'k classes {}'.format(model_name_name, k, field)
             )
 
             visualization_utils.multiclass_multimetric_plot(
@@ -1572,11 +1592,11 @@ def multiclass_multimetric(
                 ['precision', 'recall', 'f1 score'],
                 labels=labels_np[sorted_indices[::-1]].tolist(),
                 title='{} Multiclass Precision / Recall / F1 Score '
-                      '{} sorted'.format(algorithm_name, field)
+                      '{} sorted'.format(model_name_name, field)
             )
 
             logging.info('\n')
-            logging.info(algorithm_name)
+            logging.info(model_name_name)
             tmp_str = '{0} best 5 classes: '.format(field)
             tmp_str += '{}'
             logging.info(tmp_str.format(higher_f1s))
@@ -1594,34 +1614,37 @@ def multiclass_multimetric(
 
 
 def frequency_vs_f1(
-        test_stats,
+        prediction_statistics,
         ground_truth_metadata,
         field,
         top_n_classes,
-        algorithms=None,
+        model_names=None,
         **kwargs
 ):
-    if len(test_stats) < 1:
-        logging.error('No test_stats provided')
+    if len(prediction_statistics) < 1:
+        logging.error('No prediction_statistics provided')
         return
 
     metadata = load_json(ground_truth_metadata)
-    test_stats_per_algorithm = [load_json(test_stats_f)
-                                for test_stats_f in test_stats]
+    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
+                                            for prediction_statistics_f in
+                                            prediction_statistics]
     k = top_n_classes[0]
 
     fields_set = set()
-    for ls in test_stats_per_algorithm:
+    for ls in prediction_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
 
-    for i, test_stats in enumerate(test_stats_per_algorithm):
+    for i, prediction_statistics in enumerate(
+            prediction_statistics_per_model_name):
         for field in fields:
-            algorithm_name = (algorithms[i]
-                              if algorithms is not None and i < len(algorithms)
+            model_name_name = (model_names[i]
+                               if model_names is not None and i < len(
+                model_names)
                               else '')
-            per_class_stats = test_stats[field]['per_class_stats']
+            per_class_stats = prediction_statistics[field]['per_class_stats']
             f1_scores = []
             labels = []
             class_ids = sorted(map(int, per_class_stats.keys()))
@@ -1657,7 +1680,7 @@ def frequency_vs_f1(
                 'F1 score',
                 'frequency',
                 title='{} F1 Score vs Frequency {}'.format(
-                    algorithm_name,
+                    model_name_name,
                     field
                 )
             )
@@ -1679,22 +1702,23 @@ def frequency_vs_f1(
                 'frequency',
                 'F1 score',
                 title='{} F1 Score vs Frequency {}'.format(
-                    algorithm_name,
+                    model_name_name,
                     field
                 )
             )
 
 
-def learning_curves(training_stats, field, algorithms=None, **kwargs):
-    if len(training_stats) < 1:
-        logging.error('No training_stats provided')
+def learning_curves(training_statistics, field, model_names=None, **kwargs):
+    if len(training_statistics) < 1:
+        logging.error('No training_statistics provided')
         return
 
-    training_stats_per_algorithm = [load_json(learning_stats_f)
-                                    for learning_stats_f in training_stats]
+    training_statistics_per_model_name = [load_json(learning_stats_f)
+                                          for learning_stats_f in
+                                          training_statistics]
 
     fields_set = set()
-    for ls in training_stats_per_algorithm:
+    for ls in training_statistics_per_model_name:
         for _, values in ls.items():
             for key in values:
                 fields_set.add(key)
@@ -1703,13 +1727,13 @@ def learning_curves(training_stats, field, algorithms=None, **kwargs):
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for field in fields:
         for metric in metrics:
-            if metric in training_stats_per_algorithm[0]['train'][field]:
+            if metric in training_statistics_per_model_name[0]['train'][field]:
                 visualization_utils.lerning_curves_plot(
                     [learning_stats['train'][field][metric]
-                     for learning_stats in training_stats_per_algorithm],
+                     for learning_stats in training_statistics_per_model_name],
                     [learning_stats['validation'][field][metric]
-                     for learning_stats in training_stats_per_algorithm],
-                    metric, algorithms,
+                     for learning_stats in training_statistics_per_model_name],
+                    metric, model_names,
                     title='Learning Curve {}'.format(field)
                 )
 
@@ -1720,7 +1744,7 @@ def cli(sys_argv):
         prog='ludwig visualize',
         usage='%(prog)s [options]')
 
-    parser.add_argument('-r', '--raw_data', help='raw data file')
+    parser.add_argument('-d', '--data_csv', help='raw data file')
     parser.add_argument('-g', '--ground_truth', help='ground truth file')
     parser.add_argument(
         '-gm',
@@ -1735,8 +1759,8 @@ def cli(sys_argv):
         choices=['compare_classifiers_performance',
                  'compare_classifiers_performance_from_prob',
                  'compare_classifiers_performance_from_pred',
-                 'compare_classifiers_performance_changing_k',
                  'compare_classifiers_performance_subset',
+                 'compare_classifiers_performance_changing_k',
                  'compare_classifiers_predictions',
                  'compare_classifiers_predictions_distribution',
                  'confidence_filtering',
@@ -1747,7 +1771,7 @@ def cli(sys_argv):
                  'confidence_filtering_data_vs_acc_subset_per_class',
                  'binary_threshold_vs_metric',
                  'roc_curves',
-                 'roc_curves_from_test_stats',
+                 'roc_curves_from_prediction_statistics',
                  'data_vs_acc_subset',
                  'data_vs_acc_subset_per_class',
                  'calibration_1_vs_all',
@@ -1789,28 +1813,28 @@ def cli(sys_argv):
         help='probabilities files'
     )
     parser.add_argument(
-        '-tes',
-        '--training_stats',
+        '-ts',
+        '--training_statistics',
         default=[],
         nargs='+',
         type=str,
         help='training stats files'
     )
     parser.add_argument(
-        '-trs',
-        '--test_stats',
+        '-ps',
+        '--prediction_statistics',
         default=[],
         nargs='+',
         type=str,
         help='test stats files'
     )
     parser.add_argument(
-        '-alg',
-        '--algorithms',
+        '-mn',
+        '--model_names',
         default=[],
         nargs='+',
         type=str,
-        help='names of the algorithms (for better graphs)'
+        help='names of the models to use as labels'
     )
     parser.add_argument(
         '-tn',
@@ -1911,8 +1935,8 @@ def cli(sys_argv):
         binary_threshold_vs_metric(**vars(args))
     elif args.visualization == 'roc_curves':
         roc_curves(**vars(args))
-    elif args.visualization == 'roc_curves_from_test_stats':
-        roc_curves_from_test_stats(**vars(args))
+    elif args.visualization == 'roc_curves_from_prediction_statistics':
+        roc_curves_from_prediction_statistics(**vars(args))
     elif args.visualization == 'data_vs_acc_subset':
         data_vs_acc_subset(**vars(args))
     elif args.visualization == 'data_vs_acc_subset_per_class':
