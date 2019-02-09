@@ -667,6 +667,7 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
     ax.grid(which='both')
     ax.grid(which='minor', alpha=0.5)
     ax.grid(which='major', alpha=0.75)
+    ax.set_xticklabels([], minor=True)
 
     if title is not None:
         ax.set_title(title)
@@ -679,8 +680,8 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
         maximum = max([max(score) for score in scores])
     else:
         ax.set_xlim([0, 1])
-        ax.set_xticks(np.linspace(0.0, 1.0, num=21))
-        ax.set_xticks(np.linspace(0.0, 1.0, num=11), minor=True)
+        ax.set_xticks(np.linspace(0.0, 1.0, num=21), minor=True)
+        ax.set_xticks(np.linspace(0.0, 1.0, num=11))
         maximum = 1
     ax.set_yticks(ticks + 0.4 - width / 2)
     ax.set_yticklabels(algoritm_names if algoritm_names is not None else '')
@@ -705,7 +706,9 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
             txt.set_path_effects(
                 [PathEffects.withStroke(linewidth=2, foreground='black')])
 
-    ax.legend()
+    plt.setp(ax.get_xminorticklabels(), visible=False)
+
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     plt.show()
 
