@@ -766,7 +766,7 @@ def radar_chart(ground_truth, predictions, algorithms=None, log_scale=False,
     ax.set_theta_zero_location('N')
     ax.set_theta_direction(-1)
     ax.set_rmax(maximum)
-    ax.set_rlabel_position(288)
+    ax.set_rlabel_position(305)
     ax.set_ylabel('Probability')
     # ax.set_rscale('log')
     ax.grid(True)
@@ -817,7 +817,7 @@ def radar_chart(ground_truth, predictions, algorithms=None, log_scale=False,
     for i, alg_predictions in enumerate(predictions):
         draw_polygon(alg_predictions, algorithms[i], colors[i])
 
-    ax.legend(frameon=True)
+    ax.legend(frameon=True, loc='upper left')
     plt.tight_layout()
     plt.show()
 
