@@ -154,7 +154,7 @@ def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,
         ax1.plot(thresholds, scores[i], label=algorithm_name, color=colors[i],
                  linewidth=3, marker='o')
 
-    ax1.legend(frameon=True, loc='bottom right')
+    ax1.legend(frameon=True)
     plt.tight_layout()
     plt.show()
 
