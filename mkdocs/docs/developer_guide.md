@@ -10,7 +10,7 @@ Adding an Encoder
 Souce code for encoders lives under `ludwig/models/modules`.
 New encoder objects should be defined in the corresponding files, for example all new sequence encoders should be added to `ludwig/models/modules/sequence_encoders.py`.
 
-All the encoder parameters should be provided as arguments in the constructor with their default values set. For example `RNN` encoder takes the following list of arguments in its constructor
+All the encoder parameters should be provided as arguments in the constructor with their default values set. For example `RNN` encoder takes the following list of arguments in its constructor:
 
 ```python
 def __init__(
@@ -203,20 +203,21 @@ Input and output feature registries are defined in `ludwig/features/feature_regi
 
 Style Guidelines
 ================
+We expect contributions to mimic existing patterns in the codebase and demonstrate good practices: the code should be concise, readable, PEP8-compliant, and conforming to 80 character line length limit.
 
 Tests
 =====
 
 We are using ```pytest``` to run tests. 
+Current test coverage is limited to several integration tests which ensure end-to-end functionality but we are planning to expand it.
 
 Checklist
 ---------
 
 Before running tests, make sure 
-1. Your environment is properly setup   
-2. You build the latest code by running ```python setup.py install``` from the Ludwig root directory 
-3. you have write access on the machine. Some of the tests
-require saving data to disk
+1. Your environment is properly setup.
+2. You build the latest code by running ```python setup.py install``` from the Ludwig root directory.
+3. You have write access on the machine. Some of the tests require saving data to disk.
 
 Running tests
 -------------
