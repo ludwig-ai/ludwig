@@ -674,7 +674,7 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
     if title is not None:
         ax.set_title(title)
 
-    width = 0.8 / num_metrics
+    width = 0.8 / num_metrics if num_metrics > 1 else 0.4
     ticks = np.arange(len(scores[0]))
 
     colors = plt.get_cmap('tab10').colors
@@ -685,7 +685,9 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
         ax.set_xticks(np.linspace(0.0, 1.0, num=21), minor=True)
         ax.set_xticks(np.linspace(0.0, 1.0, num=11))
         maximum = 1
-    ax.set_yticks(ticks + 0.4 - width / 2)
+
+    half_total_width = 0.4 if num_metrics > 1 else 0.2
+    ax.set_yticks(ticks + half_total_width - width / 2)
     ax.set_yticklabels(algoritm_names if algoritm_names is not None else '')
     ax.invert_yaxis()  # labels read top-to-bottom
 
