@@ -1178,7 +1178,13 @@ def binary_threshold_vs_metric(
 
     thresholds = [t / 100 for t in range(0, 101, 5)]
 
+    supported_metrics = {'f1', 'precision', 'recall', 'accuracy'}
+
     for metric in metrics:
+
+        if metric not in supported_metrics:
+            logging.error("Metric {} not supported".format(metric))
+            continue
 
         scores = []
 
@@ -1198,23 +1204,31 @@ def binary_threshold_vs_metric(
                     )
 
             for threshold in thresholds:
-                threshold = threshold if threshold < 1 else 0.999
+                threshold = threshold if threshold < 1 else 0.99
 
+                t_gt = gt[prob >= threshold]
                 predictions = prob >= threshold
+                t_predictions = predictions[prob >= threshold]
 
                 if metric == 'f1':
-                    metric_score = sklearn.metrics.f1_score(gt, predictions)
+                    metric_score = sklearn.metrics.f1_score(
+                        t_gt,
+                        t_predictions
+                    )
                 elif metric == 'precision':
                     metric_score = sklearn.metrics.precision_score(
-                        gt,
-                        predictions
+                        t_gt,
+                        t_predictions
                     )
                 elif metric == 'recall':
-                    metric_score = sklearn.metrics.recall_score(gt, predictions)
-                else:  # if metric == ACCURACY:
+                    metric_score = sklearn.metrics.recall_score(
+                        t_gt,
+                        t_predictions
+                    )
+                elif metric == ACCURACY:
                     metric_score = sklearn.metrics.accuracy_score(
-                        gt,
-                        predictions
+                        t_gt,
+                        t_predictions
                     )
 
                 scores_alg.append(metric_score)
