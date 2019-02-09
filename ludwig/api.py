@@ -48,12 +48,13 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.globals import set_disable_progressbar
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
+from ludwig.predict import calculate_overall_stats
 from ludwig.train import get_experiment_dir_name
 from ludwig.train import get_file_names
 from ludwig.train import train
 from ludwig.train import update_model_definition_with_metadata
-from ludwig.utils.data_utils import save_json
 from ludwig.utils.data_utils import read_csv
+from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description
@@ -789,6 +790,13 @@ class LudwigModel:
             gpus=gpus, gpu_fraction=gpu_fraction,
             session=getattr(self.model, 'session', None)
         )
+
+        if not only_predictions:
+            calculate_overall_stats(
+                predict_results,
+                self.model_definition['output_features'],
+                dataset
+            )
 
         logging.debug('Postprocessing')
         if (
