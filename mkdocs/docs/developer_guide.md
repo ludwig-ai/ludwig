@@ -14,24 +14,24 @@ All the encoder parameters should be provided as arguments in the constructor wi
 
 ```python
 def __init__(
-            self,
-            should_embed=True,
-            vocab=None,
-            representation='dense',
-            embedding_size=256,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
-            num_layers=1,
-            state_size=256,
-            cell_type='rnn',
-            bidirectional=False,
-            dropout=False,
-            initializer=None,
-            regularize=True,
-            reduce_output='last',
-            **kwargs
-    ):
+    self,
+    should_embed=True,
+    vocab=None,
+    representation='dense',
+    embedding_size=256,
+    embeddings_trainable=True,
+    pretrained_embeddings=None,
+    embeddings_on_cpu=False,
+    num_layers=1,
+    state_size=256,
+    cell_type='rnn',
+    bidirectional=False,
+    dropout=False,
+    initializer=None,
+    regularize=True,
+    reduce_output='last',
+    **kwargs
+):
 ```
 
 Typically all the dependencies are initialized in the encoder's constructor (in the case of the RNN encoder these are EmbedSequence and RecurrentStack modules) so that at the end of the constructor call all the layers are fully described.
