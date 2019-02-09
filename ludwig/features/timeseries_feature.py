@@ -368,7 +368,12 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         ]
 
     @staticmethod
-    def calculate_overall_stats(test_stats, output_feature, dataset):
+    def calculate_overall_stats(
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
+    ):
         pass
 
     @staticmethod

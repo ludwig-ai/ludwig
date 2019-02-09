@@ -524,7 +524,12 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             ]
 
     @staticmethod
-    def calculate_overall_stats(test_stats, output_feature, dataset):
+    def calculate_overall_stats(
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
+    ):
         feature_name = output_feature['name']
         stats = test_stats[feature_name]
         confusion_matrix = ConfusionMatrix(

@@ -318,6 +318,7 @@ def experiment(
     # predict
     test_results = predict(
         test_set,
+        train_set_metadata,
         model,
         model_definition,
         model_definition['training']['batch_size'],

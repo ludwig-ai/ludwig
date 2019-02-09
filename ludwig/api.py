@@ -795,7 +795,8 @@ class LudwigModel:
             calculate_overall_stats(
                 predict_results,
                 self.model_definition['output_features'],
-                dataset
+                dataset,
+                self.train_set_metadata
             )
 
         logging.debug('Postprocessing')
