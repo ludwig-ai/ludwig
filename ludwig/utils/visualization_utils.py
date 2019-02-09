@@ -586,11 +586,11 @@ def calibration_plot(fraction_positives, mean_predicted_values,
                         algorithm_names) else '')
 
     ticks = np.linspace(0.0, 1.0, num=11)
-    plt.xlim([0, 1])
+    plt.xlim([-0.05, 1.05])
     plt.xticks(ticks)
     plt.xlabel('Predicted probability')
     plt.ylabel('Observed probability')
-    plt.ylim([0, 1])
+    plt.ylim([-0.05, 1.05])
     plt.yticks(ticks)
     plt.legend(loc='lower right')
     plt.title('Calibration (reliability curve)')
