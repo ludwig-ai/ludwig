@@ -383,7 +383,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {compare_classifiers_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_classifiers_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}
+  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -2269,7 +2269,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {compare_classifiers_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_classifiers_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}
+  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -2325,14 +2325,14 @@ Confusion Matrix
 
 
 Compare Performance
-------------------------------
+-------------------
 
-### compare_classifiers_performance
+### compare_performance
 
 This visualization uses the `field`, `prediction_statistics` and `model_names` parameters.
 For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces bars in a bar plot, one for each overall metric available in the `prediction_statistics` file for the specificed `field`.
 
-![Compare Classifiers Performance](images/compare_classifiers_performance.png "Compare Classifiers Performance")
+![Compare Classifiers Performance](images/compare_performance.png "Compare Classifiers Performance")
 
 
 ### compare_classifiers_performance_from_prob
@@ -2360,10 +2360,12 @@ This visualization uses the `top_n_classes`, `subset`, `ground_truth`, `ground_t
 For each model (in the aligned lists of `predictions` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilties predictions for the specificed `field`, sonsidering only a subset of the full training set.
 The way the subset is obtained is using the `top_n_classes` and `subset` parameters.
 
-If the values of `subset` is `ground_truth`, then only datapoints where the ground truth class is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed. 
+If the values of `subset` is `ground_truth`, then only datapoints where the ground truth class is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed.
+
 ![Compare Classifiers Performance Subset Ground Truth](images/compare_classifiers_performance_subset_gt.png "Compare Classifiers Performance Subset Ground Truth")
 
 If the values of `subset` is `predictions`, then only datapoints where the the model predicts a class that is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed for each model.
+
 ![Compare Classifiers Performance Subset Ground Predictions](images/compare_classifiers_performance_subset_pred.png "Compare Classifiers Performance Subset Ground Predictions")
 
 
@@ -2383,15 +2385,19 @@ This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `
 For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes for the specificed `field`.
 
 The first one show the measures on the `n` most frequent classes.
+
 ![Multiclass Multimetric topk](images/multiclass_multimetric_topk.png "Multiclass Multimetric most frequent classes")
 
 The second one shows the measures on the `n` classes where the model performs the best.
+
 ![Multiclass Multimetric bestk](images/multiclass_multimetric_bestk.png "Multiclass Multimetric best classes")
 
 The third one shows the measures on the `n` classes where the model performs the worst.
+
 ![Multiclass Multimetric worstk](images/multiclass_multimetric_worstk.png "Multiclass Multimetric worst classes")
 
 The fourth one shows the measures on all the classes, sorted by their frequency. This could become unreadable in case the number of classes is really high.
+
 ![Multiclass Multimetric sorted](images/multiclass_multimetric_sorted.png "Multiclass Multimetric sorted classes")
 
 
@@ -2483,9 +2489,11 @@ This visualization uses the `top_k`, `ground_truth`, `field`, `probabilities` an
 For each class or each of the `k` most frequent classes if `top_k` is specified, it produces two plots computed on the fly from the probabilities of predictions for the specificed `field`.
 
 The first plot is a calibration curve that shows the calibration of the predictions considering the current class to be the true one and all others to be a false one, drawing one line for each model (in the aligned lists of `probabilities` and `model_names`).
+
 ![Calibration 1 vs All Curve](images/calibration_1_vs_all_curve.png "Calibration 1 vs All Curve")
 
 The second plot shows the distributions of the predictions considering the current class to be the true one and all others to be a false one, drawing the distribution for each model (in the aligned lists of `probabilities` and `model_names`).
+
 ![Calibration 1 vs All Counts](images/calibration_1_vs_all_counts.png "Calibration 1 vs All Counts")
 
 
@@ -2496,9 +2504,11 @@ This visualization uses the `ground_truth`, `field`, `probabilities` and `model_
 For each class, produces two plots computed on the fly from the probabilities of predictions for the specificed `field`.
 
 The first plot is a calibration curve that shows the calibration of the predictions considering al classes, drawing one line for each model (in the aligned lists of `probabilities` and `model_names`).
+
 ![Calibration Multiclass Curve](images/calibration_multiclass_curve.png "Calibration Multiclass Curve")
 
 The second plot shows a bar plot of the brier score (that calculates how calibrated are the probabilties of the predictions of a model), drawing one bar for each model (in the aligned lists of `probabilities` and `model_names`).
+
 ![Calibration Multiclass Brier](images/calibration_multiclass_brier.png "Calibration Multiclass Brier")
 
 
