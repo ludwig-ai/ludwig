@@ -938,7 +938,6 @@ loss:
 fc_layers: None
 num_fc_layers: 0
 fc_size: 256
-norm: None
 acrivation: relu
 norm: none
 dropout: False
@@ -1020,7 +1019,6 @@ loss:
 fc_layers: None
 num_fc_layers: 0
 fc_size: 256
-norm: None
 acrivation: relu
 norm: none
 dropout: False
@@ -1153,7 +1151,6 @@ loss:
 fc_layers: None
 num_fc_layers: 0
 fc_size: 256
-norm: None
 acrivation: relu
 norm: none
 dropout: False
@@ -1281,7 +1278,6 @@ loss:
 fc_layers: None
 num_fc_layers: 0
 fc_size: 256
-norm: None
 acrivation: relu
 norm: none
 dropout: False
@@ -1554,7 +1550,6 @@ num_conv_layers: None
 filter_size: 3
 num_filters: 256
 pool_size: None
-reduce_output: max
 fc_layers: None
 num_fc_layers: None
 fc_size: 256
@@ -1767,7 +1762,6 @@ num_filters: 256
 pool_size: None
 norm: None
 activation: relu
-regularize: True
 num_rec_layers: 1
 cell_type: rnn
 state_size: 256
@@ -1775,7 +1769,7 @@ bidirectional: False
 dropout: False
 initializer: None
 regularize: True
-reduce_output last
+reduce_output: last
 ```
 
 ### Sequence Output Features and Decoders
@@ -1843,7 +1837,6 @@ loss:
 fc_layers: None
 num_fc_layers: 0
 fc_size: 256
-norm: None
 acrivation: relu
 norm: none
 dropout: False
@@ -1911,7 +1904,6 @@ loss:
 fc_layers: None
 num_fc_layers: 0
 fc_size: 256
-norm: None
 acrivation: relu
 norm: none
 dropout: False
@@ -2065,7 +2057,6 @@ type: concat
 fc_layers: None
 num_fc_layers: 0
 fc_size: 256
-norm: None
 acrivation: relu
 norm: none
 dropout: False
