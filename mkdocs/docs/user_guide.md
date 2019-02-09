@@ -2311,7 +2311,18 @@ Some additional information on the parameters:
 - `field` is the output feature to use for creating the visualization.
 
 Other parameters will be detailed for each visualization as different ones use them differently.
- 
+
+Learning Curves
+---------------
+
+### learning_curves
+
+
+Confusion Matrix
+----------------
+
+### confusion_matrix
+
 
 Compare Performance
 ------------------------------
@@ -2360,7 +2371,7 @@ If the values of `subset` is `predictions`, then only datapoints where the the m
 
 This visualization uses the `top_k`, `ground_truth_metadata`, `field`, `probabilties` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `probabilties` and `model_names`) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k`.
+For each model (in the aligned lists of `probabilties` and `model_names`) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k` for the specificed `field`.
 
 ![Compare Classifiers Performance Changing K](images/compare_classifiers_performance_changing_k.png "Compare Classifiers Performance  Changing K")
 
@@ -2369,7 +2380,7 @@ For each model (in the aligned lists of `probabilties` and `model_names`) it pro
 
 This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `prediction_statistics` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes.
+For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes for the specificed `field`.
 
 The first one show the measures on the `n` most frequent classes.
 ![Multiclass Multimetric topk](images/multiclass_multimetric_topk.png "Multiclass Multimetric most frequent classes")
@@ -2387,56 +2398,112 @@ The fourth one shows the measures on all the classes, sorted by their frequency.
 Compare Classifier Predictions
 ------------------------------
 
-compare_classifiers_predictions
-compare_classifiers_predictions_distribution
+### compare_classifiers_predictions
+
+This visualization uses the `ground_truth`, `ground_truth_metadata`, `field`, `predictions` and `model_names` parameters.
+`field` needs to be a category and there must be two and only two models (in the aligned lists of `predictions` and `model_names`).
+This visualization prudces a pie chart comparing the predictions of the two models for the specificed `field`.
+
+![Compare Classifiers Predictions](images/compare_classifiers_predictions.png "Compare Classifiers Predictions")
+
+
+### compare_classifiers_predictions_distribution
+
+This visualization uses the `ground_truth`, `ground_truth_metadata`, `field`, `predictions` and `model_names` parameters.
+`field` needs to be a category.
+This visualization prudces a radar plot comparing the distributions of predictions of the models for the first 10 classes of the specificed `field`.
+
+![Compare Classifiers Predictions Distribution](images/compare_classifiers_predictions_distribution.png "Compare Classifiers Predictions Distribution")
 
 
 Confidence Filtering (change name)
 ----------------------------------
 
-confidence_filtering
-confidence_filtering_2d
-confidence_filtering_data_vs_acc
-confidence_filtering_data_vs_acc_2d
-confidence_filtering_data_vs_acc_subset
-confidence_filtering_data_vs_acc_subset_per_class
-data_vs_acc_subset,
-data_vs_acc_subset_per_class,
+### confidence_filtering
+
+### confidence_filtering_2d
+
+### confidence_filtering_data_vs_acc
+
+### confidence_filtering_data_vs_acc_2d
+
+### confidence_filtering_data_vs_acc_subset
+
+### confidence_filtering_data_vs_acc_subset_per_class
+
+### data_vs_acc_subset
+
+### data_vs_acc_subset_per_class
 
 
 Binary Threshold vs. Metric
 ---------------------------
 
-binary_threshold_vs_metric
+### binary_threshold_vs_metric
+
+This visualization uses the `positive_label`, `metrics`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilties` and `model_names` parameters.
+`field` can be a category or binary feature.
+For each metric specified in `metrics` (options are `f1`, `precision`, `recall`, `accuracy`), this visualization prudces a line chart plotting a threshold on the confidence of the model against the metric for the specificed `field`.
+If `field` is a category feature, `positive_label` indicates which is the class to be considered positive class and all the others will be considered negative.
+It needs to be an integer, to figure out the association between classes and integers check the `ground_truth_metadata` JSON file.
+
+![Binary_Threshold_vs_Metric](images/binary_threshold_vs_metric.png "Binary_Threshold_vs_Metric")
 
 
 ROC Curves
 ----------
 
-roc_curves
-roc_curves_from_test_stats
+### roc_curves
+
+This visualization uses the `positive_label`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilties` and `model_names` parameters.
+`field` can be a category or binary feature.
+This visualization prudces a line chart plotting the roc curves for the specificed `field`.
+If `field` is a category feature, `positive_label` indicates which is the class to be considered positive class and all the others will be considered negative.
+It needs to be an integer, to figure out the association between classes and integers check the `ground_truth_metadata` JSON file.
+
+![ROC Curves](images/roc_curves.png "ROC Curves")
+
+
+### roc_curves_from_test_stats
+
+This visualization uses the `field`, `prediction_statisticss` and `model_names` parameters.
+`field` needs to be binary feature.
+This visualization prudces a line chart plotting the roc curves for the specificed `field`.
+
+![ROC Curves from Prediction Statistics](images/roc_curves_from_prediction_statistics.png "ROC Curves from Prediction Statistics")
 
 
 Calibration Plot
 ----------------
 
-calibration_1_vs_all
-calibration_multiclass
+### calibration_1_vs_all
+
+This visualization uses the `top_k`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
+`field` needs to be a category or binary.
+For each class or each of the `k` most frequent classes if `top_k` is specified, it produces two plots computed on the fly from the probabilities of predictions for the specificed `field`.
+
+The first plot is a calibration curve that shows the calibration of the predictions considering the current class to be the true one and all others to be a false one, drawing one line for each model (in the aligned lists of `probabilities` and `model_names`).
+![Calibration 1 vs All Curve](images/calibration_1_vs_all_curve.png "Calibration 1 vs All Curve")
+
+The second plot shows the distributions of the predictions considering the current class to be the true one and all others to be a false one, drawing the distribution for each model (in the aligned lists of `probabilities` and `model_names`).
+![Calibration 1 vs All Counts](images/calibration_1_vs_all_counts.png "Calibration 1 vs All Counts")
+
+
+### calibration_multiclass
+
+This visualization uses the `ground_truth`, `field`, `probabilities` and `model_names` parameters.
+`field` needs to be a category.
+For each class, produces two plots computed on the fly from the probabilities of predictions for the specificed `field`.
+
+The first plot is a calibration curve that shows the calibration of the predictions considering al classes, drawing one line for each model (in the aligned lists of `probabilities` and `model_names`).
+![Calibration Multiclass Curve](images/calibration_multiclass_curve.png "Calibration Multiclass Curve")
+
+The second plot shows a bar plot of the brier score (that calculates how calibrated are the probabilties of the predictions of a model), drawing one bar for each model (in the aligned lists of `probabilities` and `model_names`).
+![Calibration Multiclass Brier](images/calibration_multiclass_brier.png "Calibration Multiclass Brier")
 
 
 Class Frequency vs. F1 score
 ----------------------------
 
-frequency_vs_f1
+### frequency_vs_f1
 
-
-Confusion Matrix
-----------------
-
-confusion_matrix
-
-
-Learning Curves
----------------
-
-learning_curves
