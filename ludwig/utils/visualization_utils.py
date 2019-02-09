@@ -539,17 +539,18 @@ def multiclass_multimetric_plot(scores, metrics, labels=None, title=None):
 
     colors = plt.get_cmap('tab10').colors
     ax.set_xlabel('class')
+    print(ticks)
     ax.set_xticks(ticks + width)
     if labels is not None:
-        ax.set_xticklabels(labels, rotation=45)
+        ax.set_xticklabels(labels, rotation=90)
     else:
-        ax.set_xticklabels(ticks, rotation=45)
+        ax.set_xticklabels(ticks, rotation=90)
 
     for i, score in enumerate(scores):
         ax.bar(ticks + i * width, score, width, label=metrics[i],
                color=colors[i])
 
-    ax.legend(loc='upper right')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     plt.show()
 
