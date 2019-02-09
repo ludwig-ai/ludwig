@@ -92,13 +92,13 @@ def donut(inside_values, inside_labels, outside_values, outside_labels,
                   colors=outside_colors, startangle=90, counterclock=False,
                   textprops={'color': 'w', 'weight': 'bold',
                              'path_effects': [
-                                 PathEffects.withStroke(linewidth=2,
+                                 PathEffects.withStroke(linewidth=3,
                                                         foreground='black')]})
     inside = pie(ax, inside_values, radius=1 - width,
                  pctdistance=1 - (width / 2) / (1 - width),
                  colors=inside_colors, startangle=90, counterclock=False,
                  textprops={'color': 'w', 'weight': 'bold',
-                            'path_effects': [PathEffects.withStroke(linewidth=2,
+                            'path_effects': [PathEffects.withStroke(linewidth=3,
                                                                     foreground='black')]})
     plt.setp(inside + outside, width=width, edgecolor='white')
 
@@ -139,7 +139,7 @@ def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,
     ax1.set_xticks([x for idx, x in enumerate(thresholds) if idx % 2 == 0])
     ax1.set_xticks(thresholds, minor=True)
 
-    ax1.set_xlim(0, 1)
+    # ax1.set_xlim(0, 1)
     ax1.set_xlabel('confidence threshold')
 
     # ax1.set_ylim(0, 1)
@@ -152,9 +152,9 @@ def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,
                              i] + ' ' if algorithm_names is not None and i < len(
             algorithm_names) else ''
         ax1.plot(thresholds, scores[i], label=algorithm_name, color=colors[i],
-                 linewidth=3.0)
+                 linewidth=3, marker='o')
 
-    ax1.legend(frameon=True, loc=3)
+    ax1.legend(frameon=True, loc='bottom right')
     plt.tight_layout()
     plt.show()
 
@@ -185,7 +185,7 @@ def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):
     ax.set_yticks(y_ticks_minor, minor=True)
     ax.set_ylabel('True positive rate')
 
-    plt.plot([0, 1], [0, 1], color='black', linewidth=2.0, linestyle='--')
+    plt.plot([0, 1], [0, 1], color='black', linewidth=3, linestyle='--')
 
     for i in range(len(fpr_tprs)):
         algorithm_name = algorithm_names[
@@ -194,9 +194,9 @@ def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):
         color = colormap(i / len(fpr_tprs)) if graded_color else colors[i]
         ax.plot(fpr_tprs[i][0], fpr_tprs[i][1], label=algorithm_name,
                 color=color,
-                linewidth=3.0)
+                linewidth=3)
 
-    ax.legend(frameon=True, loc='lower right')
+    ax.legend(frameon=True)
     plt.tight_layout()
     plt.show()
 
@@ -250,10 +250,10 @@ def confidence_fitlering_plot(thresholds, accuracies, dataset_kepts,
         ax1.plot(thresholds, accuracies[i],
                  label='{} accuracy'.format(algorithm_name),
                  color=colors[i * 2],
-                 linewidth=3.0)
+                 linewidth=3)
         ax1.plot(thresholds, dataset_kepts[i],
                  label='{} data coverage'.format(algorithm_name),
-                 color=colors[i * 2 + 1], linewidth=3.0)
+                 color=colors[i * 2 + 1], linewidth=3)
 
     ax1.legend(frameon=True, loc=3)
     plt.tight_layout()
@@ -381,7 +381,7 @@ def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,
             algorithm_names) else ''
         ax.plot(dataset_kepts[i], accuracies[i], label=algorithm_name,
                 color=colors[i],
-                linewidth=3.0, linestyle=':' if curr_dotted else '-')
+                linewidth=3, linestyle=':' if curr_dotted else '-')
 
     ax.legend(frameon=True, loc=3)
     plt.tight_layout()
@@ -458,10 +458,10 @@ def lerning_curves_plot(train_values, vali_values, metric, algorithm_names=None,
                           i] + ' ' if algorithm_names is not None and i < len(
             algorithm_names) else ''
         plt.plot(train_values[i], label=name_prefix + 'training',
-                 color=colors[i * 2], linewidth=3.0)
+                 color=colors[i * 2], linewidth=3)
         if i < len(vali_values):
             plt.plot(vali_values[i], label=name_prefix + 'validation',
-                     color=colors[i * 2 + 1], linewidth=3.0)
+                     color=colors[i * 2 + 1], linewidth=3)
 
     # plt.legend(line_1 + line_2, ['training', 'validation'], frameon=True)
     plt.legend()
@@ -647,7 +647,7 @@ def brier_plot(brier_scores, algorithm_names=None, title=None):
                  label=algorithm_names[
                            i] + ' ' if algorithm_names is not None and i < len(
                      algorithm_names) else '',
-                 color=colors[i], linewidth=2.0)
+                 color=colors[i], linewidth=3)
 
     plt.legend()
     plt.tight_layout()
@@ -705,7 +705,7 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
                           fontweight='bold', verticalalignment='center',
                           horizontalalignment=horizontal_alignment)
             txt.set_path_effects(
-                [PathEffects.withStroke(linewidth=2, foreground='black')])
+                [PathEffects.withStroke(linewidth=3, foreground='black')])
 
     plt.setp(ax.get_xminorticklabels(), visible=False)
 
@@ -738,7 +738,7 @@ def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
                 label=algorithm_names[
                     i] if algorithm_names is not None and i < len(
                     algorithm_names) else 'Algorithm {}'.format(i),
-                color=colors[i], linewidth=2, marker='o')
+                color=colors[i], linewidth=3, marker='o')
 
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
@@ -798,13 +798,13 @@ def radar_chart(ground_truth, predictions, algorithms=None, log_scale=False,
         _patch = patches.PathPatch(_path, fill=True, color=color, linewidth=0,
                                    alpha=.2)
         ax.add_patch(_patch)
-        _patch = patches.PathPatch(_path, fill=False, color=color, linewidth=2)
+        _patch = patches.PathPatch(_path, fill=False, color=color, linewidth=3)
         ax.add_patch(_patch)
 
         # Draw circles at value points
-        # line = ax.scatter(points[:, 0], points[:, 1], linewidth=2,
+        # line = ax.scatter(points[:, 0], points[:, 1], linewidth=3,
         #            s=50, color='white', edgecolor=color, zorder=10)
-        ax.plot(points[:, 0], points[:, 1], linewidth=2, marker='o',
+        ax.plot(points[:, 0], points[:, 1], linewidth=3, marker='o',
                 fillstyle='full',
                 markerfacecolor='white',
                 markeredgecolor=color,
@@ -849,7 +849,7 @@ def double_axis_line_plot(y1_sorted, y2, y1_name, y2_name, title=None):
     ax2.set_ylim(min(y1_sorted), max(y1_sorted))
 
     ax1.plot(y2, label=y2_name, color=colors[1],
-             linewidth=2.0)
+             linewidth=3)
     ax2.plot(y1_sorted, label=y1_name, color=colors[0],
              linewidth=4.0)
 
@@ -954,7 +954,7 @@ def bar_plot(xs, ys, decimals=4, title=None):
                       fontweight='bold', verticalalignment='center',
                       horizontalalignment=horizontal_alignment)
         txt.set_path_effects(
-            [PathEffects.withStroke(linewidth=2, foreground='black')])
+            [PathEffects.withStroke(linewidth=3, foreground='black')])
 
     plt.tight_layout()
     plt.show()
