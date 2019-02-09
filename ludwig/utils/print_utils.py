@@ -15,6 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from collections import OrderedDict
+from pprint import pformat
 
 logging_level_registry = {
     'critical': logging.CRITICAL,
@@ -44,3 +46,8 @@ def print_boxed(text, print_fun=logging.info):
     print_fun('│ {} │'.format(text.upper()))
     print_fun('╘{}╛'.format('═' * box_width))
     print_fun('')
+
+
+def repr_ordered_dict(d: OrderedDict):
+    return '{' + ',\n  '.join('{}: {}'.format(x, pformat(y, indent=4))
+                              for x, y in d.items()) + '}'

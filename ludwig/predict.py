@@ -22,6 +22,7 @@ import argparse
 import logging
 import os
 import sys
+from collections import OrderedDict
 from pprint import pformat
 
 from ludwig.data.postprocessing import postprocess
@@ -33,7 +34,7 @@ from ludwig.models.model import load_model_and_definition
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.misc import get_from_registry
-from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.print_utils import logging_level_registry, repr_ordered_dict
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 
@@ -221,13 +222,18 @@ def print_prediction_results(prediction_stats):
     for output_field, result in prediction_stats.items():
         if (output_field != 'combined' or
                 (output_field == 'combined' and len(prediction_stats) > 2)):
-            logging.info('===== {} ====='.format(output_field))
+            logging.info('\n===== {} ====='.format(output_field))
             for measure in sorted(list(result)):
                 if measure != 'confusion_matrix' and measure != 'roc_curve':
+                    value = result[measure]
+                    if isinstance(value, OrderedDict):
+                        value_repr = repr_ordered_dict(value)
+                    else:
+                        value_repr = pformat(result[measure], indent=2)
                     logging.info(
                         '{0}: {1}'.format(
                             measure,
-                            pformat(result[measure], indent=2)
+                            value_repr
                         )
                     )
 
