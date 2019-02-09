@@ -261,7 +261,7 @@ def compare_classifiers_performance_subset(
 
     title = None
     if subset == 'ground_truth':
-        title = 'Classifier performance on first {} '.format(
+        title = 'Classifier performance on first {} class{} ({:.2f}%)'.format(
             k, 'es' if k > 1 else '', len(gt_subset) / len(gt) * 100
         )
     elif subset == PREDICTIONS:
@@ -1735,8 +1735,8 @@ def cli(sys_argv):
         choices=['compare_classifiers_performance',
                  'compare_classifiers_performance_from_prob',
                  'compare_classifiers_performance_from_pred',
-                 'compare_classifiers_performance_changing_k',
                  'compare_classifiers_performance_subset',
+                 'compare_classifiers_performance_changing_k',
                  'compare_classifiers_predictions',
                  'compare_classifiers_predictions_distribution',
                  'confidence_filtering',
