@@ -724,8 +724,6 @@ def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
     ax.grid(which='minor', alpha=0.5)
     ax.grid(which='major', alpha=0.75)
 
-    ax.margins(0)
-
     if title is not None:
         ax.set_title(title)
 
@@ -739,9 +737,9 @@ def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
                 label=algorithm_names[
                     i] if algorithm_names is not None and i < len(
                     algorithm_names) else 'Algorithm {}'.format(i),
-                color=colors[i])
+                color=colors[i], linewidth=2, marker='o')
 
-    ax.legend()
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
     plt.show()
 
