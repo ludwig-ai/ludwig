@@ -4,7 +4,7 @@ Introduction
 Ludwig is a toolbox built on top of TensorFlow that allows to train and test deep learning models without the need to write code.
 
 All you need to provide is a CSV file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
-Simple to use commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
+Simple commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
 
 A programmatic API is also available in order to use Ludwig from your python code.
 A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
@@ -47,7 +47,7 @@ If you don’t have python 3 installed, install it by running:
 
 ```
 sudo apt install python3  # on ubuntu
-brew install python3  # on mac
+brew install python3      # on mac
 ```
 
 At the time of writing this document, TensorFlow is not compatible with python 3.7, so the recommended version of python for Ludwig is 3.6. You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
@@ -102,7 +102,7 @@ Currently the available datatypes in Ludwig are:
 - image
 
 The model definition can contain additional information, in particular how to preprocess each column in the CSV, which encoder and decoder to use for each one, feature hyperparameters and training parameters.
-This allows ease of use for novices and flexibility of experts.
+This allows ease of use for novices and flexibility for experts.
 
 
 Training
@@ -199,6 +199,7 @@ from ludwig import LudwigModel
 model_definition = {...}
 model = LudwigModel(model_definition)
 train_stats = model.train(training_dataframe)
+
 # or load a model
 model = LudwigModel.load(model_path)
 
@@ -214,7 +215,7 @@ Extensibility
 =============
 
 Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by just implementing a  the abstract classes that contain a functions to preprocess the data, encode it and decode it.
+It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes which contain functions to preprocess the data, encode it, and decode it.
 
 Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
@@ -227,17 +228,17 @@ Roadmap
 We will prioritize new features depending on the feedback of the community, but we are already planning to add:
 
 - batcher that uses TensorFlow data pipelines.
-- add additional text and sequence encoders (attention, co-attention, hierarchical attention, bert).
-- add additional image encoders (ResNet, DenseNet, Inception).
-- add image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).
-- add additional features types (audio, geolocation vectors, dates, point clouds, lists of lists, multi-sentence documents).
-- add additional measures and losses.
-- add additional data formatters and dataset-specific preprocessing scripts.
+- additional text and sequence encoders (attention, co-attention, hierarchical attention, bert).
+- additional image encoders (ResNet, DenseNet, Inception).
+- image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).
+- additional features types (audio, geolocation vectors, dates, point clouds, lists of lists, multi-sentence documents).
+- additional measures and losses.
+- additional data formatters and dataset-specific preprocessing scripts.
 
 We also want to address some of the current limitations:
 
-- currently all the dataset needs to be loaded in memory in order to train a model. Image features already have a way to dynamically read batches of datapoints from disk, and we want to extend this capability to other datatypes.
-- there is currently no way to serve automatically trained ludwig models, we want to add a small server and a simple user interface in order to provide a live demo capability.
+- currently full dataset needs to be loaded in memory in order to train a model. Image features already have a way to dynamically read batches of datapoints from disk, and we want to extend this capability to other datatypes.
+- it is currently not possible to serve automatically trained ludwig models, we want to add a small server and a simple user interface in order to provide a live demo capability.
 - document lower level functions.
 
 
