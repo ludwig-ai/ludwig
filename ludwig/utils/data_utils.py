@@ -25,7 +25,6 @@ import random
 import h5py
 import numpy as np
 import pandas as pd
-
 from pandas.errors import ParserError
 
 
@@ -36,7 +35,7 @@ def load_csv(data_fp):
     return data
 
 
-def read_csv(data_fp):
+def read_csv(data_fp, header=0):
     """
     Helper method to read a csv file. Wraps around pd.read_csv to handle some
     exceptions. Can extend to cover cases as necessary
@@ -44,11 +43,11 @@ def read_csv(data_fp):
     :return: Pandas dataframe with the data
     """
     try:
-        df = pd.read_csv(data_fp)
+        df = pd.read_csv(data_fp, header=header)
     except ParserError:
         logging.WARNING('Failed to parse the CSV with pandas default way,'
                         ' trying \ as escape character.')
-        df = pd.read_csv(data_fp, escapechar='\\')
+        df = pd.read_csv(data_fp, header=header, escapechar='\\')
 
     return df
 
@@ -127,8 +126,8 @@ def load_array(data_fp, dtype=float):
 def load_matrix(data_fp, dtype=float):
     list_num = []
     with open(data_fp, 'r') as input_file:
-        for x in input_file:
-            list_num.append([dtype(x) for x in x.strip().split()])
+        for row in input_file:
+            list_num.append([dtype(elem) for elem in row.strip().split()])
     return np.squeeze(np.array(list_num))
 
 
@@ -272,6 +271,8 @@ def load_from_file(file_name, field=None, dtype=int):
         array = column[split == 2]  # ground truth
     elif file_name.endswith('.npy'):
         array = np.load(file_name)
+    elif file_name.endswith('.csv'):
+        array = read_csv(file_name, header=None)[0].tolist()
     else:
         array = load_matrix(file_name, dtype)
     return array
