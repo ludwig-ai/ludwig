@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
+from collections import OrderedDict
 
 import numpy as np
 from sklearn import metrics
@@ -43,7 +44,9 @@ class ConfusionMatrix:
             self.idx2label = {idx: str(label) for idx, label in
                               enumerate(np.unique(
                                   [self.predictions, self.conditions]))}
-        self.cm = confusion_matrix(self.predictions, self.conditions, labels,
+        self.cm = confusion_matrix(self.predictions,
+                                   self.conditions,
+                                   list(range(len(labels))),
                                    sample_weight)
 
         # if labels is not None:
@@ -236,7 +239,7 @@ class ConfusionMatrix:
         }
 
     def per_class_stats(self):
-        stats = {}
+        stats = OrderedDict()
         for idx in sorted(self.idx2label.keys()):
             stats[self.idx2label[idx]] = self.class_stats(idx)
         return stats

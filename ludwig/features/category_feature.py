@@ -534,7 +534,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         stats = test_stats[feature_name]
         confusion_matrix = ConfusionMatrix(
             dataset.get(feature_name),
-            stats[PREDICTIONS]
+            stats[PREDICTIONS],
+            labels=train_set_metadata[feature_name]['idx2str']
         )
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
@@ -551,12 +552,6 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         postprocessed = {}
         npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
-
-        if 'per_class_stats' in result:
-            mapped_class_per_stats = {}
-            for key, value in result['per_class_stats'].items():
-                mapped_class_per_stats[metadata['idx2str'][int(key)]] = value
-            result['per_class_stats'] = mapped_class_per_stats
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]

@@ -304,18 +304,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             train_set_metadata
     ):
         feature_name = output_feature['name']
-        confusion_matrix = ConfusionMatrix(
-            dataset.get(feature_name),
-            test_stats[feature_name][PREDICTIONS]
-        )
         stats = test_stats[feature_name]
-        stats['confusion_matrix'] = confusion_matrix.cm.tolist()
-        stats['overall_stats'] = confusion_matrix.stats()
-        stats['per_class_stats'] = confusion_matrix.per_class_stats()
 
         confusion_matrix = ConfusionMatrix(
             dataset.get(feature_name),
-            stats[PREDICTIONS]
+            stats[PREDICTIONS],
+            labels=['False', 'True']
         )
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
