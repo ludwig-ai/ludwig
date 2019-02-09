@@ -2252,21 +2252,144 @@ In this case the CSV / dataframe should also contain columns with the same names
 Visualizations
 ==============
 
-Compare Classifier Performance
+Several visualization can be obtaned from the result files from both `train`, `predict` and `experiment` by using the `visualize` command.
+The command has several parameters, but not all the visualizations use all of them.
+Let's first present the parameters of the general script, and then, for each available visualization, we will discuss about the specific parameters needed and what visualization they produce.
+
+```
+usage: ludwig visualize [options]
+
+This script analyzes results and shows some nice plots.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DATA_CSV, --data_csv DATA_CSV
+                        raw data file
+  -g GROUND_TRUTH, --ground_truth GROUND_TRUTH
+                        ground truth file
+  -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
+                        input metadata JSON file
+  -v {compare_classifiers_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_classifiers_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_2d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}
+                        type of visualization
+  -f FIELD, --field FIELD
+                        field containing ground truth
+  -tf THRESHOLD_FIELDS [THRESHOLD_FIELDS ...], --threshold_fields THRESHOLD_FIELDS [THRESHOLD_FIELDS ...]
+                        fields for 2d threshold
+  -pred PREDICTIONS [PREDICTIONS ...], --predictions PREDICTIONS [PREDICTIONS ...]
+                        predictions files
+  -prob PROBABILITIES [PROBABILITIES ...], --probabilities PROBABILITIES [PROBABILITIES ...]
+                        probabilities files
+  -ts TRAINING_STATISTICS [TRAINING_STATISTICS ...], --training_statistics TRAINING_STATISTICS [TRAINING_STATISTICS ...]
+                        training stats files
+  -ps PREDICTION_STATISTICS [PREDICTION_STATISTICS ...], --prediction_statistics PREDICTION_STATISTICS [PREDICTION_STATISTICS ...]
+                        test stats files
+  -mn MODEL_NAMES [MODEL_NAMES ...], --model_names MODEL_NAMES [MODEL_NAMES ...]
+                        names of the models names of the models to use as labels
+  -tn TOP_N_CLASSES [TOP_N_CLASSES ...], --top_n_classes TOP_N_CLASSES [TOP_N_CLASSES ...]
+                        number of classes to plot
+  -k TOP_K, --top_k TOP_K
+                        number of elements in the ranklist to consider
+  -ll LABELS_LIMIT, --labels_limit LABELS_LIMIT
+                        maximum numbers of labels. If labels in dataset are
+                        higher than this number, "rare" label
+  -ss {ground_truth,predictions}, --subset {ground_truth,predictions}
+                        type of subset filtering
+  -n, --normalize       normalize rows in confusion matrix
+  -m METRICS [METRICS ...], --metrics METRICS [METRICS ...]
+                        metrics to dispay in threshold_vs_metric
+  -pl POSITIVE_LABEL, --positive_label POSITIVE_LABEL
+                        label of the positive class for the roc curve
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+```
+
+Some additional information on the parameters:
+
+- The list parameters are considered to be aligned, meaning `predictions`, `probabilities`, `training_statistics`, `prediction_statistics` and `model_names` are indexed alltogether, for instance the name of the model producing the second predictions in the list will be the second in the model names.
+- `data_csv` is intendend to be the data the model(s) were trained on.
+- `ground_truth` and `ground_truth_metadata` are respectively the `HDF5` and `JSON` file obtained during training preprocessing. If you plan to use the visualizations then be sure not to use the `skip_save_preprocessing` when training. Those files are needed because they contain the split perfromed at preprocessing time, so it is easy to extract the test set from them.
+- `field` is the output feature to use for creating the visualization.
+
+Other parameters will be detailed for each visualization as different ones use them differently.
+ 
+
+Compare Performance
 ------------------------------
 
-compare_classifiers_performance
-compare_classifiers_performance_from_prob
-compare_classifiers_performance_from_pred
-compare_classifiers_performance_changing_k
-compare_classifiers_performance_subset
-multiclass_multimetric
+### compare_classifiers_performance
+
+This visualization uses the `field`, `prediction_statistics` and `model_names` parameters.
+For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces bars in a bar plot, one for each overall metric available in the `prediction_statistics` file for the specificed `field`.
+
+![Compare Classifiers Performance](images/compare_classifiers_performance.png "Compare Classifiers Performance")
+
+
+### compare_classifiers_performance_from_prob
+
+This visualization uses the `ground_truth`, `field`, `probabilities` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilities of predictions for the specificed `field`.
+
+![Compare Classifiers Performance from Probabilties](images/compare_classifiers_performance_from_prob.png "Compare Classifiers Performance from Probabilties")
+
+
+### compare_classifiers_performance_from_pred
+
+This visualization uses the `ground_truth`, `ground_truth_metadata`, `field`, `predictions` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `predictions` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the predictions for the specificed `field`.
+
+![Compare Classifiers Performance from Predictions](images/compare_classifiers_performance_from_pred.png "Compare Classifiers Performance from Predictions")
+
+
+### compare_classifiers_performance_subset
+
+This visualization uses the `top_n_classes`, `subset`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilties` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `predictions` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilties predictions for the specificed `field`, sonsidering only a subset of the full training set.
+The way the subset is obtained is using the `top_n_classes` and `subset` parameters.
+
+If the values of `subset` is `ground_truth`, then only datapoints where the ground truth class is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed. 
+![Compare Classifiers Performance Subset Ground Truth](images/compare_classifiers_performance_subset_gt.png "Compare Classifiers Performance Subset Ground Truth")
+
+If the values of `subset` is `predictions`, then only datapoints where the the model predicts a class that is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed for each model.
+![Compare Classifiers Performance Subset Ground Predictions](images/compare_classifiers_performance_subset_pred.png "Compare Classifiers Performance Subset Ground Predictions")
+
+
+### compare_classifiers_performance_changing_k
+
+This visualization uses the `top_k`, `ground_truth_metadata`, `field`, `probabilties` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `probabilties` and `model_names`) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k`.
+
+![Compare Classifiers Performance Changing K](images/compare_classifiers_performance_changing_k.png "Compare Classifiers Performance  Changing K")
+
+
+### multiclass_multimetric
+
+This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `prediction_statistics` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes.
+
+The first one show the measures on the `n` most frequent classes.
+![Multiclass Multimetric topk](images/multiclass_multimetric_topk.png "Multiclass Multimetric most frequent classes")
+
+The second one shows the measures on the `n` classes where the model performs the best.
+![Multiclass Multimetric bestk](images/multiclass_multimetric_bestk.png "Multiclass Multimetric best classes")
+
+The third one shows the measures on the `n` classes where the model performs the worst.
+![Multiclass Multimetric worstk](images/multiclass_multimetric_worstk.png "Multiclass Multimetric worst classes")
+
+The fourth one shows the measures on all the classes, sorted by their frequency. This could become unreadable in case the number of classes is really high.
+![Multiclass Multimetric sorted](images/multiclass_multimetric_sorted.png "Multiclass Multimetric sorted classes")
+
 
 Compare Classifier Predictions
 ------------------------------
 
 compare_classifiers_predictions
 compare_classifiers_predictions_distribution
+
 
 Confidence Filtering (change name)
 ----------------------------------
@@ -2280,10 +2403,12 @@ confidence_filtering_data_vs_acc_subset_per_class
 data_vs_acc_subset,
 data_vs_acc_subset_per_class,
 
+
 Binary Threshold vs. Metric
 ---------------------------
 
 binary_threshold_vs_metric
+
 
 ROC Curves
 ----------
@@ -2291,21 +2416,25 @@ ROC Curves
 roc_curves
 roc_curves_from_test_stats
 
+
 Calibration Plot
 ----------------
 
 calibration_1_vs_all
 calibration_multiclass
 
+
 Class Frequency vs. F1 score
 ----------------------------
 
 frequency_vs_f1
 
+
 Confusion Matrix
 ----------------
 
 confusion_matrix
+
 
 Learning Curves
 ---------------
