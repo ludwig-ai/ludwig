@@ -388,6 +388,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             train_set_metadata
     ):
         feature_name = output_feature['name']
+        level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
         sequences = dataset.get(feature_name)
         last_elem_sequence = sequences[np.arange(sequences.shape[0]),
                                        (sequences != 0).cumsum(1).argmax(1)]
@@ -395,7 +396,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         confusion_matrix = ConfusionMatrix(
             last_elem_sequence,
             stats[LAST_PREDICTIONS],
-            labels=train_set_metadata[feature_name]['idx2str']
+            labels=train_set_metadata[feature_name][level_idx2str]
         )
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
