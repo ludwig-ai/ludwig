@@ -37,6 +37,7 @@ class ConfusionMatrix:
         if labels is not None:
             self.label2idx = {label: idx for idx, label in enumerate(labels)}
             self.idx2label = {idx: label for idx, label in enumerate(labels)}
+            labels = list(range(len(labels)))
         else:
             self.label2idx = {str(label): idx for idx, label in
                               enumerate(np.unique(
@@ -46,8 +47,8 @@ class ConfusionMatrix:
                                   [self.predictions, self.conditions]))}
         self.cm = confusion_matrix(self.predictions,
                                    self.conditions,
-                                   list(range(len(labels))),
-                                   sample_weight)
+                                   labels=labels,
+                                   sample_weight=sample_weight)
 
         # if labels is not None:
         #     self.labels_dict = {label: idx for idx, label in enumerate(labels)}
