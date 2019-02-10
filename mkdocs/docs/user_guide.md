@@ -383,7 +383,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_3d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_3d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}
+  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -2260,7 +2260,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_3d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_filtering,confidence_filtering_3d,confidence_filtering_data_vs_acc,confidence_filtering_data_vs_acc_2d,confidence_filtering_data_vs_acc_subset,confidence_filtering_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,multiclass_multimetric,frequency_vs_f1,learning_curves}
+  -v {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1}, --visualization {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -2275,7 +2275,7 @@ optional arguments:
   -ps PREDICTION_STATISTICS [PREDICTION_STATISTICS ...], --prediction_statistics PREDICTION_STATISTICS [PREDICTION_STATISTICS ...]
                         test stats files
   -mn MODEL_NAMES [MODEL_NAMES ...], --model_names MODEL_NAMES [MODEL_NAMES ...]
-                        names of the models names of the models to use as labels
+                        names of the models to use as labels
   -tn TOP_N_CLASSES [TOP_N_CLASSES ...], --top_n_classes TOP_N_CLASSES [TOP_N_CLASSES ...]
                         number of classes to plot
   -k TOP_K, --top_k TOP_K
@@ -2365,7 +2365,7 @@ For each model (in the aligned lists of `predictions` and `model_names`) it prod
 
 This visualization uses the `top_n_classes`, `subset`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilties` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `predictions` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilties predictions for the specificed `field`, sonsidering only a subset of the full training set.
+For each model (in the aligned lists of `predictions` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilties predictions for the specificed `field`, considering only a subset of the full training set.
 The way the subset is obtained is using the `top_n_classes` and `subset` parameters.
 
 If the values of `subset` is `ground_truth`, then only datapoints where the ground truth class is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed.
@@ -2386,7 +2386,7 @@ For each model (in the aligned lists of `probabilties` and `model_names`) it pro
 ![Compare Classifiers Performance Changing K](images/compare_classifiers_performance_changing_k.png "Compare Classifiers Performance  Changing K")
 
 
-### multiclass_multimetric
+### compare_classifiers_multiclass_multimetric
 
 This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `prediction_statistics` and `model_names` parameters.
 `field` needs to be a category.
@@ -2394,19 +2394,19 @@ For each model (in the aligned lists of `prediction_statistics` and `model_names
 
 The first one show the measures on the `n` most frequent classes.
 
-![Multiclass Multimetric topk](images/multiclass_multimetric_topk.png "Multiclass Multimetric most frequent classes")
+![Multiclass Multimetric top k](images/compare_classifiers_multiclass_multimetric_topk.png "Multiclass Multimetric most frequent classes")
 
 The second one shows the measures on the `n` classes where the model performs the best.
 
-![Multiclass Multimetric bestk](images/multiclass_multimetric_bestk.png "Multiclass Multimetric best classes")
+![Multiclass Multimetric best k](images/compare_classifiers_multiclass_multimetric_bestk.png "Multiclass Multimetric best classes")
 
 The third one shows the measures on the `n` classes where the model performs the worst.
 
-![Multiclass Multimetric worstk](images/multiclass_multimetric_worstk.png "Multiclass Multimetric worst classes")
+![Multiclass Multimetric worst k](images/compare_classifiers_multiclass_multimetric_worstk.png "Multiclass Multimetric worst classes")
 
 The fourth one shows the measures on all the classes, sorted by their frequency. This could become unreadable in case the number of classes is really high.
 
-![Multiclass Multimetric sorted](images/multiclass_multimetric_sorted.png "Multiclass Multimetric sorted classes")
+![Multiclass Multimetric sorted](images/compare_classifiers_multiclass_multimetric_sorted.png "Multiclass Multimetric sorted classes")
 
 
 Compare Classifier Predictions
@@ -2430,24 +2430,92 @@ This visualization prudces a radar plot comparing the distributions of predictio
 ![Compare Classifiers Predictions Distribution](images/compare_classifiers_predictions_distribution.png "Compare Classifiers Predictions Distribution")
 
 
-Confidence Filtering (change name)
-----------------------------------
+Confidence_Thresholding
+--------------------
 
-### confidence_filtering
+### confidence_thresholding
 
-### confidence_filtering_3d
+This visualization uses the `ground_truth`, `field`, `probabilities` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a pair of lines indicating the accuracy of the model and the data coverage while increasing a threshold (x axis) on the probabilities of predictions for the specificed `field`.
 
-### confidence_filtering_data_vs_acc
+![Confidence_Thresholding](images/confidence_thresholding.png "Confidence_Thresholding")
 
-### confidence_filtering_data_vs_acc_2d
 
-### confidence_filtering_data_vs_acc_subset
+### confidence_thresholding_data_vs_acc
 
-### confidence_filtering_data_vs_acc_subset_per_class
+This visualization uses the `ground_truth`, `field`, `probabilities` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a thresholdon the probabilities of predictions for the specificed `field`.
+The difference with `confidence_thresholding` is that it uses two axes instead of three, not visualizing the threshold and having coverage as x axis instead of the threshold.
 
-### data_vs_acc_subset
+![Confidence_Thresholding Data vs Accuracy](images/confidence_thresholding_data_vs_acc.png "Confidence_Thresholding Data vs Accuracy")
 
-### data_vs_acc_subset_per_class
+
+### confidence_thresholding_data_vs_acc_subset
+
+This visualization uses the `top_n_classes`, `subset`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a thresholdon the probabilities of predictions for the specificed `field`, considering only a subset of the full training set.
+The way the subset is obtained is using the `top_n_classes` and `subset` parameters..
+The difference with `confidence_thresholding` is that it uses two axes instead of three, not visualizing the threshold and having coverage as x axis instead of the threshold.
+
+If the values of `subset` is `ground_truth`, then only datapoints where the ground truth class is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed.
+If the values of `subset` is `predictions`, then only datapoints where the the model predicts a class that is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed for each model.
+
+![Confidence_Thresholding Data vs Accuracy Subset](images/confidence_thresholding_data_vs_acc_subset.png "Confidence_Thresholding Data vs Accuracy  Subset")
+
+
+### confidence_thresholding_data_vs_acc_subset_per_class
+
+This visualization uses the `top_n_classes`, `subset`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilities` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a thresholdon the probabilities of predictions for the specificed `field`, considering only a subset of the full training set.
+The way the subset is obtained is using the `top_n_classes` and `subset` parameters..
+The difference with `confidence_thresholding` is that it uses two axes instead of three, not visualizing the threshold and having coverage as x axis instead of the threshold.
+
+If the values of `subset` is `ground_truth`, then only datapoints where the ground truth class is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed.
+If the values of `subset` is `predictions`, then only datapoints where the the model predicts a class that is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed for each model.
+
+The difference with `confidence_thresholding_data_vs_acc_subset` is that it produces one plot per class within the `top_n_classes`.
+
+![Confidence_Thresholding Data vs Accuracy Subset per class 1](images/confidence_thresholding_data_vs_acc_subset_per_class_1.png "Confidence_Thresholding Data vs Accuracy Subset per class 1")
+
+![Confidence_Thresholding Data vs Accuracy Subset per class 4](images/confidence_thresholding_data_vs_acc_subset_per_class_4.png "Confidence_Thresholding Data vs Accuracy Subset per class 4")
+
+
+### confidence_thresholding_2thresholds_2d
+
+This visualization uses the `ground_truth`, `threshold_fields`, `probabilities` and `model_names` parameters.
+`threshold_fields` need to be exactly two, either category or binary.
+`probabilities` need to be exactly two, aligned with `threshold_fileds`.
+`model_names` has to be exactly one.
+Three plots are produced.
+
+The first plot shows several semi transparent lines.
+They summarize the 3d surfaces displayed by `confidence_thresholding_2thresholds_3d` that have thresholds on the conficence of the predictions of the two `threshold_fields` as x and y axes and either the data coverace percentage or the accuracy as z axis. 
+Each line represents a slice of the data doverage surface projected onto the accuracy surface.
+
+![Confidence_Thresholding two thresholds 2D Multiline](images/confidence_thresholding_2thresholds_2d_multiline.png "Confidence_Thresholding two thresholds 2D Multiline")
+
+The second plot shows the max of all the lines displayed in the first plot.
+
+![Confidence_Thresholding two thresholds 2D Maxline](images/confidence_thresholding_2thresholds_2d_maxline.png "Confidence_Thresholding two thresholds 2D Maxline")
+
+The third plot shows the max line and the values of the thresholds that obtained a specific data coverage vs accuracy pair of values.
+
+![Confidence_Thresholding two thresholds 2D Accuracy and Thresholds](images/confidence_thresholding_2thresholds_2d_accthr.png "Confidence_Thresholding two thresholds 2D Accuracy and Thresholds")
+
+
+### confidence_thresholding_2thresholds_3d
+
+This visualization uses the `ground_truth`, `threshold_fields`, `probabilities` and `model_names` parameters.
+`threshold_fields` need to be exactly two, either category or binary.
+`probabilities` need to be exactly two, aligned with `threshold_fileds`.
+`model_names` has to be exactly one.
+The plot shows the 3d surfaces displayed by `confidence_thresholding_2thresholds_3d` that have thresholds on the conficence of the predictions of the two `threshold_fields` as x and y axes and either the data coverace percentage or the accuracy as z axis. 
+
+![Confidence_Thresholding two thresholds 3D](images/confidence_thresholding_2thresholds_3d.png "Confidence_Thresholding two thresholds 3D")
 
 
 Binary Threshold vs. Metric
