@@ -2308,6 +2308,13 @@ Learning Curves
 
 ### learning_curves
 
+This visualization uses the `training_statistics` and `model_names` parameters.
+For each model (in the aligned lists of `training_statistics` and `model_names`) and for each output feature and measure of the model, it produces a line plot showing how that measure changed over the course of the epochs of training on the training and validation sets.
+
+![Learning Curves Loss](images/learning_curves_loss.png "Learning Curves Loss")
+
+![Learning Curves Accuracy](images/learning_curves_accuracy.png "Learning Curves Accuracy")
+
 
 Confusion Matrix
 ----------------
