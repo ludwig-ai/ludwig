@@ -227,17 +227,17 @@ def confidence_fitlering_plot(thresholds, accuracies, dataset_kepts,
     ax1.set_xticks([x for idx, x in enumerate(thresholds) if idx % 2 == 0])
     ax1.set_xticks(thresholds, minor=True)
 
-    ax1.set_xlim(0, 1)
+    ax1.set_xlim(-0.05, 1.05)
     ax1.set_xlabel('confidence threshold')
 
-    ax1.set_ylim(0, 1)
+    ax1.set_ylim(0, 1.05)
     ax1.set_yticks(y_ticks_major)
     ax1.set_yticklabels(y_ticks_major_labels)
     ax1.set_yticks(y_ticks_minor, minor=True)
 
     ax2 = ax1.twinx()
 
-    ax2.set_ylim(0, 1)
+    ax2.set_ylim(0, 1.05)
     ax2.set_yticks(y_ticks_major)
     ax2.set_yticklabels(y_ticks_major_labels)
     ax2.set_yticks(y_ticks_minor, minor=True)
