@@ -435,35 +435,39 @@ def confidence_fitlering_data_vs_acc_multiline_plot(accuracies, dataset_kepts,
 def lerning_curves_plot(train_values, vali_values, metric, algorithm_names=None,
                         title=None):
     num_algorithms = len(train_values)
+    max_len = max([len(tv) for tv in train_values])
+
+    fig, ax = plt.subplots()
 
     sns.set_style('whitegrid')
 
     if title is not None:
-        plt.title(title)
+        ax.set_title(title)
 
     if num_algorithms == 1:
         colors = plt.get_cmap('tab10').colors
     else:  # num_algorithms > 1
         colors = plt.get_cmap('tab20').colors
 
-    plt.grid(which='both')
-    plt.grid(which='minor', alpha=0.5)
-    plt.grid(which='major', alpha=0.75)
-    plt.xlabel('epochs')
-    plt.ylabel(metric.replace('_', ' '))
+    ax.grid(which='both')
+    ax.grid(which='minor', alpha=0.5)
+    ax.grid(which='major', alpha=0.75)
+    ax.set_xlabel('epochs')
+    ax.set_ylabel(metric.replace('_', ' '))
+
+    xs = list(range(1, max_len + 1))
 
     for i in range(num_algorithms):
         name_prefix = algorithm_names[
                           i] + ' ' if algorithm_names is not None and i < len(
             algorithm_names) else ''
-        plt.plot(train_values[i], label=name_prefix + 'training',
-                 color=colors[i * 2], linewidth=3)
+        ax.plot(xs, train_values[i], label=name_prefix + 'training',
+                color=colors[i * 2], linewidth=3)
         if i < len(vali_values):
-            plt.plot(vali_values[i], label=name_prefix + 'validation',
-                     color=colors[i * 2 + 1], linewidth=3)
+            ax.plot(xs, vali_values[i], label=name_prefix + 'validation',
+                    color=colors[i * 2 + 1], linewidth=3)
 
-    # plt.legend(line_1 + line_2, ['training', 'validation'], frameon=True)
-    plt.legend()
+    ax.legend()
     plt.tight_layout()
     plt.show()
 
