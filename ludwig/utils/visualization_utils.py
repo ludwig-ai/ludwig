@@ -812,7 +812,7 @@ def double_axis_line_plot(y1_sorted, y2, y1_name, y2_name, labels=None,
     # ax1.grid(which='major', alpha=0.75)
 
     ax1.set_xlabel('class (sorted by {})'.format(y1_name))
-    ax1.set_xlim(0, len(y1_sorted))
+    ax1.set_xlim(0, len(y1_sorted) - 1)
     if labels is not None:
         ax1.set_xticklabels(labels, rotation=45, ha='right')
         ax1.set_xticks(np.arange(len(labels)))
