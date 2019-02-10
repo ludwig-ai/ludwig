@@ -152,7 +152,6 @@ def experiment(
     :type random_seed: Integer
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
-    :type debug: Boolean
     """
     # set input features defaults
     if model_definition_file is not None:
@@ -173,13 +172,16 @@ def experiment(
                     'starting training from scratch'
                 )
             model_resume_path = None
+
     if model_resume_path is None:
-        experiment_dir_name = get_experiment_dir_name(
-            output_directory,
-            experiment_name,
-            model_name,
-            append_suffix=not use_horovod
-        )
+        if is_on_master():
+            experiment_dir_name = get_experiment_dir_name(
+                output_directory,
+                experiment_name,
+                model_name
+            )
+        else:
+            experiment_dir_name = '/'
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
     )
