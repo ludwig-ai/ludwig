@@ -25,6 +25,8 @@ setup(
     author='Piero Molino',
     author_email='piero@uber.com',
 
+    license='Apache 2.0',
+
     keywords='ludwig deep learning deep_learning machine machine_learning natural language processing computer vision',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
