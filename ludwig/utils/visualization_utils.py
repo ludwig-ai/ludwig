@@ -339,7 +339,9 @@ def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,
 
 
 def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,
-                                          algorithm_names=None, dotted=False,
+                                          algorithm_names=None,
+                                          dotted=False,
+                                          decimal_digits=0,
                                           title=None):
     assert len(accuracies) == len(dataset_kepts)
 
@@ -352,7 +354,12 @@ def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,
 
     x_ticks_minor = np.linspace(0.0, max_dataset_kept, num=21)
     x_ticks_major = np.linspace(0.0, max_dataset_kept, num=11)
-    x_ticks_major_labels = ['{:3.0f}%'.format(x * 100) for x in x_ticks_major]
+    x_ticks_major_labels = [
+        '{value:3.{decimal_digits}f}%'.format(
+            decimal_digits=decimal_digits,
+            value=x * 100
+        ) for x in x_ticks_major
+    ]
     y_ticks_minor = np.linspace(0.0, 1.0, num=21)
     y_ticks_major = np.linspace(0.0, 1.0, num=11)
 

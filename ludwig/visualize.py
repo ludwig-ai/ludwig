@@ -1003,6 +1003,7 @@ def confidence_filtering_data_vs_acc_subset_per_class(
 
         visualization_utils.confidence_fitlering_data_vs_acc_plot(
             accuracies, dataset_kept, model_names,
+            decimal_digits=2,
             title='Confidence Filtering (Data vs Accuracy) '
                   'for class {}'.format(curr_k)
         )
