@@ -41,13 +41,13 @@ setup(
                       'pandas>=0.19',
                       'scipy>=0.18',
                       'scikit-learn',
+                      'scikit-image',
                       'seaborn>=0.7',
                       'spacy>=2.0',
                       'tqdm',
                       'tabulate>=0.7',
                       'tensorflow>=1.12',
-                      'PyYAML>=3.12',
-                      'imageio'
+                      'PyYAML>=3.12'
                       ],
 
     entry_points={
