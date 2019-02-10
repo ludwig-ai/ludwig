@@ -17,13 +17,14 @@ setup(
 
     version='0.1.0',
 
-    description='deep learning experimentation toolbox',
+    description='A deep learning experimentation toolbox',
     long_description=long_description,
+    long_description_content_type='text/markdown',
 
-    url='https://github.com/uber/ludwig',
+    url='https://ludwig.ai',
 
     author='Piero Molino',
-    author_email='piero@uber.com',
+    author_email='piero.molino@gmail.com',
 
     keywords='ludwig deep learning deep_learning machine machine_learning natural language processing computer vision',
 
