@@ -23,6 +23,7 @@ from collections import Counter
 
 import matplotlib as mpl
 from matplotlib import ticker
+from matplotlib.lines import Line2D
 
 mpl.use('TkAgg')  # make matplotlib run on mac os
 import matplotlib.patches as patches
@@ -400,7 +401,7 @@ def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,
 
 
 def confidence_fitlering_data_vs_acc_multiline_plot(accuracies, dataset_kepts,
-                                                    algorithms_names,
+                                                    models_names,
                                                     title=None):
     assert len(accuracies) == len(dataset_kepts)
 
@@ -438,8 +439,10 @@ def confidence_fitlering_data_vs_acc_multiline_plot(accuracies, dataset_kepts,
 
     for i in range(len(accuracies)):
         ax.plot(dataset_kepts[i], accuracies[i], color=colors[0],
-                linewidth=1.0, alpha=0.35, label=algorithms_names[0])
+                linewidth=1.0, alpha=0.35)
 
+    legend_elements = [Line2D([0], [0], linewidth=1.0, color=colors[0])]
+    ax.legend(legend_elements, models_names)
     plt.tight_layout()
     plt.show()
 

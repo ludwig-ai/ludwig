@@ -27,7 +27,6 @@ import sklearn
 from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
-from tabulate import tabulate
 
 from ludwig.constants import *
 from ludwig.utils import visualization_utils
@@ -538,98 +537,6 @@ def confidence_filtering(
     )
 
 
-def confidence_filtering_3d(
-        probabilities,
-        ground_truth,
-        threshold_fields,
-        labels_limit,
-        **kwargs
-):
-    if len(probabilities) < 2:
-        logging.error('Not enough probabilities provided, two are needed')
-        return
-    if len(probabilities) > 2:
-        logging.error('Too many probabilities provided, only two are needed')
-        return
-    if len(threshold_fields) < 2:
-        logging.error('Not enough threshold fields provided, two are needed')
-        return
-    if len(threshold_fields) > 2:
-        logging.error('Too many threshold fields provided, only two are needed')
-        return
-
-    gt_1 = load_from_file(ground_truth, threshold_fields[0])
-    gt_2 = load_from_file(ground_truth, threshold_fields[1])
-
-    if labels_limit > 0:
-        gt_1[gt_1 > labels_limit] = labels_limit
-        gt_2[gt_2 > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
-    thresholds = [t / 100 for t in range(0, 101, 5)]
-
-    accuracies = []
-    dataset_kept = []
-
-    if labels_limit > 0 and probs[0].shape[1] > labels_limit + 1:
-        prob_limit = probs[0][:, :labels_limit + 1]
-        prob_limit[:, labels_limit] = probs[0][:, labels_limit:].sum(1)
-        probs[0] = prob_limit
-
-    if labels_limit > 0 and probs[1].shape[1] > labels_limit + 1:
-        prob_limit = probs[1][:, :labels_limit + 1]
-        prob_limit[:, labels_limit] = probs[1][:, labels_limit:].sum(1)
-        probs[1] = prob_limit
-
-    max_prob_1 = np.max(probs[0], axis=1)
-    predictions_1 = np.argmax(probs[0], axis=1)
-
-    max_prob_2 = np.max(probs[1], axis=1)
-    predictions_2 = np.argmax(probs[1], axis=1)
-
-    for threshold_1 in thresholds:
-        threshold_1 = threshold_1 if threshold_1 < 1 else 0.999
-        curr_accuracies = []
-        curr_dataset_kept = []
-
-        for threshold_2 in thresholds:
-            threshold_2 = threshold_2 if threshold_2 < 1 else 0.999
-
-            filtered_indices = np.logical_and(
-                max_prob_1 >= threshold_1,
-                max_prob_2 >= threshold_2
-            )
-
-            filtered_gt_1 = gt_1[filtered_indices]
-            filtered_predictions_1 = predictions_1[filtered_indices]
-            filtered_gt_2 = gt_2[filtered_indices]
-            filtered_predictions_2 = predictions_2[filtered_indices]
-
-            accuracy = (
-                           np.logical_and(
-                               filtered_gt_1 == filtered_predictions_1,
-                               filtered_gt_2 == filtered_predictions_2
-                           )
-                       ).sum() / len(filtered_gt_1)
-
-            curr_accuracies.append(accuracy)
-            curr_dataset_kept.append(len(filtered_gt_1) / len(gt_1))
-
-        accuracies.append(curr_accuracies)
-        dataset_kept.append(curr_dataset_kept)
-
-    visualization_utils.confidence_fitlering_3d_plot(
-        np.array(thresholds),
-        np.array(thresholds),
-        np.array(accuracies),
-        np.array(dataset_kept),
-        threshold_fields,
-        title='Confidence Filtering'
-    )
-
-
 def confidence_filtering_data_vs_acc(
         probabilities,
         ground_truth,
@@ -686,159 +593,6 @@ def confidence_filtering_data_vs_acc(
         dataset_kept,
         model_names,
         title='Confidence Filtering (Data vs Accuracy)'
-    )
-
-
-def confidence_filtering_data_vs_acc_2d(
-        probabilities,
-        ground_truth,
-        threshold_fields,
-        labels_limit,
-        model_names=None,
-        **kwargs
-):
-    if len(probabilities) < 2:
-        logging.error('Not enough probabilities provided, two are needed')
-        return
-    if len(probabilities) > 2:
-        logging.error('Too many probabilities provided, only two are needed')
-        return
-    if len(threshold_fields) < 2:
-        logging.error('Not enough threshold fields provided, two are needed')
-        return
-    if len(threshold_fields) > 2:
-        logging.error('Too many threshold fields provided, only two are needed')
-        return
-
-    gt_1 = load_from_file(ground_truth, threshold_fields[0])
-    gt_2 = load_from_file(ground_truth, threshold_fields[1])
-
-    if labels_limit > 0:
-        gt_1[gt_1 > labels_limit] = labels_limit
-        gt_2[gt_2 > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
-    thresholds = [t / 100 for t in range(0, 101, 5)]
-    fixed_step_coverage = thresholds
-    name_t1 = '{} threshold'.format(threshold_fields[0])
-    name_t2 = '{} threshold'.format(threshold_fields[1])
-
-    accuracies = []
-    dataset_kept = []
-    interps = []
-    table = [[name_t1, name_t2, 'coverage', ACCURACY]]
-
-    if labels_limit > 0 and probs[0].shape[1] > labels_limit + 1:
-        prob_limit = probs[0][:, :labels_limit + 1]
-        prob_limit[:, labels_limit] = probs[0][:, labels_limit:].sum(1)
-        probs[0] = prob_limit
-
-    if labels_limit > 0 and probs[1].shape[1] > labels_limit + 1:
-        prob_limit = probs[1][:, :labels_limit + 1]
-        prob_limit[:, labels_limit] = probs[1][:, labels_limit:].sum(1)
-        probs[1] = prob_limit
-
-    max_prob_1 = np.max(probs[0], axis=1)
-    predictions_1 = np.argmax(probs[0], axis=1)
-
-    max_prob_2 = np.max(probs[1], axis=1)
-    predictions_2 = np.argmax(probs[1], axis=1)
-
-    for threshold_1 in thresholds:
-        threshold_1 = threshold_1 if threshold_1 < 1 else 0.999
-        curr_accuracies = []
-        curr_dataset_kept = []
-
-        for threshold_2 in thresholds:
-            threshold_2 = threshold_2 if threshold_2 < 1 else 0.999
-
-            filtered_indices = np.logical_and(
-                max_prob_1 >= threshold_1,
-                max_prob_2 >= threshold_2
-            )
-
-            filtered_gt_1 = gt_1[filtered_indices]
-            filtered_predictions_1 = predictions_1[filtered_indices]
-            filtered_gt_2 = gt_2[filtered_indices]
-            filtered_predictions_2 = predictions_2[filtered_indices]
-
-            coverage = len(filtered_gt_1) / len(gt_1)
-            accuracy = (
-                           np.logical_and(
-                               filtered_gt_1 == filtered_predictions_1,
-                               filtered_gt_2 == filtered_predictions_2
-                           )
-                       ).sum() / len(filtered_gt_1)
-
-            curr_accuracies.append(accuracy)
-            curr_dataset_kept.append(coverage)
-            table.append([threshold_1, threshold_2, coverage, accuracy])
-
-        accuracies.append(curr_accuracies)
-        dataset_kept.append(curr_dataset_kept)
-        interps.append(
-            np.interp(
-                fixed_step_coverage,
-                list(reversed(curr_dataset_kept)),
-                list(reversed(curr_accuracies)),
-                left=1,
-                right=0
-            )
-        )
-
-    logging.info('CSV table')
-    for row in table:
-        logging.info(','.join([str(e) for e in row]))
-
-    # ===========#
-    # Multiline #
-    # ===========#
-    visualization_utils.confidence_fitlering_data_vs_acc_multiline_plot(
-        accuracies,
-        dataset_kept,
-        model_names,
-        title='Coverage vs Accuracy'
-    )
-
-    # ==========#
-    # Max line #
-    # ==========#
-    max_accuracies = np.amax(np.array(interps), 0)
-    visualization_utils.confidence_fitlering_data_vs_acc_plot(
-        [max_accuracies],
-        [thresholds],
-        model_names,
-        title='Coverage vs Accuracy'
-    )
-
-    # ==========================#
-    # Max line with thresholds #
-    # ==========================#
-    acc_matrix = np.array(accuracies)
-    cov_matrix = np.array(dataset_kept)
-    t1_maxes = [1]
-    t2_maxes = [1]
-    for i in range(len(fixed_step_coverage) - 1):
-        lower = fixed_step_coverage[i]
-        upper = fixed_step_coverage[i + 1]
-        indices = np.logical_and(cov_matrix >= lower, cov_matrix < upper)
-        selected_acc = acc_matrix.copy()
-        selected_acc[np.logical_not(indices)] = -1
-        threshold_indices = np.unravel_index(np.argmax(selected_acc, axis=None),
-                                             selected_acc.shape)
-        t1_maxes.append(thresholds[threshold_indices[0]])
-        t2_maxes.append(thresholds[threshold_indices[1]])
-    model_name = model_names[0] if model_names is not None and len(
-        model_names) > 0 else ''
-    visualization_utils.confidence_fitlering_data_vs_acc_plot(
-        [max_accuracies, t1_maxes, t2_maxes],
-        [fixed_step_coverage, fixed_step_coverage, fixed_step_coverage],
-        model_names=[model_name + ' accuracy', name_t1, name_t2],
-        dotted=[False, True, True],
-        y_label='',
-        title='Coverage vs Accuracy / Threshold'
     )
 
 
@@ -1013,154 +767,249 @@ def confidence_filtering_data_vs_acc_subset_per_class(
         )
 
 
-def data_vs_acc_subset(
-        predictions,
+def confidence_filtering_2thresholds_2d(
+        probabilities,
         ground_truth,
-        field,
-        top_n_classes,
+        threshold_fields,
         labels_limit,
-        subset,
         model_names=None,
         **kwargs
 ):
-    if len(predictions) < 1:
-        logging.error('No predictions provided')
+    if len(probabilities) < 2:
+        logging.error('Not enough probabilities provided, two are needed')
+        return
+    if len(probabilities) > 2:
+        logging.error('Too many probabilities provided, only two are needed')
+        return
+    if len(threshold_fields) < 2:
+        logging.error('Not enough threshold fields provided, two are needed')
+        return
+    if len(threshold_fields) > 2:
+        logging.error('Too many threshold fields provided, only two are needed')
         return
 
-    k = top_n_classes[0]
-    gt = load_from_file(ground_truth, field)
+    gt_1 = load_from_file(ground_truth, threshold_fields[0])
+    gt_2 = load_from_file(ground_truth, threshold_fields[1])
+
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        gt_1[gt_1 > labels_limit] = labels_limit
+        gt_2[gt_2 > labels_limit] = labels_limit
 
-    preds = [load_from_file(preds_fn, dtype=float) for preds_fn in predictions]
+    probs = [load_from_file(probs_fn, dtype=float)
+             for probs_fn in probabilities]
 
-    subset_indices = gt > 0
-    gt_subset = gt
+    thresholds = [t / 100 for t in range(0, 101, 5)]
+    fixed_step_coverage = thresholds
+    name_t1 = '{} threshold'.format(threshold_fields[0])
+    name_t2 = '{} threshold'.format(threshold_fields[1])
 
     accuracies = []
-    data_percentage = []
+    dataset_kept = []
+    interps = []
+    table = [[name_t1, name_t2, 'coverage', ACCURACY]]
 
-    if subset == 'ground_truth':
-        subset_indices = gt < k
-        gt_subset = gt[subset_indices]
-        logging.info('Subset is {:.2f}% of the data'.format(
-            len(gt_subset) / len(gt) * 100)
+    if labels_limit > 0 and probs[0].shape[1] > labels_limit + 1:
+        prob_limit = probs[0][:, :labels_limit + 1]
+        prob_limit[:, labels_limit] = probs[0][:, labels_limit:].sum(1)
+        probs[0] = prob_limit
+
+    if labels_limit > 0 and probs[1].shape[1] > labels_limit + 1:
+        prob_limit = probs[1][:, :labels_limit + 1]
+        prob_limit[:, labels_limit] = probs[1][:, labels_limit:].sum(1)
+        probs[1] = prob_limit
+
+    max_prob_1 = np.max(probs[0], axis=1)
+    predictions_1 = np.argmax(probs[0], axis=1)
+
+    max_prob_2 = np.max(probs[1], axis=1)
+    predictions_2 = np.argmax(probs[1], axis=1)
+
+    for threshold_1 in thresholds:
+        threshold_1 = threshold_1 if threshold_1 < 1 else 0.999
+        curr_accuracies = []
+        curr_dataset_kept = []
+
+        for threshold_2 in thresholds:
+            threshold_2 = threshold_2 if threshold_2 < 1 else 0.999
+
+            filtered_indices = np.logical_and(
+                max_prob_1 >= threshold_1,
+                max_prob_2 >= threshold_2
+            )
+
+            filtered_gt_1 = gt_1[filtered_indices]
+            filtered_predictions_1 = predictions_1[filtered_indices]
+            filtered_gt_2 = gt_2[filtered_indices]
+            filtered_predictions_2 = predictions_2[filtered_indices]
+
+            coverage = len(filtered_gt_1) / len(gt_1)
+            accuracy = (
+                           np.logical_and(
+                               filtered_gt_1 == filtered_predictions_1,
+                               filtered_gt_2 == filtered_predictions_2
+                           )
+                       ).sum() / len(filtered_gt_1)
+
+            curr_accuracies.append(accuracy)
+            curr_dataset_kept.append(coverage)
+            table.append([threshold_1, threshold_2, coverage, accuracy])
+
+        accuracies.append(curr_accuracies)
+        dataset_kept.append(curr_dataset_kept)
+        interps.append(
+            np.interp(
+                fixed_step_coverage,
+                list(reversed(curr_dataset_kept)),
+                list(reversed(curr_accuracies)),
+                left=1,
+                right=0
+            )
         )
 
-    for i, pred in enumerate(preds):
+    logging.info('CSV table')
+    for row in table:
+        logging.info(','.join([str(e) for e in row]))
 
-        if labels_limit > 0:
-            pred[pred > labels_limit + 1] = labels_limit + 1
-
-        if subset == PREDICTIONS:
-            subset_indices = pred < k
-            gt_subset = gt[subset_indices]
-
-        pred_subset = pred[subset_indices]
-        accuracy = (gt_subset == pred_subset).sum() / len(gt_subset)
-
-        accuracies.append(100 * accuracy)
-        data_percentage.append(100 * len(gt_subset) / len(gt))
-
-    table = [['model', '% accuracy', '% data']]
-    for i in range(len(accuracies)):
-        table.append(
-            [model_names[i] if model_names and i < len(model_names) else i,
-             accuracies[i], data_percentage[i]]
-        )
-
-    logging.info(
-        tabulate(
-            table,
-            headers='firstrow',
-            tablefmt='orgtbl',
-            floatfmt='.4f'
-        )
-    )
-
-    visualization_utils.compare_classifiers_plot(
-        [accuracies, data_percentage],
-        ['% accuracy', '% data'],
+    # ===========#
+    # Multiline #
+    # ===========#
+    visualization_utils.confidence_fitlering_data_vs_acc_multiline_plot(
+        accuracies,
+        dataset_kept,
         model_names,
-        adaptive=True,
-        title='Accuracy and Data comparison'
+        title='Coverage vs Accuracy, two thresholds'
+    )
+
+    # ==========#
+    # Max line #
+    # ==========#
+    max_accuracies = np.amax(np.array(interps), 0)
+    visualization_utils.confidence_fitlering_data_vs_acc_plot(
+        [max_accuracies],
+        [thresholds],
+        model_names,
+        title='Coverage vs Accuracy, two thresholds'
+    )
+
+    # ==========================#
+    # Max line with thresholds #
+    # ==========================#
+    acc_matrix = np.array(accuracies)
+    cov_matrix = np.array(dataset_kept)
+    t1_maxes = [1]
+    t2_maxes = [1]
+    for i in range(len(fixed_step_coverage) - 1):
+        lower = fixed_step_coverage[i]
+        upper = fixed_step_coverage[i + 1]
+        indices = np.logical_and(cov_matrix >= lower, cov_matrix < upper)
+        selected_acc = acc_matrix.copy()
+        selected_acc[np.logical_not(indices)] = -1
+        threshold_indices = np.unravel_index(np.argmax(selected_acc, axis=None),
+                                             selected_acc.shape)
+        t1_maxes.append(thresholds[threshold_indices[0]])
+        t2_maxes.append(thresholds[threshold_indices[1]])
+    model_name = model_names[0] if model_names is not None and len(
+        model_names) > 0 else ''
+    visualization_utils.confidence_fitlering_data_vs_acc_plot(
+        [max_accuracies, t1_maxes, t2_maxes],
+        [fixed_step_coverage, fixed_step_coverage, fixed_step_coverage],
+        model_names=[model_name + ' accuracy', name_t1, name_t2],
+        dotted=[False, True, True],
+        y_label='',
+        title='Coverage vs Accuracy & Threshold'
     )
 
 
-def data_vs_acc_subset_per_class(
-        predictions,
+def confidence_filtering_2thresholds_3d(
+        probabilities,
         ground_truth,
-        field,
-        top_n_classes,
+        threshold_fields,
         labels_limit,
-        subset,
-        model_names=None,
         **kwargs
 ):
-    if len(predictions) < 1:
-        logging.error('No predictions provided')
+    if len(probabilities) < 2:
+        logging.error('Not enough probabilities provided, two are needed')
+        return
+    if len(probabilities) > 2:
+        logging.error('Too many probabilities provided, only two are needed')
+        return
+    if len(threshold_fields) < 2:
+        logging.error('Not enough threshold fields provided, two are needed')
+        return
+    if len(threshold_fields) > 2:
+        logging.error('Too many threshold fields provided, only two are needed')
         return
 
-    k = top_n_classes[0]
-    gt = load_from_file(ground_truth, field)
+    gt_1 = load_from_file(ground_truth, threshold_fields[0])
+    gt_2 = load_from_file(ground_truth, threshold_fields[1])
+
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        gt_1[gt_1 > labels_limit] = labels_limit
+        gt_2[gt_2 > labels_limit] = labels_limit
 
-    preds = [load_from_file(preds_fn, dtype=float) for preds_fn in predictions]
+    probs = [load_from_file(probs_fn, dtype=float)
+             for probs_fn in probabilities]
 
-    for curr_k in range(k):
-        subset_indices = gt > 0
-        gt_subset = gt
+    thresholds = [t / 100 for t in range(0, 101, 5)]
 
-        accuracies = []
-        data_percentage = []
+    accuracies = []
+    dataset_kept = []
 
-        if subset == 'ground_truth':
-            subset_indices = gt == curr_k
-            gt_subset = gt[subset_indices]
-            logging.info('Subset is {:.2f}% of the data'.format(
-                len(gt_subset) / len(gt) * 100)
+    if labels_limit > 0 and probs[0].shape[1] > labels_limit + 1:
+        prob_limit = probs[0][:, :labels_limit + 1]
+        prob_limit[:, labels_limit] = probs[0][:, labels_limit:].sum(1)
+        probs[0] = prob_limit
+
+    if labels_limit > 0 and probs[1].shape[1] > labels_limit + 1:
+        prob_limit = probs[1][:, :labels_limit + 1]
+        prob_limit[:, labels_limit] = probs[1][:, labels_limit:].sum(1)
+        probs[1] = prob_limit
+
+    max_prob_1 = np.max(probs[0], axis=1)
+    predictions_1 = np.argmax(probs[0], axis=1)
+
+    max_prob_2 = np.max(probs[1], axis=1)
+    predictions_2 = np.argmax(probs[1], axis=1)
+
+    for threshold_1 in thresholds:
+        threshold_1 = threshold_1 if threshold_1 < 1 else 0.999
+        curr_accuracies = []
+        curr_dataset_kept = []
+
+        for threshold_2 in thresholds:
+            threshold_2 = threshold_2 if threshold_2 < 1 else 0.999
+
+            filtered_indices = np.logical_and(
+                max_prob_1 >= threshold_1,
+                max_prob_2 >= threshold_2
             )
 
-        for i, pred in enumerate(preds):
+            filtered_gt_1 = gt_1[filtered_indices]
+            filtered_predictions_1 = predictions_1[filtered_indices]
+            filtered_gt_2 = gt_2[filtered_indices]
+            filtered_predictions_2 = predictions_2[filtered_indices]
 
-            if labels_limit > 0:
-                pred[pred > labels_limit + 1] = labels_limit + 1
+            accuracy = (
+                           np.logical_and(
+                               filtered_gt_1 == filtered_predictions_1,
+                               filtered_gt_2 == filtered_predictions_2
+                           )
+                       ).sum() / len(filtered_gt_1)
 
-            if subset == PREDICTIONS:
-                subset_indices = pred == curr_k
-                gt_subset = gt[subset_indices]
+            curr_accuracies.append(accuracy)
+            curr_dataset_kept.append(len(filtered_gt_1) / len(gt_1))
 
-            pred_subset = pred[subset_indices]
-            accuracy = (gt_subset == pred_subset).sum() / len(gt_subset)
+        accuracies.append(curr_accuracies)
+        dataset_kept.append(curr_dataset_kept)
 
-            accuracies.append(100 * accuracy)
-            data_percentage.append(100 * len(gt_subset) / len(gt))
-
-        table = [['model', '% accuracy', '% data']]
-        for i in range(len(accuracies)):
-            table.append(
-                [model_names[i] if model_names and i < len(model_names) else i,
-                 accuracies[i],
-                 data_percentage[i]]
-            )
-
-        logging.info(
-            tabulate(
-                table,
-                headers='firstrow',
-                tablefmt='orgtbl',
-                floatfmt='.4f'
-            )
-        )
-
-        visualization_utils.compare_classifiers_plot(
-            [accuracies, data_percentage],
-            ['% accuracy', '% data'],
-            model_names,
-            adaptive=True,
-            title='Accuracy vs Data comparison for class {}'.format(curr_k)
-        )
+    visualization_utils.confidence_fitlering_3d_plot(
+        np.array(thresholds),
+        np.array(thresholds),
+        np.array(accuracies),
+        np.array(dataset_kept),
+        threshold_fields,
+        title='Confidence Filtering, two thresholds'
+    )
 
 
 def binary_threshold_vs_metric(
@@ -1787,7 +1636,8 @@ def cli(sys_argv):
         '-v',
         '--visualization',
         default='confidence_filtering',
-        choices=['compare_performance',
+        choices=['learning_curves',
+                 'compare_performance',
                  'compare_classifiers_performance_from_prob',
                  'compare_classifiers_performance_from_pred',
                  'compare_classifiers_performance_subset',
@@ -1795,22 +1645,19 @@ def cli(sys_argv):
                  'compare_classifiers_predictions',
                  'compare_classifiers_predictions_distribution',
                  'confidence_filtering',
-                 'confidence_filtering_3d',
                  'confidence_filtering_data_vs_acc',
-                 'confidence_filtering_data_vs_acc_2d',
                  'confidence_filtering_data_vs_acc_subset',
                  'confidence_filtering_data_vs_acc_subset_per_class',
+                 'confidence_filtering_2thresholds_2d',
+                 'confidence_filtering_2thresholds_3d',
                  'binary_threshold_vs_metric',
                  'roc_curves',
                  'roc_curves_from_prediction_statistics',
-                 'data_vs_acc_subset',
-                 'data_vs_acc_subset_per_class',
                  'calibration_1_vs_all',
                  'calibration_multiclass',
                  'confusion_matrix',
                  'multiclass_multimetric',
-                 'frequency_vs_f1',
-                 'learning_curves'],
+                 'frequency_vs_f1'],
         help='type of visualization'
     )
 
@@ -1951,27 +1798,23 @@ def cli(sys_argv):
         compare_classifiers_predictions_distribution(**vars(args))
     elif args.visualization == 'confidence_filtering':
         confidence_filtering(**vars(args))
-    elif args.visualization == 'confidence_filtering_3d':
-        confidence_filtering_3d(**vars(args))
     elif args.visualization == 'confidence_filtering_data_vs_acc':
         confidence_filtering_data_vs_acc(**vars(args))
-    elif args.visualization == 'confidence_filtering_data_vs_acc_2d':
-        confidence_filtering_data_vs_acc_2d(**vars(args))
     elif args.visualization == 'confidence_filtering_data_vs_acc_subset':
         confidence_filtering_data_vs_acc_subset(**vars(args))
     elif (args.visualization ==
           'confidence_filtering_data_vs_acc_subset_per_class'):
         confidence_filtering_data_vs_acc_subset_per_class(**vars(args))
+    elif args.visualization == 'confidence_filtering_2thresholds_2d':
+        confidence_filtering_2thresholds_2d(**vars(args))
+    elif args.visualization == 'confidence_filtering_2thresholds_3d':
+        confidence_filtering_2thresholds_3d(**vars(args))
     elif args.visualization == 'binary_threshold_vs_metric':
         binary_threshold_vs_metric(**vars(args))
     elif args.visualization == 'roc_curves':
         roc_curves(**vars(args))
     elif args.visualization == 'roc_curves_from_prediction_statistics':
         roc_curves_from_prediction_statistics(**vars(args))
-    elif args.visualization == 'data_vs_acc_subset':
-        data_vs_acc_subset(**vars(args))
-    elif args.visualization == 'data_vs_acc_subset_per_class':
-        data_vs_acc_subset_per_class(**vars(args))
     elif args.visualization == 'calibration_1_vs_all':
         calibration_1_vs_all(**vars(args))
     elif args.visualization == 'calibration_multiclass':
