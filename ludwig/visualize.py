@@ -1759,7 +1759,7 @@ def learning_curves(training_statistics, field, model_names=None, **kwargs):
                     [learning_stats['validation'][field][metric]
                      for learning_stats in training_statistics_per_model_name],
                     metric, model_names,
-                    title='Learning Curve {}'.format(field)
+                    title='Learning Curves {}'.format(field)
                 )
 
 
