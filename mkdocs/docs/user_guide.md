@@ -2525,3 +2525,17 @@ Class Frequency vs. F1 score
 
 ### frequency_vs_f1
 
+This visualization uses the `ground_truth_metadata`, `field`, `prediction_statistics` and `model_names` parameters.
+`field` needs to be a category.
+For each model (in the aligned lists of `prediction_statistics` and `model_names`), produces two plots statistics of predictions for the specificed `field`.
+
+The first plot is a line plot with one x axis representing the different classes and two vertical axes colored in orange and blue respectively.
+The orange one is the frequency of the class and an orange line is plotted to show the trend.
+The blue one is the F1 score for that class and a blue line is plotted to show the trend. 
+The classes on the x axis are sorted by f1 score.
+
+![Frequency vs F1 sorted by F1](images/freq_vs_f1_sorted_f1.png "Frequency vs F1 sorted by F1")
+
+The second plot has the same structure of the first one, but the axes are flipped and the classes on the x axis are sorted by frequency.
+
+![Frequency vs F1 sorted by Frequency](images/freq_vs_f1_sorted_freq.png "Frequency vs F1 sorted by Frequency")
