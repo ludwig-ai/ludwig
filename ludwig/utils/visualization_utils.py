@@ -583,7 +583,7 @@ def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,
                              edgecolor='none')
     surf_2 = ax.plot_surface(thresholds_1, thresholds_2, dataset_kepts,
                              alpha=0.5,
-                             label='dataset',
+                             label='data coverage',
                              cmap=plt.get_cmap('autumn'),
                              edgecolor='none')
 
