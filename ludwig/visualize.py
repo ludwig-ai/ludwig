@@ -34,6 +34,36 @@ from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
 
 
+def learning_curves(training_statistics, field, model_names=None, **kwargs):
+    if len(training_statistics) < 1:
+        logging.error('No training_statistics provided')
+        return
+
+    training_statistics_per_model_name = [load_json(learning_stats_f)
+                                          for learning_stats_f in
+                                          training_statistics]
+
+    fields_set = set()
+    for ls in training_statistics_per_model_name:
+        for _, values in ls.items():
+            for key in values:
+                fields_set.add(key)
+    fields = [field] if field is not None and len(field) > 0 else fields_set
+
+    metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
+    for field in fields:
+        for metric in metrics:
+            if metric in training_statistics_per_model_name[0]['train'][field]:
+                visualization_utils.lerning_curves_plot(
+                    [learning_stats['train'][field][metric]
+                     for learning_stats in training_statistics_per_model_name],
+                    [learning_stats['validation'][field][metric]
+                     for learning_stats in training_statistics_per_model_name],
+                    metric, model_names,
+                    title='Learning Curves {}'.format(field)
+                )
+
+
 def compare_performance(
         prediction_statistics,
         field, model_names=None,
@@ -326,6 +356,121 @@ def compare_classifiers_performance_changing_k(
         model_names,
         title='Classifier comparison (hits@k)'
     )
+
+
+def compare_classifiers_multiclass_multimetric(
+        prediction_statistics,
+        field,
+        ground_truth_metadata,
+        top_n_classes,
+        model_names=None,
+        **kwargs
+):
+    if len(prediction_statistics) < 1:
+        logging.error('No prediction_statistics provided')
+        return
+
+    metadata = load_json(ground_truth_metadata)
+    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
+                                            for prediction_statistics_f in
+                                            prediction_statistics]
+
+    fields_set = set()
+    for ls in prediction_statistics_per_model_name:
+        for key in ls:
+            fields_set.add(key)
+    fields = [field] if field is not None and len(field) > 0 else fields_set
+
+    for i, prediction_statistics in enumerate(
+            prediction_statistics_per_model_name):
+        for field in fields:
+            model_name_name = (
+                model_names[i]
+                if model_names is not None and i < len(model_names)
+                else ''
+            )
+            per_class_stats = prediction_statistics[field]['per_class_stats']
+            precisions = []
+            recalls = []
+            f1_scores = []
+            labels = []
+            for _, class_name in sorted(
+                    [(metadata[field]['str2idx'][key], key)
+                     for key in per_class_stats.keys()],
+                    key=lambda tup: tup[0]):
+                class_stats = per_class_stats[class_name]
+                precisions.append(class_stats['precision'])
+                recalls.append(class_stats['recall'])
+                f1_scores.append(class_stats['f1_score'])
+                labels.append(class_name)
+            for k in top_n_classes:
+                k = min(k, len(precisions)) if k > 0 else len(precisions)
+                ps = precisions[0:k]
+                rs = recalls[0:k]
+                fs = f1_scores[0:k]
+                ls = labels[0:k]
+                visualization_utils.compare_classifiers_multiclass_multimetric_plot(
+                    [ps, rs, fs],
+                    ['precision', 'recall', 'f1 score'],
+                    labels=ls,
+                    title='{} Multiclass Precision / Recall / '
+                          'F1 Score top {} {}'.format(model_name_name, k, field)
+                )
+
+            p_np = np.nan_to_num(np.array(precisions, dtype=np.float32))
+            r_np = np.nan_to_num(np.array(recalls, dtype=np.float32))
+            f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
+            labels_np = np.nan_to_num(np.array(labels))
+
+            sorted_indices = f1_np.argsort()
+            higher_f1s = sorted_indices[-k:][::-1]
+            visualization_utils.compare_classifiers_multiclass_multimetric_plot(
+                [p_np[higher_f1s],
+                 r_np[higher_f1s],
+                 f1_np[higher_f1s]],
+                ['precision', 'recall', 'f1 score'],
+                labels=labels_np[higher_f1s].tolist(),
+                title='{} Multiclass Precision / Recall / '
+                      'F1 Score best {} classes {}'.format(
+                    model_name_name, k, field)
+            )
+            lower_f1s = sorted_indices[:k]
+            visualization_utils.compare_classifiers_multiclass_multimetric_plot(
+                [p_np[lower_f1s],
+                 r_np[lower_f1s],
+                 f1_np[lower_f1s]],
+                ['precision', 'recall', 'f1 score'],
+                labels=labels_np[lower_f1s].tolist(),
+                title='{} Multiclass Precision / Recall / F1 Score worst '
+                      'k classes {}'.format(model_name_name, k, field)
+            )
+
+            visualization_utils.compare_classifiers_multiclass_multimetric_plot(
+                [p_np[sorted_indices[::-1]],
+                 r_np[sorted_indices[::-1]],
+                 f1_np[sorted_indices[::-1]]],
+                ['precision', 'recall', 'f1 score'],
+                labels=labels_np[sorted_indices[::-1]].tolist(),
+                title='{} Multiclass Precision / Recall / F1 Score '
+                      '{} sorted'.format(model_name_name, field)
+            )
+
+            logging.info('\n')
+            logging.info(model_name_name)
+            tmp_str = '{0} best 5 classes: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(higher_f1s))
+            logging.info(f1_np[higher_f1s])
+            tmp_str = '{0} worst 5 classes: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(lower_f1s))
+            logging.info(f1_np[lower_f1s])
+            tmp_str = '{0} number of classes with f1 score > 0: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(np.sum(f1_np > 0)))
+            tmp_str = '{0} number of classes with f1 score = 0: '.format(field)
+            tmp_str += '{}'
+            logging.info(tmp_str.format(np.sum(f1_np == 0)))
 
 
 def compare_classifiers_predictions(
@@ -1376,121 +1521,6 @@ def confusion_matrix(
                     )
 
 
-def multiclass_multimetric(
-        prediction_statistics,
-        field,
-        ground_truth_metadata,
-        top_n_classes,
-        model_names=None,
-        **kwargs
-):
-    if len(prediction_statistics) < 1:
-        logging.error('No prediction_statistics provided')
-        return
-
-    metadata = load_json(ground_truth_metadata)
-    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                            for prediction_statistics_f in
-                                            prediction_statistics]
-
-    fields_set = set()
-    for ls in prediction_statistics_per_model_name:
-        for key in ls:
-            fields_set.add(key)
-    fields = [field] if field is not None and len(field) > 0 else fields_set
-
-    for i, prediction_statistics in enumerate(
-            prediction_statistics_per_model_name):
-        for field in fields:
-            model_name_name = (
-                model_names[i]
-                if model_names is not None and i < len(model_names)
-                else ''
-            )
-            per_class_stats = prediction_statistics[field]['per_class_stats']
-            precisions = []
-            recalls = []
-            f1_scores = []
-            labels = []
-            for _, class_name in sorted(
-                    [(metadata[field]['str2idx'][key], key)
-                     for key in per_class_stats.keys()],
-                    key=lambda tup: tup[0]):
-                class_stats = per_class_stats[class_name]
-                precisions.append(class_stats['precision'])
-                recalls.append(class_stats['recall'])
-                f1_scores.append(class_stats['f1_score'])
-                labels.append(class_name)
-            for k in top_n_classes:
-                k = min(k, len(precisions)) if k > 0 else len(precisions)
-                ps = precisions[0:k]
-                rs = recalls[0:k]
-                fs = f1_scores[0:k]
-                ls = labels[0:k]
-                visualization_utils.multiclass_multimetric_plot(
-                    [ps, rs, fs],
-                    ['precision', 'recall', 'f1 score'],
-                    labels=ls,
-                    title='{} Multiclass Precision / Recall / '
-                          'F1 Score top {} {}'.format(model_name_name, k, field)
-                )
-
-            p_np = np.nan_to_num(np.array(precisions, dtype=np.float32))
-            r_np = np.nan_to_num(np.array(recalls, dtype=np.float32))
-            f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
-            labels_np = np.nan_to_num(np.array(labels))
-
-            sorted_indices = f1_np.argsort()
-            higher_f1s = sorted_indices[-k:][::-1]
-            visualization_utils.multiclass_multimetric_plot(
-                [p_np[higher_f1s],
-                 r_np[higher_f1s],
-                 f1_np[higher_f1s]],
-                ['precision', 'recall', 'f1 score'],
-                labels=labels_np[higher_f1s].tolist(),
-                title='{} Multiclass Precision / Recall / '
-                      'F1 Score best {} classes {}'.format(
-                    model_name_name, k, field)
-            )
-            lower_f1s = sorted_indices[:k]
-            visualization_utils.multiclass_multimetric_plot(
-                [p_np[lower_f1s],
-                 r_np[lower_f1s],
-                 f1_np[lower_f1s]],
-                ['precision', 'recall', 'f1 score'],
-                labels=labels_np[lower_f1s].tolist(),
-                title='{} Multiclass Precision / Recall / F1 Score worst '
-                      'k classes {}'.format(model_name_name, k, field)
-            )
-
-            visualization_utils.multiclass_multimetric_plot(
-                [p_np[sorted_indices[::-1]],
-                 r_np[sorted_indices[::-1]],
-                 f1_np[sorted_indices[::-1]]],
-                ['precision', 'recall', 'f1 score'],
-                labels=labels_np[sorted_indices[::-1]].tolist(),
-                title='{} Multiclass Precision / Recall / F1 Score '
-                      '{} sorted'.format(model_name_name, field)
-            )
-
-            logging.info('\n')
-            logging.info(model_name_name)
-            tmp_str = '{0} best 5 classes: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(higher_f1s))
-            logging.info(f1_np[higher_f1s])
-            tmp_str = '{0} worst 5 classes: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(lower_f1s))
-            logging.info(f1_np[lower_f1s])
-            tmp_str = '{0} number of classes with f1 score > 0: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(np.sum(f1_np > 0)))
-            tmp_str = '{0} number of classes with f1 score = 0: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(np.sum(f1_np == 0)))
-
-
 def frequency_vs_f1(
         prediction_statistics,
         ground_truth_metadata,
@@ -1588,36 +1618,6 @@ def frequency_vs_f1(
             )
 
 
-def learning_curves(training_statistics, field, model_names=None, **kwargs):
-    if len(training_statistics) < 1:
-        logging.error('No training_statistics provided')
-        return
-
-    training_statistics_per_model_name = [load_json(learning_stats_f)
-                                          for learning_stats_f in
-                                          training_statistics]
-
-    fields_set = set()
-    for ls in training_statistics_per_model_name:
-        for _, values in ls.items():
-            for key in values:
-                fields_set.add(key)
-    fields = [field] if field is not None and len(field) > 0 else fields_set
-
-    metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
-    for field in fields:
-        for metric in metrics:
-            if metric in training_statistics_per_model_name[0]['train'][field]:
-                visualization_utils.lerning_curves_plot(
-                    [learning_stats['train'][field][metric]
-                     for learning_stats in training_statistics_per_model_name],
-                    [learning_stats['validation'][field][metric]
-                     for learning_stats in training_statistics_per_model_name],
-                    metric, model_names,
-                    title='Learning Curves {}'.format(field)
-                )
-
-
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script analyzes results and shows some nice plots.',
@@ -1642,6 +1642,7 @@ def cli(sys_argv):
                  'compare_classifiers_performance_from_pred',
                  'compare_classifiers_performance_subset',
                  'compare_classifiers_performance_changing_k',
+                 'compare_classifiers_multiclass_multimetric',
                  'compare_classifiers_predictions',
                  'compare_classifiers_predictions_distribution',
                  'confidence_filtering',
@@ -1656,7 +1657,6 @@ def cli(sys_argv):
                  'calibration_1_vs_all',
                  'calibration_multiclass',
                  'confusion_matrix',
-                 'multiclass_multimetric',
                  'frequency_vs_f1'],
         help='type of visualization'
     )
@@ -1792,6 +1792,8 @@ def cli(sys_argv):
         compare_classifiers_performance_subset(**vars(args))
     elif args.visualization == 'compare_classifiers_performance_changing_k':
         compare_classifiers_performance_changing_k(**vars(args))
+    elif args.visualization == 'compare_classifiers_multiclass_multimetric':
+        compare_classifiers_multiclass_multimetric(**vars(args))
     elif args.visualization == 'compare_classifiers_predictions':
         compare_classifiers_predictions(**vars(args))
     elif args.visualization == 'compare_classifiers_predictions_distribution':
@@ -1821,8 +1823,6 @@ def cli(sys_argv):
         calibration_multiclass(**vars(args))
     elif args.visualization == 'confusion_matrix':
         confusion_matrix(**vars(args))
-    elif args.visualization == 'multiclass_multimetric':
-        multiclass_multimetric(**vars(args))
     elif args.visualization == 'frequency_vs_f1':
         frequency_vs_f1(**vars(args))
     elif args.visualization == 'learning_curves':

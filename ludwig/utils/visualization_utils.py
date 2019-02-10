@@ -39,6 +39,247 @@ from mpl_toolkits.mplot3d import Axes3D
 # plt.rc('ytick', labelsize='x-large')
 # plt.rc('axes', labelsize='x-large')
 
+def lerning_curves_plot(train_values, vali_values, metric, algorithm_names=None,
+                        title=None):
+    num_algorithms = len(train_values)
+    max_len = max([len(tv) for tv in train_values])
+
+    fig, ax = plt.subplots()
+
+    sns.set_style('whitegrid')
+
+    if title is not None:
+        ax.set_title(title)
+
+    if num_algorithms == 1:
+        colors = plt.get_cmap('tab10').colors
+    else:  # num_algorithms > 1
+        colors = plt.get_cmap('tab20').colors
+
+    ax.grid(which='both')
+    ax.grid(which='minor', alpha=0.5)
+    ax.grid(which='major', alpha=0.75)
+    ax.set_xlabel('epochs')
+    ax.set_ylabel(metric.replace('_', ' '))
+
+    xs = list(range(1, max_len + 1))
+
+    for i in range(num_algorithms):
+        name_prefix = algorithm_names[
+                          i] + ' ' if algorithm_names is not None and i < len(
+            algorithm_names) else ''
+        ax.plot(xs, train_values[i], label=name_prefix + 'training',
+                color=colors[i * 2], linewidth=3)
+        if i < len(vali_values):
+            ax.plot(xs, vali_values[i], label=name_prefix + 'validation',
+                    color=colors[i * 2 + 1], linewidth=3)
+
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def compare_classifiers_plot(scores, metrics, algoritm_names=None,
+                             adaptive=False, decimals=4, title=None):
+    assert len(scores) == len(metrics)
+    assert len(scores) > 0
+
+    num_metrics = len(metrics)
+
+    sns.set_style('whitegrid')
+
+    fig, ax = plt.subplots()
+
+    ax.grid(which='both')
+    ax.grid(which='minor', alpha=0.5)
+    ax.grid(which='major', alpha=0.75)
+    ax.set_xticklabels([], minor=True)
+
+    if title is not None:
+        ax.set_title(title)
+
+    width = 0.8 / num_metrics if num_metrics > 1 else 0.4
+    ticks = np.arange(len(scores[0]))
+
+    colors = plt.get_cmap('tab10').colors
+    if adaptive:
+        maximum = max([max(score) for score in scores])
+    else:
+        ax.set_xlim([0, 1])
+        ax.set_xticks(np.linspace(0.0, 1.0, num=21), minor=True)
+        ax.set_xticks(np.linspace(0.0, 1.0, num=11))
+        maximum = 1
+
+    half_total_width = 0.4 if num_metrics > 1 else 0.2
+    ax.set_yticks(ticks + half_total_width - width / 2)
+    ax.set_yticklabels(algoritm_names if algoritm_names is not None else '')
+    ax.invert_yaxis()  # labels read top-to-bottom
+
+    for i, metric in enumerate(metrics):
+        ax.barh(ticks + (i * width), scores[i], width, label=metric,
+                color=colors[i])
+
+        for j, v in enumerate(scores[i]):
+            if v < maximum * (0.025 * decimals + 0.1):
+                x = v + maximum * 0.01
+                horizontal_alignment = 'left'
+            else:
+                x = v - maximum * 0.01
+                horizontal_alignment = 'right'
+            txt = ax.text(x, ticks[j] + (i * width),
+                          ('{:.' + str(decimals) + 'f}').format(v),
+                          color='white',
+                          fontweight='bold', verticalalignment='center',
+                          horizontalalignment=horizontal_alignment)
+            txt.set_path_effects(
+                [PathEffects.withStroke(linewidth=3, foreground='black')])
+
+    plt.setp(ax.get_xminorticklabels(), visible=False)
+
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout()
+    plt.show()
+
+
+def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
+                                  title=None):
+    sns.set_style('whitegrid')
+    colors = plt.get_cmap('tab10').colors
+
+    fig, ax = plt.subplots()
+
+    ax.grid(which='both')
+    ax.grid(which='minor', alpha=0.5)
+    ax.grid(which='major', alpha=0.75)
+
+    if title is not None:
+        ax.set_title(title)
+
+    ax.set_xticks(xs)
+    ax.set_xticklabels(xs)
+    ax.set_xlabel('k')
+    ax.set_ylabel(metric)
+
+    for i, score in enumerate(scores):
+        ax.plot(xs, score,
+                label=algorithm_names[
+                    i] if algorithm_names is not None and i < len(
+                    algorithm_names) else 'Algorithm {}'.format(i),
+                color=colors[i], linewidth=3, marker='o')
+
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout()
+    plt.show()
+
+
+def compare_classifiers_multiclass_multimetric_plot(scores, metrics,
+                                                    labels=None, title=None):
+    assert len(scores) > 0
+
+    sns.set_style('whitegrid')
+
+    fig, ax = plt.subplots()
+
+    if title is not None:
+        ax.set_title(title)
+
+    width = 0.9 / len(scores)
+    ticks = np.arange(len(scores[0]))
+
+    colors = plt.get_cmap('tab10').colors
+    ax.set_xlabel('class')
+    ax.set_xticks(ticks + width)
+    if labels is not None:
+        ax.set_xticklabels(labels, rotation=90)
+    else:
+        ax.set_xticklabels(ticks, rotation=90)
+
+    for i, score in enumerate(scores):
+        ax.bar(ticks + i * width, score, width, label=metrics[i],
+               color=colors[i])
+
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout()
+    plt.show()
+
+
+def radar_chart(ground_truth, predictions, algorithms=None, log_scale=False,
+                title=None):
+    sns.set_style('whitegrid')
+
+    if title is not None:
+        plt.title(title)
+
+    ground_truth = ground_truth[0:10]
+    predictions = [pred[0:10] for pred in predictions]
+
+    gt_argsort = np.argsort(-ground_truth)  # sort deacreasing
+    logging.info(gt_argsort)
+    ground_truth = ground_truth[gt_argsort]
+    predictions = [pred[gt_argsort] for pred in predictions]
+
+    maximum = max(max(ground_truth), max([max(p) for p in predictions]))
+
+    ax = plt.subplot(111, polar=True)
+    ax.set_theta_zero_location('N')
+    ax.set_theta_direction(-1)
+    ax.set_rmax(maximum)
+    ax.set_rlabel_position(305)
+    ax.set_ylabel('Probability')
+    # ax.set_rscale('log')
+    ax.grid(True)
+
+    colors = plt.get_cmap('tab10').colors
+
+    num_classes = len(ground_truth)
+
+    # Set ticks to the number of properties (in radians)
+    t = np.arange(0, 2 * np.pi, 2 * np.pi / num_classes)
+    ax.set_xticks(t, [])
+    ax.set_xticklabels(np.arange(0, num_classes))
+
+    # Set yticks from 0 to 10
+    # ax.set_yticks(np.linspace(0, 10, 11))
+    # Set axes limits
+    # ax.set_rlim(0, 1)
+    # ax.set_rscale('log')
+
+    def draw_polygon(values, label, color='grey'):
+        points = [(x, y) for x, y in zip(t, values)]
+        points.append(points[0])
+        points = np.array(points)
+
+        codes = [path.Path.MOVETO, ] + \
+                [path.Path.LINETO, ] * (len(values) - 1) + \
+                [path.Path.CLOSEPOLY]
+        _path = path.Path(points, codes)
+        _patch = patches.PathPatch(_path, fill=True, color=color, linewidth=0,
+                                   alpha=.2)
+        ax.add_patch(_patch)
+        _patch = patches.PathPatch(_path, fill=False, color=color, linewidth=3)
+        ax.add_patch(_patch)
+
+        # Draw circles at value points
+        # line = ax.scatter(points[:, 0], points[:, 1], linewidth=3,
+        #            s=50, color='white', edgecolor=color, zorder=10)
+        ax.plot(points[:, 0], points[:, 1], linewidth=3, marker='o',
+                fillstyle='full',
+                markerfacecolor='white',
+                markeredgecolor=color,
+                markeredgewidth=2,
+                color=color, zorder=10, label=label)
+
+    draw_polygon(ground_truth, 'Ground Truth')
+
+    # Draw polygon representing values
+    for i, alg_predictions in enumerate(predictions):
+        draw_polygon(alg_predictions, algorithms[i], colors[i])
+
+    ax.legend(frameon=True, loc='upper left')
+    plt.tight_layout()
+    plt.show()
+
+
 def pie(ax, values, **kwargs):
     total = sum(values)
 
@@ -118,89 +359,6 @@ def donut(inside_values, inside_labels, outside_values, outside_labels,
     plt.show()
 
 
-def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,
-                             title=None):
-    sns.set_style('whitegrid')
-
-    colors = plt.get_cmap('tab10').colors
-
-    # y_ticks_minor = np.linspace(0.0, 1.0, num=21)
-    # y_ticks_major = np.linspace(0.0, 1.0, num=11)
-    # y_ticks_major_labels = ['{:3.0f}%'.format(y * 100) for y in y_ticks_major]
-
-    fig, ax1 = plt.subplots()
-
-    if title is not None:
-        ax1.set_title(title)
-
-    ax1.grid(which='both')
-    ax1.grid(which='minor', alpha=0.5)
-    ax1.grid(which='major', alpha=0.75)
-    ax1.set_xticks([x for idx, x in enumerate(thresholds) if idx % 2 == 0])
-    ax1.set_xticks(thresholds, minor=True)
-
-    # ax1.set_xlim(0, 1)
-    ax1.set_xlabel('confidence threshold')
-
-    # ax1.set_ylim(0, 1)
-    # ax1.set_yticks(y_ticks_major)
-    # ax1.set_yticklabels(y_ticks_major_labels)
-    # ax1.set_yticks(y_ticks_minor, minor=True)
-
-    for i in range(len(scores)):
-        algorithm_name = algorithm_names[
-                             i] + ' ' if algorithm_names is not None and i < len(
-            algorithm_names) else ''
-        ax1.plot(thresholds, scores[i], label=algorithm_name, color=colors[i],
-                 linewidth=3, marker='o')
-
-    ax1.legend(frameon=True)
-    plt.tight_layout()
-    plt.show()
-
-
-def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):
-    sns.set_style('whitegrid')
-
-    colors = plt.get_cmap('tab10').colors
-    colormap = plt.get_cmap('RdYlGn')
-
-    y_ticks_minor = np.linspace(0.0, 1.0, num=21)
-    y_ticks_major = np.linspace(0.0, 1.0, num=11)
-
-    fig, ax = plt.subplots()
-
-    if title is not None:
-        ax.set_title(title)
-
-    ax.grid(which='both')
-    ax.grid(which='minor', alpha=0.5)
-    ax.grid(which='major', alpha=0.75)
-
-    ax.set_xlim(0, 1)
-    ax.set_xlabel('False positive rate')
-
-    ax.set_ylim(0, 1)
-    ax.set_yticks(y_ticks_major)
-    ax.set_yticks(y_ticks_minor, minor=True)
-    ax.set_ylabel('True positive rate')
-
-    plt.plot([0, 1], [0, 1], color='black', linewidth=3, linestyle='--')
-
-    for i in range(len(fpr_tprs)):
-        algorithm_name = algorithm_names[
-                             i] + ' ' if algorithm_names is not None and i < len(
-            algorithm_names) else ''
-        color = colormap(i / len(fpr_tprs)) if graded_color else colors[i]
-        ax.plot(fpr_tprs[i][0], fpr_tprs[i][1], label=algorithm_name,
-                color=color,
-                linewidth=3)
-
-    ax.legend(frameon=True)
-    plt.tight_layout()
-    plt.show()
-
-
 def confidence_fitlering_plot(thresholds, accuracies, dataset_kepts,
                               algorithm_names=None, title=None):
     assert len(accuracies) == len(dataset_kepts)
@@ -256,85 +414,6 @@ def confidence_fitlering_plot(thresholds, accuracies, dataset_kepts,
                  color=colors[i * 2 + 1], linewidth=3)
 
     ax1.legend(frameon=True, loc=3)
-    plt.tight_layout()
-    plt.show()
-
-
-def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,
-                                 dataset_kepts, threshold_fields=None,
-                                 title=None):
-    assert len(accuracies) == len(dataset_kepts)
-    assert len(thresholds_1) == len(thresholds_2)
-
-    thresholds_1, thresholds_2 = np.meshgrid(thresholds_1, thresholds_2)
-
-    colors = plt.get_cmap('tab10').colors
-    sns.set_style('white')
-
-    z_ticks_minor = np.linspace(0.0, 1.0, num=21)
-    z_ticks_major = np.linspace(0.0, 1.0, num=11)
-    z_ticks_major_labels = ['{:3.0f}%'.format(z * 100) for z in z_ticks_major]
-
-    fig = plt.figure()
-    ax = Axes3D
-    ax = fig.add_subplot(111, projection='3d')
-
-    if title is not None:
-        ax.set_title(title)
-
-    ax.grid(which='both')
-    ax.grid(which='minor', alpha=0.5)
-    ax.grid(which='major', alpha=0.75)
-
-    ax.set_xlabel('{} probability'.format(threshold_fields[0]))
-    ax.set_ylabel('{} probability'.format(threshold_fields[1]))
-
-    ax.set_xlim(np.min(thresholds_1), np.max(thresholds_1))
-    ax.set_ylim(np.min(thresholds_2), np.max(thresholds_2))
-    ax.set_zlim(0, 1)
-    ax.set_zticks(z_ticks_major)
-    ax.set_zticklabels(z_ticks_major_labels)
-    ax.set_zticks(z_ticks_minor, minor=True)
-
-    # ORRIBLE HACK, IT'S THE ONLY WAY TO REMOVE PADDING
-    from mpl_toolkits.mplot3d.axis3d import Axis
-    if not hasattr(Axis, '_get_coord_info_old'):
-        def _get_coord_info_new(self, renderer):
-            mins, maxs, centers, deltas, tc, highs = self._get_coord_info_old(
-                renderer)
-            mins += deltas / 4
-            maxs -= deltas / 4
-            return mins, maxs, centers, deltas, tc, highs
-
-        Axis._get_coord_info_old = Axis._get_coord_info
-        Axis._get_coord_info = _get_coord_info_new
-    # END OF HORRIBLE HACK
-
-    surf_1 = ax.plot_surface(thresholds_1, thresholds_2, accuracies,
-                             alpha=0.5,
-                             label='accuracy',
-                             cmap=plt.get_cmap('winter'),
-                             edgecolor='none')
-    surf_2 = ax.plot_surface(thresholds_1, thresholds_2, dataset_kepts,
-                             alpha=0.5,
-                             label='dataset',
-                             cmap=plt.get_cmap('autumn'),
-                             edgecolor='none')
-
-    handle_1 = copy.copy(surf_1)
-    handle_2 = copy.copy(surf_2)
-
-    handle_1.set_color(colors[0])
-    handle_2.set_color(colors[1])
-
-    handle_1._edgecolors2d = handle_1._edgecolors3d
-    handle_2._edgecolors2d = handle_2._edgecolors3d
-
-    handle_1._facecolors2d = handle_1._facecolors3d
-    handle_2._facecolors2d = handle_2._facecolors3d
-
-    ax.legend(frameon=True, loc=3, handles=[handle_1, handle_2])
-
     plt.tight_layout()
     plt.show()
 
@@ -447,96 +526,164 @@ def confidence_fitlering_data_vs_acc_multiline_plot(accuracies, dataset_kepts,
     plt.show()
 
 
-def lerning_curves_plot(train_values, vali_values, metric, algorithm_names=None,
-                        title=None):
-    num_algorithms = len(train_values)
-    max_len = max([len(tv) for tv in train_values])
+def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,
+                                 dataset_kepts, threshold_fields=None,
+                                 title=None):
+    assert len(accuracies) == len(dataset_kepts)
+    assert len(thresholds_1) == len(thresholds_2)
 
-    fig, ax = plt.subplots()
+    thresholds_1, thresholds_2 = np.meshgrid(thresholds_1, thresholds_2)
 
-    sns.set_style('whitegrid')
+    colors = plt.get_cmap('tab10').colors
+    sns.set_style('white')
+
+    z_ticks_minor = np.linspace(0.0, 1.0, num=21)
+    z_ticks_major = np.linspace(0.0, 1.0, num=11)
+    z_ticks_major_labels = ['{:3.0f}%'.format(z * 100) for z in z_ticks_major]
+
+    fig = plt.figure()
+    ax = Axes3D
+    ax = fig.add_subplot(111, projection='3d')
 
     if title is not None:
         ax.set_title(title)
-
-    if num_algorithms == 1:
-        colors = plt.get_cmap('tab10').colors
-    else:  # num_algorithms > 1
-        colors = plt.get_cmap('tab20').colors
 
     ax.grid(which='both')
     ax.grid(which='minor', alpha=0.5)
     ax.grid(which='major', alpha=0.75)
-    ax.set_xlabel('epochs')
-    ax.set_ylabel(metric.replace('_', ' '))
 
-    xs = list(range(1, max_len + 1))
+    ax.set_xlabel('{} probability'.format(threshold_fields[0]))
+    ax.set_ylabel('{} probability'.format(threshold_fields[1]))
 
-    for i in range(num_algorithms):
-        name_prefix = algorithm_names[
-                          i] + ' ' if algorithm_names is not None and i < len(
-            algorithm_names) else ''
-        ax.plot(xs, train_values[i], label=name_prefix + 'training',
-                color=colors[i * 2], linewidth=3)
-        if i < len(vali_values):
-            ax.plot(xs, vali_values[i], label=name_prefix + 'validation',
-                    color=colors[i * 2 + 1], linewidth=3)
+    ax.set_xlim(np.min(thresholds_1), np.max(thresholds_1))
+    ax.set_ylim(np.min(thresholds_2), np.max(thresholds_2))
+    ax.set_zlim(0, 1)
+    ax.set_zticks(z_ticks_major)
+    ax.set_zticklabels(z_ticks_major_labels)
+    ax.set_zticks(z_ticks_minor, minor=True)
 
-    ax.legend()
+    # ORRIBLE HACK, IT'S THE ONLY WAY TO REMOVE PADDING
+    from mpl_toolkits.mplot3d.axis3d import Axis
+    if not hasattr(Axis, '_get_coord_info_old'):
+        def _get_coord_info_new(self, renderer):
+            mins, maxs, centers, deltas, tc, highs = self._get_coord_info_old(
+                renderer)
+            mins += deltas / 4
+            maxs -= deltas / 4
+            return mins, maxs, centers, deltas, tc, highs
+
+        Axis._get_coord_info_old = Axis._get_coord_info
+        Axis._get_coord_info = _get_coord_info_new
+    # END OF HORRIBLE HACK
+
+    surf_1 = ax.plot_surface(thresholds_1, thresholds_2, accuracies,
+                             alpha=0.5,
+                             label='accuracy',
+                             cmap=plt.get_cmap('winter'),
+                             edgecolor='none')
+    surf_2 = ax.plot_surface(thresholds_1, thresholds_2, dataset_kepts,
+                             alpha=0.5,
+                             label='dataset',
+                             cmap=plt.get_cmap('autumn'),
+                             edgecolor='none')
+
+    handle_1 = copy.copy(surf_1)
+    handle_2 = copy.copy(surf_2)
+
+    handle_1.set_color(colors[0])
+    handle_2.set_color(colors[1])
+
+    handle_1._edgecolors2d = handle_1._edgecolors3d
+    handle_2._edgecolors2d = handle_2._edgecolors3d
+
+    handle_1._facecolors2d = handle_1._facecolors3d
+    handle_2._facecolors2d = handle_2._facecolors3d
+
+    ax.legend(frameon=True, loc=3, handles=[handle_1, handle_2])
+
     plt.tight_layout()
     plt.show()
 
 
-def confusion_matrix_plot(confusion_matrix, labels=None, field=None):
-    mpl.rcParams.update({'figure.autolayout': True})
-    fig, ax = plt.subplots()
-
-    ax.invert_yaxis()
-    ax.xaxis.tick_top()
-    ax.xaxis.set_label_position('top')
-
-    cax = ax.matshow(confusion_matrix, cmap='viridis')
-
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
-    ax.set_xticklabels([''] + labels, rotation=45, ha='left')
-    ax.set_yticklabels([''] + labels)
-    ax.grid(False)
-    ax.tick_params(axis='both', which='both', length=0)
-    fig.colorbar(cax, ax=ax, extend='max')
-    ax.set_xlabel('Predicted {}'.format(field))
-    ax.set_ylabel('Actual {}'.format(field))
-
-    plt.tight_layout()
-    plt.show()
-
-
-def multiclass_multimetric_plot(scores, metrics, labels=None, title=None):
-    assert len(scores) > 0
-
+def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,
+                             title=None):
     sns.set_style('whitegrid')
+
+    colors = plt.get_cmap('tab10').colors
+
+    # y_ticks_minor = np.linspace(0.0, 1.0, num=21)
+    # y_ticks_major = np.linspace(0.0, 1.0, num=11)
+    # y_ticks_major_labels = ['{:3.0f}%'.format(y * 100) for y in y_ticks_major]
+
+    fig, ax1 = plt.subplots()
+
+    if title is not None:
+        ax1.set_title(title)
+
+    ax1.grid(which='both')
+    ax1.grid(which='minor', alpha=0.5)
+    ax1.grid(which='major', alpha=0.75)
+    ax1.set_xticks([x for idx, x in enumerate(thresholds) if idx % 2 == 0])
+    ax1.set_xticks(thresholds, minor=True)
+
+    # ax1.set_xlim(0, 1)
+    ax1.set_xlabel('confidence threshold')
+
+    # ax1.set_ylim(0, 1)
+    # ax1.set_yticks(y_ticks_major)
+    # ax1.set_yticklabels(y_ticks_major_labels)
+    # ax1.set_yticks(y_ticks_minor, minor=True)
+
+    for i in range(len(scores)):
+        algorithm_name = algorithm_names[
+                             i] + ' ' if algorithm_names is not None and i < len(
+            algorithm_names) else ''
+        ax1.plot(thresholds, scores[i], label=algorithm_name, color=colors[i],
+                 linewidth=3, marker='o')
+
+    ax1.legend(frameon=True)
+    plt.tight_layout()
+    plt.show()
+
+
+def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):
+    sns.set_style('whitegrid')
+
+    colors = plt.get_cmap('tab10').colors
+    colormap = plt.get_cmap('RdYlGn')
+
+    y_ticks_minor = np.linspace(0.0, 1.0, num=21)
+    y_ticks_major = np.linspace(0.0, 1.0, num=11)
 
     fig, ax = plt.subplots()
 
     if title is not None:
         ax.set_title(title)
 
-    width = 0.9 / len(scores)
-    ticks = np.arange(len(scores[0]))
+    ax.grid(which='both')
+    ax.grid(which='minor', alpha=0.5)
+    ax.grid(which='major', alpha=0.75)
 
-    colors = plt.get_cmap('tab10').colors
-    ax.set_xlabel('class')
-    ax.set_xticks(ticks + width)
-    if labels is not None:
-        ax.set_xticklabels(labels, rotation=90)
-    else:
-        ax.set_xticklabels(ticks, rotation=90)
+    ax.set_xlim(0, 1)
+    ax.set_xlabel('False positive rate')
 
-    for i, score in enumerate(scores):
-        ax.bar(ticks + i * width, score, width, label=metrics[i],
-               color=colors[i])
+    ax.set_ylim(0, 1)
+    ax.set_yticks(y_ticks_major)
+    ax.set_yticks(y_ticks_minor, minor=True)
+    ax.set_ylabel('True positive rate')
 
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.plot([0, 1], [0, 1], color='black', linewidth=3, linestyle='--')
+
+    for i in range(len(fpr_tprs)):
+        algorithm_name = algorithm_names[
+                             i] + ' ' if algorithm_names is not None and i < len(
+            algorithm_names) else ''
+        color = colormap(i / len(fpr_tprs)) if graded_color else colors[i]
+        ax.plot(fpr_tprs[i][0], fpr_tprs[i][1], label=algorithm_name,
+                color=color,
+                linewidth=3)
+
+    ax.legend(frameon=True)
     plt.tight_layout()
     plt.show()
 
@@ -585,6 +732,33 @@ def calibration_plot(fraction_positives, mean_predicted_values,
     plt.show()
 
 
+def brier_plot(brier_scores, algorithm_names=None, title=None):
+    sns.set_style('whitegrid')
+
+    if title is not None:
+        plt.title(title)
+
+    colors = plt.get_cmap('tab10').colors
+
+    plt.grid(which='both')
+    plt.grid(which='minor', alpha=0.5)
+    plt.grid(which='major', alpha=0.75)
+    plt.xlabel('class')
+    plt.ylabel('brier')
+
+    x = np.array(range(brier_scores.shape[0]))
+    for i in range(brier_scores.shape[1]):
+        plt.plot(brier_scores[:, i],
+                 label=algorithm_names[
+                           i] + ' ' if algorithm_names is not None and i < len(
+                     algorithm_names) else '',
+                 color=colors[i], linewidth=3)
+
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
 def predictions_distribution_plot(probabilities, algorithm_names=None):
     sns.set_style('whitegrid')
 
@@ -614,199 +788,26 @@ def predictions_distribution_plot(probabilities, algorithm_names=None):
     plt.show()
 
 
-def brier_plot(brier_scores, algorithm_names=None, title=None):
-    sns.set_style('whitegrid')
-
-    if title is not None:
-        plt.title(title)
-
-    colors = plt.get_cmap('tab10').colors
-
-    plt.grid(which='both')
-    plt.grid(which='minor', alpha=0.5)
-    plt.grid(which='major', alpha=0.75)
-    plt.xlabel('class')
-    plt.ylabel('brier')
-
-    x = np.array(range(brier_scores.shape[0]))
-    for i in range(brier_scores.shape[1]):
-        plt.plot(brier_scores[:, i],
-                 label=algorithm_names[
-                           i] + ' ' if algorithm_names is not None and i < len(
-                     algorithm_names) else '',
-                 color=colors[i], linewidth=3)
-
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-
-def compare_classifiers_plot(scores, metrics, algoritm_names=None,
-                             adaptive=False, decimals=4, title=None):
-    assert len(scores) == len(metrics)
-    assert len(scores) > 0
-
-    num_metrics = len(metrics)
-
-    sns.set_style('whitegrid')
-
+def confusion_matrix_plot(confusion_matrix, labels=None, field=None):
+    mpl.rcParams.update({'figure.autolayout': True})
     fig, ax = plt.subplots()
 
-    ax.grid(which='both')
-    ax.grid(which='minor', alpha=0.5)
-    ax.grid(which='major', alpha=0.75)
-    ax.set_xticklabels([], minor=True)
+    ax.invert_yaxis()
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top')
 
-    if title is not None:
-        ax.set_title(title)
+    cax = ax.matshow(confusion_matrix, cmap='viridis')
 
-    width = 0.8 / num_metrics if num_metrics > 1 else 0.4
-    ticks = np.arange(len(scores[0]))
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.set_xticklabels([''] + labels, rotation=45, ha='left')
+    ax.set_yticklabels([''] + labels)
+    ax.grid(False)
+    ax.tick_params(axis='both', which='both', length=0)
+    fig.colorbar(cax, ax=ax, extend='max')
+    ax.set_xlabel('Predicted {}'.format(field))
+    ax.set_ylabel('Actual {}'.format(field))
 
-    colors = plt.get_cmap('tab10').colors
-    if adaptive:
-        maximum = max([max(score) for score in scores])
-    else:
-        ax.set_xlim([0, 1])
-        ax.set_xticks(np.linspace(0.0, 1.0, num=21), minor=True)
-        ax.set_xticks(np.linspace(0.0, 1.0, num=11))
-        maximum = 1
-
-    half_total_width = 0.4 if num_metrics > 1 else 0.2
-    ax.set_yticks(ticks + half_total_width - width / 2)
-    ax.set_yticklabels(algoritm_names if algoritm_names is not None else '')
-    ax.invert_yaxis()  # labels read top-to-bottom
-
-    for i, metric in enumerate(metrics):
-        ax.barh(ticks + (i * width), scores[i], width, label=metric,
-                color=colors[i])
-
-        for j, v in enumerate(scores[i]):
-            if v < maximum * (0.025 * decimals + 0.1):
-                x = v + maximum * 0.01
-                horizontal_alignment = 'left'
-            else:
-                x = v - maximum * 0.01
-                horizontal_alignment = 'right'
-            txt = ax.text(x, ticks[j] + (i * width),
-                          ('{:.' + str(decimals) + 'f}').format(v),
-                          color='white',
-                          fontweight='bold', verticalalignment='center',
-                          horizontalalignment=horizontal_alignment)
-            txt.set_path_effects(
-                [PathEffects.withStroke(linewidth=3, foreground='black')])
-
-    plt.setp(ax.get_xminorticklabels(), visible=False)
-
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.tight_layout()
-    plt.show()
-
-
-def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
-                                  title=None):
-    sns.set_style('whitegrid')
-    colors = plt.get_cmap('tab10').colors
-
-    fig, ax = plt.subplots()
-
-    ax.grid(which='both')
-    ax.grid(which='minor', alpha=0.5)
-    ax.grid(which='major', alpha=0.75)
-
-    if title is not None:
-        ax.set_title(title)
-
-    ax.set_xticks(xs)
-    ax.set_xticklabels(xs)
-    ax.set_xlabel('k')
-    ax.set_ylabel(metric)
-
-    for i, score in enumerate(scores):
-        ax.plot(xs, score,
-                label=algorithm_names[
-                    i] if algorithm_names is not None and i < len(
-                    algorithm_names) else 'Algorithm {}'.format(i),
-                color=colors[i], linewidth=3, marker='o')
-
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.tight_layout()
-    plt.show()
-
-
-def radar_chart(ground_truth, predictions, algorithms=None, log_scale=False,
-                title=None):
-    sns.set_style('whitegrid')
-
-    if title is not None:
-        plt.title(title)
-
-    ground_truth = ground_truth[0:10]
-    predictions = [pred[0:10] for pred in predictions]
-
-    gt_argsort = np.argsort(-ground_truth)  # sort deacreasing
-    logging.info(gt_argsort)
-    ground_truth = ground_truth[gt_argsort]
-    predictions = [pred[gt_argsort] for pred in predictions]
-
-    maximum = max(max(ground_truth), max([max(p) for p in predictions]))
-
-    ax = plt.subplot(111, polar=True)
-    ax.set_theta_zero_location('N')
-    ax.set_theta_direction(-1)
-    ax.set_rmax(maximum)
-    ax.set_rlabel_position(305)
-    ax.set_ylabel('Probability')
-    # ax.set_rscale('log')
-    ax.grid(True)
-
-    colors = plt.get_cmap('tab10').colors
-
-    num_classes = len(ground_truth)
-
-    # Set ticks to the number of properties (in radians)
-    t = np.arange(0, 2 * np.pi, 2 * np.pi / num_classes)
-    ax.set_xticks(t, [])
-    ax.set_xticklabels(np.arange(0, num_classes))
-
-    # Set yticks from 0 to 10
-    # ax.set_yticks(np.linspace(0, 10, 11))
-    # Set axes limits
-    # ax.set_rlim(0, 1)
-    # ax.set_rscale('log')
-
-    def draw_polygon(values, label, color='grey'):
-        points = [(x, y) for x, y in zip(t, values)]
-        points.append(points[0])
-        points = np.array(points)
-
-        codes = [path.Path.MOVETO, ] + \
-                [path.Path.LINETO, ] * (len(values) - 1) + \
-                [path.Path.CLOSEPOLY]
-        _path = path.Path(points, codes)
-        _patch = patches.PathPatch(_path, fill=True, color=color, linewidth=0,
-                                   alpha=.2)
-        ax.add_patch(_patch)
-        _patch = patches.PathPatch(_path, fill=False, color=color, linewidth=3)
-        ax.add_patch(_patch)
-
-        # Draw circles at value points
-        # line = ax.scatter(points[:, 0], points[:, 1], linewidth=3,
-        #            s=50, color='white', edgecolor=color, zorder=10)
-        ax.plot(points[:, 0], points[:, 1], linewidth=3, marker='o',
-                fillstyle='full',
-                markerfacecolor='white',
-                markeredgecolor=color,
-                markeredgewidth=2,
-                color=color, zorder=10, label=label)
-
-    draw_polygon(ground_truth, 'Ground Truth')
-
-    # Draw polygon representing values
-    for i, alg_predictions in enumerate(predictions):
-        draw_polygon(alg_predictions, algorithms[i], colors[i])
-
-    ax.legend(frameon=True, loc='upper left')
     plt.tight_layout()
     plt.show()
 
