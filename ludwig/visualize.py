@@ -620,7 +620,7 @@ def compare_classifiers_predictions_distribution(
     visualization_utils.radar_chart(prob_gt, prob_predictions, model_names)
 
 
-def confidence_filtering(
+def confidence_thresholding(
         probabilities,
         ground_truth,
         field,
@@ -678,11 +678,11 @@ def confidence_filtering(
         accuracies,
         dataset_kept,
         model_names,
-        title='Confidence Filtering'
+        title='Confidence_Thresholding'
     )
 
 
-def confidence_filtering_data_vs_acc(
+def confidence_thresholding_data_vs_acc(
         probabilities,
         ground_truth,
         field,
@@ -737,11 +737,11 @@ def confidence_filtering_data_vs_acc(
         accuracies,
         dataset_kept,
         model_names,
-        title='Confidence Filtering (Data vs Accuracy)'
+        title='Confidence_Thresholding (Data vs Accuracy)'
     )
 
 
-def confidence_filtering_data_vs_acc_subset(
+def confidence_thresholding_data_vs_acc_subset(
         probabilities,
         ground_truth,
         field,
@@ -821,11 +821,11 @@ def confidence_filtering_data_vs_acc_subset(
         accuracies,
         dataset_kept,
         model_names,
-        title='Confidence Filtering (Data vs Accuracy)'
+        title='Confidence_Thresholding (Data vs Accuracy)'
     )
 
 
-def confidence_filtering_data_vs_acc_subset_per_class(
+def confidence_thresholding_data_vs_acc_subset_per_class(
         probabilities,
         ground_truth,
         ground_truth_metadata,
@@ -907,12 +907,12 @@ def confidence_filtering_data_vs_acc_subset_per_class(
         visualization_utils.confidence_fitlering_data_vs_acc_plot(
             accuracies, dataset_kept, model_names,
             decimal_digits=2,
-            title='Confidence Filtering (Data vs Accuracy) '
+            title='Confidence_Thresholding (Data vs Accuracy) '
                   'for class {}'.format(metadata[field]['idx2str'][curr_k])
         )
 
 
-def confidence_filtering_2thresholds_2d(
+def confidence_thresholding_2thresholds_2d(
         probabilities,
         ground_truth,
         threshold_fields,
@@ -1065,7 +1065,7 @@ def confidence_filtering_2thresholds_2d(
     )
 
 
-def confidence_filtering_2thresholds_3d(
+def confidence_thresholding_2thresholds_3d(
         probabilities,
         ground_truth,
         threshold_fields,
@@ -1153,7 +1153,7 @@ def confidence_filtering_2thresholds_3d(
         np.array(accuracies),
         np.array(dataset_kept),
         threshold_fields,
-        title='Confidence Filtering, two thresholds'
+        title='Confidence_Thresholding, two thresholds'
     )
 
 
@@ -1635,7 +1635,7 @@ def cli(sys_argv):
     parser.add_argument(
         '-v',
         '--visualization',
-        default='confidence_filtering',
+        default='confidence_thresholding',
         choices=['learning_curves',
                  'compare_performance',
                  'compare_classifiers_performance_from_prob',
@@ -1645,12 +1645,12 @@ def cli(sys_argv):
                  'compare_classifiers_multiclass_multimetric',
                  'compare_classifiers_predictions',
                  'compare_classifiers_predictions_distribution',
-                 'confidence_filtering',
-                 'confidence_filtering_data_vs_acc',
-                 'confidence_filtering_data_vs_acc_subset',
-                 'confidence_filtering_data_vs_acc_subset_per_class',
-                 'confidence_filtering_2thresholds_2d',
-                 'confidence_filtering_2thresholds_3d',
+                 'confidence_thresholding',
+                 'confidence_thresholding_data_vs_acc',
+                 'confidence_thresholding_data_vs_acc_subset',
+                 'confidence_thresholding_data_vs_acc_subset_per_class',
+                 'confidence_thresholding_2thresholds_2d',
+                 'confidence_thresholding_2thresholds_3d',
                  'binary_threshold_vs_metric',
                  'roc_curves',
                  'roc_curves_from_prediction_statistics',
@@ -1798,19 +1798,19 @@ def cli(sys_argv):
         compare_classifiers_predictions(**vars(args))
     elif args.visualization == 'compare_classifiers_predictions_distribution':
         compare_classifiers_predictions_distribution(**vars(args))
-    elif args.visualization == 'confidence_filtering':
-        confidence_filtering(**vars(args))
-    elif args.visualization == 'confidence_filtering_data_vs_acc':
-        confidence_filtering_data_vs_acc(**vars(args))
-    elif args.visualization == 'confidence_filtering_data_vs_acc_subset':
-        confidence_filtering_data_vs_acc_subset(**vars(args))
+    elif args.visualization == 'confidence_thresholding':
+        confidence_thresholding(**vars(args))
+    elif args.visualization == 'confidence_thresholding_data_vs_acc':
+        confidence_thresholding_data_vs_acc(**vars(args))
+    elif args.visualization == 'confidence_thresholding_data_vs_acc_subset':
+        confidence_thresholding_data_vs_acc_subset(**vars(args))
     elif (args.visualization ==
-          'confidence_filtering_data_vs_acc_subset_per_class'):
-        confidence_filtering_data_vs_acc_subset_per_class(**vars(args))
-    elif args.visualization == 'confidence_filtering_2thresholds_2d':
-        confidence_filtering_2thresholds_2d(**vars(args))
-    elif args.visualization == 'confidence_filtering_2thresholds_3d':
-        confidence_filtering_2thresholds_3d(**vars(args))
+          'confidence_thresholding_data_vs_acc_subset_per_class'):
+        confidence_thresholding_data_vs_acc_subset_per_class(**vars(args))
+    elif args.visualization == 'confidence_thresholding_2thresholds_2d':
+        confidence_thresholding_2thresholds_2d(**vars(args))
+    elif args.visualization == 'confidence_thresholding_2thresholds_3d':
+        confidence_thresholding_2thresholds_3d(**vars(args))
     elif args.visualization == 'binary_threshold_vs_metric':
         binary_threshold_vs_metric(**vars(args))
     elif args.visualization == 'roc_curves':
