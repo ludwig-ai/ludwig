@@ -145,8 +145,8 @@ def full_train(
     """
     # set input features defaults
     if model_definition_file is not None:
-        model_definition = merge_with_defaults(
-            yaml.load(model_definition_file))
+        with open(model_definition_file, 'r') as def_file:
+            model_definition = merge_with_defaults(yaml.load(def_file))
     else:
         model_definition = merge_with_defaults(model_definition)
 
@@ -164,12 +164,14 @@ def full_train(
             model_resume_path = None
 
     if model_resume_path is None:
-        experiment_dir_name = get_experiment_dir_name(
-            output_directory,
-            experiment_name,
-            model_name,
-            append_suffix=not use_horovod
-        )
+        if is_on_master():
+            experiment_dir_name = get_experiment_dir_name(
+                output_directory,
+                experiment_name,
+                model_name
+            )
+        else:
+            experiment_dir_name = '/'
 
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
