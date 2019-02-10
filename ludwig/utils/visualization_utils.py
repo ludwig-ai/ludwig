@@ -476,59 +476,9 @@ def confusion_matrix_plot(confusion_matrix, labels=None, field=None):
     mpl.rcParams.update({'figure.autolayout': True})
     fig, ax = plt.subplots()
 
-    # if title is not None:
-    #    plt.title(title, y=1.08)
-
-    # ax.invert_yaxis()
-    # ax.xaxis.tick_top()
-
-    # ticks = np.arange(len(confusion_matrix) + 1)
-
-    # pcm = ax.pcolormesh(ticks, ticks, confusion_matrix,
-    #                    norm=colors.PowerNorm(gamma=gamma),
-    #                    cmap='viridis')
-
-    # ax.set_xticks(ticks)
-    # ax.set_yticks(ticks)
-    # ax.set_xticklabels(ticks)
-    # ax.set_yticklabels(ticks)
-
-    # Shift the x labels on the right
-    # SHIFT = -0.5  # Data coordinates
-    # for label in ax.xaxis.get_majorticklabels():
-    #    label.customShiftValue = SHIFT
-    #    label.set_x = types.MethodType(lambda self, x: plt.text.Text.set_x(self,
-    #                                                                       x - self.customShiftValue),
-    #                                   label)
-    # Shift the y labels on the bottom
-    # for label in ax.yaxis.get_majorticklabels():
-    #    label.customShiftValue = SHIFT
-    #    label.set_y = types.MethodType(lambda self, y: plt.text.Text.set_y(self,
-    #                                                                       y - self.customShiftValue),
-    #                                   label)
-
-    # We need to draw the canvas, otherwise the labels won't be positioned and
-    # won't have values yet.
-    #fig.canvas.draw()
-    # replace the last label on x and y axis as we are not actually displaying the last class
-    # labels = [item.get_text() for item in ax.get_xticklabels()]
-    # if labels[-1] == str(ticks[-1]):
-    #    labels[-1] = ''
-    # ax.set_xticklabels(labels)
-    # labels = [item.get_text() for item in ax.get_yticklabels()]
-    # if labels[-1] == str(ticks[-1]):
-    #    labels[-1] = ''
-    # ax.set_yticklabels(labels)
-
     ax.invert_yaxis()
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position('top')
-
-    ticks = np.arange(len(confusion_matrix))
-
-    # cax = ax.pcolormesh(ticks, ticks, confusion_matrix,
-    #                   norm=colors.PowerNorm(gamma=gamma),
-    #                   cmap='viridis')
 
     cax = ax.matshow(confusion_matrix, cmap='viridis')
 
