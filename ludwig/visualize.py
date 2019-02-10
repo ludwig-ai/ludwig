@@ -722,8 +722,8 @@ def confidence_filtering_data_vs_acc_2d(
 
     thresholds = [t / 100 for t in range(0, 101, 5)]
     fixed_step_coverage = thresholds
-    name_t1 = 'threshold_{}'.format(threshold_fields[0])
-    name_t2 = 'threshold_{}'.format(threshold_fields[1])
+    name_t1 = '{} threshold'.format(threshold_fields[0])
+    name_t2 = '{} threshold'.format(threshold_fields[1])
 
     accuracies = []
     dataset_kept = []
@@ -801,6 +801,7 @@ def confidence_filtering_data_vs_acc_2d(
         model_names,
         title='Coverage vs Accuracy'
     )
+
     # ==========#
     # Max line #
     # ==========#
@@ -829,14 +830,15 @@ def confidence_filtering_data_vs_acc_2d(
                                              selected_acc.shape)
         t1_maxes.append(thresholds[threshold_indices[0]])
         t2_maxes.append(thresholds[threshold_indices[1]])
-    model_name_name = model_names[0] if model_names is not None and len(
+    model_name = model_names[0] if model_names is not None and len(
         model_names) > 0 else ''
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         [max_accuracies, t1_maxes, t2_maxes],
         [fixed_step_coverage, fixed_step_coverage, fixed_step_coverage],
-        model_name_names=[model_name_name, name_t1, name_t2],
+        model_names=[model_name + ' accuracy', name_t1, name_t2],
         dotted=[False, True, True],
-        title='Coverage vs Accuracy'
+        y_label='',
+        title='Coverage vs Accuracy / Threshold'
     )
 
 

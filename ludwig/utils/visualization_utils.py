@@ -339,9 +339,10 @@ def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,
 
 
 def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,
-                                          algorithm_names=None,
+                                          model_names=None,
                                           dotted=False,
                                           decimal_digits=0,
+                                          y_label='accuracy',
                                           title=None):
     assert len(accuracies) == len(dataset_kepts)
 
@@ -380,15 +381,15 @@ def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,
     ax.set_ylim(0, 1)
     ax.set_yticks(y_ticks_major)
     ax.set_yticks(y_ticks_minor, minor=True)
-    ax.set_ylabel('accuracy')
+    ax.set_ylabel(y_label)
 
     for i in range(len(accuracies)):
         curr_dotted = dotted[i] if isinstance(dotted,
                                               (list, tuple)) and i < len(
             dotted) else dotted
-        algorithm_name = algorithm_names[
-                             i] + ' ' if algorithm_names is not None and i < len(
-            algorithm_names) else ''
+        algorithm_name = model_names[
+                             i] + ' ' if model_names is not None and i < len(
+            model_names) else ''
         ax.plot(dataset_kepts[i], accuracies[i], label=algorithm_name,
                 color=colors[i],
                 linewidth=3, linestyle=':' if curr_dotted else '-')
