@@ -927,6 +927,7 @@ def confidence_filtering_data_vs_acc_subset(
 def confidence_filtering_data_vs_acc_subset_per_class(
         probabilities,
         ground_truth,
+        ground_truth_metadata,
         field,
         top_n_classes,
         labels_limit,
@@ -938,6 +939,7 @@ def confidence_filtering_data_vs_acc_subset_per_class(
         logging.error('No probabilities provided')
         return
 
+    metadata = load_json(ground_truth_metadata)
     k = top_n_classes[0]
     gt = load_from_file(ground_truth, field)
     if labels_limit > 0:
@@ -1005,7 +1007,7 @@ def confidence_filtering_data_vs_acc_subset_per_class(
             accuracies, dataset_kept, model_names,
             decimal_digits=2,
             title='Confidence Filtering (Data vs Accuracy) '
-                  'for class {}'.format(curr_k)
+                  'for class {}'.format(metadata[field]['idx2str'][curr_k])
         )
 
 
