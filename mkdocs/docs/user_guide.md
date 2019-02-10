@@ -2314,6 +2314,16 @@ Confusion Matrix
 
 ### confusion_matrix
 
+This visualization uses the `top_n_classes`, `normalize`, `ground_truth_metadata`, `prediction_statistics` and `model_names` parameters.
+For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces a heatmap of the confusion matrix in the predictions for each field that has a confusion matrix in `prediction_statistics`.
+The value of `top_n_classes` limits the heatmat to the `n` most frequent classes.
+
+![Confusion Matrix](images/confusion_matrix.png "Confusion Matrix")
+
+The second plot produced, is a barplot showing the entropy of each class, ranked from most entropic to least entropic.
+
+![Confusion Matrix Entropy](images/confusion_matrix_entropy.png "Confusion Matrix Entropy")
+
 
 Compare Performance
 -------------------
