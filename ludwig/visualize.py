@@ -1672,13 +1672,13 @@ def frequency_vs_f1(
             per_class_stats = prediction_statistics[field]['per_class_stats']
             f1_scores = []
             labels = []
-            class_ids = sorted(map(int, per_class_stats.keys()))
+            class_names = metadata[field]['idx2str']
             if k > 0:
-                class_ids = class_ids[:k]
-            for class_id in class_ids:
-                class_stats = per_class_stats[str(class_id)]
+                class_names = class_names[:k]
+            for class_name in class_names:
+                class_stats = per_class_stats[class_name]
                 f1_scores.append(class_stats['f1_score'])
-                labels.append(str(class_id))
+                labels.append(class_name)
 
             f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
             f1_sorted_indices = f1_np.argsort()
@@ -1704,6 +1704,7 @@ def frequency_vs_f1(
                 field_frequency_reordered,
                 'F1 score',
                 'frequency',
+                labels=labels,
                 title='{} F1 Score vs Frequency {}'.format(
                     model_name_name,
                     field
@@ -1726,6 +1727,7 @@ def frequency_vs_f1(
                 f1_reordered,
                 'frequency',
                 'F1 score',
+                labels=labels,
                 title='{} F1 Score vs Frequency {}'.format(
                     model_name_name,
                     field
