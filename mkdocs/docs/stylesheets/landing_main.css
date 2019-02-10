@@ -2610,6 +2610,7 @@ img.centered-img {
     background-size: 230px 71px;
 }
 
+/*
 #download .download-badges li a.badge-appstore {
     background-image: url("../images/appstore.png");
 }
@@ -2617,7 +2618,7 @@ img.centered-img {
 #download .download-badges li a.badge-googleplay {
     background-image: url("../images/google-play.png");
 }
-
+*/
 #download pre > code {
     color: #ccc;
     text-align: left;
@@ -2758,6 +2759,7 @@ footer ul a:visited {
     width: 100%;
 }
 
+/*
 .footer-subscribe #mc-form input[type="email"] {
     width: 100%;
     height: 5.4rem;
@@ -2767,7 +2769,7 @@ footer ul a:visited {
     margin-bottom: 1.8rem;
     color: rgba(255, 255, 255, 0.5);
 }
-
+*/
 .footer-subscribe #mc-form input[type="email"]:focus {
     color: #1e1f20;
 }
