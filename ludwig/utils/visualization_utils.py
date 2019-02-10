@@ -309,12 +309,16 @@ def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,
         Axis._get_coord_info = _get_coord_info_new
     # END OF HORRIBLE HACK
 
-    surf_1 = ax.plot_surface(thresholds_1, thresholds_2, accuracies, alpha=0.5,
+    surf_1 = ax.plot_surface(thresholds_1, thresholds_2, accuracies,
+                             alpha=0.5,
                              label='accuracy',
-                             cmap=plt.get_cmap('winter'))
+                             cmap=plt.get_cmap('winter'),
+                             edgecolor='none')
     surf_2 = ax.plot_surface(thresholds_1, thresholds_2, dataset_kepts,
-                             alpha=0.5, label='dataset',
-                             cmap=plt.get_cmap('autumn'))
+                             alpha=0.5,
+                             label='dataset',
+                             cmap=plt.get_cmap('autumn'),
+                             edgecolor='none')
 
     handle_1 = copy.copy(surf_1)
     handle_2 = copy.copy(surf_2)

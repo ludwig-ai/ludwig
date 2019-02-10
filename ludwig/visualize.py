@@ -538,7 +538,7 @@ def confidence_filtering(
     )
 
 
-def confidence_filtering_2d(
+def confidence_filtering_3d(
         probabilities,
         ground_truth,
         threshold_fields,
@@ -622,10 +622,10 @@ def confidence_filtering_2d(
         dataset_kept.append(curr_dataset_kept)
 
     visualization_utils.confidence_fitlering_3d_plot(
-        thresholds,
-        thresholds,
-        accuracies,
-        dataset_kept,
+        np.array(thresholds),
+        np.array(thresholds),
+        np.array(accuracies),
+        np.array(dataset_kept),
         threshold_fields,
         title='Confidence Filtering'
     )
@@ -1791,7 +1791,7 @@ def cli(sys_argv):
                  'compare_classifiers_predictions',
                  'compare_classifiers_predictions_distribution',
                  'confidence_filtering',
-                 'confidence_filtering_2d',
+                 'confidence_filtering_3d',
                  'confidence_filtering_data_vs_acc',
                  'confidence_filtering_data_vs_acc_2d',
                  'confidence_filtering_data_vs_acc_subset',
@@ -1947,8 +1947,8 @@ def cli(sys_argv):
         compare_classifiers_predictions_distribution(**vars(args))
     elif args.visualization == 'confidence_filtering':
         confidence_filtering(**vars(args))
-    elif args.visualization == 'confidence_filtering_2d':
-        confidence_filtering_2d(**vars(args))
+    elif args.visualization == 'confidence_filtering_3d':
+        confidence_filtering_3d(**vars(args))
     elif args.visualization == 'confidence_filtering_data_vs_acc':
         confidence_filtering_data_vs_acc(**vars(args))
     elif args.visualization == 'confidence_filtering_data_vs_acc_2d':
