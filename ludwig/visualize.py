@@ -543,7 +543,6 @@ def confidence_filtering_3d(
         ground_truth,
         threshold_fields,
         labels_limit,
-        model_names=None,  # DOTO this param is unused?
         **kwargs
 ):
     if len(probabilities) < 2:
