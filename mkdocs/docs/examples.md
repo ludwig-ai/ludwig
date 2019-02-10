@@ -109,9 +109,6 @@ output_features:
         decoder: tagger
 ```
 
-Language Modeling
-===
-
 Machine Translation
 ===
 
@@ -426,7 +423,7 @@ output_features:
         type: numerical
 ```
 
-Example that uses Sets/Bags
+Multi-label classification
 ===
 
 | image_path                | tags          |
