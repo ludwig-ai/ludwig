@@ -2164,7 +2164,13 @@ Distributed Training
 
 You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
 
-Horovod works by increasing the batch size and distributing a part of each batch to a different node and collecting the gradients from all the nodes in a smart and scalable way.
+In order to use distributed training you have to install MPI (as detailed in [Horovod's installation instructions](https://github.com/uber/horovod)) and then install the two packages:
+
+```
+pip install horovod mpi4py
+```
+
+Horovod works by, in practice, increasing the batch size and distributing a part of each batch to a different node and collecting the gradients from all the nodes in a smart and scalable way.
 It also adjusts the learning rate to counter balance the increase in the batch size.
 The advantage is that training speed scales almost linearly with the number of nodes.
 
