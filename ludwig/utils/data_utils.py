@@ -94,7 +94,7 @@ def save_hdf5(data_fp, data, metadata=None):
     mode = 'w'
     if os.path.isfile(data_fp):
         mode = 'r+'
-    with  h5py.File(data_fp, mode) as h5_file:
+    with h5py.File(data_fp, mode) as h5_file:
         for key, value in data.items():
             dataset = h5_file.create_dataset(key, data=value)
             if key in metadata:
@@ -140,7 +140,7 @@ def save_array(data_fp, array):
 def load_pretrained_embeddings(embeddings_path, vocab):
     embeddings = load_glove(embeddings_path)
 
-    # find out the size of the mebeddings
+    # find out the size of the embeddings
     embeddings_size = len(next(iter(embeddings.values())))
 
     # calculate an average embedding, to use for initializing missing words
@@ -153,7 +153,7 @@ def load_pretrained_embeddings(embeddings_path, vocab):
     if count > 0:
         avg_embedding /= count
 
-    # create the mebedding matrix
+    # create the embedding matrix
     embeddings_vectors = []
     for word in vocab:
         if word in embeddings:
