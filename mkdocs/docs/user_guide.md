@@ -1,7 +1,7 @@
 Command Line Interface
 ======================
 
-udwig provides six command line interface entry pointsudwig provides six command line interface entry points
+Ludwig provides six command line interface entry points
 
 - train
 - predict
@@ -10,7 +10,7 @@ udwig provides six command line interface entry pointsudwig provides six command
 - collect_weights
 - collect_activations
 
-They will be described in detail in the following subsections.
+They are described in detail below.
 
 train
 -----
@@ -110,20 +110,25 @@ optional arguments:
                         the level of logging to use
 ```
 
-When Ludwig trains a model it created two intermediate files, one HDF5 and one JSON.
+When Ludwig trains a model it creates two intermediate files, one HDF5 and one JSON.
 The HDF5 file contains the data mapped to numpy ndarrays, while the JSON file contains the mappings from the values in the tensors to their original labels.
+
 For instance, for a categorical feature with 3 possible values, the HDF5 file will contain integers from 0 to 3 (with 0 being a `<UNK>` category), while the JSON file will contain a `idx2str` list contaning all tokens (`[<UNK>, label_1, label_2, label_3]`), a `str2idx` dictionary (`{"<UNK>": 0, "label_1": 1, "label_2": 2, "label_3": 3}`) and a `str2freq` dictionay (`{"<UNK>": 0, "label_1": 93, "label_2": 55, "label_3": 24}`).
+
 The reason to have those  intermediate files is two-fold: on one hand, if you are going to train your model again Ludwig will try to load them instead of recomputing all tensors, which saves a consistent amount of time, and on the other hand when you want to use your model to predict, data has to be mapped to tensors in exactly the same way it was mapped during training, so you'll be required to load the JSON metadata file in the `predict` command.
 The way this works is: the first time you provide a CSV (`--data_csv`), the HDF5 and JSON files are created, from the second time on Ludwig will lod them instead of the CSV even if you specify the CSV (it looks in the same directory for files names in the same way but with a different extension), finally you can directly specify the HDF5 and JSON files (`--data_hdf5` and `--metadata_json`).
+
 As the mapping from raw data to tensors depends on the type of feature that you specify in your model definition, if you change type (for instance from `sequential` to `text`) you also have to redo the preprocessing, which is achieved by deleting the HDF5 and JSON files.
-You can anyway skip saving the HDF5 and JSON file specifying `--skip_save_processed_input`.
+Alternatively you can skip saving the HDF5 and JSON files specifying `--skip_save_processed_input`.
 
 Splitting between train, validation and test set can be done in several ways.
 This allows for a few possible input data scenarios:
 
-- one single CSV file is provided (`-data_csv`). In this case if the csv contains a `split` column with values 0 for training, 1 for validation and 2 for test, this split will be used. If you want to ignore the split column and perform a random split, use a `force_split` argument in the model definition. In case there is no split column, a random 70-20-10 split will be performed. You can set the percentages and specify if you want stratified sampling in the model definition preprocessing section.
+- one single CSV file is provided (`-data_csv`). In this case if the csv contains a `split` column with values `0` for training, `1` for validation and `2` for test, this split will be used. If you want to ignore the split column and perform a random split, use a `force_split` argument in the model definition. In the case when there is no split column, a random `70-20-10` split will be performed. You can set the percentages and specify if you want stratified sampling in the model definition preprocessing section.
+
 - you can provide separate train, validation and test CSVs (`--data_train_csv`, `--data_validation_csv`, `--data_test_csv`).
-- the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (`--data_train_hdf5`, `--data_validation_hdf5`, `--data_test_hdf5`), with the only difference that you need to specify only one JSON file (`---metadata_json`) instead of three.
+
+- the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (`--data_train_hdf5`, `--data_validation_hdf5`, `--data_test_hdf5`), with the only difference that you need to specify only one JSON file (`--metadata_json`) instead of three.
 The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure doesn't improve for a a certain amount of epochs.
 The test set is optional too.
 
@@ -132,17 +137,18 @@ By default the output directory is `./results`.
 That directory will contain a directory named `[experiment_name]_[model_name]_0` if model name and experiment name are specified.
 If the same combination of experiment and model name is used again, the integer at the end of the name wil be increased.
 If neither of them is specified the directory will be named `run_0`.
-he directory will containhe directory will contain
+The directory will will contain
 
-- `description.json` a file containing a description of the training process with all the information to reproduce it.
-- `training_statistics.json` which a record of all measures and losses for each epoch.
-- `model` a directory containing model hyperparameters, weights, checkpoints and logs (for TensorBoard).
+- `description.json` - a file containing a description of the training process with all the information to reproduce it.
+- `training_statistics.json` which contains records of all measures and losses for each epoch.
+- `model` - a directory containing model hyperparameters, weights, checkpoints and logs (for TensorBoard).
 
 The model definition can be provided either as a string (`--model_definition`) or as YAML file (`--model_definition_file`).
 Details on how to write your model definition are provided in the [Model Definition](#model-definition) section.
 
 During training Ludwig saves two sets of weights for the model, one that is the weights at the end of the epoch where the best performance on the validation measure was achieved and one that is the weights at the end of the latest epoch.
 The reason for keeping the second set is to be able to resume training in case the training process gets interrupted somehow.
+
 To resume training using the latest weights and the whole history of progress so far you have to specify the `--model_resume_path` argument.
 You can avoid saving the latest weights and the overall progress so far by using the argument `--skip_save_progress_weights`, but you will not be able to resume it afterwards.
 Another available option is to load a previously trained model as an initialization for a new training process.
@@ -162,7 +168,7 @@ Finally the `--logging_level` argument lets you set the amount of logging that y
 
 Example:
 ```
-
+ludwig train --data_csv reuters-allcats.csv --model_definition "{input_features: [{name: text, type: text, encoder: parallel_cnn, level: word}], output_features: [{name: class, type: category}]}"
 ```
 
 predict
@@ -225,12 +231,12 @@ optional arguments:
                         the level of logging to use
 ```
 
-The same distinction between CSV files and HDF5 / JSON files explained in the [train](#train) section also apply here.
+The same distinction between CSV files and HDF5 / JSON files explained in the [train](#train) section also applies here.
 In either case, the JSON metadata file obtained during training is needed in order to map the new data into tensors.
 If the new data contains a split column, you can specify which split to use to calculate the predictions with the `--split` argument. By default it's `full` which means all the splits will be used.
 
 A model to load is needed, and yo can specify its path with the `--model_path` argument.
-If you trained a model previously and got the results in, for instance, `./results/run_0`, you have to specify `./results/run_0/model` for using it to predict.
+If you trained a model previously and got the results in, for instance, `./results/experiment_run_0`, you have to specify `./results/experiment_run_0/model` for using it to predict.
 
 You can specify an output directory with the argument `--output-directory`, by default it will be `./result_0`, with increasing numbers if a directory with the same name is present.
 
@@ -245,7 +251,7 @@ Finally the `--logging_level`, `--debug` and `--gpus` related arguments behave e
 
 Example:
 ```
-
+ludwig predict --data_csv reuters-allcats.csv --model_path results/experiment_run_0/model/
 ```
 
 experiment
@@ -350,6 +356,11 @@ optional arguments:
 
 The parameters combine parameters from both [train](#train) and [predict](#predict) so please refer to those sections for an in depth explanation.
 The output directory will contain the outputs both commands produce.
+
+Example:
+```
+ludwig experiment --data_csv reuters-allcats.csv --model_definition "{input_features: [{name: text, type: text, encoder: parallel_cnn, level: word}], output_features: [{name: class, type: category}]}"
+```
 
 visualize
 ---------
@@ -589,13 +600,13 @@ The final result matrix is saved in the HDF5 the name of the original column in 
 Each datatype is preprocessed in a different way, using different parameters and different formatters.
 Details on how to set those parameters for each feature type and for each speficific feature will be described in the [Model Definition - Preprocessing](#preprocessing) section.
 
-Binary features are directly transformed into a binary valued vector of length `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Binary` features are directly transformed into a binary valued vector of length `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 No additional information about them is available in the JSON metadata file.
 
-Numerical features are directly transformed into a float valued vector of length `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Numerical` features are directly transformed into a float valued vector of length `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 No additional information about them is available in the JSON metadata file.
 
-Category features are transoformed into into an integer valued vector of size `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Category` features are transoformed into into an integer valued vector of size `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way categories are mapped into integers consists in first collecting a dictionary of all the different category strings present in the column of the CSV, then rank them by frequency and then assign them an increasing integer ID from the most frequent to the most rare (with 0 being assigned to a `<UNK>` token).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
@@ -604,7 +615,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the size of the set of all tokens (`vocab_size`)
 4. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
-Set features are transoformed into into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Set` features are transoformed into into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -614,9 +625,9 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the maximum size of all sets (`max_set_size`)
 5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
-Bag features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).
+`Bag` features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).
 
-Sequence features are transoformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the lenght of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Sequence` features are transoformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the lenght of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -626,31 +637,29 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the maximum length of all sequences (`sequence_length_limit`)
 5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
-Text features are treated in the same way of sequence features, with a couple differences.
+`Text` features are treated in the same way of sequence features, with a couple differences.
 Two different formatting/splitting happen, one that splits at every character and one that uses a spaCy based tokenizer (and removes stopwords) are used, and two different key are added to the HDF5 file, one containing the matrix of characters and one containing the matrix of words.
 The same thing happens in the JSON file, where there are dictionaries for mapping characters to integers (and the inverse) and words to integers (and their inverse).
 In the model definition you are able to specify which level of representation to use, if the character level or the word level.
 
-Timeseries features are treated in the same way of sequence features, with the only difference being that the matrix in the HDF5 file does not have integer values, but float values.
+`Timeseries` features are treated in the same way of sequence features, with the only difference being that the matrix in the HDF5 file does not have integer values, but float values.
 Moreover, there is no need for any mapping in the JSON file.
 
-!!! TODO doublecheck this
-
-Image features are transoformed into into a float valued tensor of size `n x h x w x c` (where `n` is the size of the dataset and `h x w` is a specific resizing of the image that can be set, and `c` is the number of channels) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Image` features are transformed into into a int8 valued tensor of size `n x h x w x c` (where `n` is the size of the dataset and `h x w` is a specific resizing of the image that can be set, and `c` is the number of color channels) and added to HDF5 with a key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.
 
 CSV Format
 ----------
 
-Ludwig uses Pandas under the hood to read the CSV files. Pandas tries to automatically identify the separator (generally ',') from the data.
-We are using '\' as the default escape character. For example, if ',' is the column separator and one of your data columns has a ',' in it, Pandas would fail to load the data properly.
-To handle such cases, we expect your data columns to be escaped with backslashes (replace ',' in the data with '\\,')
+Ludwig uses Pandas under the hood to read the CSV files. Pandas tries to automatically identify the separator (generally `','`) from the data.
+We are using `'\'` as the default escape character. For example, if `','` is the column separator and one of your data columns has a `','` in it, Pandas would fail to load the data properly.
+To handle such cases, we expect your data columns to be escaped with backslashes (replace `','` in the data with `'\\,'`)
 
 Data Postprocessing
 ===================
 
 The JSON file obtained from preprocessing is used also for postprocessing: Ludwig models return output predictions and, depending on theit datatype they are mapped back into the original space.
-Numerical and timeseries are returned as they are, while category, set, sequence and text features output integers, those integres are mapped back into the original tokens / names using the `idx2str` in the JSON file.
+Numerical and timeseries are returned as they are, while category, set, sequence, and text features output integers, those integres are mapped back into the original tokens / names using the `idx2str` in the JSON file.
 When you run `experiment` or `predict` you will find both a CSV file for each output containing the mapped predictions, a probability CSV file containing the probability of that prediction, a probabilities CSV file containing the probabilities for all alternatives (for instance, the probabilities of all the categories in case of a categorical feature).
 You will also find the unmapped NPY files.
 If you don't need them you can use the `--skip_save_unprocessed_output` argument.
@@ -665,7 +674,7 @@ It is provaided to both `experiment` and `train` commands either as a string (`-
 The string or the content of the file will be parsed by PyYAML into a dictionary in memory, so any style of YAML accepted by the parser is considered to be valid, so both multiline and oneline formats are accepted.
 For instance a list of dictionaries can be written both as
 ```yaml
-nylist: [{name: item1, score: 2}, {name: item2, score: 1}, {name: item3, score: 4}]
+mylist: [{name: item1, score: 2}, {name: item2, score: 1}, {name: item3, score: 4}]
 ```
 
 or as:
@@ -701,11 +710,16 @@ Input features
 The `input_features` list contains a list of dictionaries, each of them containing two required fields `name` and `type`.
 `name` is the name of the feature and is the same name of the column of the CSV input file, `type` is one of the supported datatypes.
 Input features may have different ways to be encoded and the parameter to decide it is `encoder`.
+
 All the other parameters you specify in an input feature will be passed as parameters to the function that build the encoder, and each encoder can have different parameters.
+
 For instance a `sequence` feature can be encoded by a `stacked_cnn` or by and `rnn`, but only the `stacked_cnn` will accept the parameter `num_filters` while only the `rnn` will accept the parameter `bidirectional`.
+
 A list of all the encoders available for all the datatypes alongside with the description of all parameters will be provided in the datatype-specific sections.
 Some datatypes have only one type of encoder, so you are not required to specify it.
+
 The role of the encoders is to map inputs into tensors, usually vectors in the case fo datatype without a temporal / sequential aspect, matrices in case there is a temporal / sequential aspect or higher rank tensors in case there is a spatial or a spatio-temporal aspect to the input data.
+
 Different configurations of the same encoder may return a tensor with different rank, for instance a sequential encoder may return a vector of size `h` that is either the final vector of a sequente or the result of pooling over the sequence length, or it can return a matrix of size `l x h` where `l` is the length of the sequence and `h` is the hidden dimension if you specify the pooling reduce operation (`reduce_output`) to be `null`.
 For the sake of semplicity you can imagine the output to be a vector in most of the cases, but there is a `reduce_output` parameter one can specify to change the default behavior.
 
@@ -756,8 +770,11 @@ Output Features
 The `output_features` list has the same structure of the `input_features` list: it is a list of dictionaries containing a `name` and a `type`.
 They represent outputs / targets that you want your model to predict.
 In most machine learning tasks you want to predict only one target variable, but in Ludwig you are allowed to specify as many outputs as you want and they are going to be optimized in a multi-task fashion, using a weighted sum of their losses as a combined loss to optimize.
+
 Instead of having `encoders`, output features have `decoders`, but most of them have only one decoder so you don't have to specify it.
+
 Decoders take the output of the combiner as input, process it further, for instance passing it through fully connected layers, and finally predict values and compute a loss and some measures (depending on the datatype different losses and measures apply).
+
 Decoders have additional parameters, in particular `loss` that allows you to specify a different loss to optimize for this specific decoder, for instance numerical features support both `mean_squared_error` and `mean_absolute_error` as losses.
 Details about the available decoders and losses alongside with the description of all parameters will be provided in the datatype-specific sections.
 
@@ -847,11 +864,13 @@ preprocessing:
     ...
 ```
 
-The datails about the prprocessing parameters that each datatype accepts will be provided in the datatype-specific sections.
+The datails about the preprocessing parameters that each datatype accepts will be provided in the datatype-specific sections.
 
-It is anyway important to point out that different features within the same datatype may require different preprocessing.
+It is important to point out that different features within the same datatype may require different preprocessing.
 For instance a document classification model may have two text input features, one for the title of the document and one for the body.
+
 As the lenght of the title is much shorter than the lenght of the body, the parameter `word_length_limit` should be set to 10 for the title and 2000 for the body, but both of them share the same parameter `most_common_words` with value 10000.
+
 The way to do this is adding a `preprocessing` key inside the title `input_feature` dictionary and one in the `body` input feature dictionary contning the desired parameter and value.
 The model definition will look like:
 
@@ -881,7 +900,7 @@ Binary Features
 Binary features are directly transformed into a binary valued vector of length `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 No additional information about them is available in the JSON metadata file.
 
-he parameters available for preprocessing arehe parameters available for preprocessing are
+The parameters available for preprocessing are
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The calue should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `0`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
@@ -988,14 +1007,14 @@ tied_weights: None
 Numerical features can be used when a regression needs to be performed.
 There is only one decoder available for numerical features and it is a (potentially empty) stack of fully connected layers, followed by a projection into a single number.
 
-hese are the available parameters of a numerical output featurehese are the available parameters of a numerical output feature
+These are the available parameters of a numerical output featurehese are the available parameters of a numerical output feature
 
 - `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explaination refer to [Output Features Dependencies](#output-features-dependencies).
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `loss` (default `{type: mean_squared_error}`): is a dictionary containing a loss `type`. The available losses `type` are `mean_squared_error` and `mean_absolute_error`.
 
-hese are the available parameters of a numerical output feature decoderhese are the available parameters of a numerical output feature decoder
+These are the available parameters of a numerical output feature decoderhese are the available parameters of a numerical output feature decoder
 
 - `fc_layers` (default `None`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -1045,7 +1064,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the size of the set of all tokens (`vocab_size`)
 4. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
-he parameters available for preprocessing arehe parameters available for preprocessing are
+The parameters available for preprocessing arehe parameters available for preprocessing are
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The calue should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `"<UNK>"`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
@@ -1055,7 +1074,7 @@ he parameters available for preprocessing arehe parameters available for preproc
 Category features have one encoder, the raw integer values coming from the input placeholders are mapped to either dense or sparse embeddings (one-hot encodings) and returned as outputs.
 Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionality of the embeddings.
 
-he available encoder parameters arehe available encoder parameters are
+The available encoder parameters arehe available encoder parameters are
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the mebeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocaularyb_size, embedding_size)` for `dense` representations and exacly `vocaularyb_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1096,14 +1115,14 @@ There is only one decoder available for category features and it is a (potential
 +--------------+   +---------+   +-----------+
 ```
 
-hese are the available parameters of a category output featurehese are the available parameters of a category output feature
+These are the available parameters of a category output featurehese are the available parameters of a category output feature
 
 - `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explaination refer to [Output Features Dependencies](#output-features-dependencies).
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `loss` (default `{type: softmax_cross_entropy, class_distance_temperature: 0, class_weights: 1, confidence_penalty: 0, distortion: 1, labels_smoothing: 0, negative_samples: 0, robust_lambda: 0, sampler: None, unique: False}`): is a dictionary containing a loss `type`. The available losses `type` are `softmax_cross_entropy` and `sampled_softmax_cross_entropy`.
 
-hese are the `loss` parametershese are the `loss` parameters
+These are the `loss` parametershese are the `loss` parameters
 
 - `confidence_penalty` (default `0`): penalizes overconfident predictions (low entropy) by adding an additional term that penalizes too confident predictions by adding a `a * (max_entropy - entropy) / max_entropy` term to the loss, where a is the value of this parameter. Useful in case of noisy labels.
 - `robust_lambda` (default `0`): replaces the loss with `(1 - robust_lambda) * loss + robust_lambda / c` where `c` is the number of classes, which is useful in case of noisy labels.
@@ -1116,7 +1135,7 @@ hese are the `loss` parametershese are the `loss` parameters
 - `distortion` (default `1`): when `loss` is `sampled_softmax_cross_entropy` and the sampler is either `unigram` or `learned_unigram` this is used to skew the unigram probability distribution. Each weight is first raised to the distortion's power before adding to the internal unigram distribution. As a result, distortion = 1.0 gives regular unigram sampling (as defined by the vocab file), and distortion = 0.0 gives a uniform distribution.
 - `unique` (default `False`): Determines whether all sampled classes in a batch are unique.
 
-hese are the available parameters of a categoty output feature decoderhese are the available parameters of a categoty output feature decoder
+These are the available parameters of a categoty output feature decoderhese are the available parameters of a categoty output feature decoder
 
 - `fc_layers` (default `None`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -1179,7 +1198,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the maximum size of all sets (`max_set_size`)
 5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
-he parameters available for preprocessing arehe parameters available for preprocessing are
+The parameters available for preprocessing arehe parameters available for preprocessing are
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The calue should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `0`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
@@ -1246,14 +1265,14 @@ There is only one decoder available for set features and it is a (potentially em
 +--------------+   +---------+   +-----------+
 ```
 
-hese are the available parameters of a set output featurehese are the available parameters of a set output feature
+These are the available parameters of a set output featurehese are the available parameters of a set output feature
 
 - `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explaination refer to [Output Features Dependencies](#output-features-dependencies).
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `loss` (default `{type: sigmoid_cross_entropy}`): is a dictionary containing a loss `type`. The available loss `type` is `sigmoid_cross_entropy`.
 
-hese are the available parameters of a set output feature decoderhese are the available parameters of a set output feature decoder
+These are the available parameters of a set output feature decoderhese are the available parameters of a set output feature decoder
 
 - `fc_layers` (default `None`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -1328,7 +1347,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the maximum length of all sequences (`sequence_length_limit`)
 5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
-he parameters available for preprocessing arehe parameters available for preprocessing are
+The parameters available for preprocessing arehe parameters available for preprocessing are
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The calue should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `""`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
@@ -1348,7 +1367,7 @@ In case a representation for each element of the sequence is needed (for example
 Some encoders, because of their inner workings, may reguire additional parameters to be specified in order to obtain one representation for each element of the sequence.
 For instance the `parallel_cnn` encoder, by default pools and flattens the sequence dimension and then passes the flattened vector through fully connected layers, so in order to obtain the full tesnor one has to specify `reduce_output: None`.
 
-equence input feature parameters areequence input feature parameters are
+Sequence input feature parameters areequence input feature parameters are
 
 - `encoder` (default ``parallel_cnn``): the name of the encoder to use to encode the sequence. The available ones are  `embed`, `parallel_cnn`, `stacked_cnn`, `stacked_parallel_cnn`, `rnn` and `cnnrnn`.
 - `tied_weights` (default `None`): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.
@@ -1377,7 +1396,7 @@ If you want to output the full `b x s x h` tensor, you can specify `reduce_outpu
        +------+
 ```
 
-hese are the available for an embed encoder arehese are the available for an embed encoder are
+These are the available for an embed encoder arehese are the available for an embed encoder are
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the mebeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
 - `embedding_size` (default `50`): it is the maximum embedding size, the actual size will be `min(vocaularyb_size, embedding_size)` for `dense` representations and exacly `vocaularyb_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1510,7 +1529,7 @@ If you want to output the full `b x s x h` tensor, you can specify the `pool_siz
        +------+
 ```
 
-hese are the available for an stack cnn encoder arehese are the available for an stack cnn encoder are
+These are the available for an stack cnn encoder arehese are the available for an stack cnn encoder are
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the mebeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocaularyb_size, embedding_size)` for `dense` representations and exacly `vocaularyb_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1590,7 +1609,7 @@ If you want to output the full `b x s x h` tensor, you can specify `reduce_outpu
                    +-------+                      +-------+
 ```
 
-hese are the available for an stack parallel cnn encoder arehese are the available for an stack parallel cnn encoder are
+These are the available for an stack parallel cnn encoder arehese are the available for an stack parallel cnn encoder are
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the mebeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocaularyb_size, embedding_size)` for `dense` representations and exacly `vocaularyb_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1777,7 +1796,7 @@ reduce_output: last
 Sequential features can be used when sequence tagging (classifying each element of an input sequence) or sequence generation needs to be performed.
 There are two decoders available for those to tasks names `tagger` and `generator`.
 
-hese are the available parameters of a sequence output featurehese are the available parameters of a sequence output feature
+These are the available parameters of a sequence output featurehese are the available parameters of a sequence output feature
 
 - `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explaination refer to [Output Features Dependencies](#output-features-dependencies).
@@ -1803,7 +1822,7 @@ Output
 +---+                 +----------+   +-------+
 ```
 
-hese are the available parameters of a tagger decoderhese are the available parameters of a tagger decoder
+These are the available parameters of a tagger decoderhese are the available parameters of a tagger decoder
 
 - `fc_layers` (default `None`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -1864,7 +1883,7 @@ If a `b x h` input is provided to a generator decoder using an rnn with attentio
                               GO    +-----+     +-----+
 ```
 
-hese are the available parameters of a tagger decoderhese are the available parameters of a tagger decoder
+These are the available parameters of a tagger decoderhese are the available parameters of a tagger decoder
 
 - `fc_layers` (default `None`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -2039,7 +2058,7 @@ If there's only one input feature and no fully connected layers are specified, t
 +-----------+
 ```
 
-hese are the available parameters of a concat combinerhese are the available parameters of a concat combiner
+These are the available parameters of a concat combinerhese are the available parameters of a concat combiner
 
 - `fc_layers` (default `None`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -2058,7 +2077,7 @@ fc_layers: None
 num_fc_layers: 0
 fc_size: 256
 acrivation: relu
-norm: none
+norm: None
 dropout: False
 initializer: None
 regularize: True
@@ -2091,7 +2110,7 @@ The final output is a `b x s x h'` tensor where `h'` is the size of the cocatena
 +-----------+
 ```
 
-hese are the available parameters of a sequence concat combinerhese are the available parameters of a sequence concat combiner
+These are the available parameters of a sequence concat combinerhese are the available parameters of a sequence concat combiner
 
 - `main_sequence_feature` (default `None`): name fo the sequnce / text/ time series feature to concatenate the outputs of the other features to. If no `main_sequence_feature` is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features alons the sequence `s` dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongsize the `s` dimension, which means that all of them must have idential `s` dimension, otherwise an error will be thrown.
 
@@ -2200,7 +2219,7 @@ train_stats = model.train(data_csv=csv_file_path)
 train_stats = model.train(data_df=dataframe)
 ```
 
-`model_definition` is a ``dictionary that has the same key-value stracture of a model definition YAML file, as it's technically equivalent as parsing the YAML file into a Python dictionary.
+`model_definition` is a dictionary that has the same key-value stracture of a model definition YAML file, as it's technically equivalent as parsing the YAML file into a Python dictionary.
 `train_stats` will be a dictionary contaning statistics about the training.
 The contents are exactly the same of the `training_statistics.json` file produced by the `experiment` and `train` commands.
 
@@ -2227,7 +2246,7 @@ predictions = model.predict(dataset_csv=csv_file_path)
 predictions = model.predict(dataset_df=dataframe)
 ```
 
-`prediction` will be a dataframe contaning the prediction and confidence score / probability of all output features.
+`predictions` will be a dataframe contaning the prediction and confidence score / probability of all output features.
 
 If you want to compute also measures on the quality of the predictions you can run:
 
