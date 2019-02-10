@@ -394,7 +394,8 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         stats = test_stats[feature_name]
         confusion_matrix = ConfusionMatrix(
             last_elem_sequence,
-            stats[LAST_PREDICTIONS]
+            stats[LAST_PREDICTIONS],
+            labels=train_set_metadata[feature_name]['idx2str']
         )
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
@@ -412,13 +413,6 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
         level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
-
-        if 'per_class_stats' in result:
-            mapped_class_per_stats = {}
-            for key, value in result['per_class_stats'].items():
-                mapped_class_per_stats[
-                    metadata[level_idx2str][int(key)]] = value
-            result['per_class_stats'] = mapped_class_per_stats
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
