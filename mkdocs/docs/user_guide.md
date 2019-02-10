@@ -2162,9 +2162,9 @@ encoder: parallel_cnn
 Distributed Training
 ====================
 
-You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
+You can distribute the training and prediction of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
 
-In order to use distributed training you have to install MPI (as detailed in [Horovod's installation instructions](https://github.com/uber/horovod)) and then install the two packages:
+In order to use distributed training you have to install Horovod as detailed in [Horovod's installation instructions](https://github.com/uber/horovod#install) (which include installing [OpenMPI](https://www.open-mpi.org) or other [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) implementations) and then install the two packages:
 
 ```
 pip install horovod mpi4py
@@ -2174,7 +2174,7 @@ Horovod works by, in practice, increasing the batch size and distributing a part
 It also adjusts the learning rate to counter balance the increase in the batch size.
 The advantage is that training speed scales almost linearly with the number of nodes.
 
-Both `experiment` and `train` command accept a `--horovod` argument that instructs the model building and training phases to be conducted using Horovod in a distributed way.
+`experiment`, `train` and `predict` commands accept a `--horovod` argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
 An MPI command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
 For instance, in order to train a Ludwig model on a local machine with four GPUs one you can run:
 
@@ -2197,6 +2197,8 @@ mpirun -np 16 \
     -mca pml ob1 -mca btl ^openib \
     ludwig train --horovod ...other Ludwig parameters...
 ```
+
+The same applies to `experiment` and `predict`.
 
 More details on the installation of MPI and how to run Horovod can be found in [Horovod's documentation](https://github.com/uber/horovod).
 
