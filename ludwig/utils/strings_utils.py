@@ -29,7 +29,7 @@ UNKNOWN_SYMBOL = '<UNK>'
 PADDING_SYMBOL = '<PAD>'
 
 SPLIT_REGEX = re.compile(r'\s+')
-SPLIT_PUNCTUATION = re.compile(r'\w+|[^\w\s]')
+SPLIT_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
 
