@@ -24,6 +24,7 @@ import sys
 
 import numpy as np
 import sklearn
+from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 from tabulate import tabulate
@@ -346,10 +347,10 @@ def compare_classifiers_predictions(
     predictions_2_fn = predictions[1]
     name_c1 = (
         model_names[0] if model_names is not None and len(model_names) > 0
-               else 'c1')
+        else 'c1')
     name_c2 = (
         model_names[1] if model_names is not None and len(model_names) > 1
-               else 'c2')
+        else 'c2')
 
     gt = load_from_file(ground_truth_fn, ground_truth_field)
     pred_c1 = load_from_file(predictions_1_fn, dtype=int)
@@ -1449,6 +1450,7 @@ def calibration_multiclass(
 
 def confusion_matrix(
         prediction_statistics,
+        ground_truth_metadata,
         field,
         top_n_classes,
         normalize,
@@ -1459,6 +1461,7 @@ def confusion_matrix(
         logging.error('No prediction_statistics provided')
         return
 
+    metadata = load_json(ground_truth_metadata)
     prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
                                             for prediction_statistics_f in
                                             prediction_statistics]
@@ -1480,33 +1483,41 @@ def confusion_matrix(
                         model_names is not None and i < len(model_names)
                 ) else ''
 
+                if field in metadata and 'idx2str' in metadata[field]:
+                    labels = metadata[field]['idx2str']
+                else:
+                    labels = list(range(len(confusion_matrix)))
+
                 for k in top_n_classes:
                     k = (min(k, confusion_matrix.shape[0])
                          if k > 0 else confusion_matrix.shape[0])
-                    cm = confusion_matrix[0:k + 1, 0:k + 1]
-                    with np.errstate(divide='ignore', invalid='ignore'):
-                        cm_norm = np.true_divide(cm, cm.sum(1)[:, np.newaxis])
-                        cm_norm[cm_norm == np.inf] = 0
-                        cm_norm = np.nan_to_num(cm_norm)
+                    cm = confusion_matrix[:k, :k]
                     if normalize:
+                        with np.errstate(divide='ignore', invalid='ignore'):
+                            cm_norm = np.true_divide(cm,
+                                                     cm.sum(1)[:, np.newaxis])
+                            cm_norm[cm_norm == np.inf] = 0
+                            cm_norm = np.nan_to_num(cm_norm)
                         cm = cm_norm
                     visualization_utils.confusion_matrix_plot(
                         cm,
-                        title='{} Confusion Matrix top {} {}'.format(
-                            model_name_name, k,
-                            field
-                        )
+                        labels[:k],
+                        field=field
                     )
 
-                    cm_entropy = - cm_norm * np.log2(cm_norm)
-                    cm_entropy[cm_entropy == np.inf] = 0
-                    cm_entropy = np.nan_to_num(cm_entropy)
-                    class_entropy = cm_entropy.sum(axis=1)
+                    entropies = []
+                    for row in cm:
+                        if np.count_nonzero(row) > 0:
+                            entropies.append(entropy(row))
+                        else:
+                            entropies.append(0)
+                    class_entropy = np.array(entropies)
                     class_desc_entropy = np.argsort(class_entropy)[::-1]
                     desc_entropy = class_entropy[class_desc_entropy]
                     visualization_utils.bar_plot(
                         class_desc_entropy,
                         desc_entropy,
+                        labels=[labels[i] for i in class_desc_entropy],
                         title='Classes ranked by entropy of '
                               'Confusion Matrix row'
                     )
@@ -1657,7 +1668,7 @@ def frequency_vs_f1(
             model_name_name = (model_names[i]
                                if model_names is not None and i < len(
                 model_names)
-                              else '')
+                               else '')
             per_class_stats = prediction_statistics[field]['per_class_stats']
             f1_scores = []
             labels = []
