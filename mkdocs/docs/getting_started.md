@@ -17,7 +17,7 @@ Core Features:
 
 - No coding: no coding skills are required to train and use a model
 - Compositional: type-based approach to deep learning model construction
-- Flexible: experienced users have deep control over model building and training, while beginners will find it easy to apporach
+- Flexible: experienced users have deep control over model building and training, while beginners will find it easy to approach
 - Extensible: easy to add new models and new data types
 - Visualizations: provides standard visualizations to understand and compare performances and predictions
 - Open Source: Apache License 2.0

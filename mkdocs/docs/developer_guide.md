@@ -1,7 +1,7 @@
 Codebase Structure
 ==================
 
-The codebase is organized in a modular, datatype / feature centric way so that addng a feature for a new datatype is pretty straightforward and requires isolated code changes. All the datatype specific logic lives in the corresponding feature module all of which are under `ludwig/features/`.
+The codebase is organized in a modular, datatype / feature centric way so that adding a feature for a new datatype is pretty straightforward and requires isolated code changes. All the datatype specific logic lives in the corresponding feature module all of which are under `ludwig/features/`.
 
 Feature classes contain raw data preprocessing logic specific to each data type. All input (output) features implement `build_input` (`build_output`) method which is used to build encodings (decode outputs). Output features also contain datatype-specific logic to compute output measures such as loss, accuracy, etc.
 
@@ -17,7 +17,7 @@ Adding an Encoder
  1. Add a new encoder class
 ---------------------------
 
-Souce code for encoders lives under `ludwig/models/modules`.
+Source code for encoders lives under `ludwig/models/modules`.
 New encoder objects should be defined in the corresponding files, for example all new sequence encoders should be added to `ludwig/models/modules/sequence_encoders.py`.
 
 All the encoder parameters should be provided as arguments in the constructor with their default values set. For example `RNN` encoder takes the following list of arguments in its constructor:
