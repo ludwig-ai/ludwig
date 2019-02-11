@@ -96,6 +96,10 @@
 
 
     <div class="canvas-container">
+            <img id="alternative-background" src="images/joy.png">
+    </div>
+
+    <div class="canvas-container">
         <canvas height="100vh" id="glcanvas" width="100vw"></canvas>
     </div>
 
@@ -438,6 +442,12 @@ predictions = model.predict(test_dataframe)</code></pre>
 <script src="js/ops.js" type="text/javascript"></script>
 
 <script>
+    function detect_webgl2() {
+        var canvas = document.createElement("canvas");
+        var gl = canvas.getContext("webgl2");
+        return gl != null;
+    }
+
     /**
      * Called when there was a cables error.
      * @param {string} errId - ID of the error, e.g. 'NO_WEBGL' or 'NO_WEBAUDIO'
@@ -445,7 +455,8 @@ predictions = model.predict(test_dataframe)</code></pre>
      * @param {string} errMsg - The error message
      */
     function showError(errId, errMsg) {
-        alert('An error occured: ' + errId + ', ' + errMsg);
+        //alert('An error occured: ' + errId + ', ' + errMsg);
+        console.log("Cables error");
     }
 
     function patchInitialized() {
@@ -456,17 +467,22 @@ predictions = model.predict(test_dataframe)</code></pre>
         // The patch is ready now, all assets have been loaded
     }
 
-    document.addEventListener('DOMContentLoaded', function (event) {
-        CABLES.patch = new CABLES.Patch({
-            patchFile: 'https://raw.githubusercontent.com/uber/ludwig/master/docs/js/Ludwig.json',
-            prefixAssetPath: '',
-            glCanvasId: 'glcanvas',
-            glCanvasResizeToWindow: true,
-            onError: showError,
-            onPatchLoaded: patchInitialized,
-            onFinishedLoading: patchFinishedLoading,
-        });
-    });
+    if (detect_webgl2()) {
+            document.addEventListener('DOMContentLoaded', function (event) {
+                CABLES.patch = new CABLES.Patch({
+                    patchFile: '/js/Ludwig.json',
+                    prefixAssetPath: '',
+                    glCanvasId: 'glcanvas',
+                    glCanvasResizeToWindow: true,
+                    onError: showError,
+                    onPatchLoaded: patchInitialized,
+                    onFinishedLoading: patchFinishedLoading,
+                });
+            });
+    } else {
+        console.log("No webgl2 support")
+    }
+
 </script>
 
 </body>
