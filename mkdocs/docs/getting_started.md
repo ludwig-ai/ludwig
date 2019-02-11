@@ -13,14 +13,16 @@ Ludwig is built with extensibility principles in mind and is based on data type 
 
 It can be used by practitioners to quickly train and test deep learning models as well as by researchers to obtain strong baselines to compare against and have an experimentation setting that ensures comparability by performing standard data preprocessing and visualization.
 
-Core Features:
+Ludwig provides a set of model architectures that can be combined together to create an end-to-end model for a given use case. As an analogy, if deep learning libraries provide the building blocks to make your building, Ludwig provides the buildings to make your city, and you can chose among the available buildings or add your own building to the set of available ones.
 
-- No coding: no coding skills are required to train and use a model
-- Compositional: type-based approach to deep learning model construction
-- Flexible: experienced users have deep control over model building and training, while beginners will find it easy to approach
-- Extensible: easy to add new models and new data types
-- Visualizations: provides standard visualizations to understand and compare performances and predictions
+The core design principles we baked into the toolbox are:
+- No coding required: no coding skills are required to train a model and use it for obtaining predictions.
+- Generality: a new data type-based approach to deep learning model design that makes the tool usable across many different use cases.
+- Flexibility: experienced users have extensive control over model building and training, while newcomers will find it easy to use.
+- Extensibility: easy to add new model architecture and new feature data types.
+- Understandability: deep learning model internals are often considered black boxes, but we provide standard visualizations to understand their performance and compare their predictions.
 - Open Source: Apache License 2.0
+
 
 Installation
 ============
@@ -31,7 +33,7 @@ Ludwig's requirements are the following:
 - pandas
 - scipy
 - scikit-learn
-- imageio
+- scikit-image
 - spacy
 - tensorflow
 - matplotlib
@@ -42,15 +44,16 @@ Ludwig's requirements are the following:
 - tabulate
 - PyYAML
 
-Ludwig has been developed and tested with python 3 in mind.
-If you don’t have python 3 installed, install it by running:
+Ludwig has been developed and tested with Python 3 in mind.
+If you don’t have Python 3 installed, install it by running:
 
 ```
 sudo apt install python3  # on ubuntu
 brew install python3      # on mac
 ```
 
-At the time of writing this document, TensorFlow is not compatible with python 3.7, so the recommended version of python for Ludwig is 3.6. You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
+At the time of writing this document, TensorFlow is not compatible with Python 3.7, so the recommended version of Python for Ludwig is 3.6.
+You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
 
 In order to install Ludwig just run:
 
@@ -74,7 +77,7 @@ python setup.py install
 Beware that in the `requirements.txt` file the `tensorflow` package is the regular one, not the GPU enabled one.
 To install the GPU enabled one replace it with `tensorflow-gpu`.
 
-If you want to train Ludwig models in a distributed way, you need to also install the `horovod` package.
+If you want to train Ludwig models in a distributed way, you need to also install the `horovod` and the `mpi4py` packages.
 Please follow the instructions on [Horovod's repository](https://github.com/uber/horovod) to install it.
 
 
@@ -141,7 +144,7 @@ If you prefer to use an RNN encoder and increase the number of epochs you want t
 
 Refer to the [User Guide](user_guide.md) to find out all the options available to you in the model definition and take a look at the [Examples](examples.md) to see how you can use Ludwig for several different tasks.
 
-After training, Ludwig will create a directory under `/results` containing the trained model with its hyperparameters and summary statistics of the training process.
+After training, Ludwig will create a directory under `results` containing the trained model with its hyperparameters and summary statistics of the training process.
 You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
 
 ```
@@ -159,7 +162,7 @@ Distributed Training
 --------------------
 
 You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
-Refer to the [User Guide](user_guide.md) for more details.
+Refer to the [User Guide](user_guide.md#distributed-training) for more details.
 
 
 Predict
@@ -168,10 +171,8 @@ Predict
 If you have new data and you want your previously trained model to predict target output values, you can type the following command in your console:
 
 ```
-ludwig predict --data_csv path/to/data.csv --model_path /path/to/model --train_set_metadata_json path/to/metadata.json
+ludwig predict --data_csv path/to/data.csv --model_path /path/to/model
 ```
-
-where the `train_set_metadata_json.json` file contains the description on how to transform raw data to tensors and is created during the training process.
 
 Running this command will return model predictions and some test performance statistics if the dataset contains ground truth information to compare to.
 Those can be visualized by the `visualize` tool, which can also be used to compare performances and predictions of different models, for instance:
@@ -209,7 +210,9 @@ predictions = model.predict(test_dataframe)
 model.close()
 ```
 
+`model_definition` is a dictionary contaning the same information of the YAML file.
 More details are provided in the [User Guide](user_guide.md) and in the [API documentation](api.md).
+
 
 Extensibility
 =============
@@ -220,40 +223,3 @@ It is easy to add an additional datatype that is not currently supported by addi
 Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
 Refer to the [Developer Guide](developer_guide.md) for further details.
-
-
-Roadmap
-=======
-
-We will prioritize new features depending on the feedback of the community, but we are already planning to add:
-
-- batcher that uses TensorFlow data pipelines.
-- additional text and sequence encoders (attention, co-attention, hierarchical attention, bert).
-- additional image encoders (ResNet, DenseNet, Inception).
-- image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).
-- additional features types (audio, geolocation vectors, dates, point clouds, lists of lists, multi-sentence documents).
-- additional measures and losses.
-- additional data formatters and dataset-specific preprocessing scripts.
-
-We also want to address some of the current limitations:
-
-- currently full dataset needs to be loaded in memory in order to train a model. Image features already have a way to dynamically read batches of datapoints from disk, and we want to extend this capability to other datatypes.
-- it is currently not possible to serve automatically trained ludwig models, we want to add a small server and a simple user interface in order to provide a live demo capability.
-- document lower level functions.
-
-
-Credits
-=======
-
-Ludwig is designed and developed by [Piero Molino](jttp://w4nderlu.st) at [Uber AI](http://uber.ai).
-
-Main contributors:
-
-- Yaroslav Dudin
-
-Contributors:
-
-- Sai Sumanth Miryala
-- Yi Shi
-- Ankit Jain
-- Pranav Subramani
