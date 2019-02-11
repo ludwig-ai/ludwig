@@ -1,0 +1,20 @@
+// List Icons
+// -------------------------
+
+.#{$mi-css-prefix}-ul {
+  list-style-type: none;
+  margin-left: $mi-li-width * 5/4;
+  padding-left: 0;
+
+  > li {
+    position: relative;
+  }
+}
+
+.#{$mi-css-prefix}-li {
+  left: -$mi-li-width;
+  position: absolute;
+  text-align: center;
+  width: $mi-li-width;
+  line-height: inherit;
+}

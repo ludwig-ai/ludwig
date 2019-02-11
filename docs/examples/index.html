@@ -1,0 +1,1521 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Deep learning toolbox">
+      
+      
+        <link rel="canonical" href="https://uber.github.io/ludwig/examples/">
+      
+      
+        <meta name="author" content="Piero Molino">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../images/ludwig_logo.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-3.3.0">
+    
+    
+      
+        <title>Examples - Ludwig</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.572ca0f0.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.22915126.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#757575">
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.962652e9.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../stylesheets/monokai.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="grey" data-md-color-accent="grey">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#text-classification" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+    <nav class="md-header-nav md-grid">
+        <div class="md-flex">
+            <div class="md-flex__cell md-flex__cell--shrink">
+                <a class="md-header-nav__button md-logo"
+                   href="https://uber.github.io/ludwig/" title="Ludwig">
+                    <img src="../images/ludwig_logo.svg" style="height:2rem;">
+                </a>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+                <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch">
+                <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+                    
+                    <span class="md-header-nav__topic">
+                    Examples
+                    </span>
+                    
+                </div>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+                
+                
+                <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+                
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+                
+                
+            </div>
+            
+            <div class="md-flex__cell md-flex__cell--shrink">
+                <div class="md-header-nav__source">
+                    
+
+
+  
+
+
+  <a href="https://github.com/uber/ludwig/" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#__github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      uber/ludwig
+    </div>
+  </a>
+
+                </div>
+            </div>
+            
+        </div>
+    </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+    <label class="md-nav__title md-nav__title--site" for="__drawer">
+        <a class="md-nav__button md-logo" href="https://uber.github.io/ludwig/"
+           title="Ludwig">
+            <img src="../images/ludwig_logo.svg" style="width: 20.8rem">
+        </a>
+    </label>
+    
+    <div class="md-nav__source">
+        
+
+
+  
+
+
+  <a href="https://github.com/uber/ludwig/" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#__github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      uber/ludwig
+    </div>
+  </a>
+
+    </div>
+    
+    <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+        
+        
+
+
+  <li class="md-nav__item">
+    <a href=".." title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+        
+        
+        
+        
+
+
+  <li class="md-nav__item">
+    <a href="../getting_started/" title="Getting Started" class="md-nav__link">
+      Getting Started
+    </a>
+  </li>
+
+        
+        
+        
+        
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Examples
+      </label>
+    
+    <a href="./" title="Examples" class="md-nav__link md-nav__link--active">
+      Examples
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#text-classification" title="Text Classification" class="md-nav__link">
+    Text Classification
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-entity-recognition-tagging" title="Named Entity Recognition Tagging" class="md-nav__link">
+    Named Entity Recognition Tagging
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#natural-language-understanding" title="Natural Language Understanding" class="md-nav__link">
+    Natural Language Understanding
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#machine-translation" title="Machine Translation" class="md-nav__link">
+    Machine Translation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chit-chat-dialogue-modeling-through-sequence2sequence" title="Chit-Chat Dialogue Modeling through Sequence2Sequence" class="md-nav__link">
+    Chit-Chat Dialogue Modeling through Sequence2Sequence
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sentiment-analysis" title="Sentiment Analysis" class="md-nav__link">
+    Sentiment Analysis
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-classification" title="Image Classification" class="md-nav__link">
+    Image Classification
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-captioning" title="Image Captioning" class="md-nav__link">
+    Image Captioning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-shot-learning-with-siamese-networks" title="One-shot Learning with Siamese Networks" class="md-nav__link">
+    One-shot Learning with Siamese Networks
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visual-question-answering" title="Visual Question Answering" class="md-nav__link">
+    Visual Question Answering
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kaggles-titanic-predicting-survivors" title="Kaggle's Titanic: Predicting survivors" class="md-nav__link">
+    Kaggle's Titanic: Predicting survivors
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time-series-forecasting" title="Time series forecasting" class="md-nav__link">
+    Time series forecasting
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#movie-rating-prediction" title="Movie rating prediction" class="md-nav__link">
+    Movie rating prediction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-label-classification" title="Multi-label classification" class="md-nav__link">
+    Multi-label classification
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-task-learning" title="Multi-Task Learning" class="md-nav__link">
+    Multi-Task Learning
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+        
+        
+        
+
+
+  <li class="md-nav__item">
+    <a href="../user_guide/" title="User Guide" class="md-nav__link">
+      User Guide
+    </a>
+  </li>
+
+        
+        
+        
+        
+
+
+  <li class="md-nav__item">
+    <a href="../developer_guide/" title="Developer Guide" class="md-nav__link">
+      Developer Guide
+    </a>
+  </li>
+
+        
+        
+        
+        
+
+
+  <li class="md-nav__item">
+    <a href="../api/" title="API" class="md-nav__link">
+      API
+    </a>
+  </li>
+
+        
+        
+        
+        
+
+
+  <li class="md-nav__item">
+    <a href="../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+        
+    </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#text-classification" title="Text Classification" class="md-nav__link">
+    Text Classification
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-entity-recognition-tagging" title="Named Entity Recognition Tagging" class="md-nav__link">
+    Named Entity Recognition Tagging
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#natural-language-understanding" title="Natural Language Understanding" class="md-nav__link">
+    Natural Language Understanding
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#machine-translation" title="Machine Translation" class="md-nav__link">
+    Machine Translation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chit-chat-dialogue-modeling-through-sequence2sequence" title="Chit-Chat Dialogue Modeling through Sequence2Sequence" class="md-nav__link">
+    Chit-Chat Dialogue Modeling through Sequence2Sequence
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sentiment-analysis" title="Sentiment Analysis" class="md-nav__link">
+    Sentiment Analysis
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-classification" title="Image Classification" class="md-nav__link">
+    Image Classification
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-captioning" title="Image Captioning" class="md-nav__link">
+    Image Captioning
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-shot-learning-with-siamese-networks" title="One-shot Learning with Siamese Networks" class="md-nav__link">
+    One-shot Learning with Siamese Networks
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visual-question-answering" title="Visual Question Answering" class="md-nav__link">
+    Visual Question Answering
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kaggles-titanic-predicting-survivors" title="Kaggle's Titanic: Predicting survivors" class="md-nav__link">
+    Kaggle's Titanic: Predicting survivors
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#time-series-forecasting" title="Time series forecasting" class="md-nav__link">
+    Time series forecasting
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#movie-rating-prediction" title="Movie rating prediction" class="md-nav__link">
+    Movie rating prediction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-label-classification" title="Multi-label classification" class="md-nav__link">
+    Multi-label classification
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-task-learning" title="Multi-Task Learning" class="md-nav__link">
+    Multi-Task Learning
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/uber/ludwig/edit/master/docs/examples.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                  <h1>Examples</h1>
+                
+                <p>This section contains several examples of how to build models with Ludwig for a variety of tasks.
+For each task we show an example dataset and a sample model definition that can be used to train a model from that data.</p>
+<h2 id="text-classification">Text Classification<a class="headerlink" href="#text-classification" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>text</th>
+<th>class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Toronto  Feb 26 - Standard Trustco said it expects earnings in 1987 to increase at least 15..</td>
+<td>earnings</td>
+</tr>
+<tr>
+<td>New York  Feb 26 - American Express Co remained silent on market rumors..</td>
+<td>acquisition</td>
+</tr>
+<tr>
+<td>BANGKOK  March 25 - Vietnam will resettle 300000 people on state farms known as new economic..</td>
+<td>coffee</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv reuters-allcats.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">class</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+</pre></div>
+
+
+<h2 id="named-entity-recognition-tagging">Named Entity Recognition Tagging<a class="headerlink" href="#named-entity-recognition-tagging" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>utterance</th>
+<th>tag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>John Smith was born in New York on July 21st 1982</td>
+<td>Person Person O O O City City O Date Date Date</td>
+</tr>
+<tr>
+<td>Jane Smith was born in Boston on May 1st 1973</td>
+<td>Person Person O O O City City O Date Date Date</td>
+</tr>
+<tr>
+<td>My friend Carlos was born in San Jose</td>
+<td>O O Person O O O City City</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv sequence_tags.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">utterance</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+        <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tag</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
+</pre></div>
+
+
+<h2 id="natural-language-understanding">Natural Language Understanding<a class="headerlink" href="#natural-language-understanding" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>utterance</th>
+<th>intent</th>
+<th>slots</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I want a pizza</td>
+<td>O O O B-Food_type</td>
+<td>order_food</td>
+</tr>
+<tr>
+<td>Book a flight to Boston</td>
+<td>O O O O B-City</td>
+<td>book_flight</td>
+</tr>
+<tr>
+<td>Book a flight at 7pm to London</td>
+<td>O O O O B-Departure_time O B-City</td>
+<td>book_flight</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv reuters-allcats.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">utterance</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+        <span class="nt">bidirectional</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+        <span class="nt">num_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+        <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">None</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">intent</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+        <span class="nt">reduce_input</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
+        <span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+        <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">slots</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
+</pre></div>
+
+
+<h2 id="machine-translation">Machine Translation<a class="headerlink" href="#machine-translation" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>english</th>
+<th>italian</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hello! How are you doing?</td>
+<td>Ciao, come stai?</td>
+</tr>
+<tr>
+<td>I got promoted today</td>
+<td>Oggi sono stato promosso!</td>
+</tr>
+<tr>
+<td>Not doing well today</td>
+<td>Oggi non mi sento bene</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv translation.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">english</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">italian</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+        <span class="nt">attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bahdanau</span>
+</pre></div>
+
+
+<h2 id="chit-chat-dialogue-modeling-through-sequence2sequence">Chit-Chat Dialogue Modeling through Sequence2Sequence<a class="headerlink" href="#chit-chat-dialogue-modeling-through-sequence2sequence" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>user1</th>
+<th>user2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hello! How are you doing?</td>
+<td>Doing well, thanks!</td>
+</tr>
+<tr>
+<td>I got promoted today</td>
+<td>Congratulations!</td>
+</tr>
+<tr>
+<td>Not doing well today</td>
+<td>I’m sorry, can I do something to help you?</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv chitchat.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">user1</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">user2</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+        <span class="nt">attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bahdanau</span>
+</pre></div>
+
+
+<h2 id="sentiment-analysis">Sentiment Analysis<a class="headerlink" href="#sentiment-analysis" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>review</th>
+<th>sentiment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The movie was fantastic!</td>
+<td>positive</td>
+</tr>
+<tr>
+<td>Great acting and cinematography</td>
+<td>positive</td>
+</tr>
+<tr>
+<td>The acting was terrible!</td>
+<td>negative</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv reuters-allcats.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">review</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sentiment</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+</pre></div>
+
+
+<h2 id="image-classification">Image Classification<a class="headerlink" href="#image-classification" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>image_path</th>
+<th>class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>imagenet/image_000001.jpg</td>
+<td>car</td>
+</tr>
+<tr>
+<td>imagenet/image_000002.jpg</td>
+<td>dog</td>
+</tr>
+<tr>
+<td>imagenet/image_000003.jpg</td>
+<td>boat</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv reuters-allcats.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">class</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+</pre></div>
+
+
+<h2 id="image-captioning">Image Captioning<a class="headerlink" href="#image-captioning" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>image_path</th>
+<th>caption</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>imagenet/image_000001.jpg</td>
+<td>car driving on the street</td>
+</tr>
+<tr>
+<td>imagenet/image_000002.jpg</td>
+<td>dog barking at a cat</td>
+</tr>
+<tr>
+<td>imagenet/image_000003.jpg</td>
+<td>boat sailing in the ocean</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+--data_csv reuters-allcats.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">caption</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+</pre></div>
+
+
+<h2 id="one-shot-learning-with-siamese-networks">One-shot Learning with Siamese Networks<a class="headerlink" href="#one-shot-learning-with-siamese-networks" title="Permanent link">&para;</a></h2>
+<p>This example can be considered a simple baseline for one-shot learning on the <a href="https://github.com/brendenlake/omniglot">Omniglot</a> dataset. The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.</p>
+<table>
+<thead>
+<tr>
+<th>image_1</th>
+<th>image_2</th>
+<th>similarity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>balinese/character01/0108_13.png</td>
+<td>balinese/character01/0108_18.png</td>
+<td>1</td>
+</tr>
+<tr>
+<td>balinese/character01/0108_13.png</td>
+<td>balinese/character08/0115_12.png</td>
+<td>0</td>
+</tr>
+<tr>
+<td>balinese/character01/0108_04.png</td>
+<td>balinese/character01/0108_08.png</td>
+<td>1</td>
+</tr>
+<tr>
+<td>balinese/character01/0108_11.png</td>
+<td>balinese/character05/0112_02.png</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+--data_csv balinese_characters.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_1</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">resize_image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+        <span class="nt">width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
+        <span class="nt">height</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_2</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">resize_image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+        <span class="nt">width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
+        <span class="nt">height</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
+        <span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path_1</span>
+
+<span class="nt">combiner</span><span class="p">:</span>
+    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">concat</span>
+    <span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+    <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">similarity</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
+</pre></div>
+
+
+<h2 id="visual-question-answering">Visual Question Answering<a class="headerlink" href="#visual-question-answering" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>image_path</th>
+<th>question</th>
+<th>answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>imdata/image_000001.jpg</td>
+<td>Is there snow on the mountains?</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>imdata/image_000002.jpg</td>
+<td>What color are the wheels</td>
+<td>blue</td>
+</tr>
+<tr>
+<td>imdata/image_000003.jpg</td>
+<td>What kind of utensil is in the glass bowl</td>
+<td>knife</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">question</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">answer</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
+        <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+</pre></div>
+
+
+<h2 id="kaggles-titanic-predicting-survivors">Kaggle's Titanic: Predicting survivors<a class="headerlink" href="#kaggles-titanic-predicting-survivors" title="Permanent link">&para;</a></h2>
+<p>This example describes how to use Ludwig to train a model for the 
+<a href="https://www.kaggle.com/c/titanic/">kaggle competition</a>, on predicting a passenger's probability of surviving the Titanic
+disaster. Here's a sample of the data:</p>
+<table>
+<thead>
+<tr>
+<th>Pclass</th>
+<th>Sex</th>
+<th>Age</th>
+<th>SibSp</th>
+<th>Parch</th>
+<th>Fare</th>
+<th>Survived</th>
+<th>Embarked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>male</td>
+<td>22</td>
+<td>1</td>
+<td>0</td>
+<td>7.2500</td>
+<td>0</td>
+<td>S</td>
+</tr>
+<tr>
+<td>1</td>
+<td>female</td>
+<td>38</td>
+<td>1</td>
+<td>0</td>
+<td>71.2833</td>
+<td>1</td>
+<td>C</td>
+</tr>
+<tr>
+<td>3</td>
+<td>female</td>
+<td>26</td>
+<td>0</td>
+<td>0</td>
+<td>7.9250</td>
+<td>0</td>
+<td>S</td>
+</tr>
+<tr>
+<td>3</td>
+<td>male</td>
+<td>35</td>
+<td>0</td>
+<td>0</td>
+<td>8.0500</td>
+<td>0</td>
+<td>S</td>
+</tr>
+</tbody>
+</table>
+<p>The full data and the column descriptions can be found <a href="https://www.kaggle.com/c/titanic/data">here</a>. </p>
+<p>After downloading the data, to train a model on this dataset using Ludwig,</p>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+  --data_csv PATH_TO_TITANIC_TRAIN.CSV \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Pclass</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Sex</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Age</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+        <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SibSp</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Parch</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Fare</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+        <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Embarked</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Survived</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
+</pre></div>
+
+
+<p>Better results can be obtained with morerefined feature transformations and preprocessing, but this example has the only aim to show how this type do tasks and data can be used in Ludwig.</p>
+<h2 id="time-series-forecasting">Time series forecasting<a class="headerlink" href="#time-series-forecasting" title="Permanent link">&para;</a></h2>
+<p>While direct timeseries prediction is a work in progress Ludwig can ingest timeseries input feature data and make numerical predictions. Below is an example of a model trained to forecast timeseries at five different horizons.</p>
+<table>
+<thead>
+<tr>
+<th>timeseries_data</th>
+<th>y1</th>
+<th>y2</th>
+<th>y3</th>
+<th>y4</th>
+<th>y5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15.07 14.89 14.45 ...</td>
+<td>16.92</td>
+<td>16.67</td>
+<td>16.48</td>
+<td>17.00</td>
+<td>17.02</td>
+</tr>
+<tr>
+<td>14.89 14.45 14.30 ...</td>
+<td>16.67</td>
+<td>16.48</td>
+<td>17.00</td>
+<td>17.02</td>
+<td>16.48</td>
+</tr>
+<tr>
+<td>14.45 14.3 14.94 ...</td>
+<td>16.48</td>
+<td>17.00</td>
+<td>17.02</td>
+<td>16.48</td>
+<td>15.82</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
+--data_csv timeseries_data.csv \
+  --model_definition model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">timeseries_data</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">timeseries</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">y1</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">y2</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">y3</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">y4</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">y5</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+</pre></div>
+
+
+<h2 id="movie-rating-prediction">Movie rating prediction<a class="headerlink" href="#movie-rating-prediction" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>year</th>
+<th>duration</th>
+<th>nominations</th>
+<th>categories</th>
+<th>rating</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1921</td>
+<td>3240</td>
+<td>0</td>
+<td>comedy drama</td>
+<td>8.4</td>
+</tr>
+<tr>
+<td>1925</td>
+<td>5700</td>
+<td>1</td>
+<td>adventure comedy</td>
+<td>8.3</td>
+</tr>
+<tr>
+<td>1927</td>
+<td>9180</td>
+<td>4</td>
+<td>drama comedy scifi</td>
+<td>8.4</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">year</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">duration</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">nominations</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">categories</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">set</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rating</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+</pre></div>
+
+
+<h2 id="multi-label-classification">Multi-label classification<a class="headerlink" href="#multi-label-classification" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>image_path</th>
+<th>tags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>imagenet/image_000001.jpg</td>
+<td>car man</td>
+</tr>
+<tr>
+<td>imagenet/image_000002.jpg</td>
+<td>happy dog tie</td>
+</tr>
+<tr>
+<td>imagenet/image_000003.jpg</td>
+<td>boat water</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tags</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">set</span>
+</pre></div>
+
+
+<h2 id="multi-task-learning">Multi-Task Learning<a class="headerlink" href="#multi-task-learning" title="Permanent link">&para;</a></h2>
+<p>This example is inspired by the classic paper <a href="https://arxiv.org/abs/1103.0398">Natural Language Processing (Almost) from Scratch</a> by Collobert et al..</p>
+<table>
+<thead>
+<tr>
+<th>sentence</th>
+<th>chunks</th>
+<th>part_of_speech</th>
+<th>named_entities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>San Francisco is very foggy</td>
+<td>B-NP I-NP B-VP B-ADJP I-ADJP</td>
+<td>NNP NNP VBZ RB JJ</td>
+<td>B-Loc I-Loc O O O</td>
+</tr>
+<tr>
+<td>My dog likes eating sausage</td>
+<td>B-NP I-NP B-VP B-VP B-NP</td>
+<td>PRP NN VBZ VBG NN</td>
+<td>O O O O O</td>
+</tr>
+<tr>
+<td>Brutus Killed Julius Caesar</td>
+<td>B-NP B-VP B-NP I-NP</td>
+<td>NNP VBD NNP NNP</td>
+<td>B-Per O B-Per I-Per</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sentence</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
+        <span class="nt">cell</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
+        <span class="nt">bidirectional</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">chunks</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">part_of_speech</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">named_entities</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
+</pre></div>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+
+<!-- Application footer -->
+<footer class="md-footer">
+
+    <!-- Link to previous and/or next page -->
+    
+    <div class="md-footer-nav">
+        <nav class="md-footer-nav__inner md-grid">
+
+            <!-- Link to previous page -->
+            
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--prev"
+               href="../getting_started/"
+               rel="prev"
+               title="Getting Started">
+                <div class="md-flex__cell md-flex__cell--shrink">
+                    <i class="md-icon md-icon--arrow-back
+                    md-footer-nav__button"></i>
+                </div>
+                <div class="md-flex__cell md-flex__cell--stretch
+                  md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Getting Started
+              </span>
+                </div>
+            </a>
+            
+
+            <!-- Link to next page -->
+            
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--next"
+               href="../user_guide/"
+               rel="next"
+               title="User Guide">
+                <div class="md-flex__cell md-flex__cell--stretch
+                  md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                User Guide
+              </span>
+                </div>
+                <div class="md-flex__cell md-flex__cell--shrink">
+                    <i class="md-icon md-icon--arrow-forward
+                    md-footer-nav__button"></i>
+                </div>
+            </a>
+            
+        </nav>
+    </div>
+    
+
+    <!-- Further information -->
+    <div class="md-footer-meta md-typeset">
+        <div class="md-footer-meta__inner md-grid">
+
+            <!-- Copyright and theme information -->
+            <div class="md-footer-copyright">
+                <div class="footer-logo-smallpad"></div>
+                
+                <div class="md-footer-copyright__highlight">
+                    Copyright &copy; 2018 - 2019 Uber Technologies Inc.
+                </div>
+                
+                Website by <a href="http://w4nderlu.st">w4nderlust</a> powered by
+                <a href="https://www.mkdocs.org">MkDocs</a>,
+                <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>,
+                <a href="http://www.styleshout.com/">styleshout</a> and
+                <a href="http://cables.gl/">cables</a>.
+            </div>
+
+            <!-- Social links -->
+            
+            
+            
+        </div>
+    </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.a353778b.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+    
+  </body>
+</html>

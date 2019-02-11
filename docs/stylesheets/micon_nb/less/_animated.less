@@ -1,0 +1,19 @@
+// Animated Icons
+// --------------------------
+
+.@{mi-css-prefix}-spin {
+  animation: mi-spin 2s infinite linear;
+}
+
+.@{mi-css-prefix}-pulse {
+  animation: mi-spin 1s infinite steps(8);
+}
+
+@keyframes mi-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
