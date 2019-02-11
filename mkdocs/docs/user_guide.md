@@ -1022,7 +1022,7 @@ These are the available parameters of a numerical output feature decoder
 - `activation` (default `relu`): if an `activation` is not already specified in `fc_layers` this is the default `activation` that will be used for each layer. It indicates the activation function applied to the output.
 - `norm` (default `None`): if a `norm` is not already specified in `fc_layers` this is the default `norm` that will be used for each layer. It indicates the norm of the output and it can be `None`, `batch` or `layer`.
 - `dropout` (default `False`): determines if there should be a dropout layer after each layer.
-- `initializer` (default `None`): the initializer to use. If `None`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializier and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
+- `initializer` (default `None`): the initializer to use. If `None`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
 - `regularize` (default `True`): if `True` the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
 
 Example numerical feature entry (with default parameters) in the output features list:
@@ -1122,7 +1122,7 @@ These are the available parameters of a category output feature
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `loss` (default `{type: softmax_cross_entropy, class_distance_temperature: 0, class_weights: 1, confidence_penalty: 0, distortion: 1, labels_smoothing: 0, negative_samples: 0, robust_lambda: 0, sampler: None, unique: False}`): is a dictionary containing a loss `type`. The available losses `type` are `softmax_cross_entropy` and `sampled_softmax_cross_entropy`.
 
-These are the `loss` parametershese are the `loss` parameters
+These are the `loss` parameters
 
 - `confidence_penalty` (default `0`): penalizes overconfident predictions (low entropy) by adding an additional term that penalizes too confident predictions by adding a `a * (max_entropy - entropy) / max_entropy` term to the loss, where a is the value of this parameter. Useful in case of noisy labels.
 - `robust_lambda` (default `0`): replaces the loss with `(1 - robust_lambda) * loss + robust_lambda / c` where `c` is the number of classes, which is useful in case of noisy labels.
@@ -1232,7 +1232,7 @@ The available encoder parameters are
 - `dropout` (default `False`): determines if there should be a dropout layer before returning the encoder output.
 - `initializer` (default `None`): the initializer to use. If `None`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
 - `regularize` (default `True`): if `True` the embedding weights are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
-- `reduce_output` (default `sum`): describes the strategy to use to aggregate the embeddings of the items of the set. Possible values are `sum`, `mean` and `sqrtn` (the weighted sum divided by the square root of the sum of the squares of the weights).
+- `reduce_output` (default `sum`): describes the strategy to use to aggregate the embeddings of the items of the set. Possible values are `sum`, `mean` and `sqrt` (the weighted sum divided by the square root of the sum of the squares of the weights).
 - `tied_weights` (default `None`): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.
 
 Example set feature entry in the output features list:
@@ -1265,14 +1265,14 @@ There is only one decoder available for set features and it is a (potentially em
 +--------------+   +---------+   +-----------+
 ```
 
-These are the available parameters of a set output featurehese are the available parameters of a set output feature
+These are the available parameters of the set output feature
 
 - `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explanation refer to [Output Features Dependencies](#output-features-dependencies).
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `loss` (default `{type: sigmoid_cross_entropy}`): is a dictionary containing a loss `type`. The available loss `type` is `sigmoid_cross_entropy`.
 
-These are the available parameters of a set output feature decoderhese are the available parameters of a set output feature decoder
+These are the available parameters of a set output feature decoder
 
 - `fc_layers` (default `None`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -1320,7 +1320,7 @@ Bag features are treated in the same way of set features, with the only differen
 ### Bag Input Features and Encoders
 
 Bag features have one encoder, the raw float values coming from the input placeholders are first transformed in sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot encodings), they are aggregated as a weighted sum, where the weights are the original float values, and finally returned as outputs.
-Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionaly of the embeddings.
+Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionality of the embeddings.
 
 The parameters are the same used for set input features with the exception of `reduce_output` that doesn't apply in this case because the weighted sum already acts as a reducer.
 
@@ -1337,7 +1337,7 @@ Sequence Features
 
 ### Sequence Features Preprocessing
 
-Sequence features are transformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the lenght of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+Sequence features are transformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -1506,7 +1506,7 @@ reduce_output sum
 
 #### Stacked CNN Encoder
 
-The stacked cnn encoder is inspired by [Xiang Zhang at alii's Character-level Convolutional Networks for Text Classification](https://arxiv.org/abs/1509.01626).
+The stacked cnn encoder is inspired by [Xiang Zhang at all's Character-level Convolutional Networks for Text Classification](https://arxiv.org/abs/1509.01626).
 It works by first mapping the input integer sequence `b x s` (where `b` is the batch size and `s` is the length of the sequence) into a sequence of embeddings, then it passes the embedding through a stack of 1d convolutional layers with different filter size (by default 6 layers with filter size 7, 7, 3, 3, 3 and 3), followed by an optional final pool and by a flatten operation.
 This single flatten vector is then passed through a stack of fully connected layers and returned as a `b x h` tensor where `h` is the output size of the last fully connected layer.
 If you want to output the full `b x s x h` tensor, you can specify the `pool_size` of all your `conv_layers` to be `None`  and `reduce_output: None`, while if `pool_size` has a value different from `None` and `reduce_output: None` the returned tensor will be of shape `b x s' x h`, where `s'` is width of the output of the last convolutional layer.
@@ -1529,9 +1529,9 @@ If you want to output the full `b x s x h` tensor, you can specify the `pool_siz
        +------+
 ```
 
-These are the available for an stack cnn encoder arehese are the available for an stack cnn encoder are
+These are the parameters available for the stack cnn encoder
 
-- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
+- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
 - `embeddings_on_cpu` (default `False`): by default embeddings matrices are stored on GPU memory if a GPU is used, as it allows for faster access, but in some cases the embedding matrix may be really big and this parameter forces the placement of the embedding matrix in regular memory and the CPU is used to resolve them, slightly slowing down the process as a result of data transfer between CPU and GPU memory.
 - `pretrained_embeddings` (default `None`): by default `dense` embeddings are initialized randomly, but this parameter allow to specify a path to a file containing embeddings in the [GloVe format](https://nlp.stanford.edu/projects/glove/). When the file containing the embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, the others are discarded. If the vocabulary contains strings that have no match in the embeddings file, their embeddings are initialized with the average of all other embedding plus some random noise to make them different from each other. This parameter has effect only if `representation` is `dense`.
@@ -1609,9 +1609,9 @@ If you want to output the full `b x s x h` tensor, you can specify `reduce_outpu
                    +-------+                      +-------+
 ```
 
-These are the available for an stack parallel cnn encoder arehese are the available for an stack parallel cnn encoder are
+These are the available parameters for the stack parallel cnn encoder
 
-- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
+- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
 - `embeddings_on_cpu` (default `False`): by default embeddings matrices are stored on GPU memory if a GPU is used, as it allows for faster access, but in some cases the embedding matrix may be really big and this parameter forces the placement of the embedding matrix in regular memory and the CPU is used to resolve them, slightly slowing down the process as a result of data transfer between CPU and GPU memory.
 - `pretrained_embeddings` (default `None`): by default `dense` embeddings are initialized randomly, but this parameter allow to specify a path to a file containing embeddings in the [GloVe format](https://nlp.stanford.edu/projects/glove/). When the file containing the embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, the others are discarded. If the vocabulary contains strings that have no match in the embeddings file, their embeddings are initialized with the average of all other embedding plus some random noise to make them different from each other. This parameter has effect only if `representation` is `dense`.
@@ -1657,7 +1657,7 @@ reduce_output: max
 
 #### RNN Encoder
 
-The rnn encoder works by first mapping the input integer sequence `b x s` (where `b` is the batch size and `s` is the length of the sequence) into a sequence of embeddings, then it passes the embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce operation that by default only returns the last output, but can perfrom other reduce functions.
+The rnn encoder works by first mapping the input integer sequence `b x s` (where `b` is the batch size and `s` is the length of the sequence) into a sequence of embeddings, then it passes the embedding through a stack of recurrent layers (by default 1 layer), followed by a reduce operation that by default only returns the last output, but can perform other reduce functions.
 If you want to output the full `b x s x h` where `h` is the size of the output of the last rnn layer, you can specify `reduce_output: None`.
 
 ```
@@ -1680,15 +1680,15 @@ If you want to output the full `b x s x h` where `h` is the size of the output o
 
 ```
 
-hese are the available for an parallel cnn encoder arehese are the available for an parallel cnn encoder are
+These are the available parameters for the parallel cnn encoder
 
-- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
+- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
 - `embeddings_on_cpu` (default `False`): by default embeddings matrices are stored on GPU memory if a GPU is used, as it allows for faster access, but in some cases the embedding matrix may be really big and this parameter forces the placement of the embedding matrix in regular memory and the CPU is used to resolve them, slightly slowing down the process as a result of data transfer between CPU and GPU memory.
 - `pretrained_embeddings` (default `None`): by default `dense` embeddings are initialized randomly, but this parameter allow to specify a path to a file containing embeddings in the [GloVe format](https://nlp.stanford.edu/projects/glove/). When the file containing the embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, the others are discarded. If the vocabulary contains strings that have no match in the embeddings file, their embeddings are initialized with the average of all other embedding plus some random noise to make them different from each other. This parameter has effect only if `representation` is `dense`.
 - `embeddings_trainable` (default `True`): If `True` embeddings are trained during the training process, if `False` embeddings are fixed. It may be useful when loading pretrained embeddings for avoiding finetuning them. This parameter has effect only for `representation` is `dense` as `sparse` one-hot encodings are not trainable.
 - `num_layers` (default `1`): the number of stacked recurrent layers.
-- `cell_type` (default `rnn`): the type of recurrent cell to use. Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentstion](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
+- `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
 - `state_size` (default `256`): the size of the state of the rnn.
 - `bidirectional` (default `False`): if `True` two recurrent networks will perform encoding in the forward and backward direction and their outputs will be concatenated.
 - `dropout` (default `False`): determines if there should be a dropout layer before returning the encoder output.
@@ -1720,7 +1720,7 @@ reduce_output sum
 
 #### CNN RNN Encoder
 
-The cnn rnn encoder works by first mapping the input integer sequence `b x s` (where `b` is the batch size and `s` is the length of the sequence) into a sequence of embeddings, then it passes the embedding through a stack of convolutional layers (by default 2), that is followed by a stack of recurrent layers (by default 1), followed by a reduce operation that by default only returns the last output, but can perfrom other reduce functions.
+The cnn rnn encoder works by first mapping the input integer sequence `b x s` (where `b` is the batch size and `s` is the length of the sequence) into a sequence of embeddings, then it passes the embedding through a stack of convolutional layers (by default 2), that is followed by a stack of recurrent layers (by default 1), followed by a reduce operation that by default only returns the last output, but can perform other reduce functions.
 If you want to output the full `b x s x h` where `h` is the size of the output of the last rnn layer, you can specify `reduce_output: None`.
 
 ```
@@ -1741,9 +1741,9 @@ If you want to output the full `b x s x h` where `h` is the size of the output o
        +------+
 ```
 
-hese are the available for an parallel cnn encoder arehese are the available for an parallel cnn encoder are
+These are the available parameters of a parallel cnn encoder
 
-- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` meanse they are initialized to be one-hot encodings.
+- `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
 - `embeddings_on_cpu` (default `False`): by default embeddings matrices are stored on GPU memory if a GPU is used, as it allows for faster access, but in some cases the embedding matrix may be really big and this parameter forces the placement of the embedding matrix in regular memory and the CPU is used to resolve them, slightly slowing down the process as a result of data transfer between CPU and GPU memory.
 - `pretrained_embeddings` (default `None`): by default `dense` embeddings are initialized randomly, but this parameter allow to specify a path to a file containing embeddings in the [GloVe format](https://nlp.stanford.edu/projects/glove/). When the file containing the embeddings is loaded, only the embeddings with labels present in the vocabulary are kept, the others are discarded. If the vocabulary contains strings that have no match in the embeddings file, their embeddings are initialized with the average of all other embedding plus some random noise to make them different from each other. This parameter has effect only if `representation` is `dense`.
@@ -1754,7 +1754,7 @@ hese are the available for an parallel cnn encoder arehese are the available for
 - `num_filters` (default `256`): if a `num_filters` is not already specified in `conv_layers` this is the default `num_filters` that will be used for each layer. It indicates the number of filters, and by consequence the output channels of the 1d convolution.
 - `pool_size` (default `None`): if a `pool_size` is not already specified in `conv_layers` this is the default `pool_size` that will be used for each layer. It indicates the size of the max pooling that will be performed along the `s` sequence dimension after the convolution operation.
 - `num_rec_layers` (default `1`): the number of stacked recurrent layers.
-- `cell_type` (default `rnn`): the type of recurrent cell to use. Avalable values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentstion](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
+- `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentstion](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
 - `state_size` (default `256`): the size of the state of the rnn.
 - `bidirectional` (default `False`): if `True` two recurrent networks will perform encoding in the forward and backward direction and their outputs will be concatenated.
 - `dropout` (default `False`): determines if there should be a dropout layer between `conv_layers` and before returning the encoder output.
@@ -1801,7 +1801,7 @@ These are the available parameters of a sequence output feature
 - `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explanation refer to [Output Features Dependencies](#output-features-dependencies).
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
-- `loss` (default `{type: softmax_cross_entropy, class_distance_temperature: 0, class_weights: 1, confidence_penalty: 0, distortion: 1, labels_smoothing: 0, negative_samples: 0, robust_lambda: 0, sampler: None, unique: False}`): is a dictionary containing a loss `type`. The available losses `type` are `softmax_cross_entropy` and `sampled_softmax_cross_entropy`. For details on both losses, please refer to the [category feature output feature section](#category-output-features-and-ecoders).
+- `loss` (default `{type: softmax_cross_entropy, class_distance_temperature: 0, class_weights: 1, confidence_penalty: 0, distortion: 1, labels_smoothing: 0, negative_samples: 0, robust_lambda: 0, sampler: None, unique: False}`): is a dictionary containing a loss `type`. The available losses `type` are `softmax_cross_entropy` and `sampled_softmax_cross_entropy`. For details on both losses, please refer to the [category feature output feature section](#category-output-features-and-encoders).
 
 #### Tagger Decoder
 
@@ -1961,10 +1961,10 @@ The parameters available for preprocessing are:
 - `lowercase` (default `False`): if the string has to be lowercased before being handled by the formatter.
 - `word_sequence_length_limit` (default `256`): the maximum length of the text in words. Texts that are longer than this value will be truncated, while texts that are shorter will be padded.
 - `format_words` (default `space`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `words` splits the string using a spaCy model and removes stopwords. Other options are: `space`, `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
-- `most_common_words` (default `20000`): the maximum number of most common words to be considered. If the data contains more than this amount, the most unfrequent words will be treated as unknown.
+- `most_common_words` (default `20000`): the maximum number of most common words to be considered. If the data contains more than this amount, the most infrequent words will be treated as unknown.
 - `char_sequence_length_limit` (default `1024`): the maximum length of the text in characters. Texts that are longer than this value will be truncated, while sequences that are shorter will be padded.
 - `format_characters` (default `characters`): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is `characters` and the behavior is to split the string at each character.
-- `most_common_characters` (default `70`): the maximum number of most common characters to be considered. if the data contains more than this amount, the most unfrequent characters will be treated as unknown.
+- `most_common_characters` (default `70`): the maximum number of most common characters to be considered. if the data contains more than this amount, the most infrequent characters will be treated as unknown.
 
 
 ### Text Input Features and Encoders
@@ -2088,9 +2088,9 @@ regularize: True
 The sequence concat combiner assumes at least one output from encoders is a tensors of size `b x s x h` where `b` is the batch size, `s` is the length of the sequence and `h` is the hidden dimension.
 The sequence / text / sequential input can be specified with the `main_sequence_feature` parameter that should have the name of the sequential feature as value.
 If no `main_sequence_feature` is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series).
-If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features alons the sequence `s` dimension.
+If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence `s` dimension.
 
-If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the `s` dimension, which means that all of them must have idential `s` dimension, otherwise an error will be thrown.
+If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the `s` dimension, which means that all of them must have identical `s` dimension, otherwise an error will be thrown.
 Specifically, as the placeholders of the sequential features are of dimension `[None, None` in order to make the `BucketedBatcher` trim longer sequences to their actual length, the check if the sequences are of the same length cannot be performed at model building time, and a dimension mismatch error will be returned during training when a datapoint with two sequential features of different lengths are provided.
 
 Other features that have a `b x h` rank 2 tensor output will be replicated `s` times and concatenated to the `s` dimension.
@@ -2112,7 +2112,7 @@ The final output is a `b x s x h'` tensor where `h'` is the size of the concaten
 
 These are the available parameters of a sequence concat combiner
 
-- `main_sequence_feature` (default `None`): name fo the sequence / text/ time series feature to concatenate the outputs of the other features to. If no `main_sequence_feature` is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features alons the sequence `s` dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongsize the `s` dimension, which means that all of them must have idential `s` dimension, otherwise an error will be thrown.
+- `main_sequence_feature` (default `None`): name fo the sequence / text/ time series feature to concatenate the outputs of the other features to. If no `main_sequence_feature` is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence `s` dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the `s` dimension, which means that all of them must have identical `s` dimension, otherwise an error will be thrown.
 
 Example sequence concat combiner in the model definition:
 
@@ -2124,7 +2124,7 @@ main_sequence_feature: None
 ### Sequence Combiner
 
 The sequence combiner stacks a sequence concat combiner with a sequence encoder one on top of each other.
-All the considerations about inputs tensor ranks describer for the [sequence concat combiner](#sequence-concat-combiner) apply also in this case, but the main difference is that this combiner uses the `b x s x h'` output of the sequence concat combiner, where `b` is the batch size, `s` is the sequence length and `h'` is the sum of the hidden dimensions of all input features, as input fo any of the sequence encoders secribed in the [sequence features encoders section](#sequence-inpit-features-and-encoders).
+All the considerations about inputs tensor ranks describer for the [sequence concat combiner](#sequence-concat-combiner) apply also in this case, but the main difference is that this combiner uses the `b x s x h'` output of the sequence concat combiner, where `b` is the batch size, `s` is the sequence length and `h'` is the sum of the hidden dimensions of all input features, as input fo any of the sequence encoders described in the [sequence features encoders section](#sequence-inpit-features-and-encoders).
 Refer to that section for more detailed information about the sequence encoders and their parameters.
 Also all the considerations on the shape of the outputs done for the sequence encoders apply in this case too.
 
@@ -2312,7 +2312,7 @@ optional arguments:
                         type of subset filtering
   -n, --normalize       normalize rows in confusion matrix
   -m METRICS [METRICS ...], --metrics METRICS [METRICS ...]
-                        metrics to dispay in threshold_vs_metric
+                        metrics to display in threshold_vs_metric
   -pl POSITIVE_LABEL, --positive_label POSITIVE_LABEL
                         label of the positive class for the roc curve
   -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
@@ -2321,9 +2321,9 @@ optional arguments:
 
 Some additional information on the parameters:
 
-- The list parameters are considered to be aligned, meaning `predictions`, `probabilities`, `training_statistics`, `prediction_statistics` and `model_names` are indexed alltogether, for instance the name of the model producing the second predictions in the list will be the second in the model names.
-- `data_csv` is intendend to be the data the model(s) were trained on.
-- `ground_truth` and `ground_truth_metadata` are respectively the `HDF5` and `JSON` file obtained during training preprocessing. If you plan to use the visualizations then be sure not to use the `skip_save_preprocessing` when training. Those files are needed because they contain the split perfromed at preprocessing time, so it is easy to extract the test set from them.
+- The list parameters are considered to be aligned, meaning `predictions`, `probabilities`, `training_statistics`, `prediction_statistics` and `model_names` are indexed altogether, for instance the name of the model producing the second predictions in the list will be the second in the model names.
+- `data_csv` is intended to be the data the model(s) were trained on.
+- `ground_truth` and `ground_truth_metadata` are respectively the `HDF5` and `JSON` file obtained during training preprocessing. If you plan to use the visualizations then be sure not to use the `skip_save_preprocessing` when training. Those files are needed because they contain the split performed at preprocessing time, so it is easy to extract the test set from them.
 - `field` is the output feature to use for creating the visualization.
 
 Other parameters will be detailed for each visualization as different ones use them differently.
@@ -2471,7 +2471,7 @@ For each model (in the aligned lists of `probabilities` and `model_names`) it pr
 
 This visualization uses the `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a thresholdon the probabilities of predictions for the specified `field`.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a threshold on the probabilities of predictions for the specified `field`.
 The difference with `confidence_thresholding` is that it uses two axes instead of three, not visualizing the threshold and having coverage as x axis instead of the threshold.
 
 ![Confidence_Thresholding Data vs Accuracy](images/confidence_thresholding_data_vs_acc.png "Confidence_Thresholding Data vs Accuracy")
@@ -2481,7 +2481,7 @@ The difference with `confidence_thresholding` is that it uses two axes instead o
 
 This visualization uses the `top_n_classes`, `subset`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a thresholdon the probabilities of predictions for the specified `field`, considering only a subset of the full training set.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a threshold on the probabilities of predictions for the specified `field`, considering only a subset of the full training set.
 The way the subset is obtained is using the `top_n_classes` and `subset` parameters..
 The difference with `confidence_thresholding` is that it uses two axes instead of three, not visualizing the threshold and having coverage as x axis instead of the threshold.
 
@@ -2495,7 +2495,7 @@ If the values of `subset` is `predictions`, then only datapoints where the the m
 
 This visualization uses the `top_n_classes`, `subset`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilities` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a thresholdon the probabilities of predictions for the specified `field`, considering only a subset of the full training set.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line indicating the accuracy of the model and the data coverage while increasing a threshold on the probabilities of predictions for the specified `field`, considering only a subset of the full training set.
 The way the subset is obtained is using the `top_n_classes` and `subset` parameters..
 The difference with `confidence_thresholding` is that it uses two axes instead of three, not visualizing the threshold and having coverage as x axis instead of the threshold.
 
@@ -2538,7 +2538,7 @@ This visualization uses the `ground_truth`, `threshold_fields`, `probabilities` 
 `threshold_fields` need to be exactly two, either category or binary.
 `probabilities` need to be exactly two, aligned with `threshold_fields`.
 `model_names` has to be exactly one.
-The plot shows the 3d surfaces displayed by `confidence_thresholding_2thresholds_3d` that have thresholds on the conficence of the predictions of the two `threshold_fields` as x and y axes and either the data coverage percentage or the accuracy as z axis. 
+The plot shows the 3d surfaces displayed by `confidence_thresholding_2thresholds_3d` that have thresholds on the confidence of the predictions of the two `threshold_fields` as x and y axes and either the data coverage percentage or the accuracy as z axis.
 
 ![Confidence_Thresholding two thresholds 3D](images/confidence_thresholding_2thresholds_3d.png "Confidence_Thresholding two thresholds 3D")
 
