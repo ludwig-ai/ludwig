@@ -1183,12 +1183,12 @@ h1.intro-header::before {
 }
 
 .alternative-background {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    left: 0px;
-    top: 0px;
+    min-height: 100vh;
     z-index: -10;
+    background-image: url('/images/joy.png');
+    background-repeat: repeat-x;
+    background-attachment: fixed;
+    background-position: center top;
 }
 
 .glcanvas {
@@ -2012,8 +2012,10 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
     vertical-align: bottom;
 }
 
-img.centered-img {
+.centered-image {
     display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* ------------------------------------------------------------------- 
