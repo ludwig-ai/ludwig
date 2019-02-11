@@ -43,7 +43,7 @@ class TextBaseFeature(BaseFeature):
         'char_format': 'characters',
         'char_sequence_length_limit': 1024,
         'char_most_common': 70,
-        'word_format': 'english_tokenize',
+        'word_format': 'space_punct',
         'word_sequence_length_limit': 256,
         'word_most_common': 20000,
         'padding_symbol': PADDING_SYMBOL,
