@@ -227,4 +227,4 @@ Refer to the [Developer Guide](developer_guide.md) for further details.
 Full documentation
 ------------------
 
-You can find the full documentation [here](http://ludwig.github.io), inside the `docs` directory, with the documentation sources available in `mkdocs/doc/documentation.md`.
+You can find the full documentation [here](http://uber.github.io/ludwig/), inside the `docs` directory, with the documentation sources available in `mkdocs/doc/documentation.md`.
