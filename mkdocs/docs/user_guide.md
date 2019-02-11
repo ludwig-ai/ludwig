@@ -2013,17 +2013,24 @@ Image Features
 
 Ludwig supports grayscale and color images, image type is automatically inferred.
 During preprocessing raw image files are transformed into numpy ndarrays and saved in the hdf5 format.
-Images should have the same size. If they have different sizes they can be converted to the same size which should be set in feature preprocessing parameters.
+Images should have the same size.
+If they have different sizes they can be converted to the same size which should be set in the feature preprocessing parameters.
 
 - `in_memory` (default: `true`): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.
+- `resize_method` (default: `crop_or_pad`): available options: `crop_or_pad` - crops larger images to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation.
 - `height` (default: null): image height in pixels, must be set if resizing is required
 - `width` (default: null): image width in pixels, must be set if resizing is required
-- `resize_method` (default: `crop_or_pad`): available options: `crop_or_pad` - crops larger images to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation.
+
 
 ### Image Input Features and Encoders
 
 Input image feature do not use encoders. They are transformed into a float valued tensor of size `N x H x W x C` (where `N` is the size of the dataset and `H x W` is a specific resizing of the image that can be set, and `C` is the number of channels) and added to HDF5 with a key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.
+
+#### Convolutional Stack Encoder
+
+#### ResNet Encoder
+
 
 ### Image Output Features and Decoders
 
@@ -2094,7 +2101,7 @@ If no `main_sequence_feature` is specified, the combiner will look through all t
 If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence `s` dimension.
 
 If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the `s` dimension, which means that all of them must have identical `s` dimension, otherwise an error will be thrown.
-Specifically, as the placeholders of the sequential features are of dimension `[None, None` in order to make the `BucketedBatcher` trim longer sequences to their actual length, the check if the sequences are of the same length cannot be performed at model building time, and a dimension mismatch error will be returned during training when a datapoint with two sequential features of different lengths are provided.
+Specifically, as the placeholders of the sequential features are of dimension `[None, None]` in order to make the `BucketedBatcher` trim longer sequences to their actual length, the check if the sequences are of the same length cannot be performed at model building time, and a dimension mismatch error will be returned during training when a datapoint with two sequential features of different lengths are provided.
 
 Other features that have a `b x h` rank 2 tensor output will be replicated `s` times and concatenated to the `s` dimension.
 The final output is a `b x s x h'` tensor where `h'` is the size of the concatenation of the `h` dimensions of all input features.
