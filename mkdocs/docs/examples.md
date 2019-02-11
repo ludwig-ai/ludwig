@@ -14,7 +14,7 @@ Text Classification
 ```
 ludwig experiment \
   --data_csv reuters-allcats.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -45,7 +45,7 @@ Named Entity Recognition Tagging
 ```
 ludwig experiment \
   --data_csv sequence_tags.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -79,7 +79,7 @@ Natural Language Understanding
 ```
 ludwig experiment \
   --data_csv reuters-allcats.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -121,7 +121,7 @@ Machine Translation
 ```
 ludwig experiment \
   --data_csv translation.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -156,7 +156,7 @@ Chit-Chat Dialogue Modeling through Sequence2Sequence
 ```
 ludwig experiment \
   --data_csv chitchat.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -191,7 +191,7 @@ Sentiment Analysis
 ```
 ludwig experiment \
   --data_csv reuters-allcats.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -223,7 +223,7 @@ Image Classification
 ```
 ludwig experiment \
   --data_csv reuters-allcats.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -253,7 +253,7 @@ Image Captioning
 ```
 ludwig experiment \
 --data_csv reuters-allcats.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -289,7 +289,7 @@ This example can be considered a simple baseline for one-shot learning on the [O
 ```
 ludwig experiment \
 --data_csv balinese_characters.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -375,7 +375,7 @@ After downloading the data, to train a model on this dataset using Ludwig,
 ```
 ludwig experiment \
   --data_csv PATH_TO_TITANIC_TRAIN.CSV \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
@@ -429,7 +429,7 @@ While direct timeseries prediction is a work in progress Ludwig can ingest times
 ```
 ludwig experiment \
 --data_csv timeseries_data.csv \
-  --model_definition model_definition.yaml
+  --model_definition_file model_definition.yaml
 ```
 
 With `model_definition.yaml`:
