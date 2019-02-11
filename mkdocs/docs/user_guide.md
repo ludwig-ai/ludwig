@@ -547,7 +547,7 @@ The preprocessing process is personalizable to fit the specifics of your data fo
 The reason for that is that each data type is mapped into tensors in a different way and expects the content to be formatted in a specific way.
 Different datatypes may have different formatters that format the values of a cell.
 
-For instance the value of a cell of a sequence feature column by default is managed by a space formatter, that splits the content of the value into a list of strings using space.
+For instance the value of a cell of a sequence feature column by default is managed by a `space` formatter, that splits the content of the value into a list of strings using space.
 
 | before formatter       | after formatter          |
 |------------------------|--------------------------|
@@ -913,7 +913,7 @@ Inputs are of size `b` while outputs are fo size `b x 1` where `b` is the batch 
 
 Example binary feature entry in the output features list:
 
-```
+```yaml
 name: binary_csv_column_name
 type: binary
 ```
@@ -1068,6 +1068,8 @@ The parameters available for preprocessing are
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The value should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `"<UNK>"`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
+- `lowercase` (default `false`): if the string has to be lowercased before being handled by the formatter.
+- `most_common` (default `10000`): the maximum number of most common tokens to be considered. if the data contains more than this amount, the most infrequent tokens will be treated as unknown.
 
 ### Category Input Features and Encoders
 
@@ -1202,8 +1204,9 @@ The parameters available for preprocessing arehe parameters available for prepro
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The value should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `0`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
-- `format` (default `space`): defines how to map from the raw string content of the CSV column to a set of elements. The default value `space` splits the string on spaces. Other options are: `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
+- `format` (default `space`): defines how to map from the raw string content of the CSV column to a set of elements. The default value `space` splits the string on spaces. Other options are: `underscore` (splits on underscore), `comma`(splits on comma), `json` (decodes the string into a set or a list through a JSON parser).
 - `lowercase` (default `false`): if the string has to be lowercased before being handled by the formatter.
+- `most_common` (default `10000`): the maximum number of most common tokens to be considered. if the data contains more than this amount, the most infrequent tokens will be treated as unknown.
 
 ### Set Input Features and Encoders
 
@@ -1350,12 +1353,12 @@ The column name is added to the JSON file, with an associated dictionary contain
 The parameters available for preprocessing are
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The value should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
-- `fill_value` (default `""`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
+- `fill_value` (default `""`): the value to replace the missing values with in case the `missing_value_strategy` is `fill_value`.
 - `padding` (default `right`): the direction of the padding. `right` and `left` are available options.
 - `padding_symbol` (default `<PAD>`): the string used as a padding symbol. Is is mapped to the integer ID 0 in the vocabulary.
 - `unknown_symbol` (default `<UNK>`): the string used as a unknown symbol. Is is mapped to the integer ID 1 in the vocabulary.
 - `lowercase` (default `false`): if the string has to be lowercase before being handled by the formatter.
-- `format` (default `space`): defines how to map from the raw string content of the CSV column to a sequence of elements. The default value `space` splits the string on spaces. Other options are: `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
+- `format` (default `space`): defines how to map from the raw string content of the CSV column to a sequence of elements. The default value `space` splits the string on spaces. Other options are: `underscore` (splits on underscore), `comma`(splits on comma), `json` (decodes the string into a set or a list through a JSON parser).
 - `most_common` (default `20000`): the maximum number of most common tokens to be considered. if the data contains more than this amount, the most infrequent tokens will be treated as unknown.
 - `sequence_length_limit` (default `256`): the maximum length of the sequence. Sequences that are longer than this value will be truncated, while sequences that are shorter will be padded.
 
@@ -1396,7 +1399,7 @@ If you want to output the full `b x s x h` tensor, you can specify `reduce_outpu
        +------+
 ```
 
-These are the available for an embed encoder are
+These are the parameters available for the embed encoder
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `50`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1455,7 +1458,7 @@ If you want to output the full `b x s x h` tensor, you can specify `reduce_outpu
                    +-------+
 ```
 
-These are the available for an parallel cnn encoder are
+These are the available for an parallel cnn encoder:
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1529,7 +1532,7 @@ If you want to output the full `b x s x h` tensor, you can specify the `pool_siz
        +------+
 ```
 
-These are the parameters available for the stack cnn encoder
+These are the parameters available for the stack cnn encoder:
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1609,7 +1612,7 @@ If you want to output the full `b x s x h` tensor, you can specify `reduce_outpu
                    +-------+                      +-------+
 ```
 
-These are the available parameters for the stack parallel cnn encoder
+These are the available parameters for the stack parallel cnn encoder:
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1680,7 +1683,7 @@ If you want to output the full `b x s x h` where `h` is the size of the output o
 
 ```
 
-These are the available parameters for the parallel cnn encoder
+These are the available parameters for the rnn encoder:
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1741,7 +1744,7 @@ If you want to output the full `b x s x h` where `h` is the size of the output o
        +------+
 ```
 
-These are the available parameters of a parallel cnn encoder
+These are the available parameters of the cnn rnn encoder:
 
 - `representation'` (default `dense`): the possible values are `dense` and `sparse`. `dense` means the embeddings are initialized randomly, `sparse` means they are initialized to be one-hot encodings.
 - `embedding_size` (default `256`): it is the maximum embedding size, the actual size will be `min(vocabulary_size, embedding_size)` for `dense` representations and exactly `vocabulary_size` for the `sparse` encoding, where `vocabulary_size` is the number of different strings appearing in the training set in the column the feature is named after (plus 1 for `<UNK>`).
@@ -1822,7 +1825,7 @@ Output
 +---+                 +----------+   +-------+
 ```
 
-These are the available parameters of a tagger decoder
+These are the available parameters of a tagger decoder:
 
 - `fc_layers` (default `null`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -1883,7 +1886,7 @@ If a `b x h` input is provided to a generator decoder using an rnn with attentio
                               GO    +-----+     +-----+
 ```
 
-These are the available parameters of a tagger decoder
+These are the available parameters of a tagger decoder:
 
 - `fc_layers` (default `null`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation`, `dropout`, `initializer` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the decoder will be used instead.
 - `num_fc_layers` (default 0): this is the number of stacked fully connected layers that the input to the feature passes through. Their output is projected in the feature's output space.
@@ -1960,7 +1963,7 @@ The parameters available for preprocessing are:
 - `unknown_symbol` (default `<UNK>`): the string used as a unknown symbol. Is is mapped to the integer ID 1 in the vocabulary.
 - `lowercase` (default `false`): if the string has to be lowercased before being handled by the formatter.
 - `word_sequence_length_limit` (default `256`): the maximum length of the text in words. Texts that are longer than this value will be truncated, while texts that are shorter will be padded.
-- `format_words` (default `space`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `words` splits the string using a spaCy model and removes stopwords. Other options are: `space`, `underscore`, `comma`, `json` (decodes the string into a set or a list through a JSON parser).
+- `format_words` (default `space_punct`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `space_punct` splits the string using a regular expression that separates also punctuation. Other options are: `space` (splits on space), `underscore` (splits on underscore), `comma`(splits on comma), `json` (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on [spaCy](https://spacy.io). The spaCy based ones are: `english_tokenize` (uses spaCy tokenizer), `english_tokenize_filter` (uses spaCy tokenizer and filters out punctuation, numbers, stopwords and words shorter than 3 characters), `english_tokenize_remove_stopwords` (uses spaCy tokenizer and filters out stopwords), `english_lemmatize` (uses spaCy lemmatizer), `english_lemmatize_filter` (uses spaCy lemmatizer and filters out punctuation, numbers, stopwords and words shorter than 3 characters), `english_lemmatize_remove_stopwords` (uses spaCy lemmatize and filters out stopwords).
 - `most_common_words` (default `20000`): the maximum number of most common words to be considered. If the data contains more than this amount, the most infrequent words will be treated as unknown.
 - `char_sequence_length_limit` (default `1024`): the maximum length of the text in characters. Texts that are longer than this value will be truncated, while sequences that are shorter will be padded.
 - `format_characters` (default `characters`): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is `characters` and the behavior is to split the string at each character.
