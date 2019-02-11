@@ -4452,14 +4452,165 @@ During preprocessing raw image files are transformed into numpy ndarrays and sav
 <li><code>width</code> (default: null): image width in pixels, must be set if resizing is required</li>
 </ul>
 <h4 id="image-input-features-and-encoders">Image Input Features and Encoders<a class="headerlink" href="#image-input-features-and-encoders" title="Permanent link">&para;</a></h4>
-<p>Input image feature do not use encoders. They are transformed into a float valued tensor of size <code>N x H x W x C</code> (where <code>N</code> is the size of the dataset and <code>H x W</code> is a specific resizing of the image that can be set, and <code>C</code> is the number of channels) and added to HDF5 with a key that reflects the name of column in the CSV.
+                <p>Input image features are transformed into a float valued tensors of size <code>N x H x W x C</code>
+                    (where <code>N</code> is the size of the dataset and <code>H x W</code> is a specific resizing of
+                    the image that can be set, and <code>C</code> is the number of channels) and added to HDF5 with a
+                    key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.</p>
+                <p>Currently there are two encoders supported for images: Convolutional Stack Encoder and ResNet encoder
+                    which can be set by setting <code>encoder</code> parameter to <code>stacked_cnn</code> or <code>resnet</code>
+                    in the input feature dictionary in the model definition (<code>stacked_cnn</code> is the default
+                    one).</p>
                 <h5 id="convolutional-stack-encoder">Convolutional Stack Encoder<a class="headerlink"
                                                                                    href="#convolutional-stack-encoder"
                                                                                    title="Permanent link">&para;</a>
                 </h5>
+                <p>Convolutional Stack Encoder takes the following optional parameters:</p>
+                <ul>
+                    <li><code>conv_layers</code> (default <code>null</code>): it is a list of dictionaries containing
+                        the parameters of all the convolutional layers. The length of the list determines the number of
+                        stacked convolutional layers and the content of each dictionary determines the parameters for a
+                        specific layer. The available parameters for each layer are: <code>filter_size</code>, <code>num_filters</code>,
+                        <code>pool_size</code>, <code>norm</code>, <code>activation</code> and <code>regularize</code>.
+                        If any of those values is missing from the dictionary, the default one specified as a parameter
+                        of the encoder will be used instead. If both <code>conv_layers</code> and
+                        <code>num_conv_layers</code> are <code>null</code>, a default list will be assigned to <code>conv_layers</code>
+                        with the value <code>[{filter_size: 7, pool_size: 3, regularize: false}, {filter_size: 7,
+                            pool_size: 3, regularize: false}, {filter_size: 3, pool_size: null, regularize: false},
+                            {filter_size: 3, pool_size: null, regularize: false}, {filter_size: 3, pool_size: null,
+                            regularize: true}, {filter_size: 3, pool_size: 3, regularize: true}]</code>.
+                    </li>
+                    <li><code>num_conv_layers</code> (default <code>null</code>): if <code>conv_layers</code> is <code>null</code>,
+                        this is the number of stacked convolutional layers.
+                    </li>
+                    <li><code>filter_size</code> (default <code>3</code>): if a <code>filter_size</code> is not already
+                        specified in <code>conv_layers</code> this is the default <code>filter_size</code> that will be
+                        used for each layer. It indicates how wide is the 1d convolutional filter.
+                    </li>
+                    <li><code>num_filters</code> (default <code>256</code>): if a <code>num_filters</code> is not
+                        already specified in <code>conv_layers</code> this is the default <code>num_filters</code> that
+                        will be used for each layer. It indicates the number of filters, and by consequence the output
+                        channels of the 2d convolution.
+                    </li>
+                    <li><code>pool_stride</code> (default <code>1</code>): if a <code>pool_stride</code> is not already
+                        specified in <code>conv_layers</code> this is the default <code>pool_stride</code> that will be
+                        used for each layer.
+                    </li>
+                    <li><code>fc_layers</code> (default <code>null</code>): it is a list of dictionaries containing the
+                        parameters of all the fully connected layers. The length of the list determines the number of
+                        stacked fully connected layers and the content of each dictionary determines the parameters for
+                        a specific layer. The available parameters for each layer are: <code>fc_size</code>,
+                        <code>norm</code>, <code>activation</code> and <code>regularize</code>. If any of those values
+                        is missing from the dictionary, the default one specified as a parameter of the encoder will be
+                        used instead. If both <code>fc_layers</code> and <code>num_fc_layers</code> are
+                        <code>null</code>, a default list will be assigned to <code>fc_layers</code> with the value
+                        <code>[{fc_size: 512}, {fc_size: 256}]</code>. (only applies if <code>reduce_output</code> is
+                        not <code>null</code>).
+                    </li>
+                    <li><code>num_fc_layers</code> (default <code>1</code>): This is the number of stacked fully
+                        connected layers.
+                    </li>
+                    <li><code>fc_size</code> (default <code>256</code>): if a <code>fc_size</code> is not already
+                        specified in <code>fc_layers</code> this is the default <code>fc_size</code> that will be used
+                        for each layer. It indicates the size of the output of a fully connected layer.
+                    </li>
+                    <li><code>norm</code> (default <code>null</code>): if a <code>norm</code> is not already specified
+                        in <code>fc_layers</code> or <code>conv_layers</code> this is the default <code>norm</code> that
+                        will be used for each layer. It indicates the norm of the output and it can be <code>null</code>,
+                        <code>batch</code> or <code>layer</code>.
+                    </li>
+                    <li><code>activation</code> (default <code>relu</code>): if an <code>activation</code> is not
+                        already specified in <code>fc_layers</code> or <code>conv_layers</code> this is the default
+                        <code>activation</code> that will be used for each layer. It indicates the activation function
+                        applied to the output.
+                    </li>
+                    <li><code>dropout</code> (default <code>false</code>): determines if there should be a dropout layer
+                        after each layer.
+                    </li>
+                    <li><code>initializer</code> (default <code>null</code>): the initializer to use. If
+                        <code>null</code>, the default initialized of each variable is used (<code>glorot_uniform</code>
+                        in most cases). Options are: <code>constant</code>, <code>identity</code>, <code>zeros</code>,
+                        <code>ones</code>, <code>orthogonal</code>, <code>normal</code>, <code>uniform</code>, <code>truncated_normal</code>,
+                        <code>variance_scaling</code>, <code>glorot_normal</code>, <code>glorot_uniform</code>, <code>xavier_normal</code>,
+                        <code>xavier_uniform</code>, <code>he_normal</code>, <code>he_uniform</code>,
+                        <code>lecun_normal</code>, <code>lecun_uniform</code>. Alternatively it is possible to specify a
+                        dictionary with a key <code>type</code> that identifies the type of initializer and other keys
+                        for its parameters, e.g. <code>{type: normal, mean: 0, stddev: 0}</code>. To know the parameters
+                        of each initializer, please refer to <a
+                                href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's
+                            documentation</a>.
+                    </li>
+                    <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the
+                        layers are added to the set of weights that get regularized by a regularization loss (if the
+                        <code>regularization_lambda</code> in <code>training</code> is greater than 0).
+                    </li>
+                </ul>
                 <h5 id="resnet-encoder">ResNet Encoder<a class="headerlink" href="#resnet-encoder"
                                                          title="Permanent link">&para;</a></h5>
+                <p>ResNet Encoder takes the following optional parameters:</p>
+                <ul>
+                    <li><code>resnet_size</code> (default <code>50</code>): A single integer for the size of the ResNet
+                        model.
+                    </li>
+                    <li><code>num_filters</code> (default <code>16</code>): It indicates the number of filters, and by
+                        consequence the output channels of the 2d convolution.
+                    </li>
+                    <li><code>kernel_size</code> (default <code>3</code>): The kernel size to use for convolution.</li>
+                    <li><code>conv_stride</code> (default <code>1</code>): Stride size for the initial convolutional
+                        layer.
+                    </li>
+                    <li><code>first_pool_size</code> (default <code>null</code>): Pool size to be used for the first
+                        pooling layer. If none, the first pooling layer is skipped.
+                    </li>
+                    <li><code>fc_layers</code> (default <code>null</code>): it is a list of dictionaries containing the
+                        parameters of all the fully connected layers. The length of the list determines the number of
+                        stacked fully connected layers and the content of each dictionary determines the parameters for
+                        a specific layer. The available parameters for each layer are: <code>fc_size</code>,
+                        <code>norm</code>, <code>activation</code> and <code>regularize</code>. If any of those values
+                        is missing from the dictionary, the default one specified as a parameter of the encoder will be
+                        used instead. If both <code>fc_layers</code> and <code>num_fc_layers</code> are
+                        <code>null</code>, a default list will be assigned to <code>fc_layers</code> with the value
+                        <code>[{fc_size: 512}, {fc_size: 256}]</code>. (only applies if <code>reduce_output</code> is
+                        not <code>null</code>).
+                    </li>
+                    <li><code>num_fc_layers</code> (default <code>1</code>): This is the number of stacked fully
+                        connected layers.
+                    </li>
+                    <li><code>fc_size</code> (default <code>256</code>): if a <code>fc_size</code> is not already
+                        specified in <code>fc_layers</code> this is the default <code>fc_size</code> that will be used
+                        for each layer. It indicates the size of the output of a fully connected layer.
+                    </li>
+                    <li><code>norm</code> (default <code>null</code>): if a <code>norm</code> is not already specified
+                        in <code>fc_layers</code> or <code>conv_layers</code> this is the default <code>norm</code> that
+                        will be used for each layer. It indicates the norm of the output and it can be <code>null</code>,
+                        <code>batch</code> or <code>layer</code>.
+                    </li>
+                    <li><code>activation</code> (default <code>relu</code>): if an <code>activation</code> is not
+                        already specified in <code>fc_layers</code> or <code>conv_layers</code> this is the default
+                        <code>activation</code> that will be used for each layer. It indicates the activation function
+                        applied to the output.
+                    </li>
+                    <li><code>dropout</code> (default <code>false</code>): determines if there should be a dropout layer
+                        after each layer.
+                    </li>
+                    <li><code>initializer</code> (default <code>null</code>): the initializer to use. If
+                        <code>null</code>, the default initialized of each variable is used (<code>glorot_uniform</code>
+                        in most cases). Options are: <code>constant</code>, <code>identity</code>, <code>zeros</code>,
+                        <code>ones</code>, <code>orthogonal</code>, <code>normal</code>, <code>uniform</code>, <code>truncated_normal</code>,
+                        <code>variance_scaling</code>, <code>glorot_normal</code>, <code>glorot_uniform</code>, <code>xavier_normal</code>,
+                        <code>xavier_uniform</code>, <code>he_normal</code>, <code>he_uniform</code>,
+                        <code>lecun_normal</code>, <code>lecun_uniform</code>. Alternatively it is possible to specify a
+                        dictionary with a key <code>type</code> that identifies the type of initializer and other keys
+                        for its parameters, e.g. <code>{type: normal, mean: 0, stddev: 0}</code>. To know the parameters
+                        of each initializer, please refer to <a
+                                href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's
+                            documentation</a>.
+                    </li>
+                    <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the
+                        layers are added to the set of weights that get regularized by a regularization loss (if the
+                        <code>regularization_lambda</code> in <code>training</code> is greater than 0).
+                    </li>
+                </ul>
 <h4 id="image-output-features-and-decoders">Image Output Features and Decoders<a class="headerlink" href="#image-output-features-and-decoders" title="Permanent link">&para;</a></h4>
 <p>There are no image decoders at the moment (WIP), so image cannot be used as output features.</p>
 <h4 id="image-features-measures">Image Features Measures<a class="headerlink" href="#image-features-measures" title="Permanent link">&para;</a></h4>
