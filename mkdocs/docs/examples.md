@@ -1,8 +1,68 @@
 This section contains several examples of how to build models with Ludwig for a variety of tasks.
 For each task we show an example dataset and a sample model definition that can be used to train a model from that data.
 
-Basic Kaggle-competition-like example (titanic / house pricing)
+Kaggle: Titanic: Machine Learning From Disaster
 ===
+This example describes how to use Ludwig to train a model for the 
+[kaggle competition](https://www.kaggle.com/c/titanic/), on predicting a passenger's probability of surviving the Titanic
+disaster. Here's a sample of the data:
+
+| Pclass | Sex | Age | SibSp | Parch | Fare | Survived | Embarked |
+|--------|-----|-----|-------|-------|------|----------|----------|
+| 3|male|  22|  1|  0|   7.2500|0|S|
+|1|female|38.0|1|0|71.2833|1|C|
+|3|female|26.0|0|0|7.9250|0|S|
+| 3|male|35.0|0|0|8.0500|0|S|
+
+The full data and the column descriptions can be found [here](https://www.kaggle.com/c/titanic/data). 
+
+After downloading the data, to train a model on this dataset using Ludwig,
+```
+ludwig experiment \
+  --data_csv PATH_TO_TITANIC_TRAIN.CSV \
+  --model_definition model_definition.yaml
+```
+
+With `model_definition.yaml`:
+
+```yaml
+input_features:
+    -
+        name: Pclass
+        type: category
+    -
+        name: Sex
+        type: category
+    -
+        name: Age
+        type: numerical
+        missing_value_strategy: fill_with_mean
+    -
+        name: SibSp
+        type: numerical
+    -
+        name: Parch
+        type: numerical
+    -
+        name: Fare
+        type: numerical
+        missing_value_strategy: fill_with_mean
+    -
+        name: Embarked
+        type: category
+
+output_features:
+    -
+        name: Survived
+        type: category 
+training:
+    epochs: 200
+    learning_rate: 0.001
+
+combiner:    
+    type: concat
+
+```
 
 Text Classification
 ===
