@@ -1185,7 +1185,7 @@ h1.intro-header::before {
 .alternative-background {
     min-height: 100vh;
     z-index: -10;
-    background-image: url('/images/joy.png');
+    background-image: url('../images/joy.png');
     background-repeat: repeat-x;
     background-attachment: fixed;
     background-position: center top;
