@@ -32,21 +32,23 @@ encoders = ['embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
 
 model_definition_template = Template(
     '{input_features: ${input_name}, output_features: ${output_name}, '
-    'training: {epochs: 2}}')
+    'training: {epochs: 2}, combiner: {type: concat, fc_size: 56}}')
 
 
-def generate_data(input_features, output_features, filename='test_csv.csv'):
+def generate_data(input_features, output_features, filename='test_csv.csv',
+                  num_examples=500):
     """
     Helper method to generate synthetic data based on input, output feature
     specs
+    :param num_examples: number of examples to generate
     :param input_features: schema
     :param output_features: schema
     :param filename: path to the file where data is stored
     :return:
     """
     features = yaml.load(input_features) + yaml.load(output_features)
-    df = build_synthetic_dataset(1000, features)
-    data = [next(df) for _ in range(1000)]
+    df = build_synthetic_dataset(num_examples, features)
+    data = [next(df) for _ in range(num_examples)]
 
     dataframe = pd.DataFrame(data[1:], columns=data[0])
     dataframe.to_csv(filename, index=False)
@@ -148,7 +150,7 @@ def test_experiment_seq_seq1(csv_filename):
 def test_experiment_multi_input_intent_classification(csv_filename):
     # Multiple inputs, Single category output
     input_features_string = Template(
-        "[{type: text, name: random_text, vocab_size: 100, max_len: 20,"
+        "[{type: text, name: random_text, vocab_size: 100, max_len: 10,"
         " encoder: ${encoder1}}, {type: numerical, name: random_number}, "
         "{type: category, name: random_category, vocab_size: 10,"
         " encoder: ${encoder2}}, {type: set, name: random_set, vocab_size: 10,"
@@ -172,7 +174,7 @@ def test_experiment_multi_input_intent_classification(csv_filename):
 def test_experiment_multiple_seq_seq(csv_filename):
     # Multiple inputs, Multiple outputs
     input_features = "[{type: text, name: random_text, vocab_size: 100," \
-                     " max_len: 20, encoder: stacked_cnn}, {type: numerical," \
+                     " max_len: 10, encoder: stacked_cnn}, {type: numerical," \
                      " name: random_number}, " \
                      "{type: category, name: random_category, vocab_size: 10," \
                      " encoder: stacked_parallel_cnn}, " \
@@ -190,7 +192,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     run_experiment(input_features, output_features, rel_path)
 
     input_features = "[{type: text, name: random_text, vocab_size: 100," \
-                     " max_len: 20, encoder: stacked_cnn}, " \
+                     " max_len: 10, encoder: stacked_cnn}, " \
                      "{type: numerical, name: random_number}, " \
                      "{type: category, name: random_category, vocab_size: 10," \
                      " encoder: stacked_parallel_cnn}, " \
@@ -209,7 +211,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     run_experiment(input_features, output_features, rel_path)
 
     input_features = "[{type: text, name: random_text, vocab_size: 100," \
-                     " max_len: 20, encoder: stacked_cnn}, " \
+                     " max_len: 10, encoder: stacked_cnn}, " \
                      "{type: numerical, name: random_number}, " \
                      "{type: category, name: random_category, vocab_size: 10," \
                      " encoder: stacked_parallel_cnn}, " \
@@ -232,10 +234,10 @@ def test_experiment_image_inputs(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features_template = Template(
         "[{type: text, name: random_text, vocab_size: 100,"
-        " max_len: 20, encoder: stacked_cnn}, {type: numerical,"
+        " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
         " name: random_number}, "
-        "{type: image, name: random_image, width: 25, in_memory: ${in_memory},"
-        " height: 25, num_channels: 3, encoder: ${encoder},"
+        "{type: image, name: random_image, width: 10, in_memory: ${in_memory},"
+        " height: 10, num_channels: 3, encoder: ${encoder},"
         " resnet_size: 8, destination_folder: ${folder}}]")
 
     # Resnet encoder
@@ -429,8 +431,8 @@ def test_movie_rating_prediction(csv_filename):
 def test_example_with_set_output(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features_template = Template(
-        '[{name: image_path, type: image, encoder: ${encoder}, width: 15, '
-        'height: 15, num_channels: 3, resnet_size: 8, destination_folder: '
+        '[{name: image_path, type: image, encoder: ${encoder}, width: 10, '
+        'height: 10, num_channels: 3, resnet_size: 8, destination_folder: '
         '${folder}}]')
 
     output_features = "[ {name: tags, type: set, max_len: 5, vocab_size: 10}]"
@@ -454,8 +456,8 @@ def test_example_with_set_output(csv_filename):
 def test_visual_question_answering(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features= Template(
-        '[{name: image_path, type: image, encoder: stacked_cnn, width: 15, '
-        'height: 15, num_channels: 3, resnet_size: 8, destination_folder: '
+        '[{name: image_path, type: image, encoder: stacked_cnn, width: 10, '
+        'height: 10, num_channels: 3, resnet_size: 8, destination_folder: '
         '${folder}}, {name: question, type: text, vocab_size: 20, max_len: 10,'
         'encoder: parallel_cnn, level: word}]').substitute(
         folder=image_dest_folder)
