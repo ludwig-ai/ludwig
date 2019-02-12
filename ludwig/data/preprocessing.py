@@ -20,7 +20,6 @@ import os
 
 import h5py
 import numpy as np
-import pandas as pd
 import yaml
 
 from ludwig.constants import *
@@ -771,8 +770,8 @@ def replace_text_feature_level(model_definition, datasets):
                     )
                 ]
                 for level in ('word', 'char'):
-                    del dataset[
-                        '{}_{}'.format(
+                    name_level = '{}_{}'.format(
                             feature['name'],
                             level)
-                    ]
+                    if name_level in dataset:
+                        del dataset[name_level]
