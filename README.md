@@ -209,7 +209,7 @@ predictions = model.predict(test_dataframe)
 model.close()
 ```
 
-`model_definition` is a dictionary contaning the same information of the YAML file.
+`model_definition` is a dictionary containing the same information of the YAML file.
 More details are provided in the [User Guide](http://uber.github.io/ludwig/user_guide/) and in the [API documentation](http://uber.github.io/ludwig/api/).
 
 
