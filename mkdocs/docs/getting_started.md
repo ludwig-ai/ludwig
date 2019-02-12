@@ -148,7 +148,7 @@ After training, Ludwig will create a directory under `results` containing the tr
 You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
 
 ```
-ludwig visualize --visualization learning_curves --training_stats results/training_stats.json
+ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
 ```
 
 The commands will display a graph that looks like the following, where you can see loss and accuracy as functions of train iteration number:
@@ -178,7 +178,7 @@ Running this command will return model predictions and some test performance sta
 Those can be visualized by the `visualize` tool, which can also be used to compare performances and predictions of different models, for instance:
 
 ```
-ludwig visualize --visualization compare_performance --test_stats path/to/test_stats_model_1.json path/to/test_stats_model_2.json
+ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
 ```
 
 will return a bar plot comparing the models on different measures:
