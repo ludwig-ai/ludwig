@@ -74,6 +74,7 @@ coverage.xml
 *.hdf5
 *.json
 
+
 # Translations
 *.mo
 *.pot
@@ -123,3 +124,7 @@ ENV/
 
 # PyCharm
 .idea
+
+# Exceptions
+
+!docs/search/search_index.json #Except for foo.dll

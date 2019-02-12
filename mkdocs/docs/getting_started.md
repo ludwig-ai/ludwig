@@ -95,7 +95,7 @@ Ludwig will compose a deep learning model accordingly and train it for you.
 Currently the available datatypes in Ludwig are:
 
 - binary
-- numeric
+- numerical
 - category
 - set
 - bag
