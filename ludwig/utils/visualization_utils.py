@@ -22,16 +22,14 @@ import logging
 from collections import Counter
 
 import matplotlib as mpl
-from matplotlib import ticker
-from matplotlib.lines import Line2D
-
-mpl.use('TkAgg')  # make matplotlib run on mac os
 import matplotlib.patches as patches
 import matplotlib.path as path
 import matplotlib.patheffects as PathEffects
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from matplotlib import ticker
+from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
 
 
