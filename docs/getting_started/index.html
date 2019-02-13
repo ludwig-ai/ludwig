@@ -666,7 +666,7 @@ Training progress will be displayed in the console, but TensorBoard can also be 
 <p>Refer to the <a href="../user_guide/">User Guide</a> to find out all the options available to you in the model definition and take a look at the <a href="../examples/">Examples</a> to see how you can use Ludwig for several different tasks.</p>
 <p>After training, Ludwig will create a directory under <code>results</code> containing the trained model with its hyperparameters and summary statistics of the training process.
 You can visualize them using one of the several visualization options available in the <code>visualize</code> tool, for instance:</p>
-<div class="codehilite"><pre><span></span>ludwig visualize --visualization learning_curves --training_stats results/training_stats.json
+                <div class="codehilite"><pre><span></span>ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
 </pre></div>
 
 
@@ -684,7 +684,7 @@ Refer to the <a href="../user_guide/#distributed-training">User Guide</a> for mo
 
 <p>Running this command will return model predictions and some test performance statistics if the dataset contains ground truth information to compare to.
 Those can be visualized by the <code>visualize</code> tool, which can also be used to compare performances and predictions of different models, for instance:</p>
-<div class="codehilite"><pre><span></span>ludwig visualize --visualization compare_performance --test_stats path/to/test_stats_model_1.json path/to/test_stats_model_2.json
+                <div class="codehilite"><pre><span></span>ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
 </pre></div>
 
 
