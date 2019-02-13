@@ -2246,8 +2246,8 @@ The same applies to `experiment` and `predict`.
 More details on the installation of MPI and how to run Horovod can be found in [Horovod's documentation](https://github.com/uber/horovod).
 
 
-Programatic API
-===============
+Programmatic API
+================
 
 Ludwig functionalities can also be accessed through a programmatic API.
 The API consists of one `LudwigModel` class that can be initialized with a model definition dictionary and then can be trained with data coming in the form of a dataframe or a CSV file.
