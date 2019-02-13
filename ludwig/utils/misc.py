@@ -38,9 +38,12 @@ def get_experiment_description(model_definition,
                                data_validation_hdf5=None,
                                data_test_hdf5=None,
                                random_seed=None):
-    is_a_git_repo = subprocess.call(['git', 'branch'],
+    try:
+        is_a_git_repo = subprocess.call(['git', 'branch'],
                                     stderr=subprocess.STDOUT,
                                     stdout=open(os.devnull, 'w')) == 0
+    except:
+        is_a_git_repo = False
 
     description = OrderedDict()
     description['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
