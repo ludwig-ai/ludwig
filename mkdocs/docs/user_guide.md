@@ -240,7 +240,7 @@ If you trained a model previously and got the results in, for instance, `./resul
 
 You can specify an output directory with the argument `--output-directory`, by default it will be `./result_0`, with increasing numbers if a directory with the same name is present.
 
-The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a `predict_stats.json` file containing all prediction statistics.
+The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a `predict_statistics.json` file containing all prediction statistics.
 By specifying the argument `--only_prediction` you will not get the statistics. This parameter is needed in the case your data doesn't contain ground truth output values, and thus computing the prediction statistics would be impossible.
 If you receive an error regarding a missing output feature column in your data, you probably forgot to specify this argument.
 You can moreover specify not to save the raw NPY output files with the argument `skip_save_unprocessed_output`.
@@ -394,7 +394,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}
+  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -404,9 +404,9 @@ optional arguments:
                         predictions files
   -prob PROBABILITIES [PROBABILITIES ...], --probabilities PROBABILITIES [PROBABILITIES ...]
                         probabilities files
-  -tes TRAINING_STATS [TRAINING_STATS ...], --training_stats TRAINING_STATS [TRAINING_STATS ...]
+  -tes TRAINING_STATS [TRAINING_STATS ...], --training_statistics TRAINING_STATS [TRAINING_STATS ...]
                         training stats files
-  -trs TEST_STATS [TEST_STATS ...], --test_stats TEST_STATS [TEST_STATS ...]
+  -trs TEST_STATS [TEST_STATS ...], --test_statistics TEST_STATS [TEST_STATS ...]
                         test stats files
   -alg ALGORITHMS [ALGORITHMS ...], --algorithms ALGORITHMS [ALGORITHMS ...]
                         names of the algorithms (for better graphs)
@@ -2271,7 +2271,7 @@ train_stats = model.train(data_df=dataframe)
 ```
 
 `model_definition` is a dictionary that has the same key-value structure of a model definition YAML file, as it's technically equivalent as parsing the YAML file into a Python dictionary.
-`train_stats` will be a dictionary containing statistics about the training.
+`train_statistics` will be a dictionary containing statistics about the training.
 The contents are exactly the same of the `training_statistics.json` file produced by the `experiment` and `train` commands.
 
 Loading a Pre-trained Model
@@ -2307,7 +2307,7 @@ predictions, test_stats = model.test(dataset_csv=csv_file_path)
 predictions, test_stats = model.test(dataset_df=dataframe)
 ```
 
-In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the measures and `test_stats` will be a dictionary containing several measures of quality depending on the type of each output feature (e.g. `category` features will have an accuracy measure and a confusion matrix, among other measures, associated to them, while `numerical` features will have measures like mean squared loss and R2 among others).
+In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the measures and `test_statistics` will be a dictionary containing several measures of quality depending on the type of each output feature (e.g. `category` features will have an accuracy measure and a confusion matrix, among other measures, associated to them, while `numerical` features will have measures like mean squared loss and R2 among others).
 
 
 Visualizations
@@ -2616,7 +2616,7 @@ It needs to be an integer, to figure out the association between classes and int
 ![ROC Curves](images/roc_curves.png "ROC Curves")
 
 
-### roc_curves_from_test_stats
+### roc_curves_from_test_statistics
 
 This visualization uses the `field`, `prediction_statistics` and `model_names` parameters.
 `field` needs to be binary feature.
