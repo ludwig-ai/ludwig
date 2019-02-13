@@ -1973,12 +1973,12 @@ The parameters available for preprocessing are:
 ### Text Input Features and Encoders
 
 The encoders are the same used for the [Sequence Features](#sequence-input-features-and-encoders).
-The only difference is that you can specify an additional `level` parameter with possible values `word` or `char` to force to use the text words or characters as inputs (by default the encoder will sue `word`).
+The only difference is that you can specify an additional `level` parameter with possible values `word` or `char` to force to use the text words or characters as inputs (by default the encoder will use `word`).
 
 ### Text Output Features and Decoders
 
 The decoders are the same used for the [Sequence Features](#sequence-output-features-and-decoders).
-The only difference is that you can specify an additional `level` parameter with possible values `word` or `char` to force to use the text words or characters as inputs (by default the encoder will sue `word`).
+The only difference is that you can specify an additional `level` parameter with possible values `word` or `char` to force to use the text words or characters as inputs (by default the encoder will use `word`).
 
 ### Text Features Measures
 
