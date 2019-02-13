@@ -1192,8 +1192,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#roc_curves_from_test_stats" title="roc_curves_from_test_stats" class="md-nav__link">
-    roc_curves_from_test_stats
+              <a class="md-nav__link" href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics">
+                  roc_curves_from_test_statistics
   </a>
   
 </li>
@@ -2211,8 +2211,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#roc_curves_from_test_stats" title="roc_curves_from_test_stats" class="md-nav__link">
-    roc_curves_from_test_stats
+              <a class="md-nav__link" href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics">
+                  roc_curves_from_test_statistics
   </a>
   
 </li>
@@ -2513,7 +2513,9 @@ If the new data contains a split column, you can specify which split to use to c
 <p>A model to load is needed, and yo can specify its path with the <code>--model_path</code> argument.
 If you trained a model previously and got the results in, for instance, <code>./results/experiment_run_0</code>, you have to specify <code>./results/experiment_run_0/model</code> for using it to predict.</p>
 <p>You can specify an output directory with the argument <code>--output-directory</code>, by default it will be <code>./result_0</code>, with increasing numbers if a directory with the same name is present.</p>
-<p>The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a <code>predict_stats.json</code> file containing all prediction statistics.
+                <p>The directory will contain a prediction CSV file and a probability CSV file for each output feature,
+                    together with raw NPY files containing raw tensors and a <code>predict_statistics.json</code> file
+                    containing all prediction statistics.
 By specifying the argument <code>--only_prediction</code> you will not get the statistics. This parameter is needed in the case your data doesn't contain ground truth output values, and thus computing the prediction statistics would be impossible.
 If you receive an error regarding a missing output feature column in your data, you probably forgot to specify this argument.
 You can moreover specify not to save the raw NPY output files with the argument <code>skip_save_unprocessed_output</code>.</p>
@@ -2651,7 +2653,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_stats,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}
+  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -2661,9 +2663,9 @@ optional arguments:
                         predictions files
   -prob PROBABILITIES [PROBABILITIES ...], --probabilities PROBABILITIES [PROBABILITIES ...]
                         probabilities files
-  -tes TRAINING_STATS [TRAINING_STATS ...], --training_stats TRAINING_STATS [TRAINING_STATS ...]
+  -tes TRAINING_STATS [TRAINING_STATS ...], --training_statistics TRAINING_STATS [TRAINING_STATS ...]
                         training stats files
-  -trs TEST_STATS [TEST_STATS ...], --test_stats TEST_STATS [TEST_STATS ...]
+  -trs TEST_STATS [TEST_STATS ...], --test_statistics TEST_STATS [TEST_STATS ...]
                         test stats files
   -alg ALGORITHMS [ALGORITHMS ...], --algorithms ALGORITHMS [ALGORITHMS ...]
                         names of the algorithms (for better graphs)
@@ -4798,7 +4800,7 @@ Pretrained models can be loaded and can be used to obtain predictions on new dat
 
 
 <p><code>model_definition</code> is a dictionary that has the same key-value structure of a model definition YAML file, as it's technically equivalent as parsing the YAML file into a Python dictionary.
-<code>train_stats</code> will be a dictionary containing statistics about the training.
+    <code>train_statistics</code> will be a dictionary containing statistics about the training.
 The contents are exactly the same of the <code>training_statistics.json</code> file produced by the <code>experiment</code> and <code>train</code> commands.</p>
 <h3 id="loading-a-pre-trained-model">Loading a Pre-trained Model<a class="headerlink" href="#loading-a-pre-trained-model" title="Permanent link">&para;</a></h3>
 <p>In order to load a pre-trained Ludwig model you have to call the static function <code>load()</code> of the <code>LudwigModel</code> class providing the path containing the model.</p>
@@ -4825,7 +4827,13 @@ The CSV / dataframe has to contain columns with the same names of all the input 
 </pre></div>
 
 
-<p>In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the measures and <code>test_stats</code> will be a dictionary containing several measures of quality depending on the type of each output feature (e.g. <code>category</code> features will have an accuracy measure and a confusion matrix, among other measures, associated to them, while <code>numerical</code> features will have measures like mean squared loss and R2 among others).</p>
+                <p>In this case the CSV / dataframe should also contain columns with the same names of all the output
+                    features, as their content is going to be used as ground truth to compare the predictions against
+                    and compute the measures and <code>test_statistics</code> will be a dictionary containing several
+                    measures of quality depending on the type of each output feature (e.g. <code>category</code>
+                    features will have an accuracy measure and a confusion matrix, among other measures, associated to
+                    them, while <code>numerical</code> features will have measures like mean squared loss and R2 among
+                    others).</p>
 <h2 id="visualizations">Visualizations<a class="headerlink" href="#visualizations" title="Permanent link">&para;</a></h2>
 <p>Several visualization can be obtained from the result files from both <code>train</code>, <code>predict</code> and <code>experiment</code> by using the <code>visualize</code> command.
 The command has several parameters, but not all the visualizations use all of them.
@@ -5020,7 +5028,10 @@ This visualization produces a line chart plotting the roc curves for the specifi
 If <code>field</code> is a category feature, <code>positive_label</code> indicates which is the class to be considered positive class and all the others will be considered negative.
 It needs to be an integer, to figure out the association between classes and integers check the <code>ground_truth_metadata</code> JSON file.</p>
 <p><img alt="ROC Curves" src="../images/roc_curves.png" title="ROC Curves" /></p>
-<h4 id="roc_curves_from_test_stats">roc_curves_from_test_stats<a class="headerlink" href="#roc_curves_from_test_stats" title="Permanent link">&para;</a></h4>
+                <h4 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink"
+                                                                                           href="#roc_curves_from_test_statistics"
+                                                                                           title="Permanent link">&para;</a>
+                </h4>
 <p>This visualization uses the <code>field</code>, <code>prediction_statistics</code> and <code>model_names</code> parameters.
 <code>field</code> needs to be binary feature.
 This visualization produces a line chart plotting the roc curves for the specified <code>field</code>.</p>
