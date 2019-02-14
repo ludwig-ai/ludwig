@@ -40,7 +40,7 @@ setup(
     install_requires=['Cython>=0.25',
                       'h5py>=2.6',
                       'matplotlib>=3.0',
-                      'numpy>=1.12',
+                      'numpy>=1.15',
                       'pandas>=0.19',
                       'scipy>=0.18',
                       'scikit-learn',
