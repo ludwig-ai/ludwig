@@ -26,8 +26,10 @@ We will prioritize new features depending on the feedback of the community, but 
 We also want to address some of the current limitations:
 
 - currently the full dataset needs to be loaded in memory in order to train a model. Image features already have a way to dynamically read batches of datapoints from disk, and we want to extend this capability to other datatypes.
-- it is currently not possible to serve automatically trained ludwig models, we want to add a small server and a simple user interface in order to provide a live demo capability.
+- add a command to start a rest service maybe with a simple user interface in order to provide a live demo capability.
 - document lower level functions.
+- optimize the data I/O to TensorFlow.
+- increase the number of supported data formats beyond just CSV and integrating with [Petastorm](https://github.com/uber/Petastorm).
 
 
 ## Who are the authors of Ludwig?
