@@ -70,7 +70,7 @@ output_features:
 Natural Language Understanding
 ===
 
-| utterance                      | intent                            | slots       |
+| utterance                      | slots                             | intent      |
 |--------------------------------|-----------------------------------|-------------|
 | I want a pizza                 | O O O B-Food_type                 | order_food  |
 | Book a flight to Boston        | O O O O B-City                    | book_flight |
