@@ -107,13 +107,13 @@ class LudwigModel:
     Predict:
 
     ```python
-    predictions = ludwig_model.predict(dataset_csv=csv_file_path)
+    predictions = ludwig_model.predict(data_csv=csv_file_path)
     ```
 
     or
 
     ```python
-    predictions = ludwig_model.predict(dataset_df=dataframe)
+    predictions = ludwig_model.predict(data_df=dataframe)
     ```
 
     Finally in order to release resources:
