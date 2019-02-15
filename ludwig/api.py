@@ -131,9 +131,10 @@ class LudwigModel:
     ):
         logging.getLogger().setLevel(logging_level)
         if model_definition_file is not None:
-            self.model_definition = merge_with_defaults(
-                yaml.load(model_definition_file)
-            )
+            with open(model_definition_file, 'r') as def_file:
+                self.model_definition = merge_with_defaults(
+                    yaml.load(def_file)
+                )
         else:
             self.model_definition = merge_with_defaults(model_definition)
         self.train_set_metadata = None
