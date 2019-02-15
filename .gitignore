@@ -127,4 +127,8 @@ ENV/
 
 # Exceptions
 
-!docs/search/search_index.json #Except for foo.dll
+!/docs/js/Ludwig.json
+!/docs/search/search_index.json
+!/docs/stylesheets/micon_nb/db.json
+!/mkdocs/docs/js/Ludwig.json
+!/mkdocs/docs/stylesheets/micon_nb/db.json
