@@ -705,23 +705,23 @@ For each task we show an example dataset and a sample model definition that can 
 <tbody>
 <tr>
 <td>I want a pizza</td>
-<td>O O O B-Food_type</td>
 <td>order_food</td>
+<td>O O O B-Food_type</td>
 </tr>
 <tr>
 <td>Book a flight to Boston</td>
-<td>O O O O B-City</td>
 <td>book_flight</td>
+<td>O O O O B-City</td>
 </tr>
 <tr>
 <td>Book a flight at 7pm to London</td>
-<td>O O O O B-Departure_time O B-City</td>
 <td>book_flight</td>
+<td>O O O O B-Departure_time O B-City</td>
 </tr>
 </tbody>
 </table>
 <div class="codehilite"><pre><span></span>ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv nlu.csv \
   --model_definition_file model_definition.yaml
 </pre></div>
 
