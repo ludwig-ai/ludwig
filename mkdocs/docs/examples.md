@@ -70,15 +70,15 @@ output_features:
 Natural Language Understanding
 ===
 
-| utterance                      | intent                            | slots       |
-|--------------------------------|-----------------------------------|-------------|
-| I want a pizza                 | O O O B-Food_type                 | order_food  |
-| Book a flight to Boston        | O O O O B-City                    | book_flight |
-| Book a flight at 7pm to London | O O O O B-Departure_time O B-City | book_flight |
+| utterance                      | inten       | slots                             |
+|--------------------------------|-------------|-----------------------------------|
+| I want a pizza                 | order_food  | O O O B-Food_type                 |
+| Book a flight to Boston        | book_flight | O O O O B-City                    |
+| Book a flight at 7pm to London | book_flight | O O O O B-Departure_time O B-City |
 
 ```
 ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv nlu.csv \
   --model_definition_file model_definition.yaml
 ```
 
