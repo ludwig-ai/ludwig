@@ -15,16 +15,15 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import csv
+import numpy as np
 import os
 import random
 import string
 import uuid
-
-import numpy as np
 import yaml
 from skimage.io import imsave
 
+from ludwig.utils.data_utils import save_csv
 from ludwig.utils.misc import get_from_registry
 
 letters = string.ascii_letters
@@ -244,14 +243,6 @@ cyclers_registry = {
     'binary': cycle_binary
 }
 
-
-def write_csv(dataset, csv_file_path):
-    with open(csv_file_path, 'w') as file:
-        writer = csv.writer(file)
-        for row in dataset:
-            writer.writerow(row)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='This script generates a synthetic dataset.')
@@ -289,4 +280,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     dataset = build_synthetic_dataset(args.dataset_size, args.features)
-    write_csv(dataset, args.csv_file_path)
+    save_csv(args.csv_file_path, dataset)
