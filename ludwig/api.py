@@ -650,7 +650,7 @@ class LudwigModel:
                the same length. Each index in the lists corresponds to one 
                datapoint. For example a data set consisting of two datapoints 
                with a text and a class may be provided as the following dict 
-               ``{'text_field_name}: ['text of the first datapoint', text of the 
+               ``{'text_field_name': ['text of the first datapoint', text of the
                second datapoint'], 'class_filed_name': ['class_datapoints_1', 
                'class_datapoints_2']}`.
         :param batch_size: (int) the batch size to use for training. By default 
