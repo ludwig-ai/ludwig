@@ -323,8 +323,8 @@ def preprocess_for_training(
     data_test_hdf5_fp = None
     train_set_metadata_json_fp = 'metadata.json'
     if data_csv is not None:
-        data_hdf5_fp = data_csv.replace('csv', 'hdf5')
-        train_set_metadata_json_fp = data_csv.replace('csv', 'json')
+        data_hdf5_fp = os.path.splitext(data_csv)[0]+'.hdf5'
+        train_set_metadata_json_fp = os.path.splitext(data_csv)[0]+'.json'
         if (os.path.isfile(data_hdf5_fp) and
                 os.path.isfile(train_set_metadata_json_fp)):
             logging.info(
@@ -336,8 +336,9 @@ def preprocess_for_training(
             train_set_metadata_json = train_set_metadata_json_fp
 
     if data_train_csv is not None:
-        data_train_hdf5_fp = data_train_csv.replace('csv', 'hdf5')
-        train_set_metadata_json_fp = data_train_csv.replace('csv', 'json')
+        data_train_hdf5_fp = os.path.splitext(data_train_csv)[0]+'.hdf5'
+        train_set_metadata_json_fp = os.path.splitext(data_train_csv)[
+            0]+'.json'
         if (os.path.isfile(data_train_hdf5_fp) and
                 os.path.isfile(train_set_metadata_json_fp)):
             logging.info(
@@ -349,7 +350,8 @@ def preprocess_for_training(
             train_set_metadata_json = train_set_metadata_json_fp
 
     if data_validation_csv is not None:
-        data_validation_hdf5_fp = data_validation_csv.replace('csv', 'hdf5')
+        data_validation_hdf5_fp = os.path.splitext(
+            data_validation_csv)[0]+'.hdf5'
         if os.path.isfile(data_validation_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of '
@@ -359,7 +361,7 @@ def preprocess_for_training(
             data_validation_hdf5 = data_validation_hdf5_fp
 
     if data_test_csv is not None:
-        data_test_hdf5_fp = data_test_csv.replace('csv', 'hdf5')
+        data_test_hdf5_fp = os.path.splitext(data_test_csv)[0]+'.hdf5'
         if os.path.isfile(data_test_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of '
@@ -459,7 +461,8 @@ def preprocess_for_training(
             logging.info('Writing dataset')
             data_utils.save_hdf5(data_hdf5_fp, data, train_set_metadata)
             logging.info('Writing train set metadata with vocabulary')
-            data_utils.save_json(train_set_metadata_json_fp, train_set_metadata)
+            data_utils.save_json(
+                train_set_metadata_json_fp, train_set_metadata)
         training_set, test_set, validation_set = split_dataset_tvt(
             data,
             data['split']
@@ -509,7 +512,8 @@ def preprocess_for_training(
                     train_set_metadata
                 )
             logging.info('Writing train set metadata with vocabulary')
-            data_utils.save_json(train_set_metadata_json_fp, train_set_metadata)
+            data_utils.save_json(
+                train_set_metadata_json_fp, train_set_metadata)
 
     elif data_hdf5 is not None and train_set_metadata_json is not None:
         # use data and train set metadata
@@ -621,7 +625,7 @@ def preprocess_for_prediction(
 
     # Check if hdf5 and json already exist
     if data_csv is not None:
-        data_hdf5_fp = data_csv.replace('csv', 'hdf5')
+        data_hdf5_fp = os.path.splitext(data_csv)[0]+'.hdf5'
         if os.path.isfile(data_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of the csv, using it instead'
@@ -771,7 +775,7 @@ def replace_text_feature_level(model_definition, datasets):
                 ]
                 for level in ('word', 'char'):
                     name_level = '{}_{}'.format(
-                            feature['name'],
-                            level)
+                        feature['name'],
+                        level)
                     if name_level in dataset:
                         del dataset[name_level]
