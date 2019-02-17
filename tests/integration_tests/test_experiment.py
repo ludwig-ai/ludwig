@@ -85,11 +85,11 @@ def delete_temporary_data(csv_path):
     if os.path.exists(csv_path):
         os.remove(csv_path)
 
-    json_path = os.path.splitext(csv_path)[0]+'.json'
+    json_path = os.path.splitext(csv_path)[0] + '.json'
     if os.path.exists(json_path):
         os.remove(json_path)
 
-    hdf5_path = os.path.splitext(csv_path)[0]+'.hdf5'
+    hdf5_path = os.path.splitext(csv_path)[0] + '.hdf5'
     if os.path.exists(hdf5_path):
         os.remove(hdf5_path)
 
@@ -418,9 +418,9 @@ def test_experiment_timeseries(csv_filename):
 
 def test_movie_rating_prediction(csv_filename):
     input_features = '[{name: year, type: numerical, min: 1900, max: 2030},' \
-        '{name: duration, type: numerical, min: 3600, max: 12000},'\
-        '{name: nominations, type: numerical, min: 0, max: 25},'\
-        '{name: categories, type: set, max_len: 5, vocab_size: 10}]'
+                     '{name: duration, type: numerical, min: 3600, max: 12000},' \
+                     '{name: nominations, type: numerical, min: 0, max: 25},' \
+                     '{name: categories, type: set, max_len: 5, vocab_size: 10}]'
     output_features = "[ {name: rating, type: numerical, min: 1, max: 10}]"
 
     # Generate test data

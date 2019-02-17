@@ -100,7 +100,7 @@ class ImageBaseFeature(BaseFeature):
                     )
                 data[feature['name']][i, :, :, :] = img
         else:
-            data_fp = os.path.splitext(dataset_df.csv)[0]+'.hdf5'
+            data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
                 mode = 'r+'

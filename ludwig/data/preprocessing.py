@@ -323,8 +323,8 @@ def preprocess_for_training(
     data_test_hdf5_fp = None
     train_set_metadata_json_fp = 'metadata.json'
     if data_csv is not None:
-        data_hdf5_fp = os.path.splitext(data_csv)[0]+'.hdf5'
-        train_set_metadata_json_fp = os.path.splitext(data_csv)[0]+'.json'
+        data_hdf5_fp = os.path.splitext(data_csv)[0] + '.hdf5'
+        train_set_metadata_json_fp = os.path.splitext(data_csv)[0] + '.json'
         if (os.path.isfile(data_hdf5_fp) and
                 os.path.isfile(train_set_metadata_json_fp)):
             logging.info(
@@ -336,9 +336,8 @@ def preprocess_for_training(
             train_set_metadata_json = train_set_metadata_json_fp
 
     if data_train_csv is not None:
-        data_train_hdf5_fp = os.path.splitext(data_train_csv)[0]+'.hdf5'
-        train_set_metadata_json_fp = os.path.splitext(data_train_csv)[
-            0]+'.json'
+        data_train_hdf5_fp = os.path.splitext(data_train_csv)[0] + '.hdf5'
+        train_set_metadata_json_fp = os.path.splitext(data_train_csv)[0] + '.json'
         if (os.path.isfile(data_train_hdf5_fp) and
                 os.path.isfile(train_set_metadata_json_fp)):
             logging.info(
@@ -351,7 +350,7 @@ def preprocess_for_training(
 
     if data_validation_csv is not None:
         data_validation_hdf5_fp = os.path.splitext(
-            data_validation_csv)[0]+'.hdf5'
+            data_validation_csv)[0] + '.hdf5'
         if os.path.isfile(data_validation_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of '
@@ -361,7 +360,7 @@ def preprocess_for_training(
             data_validation_hdf5 = data_validation_hdf5_fp
 
     if data_test_csv is not None:
-        data_test_hdf5_fp = os.path.splitext(data_test_csv)[0]+'.hdf5'
+        data_test_hdf5_fp = os.path.splitext(data_test_csv)[0] + '.hdf5'
         if os.path.isfile(data_test_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of '
@@ -625,7 +624,7 @@ def preprocess_for_prediction(
 
     # Check if hdf5 and json already exist
     if data_csv is not None:
-        data_hdf5_fp = os.path.splitext(data_csv)[0]+'.hdf5'
+        data_hdf5_fp = os.path.splitext(data_csv)[0] + '.hdf5'
         if os.path.isfile(data_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of the csv, using it instead'
