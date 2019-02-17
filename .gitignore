@@ -127,8 +127,10 @@ ENV/
 
 # Exceptions
 
-!/docs/js/Ludwig.json
+!/docs/js/Ludwig_webgl1.json
+!/docs/js/Ludwig_webgl2.json
 !/docs/search/search_index.json
 !/docs/stylesheets/micon_nb/db.json
-!/mkdocs/docs/js/Ludwig.json
+!/mkdocs/docs/js/Ludwig_webgl1.json
+!/mkdocs/docs/js/Ludwig_webgl2.json
 !/mkdocs/docs/stylesheets/micon_nb/db.json

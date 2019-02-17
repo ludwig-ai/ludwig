@@ -446,8 +446,27 @@ predictions = model.predict(test_dataframe)</code></pre>
 <script>
     function detect_webgl2() {
         var canvas = document.createElement("canvas");
-        var gl = canvas.getContext("webgl2");
-        return gl != null;
+        try {
+            var context = canvas.getContext("webgl2");
+            if (context && typeof context.getParameter == "function") {
+                    return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+
+    function detect_webgl() {
+        var canvas = document.createElement("canvas");
+        names = ["webgl", "experimental-webgl", "moz-webgl", "webkit-3d"];
+        for(var i = 0; i < names.length; i++) {
+            try {
+                context = canvas.getContext(names[i]);
+                if (context && typeof context.getParameter == "function") {
+                    return true;
+                }
+            } catch(e) {}
+        }
+        return false;
     }
 
     /**
@@ -470,9 +489,23 @@ predictions = model.predict(test_dataframe)</code></pre>
     }
 
     if (detect_webgl2()) {
+            console.log("webgl2 support");
             document.addEventListener('DOMContentLoaded', function (event) {
                 CABLES.patch = new CABLES.Patch({
-                    patchFile: 'https://raw.githubusercontent.com/uber/ludwig/master/docs/js/Ludwig.json',
+                    patchFile: 'https://raw.githubusercontent.com/uber/ludwig/master/docs/js/Ludwig_webgl2.json',
+                    prefixAssetPath: '',
+                    glCanvasId: 'glcanvas',
+                    glCanvasResizeToWindow: true,
+                    onError: showError,
+                    onPatchLoaded: patchInitialized,
+                    onFinishedLoading: patchFinishedLoading,
+                });
+            });
+    } else if (detect_webgl()) {
+        console.log("webgl support");
+        document.addEventListener('DOMContentLoaded', function (event) {
+                CABLES.patch = new CABLES.Patch({
+                    patchFile: 'https://raw.githubusercontent.com/uber/ludwig/master/docs/js/Ludwig_webgl1.json',
                     prefixAssetPath: '',
                     glCanvasId: 'glcanvas',
                     glCanvasResizeToWindow: true,
@@ -482,7 +515,7 @@ predictions = model.predict(test_dataframe)</code></pre>
                 });
             });
     } else {
-        console.log("No webgl2 support")
+        console.log("No webgl support");
     }
 
 </script>
