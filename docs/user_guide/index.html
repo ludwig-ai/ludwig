@@ -2404,7 +2404,7 @@ optional arguments:
 The HDF5 file contains the data mapped to numpy ndarrays, while the JSON file contains the mappings from the values in the tensors to their original labels.</p>
 <p>For instance, for a categorical feature with 3 possible values, the HDF5 file will contain integers from 0 to 3 (with 0 being a <code>&lt;UNK&gt;</code> category), while the JSON file will contain a <code>idx2str</code> list containing all tokens (<code>[&lt;UNK&gt;, label_1, label_2, label_3]</code>), a <code>str2idx</code> dictionary (<code>{"&lt;UNK&gt;": 0, "label_1": 1, "label_2": 2, "label_3": 3}</code>) and a <code>str2freq</code> dictionary (<code>{"&lt;UNK&gt;": 0, "label_1": 93, "label_2": 55, "label_3": 24}</code>).</p>
 <p>The reason to have those  intermediate files is two-fold: on one hand, if you are going to train your model again Ludwig will try to load them instead of recomputing all tensors, which saves a consistent amount of time, and on the other hand when you want to use your model to predict, data has to be mapped to tensors in exactly the same way it was mapped during training, so you'll be required to load the JSON metadata file in the <code>predict</code> command.
-The way this works is: the first time you provide a CSV (<code>--data_csv</code>), the HDF5 and JSON files are created, from the second time on Ludwig will lod them instead of the CSV even if you specify the CSV (it looks in the same directory for files names in the same way but with a different extension), finally you can directly specify the HDF5 and JSON files (<code>--data_hdf5</code> and <code>--metadata_json</code>).</p>
+The way this works is: the first time you provide a CSV (<code>--data_csv</code>), the HDF5 and JSON files are created, from the second time on Ludwig will load them instead of the CSV even if you specify the CSV (it looks in the same directory for files names in the same way but with a different extension), finally you can directly specify the HDF5 and JSON files (<code>--data_hdf5</code> and <code>--metadata_json</code>).</p>
 <p>As the mapping from raw data to tensors depends on the type of feature that you specify in your model definition, if you change type (for instance from <code>sequential</code> to <code>text</code>) you also have to redo the preprocessing, which is achieved by deleting the HDF5 and JSON files.
 Alternatively you can skip saving the HDF5 and JSON files specifying <code>--skip_save_processed_input</code>.</p>
 <p>Splitting between train, validation and test set can be done in several ways.
@@ -2427,7 +2427,7 @@ By default the output directory is <code>./results</code>.
 That directory will contain a directory named <code>[experiment_name]_[model_name]_0</code> if model name and experiment name are specified.
 If the same combination of experiment and model name is used again, the integer at the end of the name wil be increased.
 If neither of them is specified the directory will be named <code>run_0</code>.
-The directory will will contain</p>
+The directory will contain</p>
 <ul>
 <li><code>description.json</code> - a file containing a description of the training process with all the information to reproduce it.</li>
 <li><code>training_statistics.json</code> which contains records of all measures and losses for each epoch.</li>
@@ -2512,7 +2512,7 @@ optional arguments:
 <p>The same distinction between CSV files and HDF5 / JSON files explained in the <a href="#train">train</a> section also applies here.
 In either case, the JSON metadata file obtained during training is needed in order to map the new data into tensors.
 If the new data contains a split column, you can specify which split to use to calculate the predictions with the <code>--split</code> argument. By default it's <code>full</code> which means all the splits will be used.</p>
-<p>A model to load is needed, and yo can specify its path with the <code>--model_path</code> argument.
+<p>A model to load is needed, and you can specify its path with the <code>--model_path</code> argument.
 If you trained a model previously and got the results in, for instance, <code>./results/experiment_run_0</code>, you have to specify <code>./results/experiment_run_0/model</code> for using it to predict.</p>
 <p>You can specify an output directory with the argument <code>--output-directory</code>, by default it will be <code>./result_0</code>, with increasing numbers if a directory with the same name is present.</p>
 <p>The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a <code>predict_statistics.json</code> file containing all prediction statistics.
