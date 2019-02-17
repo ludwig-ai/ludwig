@@ -941,8 +941,8 @@
 </li>
       
         <li class="md-nav__item">
-            <a class="md-nav__link" href="#programmatic-api" title="Programmatic API">
-                Programmatic API
+  <a href="#programmatic-api" title="Programmatic API" class="md-nav__link">
+    Programmatic API
   </a>
   
     <nav class="md-nav">
@@ -1195,8 +1195,8 @@
 </li>
         
           <li class="md-nav__item">
-              <a class="md-nav__link" href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics">
-                  roc_curves_from_test_statistics
+  <a href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics" class="md-nav__link">
+    roc_curves_from_test_statistics
   </a>
   
 </li>
@@ -1959,8 +1959,8 @@
 </li>
       
         <li class="md-nav__item">
-            <a class="md-nav__link" href="#programmatic-api" title="Programmatic API">
-                Programmatic API
+  <a href="#programmatic-api" title="Programmatic API" class="md-nav__link">
+    Programmatic API
   </a>
   
     <nav class="md-nav">
@@ -2213,8 +2213,8 @@
 </li>
         
           <li class="md-nav__item">
-              <a class="md-nav__link" href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics">
-                  roc_curves_from_test_statistics
+  <a href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics" class="md-nav__link">
+    roc_curves_from_test_statistics
   </a>
   
 </li>
@@ -2515,9 +2515,7 @@ If the new data contains a split column, you can specify which split to use to c
 <p>A model to load is needed, and yo can specify its path with the <code>--model_path</code> argument.
 If you trained a model previously and got the results in, for instance, <code>./results/experiment_run_0</code>, you have to specify <code>./results/experiment_run_0/model</code> for using it to predict.</p>
 <p>You can specify an output directory with the argument <code>--output-directory</code>, by default it will be <code>./result_0</code>, with increasing numbers if a directory with the same name is present.</p>
-                <p>The directory will contain a prediction CSV file and a probability CSV file for each output feature,
-                    together with raw NPY files containing raw tensors and a <code>predict_statistics.json</code> file
-                    containing all prediction statistics.
+<p>The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a <code>predict_statistics.json</code> file containing all prediction statistics.
 By specifying the argument <code>--only_prediction</code> you will not get the statistics. This parameter is needed in the case your data doesn't contain ground truth output values, and thus computing the prediction statistics would be impossible.
 If you receive an error regarding a missing output feature column in your data, you probably forgot to specify this argument.
 You can moreover specify not to save the raw NPY output files with the argument <code>skip_save_unprocessed_output</code>.</p>
@@ -4078,14 +4076,10 @@ In the model definition you are able to specify which level of representation to
 </ul>
 <h4 id="text-input-features-and-encoders">Text Input Features and Encoders<a class="headerlink" href="#text-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>The encoders are the same used for the <a href="#sequence-input-features-and-encoders">Sequence Features</a>.
-    The only difference is that you can specify an additional <code>level</code> parameter with possible values <code>word</code>
-    or <code>char</code> to force to use the text words or characters as inputs (by default the encoder will use <code>word</code>).
-</p>
+The only difference is that you can specify an additional <code>level</code> parameter with possible values <code>word</code> or <code>char</code> to force to use the text words or characters as inputs (by default the encoder will use <code>word</code>).</p>
 <h4 id="text-output-features-and-decoders">Text Output Features and Decoders<a class="headerlink" href="#text-output-features-and-decoders" title="Permanent link">&para;</a></h4>
 <p>The decoders are the same used for the <a href="#sequence-output-features-and-decoders">Sequence Features</a>.
-    The only difference is that you can specify an additional <code>level</code> parameter with possible values <code>word</code>
-    or <code>char</code> to force to use the text words or characters as inputs (by default the encoder will use <code>word</code>).
-</p>
+The only difference is that you can specify an additional <code>level</code> parameter with possible values <code>word</code> or <code>char</code> to force to use the text words or characters as inputs (by default the encoder will use <code>word</code>).</p>
 <h4 id="text-features-measures">Text Features Measures<a class="headerlink" href="#text-features-measures" title="Permanent link">&para;</a></h4>
 <p>The measures are the same used for the <a href="#sequence-features-measures">Sequence Features</a>.</p>
 <h3 id="time-series-features">Time Series Features<a class="headerlink" href="#time-series-features" title="Permanent link">&para;</a></h3>
@@ -4301,8 +4295,7 @@ For instance, in order to train a Ludwig model on a local machine with four GPUs
 
 <p>The same applies to <code>experiment</code> and <code>predict</code>.</p>
 <p>More details on the installation of MPI and how to run Horovod can be found in <a href="https://github.com/uber/horovod">Horovod's documentation</a>.</p>
-                <h2 id="programmatic-api">Programmatic API<a class="headerlink" href="#programmatic-api"
-                                                             title="Permanent link">&para;</a></h2>
+<h2 id="programmatic-api">Programmatic API<a class="headerlink" href="#programmatic-api" title="Permanent link">&para;</a></h2>
 <p>Ludwig functionalities can also be accessed through a programmatic API.
 The API consists of one <code>LudwigModel</code> class that can be initialized with a model definition dictionary and then can be trained with data coming in the form of a dataframe or a CSV file.
 Pretrained models can be loaded and can be used to obtain predictions on new data, again either in dataframe or CSV format.</p>
@@ -4320,7 +4313,7 @@ Pretrained models can be loaded and can be used to obtain predictions on new dat
 
 
 <p><code>model_definition</code> is a dictionary that has the same key-value structure of a model definition YAML file, as it's technically equivalent as parsing the YAML file into a Python dictionary.
-    <code>train_statistics</code> will be a dictionary containing statistics about the training.
+<code>train_statistics</code> will be a dictionary containing statistics about the training.
 The contents are exactly the same of the <code>training_statistics.json</code> file produced by the <code>experiment</code> and <code>train</code> commands.</p>
 <h3 id="loading-a-pre-trained-model">Loading a Pre-trained Model<a class="headerlink" href="#loading-a-pre-trained-model" title="Permanent link">&para;</a></h3>
 <p>In order to load a pre-trained Ludwig model you have to call the static function <code>load()</code> of the <code>LudwigModel</code> class providing the path containing the model.</p>
@@ -4347,13 +4340,7 @@ The CSV / dataframe has to contain columns with the same names of all the input 
 </pre></div>
 
 
-                <p>In this case the CSV / dataframe should also contain columns with the same names of all the output
-                    features, as their content is going to be used as ground truth to compare the predictions against
-                    and compute the measures and <code>test_statistics</code> will be a dictionary containing several
-                    measures of quality depending on the type of each output feature (e.g. <code>category</code>
-                    features will have an accuracy measure and a confusion matrix, among other measures, associated to
-                    them, while <code>numerical</code> features will have measures like mean squared loss and R2 among
-                    others).</p>
+<p>In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the measures and <code>test_statistics</code> will be a dictionary containing several measures of quality depending on the type of each output feature (e.g. <code>category</code> features will have an accuracy measure and a confusion matrix, among other measures, associated to them, while <code>numerical</code> features will have measures like mean squared loss and R2 among others).</p>
 <h2 id="visualizations">Visualizations<a class="headerlink" href="#visualizations" title="Permanent link">&para;</a></h2>
 <p>Several visualization can be obtained from the result files from both <code>train</code>, <code>predict</code> and <code>experiment</code> by using the <code>visualize</code> command.
 The command has several parameters, but not all the visualizations use all of them.
@@ -4548,10 +4535,7 @@ This visualization produces a line chart plotting the roc curves for the specifi
 If <code>field</code> is a category feature, <code>positive_label</code> indicates which is the class to be considered positive class and all the others will be considered negative.
 It needs to be an integer, to figure out the association between classes and integers check the <code>ground_truth_metadata</code> JSON file.</p>
 <p><img alt="ROC Curves" src="../images/roc_curves.png" title="ROC Curves" /></p>
-                <h4 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink"
-                                                                                           href="#roc_curves_from_test_statistics"
-                                                                                           title="Permanent link">&para;</a>
-                </h4>
+<h4 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink" href="#roc_curves_from_test_statistics" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>field</code>, <code>prediction_statistics</code> and <code>model_names</code> parameters.
 <code>field</code> needs to be binary feature.
 This visualization produces a line chart plotting the roc curves for the specified <code>field</code>.</p>
