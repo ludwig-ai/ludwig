@@ -35,7 +35,7 @@ default_preprocessing_parameters = {
 }
 default_preprocessing_parameters.update({
     name: base_type.preprocessing_defaults for name, base_type in
-base_type_registry.items()
+    base_type_registry.items()
 })
 
 default_combiner_type = 'concat'
@@ -85,14 +85,14 @@ default_optimizer_params_registry = {
         'l1_regularization_strength': 0.0,
         'l2_regularization_strength': 0.0
     },
-    'momentum': {
-        'momentum': 0.1
-    },
     'ftrl': {
         'learning_rate_power': -0.5,
         'initial_accumulator_value': 0.1,
         'l1_regularization_strength': 0.0,
         'l2_regularization_strength': 0.0
+    },
+    'momentum': {
+        'momentum': 0.1
     },
     'proximalgd': {
         'l1_regularization_strength': 0.0,
@@ -103,6 +103,8 @@ default_optimizer_params_registry = {
         'l1_regularization_strength': 0.0,
         'l2_regularization_strength': 0.0
     },
+    'sgd': {
+    },
     'rmsprop': {
         'decay': 0.9,
         'momentum': 0.0,
@@ -110,6 +112,15 @@ default_optimizer_params_registry = {
         'centered': False
     }
 }
+default_optimizer_params_registry['stochastic_gradient_descent'] = (
+    default_optimizer_params_registry['sgd']
+)
+default_optimizer_params_registry['gd'] = (
+    default_optimizer_params_registry['sgd']
+)
+default_optimizer_params_registry['gradient_descent'] = (
+    default_optimizer_params_registry['sgd']
+)
 
 
 def get_default_optimizer_params(optimizer_type):
