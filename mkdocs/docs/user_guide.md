@@ -116,7 +116,7 @@ The HDF5 file contains the data mapped to numpy ndarrays, while the JSON file co
 For instance, for a categorical feature with 3 possible values, the HDF5 file will contain integers from 0 to 3 (with 0 being a `<UNK>` category), while the JSON file will contain a `idx2str` list containing all tokens (`[<UNK>, label_1, label_2, label_3]`), a `str2idx` dictionary (`{"<UNK>": 0, "label_1": 1, "label_2": 2, "label_3": 3}`) and a `str2freq` dictionary (`{"<UNK>": 0, "label_1": 93, "label_2": 55, "label_3": 24}`).
 
 The reason to have those  intermediate files is two-fold: on one hand, if you are going to train your model again Ludwig will try to load them instead of recomputing all tensors, which saves a consistent amount of time, and on the other hand when you want to use your model to predict, data has to be mapped to tensors in exactly the same way it was mapped during training, so you'll be required to load the JSON metadata file in the `predict` command.
-The way this works is: the first time you provide a CSV (`--data_csv`), the HDF5 and JSON files are created, from the second time on Ludwig will lod them instead of the CSV even if you specify the CSV (it looks in the same directory for files names in the same way but with a different extension), finally you can directly specify the HDF5 and JSON files (`--data_hdf5` and `--metadata_json`).
+The way this works is: the first time you provide a CSV (`--data_csv`), the HDF5 and JSON files are created, from the second time on Ludwig will load them instead of the CSV even if you specify the CSV (it looks in the same directory for files names in the same way but with a different extension), finally you can directly specify the HDF5 and JSON files (`--data_hdf5` and `--metadata_json`).
 
 As the mapping from raw data to tensors depends on the type of feature that you specify in your model definition, if you change type (for instance from `sequential` to `text`) you also have to redo the preprocessing, which is achieved by deleting the HDF5 and JSON files.
 Alternatively you can skip saving the HDF5 and JSON files specifying `--skip_save_processed_input`.
@@ -137,7 +137,7 @@ By default the output directory is `./results`.
 That directory will contain a directory named `[experiment_name]_[model_name]_0` if model name and experiment name are specified.
 If the same combination of experiment and model name is used again, the integer at the end of the name wil be increased.
 If neither of them is specified the directory will be named `run_0`.
-The directory will will contain
+The directory will contain
 
 - `description.json` - a file containing a description of the training process with all the information to reproduce it.
 - `training_statistics.json` which contains records of all measures and losses for each epoch.
@@ -235,7 +235,7 @@ The same distinction between CSV files and HDF5 / JSON files explained in the [t
 In either case, the JSON metadata file obtained during training is needed in order to map the new data into tensors.
 If the new data contains a split column, you can specify which split to use to calculate the predictions with the `--split` argument. By default it's `full` which means all the splits will be used.
 
-A model to load is needed, and yo can specify its path with the `--model_path` argument.
+A model to load is needed, and you can specify its path with the `--model_path` argument.
 If you trained a model previously and got the results in, for instance, `./results/experiment_run_0`, you have to specify `./results/experiment_run_0/model` for using it to predict.
 
 You can specify an output directory with the argument `--output-directory`, by default it will be `./result_0`, with increasing numbers if a directory with the same name is present.
