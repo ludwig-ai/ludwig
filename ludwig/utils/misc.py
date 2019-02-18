@@ -38,20 +38,21 @@ def get_experiment_description(model_definition,
                                data_validation_hdf5=None,
                                data_test_hdf5=None,
                                random_seed=None):
+    description = OrderedDict()
+    description['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
+    description['command'] = ' '.join(sys.argv)
+
     try:
         is_a_git_repo = subprocess.call(['git', 'branch'],
                                     stderr=subprocess.STDOUT,
                                     stdout=open(os.devnull, 'w')) == 0
+        if is_a_git_repo:
+            description['commit_hash'] = \
+                subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
+                    'utf-8')[:12]
     except:
-        is_a_git_repo = False
+        pass
 
-    description = OrderedDict()
-    description['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
-    description['command'] = ' '.join(sys.argv)
-    if is_a_git_repo:
-        description['commit_hash'] = \
-            subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
-                'utf-8')[:12]
     description['dataset_type'] = dataset_type
     if random_seed is not None:
         description['random_seed'] = random_seed
