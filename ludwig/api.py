@@ -710,7 +710,7 @@ class LudwigModel:
             dropout_rate = self.model_definition['training']['dropout'],
         if bucketing_field is None:
             bucketing_field = self.model_definition['training'][
-                'bucketin_field'
+                'bucketing_field'
             ]
 
         logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
