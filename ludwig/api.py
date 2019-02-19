@@ -177,7 +177,7 @@ class LudwigModel:
 
         # Return
 
-        :return: a LudwigModel object
+        :return: (LudwigModel) a LudwigModel object
 
 
         # Example usage
