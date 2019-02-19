@@ -481,6 +481,7 @@ def preprocess_for_training(
             data_validation_csv,
             data_test_csv
         )
+        concatenated_df.csv = data_train_csv
         data, train_set_metadata = build_dataset_df(
             concatenated_df,
             features,
@@ -570,18 +571,24 @@ def preprocess_for_training(
         model_definition['output_features'],
         data_hdf5_fp
     )
-    validation_dataset = Dataset(
-        validation_set,
-        model_definition['input_features'],
-        model_definition['output_features'],
-        data_hdf5_fp
-    )
-    test_dataset = Dataset(
-        test_set,
-        model_definition['input_features'],
-        model_definition['output_features'],
-        data_hdf5_fp
-    )
+
+    validation_dataset = None
+    if validation_set is not None:
+        validation_dataset = Dataset(
+            validation_set,
+            model_definition['input_features'],
+            model_definition['output_features'],
+            data_hdf5_fp
+        )
+    
+    test_dataset = None
+    if test_set is not None:
+        test_dataset = Dataset(
+            test_set,
+            model_definition['input_features'],
+            model_definition['output_features'],
+            data_hdf5_fp
+        )
 
     return (
         training_dataset,

@@ -524,29 +524,31 @@ class Model:
                 bucketing_field
             )
 
-            # eval measures on validation set
-            self.evaluation(
-                session,
-                validation_set,
-                'vali',
-                regularization_lambda,
-                progress_tracker.vali_stats,
-                tables,
-                progress_tracker.batch_size,
-                bucketing_field
-            )
+            if validation_set is not None:
+                # eval measures on validation set
+                self.evaluation(
+                    session,
+                    validation_set,
+                    'vali',
+                    regularization_lambda,
+                    progress_tracker.vali_stats,
+                    tables,
+                    progress_tracker.batch_size,
+                    bucketing_field
+                )
 
-            # eval measures on test set
-            self.evaluation(
-                session,
-                test_set,
-                'test',
-                regularization_lambda,
-                progress_tracker.test_stats,
-                tables,
-                progress_tracker.batch_size,
-                bucketing_field
-            )
+            if test_set is not None:
+                # eval measures on test set
+                self.evaluation(
+                    session,
+                    test_set,
+                    'test',
+                    regularization_lambda,
+                    progress_tracker.test_stats,
+                    tables,
+                    progress_tracker.batch_size,
+                    bucketing_field
+                )
 
             # mbiu and end of epoch prints
             elapsed_time = (time.time() - start_time) * 1000.0

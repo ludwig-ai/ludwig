@@ -42,7 +42,7 @@ default_combiner_type = 'concat'
 
 default_training_params = {
     'optimizer': {'type': 'adam'},
-    'epochs': 200,
+    'epochs': 1,
     'regularizer': 'l2',
     'regularization_lambda': 0,
     'learning_rate': 0.001,
