@@ -207,7 +207,7 @@ __Inputs__
    datapoint. Only the input features defined in the model
    definition need to be present in the dataframe. For example a
    data set consisting of two datapoints with a input text may be
-   provided as the following dict ``{'text_field_name': ['text of
+   provided as the following dict ``{'text_field_name}: ['text of
    the first datapoint', text of the second datapoint']}`.
 - __return_type__ (strng or type, default: `DataFrame`):
    string describing the type of the returned prediction object.
