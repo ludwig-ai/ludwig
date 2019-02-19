@@ -85,11 +85,11 @@ def delete_temporary_data(csv_path):
     if os.path.exists(csv_path):
         os.remove(csv_path)
 
-    json_path = csv_path.replace('csv', 'json')
+    json_path = os.path.splitext(csv_path)[0] + '.json'
     if os.path.exists(json_path):
         os.remove(json_path)
 
-    hdf5_path = csv_path.replace('csv', 'hdf5')
+    hdf5_path = os.path.splitext(csv_path)[0] + '.hdf5'
     if os.path.exists(hdf5_path):
         os.remove(hdf5_path)
 
@@ -417,10 +417,10 @@ def test_experiment_timeseries(csv_filename):
 
 
 def test_movie_rating_prediction(csv_filename):
-    input_features= '[{name: year, type: numerical, min: 1900, max: 2030},' \
-                    '{name: duration, type: numerical, min: 3600, max: 12000},'\
-                    '{name: nominations, type: numerical, min: 0, max: 25},'\
-                    '{name: categories, type: set, max_len: 5, vocab_size: 10}]'
+    input_features = '[{name: year, type: numerical, min: 1900, max: 2030},' \
+                     '{name: duration, type: numerical, min: 3600, max: 12000},' \
+                     '{name: nominations, type: numerical, min: 0, max: 25},' \
+                     '{name: categories, type: set, max_len: 5, vocab_size: 10}]'
     output_features = "[ {name: rating, type: numerical, min: 1, max: 10}]"
 
     # Generate test data
@@ -455,7 +455,7 @@ def test_example_with_set_output(csv_filename):
 
 def test_visual_question_answering(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
-    input_features= Template(
+    input_features = Template(
         '[{name: image_path, type: image, encoder: stacked_cnn, width: 10, '
         'height: 10, num_channels: 3, resnet_size: 8, destination_folder: '
         '${folder}}, {name: question, type: text, vocab_size: 20, max_len: 10,'
