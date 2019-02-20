@@ -279,7 +279,6 @@ def experiment(
     validation_field = model_definition['training']['validation_field']
     validation_measure = model_definition['training']['validation_measure']
     validation_field_result = train_valisest_stats[validation_field]
-    test_field_result = train_testset_stats[validation_field]
 
     best_function = get_best_function(validation_measure)
 
@@ -301,8 +300,8 @@ def experiment(
                     validation_field,
                     best_vali_measure)
             )
-        if test_set is not None:
-            if validation_set is not None:
+        
+            if test_set is not None:
                 best_vali_measure_epoch_test_measure = train_testset_stats[
                     validation_field
                 ][validation_measure][epoch_best_vali_measure]
@@ -311,21 +310,6 @@ def experiment(
                         validation_measure,
                         validation_field,
                         best_vali_measure_epoch_test_measure
-                    )
-                )
-            else:
-                epoch_best_test_measure, best_test_measure = best_function(
-                    enumerate(test_field_result[validation_measure]),
-                    key=lambda pair: pair[1]
-                )
-                best_test_measure_epoch_test_measure = train_testset_stats[
-                    validation_field
-                ][validation_measure][epoch_best_test_measure]
-                logging.info(
-                    'Best validation model {0} on test set {1}: {2}'.format(
-                        validation_measure,
-                        validation_field,
-                        best_test_measure_epoch_test_measure
                     )
                 )
 
