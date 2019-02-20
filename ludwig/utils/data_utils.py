@@ -246,6 +246,8 @@ def split_dataset(dataset, split, value_to_split=0):
     splitted_dataset = {}
     for key in dataset:
         splitted_dataset[key] = dataset[key][split == value_to_split]
+        if len(splitted_dataset[key]) == 0:
+            return None
     return splitted_dataset
 
 

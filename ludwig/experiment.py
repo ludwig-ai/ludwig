@@ -235,8 +235,10 @@ def experiment(
     )
     if is_on_master():
         logging.info('Training set: {0}'.format(training_set.size))
-        logging.info('Validation set: {0}'.format(validation_set.size))
-        logging.info('Test set: {0}'.format(test_set.size))
+        if validation_set is not None:
+            logging.info('Validation set: {0}'.format(validation_set.size))
+        if test_set is not None:
+            logging.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
     update_model_definition_with_metadata(model_definition, train_set_metadata)
@@ -278,33 +280,38 @@ def experiment(
     validation_measure = model_definition['training']['validation_measure']
     validation_field_result = train_valisest_stats[validation_field]
 
-    # max or min depending on the measure
     best_function = get_best_function(validation_measure)
-    epoch_best_vali_measure, best_vali_measure = best_function(
-        enumerate(validation_field_result[validation_measure]),
-        key=lambda pair: pair[1]
-    )
-
-    best_vali_measure_epoch_test_measure = train_testset_stats[
-        validation_field
-    ][validation_measure][epoch_best_vali_measure]
 
     # print the results of the model with highest validation test performance
     if is_on_master():
-        logging.info('Best validation model epoch: {0}'.format(
-            epoch_best_vali_measure + 1)
-        )
-        logging.info(
-            'Best validation model {0} on validation set {1}: {2}'.format(
-                validation_measure,
-                validation_field,
-                best_vali_measure)
-        )
-        logging.info('Best validation model {0} on test set {1}: {2}'.format(
-            validation_measure,
-            validation_field,
-            best_vali_measure_epoch_test_measure)
-        )
+        if validation_set is not None:
+            # max or min depending on the measure
+            
+            epoch_best_vali_measure, best_vali_measure = best_function(
+                enumerate(validation_field_result[validation_measure]),
+                key=lambda pair: pair[1]
+            )
+            logging.info('Best validation model epoch: {0}'.format(
+                epoch_best_vali_measure + 1)
+            )
+            logging.info(
+                'Best validation model {0} on validation set {1}: {2}'.format(
+                    validation_measure,
+                    validation_field,
+                    best_vali_measure)
+            )
+        
+            if test_set is not None:
+                best_vali_measure_epoch_test_measure = train_testset_stats[
+                    validation_field
+                ][validation_measure][epoch_best_vali_measure]
+                logging.info(
+                    'Best validation model {0} on test set {1}: {2}'.format(
+                        validation_measure,
+                        validation_field,
+                        best_vali_measure_epoch_test_measure
+                    )
+                )
 
     # save training statistics
     if is_on_master():
@@ -317,36 +324,40 @@ def experiment(
             }
         )
 
-    # predict
-    test_results = predict(
-        test_set,
-        train_set_metadata,
-        model,
-        model_definition,
-        model_definition['training']['batch_size'],
-        only_predictions=False,
-        gpus=gpus,
-        gpu_fraction=gpu_fraction,
-        debug=debug
-    )
+    
+    if test_set is not None:
+        # predict
+        test_results = predict(
+            test_set,
+            train_set_metadata,
+            model,
+            model_definition,
+            model_definition['training']['batch_size'],
+            only_predictions=False,
+            gpus=gpus,
+            gpu_fraction=gpu_fraction,
+            debug=debug
+        )
+        # postprocess
+        postprocessed_output = postprocess(
+            test_results,
+            model_definition['output_features'],
+            train_set_metadata,
+            experiment_dir_name,
+            skip_save_unprocessed_output or not is_on_master()
+        )
+
+        if is_on_master():
+            print_prediction_results(test_results)
+
+            save_prediction_outputs(postprocessed_output, experiment_dir_name)
+            save_prediction_statistics(test_results, experiment_dir_name)
+    
     model.close_session()
 
-    # postprocess
-    postprocessed_output = postprocess(
-        test_results,
-        model_definition['output_features'],
-        train_set_metadata,
-        experiment_dir_name,
-        skip_save_unprocessed_output or not is_on_master()
-    )
-
     if is_on_master():
-        print_prediction_results(test_results)
-
-        save_prediction_outputs(postprocessed_output, experiment_dir_name)
-        save_prediction_statistics(test_results, experiment_dir_name)
-
-        logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
+        logging.info('\nFinished: {0}_{1}'.format(
+            experiment_name, model_name))
         logging.info('Saved to: {}'.format(experiment_dir_name))
 
     return experiment_dir_name
