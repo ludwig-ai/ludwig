@@ -54,7 +54,10 @@ class ImageBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
+        if hasattr(dataset_df, 'csv'):
+            csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
+        else:
+            csv_path = ''
         an_image = imread(
             os.path.join(csv_path, dataset_df[feature['name']][0])
         )
