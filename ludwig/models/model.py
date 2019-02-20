@@ -524,7 +524,7 @@ class Model:
                 bucketing_field
             )
 
-            if validation_set is not None:
+            if validation_set is not None and validation_set.size > 0:
                 # eval measures on validation set
                 self.evaluation(
                     session,
@@ -537,7 +537,7 @@ class Model:
                     bucketing_field
                 )
 
-            if test_set is not None:
+            if test_set is not None and test_set.size > 0:
                 # eval measures on test set
                 self.evaluation(
                     session,

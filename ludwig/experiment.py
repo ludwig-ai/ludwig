@@ -282,11 +282,10 @@ def experiment(
 
     best_function = get_best_function(validation_measure)
 
-    # print the results of the model with highest validation test performance
+    # print results of the model with highest validation test performance
     if is_on_master():
         if validation_set is not None:
             # max or min depending on the measure
-            
             epoch_best_vali_measure, best_vali_measure = best_function(
                 enumerate(validation_field_result[validation_measure]),
                 key=lambda pair: pair[1]

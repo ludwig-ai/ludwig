@@ -15,11 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import logging
-import os
-
 import h5py
+import logging
 import numpy as np
+import os
 import yaml
 
 from ludwig.constants import *
@@ -337,7 +336,8 @@ def preprocess_for_training(
 
     if data_train_csv is not None:
         data_train_hdf5_fp = os.path.splitext(data_train_csv)[0] + '.hdf5'
-        train_set_metadata_json_fp = os.path.splitext(data_train_csv)[0] + '.json'
+        train_set_metadata_json_fp = os.path.splitext(data_train_csv)[
+                                         0] + '.json'
         if (os.path.isfile(data_train_hdf5_fp) and
                 os.path.isfile(train_set_metadata_json_fp)):
             logging.info(
@@ -580,7 +580,7 @@ def preprocess_for_training(
             model_definition['output_features'],
             data_hdf5_fp
         )
-    
+
     test_dataset = None
     if test_set is not None:
         test_dataset = Dataset(
@@ -695,6 +695,26 @@ def preprocess_for_prediction(
     return dataset, train_set_metadata
 
 
+def replace_text_feature_level(model_definition, datasets):
+    for feature in (model_definition['input_features'] +
+                    model_definition['output_features']):
+        if feature['type'] == TEXT:
+            for dataset in datasets:
+                if dataset is not None:
+                    dataset[feature['name']] = dataset[
+                        '{}_{}'.format(
+                            feature['name'],
+                            feature['level']
+                        )
+                    ]
+                    for level in ('word', 'char'):
+                        name_level = '{}_{}'.format(
+                            feature['name'],
+                            level)
+                        if name_level in dataset:
+                            del dataset[name_level]
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='This script takes csv files as input and outputs a HDF5 '
@@ -766,22 +786,3 @@ if __name__ == '__main__':
     data_utils.save_json(args.output_metadata_json, train_set_metadata)
     logging.info('Writing dataset')
     data_utils.save_hdf5(args.output_dataset_h5, data, train_set_metadata)
-
-
-def replace_text_feature_level(model_definition, datasets):
-    for feature in (model_definition['input_features'] +
-                    model_definition['output_features']):
-        if feature['type'] == TEXT:
-            for dataset in datasets:
-                dataset[feature['name']] = dataset[
-                    '{}_{}'.format(
-                        feature['name'],
-                        feature['level']
-                    )
-                ]
-                for level in ('word', 'char'):
-                    name_level = '{}_{}'.format(
-                        feature['name'],
-                        level)
-                    if name_level in dataset:
-                        del dataset[name_level]
