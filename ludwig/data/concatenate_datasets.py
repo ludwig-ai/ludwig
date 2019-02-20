@@ -55,7 +55,7 @@ def concatenate_df(train_df, vali_df, test_df):
     train_size = len(train_df)
     vali_size = len(vali_df) if vali_df is not None else 0
     test_size = len(test_df) if test_df is not None else 0
-    concatenated_df = pd.concat([train_df, vali_df, test_df])
+    concatenated_df = pd.concat([train_df, vali_df, test_df], ignore_index=True)
     split = np.array(
         [0] * train_size + [1] * vali_size + [2] * test_size,
         dtype=np.int8
