@@ -26,14 +26,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+
 import argparse
 import logging
 import os
-import sys
-from pprint import pformat
-
 import pandas as pd
 import yaml
+from pprint import pformat
 
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
@@ -48,6 +48,7 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.globals import set_disable_progressbar
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
+from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.predict import calculate_overall_stats
 from ludwig.train import get_experiment_dir_name
 from ludwig.train import get_file_names
@@ -470,8 +471,10 @@ class LudwigModel:
                 random_seed=random_seed)
 
         logging.info('Training set: {0}'.format(training_set.size))
-        logging.info('Validation set: {0}'.format(validation_set.size))
-        logging.info('Test set: {0}'.format(test_set.size))
+        if validation_set is not None:
+            logging.info('Validation set: {0}'.format(validation_set.size))
+        if test_set is not None:
+            logging.info('Test set: {0}'.format(test_set.size))
 
         # update model definition with metadata properties
         update_model_definition_with_metadata(
@@ -513,37 +516,41 @@ class LudwigModel:
         save_json(training_stats_fn, train_stats)
 
         # grab the results of the model with highest validation test performance
-        validation_field = self.model_definition['training']['validation_field']
-        validation_measure = self.model_definition['training'][
-            'validation_measure'
-        ]
-        validation_field_result = train_stats['validation'][validation_field]
-        epoch_max_vali_measure, max_vali_measure = max(
-            enumerate(validation_field_result[validation_measure]),
-            key=lambda pair: pair[1]
-        )
-        max_vali_measure_epoch_test_measure = train_stats['test'][
-            validation_field
-        ][validation_measure][epoch_max_vali_measure]
+        md_training = self.model_definition['training']
+        validation_field = md_training['validation_field']
+        validation_measure = md_training['validation_measure']
+        validation_field_result = train_valisest_stats[validation_field]
+
+        best_function = get_best_function(validation_measure)
 
         # print results of the model with highest validation test performance
-        logging.info('Best validation model epoch: {0}'.format(
-            epoch_max_vali_measure + 1)
-        )
-        logging.info(
-            'Best validation model {0} on validation set {1}: {2}'.format(
-                validation_measure,
-                validation_field,
-                max_vali_measure
+        if validation_set is not None:
+            # max or min depending on the measure
+            epoch_best_vali_measure, best_vali_measure = best_function(
+                enumerate(validation_field_result[validation_measure]),
+                key=lambda pair: pair[1]
             )
-        )
-        logging.info(
-            'Best validation model {0} on test set {1}: {2}'.format(
-                validation_measure,
-                validation_field,
-                max_vali_measure_epoch_test_measure
+            logging.info('Best validation model epoch: {0}'.format(
+                epoch_best_vali_measure + 1)
             )
-        )
+            logging.info(
+                'Best validation model {0} on validation set {1}: {2}'.format(
+                    validation_measure,
+                    validation_field,
+                    best_vali_measure)
+            )
+
+            if test_set is not None:
+                best_vali_measure_epoch_test_measure = train_testset_stats[
+                    validation_field
+                ][validation_measure][epoch_best_vali_measure]
+                logging.info(
+                    'Best validation model {0} on test set {1}: {2}'.format(
+                        validation_measure,
+                        validation_field,
+                        best_vali_measure_epoch_test_measure
+                    )
+                )
 
         logging.info('Finished: {0}'.format(model_name))
         logging.info('Saved to {0}:'.format(experiment_dir_name))
