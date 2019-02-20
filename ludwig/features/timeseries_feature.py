@@ -338,8 +338,8 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         }),
         (ERROR, {
             'output': ERROR,
-            'aggregation': APPEND,
-            'value': [],
+            'aggregation': SUM,
+            'value': 0,
             'type': MEASURE
         }),
         (PREDICTIONS, {

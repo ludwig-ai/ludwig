@@ -307,8 +307,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         }),
         (ERROR, {
             'output': ERROR,
-            'aggregation': APPEND,
-            'value': [],
+            'aggregation': SUM,
+            'value': 0,
             'type': MEASURE
         }),
         (PREDICTIONS, {
