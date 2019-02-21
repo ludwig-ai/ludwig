@@ -205,7 +205,7 @@ class Model:
 
             tf.summary.scalar('train_reg_mean_loss', self.train_reg_mean_loss)
 
-            self.merged = tf.summary.merge_all()
+            self.merged_summary = tf.summary.merge_all()
             self.graph = graph
             self.graph_initialize = tf.global_variables_initializer()
             if self.horovod:
@@ -286,6 +286,7 @@ class Model:
             resume=False,
             skip_save_model=False,
             skip_save_progress=False,
+            skip_save_log=False,
             gpus=None,
             gpu_fraction=1,
             random_seed=default_random_seed,
@@ -355,9 +356,14 @@ class Model:
                the weights and just find out what performance can a model get
                with a set of hyperparameters, use this parameter to skip it,
                but the model will not be loadable later on.
-         :type skip_save_model: Boolean
+        :type skip_save_model: Boolean
         :param skip_save_progress:
         :type skip_save_progress:
+        :param skip_save_log: Does not save TensorBoard
+               logs. By default Ludwig saves logs for the TensorBoard, but if it
+               is not needed turning it off can slightly increase the
+               overall speed..
+        :type skip_save_log: Boolean
         :param gpus: List of gpus to use
         :type gpus: List
         :param gpu_fraction: Percentage of the GPU that is intended to be used
@@ -391,10 +397,11 @@ class Model:
         session = self.initialize_session(gpus, gpu_fraction)
 
         if is_on_master():
-            train_writer = tf.summary.FileWriter(
-                os.path.join(save_path, 'log', 'train'),
-                session.graph
-            )
+            if not skip_save_log:
+                train_writer = tf.summary.FileWriter(
+                    os.path.join(save_path, 'log', 'train'),
+                    session.graph
+                )
 
         if self.debug:
             session = tf_debug.LocalCLIDebugWrapperSession(session)
@@ -488,8 +495,12 @@ class Model:
                 else:
                     current_learning_rate = progress_tracker.learning_rate
 
-                summary, _ = session.run(
-                    [self.merged, self.optimize],
+                readout_nodes = {'optimize': self.optimize}
+                if not skip_save_log:
+                    readout_nodes['summary'] = self.merged_summary
+
+                output_values = session.run(
+                    readout_nodes,
                     feed_dict=self.feed_dict(
                         batch,
                         regularization_lambda=regularization_lambda,
@@ -498,9 +509,12 @@ class Model:
                         is_training=True
                     )
                 )
+
                 if is_on_master():
-                    # it is initialized only on master
-                    train_writer.add_summary(summary, progress_tracker.steps)
+                    if not skip_save_log:
+                        # it is initialized only on master
+                        train_writer.add_summary(output_values['summary'],
+                                                 progress_tracker.steps)
 
                 progress_tracker.steps += 1
                 if is_on_master():

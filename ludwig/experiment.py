@@ -65,6 +65,7 @@ def experiment(
         model_resume_path=None,
         skip_save_model=False,
         skip_save_progress=False,
+        skip_save_log=False,
         skip_save_processed_input=False,
         skip_save_unprocessed_output=False,
         output_directory='results',
@@ -141,6 +142,11 @@ def experiment(
            twice as much space, use this parameter to skip it, but training
            cannot be resumed later on.
     :type skip_save_progress: Boolean
+    :param skip_save_log: Does not save TensorBoard
+           logs. By default Ludwig saves logs for the TensorBoard, but if it
+           is not needed turning it off can slightly increase the
+           overall speed..
+    :type skip_save_log: Boolean
     :param skip_save_processed_input: If a CSV dataset is provided it is
            preprocessed and then saved as an hdf5 and json to avoid running
            the preprocessing again. If this parameter is False,
@@ -267,6 +273,7 @@ def experiment(
         resume=model_resume_path is not None,
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
         use_horovod=use_horovod,
@@ -524,6 +531,15 @@ def cli(sys_argv):
              'time consuming and will uses twice as much space, use '
              'this parameter to skip it, but training cannot be resumed '
              'later on. '
+    )
+    parser.add_argument(
+        '-ssl',
+        '--skip_save_log',
+        action='store_true',
+        default=False,
+        help='does not save TensorBoard logs. By default Ludwig saves '
+             'logs for the TensorBoard, but if it is not needed turning it off '
+             'can slightly increase the overall speed.'
     )
 
     # ------------------

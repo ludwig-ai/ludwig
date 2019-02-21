@@ -61,6 +61,7 @@ def full_train(
         model_resume_path=None,
         skip_save_model=False,
         skip_save_progress=False,
+        skip_save_log=False,
         skip_save_processed_input=False,
         output_directory='results',
         gpus=None,
@@ -141,6 +142,11 @@ def full_train(
            the preprocessing again. If this parameter is False,
            the hdf5 and json file are not saved.
     :type skip_save_processed_input: Boolean
+    :param skip_save_log: Does not save TensorBoard
+           logs. By default Ludwig saves logs for the TensorBoard, but if it
+           is not needed turning it off can slightly increase the
+           overall speed..
+    :type skip_save_progress: Boolean
     :param output_directory: The directory that will contanin the training
            statistics, the saved model and the training procgress files.
     :type output_directory: filepath (str)
@@ -258,6 +264,7 @@ def full_train(
         resume=model_resume_path is not None,
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
         use_horovod=use_horovod,
@@ -326,6 +333,7 @@ def train(
         resume=False,
         skip_save_model=False,
         skip_save_progress=False,
+        skip_save_log=False,
         gpus=None,
         gpu_fraction=1.0,
         use_horovod=False,
@@ -363,6 +371,11 @@ def train(
            twice as much space, use this parameter to skip it, but training
            cannot be resumed later on.
     :type skip_save_progress: Boolean
+    :param skip_save_log: Does not save TensorBoard
+           logs. By default Ludwig saves logs for the TensorBoard, but if it
+           is not needed turning it off can slightly increase the
+           overall speed..
+    :type skip_save_log: Boolean
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
     :param gpu_fraction: Fraction of the memory of each GPU to use at
@@ -407,6 +420,7 @@ def train(
         resume=resume,
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
         gpus=gpus, gpu_fraction=gpu_fraction,
         random_seed=random_seed,
         **model_definition['training']
@@ -640,6 +654,15 @@ def cli(sys_argv):
              'weights after each epoch for enabling resuming of training, but '
              'if the model is really big that can be time consuming and will '
              'save twice as much space, use this parameter to skip it.'
+    )
+    parser.add_argument(
+        '-ssl',
+        '--skip_save_log',
+        action='store_true',
+        default=False,
+        help='does not save TensorBoard logs. By default Ludwig saves '
+             'logs for the TensorBoard, but if it is not needed turning it off '
+             'can slightly increase the overall speed.'
     )
 
     # ------------------

@@ -274,6 +274,7 @@ class LudwigModel:
             model_resume_path=None,
             skip_save_model=False,
             skip_save_progress=False,
+            skip_save_log=False,
             skip_save_processed_input=False,
             output_directory='results',
             gpus=None,
@@ -344,6 +345,10 @@ class LudwigModel:
                the model is really big that can be time consuming and will uses
                twice as much space, use this parameter to skip it, but training
                cannot be resumed later on.
+        :param skip_save_log: (bool, default: `False`) does not save TensorBoard
+               logs. By default Ludwig saves logs for the TensorBoard, but if it
+               is not needed turning it off can slightly increase the
+               overall speed.
         :param skip_save_processed_input: (bool, default: `False`) skips saving
                intermediate HDF5 and JSON files
         :param output_directory: (string, default: `'results'`) directory that
@@ -502,7 +507,8 @@ class LudwigModel:
             model_load_path=model_load_path,
             resume=model_resume_path is not None,
             skip_save_model=skip_save_model,
-            skip_save_progress_weights=skip_save_progress_weights,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             random_seed=random_seed,
