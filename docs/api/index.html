@@ -542,8 +542,9 @@
                 
                 
                   <h1>API</h1>
-                
-                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L64">[source]</a></span></p>
+
+                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L65">[source]</a></span>
+                </p>
 <h2 id="ludwigmodel-class">LudwigModel class<a class="headerlink" href="#ludwigmodel-class" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">LudwigModel</span><span class="p">(</span>
   <span class="n">model_definition</span><span class="p">,</span>
@@ -590,12 +591,18 @@
 
 
 <p>Predict:</p>
-<div class="codehilite"><pre><span></span><span class="n">predictions</span> <span class="o">=</span> <span class="n">ludwig_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dataset_csv</span><span class="o">=</span><span class="n">csv_file_path</span><span class="p">)</span>
+                <div class="codehilite"><pre><span></span><span class="n">predictions</span> <span
+                        class="o">=</span> <span class="n">ludwig_model</span><span class="o">.</span><span class="n">predict</span><span
+                        class="p">(</span><span class="n">data_csv</span><span class="o">=</span><span class="n">csv_file_path</span><span
+                        class="p">)</span>
 </pre></div>
 
 
 <p>or</p>
-<div class="codehilite"><pre><span></span><span class="n">predictions</span> <span class="o">=</span> <span class="n">ludwig_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dataset_df</span><span class="o">=</span><span class="n">dataframe</span><span class="p">)</span>
+                <div class="codehilite"><pre><span></span><span class="n">predictions</span> <span
+                        class="o">=</span> <span class="n">ludwig_model</span><span class="o">.</span><span class="n">predict</span><span
+                        class="p">(</span><span class="n">data_df</span><span class="o">=</span><span class="n">dataframe</span><span
+                        class="p">)</span>
 </pre></div>
 
 
@@ -675,7 +682,7 @@ this function if you don't use <code>train_online</code>.</p>
 </ul>
 <p><strong>Return</strong></p>
 <ul>
-    <li><strong>return</strong> ( a LudwigModel obje): a LudwigModel object</li>
+    <li><strong>return</strong> (LudwigModel): a LudwigModel object</li>
 </ul>
 <p><strong>Example usage</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">ludwig_model</span> <span class="o">=</span> <span class="n">LudwigModel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_dir</span><span class="p">)</span>
@@ -855,11 +862,14 @@ performance measures, confusion matrices and the like.</p>
   <span class="n">data_validation_hdf5</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">data_test_hdf5</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">train_set_metadata_json</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">dataset_type</span><span class="o">=</span><span class="s1">&#39;generic&#39;</span><span
+            class="p">,</span>
   <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;run&#39;</span><span class="p">,</span>
   <span class="n">model_load_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">model_resume_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">skip_save_model</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">skip_save_progress</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-  <span class="n">dataset_type</span><span class="o">=</span><span class="s1">&#39;generic&#39;</span><span class="p">,</span>
+  <span class="n">skip_save_log</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">skip_save_processed_input</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">output_directory</span><span class="o">=</span><span class="s1">&#39;results&#39;</span><span class="p">,</span>
   <span class="n">gpus</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -908,20 +918,37 @@ specified dataset.</p>
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
    directory with the same name and a json extension</li>
+    <li><strong>dataset_type</strong> (string, default: <code>'default'</code>): determines the type
+        of preprocessing will be applied to the data. Only <code>generic</code> is
+        available at the moment
+    </li>
 <li><strong>model_name</strong> (string): a name for the model, user for the save
    directory</li>
 <li><strong>model_load_path</strong> (string): path of a pretrained model to load as
    initialization</li>
 <li><strong>model_resume_path</strong> (string): path of a the model directory to
    resume training of</li>
+    <li><strong>skip_save_model</strong> (bool, default: <code>False</code>): does not
+        save model weights and hyperparameters each time the model
+        improves. By default Ludwig saves model weights after each epoch
+        the validation measure imrpvoes, but if the model is really big
+        that can be time consuming if you do not want to keep
+        the weights and just find out what performance can a model get
+        with a set of hyperparameters, use this parameter to skip it,
+        but the model will not be loadable later on.
+    </li>
     <li><strong>skip_save_progress</strong> (bool, default: <code>False</code>): doesn't save
-   weights after each epoch. By default Ludwig saves weights after
-   each epoch for enabling resuming of training, but if the model is
-   really big that can be time consuming and will save twice as much
-   space, use this parameter to skip it.</li>
-<li><strong>dataset_type</strong> (string, default: <code>'default'</code>): determines the type
-   of preprocessing will be applied to the data. Only <code>generic</code> is
-   available at the moment</li>
+        progress each epoch. By default Ludwig saves weights and stats
+        after each epoch for enabling resuming of training, but if
+        the model is really big that can be time consuming and will uses
+        twice as much space, use this parameter to skip it, but training
+        cannot be resumed later on.
+    </li>
+    <li><strong>skip_save_log</strong> (bool, default: <code>False</code>): does not save TensorBoard
+        logs. By default Ludwig saves logs for the TensorBoard, but if it
+        is not needed turning it off can slightly increase the
+        overall speed.
+    </li>
 <li><strong>skip_save_processed_input</strong> (bool, default: <code>False</code>): skips saving
    intermediate HDF5 and JSON files</li>
 <li><strong>output_directory</strong> (string, default: <code>'results'</code>): directory that
@@ -990,8 +1017,8 @@ on the specified dataset.</p>
    contain one key for each field and the values have to be lists of 
    the same length. Each index in the lists corresponds to one 
    datapoint. For example a data set consisting of two datapoints 
-   with a text and a class may be provided as the following dict 
-   <code>`{'text_field_name}: ['text of the first datapoint', text of the 
+   with a text and a class may be provided as the following dict
+    <code>`{'text_field_name': ['text of the first datapoint', text of the
    second datapoint'], 'class_filed_name': ['class_datapoints_1', 
    'class_datapoints_2']}</code>.</li>
 <li><strong>batch_size</strong> (int): the batch size to use for training. By default 

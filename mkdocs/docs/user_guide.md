@@ -75,7 +75,7 @@ optional arguments:
                         time a CSV file is used in the same directory with the
                         same name and a hdf5 extension
   --train_set_metadata_json TRAIN_SET_METADATA_JSON
-                        input train set metadata JSON file. It is an intermediate
+                        input metadata JSON file. It is an intermediate
                         preprocess file containing the mappings of the input
                         CSV created the first time a CSV file is used in the
                         same directory with the same name and a json extension
@@ -90,12 +90,25 @@ optional arguments:
                         path of a pretrained model to load as initialization
   -mrp MODEL_RESUME_PATH, --model_resume_path MODEL_RESUME_PATH
                         path of a the model directory to resume training of
-  -ssp SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress SKIP_SAVE_PROGRESS_WEIGHTS
-                        doesn't save weights after each epoch. By default
+  -ssm, --skip_save_model
+                        does not save weights each time the model imrpoves. By
+                        default Ludwig saves weights after each epoch the
+                        validation measure imrpvoes, but if the model is
+                        really big that can be time consuming if you do not
+                        want to keep the weights and just find out what
+                        performance can a model get with a set of
+                        hyperparameters, use this parameter to skip it.
+  -ssp, --skip_save_progress
+                        does not save weights after each epoch. By default
                         ludwig saves weights after each epoch for enabling
                         resuming of training, but if the model is really big
                         that can be time consuming and will save twice as much
                         space, use this parameter to skip it.
+  -ssl, --skip_save_log
+                        does not save TensorBoard logs. By default Ludwig
+                        saves logs for the TensorBoard, but if it is not
+                        needed turning it off can slightly increase the
+                        overall speed.
   -rs RANDOM_SEED, --random_seed RANDOM_SEED
                         a random seed that is going to be used anywhere there
                         is a call to a random number generator: data
@@ -105,6 +118,7 @@ optional arguments:
                         list of gpus to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
                         fraction of gpu memory to initialize the process with
+  -uh, --use_horovod    uses horovod for distributed training
   -dbg, --debug         enables debugging mode
   -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
                         the level of logging to use
@@ -207,7 +221,7 @@ optional arguments:
                         file is used in the same directory with the same name
                         and a hdf5 extension
   --train_set_metadata_json TRAIN_SET_METADATA_JSON
-                        input train set metadata JSON file. It is an intermediate
+                        input metadata JSON file. It is an intermediate
                         preprocess file containing the mappings of the input
                         CSV created the first time a CSV file is used in the
                         same directory with the same name and a json extension
@@ -226,6 +240,7 @@ optional arguments:
   -g GPUS, --gpus GPUS  list of gpu to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
                         fraction of gpu memory to initialize the process with
+  -uh, --use_horovod    uses horovod for distributed training
   -dbg, --debug         enables debugging mode
   -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
                         the level of logging to use
