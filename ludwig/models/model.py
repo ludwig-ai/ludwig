@@ -238,7 +238,8 @@ class Model:
     def feed_dict(
             self,
             batch,
-            regularization_lambda=default_training_params['regularization_lambda'],
+            regularization_lambda=default_training_params[
+                'regularization_lambda'],
             learning_rate=default_training_params['learning_rate'],
             dropout_rate=default_training_params['dropout_rate'],
             is_training=True
@@ -631,6 +632,7 @@ class Model:
             # ========== Save training progress ==========
             if is_on_master():
                 if not skip_save_progress:
+                    self.save_weights(session, model_weights_progress_path)
                     save_object(
                         os.path.join(
                             save_path,
@@ -638,7 +640,10 @@ class Model:
                         ),
                         progress_tracker
                     )
-                    self.save_weights(session, model_weights_progress_path)
+                    if skip_save_model:
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path)
 
             if is_on_master():
                 logging.info('')
@@ -962,8 +967,8 @@ class Model:
                             result[field_name][stat_config['output']].sum()
                         )
                         seq_set_size[field_name][stat] = (
-                            seq_set_size[field_name].get(stat, 0) +
-                            len(result[field_name][stat_config['output']])
+                                seq_set_size[field_name].get(stat, 0) +
+                                len(result[field_name][stat_config['output']])
                         )
                     elif aggregation_method == AVG_EXP:
                         output_stats[field_name][stat] += (
