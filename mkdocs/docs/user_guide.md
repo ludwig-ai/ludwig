@@ -90,7 +90,7 @@ optional arguments:
                         path of a pretrained model to load as initialization
   -mrp MODEL_RESUME_PATH, --model_resume_path MODEL_RESUME_PATH
                         path of a the model directory to resume training of
-  -sspw SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress_weights SKIP_SAVE_PROGRESS_WEIGHTS
+  -ssp SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress SKIP_SAVE_PROGRESS_WEIGHTS
                         doesn't save weights after each epoch. By default
                         ludwig saves weights after each epoch for enabling
                         resuming of training, but if the model is really big
@@ -150,7 +150,7 @@ During training Ludwig saves two sets of weights for the model, one that is the 
 The reason for keeping the second set is to be able to resume training in case the training process gets interrupted somehow.
 
 To resume training using the latest weights and the whole history of progress so far you have to specify the `--model_resume_path` argument.
-You can avoid saving the latest weights and the overall progress so far by using the argument `--skip_save_progress_weights`, but you will not be able to resume it afterwards.
+You can avoid saving the latest weights and the overall progress so far by using the argument `--skip_save_progress`, but you will not be able to resume it afterwards.
 Another available option is to load a previously trained model as an initialization for a new training process.
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
 It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the `--model_resume_path` argument.
@@ -334,7 +334,7 @@ optional arguments:
                         path of a pretrained model to load as initialization
   -mrp MODEL_RESUME_PATH, --model_resume_path MODEL_RESUME_PATH
                         path of a the model directory to resume training of
-  -sspw SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress_weights SKIP_SAVE_PROGRESS_WEIGHTS
+  -ssp SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress SKIP_SAVE_PROGRESS_WEIGHTS
                         doesn't save weights after each epoch. By default
                         Ludwig saves weights after each epoch for enabling
                         resuming of training, but if the model is really big

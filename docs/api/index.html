@@ -858,7 +858,7 @@ performance measures, confusion matrices and the like.</p>
   <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;run&#39;</span><span class="p">,</span>
   <span class="n">model_load_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">model_resume_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-  <span class="n">skip_save_progress_weights</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+  <span class="n">skip_save_progress</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">dataset_type</span><span class="o">=</span><span class="s1">&#39;generic&#39;</span><span class="p">,</span>
   <span class="n">skip_save_processed_input</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">output_directory</span><span class="o">=</span><span class="s1">&#39;results&#39;</span><span class="p">,</span>
@@ -914,7 +914,7 @@ specified dataset.</p>
    initialization</li>
 <li><strong>model_resume_path</strong> (string): path of a the model directory to
    resume training of</li>
-<li><strong>skip_save_progress_weights</strong> (bool, default: <code>False</code>): doesn't save
+    <li><strong>skip_save_progress</strong> (bool, default: <code>False</code>): doesn't save
    weights after each epoch. By default Ludwig saves weights after
    each epoch for enabling resuming of training, but if the model is
    really big that can be time consuming and will save twice as much

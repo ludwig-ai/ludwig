@@ -272,8 +272,8 @@ class LudwigModel:
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
-            skip_save_best_weights=False,
-            skip_save_progress_weights=False,
+            skip_save_model=False,
+            skip_save_progress=False,
             skip_save_processed_input=False,
             output_directory='results',
             gpus=None,
@@ -330,13 +330,20 @@ class LudwigModel:
                initialization
         :param model_resume_path: (string) path of a the model directory to
                resume training of
-        :param skip_save_best_weights: (bool, default: `False`) skips saving
-               the weights of the model.
-        :param skip_save_progress_weights: (bool, default: `False`) doesn't save
-               weights after each epoch. By default Ludwig saves weights after
-               each epoch for enabling resuming of training, but if the model is
-               really big that can be time consuming and will save twice as much
-               space, use this parameter to skip it.
+        :param skip_save_model: (bool, default: `False`) does not
+               save model weights and hyperparameters each time the model
+               improves. By default Ludwig saves model weights after each epoch
+               the validation measure imrpvoes, but if the model is really big
+               that can be time consuming if you do not want to keep
+               the weights and just find out what performance can a model get
+               with a set of hyperparameters, use this parameter to skip it,
+               but the model will not be loadable later on.
+        :param skip_save_progress: (bool, default: `False`) doesn't save
+               progress each epoch. By default Ludwig saves weights and stats
+               after each epoch for enabling resuming of training, but if
+               the model is really big that can be time consuming and will uses
+               twice as much space, use this parameter to skip it, but training
+               cannot be resumed later on.
         :param skip_save_processed_input: (bool, default: `False`) skips saving
                intermediate HDF5 and JSON files
         :param output_directory: (string, default: `'results'`) directory that
@@ -494,7 +501,7 @@ class LudwigModel:
             save_path=model_dir,
             model_load_path=model_load_path,
             resume=model_resume_path is not None,
-            skip_save_best_weights=skip_save_best_weights,
+            skip_save_model=skip_save_model,
             skip_save_progress_weights=skip_save_progress_weights,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
@@ -502,12 +509,12 @@ class LudwigModel:
             debug=debug
         )
 
-        train_set_metadata_path = os.path.join(
-            model_dir,
-            TRAIN_SET_METADATA_FILE_NAME
-        )
-
-        save_json(train_set_metadata_path, train_set_metadata)
+        if not skip_save_model:
+            train_set_metadata_path = os.path.join(
+                model_dir,
+                TRAIN_SET_METADATA_FILE_NAME
+            )
+            save_json(train_set_metadata_path, train_set_metadata)
 
         train_trainset_stats, train_valisest_stats, train_testset_stats = result
         train_stats = {

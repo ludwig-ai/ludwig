@@ -70,7 +70,7 @@ def run_experiment(input_features, output_features, data_csv):
     )
 
     experiment(yaml.load(model_definition), skip_save_processed_input=True,
-               skip_save_progress_weights=True,
+               skip_save_progress=True,
                skip_save_unprocessed_output=True, data_csv=data_csv
                )
 
@@ -355,7 +355,7 @@ def test_experiment_sequence_combiner(csv_filename):
         )
 
         experiment(yaml.load(model_definition), skip_save_processed_input=True,
-                   skip_save_progress_weights=True,
+                   skip_save_progress=True,
                    skip_save_unprocessed_output=True, data_csv=rel_path
                    )
 

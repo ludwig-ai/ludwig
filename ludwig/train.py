@@ -59,8 +59,8 @@ def full_train(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
-        skip_save_best_weights=False,
-        skip_save_progress_weights=False,
+        skip_save_model=False,
+        skip_save_progress=False,
         skip_save_processed_input=False,
         output_directory='results',
         gpus=None,
@@ -120,13 +120,22 @@ def full_train(
            far are also resumed effectively cotinuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
-    :param skip_save_best_weights: Skips saving the weights of the model.
-           If this is true, no model weights will be saved.
-    :type skip_save_best_weights: Boolean
-    :param skip_save_progress_weights: Skips saving the weights at the end of
-           each epoch. If this is true, training cannot be resumed from the
-           exactly the state at the end of the previous epoch.
-    :type skip_save_progress_weights: Boolean
+    :param skip_save_model: Does not
+           save model weights and hyperparameters each time the model
+           improves. By default Ludwig saves model weights after each epoch
+           the validation measure imrpvoes, but if the model is really big
+           that can be time consuming if you do not want to keep
+           the weights and just find out what performance can a model get
+           with a set of hyperparameters, use this parameter to skip it,
+           but the model will not be loadable later on.
+    :type skip_save_model: Boolean
+    :param skip_save_progress: Doesn't save
+           progress each epoch. By default Ludwig saves weights and stats
+           after each epoch for enabling resuming of training, but if
+           the model is really big that can be time consuming and will uses
+           twice as much space, use this parameter to skip it, but training
+           cannot be resumed later on.
+    :type skip_save_progress: Boolean
     :param skip_save_processed_input: If a CSV dataset is provided it is
            preprocessed and then saved as an hdf5 and json to avoid running
            the preprocessing again. If this parameter is False,
@@ -247,8 +256,8 @@ def full_train(
         save_path=model_dir,
         model_load_path=model_load_path,
         resume=model_resume_path is not None,
-        skip_save_best_weights=skip_save_best_weights,
-        skip_save_progress_weights=skip_save_progress_weights,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
         use_horovod=use_horovod,
@@ -269,14 +278,15 @@ def full_train(
             }
         )
 
-        # save train set metadata
-        save_json(
-            os.path.join(
-                model_dir,
-                TRAIN_SET_METADATA_FILE_NAME
-            ),
-            train_set_metadata
-        )
+        if not skip_save_model:
+            # save train set metadata
+            save_json(
+                os.path.join(
+                    model_dir,
+                    TRAIN_SET_METADATA_FILE_NAME
+                ),
+                train_set_metadata
+            )
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -314,8 +324,8 @@ def train(
         save_path='model',
         model_load_path=None,
         resume=False,
-        skip_save_best_weights=False,
-        skip_save_progress_weights=False,
+        skip_save_model=False,
+        skip_save_progress=False,
         gpus=None,
         gpu_fraction=1.0,
         use_horovod=False,
@@ -337,13 +347,22 @@ def train(
     :param model_load_path: If this is specified the loaded model will be used
            as initialization (useful for transfer learning).
     :type model_load_path: filepath (str)
-    :param skip_save_best_weights: Skips saving the weights of the model.
-           If this is true, no model weights will be saved.
-    :type skip_save_best_weights: Boolean
-    :param skip_save_progress_weights: Skips saving the weights at the end of
-           each epoch. If this is true, training cannot be resumed from the
-           exactly the state at the end of the previous epoch.
-    :type skip_save_progress_weights: Boolean
+    :param skip_save_model: Does not
+           save model weights and hyperparameters each time the model
+           improves. By default Ludwig saves model weights after each epoch
+           the validation measure imrpvoes, but if the model is really big
+           that can be time consuming if you do not want to keep
+           the weights and just find out what performance can a model get
+           with a set of hyperparameters, use this parameter to skip it,
+           but the model will not be loadable later on.
+    :type skip_save_model: Boolean
+    :param skip_save_progress: Doesn't save
+           progress each epoch. By default Ludwig saves weights and stats
+           after each epoch for enabling resuming of training, but if
+           the model is really big that can be time consuming and will uses
+           twice as much space, use this parameter to skip it, but training
+           cannot be resumed later on.
+    :type skip_save_progress: Boolean
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
     :param gpu_fraction: Fraction of the memory of each GPU to use at
@@ -386,8 +405,8 @@ def train(
         test_set=test_set,
         save_path=save_path,
         resume=resume,
-        skip_save_best_weights=skip_save_best_weights,
-        skip_save_progress_weights=skip_save_progress_weights,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
         gpus=gpus, gpu_fraction=gpu_fraction,
         random_seed=random_seed,
         **model_definition['training']
@@ -601,8 +620,8 @@ def cli(sys_argv):
         help='path of a the model directory to resume training of'
     )
     parser.add_argument(
-        '-ssbw',
-        '--skip_save_best_weights',
+        '-ssm',
+        '--skip_save_model',
         action='store_true',
         default=False,
         help='does not save weights each time the model imrpoves. '
@@ -613,8 +632,8 @@ def cli(sys_argv):
              'with a set of hyperparameters, use this parameter to skip it.'
     )
     parser.add_argument(
-        '-sspw',
-        '--skip_save_progress_weights',
+        '-ssp',
+        '--skip_save_progress',
         action='store_true',
         default=False,
         help='does not save weights after each epoch. By default ludwig saves '

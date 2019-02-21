@@ -375,7 +375,7 @@ train(
   model_name='run',
   model_load_path=None,
   model_resume_path=None,
-  skip_save_progress_weights=False,
+  skip_save_progress=False,
   dataset_type='generic',
   skip_save_processed_input=False,
   output_directory='results',
@@ -433,7 +433,7 @@ __Inputs__
    initialization
 - __model_resume_path__ (string): path of a the model directory to
    resume training of
-- __skip_save_progress_weights__ (bool, default: `False`): doesn't save
+- __skip_save_progress__ (bool, default: `False`): doesn't save
    weights after each epoch. By default Ludwig saves weights after
    each epoch for enabling resuming of training, but if the model is
    really big that can be time consuming and will save twice as much

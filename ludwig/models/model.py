@@ -284,8 +284,8 @@ class Model:
             increase_batch_size_on_plateau_max=512,
             learning_rate_warmup_epochs=5,  # used when training with Horovod
             resume=False,
-            skip_save_best_weights=False,
-            skip_save_progress_weights=False,
+            skip_save_model=False,
+            skip_save_progress=False,
             gpus=None,
             gpu_fraction=1,
             random_seed=default_random_seed,
@@ -347,11 +347,17 @@ class Model:
         :type learning_rate_warmup_epochs: Integer
         :param resume: Resume training a model that was being trained.
         :type resume: Boolean
-        :param skip_save_best_weights: Skips saving the weights of the model.
-           If this is true, no model weights will be saved.
-         :type skip_save_best_weights: Boolean
-        :param skip_save_progress_weights:
-        :type skip_save_progress_weights:
+        :param skip_save_model: does not
+               save model weights and hyperparameters each time the model
+               improves. By default Ludwig saves model weights after each epoch
+               the validation measure imrpvoes, but if the model is really big
+               that can be time consuming if you do not want to keep
+               the weights and just find out what performance can a model get
+               with a set of hyperparameters, use this parameter to skip it,
+               but the model will not be loadable later on.
+         :type skip_save_model: Boolean
+        :param skip_save_progress:
+        :type skip_save_progress:
         :param gpus: List of gpus to use
         :type gpus: List
         :param gpu_fraction: Percentage of the GPU that is intended to be used
@@ -594,14 +600,14 @@ class Model:
                     increase_batch_size_on_plateau_max,
                     increase_batch_size_on_plateau_rate,
                     early_stop,
-                    skip_save_best_weights
+                    skip_save_model
                 )
                 if should_break:
                     break
             else:
                 # there's no validation, so we save the model at each iteration
                 if is_on_master():
-                    if not skip_save_best_weights:
+                    if not skip_save_model:
                         self.save_weights(session, model_weights_path)
                         self.save_hyperparameters(
                             self.hyperparameters,
@@ -610,14 +616,14 @@ class Model:
 
             # ========== Save training progress ==========
             if is_on_master():
-                save_object(
-                    os.path.join(
-                        save_path,
-                        TRAINING_PROGRESS_FILE_NAME
-                    ),
-                    progress_tracker
-                )
-                if not skip_save_progress_weights:
+                if not skip_save_progress:
+                    save_object(
+                        os.path.join(
+                            save_path,
+                            TRAINING_PROGRESS_FILE_NAME
+                        ),
+                        progress_tracker
+                    )
                     self.save_weights(session, model_weights_progress_path)
 
             if is_on_master():
@@ -1086,7 +1092,7 @@ class Model:
             increase_batch_size_on_plateau_max,
             increase_batch_size_on_plateau_rate,
             early_stop,
-            skip_save_best_weights
+            skip_save_model
     ):
         should_break = False
         # record how long its been since an improvement
@@ -1100,7 +1106,7 @@ class Model:
             progress_tracker.best_valid_measure = progress_tracker.vali_stats[
                 validation_field][validation_measure][-1]
             if is_on_master():
-                if not skip_save_best_weights:
+                if not skip_save_model:
                     self.save_weights(session, model_weights_path)
                     self.save_hyperparameters(
                         self.hyperparameters,
@@ -1266,8 +1272,6 @@ class Model:
         return collected_tensors
 
     def save_weights(self, session, save_path):
-        if is_on_master():
-            self.weights_save_path = self.saver.save(session, save_path)
         self.weights_save_path = self.saver.save(session, save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
