@@ -26,14 +26,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import argparse
 import logging
 import os
+import sys
+from pprint import pformat
+
 import pandas as pd
 import yaml
-from pprint import pformat
 
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
@@ -268,11 +268,12 @@ class LudwigModel:
             data_validation_hdf5=None,
             data_test_hdf5=None,
             train_set_metadata_json=None,
+            dataset_type='generic',
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
+            skip_save_best_weights=False,
             skip_save_progress_weights=False,
-            dataset_type='generic',
             skip_save_processed_input=False,
             output_directory='results',
             gpus=None,
@@ -320,20 +321,22 @@ class LudwigModel:
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
+        :param dataset_type: (string, default: `'default'`) determines the type
+               of preprocessing will be applied to the data. Only `generic` is
+               available at the moment
         :param model_name: (string) a name for the model, user for the save
                directory
         :param model_load_path: (string) path of a pretrained model to load as
                initialization
         :param model_resume_path: (string) path of a the model directory to
                resume training of
+        :param skip_save_best_weights: (bool, default: `False`) skips saving
+               the weights of the model.
         :param skip_save_progress_weights: (bool, default: `False`) doesn't save
                weights after each epoch. By default Ludwig saves weights after
                each epoch for enabling resuming of training, but if the model is
                really big that can be time consuming and will save twice as much
                space, use this parameter to skip it.
-        :param dataset_type: (string, default: `'default'`) determines the type
-               of preprocessing will be applied to the data. Only `generic` is
-               available at the moment
         :param skip_save_processed_input: (bool, default: `False`) skips saving
                intermediate HDF5 and JSON files
         :param output_directory: (string, default: `'results'`) directory that
@@ -491,6 +494,7 @@ class LudwigModel:
             save_path=model_dir,
             model_load_path=model_load_path,
             resume=model_resume_path is not None,
+            skip_save_best_weights=skip_save_best_weights,
             skip_save_progress_weights=skip_save_progress_weights,
             gpus=gpus,
             gpu_fraction=gpu_fraction,

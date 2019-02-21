@@ -63,6 +63,7 @@ def experiment(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
+        skip_save_best_weights=False,
         skip_save_progress_weights=False,
         skip_save_processed_input=False,
         skip_save_unprocessed_output=False,
@@ -124,6 +125,9 @@ def experiment(
            far are also resumed effectively cotinuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
+    :param skip_save_best_weights: Skips saving the weights of the model.
+           If this is true, no model weights will be saved.
+    :type skip_save_best_weights: Boolean
     :param skip_save_progress_weights: Skips saving the weights at the end of
            each epoch. If this is true, training cannot be resumed from the
            exactly the state at the end of the previous epoch.
@@ -252,6 +256,7 @@ def experiment(
         save_path=model_dir,
         model_load_path=model_load_path,
         resume=model_resume_path is not None,
+        skip_save_best_weights=skip_save_best_weights,
         skip_save_progress_weights=skip_save_progress_weights,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
@@ -485,8 +490,22 @@ def cli(sys_argv):
         help='path of a the model directory to resume training of'
     )
     parser.add_argument(
+        '-ssbw',
+        '--skip_save_best_weights',
+        action='store_true',
+        default=False,
+        help='does not save weights each time the model imrpoves. '
+             'By default Ludwig saves  weights after each epoch '
+             'the validation measure imrpvoes, but  if the model is really big '
+             'that can be time consuming if you do not want to keep '
+             'the weights and just find out what performance can a model get '
+             'with a set of hyperparameters, use this parameter to skip it.'
+    )
+    parser.add_argument(
         '-sspw',
         '--skip_save_progress_weights',
+        action='store_true',
+        default=False,
         help='does not save weights after each epoch. By default Ludwig saves '
              'weights after each epoch for enabling resuming of training, but '
              'if the model is really big that can be time consuming and will '

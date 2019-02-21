@@ -40,17 +40,17 @@ from tqdm import tqdm
 from ludwig.constants import *
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
-from ludwig.globals import is_progressbar_disabled
+from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
 from ludwig.globals import is_on_master
+from ludwig.globals import is_progressbar_disabled
 from ludwig.models.combiners import get_build_combiner
 from ludwig.models.inputs import build_inputs, dynamic_length_encoders
 from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.models.modules.measure_modules import get_initial_validation_value
 from ludwig.models.modules.measure_modules import get_improved_fun
+from ludwig.models.modules.measure_modules import get_initial_validation_value
 from ludwig.models.modules.optimization_modules import optimize
 from ludwig.models.outputs import build_outputs
 from ludwig.utils import time_utils
@@ -284,6 +284,7 @@ class Model:
             increase_batch_size_on_plateau_max=512,
             learning_rate_warmup_epochs=5,  # used when training with Horovod
             resume=False,
+            skip_save_best_weights=False,
             skip_save_progress_weights=False,
             gpus=None,
             gpu_fraction=1,
@@ -346,6 +347,9 @@ class Model:
         :type learning_rate_warmup_epochs: Integer
         :param resume: Resume training a model that was being trained.
         :type resume: Boolean
+        :param skip_save_best_weights: Skips saving the weights of the model.
+           If this is true, no model weights will be saved.
+         :type skip_save_best_weights: Boolean
         :param skip_save_progress_weights:
         :type skip_save_progress_weights:
         :param gpus: List of gpus to use
@@ -589,18 +593,20 @@ class Model:
                     increase_batch_size_on_plateau,
                     increase_batch_size_on_plateau_max,
                     increase_batch_size_on_plateau_rate,
-                    early_stop
+                    early_stop,
+                    skip_save_best_weights
                 )
                 if should_break:
                     break
             else:
                 # there's no validation, so we save the model at each iteration
                 if is_on_master():
-                    self.save_weights(session, model_weights_path)
-                    self.save_hyperparameters(
-                        self.hyperparameters,
-                        model_hyperparameters_path
-                    )
+                    if not skip_save_best_weights:
+                        self.save_weights(session, model_weights_path)
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path
+                        )
 
             # ========== Save training progress ==========
             if is_on_master():
@@ -1079,7 +1085,8 @@ class Model:
             increase_batch_size_on_plateau,
             increase_batch_size_on_plateau_max,
             increase_batch_size_on_plateau_rate,
-            early_stop
+            early_stop,
+            skip_save_best_weights
     ):
         should_break = False
         # record how long its been since an improvement
@@ -1093,24 +1100,23 @@ class Model:
             progress_tracker.best_valid_measure = progress_tracker.vali_stats[
                 validation_field][validation_measure][-1]
             if is_on_master():
-                self.save_weights(session, model_weights_path)
-                self.save_hyperparameters(
-                    self.hyperparameters,
-                    model_hyperparameters_path
-                )
+                if not skip_save_best_weights:
+                    self.save_weights(session, model_weights_path)
+                    self.save_hyperparameters(
+                        self.hyperparameters,
+                        model_hyperparameters_path
+                    )
+                    logging.info(
+                        'Validation {} on {} improved, model saved'.format(
+                            validation_measure,
+                            validation_field
+                        )
+                    )
 
         progress_tracker.last_improvement = (
                 progress_tracker.epoch - progress_tracker.last_improvement_epoch
         )
-        if progress_tracker.last_improvement == 0:
-            if is_on_master():
-                logging.info(
-                    'Validation {} on {} improved, model saved'.format(
-                        validation_measure,
-                        validation_field
-                    )
-                )
-        else:
+        if progress_tracker.last_improvement != 0:
             if is_on_master():
                 logging.info(
                     'Last improvement of {} on {} happened '
