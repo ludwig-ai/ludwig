@@ -648,7 +648,8 @@ class Model:
                     if skip_save_model:
                         self.save_hyperparameters(
                             self.hyperparameters,
-                            model_hyperparameters_path)
+                            model_hyperparameters_path
+                        )
 
             if is_on_master():
                 logging.info('')
