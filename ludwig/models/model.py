@@ -349,8 +349,8 @@ class Model:
         :type learning_rate_warmup_epochs: Integer
         :param resume: Resume training a model that was being trained.
         :type resume: Boolean
-        :param skip_save_model: does not
-               save model weights and hyperparameters each time the model
+        :param skip_save_model: disables
+               saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
                the validation measure imrpvoes, but if the model is really big
                that can be time consuming if you do not want to keep

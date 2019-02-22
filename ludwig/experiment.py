@@ -126,8 +126,8 @@ def experiment(
            far are also resumed effectively cotinuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
-    :param skip_save_model: Does not
-           save model weights and hyperparameters each time the model
+    :param skip_save_model: Disables
+               saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
            the validation measure imrpvoes, but if the model is really big
            that can be time consuming if you do not want to keep
