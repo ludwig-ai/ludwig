@@ -358,8 +358,13 @@ class Model:
                with a set of hyperparameters, use this parameter to skip it,
                but the model will not be loadable later on.
         :type skip_save_model: Boolean
-        :param skip_save_progress:
-        :type skip_save_progress:
+        :param skip_save_progress: disables saving progress each epoch.
+               By default Ludwig saves weights and stats  after each epoch
+               for enabling resuming of training, but if the model is
+               really big that can be time consuming and will uses twice
+               as much space, use this parameter to skip it, but training
+               cannot be resumed later on
+        :type skip_save_progress: Boolean
         :param skip_save_log: Disables saving TensorBoard
                logs. By default Ludwig saves logs for the TensorBoard, but if it
                is not needed turning it off can slightly increase the
