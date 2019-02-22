@@ -135,7 +135,7 @@ def experiment(
            with a set of hyperparameters, use this parameter to skip it,
            but the model will not be loadable later on.
     :type skip_save_model: Boolean
-    :param skip_save_progress: Doesn't save
+    :param skip_save_progress: Disables saving
            progress each epoch. By default Ludwig saves weights and stats
            after each epoch for enabling resuming of training, but if
            the model is really big that can be time consuming and will uses

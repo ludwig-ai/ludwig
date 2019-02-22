@@ -143,7 +143,7 @@ This allows for a few possible input data scenarios:
 - you can provide separate train, validation and test CSVs (`--data_train_csv`, `--data_validation_csv`, `--data_test_csv`).
 
 - the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (`--data_train_hdf5`, `--data_validation_hdf5`, `--data_test_hdf5`), with the only difference that you need to specify only one JSON file (`--metadata_json`) instead of three.
-The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure doesn't improve for a a certain amount of epochs.
+The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure does not improve for a a certain amount of epochs.
 The test set is optional too.
 
 Other optional arguments are `--output_directory`, `--experiment_name` and `--model name`.
@@ -256,7 +256,7 @@ If you trained a model previously and got the results in, for instance, `./resul
 You can specify an output directory with the argument `--output-directory`, by default it will be `./result_0`, with increasing numbers if a directory with the same name is present.
 
 The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a `predict_statistics.json` file containing all prediction statistics.
-By specifying the argument `--only_prediction` you will not get the statistics. This parameter is needed in the case your data doesn't contain ground truth output values, and thus computing the prediction statistics would be impossible.
+By specifying the argument `--only_prediction` you will not get the statistics. This parameter is needed in the case your data does not contain ground truth output values, and thus computing the prediction statistics would be impossible.
 If you receive an error regarding a missing output feature column in your data, you probably forgot to specify this argument.
 You can moreover specify not to save the raw NPY output files with the argument `skip_save_unprocessed_output`.
 
@@ -350,7 +350,7 @@ optional arguments:
   -mrp MODEL_RESUME_PATH, --model_resume_path MODEL_RESUME_PATH
                         path of a the model directory to resume training of
   -ssp SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress SKIP_SAVE_PROGRESS_WEIGHTS
-                        doesn't save weights after each epoch. By default
+                        disables saving weights after each epoch. By default
                         Ludwig saves weights after each epoch for enabling
                         resuming of training, but if the model is really big
                         that can be time consuming and will use twice as much
@@ -1340,7 +1340,7 @@ Bag features are treated in the same way of set features, with the only differen
 Bag features have one encoder, the raw float values coming from the input placeholders are first transformed in sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot encodings), they are aggregated as a weighted sum, where the weights are the original float values, and finally returned as outputs.
 Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionality of the embeddings.
 
-The parameters are the same used for set input features with the exception of `reduce_output` that doesn't apply in this case because the weighted sum already acts as a reducer.
+The parameters are the same used for set input features with the exception of `reduce_output` that does not apply in this case because the weighted sum already acts as a reducer.
 
 ### Bag Output Features and Decoders
 

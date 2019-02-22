@@ -130,7 +130,7 @@ def full_train(
            with a set of hyperparameters, use this parameter to skip it,
            but the model will not be loadable later on.
     :type skip_save_model: Boolean
-    :param skip_save_progress: Doesn't save
+    :param skip_save_progress: Disables saving
            progress each epoch. By default Ludwig saves weights and stats
            after each epoch for enabling resuming of training, but if
            the model is really big that can be time consuming and will uses
@@ -364,7 +364,7 @@ def train(
            with a set of hyperparameters, use this parameter to skip it,
            but the model will not be loadable later on.
     :type skip_save_model: Boolean
-    :param skip_save_progress: Doesn't save
+    :param skip_save_progress: Disables saving
            progress each epoch. By default Ludwig saves weights and stats
            after each epoch for enabling resuming of training, but if
            the model is really big that can be time consuming and will uses
@@ -471,7 +471,7 @@ def get_experiment_dir_name(
         append_suffix=True
 ):
     results_dir = output_directory
-    # create results dir if it doesn't exist
+    # create results dir if it does not exist
     if is_on_master():
         if not os.path.isdir(results_dir):
             os.mkdir(results_dir)

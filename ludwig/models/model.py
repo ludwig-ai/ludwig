@@ -325,7 +325,7 @@ class Model:
         :type early_stop: Integer
         :param reduce_learning_rate_on_plateau: Reduces the learning rate when
                the algorithm hits a plateau (i.e. the performance on the
-               validation doesn't improve)
+               validation does not improve)
         :type reduce_learning_rate_on_plateau: Float
         :param reduce_learning_rate_on_plateau_patience: How many epochs have
                to pass before the learning rate reduces

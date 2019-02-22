@@ -446,7 +446,7 @@ __Inputs__
    the weights and just find out what performance can a model get
    with a set of hyperparameters, use this parameter to skip it,
    but the model will not be loadable later on.
-- __skip_save_progress__ (bool, default: `False`): doesn't save
+- __skip_save_progress__ (bool, default: `False`): disables saving
    progress each epoch. By default Ludwig saves weights and stats
    after each epoch for enabling resuming of training, but if
    the model is really big that can be time consuming and will uses

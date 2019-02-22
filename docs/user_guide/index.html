@@ -2432,7 +2432,9 @@ This allows for a few possible input data scenarios:</p>
 </li>
 <li>
 <p>the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (<code>--data_train_hdf5</code>, <code>--data_validation_hdf5</code>, <code>--data_test_hdf5</code>), with the only difference that you need to specify only one JSON file (<code>--metadata_json</code>) instead of three.
-The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure doesn't improve for a a certain amount of epochs.
+    The validation set is optional, but if absent the training wil continue until the end of the training epochs, while
+    when there's a validation set the default behavior is to perform early stopping after the validation measure does
+    not improve for a a certain amount of epochs.
 The test set is optional too.</p>
 </li>
 </ul>
@@ -2532,7 +2534,9 @@ If the new data contains a split column, you can specify which split to use to c
 If you trained a model previously and got the results in, for instance, <code>./results/experiment_run_0</code>, you have to specify <code>./results/experiment_run_0/model</code> for using it to predict.</p>
 <p>You can specify an output directory with the argument <code>--output-directory</code>, by default it will be <code>./result_0</code>, with increasing numbers if a directory with the same name is present.</p>
 <p>The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a <code>predict_statistics.json</code> file containing all prediction statistics.
-By specifying the argument <code>--only_prediction</code> you will not get the statistics. This parameter is needed in the case your data doesn't contain ground truth output values, and thus computing the prediction statistics would be impossible.
+    By specifying the argument <code>--only_prediction</code> you will not get the statistics. This parameter is needed
+    in the case your data does not contain ground truth output values, and thus computing the prediction statistics
+    would be impossible.
 If you receive an error regarding a missing output feature column in your data, you probably forgot to specify this argument.
 You can moreover specify not to save the raw NPY output files with the argument <code>skip_save_unprocessed_output</code>.</p>
 <p>A specific batch size for speeding up the prediction can be specified using the argument <code>--batch_size</code>.</p>
@@ -3655,7 +3659,9 @@ You can set either of them as <code>validation_measure</code> in the <code>train
 <h4 id="bag-input-features-and-encoders">Bag Input Features and Encoders<a class="headerlink" href="#bag-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Bag features have one encoder, the raw float values coming from the input placeholders are first transformed in sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot encodings), they are aggregated as a weighted sum, where the weights are the original float values, and finally returned as outputs.
 Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionality of the embeddings.</p>
-<p>The parameters are the same used for set input features with the exception of <code>reduce_output</code> that doesn't apply in this case because the weighted sum already acts as a reducer.</p>
+                <p>The parameters are the same used for set input features with the exception of
+                    <code>reduce_output</code> that does not apply in this case because the weighted sum already acts as
+                    a reducer.</p>
 <h4 id="bag-output-features-and-decoders">Bag Output Features and Decoders<a class="headerlink" href="#bag-output-features-and-decoders" title="Permanent link">&para;</a></h4>
 <p>There is no bag decoder available yet.</p>
 <h4 id="bag-features-measures">Bag Features Measures<a class="headerlink" href="#bag-features-measures" title="Permanent link">&para;</a></h4>
