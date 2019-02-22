@@ -63,7 +63,9 @@ def experiment(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
-        skip_save_progress_weights=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
         skip_save_processed_input=False,
         skip_save_unprocessed_output=False,
         output_directory='results',
@@ -124,10 +126,27 @@ def experiment(
            far are also resumed effectively cotinuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
-    :param skip_save_progress_weights: Skips saving the weights at the end of
-           each epoch. If this is true, training cannot be resumed from the
-           exactly the state at the end of the previous epoch.
-    :type skip_save_progress_weights: Boolean
+    :param skip_save_model: Disables
+               saving model weights and hyperparameters each time the model
+           improves. By default Ludwig saves model weights after each epoch
+           the validation measure imrpvoes, but if the model is really big
+           that can be time consuming if you do not want to keep
+           the weights and just find out what performance can a model get
+           with a set of hyperparameters, use this parameter to skip it,
+           but the model will not be loadable later on.
+    :type skip_save_model: Boolean
+    :param skip_save_progress: Disables saving
+           progress each epoch. By default Ludwig saves weights and stats
+           after each epoch for enabling resuming of training, but if
+           the model is really big that can be time consuming and will uses
+           twice as much space, use this parameter to skip it, but training
+           cannot be resumed later on.
+    :type skip_save_progress: Boolean
+    :param skip_save_log: Disables saving TensorBoard
+           logs. By default Ludwig saves logs for the TensorBoard, but if it
+           is not needed turning it off can slightly increase the
+           overall speed..
+    :type skip_save_log: Boolean
     :param skip_save_processed_input: If a CSV dataset is provided it is
            preprocessed and then saved as an hdf5 and json to avoid running
            the preprocessing again. If this parameter is False,
@@ -252,7 +271,9 @@ def experiment(
         save_path=model_dir,
         model_load_path=model_load_path,
         resume=model_resume_path is not None,
-        skip_save_progress_weights=skip_save_progress_weights,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
         use_horovod=use_horovod,
@@ -266,14 +287,15 @@ def experiment(
     ) = training_results
 
     if is_on_master():
-        # save train set metadata
-        save_json(
-            os.path.join(
-                model_dir,
-                TRAIN_SET_METADATA_FILE_NAME
-            ),
-            train_set_metadata
-        )
+        if not skip_save_model:
+            # save train set metadata
+            save_json(
+                os.path.join(
+                    model_dir,
+                    TRAIN_SET_METADATA_FILE_NAME
+                ),
+                train_set_metadata
+            )
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -485,12 +507,39 @@ def cli(sys_argv):
         help='path of a the model directory to resume training of'
     )
     parser.add_argument(
-        '-sspw',
-        '--skip_save_progress_weights',
-        help='does not save weights after each epoch. By default Ludwig saves '
-             'weights after each epoch for enabling resuming of training, but '
-             'if the model is really big that can be time consuming and will '
-             'use twice as much storage space, use this parameter to skip it.'
+        '-ssm',
+        '--skip_save_model',
+        action='store_true',
+        default=False,
+        help='disables saving model weights and hyperparameters each time '
+             'the model imrpoves. '
+             'By default Ludwig saves model weights after each epoch '
+             'the validation measure imrpvoes, but if the model is really big '
+             'that can be time consuming if you do not want to keep '
+             'the weights and just find out what performance can a model get '
+             'with a set of hyperparameters, use this parameter to skip it,'
+             'but the model will not be loadable later on.'
+    )
+    parser.add_argument(
+        '-ssp',
+        '--skip_save_progress',
+        action='store_true',
+        default=False,
+        help='disables saving progress each epoch. By default Ludwig saves '
+             'weights and stats  after each epoch for enabling resuming '
+             'of training, but if the model is really big that can be '
+             'time consuming and will uses twice as much space, use '
+             'this parameter to skip it, but training cannot be resumed '
+             'later on. '
+    )
+    parser.add_argument(
+        '-ssl',
+        '--skip_save_log',
+        action='store_true',
+        default=False,
+        help='disables saving TensorBoard logs. By default Ludwig saves '
+             'logs for the TensorBoard, but if it is not needed turning it off '
+             'can slightly increase the overall speed.'
     )
 
     # ------------------

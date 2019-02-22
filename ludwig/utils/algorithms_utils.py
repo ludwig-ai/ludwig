@@ -39,7 +39,7 @@ def topological_sort(graph_unsorted):
     while graph_unsorted:
 
         # Go through each of the node/edges pairs in the unsorted
-        # graph. If a set of edges doesn't contain any nodes that
+        # graph. If a set of edges does not contain any nodes that
         # haven't been resolved, that is, that are still in the
         # unsorted graph, remove the pair from the unsorted graph,
         # and append it to the sorted graph. Note here that by using

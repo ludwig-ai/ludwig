@@ -26,14 +26,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import argparse
 import logging
 import os
+import sys
+from pprint import pformat
+
 import pandas as pd
 import yaml
-from pprint import pformat
 
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
@@ -268,11 +268,13 @@ class LudwigModel:
             data_validation_hdf5=None,
             data_test_hdf5=None,
             train_set_metadata_json=None,
+            dataset_type='generic',
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
-            skip_save_progress_weights=False,
-            dataset_type='generic',
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
             skip_save_processed_input=False,
             output_directory='results',
             gpus=None,
@@ -320,20 +322,33 @@ class LudwigModel:
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
+        :param dataset_type: (string, default: `'default'`) determines the type
+               of preprocessing will be applied to the data. Only `generic` is
+               available at the moment
         :param model_name: (string) a name for the model, user for the save
                directory
         :param model_load_path: (string) path of a pretrained model to load as
                initialization
         :param model_resume_path: (string) path of a the model directory to
                resume training of
-        :param skip_save_progress_weights: (bool, default: `False`) doesn't save
-               weights after each epoch. By default Ludwig saves weights after
-               each epoch for enabling resuming of training, but if the model is
-               really big that can be time consuming and will save twice as much
-               space, use this parameter to skip it.
-        :param dataset_type: (string, default: `'default'`) determines the type
-               of preprocessing will be applied to the data. Only `generic` is
-               available at the moment
+        :param skip_save_model: (bool, default: `False`) disables
+               saving model weights and hyperparameters each time the model
+               improves. By default Ludwig saves model weights after each epoch
+               the validation measure imrpvoes, but if the model is really big
+               that can be time consuming if you do not want to keep
+               the weights and just find out what performance can a model get
+               with a set of hyperparameters, use this parameter to skip it,
+               but the model will not be loadable later on.
+        :param skip_save_progress: (bool, default: `False`) disables saving
+               progress each epoch. By default Ludwig saves weights and stats
+               after each epoch for enabling resuming of training, but if
+               the model is really big that can be time consuming and will uses
+               twice as much space, use this parameter to skip it, but training
+               cannot be resumed later on.
+        :param skip_save_log: (bool, default: `False`) disables saving TensorBoard
+               logs. By default Ludwig saves logs for the TensorBoard, but if it
+               is not needed turning it off can slightly increase the
+               overall speed.
         :param skip_save_processed_input: (bool, default: `False`) skips saving
                intermediate HDF5 and JSON files
         :param output_directory: (string, default: `'results'`) directory that
@@ -491,19 +506,21 @@ class LudwigModel:
             save_path=model_dir,
             model_load_path=model_load_path,
             resume=model_resume_path is not None,
-            skip_save_progress_weights=skip_save_progress_weights,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             random_seed=random_seed,
             debug=debug
         )
 
-        train_set_metadata_path = os.path.join(
-            model_dir,
-            TRAIN_SET_METADATA_FILE_NAME
-        )
-
-        save_json(train_set_metadata_path, train_set_metadata)
+        if not skip_save_model:
+            train_set_metadata_path = os.path.join(
+                model_dir,
+                TRAIN_SET_METADATA_FILE_NAME
+            )
+            save_json(train_set_metadata_path, train_set_metadata)
 
         train_trainset_stats, train_valisest_stats, train_testset_stats = result
         train_stats = {

@@ -40,17 +40,17 @@ from tqdm import tqdm
 from ludwig.constants import *
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
+from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
-from ludwig.globals import is_progressbar_disabled
+from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
 from ludwig.globals import is_on_master
+from ludwig.globals import is_progressbar_disabled
 from ludwig.models.combiners import get_build_combiner
 from ludwig.models.inputs import build_inputs, dynamic_length_encoders
 from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.models.modules.measure_modules import get_initial_validation_value
 from ludwig.models.modules.measure_modules import get_improved_fun
+from ludwig.models.modules.measure_modules import get_initial_validation_value
 from ludwig.models.modules.optimization_modules import optimize
 from ludwig.models.outputs import build_outputs
 from ludwig.utils import time_utils
@@ -205,7 +205,7 @@ class Model:
 
             tf.summary.scalar('train_reg_mean_loss', self.train_reg_mean_loss)
 
-            self.merged = tf.summary.merge_all()
+            self.merged_summary = tf.summary.merge_all()
             self.graph = graph
             self.graph_initialize = tf.global_variables_initializer()
             if self.horovod:
@@ -238,7 +238,8 @@ class Model:
     def feed_dict(
             self,
             batch,
-            regularization_lambda=default_training_params['regularization_lambda'],
+            regularization_lambda=default_training_params[
+                'regularization_lambda'],
             learning_rate=default_training_params['learning_rate'],
             dropout_rate=default_training_params['dropout_rate'],
             is_training=True
@@ -284,7 +285,9 @@ class Model:
             increase_batch_size_on_plateau_max=512,
             learning_rate_warmup_epochs=5,  # used when training with Horovod
             resume=False,
-            skip_save_progress_weights=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
             gpus=None,
             gpu_fraction=1,
             random_seed=default_random_seed,
@@ -322,7 +325,7 @@ class Model:
         :type early_stop: Integer
         :param reduce_learning_rate_on_plateau: Reduces the learning rate when
                the algorithm hits a plateau (i.e. the performance on the
-               validation doesn't improve)
+               validation does not improve)
         :type reduce_learning_rate_on_plateau: Float
         :param reduce_learning_rate_on_plateau_patience: How many epochs have
                to pass before the learning rate reduces
@@ -346,8 +349,27 @@ class Model:
         :type learning_rate_warmup_epochs: Integer
         :param resume: Resume training a model that was being trained.
         :type resume: Boolean
-        :param skip_save_progress_weights:
-        :type skip_save_progress_weights:
+        :param skip_save_model: disables
+               saving model weights and hyperparameters each time the model
+               improves. By default Ludwig saves model weights after each epoch
+               the validation measure imrpvoes, but if the model is really big
+               that can be time consuming if you do not want to keep
+               the weights and just find out what performance can a model get
+               with a set of hyperparameters, use this parameter to skip it,
+               but the model will not be loadable later on.
+        :type skip_save_model: Boolean
+        :param skip_save_progress: disables saving progress each epoch.
+               By default Ludwig saves weights and stats  after each epoch
+               for enabling resuming of training, but if the model is
+               really big that can be time consuming and will uses twice
+               as much space, use this parameter to skip it, but training
+               cannot be resumed later on
+        :type skip_save_progress: Boolean
+        :param skip_save_log: Disables saving TensorBoard
+               logs. By default Ludwig saves logs for the TensorBoard, but if it
+               is not needed turning it off can slightly increase the
+               overall speed..
+        :type skip_save_log: Boolean
         :param gpus: List of gpus to use
         :type gpus: List
         :param gpu_fraction: Percentage of the GPU that is intended to be used
@@ -381,10 +403,11 @@ class Model:
         session = self.initialize_session(gpus, gpu_fraction)
 
         if is_on_master():
-            train_writer = tf.summary.FileWriter(
-                os.path.join(save_path, 'log', 'train'),
-                session.graph
-            )
+            if not skip_save_log:
+                train_writer = tf.summary.FileWriter(
+                    os.path.join(save_path, 'log', 'train'),
+                    session.graph
+                )
 
         if self.debug:
             session = tf_debug.LocalCLIDebugWrapperSession(session)
@@ -478,8 +501,12 @@ class Model:
                 else:
                     current_learning_rate = progress_tracker.learning_rate
 
-                summary, _ = session.run(
-                    [self.merged, self.optimize],
+                readout_nodes = {'optimize': self.optimize}
+                if not skip_save_log:
+                    readout_nodes['summary'] = self.merged_summary
+
+                output_values = session.run(
+                    readout_nodes,
                     feed_dict=self.feed_dict(
                         batch,
                         regularization_lambda=regularization_lambda,
@@ -488,9 +515,12 @@ class Model:
                         is_training=True
                     )
                 )
+
                 if is_on_master():
-                    # it is initialized only on master
-                    train_writer.add_summary(summary, progress_tracker.steps)
+                    if not skip_save_log:
+                        # it is initialized only on master
+                        train_writer.add_summary(output_values['summary'],
+                                                 progress_tracker.steps)
 
                 progress_tracker.steps += 1
                 if is_on_master():
@@ -589,30 +619,37 @@ class Model:
                     increase_batch_size_on_plateau,
                     increase_batch_size_on_plateau_max,
                     increase_batch_size_on_plateau_rate,
-                    early_stop
+                    early_stop,
+                    skip_save_model
                 )
                 if should_break:
                     break
             else:
                 # there's no validation, so we save the model at each iteration
                 if is_on_master():
-                    self.save_weights(session, model_weights_path)
-                    self.save_hyperparameters(
-                        self.hyperparameters,
-                        model_hyperparameters_path
-                    )
+                    if not skip_save_model:
+                        self.save_weights(session, model_weights_path)
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path
+                        )
 
             # ========== Save training progress ==========
             if is_on_master():
-                save_object(
-                    os.path.join(
-                        save_path,
-                        TRAINING_PROGRESS_FILE_NAME
-                    ),
-                    progress_tracker
-                )
-                if not skip_save_progress_weights:
+                if not skip_save_progress:
                     self.save_weights(session, model_weights_progress_path)
+                    save_object(
+                        os.path.join(
+                            save_path,
+                            TRAINING_PROGRESS_FILE_NAME
+                        ),
+                        progress_tracker
+                    )
+                    if skip_save_model:
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path
+                        )
 
             if is_on_master():
                 logging.info('')
@@ -936,8 +973,8 @@ class Model:
                             result[field_name][stat_config['output']].sum()
                         )
                         seq_set_size[field_name][stat] = (
-                            seq_set_size[field_name].get(stat, 0) +
-                            len(result[field_name][stat_config['output']])
+                                seq_set_size[field_name].get(stat, 0) +
+                                len(result[field_name][stat_config['output']])
                         )
                     elif aggregation_method == AVG_EXP:
                         output_stats[field_name][stat] += (
@@ -1079,7 +1116,8 @@ class Model:
             increase_batch_size_on_plateau,
             increase_batch_size_on_plateau_max,
             increase_batch_size_on_plateau_rate,
-            early_stop
+            early_stop,
+            skip_save_model
     ):
         should_break = False
         # record how long its been since an improvement
@@ -1093,24 +1131,23 @@ class Model:
             progress_tracker.best_valid_measure = progress_tracker.vali_stats[
                 validation_field][validation_measure][-1]
             if is_on_master():
-                self.save_weights(session, model_weights_path)
-                self.save_hyperparameters(
-                    self.hyperparameters,
-                    model_hyperparameters_path
-                )
+                if not skip_save_model:
+                    self.save_weights(session, model_weights_path)
+                    self.save_hyperparameters(
+                        self.hyperparameters,
+                        model_hyperparameters_path
+                    )
+                    logging.info(
+                        'Validation {} on {} improved, model saved'.format(
+                            validation_measure,
+                            validation_field
+                        )
+                    )
 
         progress_tracker.last_improvement = (
                 progress_tracker.epoch - progress_tracker.last_improvement_epoch
         )
-        if progress_tracker.last_improvement == 0:
-            if is_on_master():
-                logging.info(
-                    'Validation {} on {} improved, model saved'.format(
-                        validation_measure,
-                        validation_field
-                    )
-                )
-        else:
+        if progress_tracker.last_improvement != 0:
             if is_on_master():
                 logging.info(
                     'Last improvement of {} on {} happened '
@@ -1260,8 +1297,6 @@ class Model:
         return collected_tensors
 
     def save_weights(self, session, save_path):
-        if is_on_master():
-            self.weights_save_path = self.saver.save(session, save_path)
         self.weights_save_path = self.saver.save(session, save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
