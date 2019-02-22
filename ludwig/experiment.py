@@ -142,7 +142,7 @@ def experiment(
            twice as much space, use this parameter to skip it, but training
            cannot be resumed later on.
     :type skip_save_progress: Boolean
-    :param skip_save_log: Does not save TensorBoard
+    :param skip_save_log: Disables saving TensorBoard
            logs. By default Ludwig saves logs for the TensorBoard, but if it
            is not needed turning it off can slightly increase the
            overall speed..
@@ -511,7 +511,7 @@ def cli(sys_argv):
         '--skip_save_model',
         action='store_true',
         default=False,
-        help='does not save model weights and hyperparameters each time '
+        help='disables saving model weights and hyperparameters each time '
              'the model imrpoves. '
              'By default Ludwig saves model weights after each epoch '
              'the validation measure imrpvoes, but if the model is really big '
@@ -525,7 +525,7 @@ def cli(sys_argv):
         '--skip_save_progress',
         action='store_true',
         default=False,
-        help='does not save progress each epoch. By default Ludwig saves '
+        help='disables saving progress each epoch. By default Ludwig saves '
              'weights and stats  after each epoch for enabling resuming '
              'of training, but if the model is really big that can be '
              'time consuming and will uses twice as much space, use '
@@ -537,7 +537,7 @@ def cli(sys_argv):
         '--skip_save_log',
         action='store_true',
         default=False,
-        help='does not save TensorBoard logs. By default Ludwig saves '
+        help='disables saving TensorBoard logs. By default Ludwig saves '
              'logs for the TensorBoard, but if it is not needed turning it off '
              'can slightly increase the overall speed.'
     )

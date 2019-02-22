@@ -2380,7 +2380,7 @@ optional arguments:
   -mrp MODEL_RESUME_PATH, --model_resume_path MODEL_RESUME_PATH
                         path of a the model directory to resume training of
   -ssm, --skip_save_model
-                        does not save weights each time the model imrpoves. By
+                        disables saving weights each time the model imrpoves. By
                         default Ludwig saves weights after each epoch the
                         validation measure imrpvoes, but if the model is
                         really big that can be time consuming if you do not
@@ -2388,13 +2388,13 @@ optional arguments:
                         performance can a model get with a set of
                         hyperparameters, use this parameter to skip it.
   -ssp, --skip_save_progress
-                        does not save weights after each epoch. By default
+                        disables saving weights after each epoch. By default
                         ludwig saves weights after each epoch for enabling
                         resuming of training, but if the model is really big
                         that can be time consuming and will save twice as much
                         space, use this parameter to skip it.
   -ssl, --skip_save_log
-                        does not save TensorBoard logs. By default Ludwig
+                        disables saving TensorBoard logs. By default Ludwig
                         saves logs for the TensorBoard, but if it is not
                         needed turning it off can slightly increase the
                         overall speed.

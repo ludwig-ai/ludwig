@@ -360,7 +360,7 @@ class Model:
         :type skip_save_model: Boolean
         :param skip_save_progress:
         :type skip_save_progress:
-        :param skip_save_log: Does not save TensorBoard
+        :param skip_save_log: Disables saving TensorBoard
                logs. By default Ludwig saves logs for the TensorBoard, but if it
                is not needed turning it off can slightly increase the
                overall speed..

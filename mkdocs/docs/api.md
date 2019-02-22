@@ -452,7 +452,7 @@ __Inputs__
    the model is really big that can be time consuming and will uses
    twice as much space, use this parameter to skip it, but training
    cannot be resumed later on.
-- __skip_save_log__ (bool, default: `False`): does not save TensorBoard
+- __skip_save_log__ (bool, default: `False`): disables saving TensorBoard
    logs. By default Ludwig saves logs for the TensorBoard, but if it
    is not needed turning it off can slightly increase the
    overall speed.

@@ -142,7 +142,7 @@ def full_train(
            the preprocessing again. If this parameter is False,
            the hdf5 and json file are not saved.
     :type skip_save_processed_input: Boolean
-    :param skip_save_log: Does not save TensorBoard
+    :param skip_save_log: Disables saving TensorBoard
            logs. By default Ludwig saves logs for the TensorBoard, but if it
            is not needed turning it off can slightly increase the
            overall speed..
@@ -371,7 +371,7 @@ def train(
            twice as much space, use this parameter to skip it, but training
            cannot be resumed later on.
     :type skip_save_progress: Boolean
-    :param skip_save_log: Does not save TensorBoard
+    :param skip_save_log: Disables saving TensorBoard
            logs. By default Ludwig saves logs for the TensorBoard, but if it
            is not needed turning it off can slightly increase the
            overall speed..
@@ -638,7 +638,7 @@ def cli(sys_argv):
         '--skip_save_model',
         action='store_true',
         default=False,
-        help='does not save weights each time the model imrpoves. '
+        help='disables saving weights each time the model imrpoves. '
              'By default Ludwig saves  weights after each epoch '
              'the validation measure imrpvoes, but  if the model is really big '
              'that can be time consuming if you do not want to keep '
@@ -650,7 +650,7 @@ def cli(sys_argv):
         '--skip_save_progress',
         action='store_true',
         default=False,
-        help='does not save weights after each epoch. By default ludwig saves '
+        help='disables saving weights after each epoch. By default ludwig saves '
              'weights after each epoch for enabling resuming of training, but '
              'if the model is really big that can be time consuming and will '
              'save twice as much space, use this parameter to skip it.'
@@ -660,7 +660,7 @@ def cli(sys_argv):
         '--skip_save_log',
         action='store_true',
         default=False,
-        help='does not save TensorBoard logs. By default Ludwig saves '
+        help='disables saving TensorBoard logs. By default Ludwig saves '
              'logs for the TensorBoard, but if it is not needed turning it off '
              'can slightly increase the overall speed.'
     )
