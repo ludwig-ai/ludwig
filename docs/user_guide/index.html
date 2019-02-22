@@ -2620,7 +2620,7 @@ optional arguments:
   -mrp MODEL_RESUME_PATH, --model_resume_path MODEL_RESUME_PATH
                         path of a the model directory to resume training of
   -ssp SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress SKIP_SAVE_PROGRESS_WEIGHTS
-                        doesn&#39;t save weights after each epoch. By default
+                        disables saving weights after each epoch. By default
                         Ludwig saves weights after each epoch for enabling
                         resuming of training, but if the model is really big
                         that can be time consuming and will use twice as much
@@ -3271,7 +3271,7 @@ No additional information about them is available in the JSON metadata file.</p>
 <h4 id="numerical-input-features-and-encoders">Numerical Input Features and Encoders<a class="headerlink" href="#numerical-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Numerical features have one encoder, the raw float values coming from the input placeholders are passed through a single neuron for scaling purposes, (optionally) passed through a normalization layer (either <code>null</code>, <code>batch_norm</code>, or <code>layer_norm</code>) and returned as outputs.
 Inputs are of size <code>b</code> while outputs are fo size <code>b x 1</code> where b is the batch size.</p>
-<p>The available encoder parameters are</p>
+                <p>The available encoder parameters are:</p>
 <ul>
 <li><code>norm'</code> (default <code>null</code>): norm to apply after the single neuron. It can be <code>null</code>, <code>batch</code> or <code>layer</code>.</li>
 <li><code>tied_weights</code> (default <code>null</code>): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.</li>
@@ -3519,7 +3519,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 3. the mapping from string to frequency (<code>str2freq</code>)
 4. the maximum size of all sets (<code>max_set_size</code>)
 5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
-<p>The parameters available for preprocessing are</p>
+                <p>The parameters available for preprocessing arehe parameters available for preprocessing are</p>
 <ul>
 <li><code>missing_value_strategy</code> (default <code>fill_with_const</code>): what strategy to follow when there's a missing value in a binary column. The value should be one of <code>fill_with_const</code>  (replaces the missing value with a specific value specified with the <code>fill_value</code> parameter), <code>fill_with_mode</code> (replaces the missing values with the most frequent value in the column), <code>fill_with_mean</code> (replaces the missing values with the mean of the values in the column), <code>backfill</code> (replaces the missing values with the next valid value).</li>
 <li><code>fill_value</code> (default <code>0</code>): the value to replace the missing values with in case the <code>missing_value_strategy</code> is <code>fill-value</code>.</li>
