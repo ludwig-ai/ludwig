@@ -15,10 +15,11 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import h5py
 import logging
-import numpy as np
 import os
+
+import h5py
+import numpy as np
 import yaml
 
 from ludwig.constants import *
@@ -517,7 +518,7 @@ def preprocess_for_training(
 
     elif data_hdf5 is not None and train_set_metadata_json is not None:
         # use data and train set metadata
-        # doesn't need preprocessing, just load
+        # does not need preprocessing, just load
         logging.info('Using full hdf5 and json')
         training_set, test_set, validation_set = load_data(
             data_hdf5,
@@ -529,7 +530,7 @@ def preprocess_for_training(
 
     elif data_train_hdf5 is not None and train_set_metadata_json is not None:
         # use data and train set metadata
-        # doesn't need preprocessing, just load
+        # does not need preprocessing, just load
         logging.info('Using hdf5 and json')
         training_set = load_data(
             data_train_hdf5,
