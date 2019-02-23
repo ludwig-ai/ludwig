@@ -1490,24 +1490,21 @@ class Model:
             if (progress_tracker.num_reductions_lr >=
                     reduce_learning_rate_on_plateau):
                 if is_on_master():
-                    logging.info('\n')
                     logging.info(
-                        "It has been " +
+                        'It has been ' +
                         str(progress_tracker.last_improvement) +
-                        'epochs since last validation accuracy improvement '
+                        ' epochs since last validation accuracy improvement '
                         'and the learning rate was already reduced ' +
                         str(progress_tracker.num_reductions_lr) +
-                        'times, not reducing it anymore'
+                        ' times, not reducing it anymore'
                     )
-                    logging.info('\n')
             else:
                 if is_on_master():
-                    logging.info('\n')
                     logging.info(
-                        'PLATEAU REACHED, reducing learning rate'
-                        ' due to lack of validation improvement, it has been' +
+                        'PLATEAU REACHED, reducing learning rate '
+                        'due to lack of validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        'epochs since last validation accuracy improvement'
+                        ' epochs since last validation accuracy improvement '
                         'or since the learning rate was reduced'
                     )
 
@@ -1533,41 +1530,36 @@ class Model:
             if (progress_tracker.num_increases_bs >=
                     increase_batch_size_on_plateau):
                 if is_on_master():
-                    logging.info('\n')
                     logging.info(
-                        "It has been " +
+                        'It has been ' +
                         str(progress_tracker.last_improvement) +
-                        'epochs since last validation accuracy improvement '
+                        ' epochs since last validation accuracy improvement '
                         'and the learning rate was already reduced ' +
                         str(progress_tracker.num_increases_bs) +
-                        'times, not reducing it anymore'
+                        ' times, not reducing it anymore'
                     )
-                    logging.info('\n')
 
             elif (progress_tracker.batch_size ==
                   increase_batch_size_on_plateau_max):
                 if is_on_master():
-                    logging.info('\n')
                     logging.info(
-                        "It has been" +
+                        'It has been' +
                         str(progress_tracker.last_improvement) +
-                        'epochs since last validation accuracy improvement'
-                        'and the batch size was already increased' +
+                        ' epochs since last validation accuracy improvement '
+                        'and the batch size was already increased ' +
                         str(progress_tracker.num_increases_bs) +
-                        'times and currently is' +
+                        ' times and currently is ' +
                         str(progress_tracker.batch_size) +
                         ', the maximum allowed'
                     )
-                    logging.info('\n')
             else:
                 if is_on_master():
-                    logging.info('\n')
                     logging.info(
-                        'PLATEAU REACHED'
-                        'increasing batch size due to lack of'
-                        'validation improvement, it has been' +
+                        'PLATEAU REACHED '
+                        'increasing batch size due to lack of '
+                        'validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        'epochs since last validation accuracy improvement'
+                        ' epochs since last validation accuracy improvement '
                         'or since the batch size was increased'
                     )
 
