@@ -834,8 +834,8 @@ The `training` section of the model definition lets you specify some parameters 
 These are the available training parameters:
 
 - `batch_size` (default `128`): size of the batch used for training the model.
-- `epochs` (default `200`): number of epochs the training process will run for.
-- `early_stop` (default `10`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.
+- `epochs` (default `100`): number of epochs the training process will run for.
+- `early_stop` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.
 - `optimizer` (default `{type: adam, beta1: 0.9, beta2: 0.999, epsilon: 1e-08}`): which optimizer to use with the relative parameters. The available optimizers are: `sgd` (or `stochastic_gradient_descent`, `gd`, `gradient_descent`, they are all the same), `adam`, `adadelta`, `adagrad`, `adagradda`, `momentum`, `ftrl`, `proximalgd`, `proximaladagrad`, `rmsprop`. To know their parameters check [TensorFlow's optimizer documentation](https://www.tensorflow.org/api_docs/python/tf/keras/optimizers).
 - `learning_rate` (default `0.001`): the learning rate to use.
 - `decay` (default `false`): if to use exponential decay of the learning rate or not.
