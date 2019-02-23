@@ -3087,8 +3087,8 @@ In the decoder of <code>fine_class</code>, the 64 dimensional vector of <code>co
 <p>These are the available training parameters:</p>
 <ul>
 <li><code>batch_size</code> (default <code>128</code>): size of the batch used for training the model.</li>
-<li><code>epochs</code> (default <code>200</code>): number of epochs the training process will run for.</li>
-<li><code>early_stop</code> (default <code>10</code>): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.</li>
+<li><code>epochs</code> (default <code>100</code>): number of epochs the training process will run for.</li>
+<li><code>early_stop</code> (default <code>5</code>): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.</li>
 <li><code>optimizer</code> (default <code>{type: adam, beta1: 0.9, beta2: 0.999, epsilon: 1e-08}</code>): which optimizer to use with the relative parameters. The available optimizers are: <code>sgd</code> (or <code>stochastic_gradient_descent</code>, <code>gd</code>, <code>gradient_descent</code>, they are all the same), <code>adam</code>, <code>adadelta</code>, <code>adagrad</code>, <code>adagradda</code>, <code>momentum</code>, <code>ftrl</code>, <code>proximalgd</code>, <code>proximaladagrad</code>, <code>rmsprop</code>. To know their parameters check <a href="https://www.tensorflow.org/api_docs/python/tf/keras/optimizers">TensorFlow's optimizer documentation</a>.</li>
 <li><code>learning_rate</code> (default <code>0.001</code>): the learning rate to use.</li>
 <li><code>decay</code> (default <code>false</code>): if to use exponential decay of the learning rate or not.</li>
