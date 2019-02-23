@@ -263,6 +263,10 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                 'train_batch_mean_absolute_error_{}'.format(self.name),
                 tf.reduce_mean(absolute_error)
             )
+            tf.summary.scalar(
+                'train_batch_mean_r2_{}'.format(self.name),
+                tf.reduce_mean(r2)
+            )
 
         # ================ Loss (Binary Cross Entropy) ================
         train_mean_loss, eval_loss = self._get_loss(targets, predictions)
