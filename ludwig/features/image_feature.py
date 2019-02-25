@@ -39,12 +39,15 @@ class ImageBaseFeature(BaseFeature):
         self.type = IMAGE
 
     preprocessing_defaults = {
-        'missing_value_strategy': BACKFILL
+        'missing_value_strategy': BACKFILL,
+        'in_memory': True
     }
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        return {}
+        return {
+            'preprocessing': preprocessing_parameters
+        }
 
     @staticmethod
     def add_feature_data(
@@ -54,10 +57,40 @@ class ImageBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        if hasattr(dataset_df, 'csv'):
-            csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
+        set_default_value(
+            feature, 
+            'in_memory', 
+            preprocessing_parameters['in_memory']
+        )
+
+        if ('height' in preprocessing_parameters or 
+                'width' in preprocessing_parameters):
+            feature['should_resize'] = True
+            try:
+                feature[HEIGHT] = int(preprocessing_parameters[HEIGHT])
+                feature[WIDTH] = int(preprocessing_parameters[WIDTH])
+            except ValueError as e:
+                raise ValueError(
+                    'Image height and width must be set and have '
+                    'positive integer values: ' + str(e)
+                )
+            if (preprocessing_parameters[HEIGHT] <= 0 or 
+                    preprocessing_parameters[WIDTH] <= 0):
+                raise ValueError(
+                    'Image height and width must be positive integers'
+                )
+            feature['should_resize'] = True
+            set_default_value(
+                feature['preprocessing'], 
+                'resize_method', 
+                'crop_or_pad'
+            )
         else:
-            csv_path = ''
+            feature['should_resize'] = False
+
+
+        csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
+
         an_image = imread(
             os.path.join(csv_path, dataset_df[feature['name']][0])
         )
@@ -75,12 +108,10 @@ class ImageBaseFeature(BaseFeature):
             im_height = feature[HEIGHT]
             im_width = feature[WIDTH]
 
-        metadata[feature['name']] = {
-            'height': im_height,
-            'width': im_width,
-            'num_channels': num_channels,
-            'in_memory': feature['in_memory']
-        }
+        metadata[feature['name']]['preprocessing']['height'] = im_height
+        metadata[feature['name']]['preprocessing']['width'] = im_width
+        metadata[feature['name']]['preprocessing'][
+            'num_channels'] = num_channels
 
         if feature['in_memory']:
             data[feature['name']] = np.empty(
@@ -99,7 +130,7 @@ class ImageBaseFeature(BaseFeature):
                     img = resize_image(
                         img,
                         (im_height, im_width),
-                        feature['resize_method']
+                        feature['preprocessing']['resize_method']
                     )
                 data[feature['name']][i, :, :, :] = img
         else:
@@ -125,7 +156,7 @@ class ImageBaseFeature(BaseFeature):
                         img = resize_image(
                             img,
                             (im_height, im_width),
-                            feature['resize_method'],
+                            feature['preprocessing']['resize_method'],
                         )
 
                     image_dataset[i, :im_height, :im_width, :] = img
@@ -203,34 +234,13 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
             **kwargs
     ):
         for dim in ['height', 'width', 'num_channels']:
-            input_feature[dim] = feature_metadata[dim]
+            input_feature[dim] = feature_metadata['preprocessing'][dim]
         input_feature['data_hdf5_fp'] = (
             kwargs['model_definition']['data_hdf5_fp']
         )
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'in_memory', True)
-
-        if 'height' in input_feature or 'width' in input_feature:
-            input_feature['should_resize'] = True
-            try:
-                input_feature[HEIGHT] = int(input_feature[HEIGHT])
-                input_feature[WIDTH] = int(input_feature[WIDTH])
-            except ValueError as e:
-                raise ValueError(
-                    'Image height and width must be set and have '
-                    'positive integer values: ' + str(e)
-                )
-            if input_feature[HEIGHT] <= 0 or input_feature[WIDTH] <= 0:
-                raise ValueError(
-                    'Image height and width must be positive integers'
-                )
-            input_feature['should_resize'] = True
-            set_default_value(input_feature, 'resize_method', 'crop_or_pad')
-        else:
-            input_feature['should_resize'] = False
-
         set_default_value(input_feature, 'tied_weights', None)
 
 
