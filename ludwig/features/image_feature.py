@@ -81,7 +81,7 @@ class ImageBaseFeature(BaseFeature):
                 )
             feature['should_resize'] = True
             set_default_value(
-                feature['preprocessing'], 
+                preprocessing_parameters, 
                 'resize_method', 
                 'crop_or_pad'
             )
@@ -130,7 +130,7 @@ class ImageBaseFeature(BaseFeature):
                     img = resize_image(
                         img,
                         (im_height, im_width),
-                        feature['preprocessing']['resize_method']
+                        preprocessing_parameters['resize_method']
                     )
                 data[feature['name']][i, :, :, :] = img
         else:
@@ -156,7 +156,7 @@ class ImageBaseFeature(BaseFeature):
                         img = resize_image(
                             img,
                             (im_height, im_width),
-                            feature['preprocessing']['resize_method'],
+                            preprocessing_parameters['resize_method'],
                         )
 
                     image_dataset[i, :im_height, :im_width, :] = img
