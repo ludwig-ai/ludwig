@@ -145,6 +145,12 @@ def _perform_sanity_checks(model_definition):
         "Ludwig expects output features in a list. Check your model " \
         "definition format"
 
+    assert len(model_definition['input_features']) > 0, \
+        "Model definition needs to have at least one input feature"
+
+    assert len(model_definition['output_features']) > 0, \
+        "Model definition needs to have at least one output feature"
+
     if 'training' in model_definition:
         assert isinstance(model_definition['training'], dict), \
             "There is an issue while reading the training section of the " \
