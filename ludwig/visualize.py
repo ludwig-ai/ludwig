@@ -54,7 +54,7 @@ def learning_curves(training_statistics, field, model_names=None, **kwargs):
     for field in fields:
         for metric in metrics:
             if metric in training_statistics_per_model_name[0]['train'][field]:
-                visualization_utils.lerning_curves_plot(
+                visualization_utils.learning_curves_plot(
                     [learning_stats['train'][field][metric]
                      for learning_stats in training_statistics_per_model_name],
                     [learning_stats['validation'][field][metric]
