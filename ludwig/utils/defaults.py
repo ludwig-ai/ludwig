@@ -130,7 +130,40 @@ def get_default_optimizer_params(optimizer_type):
         raise ValueError('Incorrect optimizer type: ' + optimizer_type)
 
 
+def _perform_sanity_checks(model_definition):
+    assert 'input_features' in model_definition, "Model definition doesn't " \
+                                                 "define any input features."
+
+    assert 'output_features' in model_definition, "Model definition doesn't " \
+                                                  "define any output features."
+
+    assert isinstance(model_definition['input_features'], list), \
+        "Ludwig expects input features in a list. Check your model " \
+        "definition format"
+
+    assert isinstance(model_definition['output_features'], list), \
+        "Ludwig expects output features in a list. Check your model " \
+        "definition format"
+
+    if 'training' in model_definition:
+        assert isinstance(model_definition['training'], dict), \
+            "There is an issue while reading the training section of the " \
+            "model definition. Please check your model definition format."
+
+    if 'preprocessing' in model_definition:
+        assert isinstance(model_definition['preprocessing'], dict), \
+            "There is an issue while reading the preprocessing section of the" \
+            " model definition. Please check your model definition format."
+
+    if 'combiner' in model_definition:
+        assert isinstance(model_definition['preprocessing'], dict), \
+            "There is an issue while reading the combiner section of the" \
+            " model definition. Please check your model definition format."
+
+
 def merge_with_defaults(model_definition):
+    _perform_sanity_checks(model_definition)
+
     # ===== Preprocessing =====
     model_definition['preprocessing'] = merge_dict(
         default_preprocessing_parameters,
@@ -157,9 +190,6 @@ def merge_with_defaults(model_definition):
     for param in default_training_params:
         set_default_value(model_definition['training'], param,
                           default_training_params[param])
-
-    if len(model_definition['output_features']) == 0:
-        raise ValueError('No output features are defined')
 
     set_default_value(
         model_definition['training'],
