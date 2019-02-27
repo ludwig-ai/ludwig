@@ -924,7 +924,7 @@ The parameters available for preprocessing are
 
 Binary features have no encoder, the raw binary values coming from the input placeholders are just returned as outputs.
 By consequence there are no encoding parameters.
-Inputs are of size `b` while outputs are fo size `b x 1` where `b` is the batch size.
+Inputs are of size `b` while outputs are of size `b x 1` where `b` is the batch size.
 
 Example binary feature entry in the output features list:
 
