@@ -684,7 +684,7 @@ Model Definition
 
 The model definition is the core of Ludwig.
 It is a dictionary that contains all the information needed to build and train a Ludwig model.
-I mixes ease of use, by means of reasonable defaults, with flexibility, by means of detailed control over the parameters of your model.
+It mixes ease of use, by means of reasonable defaults, with flexibility, by means of detailed control over the parameters of your model.
 It is provided to both `experiment` and `train` commands either as a string (`--model_definition`) or as a file (`--model_definition_file`).
 The string or the content of the file will be parsed by PyYAML into a dictionary in memory, so any style of YAML accepted by the parser is considered to be valid, so both multiline and oneline formats are accepted.
 For instance a list of dictionaries can be written both as
@@ -733,7 +733,7 @@ For instance a `sequence` feature can be encoded by a `stacked_cnn` or by and `r
 A list of all the encoders available for all the datatypes alongside with the description of all parameters will be provided in the datatype-specific sections.
 Some datatypes have only one type of encoder, so you are not required to specify it.
 
-The role of the encoders is to map inputs into tensors, usually vectors in the case fo datatype without a temporal / sequential aspect, matrices in case there is a temporal / sequential aspect or higher rank tensors in case there is a spatial or a spatio-temporal aspect to the input data.
+The role of the encoders is to map inputs into tensors, usually vectors in the case of datatype without a temporal / sequential aspect, matrices in case there is a temporal / sequential aspect or higher rank tensors in case there is a spatial or a spatio-temporal aspect to the input data.
 
 Different configurations of the same encoder may return a tensor with different rank, for instance a sequential encoder may return a vector of size `h` that is either the final vector of a sequence or the result of pooling over the sequence length, or it can return a matrix of size `l x h` where `l` is the length of the sequence and `h` is the hidden dimension if you specify the pooling reduce operation (`reduce_output`) to be `null`.
 For the sake of simplicity you can imagine the output to be a vector in most of the cases, but there is a `reduce_output` parameter one can specify to change the default behavior.
@@ -924,7 +924,7 @@ The parameters available for preprocessing are
 
 Binary features have no encoder, the raw binary values coming from the input placeholders are just returned as outputs.
 By consequence there are no encoding parameters.
-Inputs are of size `b` while outputs are fo size `b x 1` where `b` is the batch size.
+Inputs are of size `b` while outputs are of size `b x 1` where `b` is the batch size.
 
 Example binary feature entry in the output features list:
 
