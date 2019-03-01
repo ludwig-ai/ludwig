@@ -550,3 +550,56 @@ output_features:
         type: sequence
         decoder: tagger
 ```
+
+Keras Predict Fuel Efficiency: Simple Regression
+===
+
+This example replicates the Keras example at https://www.tensorflow.org/tutorials/keras/basic_regression to predict the continuous value, fuel ecomomy given other car characteristics in the [Auto MPG](https://archive.ics.uci.edu/ml/datasets/auto+mpg) dataset.
+
+|MPG   |Cylinders |Displacement |Horsepower |Weight |Acceleration |ModelYear |Origin |
+|------|----------|-------------|-----------|-------|-------------|----------|-------|
+|18.0  |8         |307.0        |130.0      |3504.0 |12.0         |70        |1      |
+|15.0  |8         |350.0        |165.0      |3693.0 |11.5         |70        |1      |
+|18.0  |8         |318.0        |150.0      |3436.0 |11.0         |70        |1      |
+|16.0  |8         |304.0        |150.0      |3433.0 |12.0         |70        |1      |
+
+```yaml
+training:
+    batch_size: 32
+    epochs: 1000
+    early_stop: 50
+    learning_rate: 0.001
+    optimizer:
+        type: rmsprop
+input_features:
+    -
+        name: Cylinders
+        type: numerical
+    -
+        name: Displacement
+        type: numerical
+    -
+        name: Horsepower
+        type: numerical
+    -
+        name: Weight
+        type: numerical
+    -
+        name: Acceleration
+        type: numerical
+    -
+        name: ModelYear
+        type: numerical
+    -
+        name: Origin
+        type: category
+output_features:
+    -
+        name: MPG
+        type: numerical
+        optimizer:
+            type: mean_squared_error
+        num_fc_layers: 2
+        fc_size: 64
+
+```
