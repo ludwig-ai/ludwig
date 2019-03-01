@@ -55,7 +55,6 @@ sudo apt install python3  # on ubuntu
 brew install python3      # on mac
 ```
 
-At the time of writing this document, TensorFlow is not compatible with Python 3.7, so the recommended version of Python for Ludwig is 3.6.
 You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
 
 In order to install Ludwig just run:
