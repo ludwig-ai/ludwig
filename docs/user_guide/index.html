@@ -2455,7 +2455,7 @@ The reason for keeping the second set is to be able to resume training in case t
 You can avoid saving the latest weights and the overall progress so far by using the argument <code>--skip_save_progress</code>, but you will not be able to resume it afterwards.
 Another available option is to load a previously trained model as an initialization for a new training process.
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
-It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the <code>--model_resume_path</code> argument.</p>
+It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the <code>--model_load_path</code> argument.</p>
 <p>You can specify a random sed to be used by the python environment, python random package, numpy and TensorFlow with the <code>--random_seed</code> argument.
 This is useful for reproducibility.
 Be aware that due to asynchronicity in the TensorFlow GPU execution, when training on GPU results may not be reproducible.</p>
