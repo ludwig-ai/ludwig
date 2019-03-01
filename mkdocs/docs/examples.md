@@ -93,7 +93,7 @@ input_features:
         cell_type: lstm
         bidirectional: true
         num_layers: 2
-        reduce_output: None
+        reduce_output: null
 
 output_features:
     -
@@ -133,6 +133,7 @@ input_features:
         type: sequence
         encoder: rnn
         cell_type: lstm
+        reduce_output: null
 
 output_features:
     -
@@ -168,6 +169,7 @@ input_features:
         type: sequence
         encoder: rnn
         cell_type: lstm
+        reduce_output: null
 
 output_features:
     -
@@ -532,6 +534,7 @@ input_features:
         encoder: rnn
         cell: lstm
         bidirectional: true
+        reduce_output: null
 
 output_features:
     -
