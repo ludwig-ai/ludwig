@@ -2798,7 +2798,7 @@ The collect specific arguments  <code>--model_path</code>, <code>--tensors</code
 <h2 id="data-preprocessing">Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permanent link">&para;</a></h2>
 <p>Ludwig data preprocessing maps raw data coming in CSV format into an HDF5 file containing tensors and a JSON file containing mappings from strings to tensors when needed.
 This mapping is performed when a CSV is provided as input and both HDF5 and JSON files are saved in the same directory as the input CSV, unless the argument <code>--skip_save_processed_input</code> is used (both in <code>train</code> and <code>experiment</code> commands).
-The reason to save those files is both to provide a cache and avoid performing the preprocessing again (as, depepnding on the type of features involved, it could be time consuming) and to provide the needed mappings to be able to map unseen data into tensors.</p>
+The reason to save those files is both to provide a cache and avoid performing the preprocessing again (as, depending on the type of features involved, it could be time consuming) and to provide the needed mappings to be able to map unseen data into tensors.</p>
 <p>The preprocessing process is personalizable to fit the specifics of your data format, but the basic assumption is always that your CSV files contains one row for each datapoint and one column for each feature (either input or output), and that you are able to determine the type of that column among the ones supported by Ludwig.
 The reason for that is that each data type is mapped into tensors in a different way and expects the content to be formatted in a specific way.
 Different datatypes may have different formatters that format the values of a cell.</p>
@@ -2880,7 +2880,7 @@ Details on how to set those parameters for each feature type and for each specif
 No additional information about them is available in the JSON metadata file.</p>
 <p><code>Numerical</code> features are directly transformed into a float valued vector of length <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 No additional information about them is available in the JSON metadata file.</p>
-<p><code>Category</code> features are transformed into into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Category</code> features are transformed into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way categories are mapped into integers consists in first collecting a dictionary of all the different category strings present in the column of the CSV, then rank them by frequency and then assign them an increasing integer ID from the most frequent to the most rare (with 0 being assigned to a <code>&lt;UNK&gt;</code> token).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (<code>idx2str</code>)
@@ -2888,7 +2888,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 3. the mapping from string to frequency (<code>str2freq</code>)
 4. the size of the set of all tokens (<code>vocab_size</code>)
 4. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
-<p><code>Set</code> features are transformed into into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Set</code> features are transformed into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -2898,7 +2898,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the maximum size of all sets (<code>max_set_size</code>)
 5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
 <p><code>Bag</code> features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).</p>
-<p><code>Sequence</code> features are transformed into into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Sequence</code> features are transformed into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -2913,7 +2913,7 @@ The same thing happens in the JSON file, where there are dictionaries for mappin
 In the model definition you are able to specify which level of representation to use, if the character level or the word level.</p>
 <p><code>Timeseries</code> features are treated in the same way of sequence features, with the only difference being that the matrix in the HDF5 file does not have integer values, but float values.
 Moreover, there is no need for any mapping in the JSON file.</p>
-<p><code>Image</code> features are transformed into into a int8 valued tensor of size <code>n x h x w x c</code> (where <code>n</code> is the size of the dataset and <code>h x w</code> is a specific resizing of the image that can be set, and <code>c</code> is the number of color channels) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Image</code> features are transformed into a int8 valued tensor of size <code>n x h x w x c</code> (where <code>n</code> is the size of the dataset and <code>h x w</code> is a specific resizing of the image that can be set, and <code>c</code> is the number of color channels) and added to HDF5 with a key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.</p>
 <h3 id="csv-format">CSV Format<a class="headerlink" href="#csv-format" title="Permanent link">&para;</a></h3>
 <p>Ludwig uses Pandas under the hood to read the CSV files. Pandas tries to automatically identify the separator (generally <code>','</code>) from the data.
@@ -3247,7 +3247,7 @@ There is only one decoder available for numerical features and it is a (potentia
 You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
 <h3 id="category-features">Category Features<a class="headerlink" href="#category-features" title="Permanent link">&para;</a></h3>
 <h4 id="category-features-preprocessing">Category Features Preprocessing<a class="headerlink" href="#category-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Category features are transformed into into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p>Category features are transformed into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way categories are mapped into integers consists in first collecting a dictionary of all the different category strings present in the column of the CSV, then rank them by frequency and then assign them an increasing integer ID from the most frequent to the most rare (with 0 being assigned to a <code>&lt;UNK&gt;</code> token).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (<code>idx2str</code>)
@@ -3370,7 +3370,7 @@ There is only one decoder available for category features and it is a (potential
 You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
 <h3 id="set-features">Set Features<a class="headerlink" href="#set-features" title="Permanent link">&para;</a></h3>
 <h4 id="set-features-preprocessing">Set Features Preprocessing<a class="headerlink" href="#set-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Set features are transformed into into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p>Set features are transformed into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -3497,7 +3497,7 @@ Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> w
 <p>As there is no decoder there is also no measure available yet for bag feature.</p>
 <h3 id="sequence-features">Sequence Features<a class="headerlink" href="#sequence-features" title="Permanent link">&para;</a></h3>
 <h4 id="sequence-features-preprocessing">Sequence Features Preprocessing<a class="headerlink" href="#sequence-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Sequence features are transformed into into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p>Sequence features are transformed into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
