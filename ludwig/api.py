@@ -731,7 +731,7 @@ class LudwigModel:
                 'regularization_lambda'
             ]
         if dropout_rate is None:
-            dropout_rate = self.model_definition['training']['dropout'],
+            dropout_rate = self.model_definition['training']['dropout_rate'],
         if bucketing_field is None:
             bucketing_field = self.model_definition['training'][
                 'bucketing_field'
