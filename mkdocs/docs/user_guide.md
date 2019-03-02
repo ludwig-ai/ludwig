@@ -1519,7 +1519,7 @@ activation: relu
 norm: null
 dropout: false
 regularize: true
-reduce_output sum
+reduce_output: sum
 ```
 
 #### Stacked CNN Encoder
@@ -1733,7 +1733,7 @@ bidirectional: false
 dropout: false
 initializer: null
 regularize: true
-reduce_output sum
+reduce_output: sum
 ```
 
 #### CNN RNN Encoder
