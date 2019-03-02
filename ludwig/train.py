@@ -199,16 +199,16 @@ def full_train(
     # save description
     description = get_experiment_description(
         model_definition,
-        data_csv,
-        data_train_csv,
-        data_validation_csv,
-        data_test_csv,
-        data_hdf5,
-        data_train_hdf5,
-        data_validation_hdf5,
-        data_test_hdf5,
-        train_set_metadata_json,
-        random_seed
+        data_csv=data_csv,
+        data_train_csv=data_train_csv,
+        data_validation_csv=data_validation_csv,
+        data_test_csv=data_test_csv,
+        data_hdf5=data_hdf5,
+        data_train_hdf5=data_train_hdf5,
+        data_validation_hdf5=data_validation_hdf5,
+        data_test_hdf5=data_test_hdf5,
+        metadata_json=train_set_metadata_json,
+        random_seed=random_seed
     )
     if is_on_master():
         save_json(description_fn, description)
