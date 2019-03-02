@@ -210,3 +210,11 @@ html body .md-typeset .headerlink {
 .md-typeset h6[id] .headerlink:focus {
     color: #ececec;
 }
+
+.md-typeset h5 {
+    color: #ccc;
+}
+
+.md-typeset h6 {
+    color: #ccc;
+}
