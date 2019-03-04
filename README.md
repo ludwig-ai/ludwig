@@ -10,7 +10,7 @@ All you need to provide is a CSV file containing your data, a list of columns to
 Simple commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
 
 A programmatic API is also available in order to use Ludwig from your python code.
-A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
+A suite of visualization tools allows you to analyze and compare models' training and test performance.
 
 Ludwig is built with extensibility principles in mind and is based on data type abstractions, making it easy to add support for new data types as well as new model architectures.
 
