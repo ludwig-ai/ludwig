@@ -216,7 +216,7 @@ Extensibility
 =============
 
 Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes which contain functions to preprocess the data, encode it, and decode it.
+It is easy to add additional datatypes by adding a datatype-specific implementation of abstract classes which contain functions to preprocess, encode, and decode the data.
 
 Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
