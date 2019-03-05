@@ -10,7 +10,7 @@ All you need to provide is a CSV file containing your data, a list of columns to
 Simple commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
 
 A programmatic API is also available in order to use Ludwig from your python code.
-A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
+A suite of visualization tools allows you to analyze and compare models' training and test performance.
 
 Ludwig is built with extensibility principles in mind and is based on data type abstractions, making it easy to add support for new data types as well as new model architectures.
 
@@ -216,7 +216,7 @@ Extensibility
 =============
 
 Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes which contain functions to preprocess the data, encode it, and decode it.
+It is easy to add additional datatypes by adding a datatype-specific implementation of abstract classes which contain functions to preprocess, encode, and decode the data.
 
 Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
