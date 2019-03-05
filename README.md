@@ -60,7 +60,7 @@ You may want to use a virtual environment to maintain an isolated [Python enviro
 In order to install Ludwig just run:
 
 ```
-pip install ludwig
+pip3 install ludwig
 python -m spacy download en
 ```
 
@@ -71,7 +71,7 @@ git clone git@github.com:uber/ludwig.git
 cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 python -m spacy download en
 python setup.py install
 ```
