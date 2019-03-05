@@ -58,12 +58,12 @@ class ImageBaseFeature(BaseFeature):
             preprocessing_parameters
     ):
         set_default_value(
-            feature, 
-            'in_memory', 
+            feature,
+            'in_memory',
             preprocessing_parameters['in_memory']
         )
 
-        if ('height' in preprocessing_parameters or 
+        if ('height' in preprocessing_parameters or
                 'width' in preprocessing_parameters):
             feature['should_resize'] = True
             try:
@@ -74,20 +74,19 @@ class ImageBaseFeature(BaseFeature):
                     'Image height and width must be set and have '
                     'positive integer values: ' + str(e)
                 )
-            if (preprocessing_parameters[HEIGHT] <= 0 or 
+            if (preprocessing_parameters[HEIGHT] <= 0 or
                     preprocessing_parameters[WIDTH] <= 0):
                 raise ValueError(
                     'Image height and width must be positive integers'
                 )
-            feature['should_resize'] = True
-            set_default_value(
-                preprocessing_parameters, 
-                'resize_method', 
-                'crop_or_pad'
-            )
+            if 'resize_method' in preprocessing_parameters:
+                feature['resize_method'] = (
+                    preprocessing_parameters['resize_method']
+                )
+            else:
+                feature['resize_method'] = 'crop_or_pad'
         else:
             feature['should_resize'] = False
-
 
         csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
 
@@ -130,7 +129,7 @@ class ImageBaseFeature(BaseFeature):
                     img = resize_image(
                         img,
                         (im_height, im_width),
-                        preprocessing_parameters['resize_method']
+                        feature['resize_method']
                     )
                 data[feature['name']][i, :, :, :] = img
         else:
@@ -156,7 +155,7 @@ class ImageBaseFeature(BaseFeature):
                         img = resize_image(
                             img,
                             (im_height, im_width),
-                            preprocessing_parameters['resize_method'],
+                            feature['resize_method'],
                         )
 
                     image_dataset[i, :im_height, :im_width, :] = img
