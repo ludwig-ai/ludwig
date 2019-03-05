@@ -167,7 +167,7 @@ To resume training using the latest weights and the whole history of progress so
 You can avoid saving the latest weights and the overall progress so far by using the argument `--skip_save_progress`, but you will not be able to resume it afterwards.
 Another available option is to load a previously trained model as an initialization for a new training process.
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
-It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the `--model_resume_path` argument.
+It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the `--model_load_path` argument.
 
 You can specify a random sed to be used by the python environment, python random package, numpy and TensorFlow with the `--random_seed` argument.
 This is useful for reproducibility.
@@ -556,7 +556,7 @@ Data Preprocessing
 
 Ludwig data preprocessing maps raw data coming in CSV format into an HDF5 file containing tensors and a JSON file containing mappings from strings to tensors when needed.
 This mapping is performed when a CSV is provided as input and both HDF5 and JSON files are saved in the same directory as the input CSV, unless the argument `--skip_save_processed_input` is used (both in `train` and `experiment` commands).
-The reason to save those files is both to provide a cache and avoid performing the preprocessing again (as, depepnding on the type of features involved, it could be time consuming) and to provide the needed mappings to be able to map unseen data into tensors.
+The reason to save those files is both to provide a cache and avoid performing the preprocessing again (as, depending on the type of features involved, it could be time consuming) and to provide the needed mappings to be able to map unseen data into tensors.
 
 The preprocessing process is personalizable to fit the specifics of your data format, but the basic assumption is always that your CSV files contains one row for each datapoint and one column for each feature (either input or output), and that you are able to determine the type of that column among the ones supported by Ludwig.
 The reason for that is that each data type is mapped into tensors in a different way and expects the content to be formatted in a specific way.
@@ -621,7 +621,7 @@ No additional information about them is available in the JSON metadata file.
 `Numerical` features are directly transformed into a float valued vector of length `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 No additional information about them is available in the JSON metadata file.
 
-`Category` features are transformed into into an integer valued vector of size `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Category` features are transformed into an integer valued vector of size `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way categories are mapped into integers consists in first collecting a dictionary of all the different category strings present in the column of the CSV, then rank them by frequency and then assign them an increasing integer ID from the most frequent to the most rare (with 0 being assigned to a `<UNK>` token).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
@@ -630,7 +630,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the size of the set of all tokens (`vocab_size`)
 4. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)
 
-`Set` features are transformed into into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Set` features are transformed into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -642,7 +642,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 
 `Bag` features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).
 
-`Sequence` features are transformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Sequence` features are transformed into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -660,7 +660,7 @@ In the model definition you are able to specify which level of representation to
 `Timeseries` features are treated in the same way of sequence features, with the only difference being that the matrix in the HDF5 file does not have integer values, but float values.
 Moreover, there is no need for any mapping in the JSON file.
 
-`Image` features are transformed into into a int8 valued tensor of size `n x h x w x c` (where `n` is the size of the dataset and `h x w` is a specific resizing of the image that can be set, and `c` is the number of color channels) and added to HDF5 with a key that reflects the name of column in the CSV.
+`Image` features are transformed into a int8 valued tensor of size `n x h x w x c` (where `n` is the size of the dataset and `h x w` is a specific resizing of the image that can be set, and `c` is the number of color channels) and added to HDF5 with a key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.
 
 CSV Format
@@ -1070,7 +1070,7 @@ Category Features
 
 ### Category Features Preprocessing
 
-Category features are transformed into into an integer valued vector of size `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+Category features are transformed into an integer valued vector of size `n` (where `n` is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way categories are mapped into integers consists in first collecting a dictionary of all the different category strings present in the column of the CSV, then rank them by frequency and then assign them an increasing integer ID from the most frequent to the most rare (with 0 being assigned to a `<UNK>` token).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
@@ -1205,7 +1205,7 @@ Set Features
 
 ### Set Features Preprocessing
 
-Set features are transformed into into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+Set features are transformed into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -1355,7 +1355,7 @@ Sequence Features
 
 ### Sequence Features Preprocessing
 
-Sequence features are transformed into into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+Sequence features are transformed into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
