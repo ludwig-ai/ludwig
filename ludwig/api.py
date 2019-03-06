@@ -69,8 +69,8 @@ class LudwigModel:
 
     :param model_definition: (dict) a dictionary containing information needed
            to build a model. Refer to the [User Guide]
-           (http://ludwig.ai/user-guide/m#model-definition) for details.
-    :param model_definition_file: (string, optional, default: `Mone`) path to
+           (http://ludwig.ai/user_guide/#model-definition) for details.
+    :param model_definition_file: (string, optional, default: `None`) path to
            a YAML file containing the model definition. If available it will be
            used instead of the model_definition dict.
     :param logging_level: (int, default: `logging.ERROR`) logging level to use
