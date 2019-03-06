@@ -78,7 +78,18 @@ def learning_curves_plot(train_values, vali_values, metric, algorithm_names=None
 
     ax.legend()
     plt.tight_layout()
-    plt.show()
+    plt.show();
+
+    fig = plt.figure()
+    figure_name = '/Figure_name_' + str(figure_counter) + '.png'  # Define Image's name
+    figure_counter += 1
+    print(figure_counter)
+    fig.savefig(figure_name) # Save image
+    display(Image(figure_name))
+    # mpimg.imread(figure_name) # Open image
+    # print('Testing2')
+
+
 
 
 def compare_classifiers_plot(scores, metrics, algoritm_names=None,
