@@ -141,7 +141,7 @@ class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
 
     def _get_input_placeholder(self):
         return tf.placeholder(
-            tf.int32, shape=[None, self.length],
+            tf.float32, shape=[None, self.length],
             name='{}_placeholder'.format(self.name)
         )
 
