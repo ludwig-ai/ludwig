@@ -16,8 +16,8 @@ __Inputs__
 
 - __model_definition__ (dict): a dictionary containing information needed
    to build a model. Refer to the [User Guide]
-   (http://ludwig.ai/user-guide/m#model-definition) for details.
-- __model_definition_file__ (string, optional, default: `Mone`): path to
+   (http://ludwig.ai/user_guide/#model-definition) for details.
+- __model_definition_file__ (string, optional, default: `None`): path to
    a YAML file containing the model definition. If available it will be
    used instead of the model_definition dict.
 - __logging_level__ (int, default: `logging.ERROR`): logging level to use
