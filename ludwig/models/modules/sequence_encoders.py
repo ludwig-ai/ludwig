@@ -26,6 +26,56 @@ from ludwig.models.modules.recurrent_modules import RecurrentStack
 from ludwig.models.modules.recurrent_modules import reduce_sequence
 
 
+class PassthroughEncoder:
+
+    def __init__(
+            self,
+            reduce_output=None,
+            **kwargs
+    ):
+        """
+            :param reduce_output: defines how to reduce the output tensor along
+                   the `s` sequence length dimention if the rank of the tensor
+                   is greater than 2. Available values are: `sum`,
+                   `mean` or `avg`, `max`, `concat` (concatenates along
+                   the first dimension), `last` (returns the last vector of the
+                   first dimension) and `None` or `null` (which does not reduce
+                   and returns the full tensor).
+            :type reduce_output: str
+        """
+        self.reduce_output = reduce_output
+
+    def __call__(
+            self,
+            input_sequence,
+            regularizer,
+            dropout_rate,
+            is_training=True
+    ):
+        """
+            :param input_sequence: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int32
+            :type input_sequence: Tensor
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+            :param is_training: Tesnor (tf.bool) specifying if in training mode
+                   (important for dropout)
+            :type is_training: Tensor
+        """
+        input_sequence = tf.cast(input_sequence, tf.float32)
+        while len(input_sequence.shape) < 3:
+            input_sequence = tf.expand_dims(
+                input_sequence, -1)
+        hidden_size = input_sequence.shape[-1]
+
+        hidden = reduce_sequence(input_sequence, self.reduce_output)
+
+        return hidden, hidden_size
+
+
 class EmbedEncoder:
 
     def __init__(
