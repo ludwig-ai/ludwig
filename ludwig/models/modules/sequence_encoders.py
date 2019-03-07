@@ -69,7 +69,7 @@ class PassthroughEncoder:
         while len(input_sequence.shape) < 3:
             input_sequence = tf.expand_dims(
                 input_sequence, -1)
-        hidden_size = input_sequence.shape()[-1]
+        hidden_size = input_sequence.shape[-1]
 
         hidden = reduce_sequence(input_sequence, self.reduce_output)
 
