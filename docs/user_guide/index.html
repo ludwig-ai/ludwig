@@ -3082,6 +3082,13 @@ In the decoder of <code>fine_class</code>, the 64 dimensional vector of <code>co
 <p>These are the available training parameters:</p>
 <ul>
 <li><code>batch_size</code> (default <code>128</code>): size of the batch used for training the model.</li>
+    <li><code>eval_batch_size</code> (default <code>0</code>): size of the batch used for evaluating the model. If it is
+        <code>0</code>, the same value of <code>batch_size</code> is used. This is usefult to speedup evaluation with a
+        much bigger batch size than reaining, if enough memory is available, or to decrease the batch size when <code>sampled_softmax_cross_entropy</code>
+        is used as loss for sequential and categorical features with big vocabulary sizes (evaluation needs to be
+        performed on the full vocabulary, so a much smaller batch size may be needed to fit the activation tensors in
+        memory).
+    </li>
 <li><code>epochs</code> (default <code>100</code>): number of epochs the training process will run for.</li>
 <li><code>early_stop</code> (default <code>5</code>): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.</li>
 <li><code>optimizer</code> (default <code>{type: adam, beta1: 0.9, beta2: 0.999, epsilon: 1e-08}</code>): which optimizer to use with the relative parameters. The available optimizers are: <code>sgd</code> (or <code>stochastic_gradient_descent</code>, <code>gd</code>, <code>gradient_descent</code>, they are all the same), <code>adam</code>, <code>adadelta</code>, <code>adagrad</code>, <code>adagradda</code>, <code>momentum</code>, <code>ftrl</code>, <code>proximalgd</code>, <code>proximaladagrad</code>, <code>rmsprop</code>. To know their parameters check <a href="https://www.tensorflow.org/api_docs/python/tf/keras/optimizers">TensorFlow's optimizer documentation</a>.</li>
