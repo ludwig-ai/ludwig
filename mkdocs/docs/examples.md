@@ -130,7 +130,7 @@ With `model_definition.yaml`:
 input_features:
     -
         name: english
-        type: sequence
+        type: text
         encoder: rnn
         cell_type: lstm
         reduce_output: null
@@ -138,10 +138,15 @@ input_features:
 output_features:
     -
         name: italian
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
         attention: bahdanau
+        loss:
+            type: sampled_softmax_cross_entropy
+
+training:
+    batch_size: 96
 ```
 
 
@@ -166,7 +171,7 @@ With `model_definition.yaml`:
 input_features:
     -
         name: user1
-        type: sequence
+        type: text
         encoder: rnn
         cell_type: lstm
         reduce_output: null
@@ -174,10 +179,15 @@ input_features:
 output_features:
     -
         name: user2
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
         attention: bahdanau
+        loss:
+            type: sampled_softmax_cross_entropy
+
+training:
+    batch_size: 96
 ```
 
 
@@ -270,7 +280,7 @@ input_features:
 output_features:
     -
         name: caption
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
 ```
@@ -350,9 +360,11 @@ input_features:
 output_features:
     -
         name: answer
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
+        loss:
+            type: sampled_softmax_cross_entropy
 ```
 
 
@@ -530,7 +542,7 @@ This example is inspired by the classic paper [Natural Language Processing (Almo
 input_features:
     -
         name: sentence
-        type: text
+        type: sequence
         encoder: rnn
         cell: lstm
         bidirectional: true
