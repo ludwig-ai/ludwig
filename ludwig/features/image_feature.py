@@ -20,7 +20,6 @@ import os
 import h5py
 import numpy as np
 import tensorflow as tf
-
 from skimage.io import imread
 
 from ludwig.constants import *
@@ -40,7 +39,8 @@ class ImageBaseFeature(BaseFeature):
 
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
-        'in_memory': True
+        'in_memory': True,
+        'resize_method': 'crop_or_pad'
     }
 
     @staticmethod
@@ -65,56 +65,58 @@ class ImageBaseFeature(BaseFeature):
 
         if ('height' in preprocessing_parameters or
                 'width' in preprocessing_parameters):
-            feature['should_resize'] = True
+            should_resize = True
             try:
-                feature[HEIGHT] = int(preprocessing_parameters[HEIGHT])
-                feature[WIDTH] = int(preprocessing_parameters[WIDTH])
+                provided_height = int(preprocessing_parameters[HEIGHT])
+                provided_width = int(preprocessing_parameters[WIDTH])
             except ValueError as e:
                 raise ValueError(
                     'Image height and width must be set and have '
                     'positive integer values: ' + str(e)
                 )
-            if (preprocessing_parameters[HEIGHT] <= 0 or
-                    preprocessing_parameters[WIDTH] <= 0):
+            if (provided_height <= 0 or provided_width <= 0):
                 raise ValueError(
                     'Image height and width must be positive integers'
                 )
-            if 'resize_method' in preprocessing_parameters:
-                feature['resize_method'] = (
-                    preprocessing_parameters['resize_method']
-                )
-            else:
-                feature['resize_method'] = 'crop_or_pad'
         else:
-            feature['should_resize'] = False
+            should_resize = False
 
         csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
 
-        an_image = imread(
-            os.path.join(csv_path, dataset_df[feature['name']][0])
-        )
-        im_height = an_image.shape[0]
-        im_width = an_image.shape[1]
-
-        if an_image.ndim == 2:
-            num_channels = 1
-        else:
-            num_channels = an_image.shape[2]
-
         num_images = len(dataset_df)
 
-        if feature['should_resize']:
-            im_height = feature[HEIGHT]
-            im_width = feature[WIDTH]
+        height = 0
+        width = 0
+        num_channels = 1
 
-        metadata[feature['name']]['preprocessing']['height'] = im_height
-        metadata[feature['name']]['preprocessing']['width'] = im_width
+        if num_images > 0:
+            # here if a width and height have not been specified
+            # we assume that all images have the same wifth and im_height
+            # thus the width and height of the first one are the same
+            # of all the other ones
+            first_image = imread(
+                os.path.join(csv_path, dataset_df[feature['name']][0])
+            )
+            height = first_image.shape[0]
+            width = first_image.shape[1]
+
+            if first_image.ndim == 2:
+                num_channels = 1
+            else:
+                num_channels = first_image.shape[2]
+
+        if should_resize:
+            height = provided_height
+            width = provided_width
+
+        metadata[feature['name']]['preprocessing']['height'] = height
+        metadata[feature['name']]['preprocessing']['width'] = width
         metadata[feature['name']]['preprocessing'][
             'num_channels'] = num_channels
 
         if feature['in_memory']:
             data[feature['name']] = np.empty(
-                (num_images, im_height, im_width, num_channels),
+                (num_images, height, width, num_channels),
                 dtype=np.int8
             )
             for i in range(len(dataset_df)):
@@ -125,11 +127,11 @@ class ImageBaseFeature(BaseFeature):
                 img = imread(filename)
                 if img.ndim == 2:
                     img = img.reshape((img.shape[0], img.shape[1], 1))
-                if feature['should_resize']:
+                if should_resize:
                     img = resize_image(
                         img,
-                        (im_height, im_width),
-                        feature['resize_method']
+                        (height, width),
+                        preprocessing_parameters['resize_method']
                     )
                 data[feature['name']][i, :, :, :] = img
         else:
@@ -140,7 +142,7 @@ class ImageBaseFeature(BaseFeature):
             with h5py.File(data_fp, mode) as h5_file:
                 image_dataset = h5_file.create_dataset(
                     feature['name'] + '_data',
-                    (num_images, im_height, im_width, num_channels),
+                    (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
                 for i in range(len(dataset_df)):
@@ -151,14 +153,14 @@ class ImageBaseFeature(BaseFeature):
                     img = imread(filename)
                     if img.ndim == 2:
                         img = img.reshape((img.shape[0], img.shape[1], 1))
-                    if feature['should_resize']:
+                    if should_resize:
                         img = resize_image(
                             img,
-                            (im_height, im_width),
+                            (height, width),
                             feature['resize_method'],
                         )
 
-                    image_dataset[i, :im_height, :im_width, :] = img
+                    image_dataset[i, :height, :width, :] = img
 
             data[feature['name']] = np.arange(num_images)
 
@@ -166,8 +168,6 @@ class ImageBaseFeature(BaseFeature):
 class ImageInputFeature(ImageBaseFeature, InputFeature):
     def __init__(self, feature):
         super().__init__(feature)
-
-        self.should_resize = False
 
         self.height = 0
         self.width = 0
