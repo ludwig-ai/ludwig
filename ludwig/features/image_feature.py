@@ -157,7 +157,7 @@ class ImageBaseFeature(BaseFeature):
                         img = resize_image(
                             img,
                             (height, width),
-                            feature['resize_method'],
+                            preprocessing_parameters['resize_method'],
                         )
 
                     image_dataset[i, :height, :width, :] = img
