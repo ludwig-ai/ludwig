@@ -236,9 +236,9 @@ def test_experiment_image_inputs(csv_filename):
         "[{type: text, name: random_text, vocab_size: 100,"
         " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
         " name: random_number}, "
-        "{type: image, name: random_image, width: 10, in_memory: ${in_memory},"
-        " height: 10, num_channels: 3, encoder: ${encoder},"
-        " resnet_size: 8, destination_folder: ${folder}}]")
+        "{type: image, name: random_image, encoder: ${encoder},"
+        "preprocessing: {in_memory: ${in_memory}, height: 10, width: 10, "
+        "num_channels: 3}, resnet_size: 8, destination_folder: ${folder}}]")
 
     # Resnet encoder
     input_features = input_features_template.substitute(
@@ -431,9 +431,9 @@ def test_movie_rating_prediction(csv_filename):
 def test_example_with_set_output(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features_template = Template(
-        '[{name: image_path, type: image, encoder: ${encoder}, width: 10, '
-        'height: 10, num_channels: 3, resnet_size: 8, destination_folder: '
-        '${folder}}]')
+        '[{name: image_path, type: image, encoder: ${encoder}, preprocessing: '
+        '{width: 10, height: 10, num_channels: 3}, resnet_size: 8, '
+        'destination_folder: ${folder}}]')
 
     output_features = "[ {name: tags, type: set, max_len: 5, vocab_size: 10}]"
 
@@ -456,10 +456,11 @@ def test_example_with_set_output(csv_filename):
 def test_visual_question_answering(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features = Template(
-        '[{name: image_path, type: image, encoder: stacked_cnn, width: 10, '
-        'height: 10, num_channels: 3, resnet_size: 8, destination_folder: '
-        '${folder}}, {name: question, type: text, vocab_size: 20, max_len: 10,'
-        'encoder: parallel_cnn, level: word}]').substitute(
+        '[{name: image_path, type: image, encoder: stacked_cnn, preprocessing:'
+        ' {width: 10, height: 10, num_channels: 3}, resnet_size: 8, '
+        'destination_folder: ${folder}}, {name: question, type: text, '
+        'vocab_size: 20, max_len: 10,encoder: parallel_cnn, '
+        'level: word}]').substitute(
         folder=image_dest_folder)
 
     output_features = "[ {name: answer, type: sequence, max_len: 5, " \

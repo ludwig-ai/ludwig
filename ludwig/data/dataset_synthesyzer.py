@@ -169,9 +169,9 @@ def generate_timeseries(feature):
 
 def generate_image(feature):
     # Read num_channels, width, height
-    num_channels = feature['num_channels']
-    width = feature['width']
-    height = feature['height']
+    num_channels = feature['preprocessing']['num_channels']
+    width = feature['preprocessing']['width']
+    height = feature['preprocessing']['height']
     image_dest_folder = feature['destination_folder']
 
     if width <= 0 or height <= 0 or num_channels < 1:
