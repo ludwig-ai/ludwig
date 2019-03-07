@@ -99,8 +99,8 @@ def save_hdf5(data_fp, data, metadata=None):
         for key, value in data.items():
             dataset = h5_file.create_dataset(key, data=value)
             if key in metadata:
-                if 'in_memory' in metadata[key]:
-                    if metadata[key]['in_memory']:
+                if 'in_memory' in metadata[key]['preprocessing']:
+                    if metadata[key]['preprocessing']['in_memory']:
                         dataset.attrs['in_memory'] = True
                     else:
                         dataset.attrs['in_memory'] = False
