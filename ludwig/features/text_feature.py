@@ -375,10 +375,10 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
                 )
 
         if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
-            output_feature[LOSS]['class_counts'] = [(
+            output_feature[LOSS]['class_counts'] = [
                 feature_metadata['str2freq'][cls]
                 for cls in feature_metadata['idx2str']
-            )]
+            ]
 
     @staticmethod
     def calculate_overall_stats(
