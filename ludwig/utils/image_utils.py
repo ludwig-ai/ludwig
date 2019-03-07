@@ -17,8 +17,8 @@
 from math import floor, ceil
 
 import numpy as np
-from skimage.transform import resize
 from skimage import img_as_ubyte
+from skimage.transform import resize
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 
@@ -57,8 +57,10 @@ def crop_or_pad(img, new_size_tuple):
 
 
 def resize_image(img, new_size_typle, resize_method):
-    if resize_method == CROP_OR_PAD:
-        return crop_or_pad(img, new_size_typle)
-    elif resize_method == INTERPOLATE:
-        return img_as_ubyte(resize(img, new_size_typle))
-    raise ValueError('Invalid image resize method: {}'.format(resize_method))
+    if tuple(img.shape[:2]) != new_size_typle:
+        if resize_method == CROP_OR_PAD:
+            return crop_or_pad(img, new_size_typle)
+        elif resize_method == INTERPOLATE:
+            return img_as_ubyte(resize(img, new_size_typle))
+        raise ValueError(
+            'Invalid image resize method: {}'.format(resize_method))
