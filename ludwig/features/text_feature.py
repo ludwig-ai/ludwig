@@ -375,9 +375,11 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
                 )
 
         if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+            level_str2freq = '{}_str2freq'.format(output_feature['level'])
+            level_idx2str = '{}_idx2str'.format(output_feature['level'])
             output_feature[LOSS]['class_counts'] = [
-                feature_metadata['str2freq'][cls]
-                for cls in feature_metadata['idx2str']
+                feature_metadata[level_str2freq][cls]
+                for cls in feature_metadata[level_idx2str]
             ]
 
     @staticmethod
@@ -475,21 +477,50 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
+        set_default_value(output_feature, 'level', 'word')
+
         set_default_value(
             output_feature,
             LOSS,
             {
-                'weight': 1,
                 'type': 'softmax_cross_entropy',
+                'sampler': None,
+                'negative_samples': 0,
+                'distortion': 1,
+                'labels_smoothing': 0,
                 'class_weights': 1,
+                'robust_lambda': 0,
+                'confidence_penalty': 0,
                 'class_distance_temperature': 0,
+                'weight': 1
             }
         )
-        set_default_value(output_feature, 'level', 'char')
+        set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
+        set_default_value(output_feature[LOSS], 'labels_smoothing', 0)
+        set_default_value(output_feature[LOSS], 'class_weights', 1)
+        set_default_value(output_feature[LOSS], 'robust_lambda', 0)
+        set_default_value(output_feature[LOSS], 'confidence_penalty', 0)
+        set_default_value(output_feature[LOSS], 'class_distance_temperature', 0)
+        set_default_value(output_feature[LOSS], 'weight', 1)
+        set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
+
+        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+            set_default_value(output_feature[LOSS], 'sampler', 'log_uniform')
+            set_default_value(output_feature[LOSS], 'negative_samples', 25)
+            set_default_value(output_feature[LOSS], 'distortion', 0.75)
+        else:
+            set_default_value(output_feature[LOSS], 'sampler', None)
+            set_default_value(output_feature[LOSS], 'negative_samples', 0)
+            set_default_value(output_feature[LOSS], 'distortion', 1)
+
+        set_default_value(output_feature[LOSS], 'unique', False)
+        set_default_value(output_feature[LOSS], 'weight', 1)
+
         set_default_value(output_feature, 'decoder', 'generator')
+
         if output_feature['decoder'] == 'tagger':
             set_default_value(output_feature, 'reduce_input', None)
+
         set_default_value(output_feature, 'dependencies', [])
-        set_default_value(output_feature, 'weight', 1)
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
