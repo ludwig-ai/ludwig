@@ -353,7 +353,7 @@ def experiment(
             train_set_metadata,
             model,
             model_definition,
-            model_definition['training']['batch_size'],
+            model_definition['training']['eval_batch_size'],
             only_predictions=False,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
