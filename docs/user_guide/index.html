@@ -3084,7 +3084,7 @@ In the decoder of <code>fine_class</code>, the 64 dimensional vector of <code>co
 <li><code>batch_size</code> (default <code>128</code>): size of the batch used for training the model.</li>
     <li><code>eval_batch_size</code> (default <code>0</code>): size of the batch used for evaluating the model. If it is
         <code>0</code>, the same value of <code>batch_size</code> is used. This is usefult to speedup evaluation with a
-        much bigger batch size than reaining, if enough memory is available, or to decrease the batch size when <code>sampled_softmax_cross_entropy</code>
+        much bigger batch size than training, if enough memory is available, or to decrease the batch size when <code>sampled_softmax_cross_entropy</code>
         is used as loss for sequential and categorical features with big vocabulary sizes (evaluation needs to be
         performed on the full vocabulary, so a much smaller batch size may be needed to fit the activation tensors in
         memory).
