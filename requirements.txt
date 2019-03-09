@@ -11,6 +11,6 @@ spacy>=2.0
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.0.0/en_core_web_sm-2.0.0.tar.gz
 tqdm
 tabulate>=0.7
-tensorflow>=1.12.0
+tensorflow==1.12.0
 PyYAML>=3.12
 pytest
