@@ -161,19 +161,22 @@ def _perform_sanity_checks(model_definition):
     if 'training' in model_definition:
         assert isinstance(model_definition['training'], dict), (
             'There is an issue while reading the training section of the ' 
-            'model definition. Please check your model definition format.'
+            'model definition. The parameters are expected to be'
+            'read as a dictionary. Please check your model definition format.'
         )
 
     if 'preprocessing' in model_definition:
         assert isinstance(model_definition['preprocessing'], dict), (
             'There is an issue while reading the preprocessing section of the ' 
-            'model definition. Please check your model definition format.'
+            'model definition. The parameters are expected to be read'
+            'as a dictionary. Please check your model definition format.'
         )
 
     if 'combiner' in model_definition:
         assert isinstance(model_definition['combiner'], dict), (
             'There is an issue while reading the combiner section of the ' 
-            'model definition. Please check your model definition format.'
+            'model definition. The parameters are expected to be read'
+            'as a dictionary. Please check your model definition format.'
         )
 
 
