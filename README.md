@@ -67,7 +67,7 @@ python -m spacy download en
 or install it by building the source code from the repository:
 
 ```
-git clone git@github.com:uber/ludwig.git
+git clone https://github.com/uber/ludwig.git
 cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate
