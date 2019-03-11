@@ -235,7 +235,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         for dim in ['height', 'width', 'num_channels']:
             input_feature[dim] = feature_metadata['preprocessing'][dim]
         input_feature['data_hdf5_fp'] = (
-            kwargs['model_definition']['data_hdf5_fp']
+            kwargs['model_definition'].get('data_hdf5_fp', None)
         )
 
     @staticmethod
