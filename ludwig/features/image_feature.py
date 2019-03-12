@@ -174,7 +174,6 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         self.num_channels = 0
 
         self.in_memory = True
-        self.data_hdf5_fp = ''
 
         self.encoder = 'stacked_cnn'
 
@@ -234,9 +233,6 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
     ):
         for dim in ['height', 'width', 'num_channels']:
             input_feature[dim] = feature_metadata['preprocessing'][dim]
-        input_feature['data_hdf5_fp'] = (
-            kwargs['model_definition']['data_hdf5_fp']
-        )
 
     @staticmethod
     def populate_defaults(input_feature):
