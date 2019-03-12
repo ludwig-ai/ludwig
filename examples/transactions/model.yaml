@@ -1,0 +1,47 @@
+input_features:
+
+  -
+    name: customer_id
+    type: category
+    encoder: embed
+
+  -
+    name: merchant_category
+    type: sequence
+    encoder: embed
+    reduce_output: null
+
+  -
+    name: merchant_category
+    type: sequence
+    encoder: embed
+    reduce_output: null
+
+  -
+    name: merchant_zipcode
+    type: sequence
+    encoder: embed
+    reduce_output: null
+
+  -
+    name: transaction_amount
+    type: timeseries
+    encoder: none
+    reduce_output: null
+
+
+combiner:
+  type: sequence
+  main_sequence_feature: merchant_category
+  encoder: rnn
+
+
+
+output_features:
+  -
+    name: fraud_label
+    type: binary
+
+
+
+

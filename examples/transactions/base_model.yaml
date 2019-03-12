@@ -1,0 +1,43 @@
+input_features:
+  -
+    name: customer_id
+    type: category
+    encoder: embedding
+
+  -
+    name: merchant_category
+    type: category
+    encoder: embedding
+
+  -
+    name: merchant_id
+    type: category
+    emcoder: embedding
+
+  -
+    name: merchant_zipcode
+    type: category
+    encoder: embedding
+
+  -
+    name: transaction_amount
+    type: numerical
+
+
+
+
+
+combiner:
+    type: concat
+    num_fc_layers: 1
+    fc_size: 48
+
+
+output_features:
+  -
+    name: fraud_label
+    type: binary
+
+
+
+
