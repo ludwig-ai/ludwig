@@ -26,6 +26,7 @@ import yaml
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
 from ludwig.experiment import experiment
 from ludwig.predict import full_predict
+from ludwig.data.concatenate_datasets import concatenate_df
 
 encoders = ['embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
             'stacked_cnn']
@@ -468,6 +469,77 @@ def test_visual_question_answering(csv_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, rel_path)
+
+    # Delete the temporary data created
+    all_images = glob.glob(os.path.join(image_dest_folder, '*.jpg'))
+    for im in all_images:
+        os.remove(im)
+
+    os.rmdir(image_dest_folder)
+
+
+def test_image_resizing_num_channel_handling(csv_filename):
+    # Image Inputs
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    input_features_template = Template(
+        "[{type: text, name: random_text, vocab_size: 100,"
+        " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
+        " name: random_number}, "
+        "{type: image, name: random_image, encoder: ${encoder}, preprocessing:"
+        " {width: 10, in_memory: ${in_memory},"
+        " height: 10, num_channels: 3},"
+        " resnet_size: 8, destination_folder: ${folder}}]")
+
+    # Resnet encoder
+    input_features = input_features_template.substitute(
+        encoder='resnet',
+        folder=image_dest_folder,
+        in_memory='true',
+    )
+    output_features = "[{type: binary, name: intent, reduce_input: sum}, " \
+                      "{type: numerical, name: random_num_output}]"
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    df1 = pd.read_csv(rel_path)
+
+    input_features_template = Template(
+        "[{type: text, name: random_text, vocab_size: 100,"
+        " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
+        " name: random_number}, "
+        "{type: image, name: random_image, preprocessing: {width: 10,"
+        " in_memory: ${in_memory}, height: 10, num_channels: 1},"
+        " encoder: ${encoder},"
+        " resnet_size: 8, destination_folder: ${folder}}]")
+
+    input_features = input_features_template.substitute(
+        encoder='resnet',
+        folder=image_dest_folder,
+        in_memory='true',
+    )
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    df2 = pd.read_csv(rel_path)
+
+    df = concatenate_df(df1, df2, None)
+    df.to_csv(rel_path, index=False)
+
+    run_experiment(input_features, output_features, rel_path)
+
+    input_features_template = Template(
+        "[{type: text, name: random_text, vocab_size: 100,"
+        " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
+        " name: random_number}, "
+        "{type: image, name: random_image, preprocessing: {width: 10, "
+        "in_memory: ${in_memory}, height: 10} , encoder: ${encoder},"
+        " resnet_size: 8, destination_folder: ${folder}}]")
+
+    input_features = input_features_template.substitute(
+        encoder='resnet',
+        folder=image_dest_folder,
+        in_memory='true',
+    )
+    with pytest.raises(ValueError):
+        run_experiment(input_features, output_features, rel_path)
 
     # Delete the temporary data created
     all_images = glob.glob(os.path.join(image_dest_folder, '*.jpg'))

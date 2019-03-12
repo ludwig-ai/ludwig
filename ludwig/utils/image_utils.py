@@ -20,6 +20,7 @@ import os
 import numpy as np
 from skimage import img_as_ubyte
 from skimage.transform import resize
+from skimage.io import imread
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 
@@ -73,3 +74,10 @@ def get_abs_path(data_csv_path, image_path):
         return os.path.join(data_csv_path, image_path)
     else:
         return image_path
+
+
+def num_channels_in_image(img):
+    if img.ndim == 2:
+        return 1
+    else:
+        return img.shape[2]
