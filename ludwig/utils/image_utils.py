@@ -64,3 +64,4 @@ def resize_image(img, new_size_typle, resize_method):
             return img_as_ubyte(resize(img, new_size_typle))
         raise ValueError(
             'Invalid image resize method: {}'.format(resize_method))
+    return img
