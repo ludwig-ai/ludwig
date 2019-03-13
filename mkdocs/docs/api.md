@@ -138,6 +138,7 @@ __Inputs__
 
 ```python
 load(
+  model_dir,
   logging_level=40
 )
 ```
@@ -439,7 +440,7 @@ __Inputs__
 - __model_resume_path__ (string): path of a the model directory to
    resume training of
 - __skip_save_model__ (bool, default: `False`): disables
-               saving model weights and hyperparameters each time the model
+   saving model weights and hyperparameters each time the model
    improves. By default Ludwig saves model weights after each epoch
    the validation measure imrpvoes, but if the model is really big
    that can be time consuming if you do not want to keep
