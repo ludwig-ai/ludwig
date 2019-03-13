@@ -291,7 +291,7 @@ One-shot Learning with Siamese Networks
 
 This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset. The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
 
-| image_1                          |   image_2                        | similarity |
+| image_path_1                     |   image_path_2                   | similarity |
 |----------------------------------|----------------------------------|------------|
 | balinese/character01/0108_13.png | balinese/character01/0108_18.png | 1          |
 | balinese/character01/0108_13.png | balinese/character08/0115_12.png | 0          |
@@ -309,14 +309,14 @@ With `model_definition.yaml`:
 ```yaml
 input_features:
     -
-        name: image_1
+        name: image_path_1
         type: image
         encoder: stacked_cnn
         resize_image: true
         width: 28
         height: 28
     -
-        name: image_2
+        name: image_path_2
         type: image
         encoder: stacked_cnn
         resize_image: true
