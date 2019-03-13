@@ -347,13 +347,18 @@ def experiment(
 
     
     if test_set is not None:
+        if model_definition['training']['eval_batch_size'] > 0:
+            batch_size = model_definition['training']['eval_batch_size']
+        else:
+            batch_size = model_definition['training']['batch_size']
+
         # predict
         test_results = predict(
             test_set,
             train_set_metadata,
             model,
             model_definition,
-            model_definition['training']['eval_batch_size'],
+            batch_size,
             only_predictions=False,
             gpus=gpus,
             gpu_fraction=gpu_fraction,

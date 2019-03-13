@@ -99,7 +99,7 @@ class LudwigModel:
     train_stats = ludwig_model.train(data_df=dataframe)
     ```
 
-    If you have already trained a model you cal load it and use it to predict
+    If you have already trained a model you can load it and use it to predict
 
     ```python
     ludwig_model = LudwigModel.load(model_dir)
