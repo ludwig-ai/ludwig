@@ -18,7 +18,7 @@ from abc import ABC, abstractmethod
 import tensorflow as tf
 
 from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.recurrent_modules import reduce_sequence
+from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.utils.misc import merge_dict
 from ludwig.utils.tf_utils import sequence_length_3D
 
