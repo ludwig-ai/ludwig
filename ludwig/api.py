@@ -69,8 +69,8 @@ class LudwigModel:
 
     :param model_definition: (dict) a dictionary containing information needed
            to build a model. Refer to the [User Guide]
-           (http://ludwig.ai/user-guide/m#model-definition) for details.
-    :param model_definition_file: (string, optional, default: `Mone`) path to
+           (http://ludwig.ai/user_guide/#model-definition) for details.
+    :param model_definition_file: (string, optional, default: `None`) path to
            a YAML file containing the model definition. If available it will be
            used instead of the model_definition dict.
     :param logging_level: (int, default: `logging.ERROR`) logging level to use
@@ -99,7 +99,7 @@ class LudwigModel:
     train_stats = ludwig_model.train(data_df=dataframe)
     ```
 
-    If you have already trained a model you cal load it and use it to predict
+    If you have already trained a model you can load it and use it to predict
 
     ```python
     ludwig_model = LudwigModel.load(model_dir)
@@ -731,7 +731,7 @@ class LudwigModel:
                 'regularization_lambda'
             ]
         if dropout_rate is None:
-            dropout_rate = self.model_definition['training']['dropout'],
+            dropout_rate = self.model_definition['training']['dropout_rate'],
         if bucketing_field is None:
             bucketing_field = self.model_definition['training'][
                 'bucketing_field'

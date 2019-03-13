@@ -34,7 +34,7 @@ from ludwig.models.modules.measure_modules import masked_accuracy
 from ludwig.models.modules.measure_modules import perplexity
 from ludwig.models.modules.sequence_decoders import Generator
 from ludwig.models.modules.sequence_decoders import Tagger
-from ludwig.models.modules.sequence_encoders import CNNRNN
+from ludwig.models.modules.sequence_encoders import CNNRNN, PassthroughEncoder
 from ludwig.models.modules.sequence_encoders import EmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
@@ -635,10 +635,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 )
 
         if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
-            output_feature[LOSS]['class_counts'] = [(
+            output_feature[LOSS]['class_counts'] = [
                 feature_metadata['str2freq'][cls]
                 for cls in feature_metadata['idx2str']
-            )]
+            ]
 
     @staticmethod
     def calculate_overall_stats(
@@ -785,7 +785,10 @@ sequence_encoder_registry = {
     'stacked_parallel_cnn': StackedParallelCNN,
     'rnn': RNN,
     'cnnrnn': CNNRNN,
-    'embed': EmbedEncoder
+    'embed': EmbedEncoder,
+    'none': PassthroughEncoder,
+    'nNone': PassthroughEncoder,
+    None: PassthroughEncoder
 }
 
 sequence_decoder_registry = {

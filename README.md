@@ -10,13 +10,13 @@ All you need to provide is a CSV file containing your data, a list of columns to
 Simple commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
 
 A programmatic API is also available in order to use Ludwig from your python code.
-A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
+A suite of visualization tools allows you to analyze and compare models' training and test performance.
 
 Ludwig is built with extensibility principles in mind and is based on data type abstractions, making it easy to add support for new data types as well as new model architectures.
 
 It can be used by practitioners to quickly train and test deep learning models as well as by researchers to obtain strong baselines to compare against and have an experimentation setting that ensures comparability by performing standard data preprocessing and visualization.
 
-Ludwig provides a set of model architectures that can be combined together to create an end-to-end model for a given use case. As an analogy, if deep learning libraries provide the building blocks to make your building, Ludwig provides the buildings to make your city, and you can chose among the available buildings or add your own building to the set of available ones.
+Ludwig provides a set of model architectures that can be combined together to create an end-to-end model for a given use case. As an analogy, if deep learning libraries provide the building blocks to make your building, Ludwig provides the buildings to make your city, and you can choose among the available buildings or add your own building to the set of available ones.
 
 The core design principles we baked into the toolbox are:
 - No coding required: no coding skills are required to train a model and use it for obtaining predictions.
@@ -54,8 +54,7 @@ If you don’t have Python 3 installed, install it by running:
 sudo apt install python3  # on ubuntu
 brew install python3      # on mac
 ```
-
-At the time of writing this document, TensorFlow is not compatible with Python 3.7, so the recommended version of Python for Ludwig is 3.6.
+If you are using Python 3.7, you have to use `tensorflow>=1.13.1` as previous versions do not support it.
 You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
 
 In order to install Ludwig just run:
@@ -68,7 +67,7 @@ python -m spacy download en
 or install it by building the source code from the repository:
 
 ```
-git clone git@github.com:uber/ludwig.git
+git clone https://github.com/uber/ludwig.git
 cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate
@@ -150,7 +149,7 @@ After training, Ludwig will create a directory under `results` containing the tr
 You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
 
 ```
-ludwig visualize --visualization learning_curves --statistics path/to//training_statistics.json
+ludwig visualize --visualization learning_curves --training_statistics path/to//training_statistics.json
 ```
 
 The commands will display a graph that looks like the following, where you can see loss and accuracy as functions of train iteration number:
@@ -217,7 +216,7 @@ Extensibility
 =============
 
 Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes which contain functions to preprocess the data, encode it, and decode it.
+It is easy to add additional datatypes by adding a datatype-specific implementation of abstract classes which contain functions to preprocess, encode, and decode the data.
 
 Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.

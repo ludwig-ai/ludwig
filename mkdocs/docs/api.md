@@ -16,8 +16,8 @@ __Inputs__
 
 - __model_definition__ (dict): a dictionary containing information needed
    to build a model. Refer to the [User Guide]
-   (http://ludwig.ai/user-guide/m#model-definition) for details.
-- __model_definition_file__ (string, optional, default: `Mone`): path to
+   (http://ludwig.ai/user_guide/#model-definition) for details.
+- __model_definition_file__ (string, optional, default: `None`): path to
    a YAML file containing the model definition. If available it will be
    used instead of the model_definition dict.
 - __logging_level__ (int, default: `logging.ERROR`): logging level to use
@@ -47,7 +47,7 @@ or
 train_stats = ludwig_model.train(data_df=dataframe)
 ```
 
-If you have already trained a model you cal load it and use it to predict
+If you have already trained a model you can load it and use it to predict
 
 ```python
 ludwig_model = LudwigModel.load(model_dir)
@@ -138,6 +138,7 @@ __Inputs__
 
 ```python
 load(
+  model_dir,
   logging_level=40
 )
 ```
@@ -439,7 +440,7 @@ __Inputs__
 - __model_resume_path__ (string): path of a the model directory to
    resume training of
 - __skip_save_model__ (bool, default: `False`): disables
-               saving model weights and hyperparameters each time the model
+   saving model weights and hyperparameters each time the model
    improves. By default Ludwig saves model weights after each epoch
    the validation measure imrpvoes, but if the model is really big
    that can be time consuming if you do not want to keep

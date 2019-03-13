@@ -273,6 +273,7 @@ class Model:
             epochs=100,
             learning_rate=0.001,
             batch_size=128,
+            eval_batch_size=0,
             bucketing_field=None,
             dropout_rate=0.0,
             early_stop=20,
@@ -311,9 +312,11 @@ class Model:
         :param learning_rate: Learning rate for the algorithm, represents how
                much to scale the gradients by
         :type learning_rate: Integer
-        :param batch_size: Size of batch to pass to the machine learning model.
+        :param batch_size: Size of batch to pass to the model for training.
         :type batch_size: Integer
-        :param bucketing_field:when batching, buckets datapoints based the
+        :param batch_size: Size of batch to pass to the model for evaluation.
+        :type batch_size: Integer
+        :param bucketing_field: when batching, buckets datapoints based the
                length of a field together. Bucketing on text length speeds up
                training of RNNs consistently, 30% in some cases
         :type bucketing_field:
@@ -384,6 +387,8 @@ class Model:
         self.received_sigint = False
         signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
+        if eval_batch_size < 1:
+            eval_batch_size = batch_size
         stat_names = self.get_stat_names(output_features)
         if self.horovod:
             learning_rate *= self.horovod.size()
@@ -496,8 +501,9 @@ class Model:
                         progress_tracker.epoch,
                         learning_rate_warmup_epochs,
                         self.horovod.size(),
+                        batcher.step,
                         batcher.steps_per_epoch
-                    )
+                    ) * self.horovod.size()
                 else:
                     current_learning_rate = progress_tracker.learning_rate
 
@@ -550,7 +556,7 @@ class Model:
                 regularization_lambda,
                 progress_tracker.train_stats,
                 tables,
-                progress_tracker.batch_size,
+                eval_batch_size,
                 bucketing_field
             )
 
@@ -563,7 +569,7 @@ class Model:
                     regularization_lambda,
                     progress_tracker.vali_stats,
                     tables,
-                    progress_tracker.batch_size,
+                    eval_batch_size,
                     bucketing_field
                 )
 
@@ -576,7 +582,7 @@ class Model:
                     regularization_lambda,
                     progress_tracker.test_stats,
                     tables,
-                    progress_tracker.batch_size,
+                    eval_batch_size,
                     bucketing_field
                 )
 

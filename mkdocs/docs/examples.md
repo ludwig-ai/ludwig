@@ -70,7 +70,7 @@ output_features:
 Natural Language Understanding
 ===
 
-| utterance                      | inten       | slots                             |
+| utterance                      | intent      | slots                             |
 |--------------------------------|-------------|-----------------------------------|
 | I want a pizza                 | order_food  | O O O B-Food_type                 |
 | Book a flight to Boston        | book_flight | O O O O B-City                    |
@@ -130,7 +130,7 @@ With `model_definition.yaml`:
 input_features:
     -
         name: english
-        type: sequence
+        type: text
         encoder: rnn
         cell_type: lstm
         reduce_output: null
@@ -138,10 +138,15 @@ input_features:
 output_features:
     -
         name: italian
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
         attention: bahdanau
+        loss:
+            type: sampled_softmax_cross_entropy
+
+training:
+    batch_size: 96
 ```
 
 
@@ -166,7 +171,7 @@ With `model_definition.yaml`:
 input_features:
     -
         name: user1
-        type: sequence
+        type: text
         encoder: rnn
         cell_type: lstm
         reduce_output: null
@@ -174,10 +179,15 @@ input_features:
 output_features:
     -
         name: user2
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
         attention: bahdanau
+        loss:
+            type: sampled_softmax_cross_entropy
+
+training:
+    batch_size: 96
 ```
 
 
@@ -270,7 +280,7 @@ input_features:
 output_features:
     -
         name: caption
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
 ```
@@ -281,7 +291,7 @@ One-shot Learning with Siamese Networks
 
 This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset. The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
 
-| image_1                          |   image_2                        | similarity |
+| image_path_1                     |   image_path_2                   | similarity |
 |----------------------------------|----------------------------------|------------|
 | balinese/character01/0108_13.png | balinese/character01/0108_18.png | 1          |
 | balinese/character01/0108_13.png | balinese/character08/0115_12.png | 0          |
@@ -299,14 +309,14 @@ With `model_definition.yaml`:
 ```yaml
 input_features:
     -
-        name: image_1
+        name: image_path_1
         type: image
         encoder: stacked_cnn
         resize_image: true
         width: 28
         height: 28
     -
-        name: image_2
+        name: image_path_2
         type: image
         encoder: stacked_cnn
         resize_image: true
@@ -350,9 +360,11 @@ input_features:
 output_features:
     -
         name: answer
-        type: sequence
+        type: text
         decoder: generator
         cell_type: lstm
+        loss:
+            type: sampled_softmax_cross_entropy
 ```
 
 
@@ -530,7 +542,7 @@ This example is inspired by the classic paper [Natural Language Processing (Almo
 input_features:
     -
         name: sentence
-        type: text
+        type: sequence
         encoder: rnn
         cell: lstm
         bidirectional: true

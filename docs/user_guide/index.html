@@ -2455,7 +2455,7 @@ The reason for keeping the second set is to be able to resume training in case t
 You can avoid saving the latest weights and the overall progress so far by using the argument <code>--skip_save_progress</code>, but you will not be able to resume it afterwards.
 Another available option is to load a previously trained model as an initialization for a new training process.
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
-It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the <code>--model_resume_path</code> argument.</p>
+It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the <code>--model_load_path</code> argument.</p>
 <p>You can specify a random sed to be used by the python environment, python random package, numpy and TensorFlow with the <code>--random_seed</code> argument.
 This is useful for reproducibility.
 Be aware that due to asynchronicity in the TensorFlow GPU execution, when training on GPU results may not be reproducible.</p>
@@ -2798,7 +2798,7 @@ The collect specific arguments  <code>--model_path</code>, <code>--tensors</code
 <h2 id="data-preprocessing">Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Permanent link">&para;</a></h2>
 <p>Ludwig data preprocessing maps raw data coming in CSV format into an HDF5 file containing tensors and a JSON file containing mappings from strings to tensors when needed.
 This mapping is performed when a CSV is provided as input and both HDF5 and JSON files are saved in the same directory as the input CSV, unless the argument <code>--skip_save_processed_input</code> is used (both in <code>train</code> and <code>experiment</code> commands).
-The reason to save those files is both to provide a cache and avoid performing the preprocessing again (as, depepnding on the type of features involved, it could be time consuming) and to provide the needed mappings to be able to map unseen data into tensors.</p>
+The reason to save those files is both to provide a cache and avoid performing the preprocessing again (as, depending on the type of features involved, it could be time consuming) and to provide the needed mappings to be able to map unseen data into tensors.</p>
 <p>The preprocessing process is personalizable to fit the specifics of your data format, but the basic assumption is always that your CSV files contains one row for each datapoint and one column for each feature (either input or output), and that you are able to determine the type of that column among the ones supported by Ludwig.
 The reason for that is that each data type is mapped into tensors in a different way and expects the content to be formatted in a specific way.
 Different datatypes may have different formatters that format the values of a cell.</p>
@@ -2880,7 +2880,7 @@ Details on how to set those parameters for each feature type and for each specif
 No additional information about them is available in the JSON metadata file.</p>
 <p><code>Numerical</code> features are directly transformed into a float valued vector of length <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 No additional information about them is available in the JSON metadata file.</p>
-<p><code>Category</code> features are transformed into into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Category</code> features are transformed into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way categories are mapped into integers consists in first collecting a dictionary of all the different category strings present in the column of the CSV, then rank them by frequency and then assign them an increasing integer ID from the most frequent to the most rare (with 0 being assigned to a <code>&lt;UNK&gt;</code> token).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (<code>idx2str</code>)
@@ -2888,7 +2888,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 3. the mapping from string to frequency (<code>str2freq</code>)
 4. the size of the set of all tokens (<code>vocab_size</code>)
 4. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
-<p><code>Set</code> features are transformed into into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Set</code> features are transformed into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -2898,7 +2898,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 4. the maximum size of all sets (<code>max_set_size</code>)
 5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
 <p><code>Bag</code> features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).</p>
-<p><code>Sequence</code> features are transformed into into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Sequence</code> features are transformed into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -2913,7 +2913,7 @@ The same thing happens in the JSON file, where there are dictionaries for mappin
 In the model definition you are able to specify which level of representation to use, if the character level or the word level.</p>
 <p><code>Timeseries</code> features are treated in the same way of sequence features, with the only difference being that the matrix in the HDF5 file does not have integer values, but float values.
 Moreover, there is no need for any mapping in the JSON file.</p>
-<p><code>Image</code> features are transformed into into a int8 valued tensor of size <code>n x h x w x c</code> (where <code>n</code> is the size of the dataset and <code>h x w</code> is a specific resizing of the image that can be set, and <code>c</code> is the number of color channels) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p><code>Image</code> features are transformed into a int8 valued tensor of size <code>n x h x w x c</code> (where <code>n</code> is the size of the dataset and <code>h x w</code> is a specific resizing of the image that can be set, and <code>c</code> is the number of color channels) and added to HDF5 with a key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.</p>
 <h3 id="csv-format">CSV Format<a class="headerlink" href="#csv-format" title="Permanent link">&para;</a></h3>
 <p>Ludwig uses Pandas under the hood to read the CSV files. Pandas tries to automatically identify the separator (generally <code>','</code>) from the data.
@@ -2932,30 +2932,51 @@ It mixes ease of use, by means of reasonable defaults, with flexibility, by mean
 It is provided to both <code>experiment</code> and <code>train</code> commands either as a string (<code>--model_definition</code>) or as a file (<code>--model_definition_file</code>).
 The string or the content of the file will be parsed by PyYAML into a dictionary in memory, so any style of YAML accepted by the parser is considered to be valid, so both multiline and oneline formats are accepted.
 For instance a list of dictionaries can be written both as</p>
-<div class="codehilite"><pre><span></span><span class="nt">mylist</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">item1</span><span class="p p-Indicator">,</span><span class="nt"> score</span><span class="p">:</span> <span class="nv">2</span><span class="p p-Indicator">},</span> <span class="p p-Indicator">{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">item2</span><span class="p p-Indicator">,</span><span class="nt"> score</span><span class="p">:</span> <span class="nv">1</span><span class="p p-Indicator">},</span> <span class="p p-Indicator">{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">item3</span><span class="p p-Indicator">,</span><span class="nt"> score</span><span class="p">:</span> <span class="nv">4</span><span class="p p-Indicator">}]</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">mylist</span><span
+                        class="p p-Indicator">:</span> <span class="p p-Indicator">[{</span><span class="nv">name</span><span
+                        class="p p-Indicator">:</span> <span class="nv">item1</span><span class="p p-Indicator">,</span> <span
+                        class="nv">score</span><span class="p p-Indicator">:</span> <span class="nv">2</span><span
+                        class="p p-Indicator">},</span> <span class="p p-Indicator">{</span><span class="nv">name</span><span
+                        class="p p-Indicator">:</span> <span class="nv">item2</span><span class="p p-Indicator">,</span> <span
+                        class="nv">score</span><span class="p p-Indicator">:</span> <span class="nv">1</span><span
+                        class="p p-Indicator">},</span> <span class="p p-Indicator">{</span><span class="nv">name</span><span
+                        class="p p-Indicator">:</span> <span class="nv">item3</span><span class="p p-Indicator">,</span> <span
+                        class="nv">score</span><span class="p p-Indicator">:</span> <span class="nv">4</span><span
+                        class="p p-Indicator">}]</span>
 </pre></div>
 
 
 <p>or as:</p>
-<div class="codehilite"><pre><span></span><span class="nt">mylist</span><span class="p">:</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">mylist</span><span
+                        class="p p-Indicator">:</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">item1</span>
-        <span class="nt">score</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">item1</span>
+        <span class="l l-Scalar l-Scalar-Plain">score</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">2</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">item2</span>
-        <span class="nt">score</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">item2</span>
+        <span class="l l-Scalar l-Scalar-Plain">score</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">item3</span>
-        <span class="nt">score</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">4</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">item3</span>
+        <span class="l l-Scalar l-Scalar-Plain">score</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">4</span>
 </pre></div>
 
 
 <p>The structure of the model definition file is a dictionary with five keys:</p>
-<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">combiner</span><span class="p">:</span> <span class="p p-Indicator">{}</span>
-<span class="nt">output_features</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">training</span><span class="p">:</span> <span class="p p-Indicator">{}</span>
-<span class="nt">preprocessing</span><span class="p">:</span> <span class="p p-Indicator">{}</span>
+                <div class="codehilite"><pre><span></span><span
+                        class="l l-Scalar l-Scalar-Plain">input_features</span><span
+                        class="p p-Indicator">:</span> <span class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">combiner</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">{}</span>
+<span class="l l-Scalar l-Scalar-Plain">output_features</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">training</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">{}</span>
+<span class="l l-Scalar l-Scalar-Plain">preprocessing</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">{}</span>
 </pre></div>
 
 
@@ -2974,14 +2995,20 @@ For the sake of simplicity you can imagine the output to be a vector in most of 
 <p>An additional feature that ludwig provides is the option to have tied weights between different encoders.
 For instance if my model takes two sentences as input and return the probability of their entailment, I may want to encode both sentences with the same encoder.
 The way to do it is by specifying the <code>tied-weights</code> parameter of the second feature you define to be the name of the first feature you defined.</p>
-<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+                <div class="codehilite"><pre><span></span><span
+                        class="l l-Scalar l-Scalar-Plain">input_features</span><span class="p p-Indicator">:</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sentence1</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sentence1</span>
+        <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">text</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sentence2</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
-        <span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sentence1</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sentence2</span>
+        <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sentence1</span>
 </pre></div>
 
 
@@ -3023,19 +3050,28 @@ If you do so Ludwig will concatenate all the final representations before the pr
 The reason is that if different output features have a causal dependency, knowing which prediction has been made for one can help making the prediction of the other.</p>
 <p>For instance if two output features are one coarse grained category and one fine-grained category that are in a hierarchical structure with each other, knowing the prediction made for coarse grained restricts the possible categories to predict for the fine-grained.
 In this case the following model definition structure can be used:</p>
-<div class="codehilite"><pre><span></span><span class="nt">output_features</span><span class="p">:</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">output_features</span><span
+                        class="p p-Indicator">:</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">coarse_class</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
-        <span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
-        <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">coarse_class</span>
+        <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">category</span>
+        <span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">2</span>
+        <span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">64</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fine_class</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
-        <span class="nt">dependencies</span><span class="p">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">fine_class</span>
+        <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">category</span>
+        <span class="l l-Scalar l-Scalar-Plain">dependencies</span><span class="p p-Indicator">:</span>
             <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">coarse_class</span>
-        <span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-        <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+        <span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+        <span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">64</span>
 </pre></div>
 
 
@@ -3046,6 +3082,13 @@ In the decoder of <code>fine_class</code>, the 64 dimensional vector of <code>co
 <p>These are the available training parameters:</p>
 <ul>
 <li><code>batch_size</code> (default <code>128</code>): size of the batch used for training the model.</li>
+    <li><code>eval_batch_size</code> (default <code>0</code>): size of the batch used for evaluating the model. If it is
+        <code>0</code>, the same value of <code>batch_size</code> is used. This is usefult to speedup evaluation with a
+        much bigger batch size than training, if enough memory is available, or to decrease the batch size when <code>sampled_softmax_cross_entropy</code>
+        is used as loss for sequential and categorical features with big vocabulary sizes (evaluation needs to be
+        performed on the full vocabulary, so a much smaller batch size may be needed to fit the activation tensors in
+        memory).
+    </li>
 <li><code>epochs</code> (default <code>100</code>): number of epochs the training process will run for.</li>
 <li><code>early_stop</code> (default <code>5</code>): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.</li>
 <li><code>optimizer</code> (default <code>{type: adam, beta1: 0.9, beta2: 0.999, epsilon: 1e-08}</code>): which optimizer to use with the relative parameters. The available optimizers are: <code>sgd</code> (or <code>stochastic_gradient_descent</code>, <code>gd</code>, <code>gradient_descent</code>, they are all the same), <code>adam</code>, <code>adadelta</code>, <code>adagrad</code>, <code>adagradda</code>, <code>momentum</code>, <code>ftrl</code>, <code>proximalgd</code>, <code>proximaladagrad</code>, <code>rmsprop</code>. To know their parameters check <a href="https://www.tensorflow.org/api_docs/python/tf/keras/optimizers">TensorFlow's optimizer documentation</a>.</li>
@@ -3077,13 +3120,25 @@ Moreover, the preprocessing dictionary contains parameters related to how to spl
 <li><code>stratify</code> (default <code>null</code>): if <code>null</code> the split is random, otherwise you can specify the name of a <code>category</code> feature and the split will be stratified on that feature.</li>
 </ul>
 <p>Example preprocessing dictionary (showing default values):</p>
-<div class="codehilite"><pre><span></span><span class="nt">preprocessing</span><span class="p">:</span>
-    <span class="nt">force_split</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-    <span class="nt">split_probabilities</span><span class="p">:</span> <span class="p p-Indicator">[</span><span class="nv">0.7</span><span class="p p-Indicator">,</span> <span class="nv">0.2</span><span class="p p-Indicator">,</span> <span class="nv">0.1</span><span class="p p-Indicator">]</span>
-    <span class="nt">stratify</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">category</span><span class="p">:</span> <span class="p p-Indicator">{</span><span class="nv">...</span><span class="p p-Indicator">}</span>
-    <span class="nt">sequence</span><span class="p">:</span> <span class="p p-Indicator">{</span><span class="nv">...</span><span class="p p-Indicator">}</span>
-    <span class="nt">text</span><span class="p">:</span> <span class="p p-Indicator">{</span><span class="nv">...</span><span class="p p-Indicator">}</span>
+                <div class="codehilite"><pre><span></span><span
+                        class="l l-Scalar l-Scalar-Plain">preprocessing</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">force_split</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+    <span class="l l-Scalar l-Scalar-Plain">split_probabilities</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[</span><span class="nv">0.7</span><span
+                            class="p p-Indicator">,</span> <span class="nv">0.2</span><span
+                            class="p p-Indicator">,</span> <span class="nv">0.1</span><span
+                            class="p p-Indicator">]</span>
+    <span class="l l-Scalar l-Scalar-Plain">stratify</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="l l-Scalar l-Scalar-Plain">category</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">{</span><span class="nv">...</span><span
+                            class="p p-Indicator">}</span>
+    <span class="l l-Scalar l-Scalar-Plain">sequence</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">{</span><span class="nv">...</span><span
+                            class="p p-Indicator">}</span>
+    <span class="l l-Scalar l-Scalar-Plain">text</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">{</span><span
+                            class="nv">...</span><span class="p p-Indicator">}</span>
     <span class="l l-Scalar l-Scalar-Plain">...</span>
 </pre></div>
 
@@ -3094,20 +3149,28 @@ For instance a document classification model may have two text input features, o
 <p>As the length of the title is much shorter than the length of the body, the parameter <code>word_length_limit</code> should be set to 10 for the title and 2000 for the body, but both of them share the same parameter <code>most_common_words</code> with value 10000.</p>
 <p>The way to do this is adding a <code>preprocessing</code> key inside the title <code>input_feature</code> dictionary and one in the <code>body</code> input feature dictionary containing the desired parameter and value.
 The model definition will look like:</p>
-<div class="codehilite"><pre><span></span><span class="nt">preprocessing</span><span class="p">:</span>
-    <span class="nt">text</span><span class="p">:</span>
-        <span class="nt">most_common_word</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10000</span>
-<span class="nt">input_features</span><span class="p">:</span>
+                <div class="codehilite"><pre><span></span><span
+                        class="l l-Scalar l-Scalar-Plain">preprocessing</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">text</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">most_common_word</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">10000</span>
+<span class="l l-Scalar l-Scalar-Plain">input_features</span><span class="p p-Indicator">:</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">title</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
-        <span class="nt">preprocessing</span><span class="p">:</span>
-            <span class="nt">word_length_limit</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">20</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">title</span>
+        <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="l l-Scalar l-Scalar-Plain">preprocessing</span><span class="p p-Indicator">:</span>
+            <span class="l l-Scalar l-Scalar-Plain">word_length_limit</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">20</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">body</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
-        <span class="nt">preprocessing</span><span class="p">:</span>
-            <span class="nt">word_length_limit</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2000</span>
+        <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">body</span>
+        <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="l l-Scalar l-Scalar-Plain">preprocessing</span><span class="p p-Indicator">:</span>
+            <span class="l l-Scalar l-Scalar-Plain">word_length_limit</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">2000</span>
 </pre></div>
 
 
@@ -3125,8 +3188,11 @@ No additional information about them is available in the JSON metadata file.</p>
 By consequence there are no encoding parameters.
 Inputs are of size <code>b</code> while outputs are of size <code>b x 1</code> where <code>b</code> is the batch size.</p>
 <p>Example binary feature entry in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">binary_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">binary</span>
 </pre></div>
 
 
@@ -3153,24 +3219,42 @@ There is only one decoder available for binary features and it is a (potentially
 <li><code>threshold</code> (default <code>0.5</code>): The threshold above (greater or equal) which the predicted output of the sigmoid will be mapped to 1.</li>
 </ul>
 <p>Example binary feature entry (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">cross_entropy</span>
-    <span class="nt">confidence_penalty</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">robust_lambda</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">threshold</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.5</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">binary_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">binary</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_inputs</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">loss</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">cross_entropy</span>
+    <span class="l l-Scalar l-Scalar-Plain">confidence_penalty</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">robust_lambda</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">threshold</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0.5</span>
 </pre></div>
 
 
@@ -3195,10 +3279,15 @@ Inputs are of size <code>b</code> while outputs are fo size <code>b x 1</code> w
 <li><code>tied_weights</code> (default <code>null</code>): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.</li>
 </ul>
 <p>Example binary feature entry in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">numerical_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">numerical</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
 </pre></div>
 
 
@@ -3224,21 +3313,36 @@ There is only one decoder available for numerical features and it is a (potentia
 <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
 </ul>
 <p>Example numerical feature entry (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">mean_squared_error</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">numerical_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">numerical</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_inputs</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">loss</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">mean_squared_error</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 
 
@@ -3247,7 +3351,7 @@ There is only one decoder available for numerical features and it is a (potentia
 You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
 <h3 id="category-features">Category Features<a class="headerlink" href="#category-features" title="Permanent link">&para;</a></h3>
 <h4 id="category-features-preprocessing">Category Features Preprocessing<a class="headerlink" href="#category-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Category features are transformed into into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p>Category features are transformed into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way categories are mapped into integers consists in first collecting a dictionary of all the different category strings present in the column of the CSV, then rank them by frequency and then assign them an increasing integer ID from the most frequent to the most rare (with 0 being assigned to a <code>&lt;UNK&gt;</code> token).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (<code>idx2str</code>)
@@ -3278,17 +3382,29 @@ Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> w
 <li><code>tied_weights</code> (default <code>null</code>): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.</li>
 </ul>
 <p>Example category feature entry in the input features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">category_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">category</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
 </pre></div>
 
 
@@ -3336,32 +3452,58 @@ There is only one decoder available for category features and it is a (potential
 <li><code>top_k</code> (default <code>3</code>): determines the parameter <code>k</code>, the number of categories to consider when computing the <code>top_k</code> measure. It computes accuracy but considering as a match if the true category appears in the first <code>k</code> predicted categories ranked by decoder's confidence.</li>
 </ul>
 <p>Example category feature entry (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
-    <span class="nt">confidence_penalty</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">robust_lambda</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">class_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">class_distances</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">class_distance_temperature</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">labels_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">negative_samples</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">sampler</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">distortion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">unique</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">top_k</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">category_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">category</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_inputs</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">loss</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+    <span class="l l-Scalar l-Scalar-Plain">confidence_penalty</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">robust_lambda</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_distances</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_distance_temperature</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">labels_smoothing</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">negative_samples</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">sampler</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="l l-Scalar l-Scalar-Plain">distortion</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="l l-Scalar l-Scalar-Plain">unique</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">top_k</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">3</span>
 </pre></div>
 
 
@@ -3370,7 +3512,7 @@ There is only one decoder available for category features and it is a (potential
 You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
 <h3 id="set-features">Set Features<a class="headerlink" href="#set-features" title="Permanent link">&para;</a></h3>
 <h4 id="set-features-preprocessing">Set Features Preprocessing<a class="headerlink" href="#set-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Set features are transformed into into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+<p>Set features are transformed into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
 Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
@@ -3416,18 +3558,31 @@ Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> w
 <li><code>tied_weights</code> (default <code>null</code>): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.</li>
 </ul>
 <p>Example set feature entry in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">set_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">set</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">50</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">set_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">set</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">50</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_output</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
 </pre></div>
 
 
@@ -3462,22 +3617,38 @@ There is only one decoder available for set features and it is a (potentially em
 <li><code>threshold</code> (default <code>0.5</code>): The threshold above (greater or equal) which the predicted output of the sigmoid will be mapped to 1.</li>
 </ul>
 <p>Example set feature entry (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">set_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">set</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sigmoid_cross_entropy</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">threshold</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.5</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">set_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">set</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_inputs</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">loss</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sigmoid_cross_entropy</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">threshold</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0.5</span>
 </pre></div>
 
 
@@ -3497,8 +3668,8 @@ Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> w
 <p>As there is no decoder there is also no measure available yet for bag feature.</p>
 <h3 id="sequence-features">Sequence Features<a class="headerlink" href="#sequence-features" title="Permanent link">&para;</a></h3>
 <h4 id="sequence-features-preprocessing">Sequence Features Preprocessing<a class="headerlink" href="#sequence-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Sequence features are transformed into into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
+<p>Sequence features are transformed into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
+The way sequences are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (<code>idx2str</code>)
@@ -3564,19 +3735,33 @@ If you want to output the full <code>b x s x h</code> tensor, you can specify <c
 <li><code>reduce_output</code> (default <code>sum</code>): defines how to reduce the output tensor along the <code>s</code> sequence length dimension if the rank of the tensor is greater than 2. Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the first dimension), <code>last</code> (returns the last vector of the first dimension) and <code>null</code> or <code>null</code> (which does not reduce and returns the full tensor).</li>
 </ul>
 <p>Example sequence feature entry in the output features list using an embed encoder:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">encoder</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_output</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
 </pre></div>
 
 
@@ -3630,28 +3815,51 @@ If you want to output the full <code>b x s x h</code> tensor, you can specify <c
 <li><code>reduce_output</code> (default <code>sum</code>): defines how to reduce the output tensor along the <code>s</code> sequence length dimension if the rank of the tensor is greater than 2. Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the sequence dimension), <code>last</code> (returns the last vector of the sequence dimension) and <code>null</code> or <code>null</code> (which does not reduce and returns the full tensor).</li>
 </ul>
 <p>Example sequence feature entry in the output features list using a parallel cnn encoder:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">conv_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_conv_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
-<span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="l l-Scalar l-Scalar-Plain">reduce_output sum</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">encoder</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">conv_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_conv_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">filter_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="l l-Scalar l-Scalar-Plain">num_filters</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">pool_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_output</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
 </pre></div>
 
 
@@ -3702,29 +3910,53 @@ If you want to output the full <code>b x s x h</code> tensor, you can specify th
 <li><code>reduce_output</code> (default <code>sum</code>): defines how to reduce the output tensor along the <code>s</code> sequence length dimension if the rank of the tensor is greater than 2. Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the first dimension), <code>last</code> (returns the last vector of the first dimension) and <code>null</code> or <code>null</code> (which does not reduce and returns the full tensor).</li>
 </ul>
 <p>Example sequence feature entry in the output features list using a parallel cnn encoder:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">conv_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_conv_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
-<span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">max</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">encoder</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">conv_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_conv_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">filter_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="l l-Scalar l-Scalar-Plain">num_filters</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">pool_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_output</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">max</span>
 </pre></div>
 
 
@@ -3776,27 +4008,49 @@ If you want to output the full <code>b x s x h</code> tensor, you can specify <c
 <li><code>reduce_output</code> (default <code>sum</code>): defines how to reduce the output tensor along the <code>s</code> sequence length dimension if the rank of the tensor is greater than 2. Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the first dimension), <code>last</code> (returns the last vector of the first dimension) and <code>null</code> or <code>null</code> (which does not reduce and returns the full tensor).</li>
 </ul>
 <p>Example sequence feature entry in the output features list using a parallel cnn encoder:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_parallel_cnn</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">stacked_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_stacked_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
-<span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">max</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">encoder</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">stacked_parallel_cnn</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">stacked_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_stacked_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">filter_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="l l-Scalar l-Scalar-Plain">num_filters</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">pool_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_output</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">max</span>
 </pre></div>
 
 
@@ -3838,23 +4092,41 @@ If you want to output the full <code>b x s x h</code> where <code>h</code> is th
 <li><code>reduce_output</code> (default <code>last</code>): defines how to reduce the output tensor along the <code>s</code> sequence length dimension if the rank of the tensor is greater than 2. Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the first dimension), <code>last</code> (returns the last vector of the first dimension) and <code>null</code> or <code>null</code> (which does not reduce and returns the full tensor).</li>
 </ul>
 <p>Example sequence feature entry in the output features list using a parallel cnn encoder:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">num_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
-<span class="nt">state_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">bidirectional</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="l l-Scalar l-Scalar-Plain">reduce_output sum</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">encoder</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">rnn</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">num_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="l l-Scalar l-Scalar-Plain">cell_type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">rnn</span>
+<span class="l l-Scalar l-Scalar-Plain">state_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">bidirectional</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_output</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
 </pre></div>
 
 
@@ -3901,30 +4173,55 @@ If you want to output the full <code>b x s x h</code> where <code>h</code> is th
 <li><code>reduce_output</code> (default <code>last</code>): defines how to reduce the output tensor along the <code>s</code> sequence length dimension if the rank of the tensor is greater than 2. Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the first dimension), <code>last</code> (returns the last vector of the first dimension) and <code>null</code> or <code>null</code> (which does not reduce and returns the full tensor).</li>
 </ul>
 <p>Example sequence feature entry in the output features list using a parallel cnn encoder:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
-<span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">representation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dense</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">embeddings_on_cpu</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">pretrained_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">embeddings_trainable</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">conv_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_conv_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
-<span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">num_rec_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
-<span class="nt">state_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">bidirectional</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">last</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">encoder</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">rnn</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">representation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">dense</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_on_cpu</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">pretrained_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">embeddings_trainable</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">conv_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_conv_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">filter_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="l l-Scalar l-Scalar-Plain">num_filters</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">pool_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">num_rec_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="l l-Scalar l-Scalar-Plain">cell_type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">rnn</span>
+<span class="l l-Scalar l-Scalar-Plain">state_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">bidirectional</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_output</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">last</span>
 </pre></div>
 
 
@@ -3967,31 +4264,56 @@ Output
 <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
 </ul>
 <p>Example sequence feature entry using a tagger decoder (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
-    <span class="nt">confidence_penalty</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">robust_lambda</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">class_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">class_distances</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">class_distance_temperature</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">labels_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">negative_samples</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">sampler</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">distortion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">unique</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_inputs</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">loss</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+    <span class="l l-Scalar l-Scalar-Plain">confidence_penalty</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">robust_lambda</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_distances</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_distance_temperature</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">labels_smoothing</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">negative_samples</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">sampler</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="l l-Scalar l-Scalar-Plain">distortion</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="l l-Scalar l-Scalar-Plain">unique</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 
 
@@ -4031,37 +4353,68 @@ If a <code>b x h</code> input is provided to a generator decoder using an rnn wi
 <li><code>attention_mechanism</code> (default <code>null</code>): the recurrent generator may use an attention mechanism. The available ones are <code>bahdanau</code> and <code>luong</code> (for more information refer to <a href="https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention">TensorFlow's documentation</a>). When <code>attention</code> is not <code>null</code> the expected size of the input tensor is <code>b x s x h</code>, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner. If a <code>b x h</code> input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.</li>
 </ul>
 <p>Example sequence feature entry using a tagger decoder (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
-    <span class="nt">confidence_penalty</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">robust_lambda</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">class_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">class_distances</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">class_distance_temperature</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">labels_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">negative_samples</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">sampler</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">distortion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">unique</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
-<span class="nt">state_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">tied_target_embeddings</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">beam_width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="nt">attention_mechanism</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">name</span><span
+                        class="p p-Indicator">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_inputs</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="p p-Indicator">[]</span>
+<span class="l l-Scalar l-Scalar-Plain">reduce_dependencies</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="l l-Scalar l-Scalar-Plain">loss</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+    <span class="l l-Scalar l-Scalar-Plain">confidence_penalty</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">robust_lambda</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_weights</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_distances</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="l l-Scalar l-Scalar-Plain">class_distance_temperature</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">labels_smoothing</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">negative_samples</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="l l-Scalar l-Scalar-Plain">sampler</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="l l-Scalar l-Scalar-Plain">distortion</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="l l-Scalar l-Scalar-Plain">unique</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">cell_type</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">rnn</span>
+<span class="l l-Scalar l-Scalar-Plain">state_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">tied_target_embeddings</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="l l-Scalar l-Scalar-Plain">embedding_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">beam_width</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="l l-Scalar l-Scalar-Plain">attention_mechanism</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
 </pre></div>
 
 
@@ -4196,15 +4549,24 @@ If there's only one input feature and no fully connected layers are specified, t
 <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
 </ul>
 <p>Example concat combiner in the model definition:</p>
-<div class="codehilite"><pre><span></span><span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">concat</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">type</span><span
+                        class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">concat</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">num_fc_layers</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="l l-Scalar l-Scalar-Plain">fc_size</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="l l-Scalar l-Scalar-Plain">activation</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="l l-Scalar l-Scalar-Plain">norm</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">dropout</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="l l-Scalar l-Scalar-Plain">initializer</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">regularize</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">true</span>
 </pre></div>
 
 
@@ -4236,8 +4598,10 @@ The final output is a <code>b x s x h'</code> tensor where <code>h'</code> is th
 <li><code>main_sequence_feature</code> (default <code>null</code>): name fo the sequence / text/ time series feature to concatenate the outputs of the other features to. If no <code>main_sequence_feature</code> is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence <code>s</code> dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the <code>s</code> dimension, which means that all of them must have identical <code>s</code> dimension, otherwise an error will be thrown.</li>
 </ul>
 <p>Example sequence concat combiner in the model definition:</p>
-<div class="codehilite"><pre><span></span><span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_concat</span>
-<span class="nt">main_sequence_feature</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">type</span><span
+                        class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_concat</span>
+<span class="l l-Scalar l-Scalar-Plain">main_sequence_feature</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
 </pre></div>
 
 
@@ -4269,9 +4633,12 @@ Output       |  +-----------------+
 
 
 <p>Example sequence concat combiner in the model definition:</p>
-<div class="codehilite"><pre><span></span><span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">main_sequence_feature</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+                <div class="codehilite"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">type</span><span
+                        class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="l l-Scalar l-Scalar-Plain">main_sequence_feature</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="l l-Scalar l-Scalar-Plain">encoder</span><span class="p p-Indicator">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
 <span class="nn">...</span> <span class="l l-Scalar l-Scalar-Plain">encoder parameters ...</span>
 </pre></div>
 

@@ -558,8 +558,8 @@
 <ul>
 <li><strong>model_definition</strong> (dict): a dictionary containing information needed
    to build a model. Refer to the [User Guide]
-   (http://ludwig.ai/user-guide/m#model-definition) for details.</li>
-<li><strong>model_definition_file</strong> (string, optional, default: <code>Mone</code>): path to
+   (http://ludwig.ai/user_guide/#model-definition) for details.</li>
+<li><strong>model_definition_file</strong> (string, optional, default: <code>None</code>): path to
    a YAML file containing the model definition. If available it will be
    used instead of the model_definition dict.</li>
 <li><strong>logging_level</strong> (int, default: <code>logging.ERROR</code>): logging level to use
@@ -584,7 +584,7 @@
 </pre></div>
 
 
-<p>If you have already trained a model you cal load it and use it to predict</p>
+<p>If you have already trained a model you can load it and use it to predict</p>
 <div class="codehilite"><pre><span></span><span class="n">ludwig_model</span> <span class="o">=</span> <span class="n">LudwigModel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_dir</span><span class="p">)</span>
 </pre></div>
 
@@ -657,6 +657,7 @@ this function if you don't use <code>train_online</code>.</p>
 <hr />
 <h3 id="load">load<a class="headerlink" href="#load" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">load</span><span class="p">(</span>
+  <span class="n">model_dir</span><span class="p">,</span>
   <span class="n">logging_level</span><span class="o">=</span><span class="mi">40</span>
 <span class="p">)</span>
 </pre></div>

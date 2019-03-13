@@ -172,6 +172,7 @@ class DistributedBatcher(object):
         self.steps_per_epoch = int(math.ceil(self.total_size / self.batch_size))
         self.index = self.partition[0]
         self.max_index = self.partition[1]
+        self.step = 0
         self.epoch = 0
 
     def next_batch(self):
@@ -195,6 +196,7 @@ class DistributedBatcher(object):
             )
 
         self.index += self.batch_size
+        self.step += 1
         return sub_batch
 
     def last_batch(self):
@@ -204,3 +206,4 @@ class DistributedBatcher(object):
 
     def reset(self):
         self.index = self.partition[0]
+        self.step = 0
