@@ -3669,7 +3669,7 @@ Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> w
 <h3 id="sequence-features">Sequence Features<a class="headerlink" href="#sequence-features" title="Permanent link">&para;</a></h3>
 <h4 id="sequence-features-preprocessing">Sequence Features Preprocessing<a class="headerlink" href="#sequence-features-preprocessing" title="Permanent link">&para;</a></h4>
 <p>Sequence features are transformed into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
+The way sequences are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
 Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (<code>idx2str</code>)
