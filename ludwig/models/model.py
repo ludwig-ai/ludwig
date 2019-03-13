@@ -501,8 +501,9 @@ class Model:
                         progress_tracker.epoch,
                         learning_rate_warmup_epochs,
                         self.horovod.size(),
+                        batcher.step,
                         batcher.steps_per_epoch
-                    )
+                    ) * self.horovod.size()
                 else:
                     current_learning_rate = progress_tracker.learning_rate
 
