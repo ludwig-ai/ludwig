@@ -138,6 +138,7 @@ __Inputs__
 
 ```python
 load(
+  model_dir,
   logging_level=40
 )
 ```
