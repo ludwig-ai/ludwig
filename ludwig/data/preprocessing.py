@@ -15,11 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import logging
-import os
-
 import h5py
+import logging
 import numpy as np
+import os
 import yaml
 
 from ludwig.constants import *
@@ -562,7 +561,8 @@ def preprocess_for_training(
         raise RuntimeError('Insufficient input parameters')
 
     replace_text_feature_level(
-        model_definition,
+        model_definition['input_features'] +
+        model_definition['output_features'],
         [training_set, validation_set, test_set]
     )
 
@@ -684,7 +684,11 @@ def preprocess_for_prediction(
                 train_set_metadata=train_set_metadata
             )
 
-    replace_text_feature_level(model_definition, [dataset])
+    replace_text_feature_level(
+        model_definition['input_features'] +
+        ([] if only_predictions else model_definition['output_features']),
+        [dataset]
+    )
 
     dataset = Dataset(
         dataset,
@@ -696,9 +700,8 @@ def preprocess_for_prediction(
     return dataset, train_set_metadata
 
 
-def replace_text_feature_level(model_definition, datasets):
-    for feature in (model_definition['input_features'] +
-                    model_definition['output_features']):
+def replace_text_feature_level(features, datasets):
+    for feature in features:
         if feature['type'] == TEXT:
             for dataset in datasets:
                 if dataset is not None:

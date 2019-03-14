@@ -26,14 +26,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+
 import argparse
 import logging
 import os
-import sys
-from pprint import pformat
-
 import pandas as pd
 import yaml
+from pprint import pformat
 
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
@@ -746,7 +746,11 @@ class LudwigModel:
             self.train_set_metadata,
             self.model_definition['preprocessing']
         )
-        replace_text_feature_level(self.model_definition, [preprocessed_data])
+        replace_text_feature_level(
+            self.model_definition['input_features'] +
+            self.model_definition['output_features'],
+            [preprocessed_data]
+        )
         dataset = Dataset(
             preprocessed_data,
             self.model_definition['input_features'],
@@ -798,7 +802,12 @@ class LudwigModel:
             self.train_set_metadata,
             self.model_definition['preprocessing']
         )
-        replace_text_feature_level(self.model_definition, [preprocessed_data])
+        replace_text_feature_level(
+            self.model_definition['input_features'] +
+            ([] if only_predictions else self.model_definition[
+                'output_features']),
+            [preprocessed_data]
+        )
         dataset = Dataset(
             preprocessed_data,
             self.model_definition['input_features'],
