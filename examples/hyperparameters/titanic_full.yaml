@@ -1,0 +1,36 @@
+combiner: {fc_size: 48, num_fc_layers: 1, type: concat}
+input_features:
+- {name: Pclass, type: category}
+- {name: Sex, type: category}
+- {missing_value_strategy: fill_with_mean, name: Age, type: numerical}
+- {name: SibSp, type: numerical}
+- {name: Parch, type: numerical}
+- {missing_value_strategy: fill_with_mean, name: Fare, type: numerical}
+- {name: Embarked, representation: sparse, type: category}
+output_features:
+- {name: Survived, type: binary}
+training:
+  batch_size: 128
+  bucketing_field: null
+  decay: false
+  decay_rate: 0.96
+  decay_steps: 10000
+  dropout_rate: 0.0
+  early_stop: 5
+  epochs: 100
+  gradient_clipping: null
+  increase_batch_size_on_plateau: 0
+  increase_batch_size_on_plateau_max: 512
+  increase_batch_size_on_plateau_patience: 5
+  increase_batch_size_on_plateau_rate: 2
+  learning_rate: 0.001
+  learning_rate_warmup_epochs: 5
+  optimizer: {beta1: 0.9, beta2: 0.999, epsilon: 1.0e-08, type: adam}
+  reduce_learning_rate_on_plateau: 0
+  reduce_learning_rate_on_plateau_patience: 5
+  reduce_learning_rate_on_plateau_rate: 0.5
+  regularization_lambda: 0
+  regularizer: l2
+  staircase: false
+  validation_field: combined
+  validation_measure: loss

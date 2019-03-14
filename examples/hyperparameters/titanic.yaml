@@ -1,0 +1,37 @@
+input_features:
+    -
+        name: Pclass
+        type: category
+    -
+        name: Sex
+        type: category
+    -
+        name: Age
+        type: numerical
+        missing_value_strategy: fill_with_mean
+    -
+        name: SibSp
+        type: numerical
+    -
+        name: Parch
+        type: numerical
+    -
+        name: Fare
+        type: numerical
+        missing_value_strategy: fill_with_mean
+    -
+        name: Embarked
+        type: category
+        representation: sparse
+
+
+combiner:
+    type: concat
+    num_fc_layers: 1
+    fc_size: 48
+
+
+output_features:
+    -
+        name: Survived
+        type: binary

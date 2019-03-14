@@ -385,7 +385,7 @@ class Model:
         self.epochs = epochs
         digits_per_epochs = len(str(self.epochs))
         self.received_sigint = False
-        signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
+        #signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
         if eval_batch_size < 1:
             eval_batch_size = batch_size
