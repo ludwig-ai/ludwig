@@ -16,6 +16,7 @@
 # ==============================================================================
 from math import floor, ceil
 
+import os
 import numpy as np
 from skimage import img_as_ubyte
 from skimage.transform import resize
