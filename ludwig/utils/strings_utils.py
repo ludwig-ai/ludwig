@@ -29,7 +29,7 @@ UNKNOWN_SYMBOL = '<UNK>'
 PADDING_SYMBOL = '<PAD>'
 
 SPLIT_REGEX = re.compile(r'\s+')
-SPLIT_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
+SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
 
@@ -190,7 +190,7 @@ def space_string_to_list(s):
 
 
 def space_punctuation_string_to_list(s):
-    return SPLIT_PUNCTUATION_REGEX.split(s.strip())
+    return SPACE_PUNCTUATION_REGEX.findall(s.strip())
 
 def underscore_string_to_list(s):
     return UNDERSCORE_REGEX.split(s.strip())
