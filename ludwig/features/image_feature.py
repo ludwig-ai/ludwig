@@ -28,6 +28,7 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
 from ludwig.utils.image_utils import resize_image
+from ludwig.utils.image_utils import get_abs_path
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 
@@ -81,7 +82,9 @@ class ImageBaseFeature(BaseFeature):
         else:
             should_resize = False
 
-        csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
+        csv_path = None
+        if hasattr(dataset_df, 'csv'):
+            csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
 
         num_images = len(dataset_df)
 
@@ -94,9 +97,19 @@ class ImageBaseFeature(BaseFeature):
             # we assume that all images have the same wifth and im_height
             # thus the width and height of the first one are the same
             # of all the other ones
+            if (csv_path is None and
+                    not os.path.isabs(dataset_df[feature['name']][0])):
+                raise ValueError(
+                    'Image file paths must be absolute'
+                )
+
             first_image = imread(
-                os.path.join(csv_path, dataset_df[feature['name']][0])
+                get_abs_path(
+                    csv_path,
+                    dataset_df[feature['name']][0]
+                )
             )
+
             height = first_image.shape[0]
             width = first_image.shape[1]
 
@@ -120,11 +133,12 @@ class ImageBaseFeature(BaseFeature):
                 dtype=np.int8
             )
             for i in range(len(dataset_df)):
-                filename = os.path.join(
-                    csv_path,
-                    dataset_df[feature['name']][i]
+                img = imread(
+                    get_abs_path(
+                        csv_path,
+                        dataset_df[feature['name']][i]
+                    )
                 )
-                img = imread(filename)
                 if img.ndim == 2:
                     img = img.reshape((img.shape[0], img.shape[1], 1))
                 if should_resize:
@@ -146,11 +160,12 @@ class ImageBaseFeature(BaseFeature):
                     dtype=np.uint8
                 )
                 for i in range(len(dataset_df)):
-                    filename = os.path.join(
-                        csv_path,
-                        dataset_df[feature['name']][i]
+                    img = imread(
+                        get_abs_path(
+                            csv_path,
+                            dataset_df[feature['name']][i]
+                        )
                     )
-                    img = imread(filename)
                     if img.ndim == 2:
                         img = img.reshape((img.shape[0], img.shape[1], 1))
                     if should_resize:
@@ -174,7 +189,6 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         self.num_channels = 0
 
         self.in_memory = True
-        self.data_hdf5_fp = ''
 
         self.encoder = 'stacked_cnn'
 
@@ -234,9 +248,6 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
     ):
         for dim in ['height', 'width', 'num_channels']:
             input_feature[dim] = feature_metadata['preprocessing'][dim]
-        input_feature['data_hdf5_fp'] = (
-            kwargs['model_definition']['data_hdf5_fp']
-        )
 
     @staticmethod
     def populate_defaults(input_feature):

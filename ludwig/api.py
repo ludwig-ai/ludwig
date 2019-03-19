@@ -721,6 +721,7 @@ class LudwigModel:
 
         if data_df is None:
             data_df = self._read_data(data_csv, data_dict)
+            data_df.csv = data_csv
 
         if batch_size is None:
             batch_size = self.model_definition['training']['batch_size']
