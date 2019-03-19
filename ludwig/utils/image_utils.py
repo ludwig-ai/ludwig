@@ -16,6 +16,7 @@
 # ==============================================================================
 from math import floor, ceil
 
+import os
 import numpy as np
 from skimage import img_as_ubyte
 from skimage.transform import resize
@@ -65,3 +66,10 @@ def resize_image(img, new_size_typle, resize_method):
         raise ValueError(
             'Invalid image resize method: {}'.format(resize_method))
     return img
+
+
+def get_abs_path(data_csv_path, image_path):
+    if data_csv_path is not None:
+        return os.path.join(data_csv_path, image_path)
+    else:
+        return image_path
