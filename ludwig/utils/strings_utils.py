@@ -112,10 +112,7 @@ def get_sequence_vector(sequence, format, unit_to_id, lowercase=True):
         format,
         format_registry
     )
-    format_dtype = get_from_registry(
-        format,
-        format_dtype_registry
-    )
+    format_dtype = get_dtype(len(unit_to_id))
     return _get_sequence_vector(sequence, format_function, format_dtype,
                                 unit_to_id, lowercase=lowercase)
 
@@ -140,10 +137,8 @@ def build_sequence_matrix(sequences, inverse_vocabulary, format, length_limit,
         format,
         format_registry
     )
-    format_dtype = get_from_registry(
-        format,
-        format_dtype_registry
-    )
+    format_dtype = get_dtype(len(inverse_vocabulary))
+
     max_length = 0
     unit_vectors = []
     for sequence in sequences:
@@ -278,3 +273,14 @@ format_dtype_registry = {
     'english_lemmatize_remove_stopwords': np.int32,
     'characters': np.int8
 }
+
+
+def get_dtype(number):
+    if number <= np.iinfo(np.int8).max:
+        return np.int8
+    elif number <= np.iinfo(np.int16).max:
+        return np.int16
+    elif number <= np.iinfo(np.int32).max:
+        return np.int32
+    elif number <= np.iinfo(np.int64).max:
+        return np.int64
