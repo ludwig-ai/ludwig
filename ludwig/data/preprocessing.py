@@ -694,7 +694,7 @@ def preprocess_for_prediction(
         dataset,
         model_definition['input_features'],
         [] if only_predictions else model_definition['output_features'],
-        data_hdf5,
+        data_hdf5_fp,
     )
 
     return dataset, train_set_metadata
