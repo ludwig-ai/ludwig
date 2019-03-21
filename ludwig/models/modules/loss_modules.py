@@ -277,12 +277,12 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
 def weighted_softmax_cross_entropy(logits, vector_labels, loss):
     use_class_weights = not isinstance(loss['class_weights'], (int, float))
     if use_class_weights:
-        train_loss = softmax_cross_entropy_with_class_weighting(logits,
-                                                                vector_labels,
-                                                                loss[
-                                                                    'class_weights'],
-                                                                loss[
-                                                                    'labels_smoothing'])
+        train_loss = softmax_cross_entropy_with_class_weighting(
+            logits,
+            vector_labels,
+            loss['class_weights'],
+            loss['labels_smoothing']
+        )
     else:
         train_loss = tf.losses.softmax_cross_entropy(
             onehot_labels=vector_labels,
@@ -299,12 +299,12 @@ def loss_multilabel(logits, vector_labels, loss):
     # let `x = logits`, `z = labels`.  The logistic loss is:z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
     use_class_weights = not isinstance(loss['class_weights'], (int, float))
     if use_class_weights:
-        train_loss = sigmoid_cross_entropy_with_class_weighting(logits,
-                                                                vector_labels,
-                                                                loss[
-                                                                    'class_weights'],
-                                                                loss[
-                                                                    'labels_smoothing'])
+        train_loss = sigmoid_cross_entropy_with_class_weighting(
+            logits,
+            vector_labels,
+            loss['class_weights'],
+            loss['labels_smoothing']
+        )
     else:
         train_loss = tf.losses.sigmoid_cross_entropy(
             multi_class_labels=vector_labels,

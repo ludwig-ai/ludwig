@@ -290,43 +290,44 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             class_biases
     ):
         with tf.variable_scope('loss_{}'.format(self.name)):
-            if ('distances' in self.loss and
-                    self.loss['distances'] is not None):
+            if ('class_similarities' in self.loss and
+                    self.loss['class_similarities'] is not None):
 
-                class_distances = self.loss['distances']
+                class_similarities = self.loss['class_similarities']
 
-                if (class_distances.shape[0] != self.num_classes or
-                        class_distances.shape[1] != self.num_classes):
+                if (class_similarities.shape[0] != self.num_classes or
+                        class_similarities.shape[1] != self.num_classes):
                     logging.info(
-                        'Class distances is {} while num classes is {}'.format(
-                            class_distances.shape,
+                        'Class similarities is {} while num classes is {}'.format(
+                            class_similarities.shape,
                             self.num_classes
                         )
                     )
-                    if (class_distances.shape[0] > self.num_classes and
-                            class_distances.shape[1] > self.num_classes):
+                    if (class_similarities.shape[0] > self.num_classes and
+                            class_similarities.shape[1] > self.num_classes):
                         # keep only the first num_classes rows and columns
-                        class_distances = class_distances[
+                        class_similarities = class_similarities[
                                           :self.num_classes,
                                           :self.num_classes
-                                          ]
-                    elif (class_distances.shape[0] < self.num_classes and
-                          class_distances.shape[1] < self.num_classes):
+                                             ]
+                    elif (class_similarities.shape[0] < self.num_classes and
+                          class_similarities.shape[1] < self.num_classes):
                         # fill the missing parts of the matrix with 0s and 1
                         # on the diagonal
                         diag = np.diag((self.num_classes, self.num_classes))
                         diag[
-                        :class_distances.shape[0],
-                        :class_distances.shape[1]
-                        ] = class_distances
-                        class_distances = diag
+                        :class_similarities.shape[0],
+                        :class_similarities.shape[1]
+                        ] = class_similarities
+                        class_similarities = diag
 
-                class_distances = tf.constant(
-                    class_distances,
-                    name='class_distances_{}'.format(self.name)
+                class_similarities = tf.constant(
+                    class_similarities,
+                    dtype=tf.float32,
+                    name='class_similarities_{}'.format(self.name)
                 )
                 vector_labels = tf.gather(
-                    class_distances,
+                    class_similarities,
                     targets,
                     name='vector_labels_{}'.format(self.name)
                 )
@@ -486,35 +487,89 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         )
 
         if isinstance(output_feature[LOSS]['class_weights'], (list, tuple)):
-            output_feature[LOSS]['class_weights'] = (
-                    [0] + output_feature[LOSS]['class_weights']  # for UNK
-            )
             if (len(output_feature[LOSS]['class_weights']) !=
                     output_feature['num_classes']):
                 raise ValueError(
                     'The length of class_weights ({}) is not compatible with '
-                    'the number of classes ({})'.format(
+                    'the number of classes ({}) for feature {}. '
+                    'Check the metadata JSON file to see the classes '
+                    'and their order and consider there needs to be a weight '
+                    'for the <UNK> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
-                        output_feature['num_classes']
+                        output_feature['num_classes'],
+                        output_feature['name']
                     )
                 )
 
-        if output_feature[LOSS]['class_distance_temperature'] > 0:
-            if 'distances' in feature_metadata:
-                distances = feature_metadata['distances']
-                temperature = output_feature[LOSS]['class_distance_temperature']
+        if output_feature[LOSS]['class_similarities_temperature'] > 0:
+            if 'class_similarities' in output_feature[LOSS]:
+                similarities = output_feature[LOSS]['class_similarities']
+                temperature = output_feature[LOSS][
+                    'class_similarities_temperature']
 
-                for i in range(len(distances)):
-                    distances[i, :] = softmax(
-                        distances[i, :],
+                curr_row = 0
+                first_row_lenght = 0
+                is_first_row = True
+                for row in similarities:
+                    if is_first_row:
+                        first_row_lenght = len(row)
+                        is_first_row = False
+                        curr_row += 1
+                    else:
+                        curr_row_lenght = len(row)
+                        if curr_row_lenght != first_row_lenght:
+                            raise ValueError(
+                                'The length of row {} of the class_similarities '
+                                'of {} is {}, different from the length of '
+                                'the first row {}. All rows must have '
+                                'the same length.'.format(
+                                    curr_row,
+                                    output_feature['name'],
+                                    curr_row_lenght,
+                                    first_row_lenght
+                                )
+                            )
+                        else:
+                            curr_row += 1
+                all_rows_length = first_row_lenght
+
+                if all_rows_length != len(similarities):
+                    raise ValueError(
+                        'The class_similarities matrix of {} has '
+                        '{} rows and {} columns, '
+                        'their number must be identical.'.format(
+                            output_feature['name'],
+                            len(similarities),
+                            all_rows_length
+                        )
+                    )
+
+                if all_rows_length != output_feature['num_classes']:
+                    raise ValueError(
+                        'The size of the class_similarities matrix of {} is '
+                        '{}, different from the number of classe ({}). '
+                        'Check the metadata JSON file to see the classes '
+                        'and their order and '
+                        'consider <UNK> class too.'.format(
+                            output_feature['name'],
+                            all_rows_length,
+                            output_feature['num_classes']
+                        )
+                    )
+
+                similarities = np.array(similarities, dtype=np.float32)
+                for i in range(len(similarities)):
+                    similarities[i, :] = softmax(
+                        similarities[i, :],
                         temperature=temperature
                     )
 
-                output_feature[LOSS]['distances'] = distances
+                output_feature[LOSS]['class_similarities'] = similarities
             else:
                 raise ValueError(
-                    'No class_distance metadata available for '
-                    'feature {}'.format(output_feature['name'])
+                    'class_similarities_temperature > 0, '
+                    'but no class_similarities are provided '
+                    'for feature {}'.format(output_feature['name'])
                 )
 
         if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
@@ -612,11 +667,12 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                 'sampler': None,
                 'negative_samples': 0,
                 'distortion': 1,
+                'unique': False,
                 'labels_smoothing': 0,
                 'class_weights': 1,
                 'robust_lambda': 0,
                 'confidence_penalty': 0,
-                'class_distance_temperature': 0,
+                'class_similarities_temperature': 0,
                 'weight': 1
             }
         )
@@ -632,6 +688,12 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             set_default_value(output_feature[LOSS], 'distortion', 1)
 
         set_default_value(output_feature[LOSS], 'unique', False)
+        set_default_value(output_feature[LOSS], 'labels_smoothing', 0)
+        set_default_value(output_feature[LOSS], 'class_weights', 1)
+        set_default_value(output_feature[LOSS], 'robust_lambda', 0)
+        set_default_value(output_feature[LOSS], 'confidence_penalty', 0)
+        set_default_value(output_feature[LOSS],
+                          'class_similarities_temperature', 0)
         set_default_value(output_feature[LOSS], 'weight', 1)
 
         set_default_value(output_feature, 'top_k', 3)

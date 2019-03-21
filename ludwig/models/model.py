@@ -22,7 +22,6 @@ from __future__ import division
 from __future__ import print_function
 
 import copy
-import json
 import logging
 import os
 import re
@@ -57,7 +56,7 @@ from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
-from ludwig.utils.data_utils import load_json
+from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.data_utils import load_object
 from ludwig.utils.data_utils import save_object
 from ludwig.utils.defaults import default_random_seed
@@ -1315,8 +1314,7 @@ class Model:
                         local_hyperparamters['output_features']):
             if 'pretrained_embeddings' in feature:
                 feature['pretrained_embeddings'] = None
-        with open(save_path, 'w') as fp:
-            json.dump(hyperparameters, fp, sort_keys=True, indent=4)
+        save_json(save_path, hyperparameters, sort_keys=True, indent=4)
 
     def restore(self, session, weights_path):
         self.saver.restore(session, weights_path)

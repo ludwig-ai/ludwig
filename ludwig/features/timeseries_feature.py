@@ -192,7 +192,7 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
             'weight': 1,
             'type': 'softmax_cross_entropy',
             'class_weights': 1,
-            'class_distance_temperature': 0
+            'class_similarities_temperature': 0
         }
         self.num_classes = 0
 

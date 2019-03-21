@@ -238,7 +238,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         self.loss = {
             'type': SOFTMAX_CROSS_ENTROPY,
             'class_weights': 1,
-            'class_distance_temperature': 0,
+            'class_similarities_temperature': 0,
             'weight': 1
         }
         self.num_classes = 0
@@ -358,19 +358,21 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
                     )
                 )
 
-        if output_feature[LOSS]['class_distance_temperature'] > 0:
-            if 'distances' in feature_metadata:
-                distances = feature_metadata['distances']
-                temperature = output_feature[LOSS]['class_distance_temperature']
+        if output_feature[LOSS]['class_similarities_temperature'] > 0:
+            if 'class_similarities' in output_feature:
+                distances = output_feature['class_similarities']
+                temperature = output_feature[LOSS][
+                    'class_similarities_temperature']
                 for i in range(len(distances)):
                     distances[i, :] = softmax(
                         distances[i, :],
                         temperature=temperature
                     )
-                output_feature[LOSS]['distances'] = distances
+                output_feature[LOSS]['class_similarities'] = distances
             else:
                 raise ValueError(
-                    'No class distance metadata available '
+                    'class_similarities_temperature > 0,'
+                    'but no class similarities are provided '
                     'for feature {}'.format(output_feature['name'])
                 )
 
@@ -491,7 +493,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
                 'class_weights': 1,
                 'robust_lambda': 0,
                 'confidence_penalty': 0,
-                'class_distance_temperature': 0,
+                'class_similarities_temperature': 0,
                 'weight': 1
             }
         )
@@ -500,7 +502,8 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         set_default_value(output_feature[LOSS], 'class_weights', 1)
         set_default_value(output_feature[LOSS], 'robust_lambda', 0)
         set_default_value(output_feature[LOSS], 'confidence_penalty', 0)
-        set_default_value(output_feature[LOSS], 'class_distance_temperature', 0)
+        set_default_value(output_feature[LOSS],
+                          'class_similarities_temperature', 0)
         set_default_value(output_feature[LOSS], 'weight', 1)
         set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
 
