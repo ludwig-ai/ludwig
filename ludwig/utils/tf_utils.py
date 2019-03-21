@@ -56,7 +56,9 @@ def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,
                 per_process_gpu_memory_fraction=gpu_fraction,
                 allow_growth=True)
         else:
-            gpu_options = tf.GPUOptions()
+            gpu_options = tf.GPUOptions(allow_growth=True)
+            # allow_growth=True is needed for a weird behavior with CUDA 10
+            # https://github.com/tensorflow/tensorflow/issues/24828
         if isinstance(gpus, int):
             gpus = [gpus]
         gpu_options.visible_device_list = ','.join(str(g) for g in gpus)
