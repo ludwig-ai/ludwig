@@ -48,14 +48,14 @@ def softmax(x, temperature=1.0):
     return e_x / e_x.sum()
 
 
-def int_type(num_distinct):
-    if num_distinct < 128:
+def int_type(number):
+    if number <= np.iinfo(np.int8).max:
         return np.int8
-    elif num_distinct < 32768:
+    elif number <= np.iinfo(np.int16).max:
         return np.int16
-    elif num_distinct < 2147483648:
+    elif number <= np.iinfo(np.int32).max:
         return np.int32
-    else:
+    else:  # if number <= np.iinfo(np.int64).max:
         return np.int64
 
 
