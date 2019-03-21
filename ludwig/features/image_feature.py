@@ -27,8 +27,8 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
-from ludwig.utils.image_utils import resize_image
 from ludwig.utils.image_utils import get_abs_path
+from ludwig.utils.image_utils import resize_image
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 
@@ -147,6 +147,9 @@ class ImageBaseFeature(BaseFeature):
                         (height, width),
                         preprocessing_parameters['resize_method']
                     )
+                # todo: temporary workaround for images with alpha channel, replace
+                if img.ndim == 3 and img.shape[2] != num_channels:
+                    img = img[:, :, :num_channels]
                 data[feature['name']][i, :, :, :] = img
         else:
             data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
