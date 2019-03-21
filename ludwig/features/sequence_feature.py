@@ -211,7 +211,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             'class_weights': 1,
             'robust_lambda': 0,
             'confidence_penalty': 0,
-            'class_distance_temperature': 0,
+            'class_similarities_temperature': 0,
             'weight': 1
         }
         self.num_classes = 0
@@ -603,34 +603,87 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             feature_metadata['max_sequence_length']
         )
         if isinstance(output_feature[LOSS]['class_weights'], (list, tuple)):
-            output_feature[LOSS]['class_weights'] = (
-                    [0, 0] + output_feature[LOSS]['class_weights']
-
-            )
-            # for UNK and PAD
             if (len(output_feature[LOSS]['class_weights']) !=
                     output_feature['num_classes']):
                 raise ValueError(
                     'The length of class_weights ({}) is not compatible with '
-                    'the number of classes ({})'.format(
+                    'the number of classes ({}) for feature {}. '
+                    'Check the metadata JSON file to see the classes '
+                    'and their order and consider there needs to be a weight '
+                    'for the <UNK> and <PAD> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
-                        output_feature['num_classes']
+                        output_feature['num_classes'],
+                        output_feature['name']
                     )
                 )
 
-        if output_feature[LOSS]['class_distance_temperature'] > 0:
-            if 'distances' in feature_metadata:
-                distances = feature_metadata['distances']
-                temperature = output_feature[LOSS]['class_distance_temperature']
-                for i in range(len(distances)):
-                    distances[i, :] = softmax(
-                        distances[i, :],
+        if output_feature[LOSS]['class_similarities_temperature'] > 0:
+            if 'class_similarities' in output_feature[LOSS]:
+                similarities = output_feature[LOSS]['class_similarities']
+                temperature = output_feature[LOSS][
+                    'class_similarities_temperature']
+
+                curr_row = 0
+                first_row_lenght = 0
+                is_first_row = True
+                for row in similarities:
+                    if is_first_row:
+                        first_row_lenght = len(row)
+                        is_first_row = False
+                        curr_row += 1
+                    else:
+                        curr_row_lenght = len(row)
+                        if curr_row_lenght != first_row_lenght:
+                            raise ValueError(
+                                'The length of row {} of the class_similarities '
+                                'of {} is {}, different from the length of '
+                                'the first row {}. All rows must have '
+                                'the same length.'.format(
+                                    curr_row,
+                                    output_feature['name'],
+                                    curr_row_lenght,
+                                    first_row_lenght
+                                )
+                            )
+                        else:
+                            curr_row += 1
+                all_rows_length = first_row_lenght
+
+                if all_rows_length != len(similarities):
+                    raise ValueError(
+                        'The class_similarities matrix of {} has '
+                        '{} rows and {} columns, '
+                        'their number must be identical.'.format(
+                            output_feature['name'],
+                            len(similarities),
+                            all_rows_length
+                        )
+                    )
+
+                if all_rows_length != output_feature['num_classes']:
+                    raise ValueError(
+                        'The size of the class_similarities matrix of {} is '
+                        '{}, different from the number of classe ({}). '
+                        'Check the metadata JSON file to see the classes '
+                        'and their order and '
+                        'consider <UNK> and <PAD> class too.'.format(
+                            output_feature['name'],
+                            all_rows_length,
+                            output_feature['num_classes']
+                        )
+                    )
+
+                similarities = np.array(similarities, dtype=np.float32)
+                for i in range(len(similarities)):
+                    similarities[i, :] = softmax(
+                        similarities[i, :],
                         temperature=temperature
                     )
-                output_feature[LOSS]['distances'] = distances
+                output_feature[LOSS]['class_similarities'] = similarities
             else:
                 raise ValueError(
-                    'No class distance metadata available '
+                    'class_similarities_temperature > 0, '
+                    'but no class_similarities are provided '
                     'for feature {}'.format(output_feature['name'])
                 )
 
@@ -744,7 +797,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 'class_weights': 1,
                 'robust_lambda': 0,
                 'confidence_penalty': 0,
-                'class_distance_temperature': 0,
+                'class_similarities_temperature': 0,
                 'weight': 1
             }
         )
@@ -753,7 +806,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         set_default_value(output_feature[LOSS], 'class_weights', 1)
         set_default_value(output_feature[LOSS], 'robust_lambda', 0)
         set_default_value(output_feature[LOSS], 'confidence_penalty', 0)
-        set_default_value(output_feature[LOSS], 'class_distance_temperature', 0)
+        set_default_value(output_feature[LOSS],
+                          'class_similarities_temperature', 0)
         set_default_value(output_feature[LOSS], 'weight', 1)
         set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
 
