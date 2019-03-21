@@ -629,16 +629,7 @@ This allows ease of use for novices and flexibility for experts.</p>
 </table>
 <p>you want to learn a model that uses the content of the <code>doc_text</code> column as input to predict the values in the <code>class</code> column.
 You can use the following model definition:</p>
-                <div class="codehilite"><pre><span></span><span class="p p-Indicator">{</span><span class="nv">input_features</span><span
-                        class="p p-Indicator">:</span> <span class="p p-Indicator">[{</span><span class="nv">name</span><span
-                        class="p p-Indicator">:</span> <span class="nv">doc_text</span><span
-                        class="p p-Indicator">,</span> <span class="nv">type</span><span class="p p-Indicator">:</span> <span
-                        class="nv">text</span><span class="p p-Indicator">}],</span> <span
-                        class="nv">output_features</span><span class="p p-Indicator">:</span> <span
-                        class="p p-Indicator">[{</span><span class="nv">name</span><span class="p p-Indicator">:</span> <span
-                        class="nv">class</span><span class="p p-Indicator">,</span> <span class="nv">type</span><span
-                        class="p p-Indicator">:</span> <span class="nv">category</span><span
-                        class="p p-Indicator">}]}</span>
+<div class="codehilite"><pre><span></span><span class="p p-Indicator">{</span><span class="nv">input_features</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[{</span><span class="nv">name</span><span class="p p-Indicator">:</span> <span class="nv">doc_text</span><span class="p p-Indicator">,</span> <span class="nv">type</span><span class="p p-Indicator">:</span> <span class="nv">text</span><span class="p p-Indicator">}],</span> <span class="nv">output_features</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[{</span><span class="nv">name</span><span class="p p-Indicator">:</span> <span class="nv">class</span><span class="p p-Indicator">,</span> <span class="nv">type</span><span class="p p-Indicator">:</span> <span class="nv">category</span><span class="p p-Indicator">}]}</span>
 </pre></div>
 
 
@@ -650,20 +641,7 @@ You can use the following model definition:</p>
 <p>and Ludwig will perform a random split of the data, preprocess it, build a WordCNN model (the default for text features) that decodes output classes through a softmax classifier, train the model on the training set until the accuracy on the validation set stops improving.
 Training progress will be displayed in the console, but TensorBoard can also be used.</p>
 <p>If you prefer to use an RNN encoder and increase the number of epochs you want the model to train for, all you have to do is to change the model definition to:</p>
-                <div class="codehilite"><pre><span></span><span class="p p-Indicator">{</span><span class="nv">input_features</span><span
-                        class="p p-Indicator">:</span> <span class="p p-Indicator">[{</span><span class="nv">name</span><span
-                        class="p p-Indicator">:</span> <span class="nv">doc_text</span><span
-                        class="p p-Indicator">,</span> <span class="nv">type</span><span class="p p-Indicator">:</span> <span
-                        class="nv">text</span><span class="p p-Indicator">,</span> <span class="nv">encoder</span><span
-                        class="p p-Indicator">:</span> <span class="nv">rnn</span><span class="p p-Indicator">}],</span> <span
-                        class="nv">output_features</span><span class="p p-Indicator">:</span> <span
-                        class="p p-Indicator">[{</span><span class="nv">name</span><span class="p p-Indicator">:</span> <span
-                        class="nv">class</span><span class="p p-Indicator">,</span> <span class="nv">type</span><span
-                        class="p p-Indicator">:</span> <span class="nv">category</span><span
-                        class="p p-Indicator">}],</span> <span class="nv">training</span><span
-                        class="p p-Indicator">:</span> <span class="p p-Indicator">{</span><span
-                        class="nv">epochs</span><span class="p p-Indicator">:</span> <span class="nv">50</span><span
-                        class="p p-Indicator">}}</span>
+<div class="codehilite"><pre><span></span><span class="p p-Indicator">{</span><span class="nv">input_features</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[{</span><span class="nv">name</span><span class="p p-Indicator">:</span> <span class="nv">doc_text</span><span class="p p-Indicator">,</span> <span class="nv">type</span><span class="p p-Indicator">:</span> <span class="nv">text</span><span class="p p-Indicator">,</span> <span class="nv">encoder</span><span class="p p-Indicator">:</span> <span class="nv">rnn</span><span class="p p-Indicator">}],</span> <span class="nv">output_features</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">[{</span><span class="nv">name</span><span class="p p-Indicator">:</span> <span class="nv">class</span><span class="p p-Indicator">,</span> <span class="nv">type</span><span class="p p-Indicator">:</span> <span class="nv">category</span><span class="p p-Indicator">}],</span> <span class="nv">training</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">{</span><span class="nv">epochs</span><span class="p p-Indicator">:</span> <span class="nv">50</span><span class="p p-Indicator">}}</span>
 </pre></div>
 
 
