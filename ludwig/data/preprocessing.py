@@ -15,10 +15,11 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import h5py
 import logging
-import numpy as np
 import os
+
+import h5py
+import numpy as np
 import yaml
 
 from ludwig.constants import *
@@ -204,7 +205,7 @@ def get_split(
         split = dataset_df['split']
     else:
         set_random_seed(random_seed)
-        if stratify is None:
+        if stratify is None or stratify not in dataset_df:
             split = np.random.choice(
                 3,
                 len(dataset_df),
