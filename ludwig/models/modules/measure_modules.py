@@ -78,8 +78,9 @@ def masked_accuracy(targets, predictions, sequence_lengths,
         tf.cast(masked_correct_predictions, tf.float32),
         name='overall_accuracy_{}'.format(output_feature_name))
 
-    one_masked_correct_prediction = 1.0 - tf.to_float(mask) + (
-                tf.to_float(mask) * tf.to_float(correct_predictions))
+    one_masked_correct_prediction = 1.0 - tf.cast(mask, tf.float32) + (
+            tf.cast(mask, tf.float32) * tf.cast(correct_predictions,
+                                                tf.float32))
     rowwise_correct_predictions = tf.reduce_prod(one_masked_correct_prediction,
                                                  axis=-1,
                                                  name='rowwise_correct_predictions_{}'.format(

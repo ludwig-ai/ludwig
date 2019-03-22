@@ -244,7 +244,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
     ):
         with tf.variable_scope('loss_{}'.format(self.name)):
             train_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-                labels=tf.to_float(targets),
+                labels=tf.cast(targets, tf.float32),
                 logits=logits
             )
             train_loss = tf.reduce_sum(train_loss, axis=1)
@@ -258,11 +258,11 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
 
     def _get_measures(self, targets, predictions):
         intersection = tf.reduce_sum(
-            tf.to_float(tf.logical_and(targets, predictions)),
+            tf.cast(tf.logical_and(targets, predictions), tf.float32),
             axis=1
         )
         union = tf.reduce_sum(
-            tf.to_float(tf.logical_or(targets, predictions)),
+            tf.cast(tf.logical_or(targets, predictions), tf.float32),
             axis=1
         )
         jaccard_index = intersection / union

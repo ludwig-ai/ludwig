@@ -109,8 +109,9 @@ def cross_entropy_sequence_loss(logits, targets, sequence_length):
             logits=logits, labels=targets)
         # Mask out the losses we don't care about
         loss_mask = tf.sequence_mask(
-            tf.to_int32(sequence_length), tf.to_int32(tf.shape(targets)[1]))
-        losses = losses * tf.to_float(loss_mask)
+            tf.cast(sequence_length, tf.int32), tf.cast(tf.shape(targets)[1]),
+            tf.int32)
+        losses = losses * tf.cast(loss_mask, tf.float32)
         return losses
 
 

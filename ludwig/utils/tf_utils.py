@@ -34,9 +34,9 @@ def sequence_length_2D(sequence):
 # Convert a dense matrix into a sparse matrix (for e.g. edit_distance)
 def to_sparse(tensor, lengths, max_length):
     mask = tf.sequence_mask(lengths, max_length)
-    indices = tf.to_int64(tf.where(tf.equal(mask, True)))
-    values = tf.to_int32(tf.boolean_mask(tensor, mask))
-    shape = tf.to_int64(tf.shape(tensor))
+    indices = tf.cast(tf.where(tf.equal(mask, True)), tf.int64)
+    values = tf.cast(tf.boolean_mask(tensor, mask), tf.int32)
+    shape = tf.cast(tf.shape(tensor), tf.int32)
     return tf.SparseTensor(indices, values, shape)
 
 
