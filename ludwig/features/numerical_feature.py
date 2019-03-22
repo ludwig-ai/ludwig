@@ -128,6 +128,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         super().__init__(feature)
 
         self.loss = {'type': MEAN_SQUARED_ERROR}
+        self.clip = None
         self.initializer = None
         self.regularize = True
 
@@ -166,6 +167,25 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                 [-1]
             )
             logging.debug('  predictions: {0}'.format(predictions))
+
+            if self.clip is not None:
+                if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
+                    predictions = tf.clip_by_value(
+                        predictions,
+                        self.clip[0],
+                        self.clip[1]
+                    )
+                    logging.debug(
+                        '  clipped_predictions: {0}'.format(predictions)
+                    )
+                else:
+                    raise ValueError(
+                        'The clip parameter of {} is {}. '
+                        'It must be a list or a tuple of length 2.'.format(
+                            self.name,
+                            self.clip
+                        )
+                    )
 
         return predictions
 
@@ -268,7 +288,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                 tf.reduce_mean(r2)
             )
 
-        # ================ Loss (Binary Cross Entropy) ================
+        # ================ Loss ================
         train_mean_loss, eval_loss = self._get_loss(targets, predictions)
 
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
@@ -381,6 +401,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             {'type': 'mean_squared_error', 'weight': 1}
         )
         set_default_value(output_feature[LOSS], 'type', 'mean_squared_error')
+        set_default_value(output_feature, 'clip', None)
         set_default_value(output_feature, 'dependencies', [])
         set_default_value(output_feature, 'weight', 1)
         set_default_value(output_feature, 'reduce_input', SUM)
