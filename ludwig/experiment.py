@@ -252,6 +252,7 @@ def experiment(
             'preprocessing'],
         random_seed=random_seed
     )
+    print("=== train ===")
     if is_on_master():
         logging.info('Training set: {0}'.format(training_set.size))
         if validation_set is not None:

@@ -58,8 +58,11 @@ class ImageBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
+        print("=== add feature data ===")
+        # if 'preprocessing' not in feature:
+        #     feature['preprocessing'] = {}
         set_default_value(
-            feature,
+            feature['preprocessing'],
             'in_memory',
             preprocessing_parameters['in_memory']
         )
@@ -127,7 +130,8 @@ class ImageBaseFeature(BaseFeature):
         metadata[feature['name']]['preprocessing'][
             'num_channels'] = num_channels
 
-        if feature['in_memory']:
+        if feature['preprocessing']['in_memory']:
+            print('=== in memory ===')
             data[feature['name']] = np.empty(
                 (num_images, height, width, num_channels),
                 dtype=np.int8
@@ -152,6 +156,7 @@ class ImageBaseFeature(BaseFeature):
                     img = img[:, :, :num_channels]
                 data[feature['name']][i, :, :, :] = img
         else:
+            print('=== not in memory ===')
             data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
@@ -190,8 +195,6 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         self.height = 0
         self.width = 0
         self.num_channels = 0
-
-        self.in_memory = True
 
         self.encoder = 'stacked_cnn'
 
@@ -255,6 +258,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, 'preprocessing', {})
 
 
 image_encoder_registry = {

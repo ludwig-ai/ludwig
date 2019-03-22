@@ -626,6 +626,12 @@ def preprocess_for_prediction(
     model_definition = load_json(
         os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
     )
+    for input_feature in model_definition['input_features']:
+        if 'preprocessing' in input_feature:
+            if 'in_memory' in input_feature['preprocessing']:
+                if not input_feature['preprocessing']['in_memory']:
+                    print('==== OVERRIDING IN MEMORY FLAG ====')
+                    input_feature['preprocessing']['in_memory'] = True
     preprocessing_params = merge_dict(
         default_preprocessing_parameters,
         model_definition['preprocessing']
