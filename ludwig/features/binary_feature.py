@@ -177,7 +177,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def _get_loss(self, targets, logits, probabilities):
         with tf.variable_scope('loss_{}'.format(self.name)):
             train_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-                labels=tf.to_float(targets), logits=logits)
+                labels=tf.cast(targets, tf.float32), logits=logits)
 
             if self.loss['robust_lambda'] > 0:
                 train_loss = ((1 - self.loss['robust_lambda']) * train_loss +
