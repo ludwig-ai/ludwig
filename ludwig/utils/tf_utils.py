@@ -36,7 +36,7 @@ def to_sparse(tensor, lengths, max_length):
     mask = tf.sequence_mask(lengths, max_length)
     indices = tf.cast(tf.where(tf.equal(mask, True)), tf.int64)
     values = tf.cast(tf.boolean_mask(tensor, mask), tf.int32)
-    shape = tf.cast(tf.shape(tensor), tf.int32)
+    shape = tf.cast(tf.shape(tensor), tf.int64)
     return tf.SparseTensor(indices, values, shape)
 
 
