@@ -58,9 +58,6 @@ class ImageBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        print("=== add feature data ===")
-        # if 'preprocessing' not in feature:
-        #     feature['preprocessing'] = {}
         set_default_value(
             feature['preprocessing'],
             'in_memory',
@@ -131,7 +128,6 @@ class ImageBaseFeature(BaseFeature):
             'num_channels'] = num_channels
 
         if feature['preprocessing']['in_memory']:
-            print('=== in memory ===')
             data[feature['name']] = np.empty(
                 (num_images, height, width, num_channels),
                 dtype=np.int8
@@ -156,7 +152,6 @@ class ImageBaseFeature(BaseFeature):
                     img = img[:, :, :num_channels]
                 data[feature['name']][i, :, :, :] = img
         else:
-            print('=== not in memory ===')
             data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
