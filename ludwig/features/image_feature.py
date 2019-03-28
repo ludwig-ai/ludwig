@@ -65,6 +65,7 @@ class ImageBaseFeature(BaseFeature):
         :param user_specified_num_channels: did the user specify num channels?
         :return: image object
 
+        Helper method to read and resize an image according to model defn.
         If the user doesn't specify a number of channels, we use the first image
         in the dataset as the source of truth. If any image in the dataset
         doesn't have the same number of channels as the first image,
@@ -173,7 +174,7 @@ class ImageBaseFeature(BaseFeature):
             height = first_img_height
             width = first_img_width
 
-        # User specified num_channels
+        # User specified num_channels in the model/feature definition
         user_specified_num_channels = False
         num_channels = first_img_num_channels
         if NUM_CHANNELS in preprocessing_parameters:

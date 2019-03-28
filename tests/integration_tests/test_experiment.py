@@ -479,6 +479,14 @@ def test_visual_question_answering(csv_filename):
 
 
 def test_image_resizing_num_channel_handling(csv_filename):
+    """
+    This test creates two image datasets with 3 channels and 1 channel. The
+    combination of this data is used to train a model. This checks the cases
+    where the user may or may not specify a number of channels in the
+    model definition
+    :param csv_filename:
+    :return:
+    """
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features_template = Template(
@@ -523,6 +531,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     df = concatenate_df(df1, df2, None)
     df.to_csv(rel_path, index=False)
 
+    # Here the user sepcifiies number of channels. Exception shouldn't be thrown
     run_experiment(input_features, output_features, rel_path)
 
     input_features_template = Template(
@@ -538,6 +547,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
         folder=image_dest_folder,
         in_memory='true',
     )
+    # User now doesn't specify num channels. Should throw exception
     with pytest.raises(ValueError):
         run_experiment(input_features, output_features, rel_path)
 
