@@ -52,9 +52,13 @@ class ImageBaseFeature(BaseFeature):
         }
 
     @staticmethod
-    def _read_image_and_resize(filepath, im_width, im_height,
-                               should_resize, num_channels,
-                               resize_method, user_specified_num_channels):
+    def _read_image_and_resize(filepath,
+                               im_width,
+                               im_height,
+                               should_resize,
+                               num_channels,
+                               resize_method,
+                               user_specified_num_channels):
         """
         :param filepath: path to the image
         :param im_width: expected width of the image
@@ -85,7 +89,8 @@ class ImageBaseFeature(BaseFeature):
             if im_num_channels != num_channels:
                 raise ValueError(
                     'Image {0} has {1} channels, unlike the first image, which'
-                    ' has {2} channels'.format(filepath, im_num_channels,
+                    ' has {2} channels'.format(filepath,
+                                               im_num_channels,
                                                num_channels))
 
         else:
@@ -201,8 +206,12 @@ class ImageBaseFeature(BaseFeature):
                 )
 
                 img = ImageBaseFeature._read_image_and_resize(
-                    filepath, width, height, should_resize,
-                    num_channels, preprocessing_parameters['resize_method'],
+                    filepath,
+                    width,
+                    height,
+                    should_resize,
+                    num_channels,
+                    preprocessing_parameters['resize_method'],
                     user_specified_num_channels
                 )
                 data[feature['name']][i, :, :, :] = img
@@ -224,8 +233,12 @@ class ImageBaseFeature(BaseFeature):
                     )
 
                     img = ImageBaseFeature._read_image_and_resize(
-                        filepath, width, height, should_resize,
-                        num_channels, preprocessing_parameters['resize_method'],
+                        filepath,
+                        width,
+                        height,
+                        should_resize,
+                        num_channels,
+                        preprocessing_parameters['resize_method'],
                         user_specified_num_channels
                     )
 
