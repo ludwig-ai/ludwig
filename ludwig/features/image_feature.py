@@ -53,16 +53,16 @@ class ImageBaseFeature(BaseFeature):
 
     @staticmethod
     def _read_image_and_resize(filepath,
-                               im_width,
-                               im_height,
+                               img_width,
+                               img_height,
                                should_resize,
                                num_channels,
                                resize_method,
                                user_specified_num_channels):
         """
         :param filepath: path to the image
-        :param im_width: expected width of the image
-        :param im_height: expected height of the image
+        :param img_width: expected width of the image
+        :param img_height: expected height of the image
         :param should_resize: Should the image be resized?
         :param resize_method: type of resizing method
         :param num_channels: expected number of channels in the first image
@@ -80,35 +80,33 @@ class ImageBaseFeature(BaseFeature):
         """
 
         img = imread(filepath)
-        im_num_channels = num_channels_in_image(img)
-        if im_num_channels == 1:
+        img_num_channels = num_channels_in_image(img)
+        if img_num_channels == 1:
             img = img.reshape((img.shape[0], img.shape[1], 1))
 
-        if user_specified_num_channels is False:
-            # If the image isn't like the first image, raise exception
-            if im_num_channels != num_channels:
-                raise ValueError(
-                    'Image {0} has {1} channels, unlike the first image, which'
-                    ' has {2} channels'.format(filepath,
-                                               im_num_channels,
-                                               num_channels))
-
-        else:
+        if user_specified_num_channels is True:
             # Number of channels is specified by the user
-            img_padded = np.zeros((im_height, im_width, num_channels))
-            for i in range(min(num_channels, im_num_channels)):
-                img_padded[:, :, i] = img[:, :, i]
+            img_padded = np.zeros((img_height, img_width, num_channels))
+            min_num_channels = min(num_channels, img_num_channels)
+            img_padded[:,:,:min_num_channels] = img[:,:,:min_num_channels]
             img = img_padded
 
-            if im_num_channels != num_channels:
+            if img_num_channels != num_channels:
                 logging.warning(
                     "Image {0} has {1} channels, where as {2}"
                     " channels are expected. Dropping/adding channels"
                     "with 0s as appropriate".format(
-                        filepath, im_num_channels, num_channels))
-
+                        filepath, img_num_channels, num_channels))
+        else:
+            # If the image isn't like the first image, raise exception
+            if img_num_channels != num_channels:
+                raise ValueError(
+                    'Image {0} has {1} channels, unlike the first image, which'
+                    ' has {2} channels'.format(filepath,
+                                               img_num_channels,
+                                               num_channels))
         if should_resize:
-            img = resize_image(img, (im_height, im_width), resize_method)
+            img = resize_image(img, (img_height, img_width), resize_method)
 
         return img
 
