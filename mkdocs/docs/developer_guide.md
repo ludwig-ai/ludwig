@@ -226,8 +226,7 @@ Checklist
 
 Before running tests, make sure 
 1. Your environment is properly setup.
-2. You build the latest code by running ```python setup.py install``` from the Ludwig root directory.
-3. You have write access on the machine. Some of the tests require saving data to disk.
+2. You have write access on the machine. Some of the tests require saving data to disk.
 
 Running tests
 -------------
