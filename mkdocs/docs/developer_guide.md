@@ -233,16 +233,19 @@ Running tests
 -------------
 
 To run all tests, just run
-```pytest``` from the ludwig root directory.
+```python -m pytest``` from the ludwig root directory.
+Note that you don't need to have ludwig module installed and in this case
+code change will take effect immediately.
+
 
 To run a single test, run
 ``` 
-pytest path_to_filename::test_method_name
+python -m pytest path_to_filename::test_method_name
 ```
 
 Example
 -------
 
 ```
-pytest tests/integration_tests/test_experiment.py::test_visual_question_answering
+python -m pytest tests/integration_tests/test_experiment.py::test_visual_question_answering
 ```
