@@ -35,6 +35,7 @@ import pandas as pd
 import yaml
 from pprint import pformat
 
+import ludwig.contrib
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
 from ludwig.data.preprocessing import build_data
