@@ -26,16 +26,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import argparse
 import logging
 import os
-import pandas as pd
-import yaml
+import sys
 from pprint import pformat
 
+import pandas as pd
+import yaml
+
 import ludwig.contrib
+
+ludwig.contrib.contrib_import()
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
 from ludwig.data.preprocessing import build_data
