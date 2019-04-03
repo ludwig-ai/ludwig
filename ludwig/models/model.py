@@ -406,6 +406,7 @@ class Model:
         # ====== Setup session =======
         session = self.initialize_session(gpus, gpu_fraction)
 
+        train_writer = None
         if is_on_master():
             if not skip_save_log:
                 train_writer = tf.summary.FileWriter(
@@ -658,6 +659,9 @@ class Model:
 
             if is_on_master():
                 logging.info('')
+
+        if train_writer is not None:
+            train_writer.close()
 
         return (
             progress_tracker.train_stats,
