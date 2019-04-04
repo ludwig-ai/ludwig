@@ -821,7 +821,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             set_default_value(output_feature[LOSS], 'distortion', 1)
 
         set_default_value(output_feature[LOSS], 'unique', False)
-        set_default_value(output_feature[LOSS], 'weight', 1)
 
         set_default_value(output_feature, 'decoder', 'generator')
 
