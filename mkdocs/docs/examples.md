@@ -253,6 +253,87 @@ output_features:
         type: category
 ```
 
+Image Classification (MNIST)
+===
+This is a complete example of training an image classification model on MNIST 
+dataset.
+
+## Download MNIST the dataset.
+```
+git clone https://github.com/myleott/mnist_png.git
+cd mnist_png/
+tar -xf mnist_png.tar.gz
+cd mnist_png/
+```
+
+## Create train and test CSVs.
+Open python shell in the same directory and run this:
+```
+import os
+for name in ['training', 'testing']:
+    with open('mnist_dataset_{}.csv'.format(name), 'w') as output_file:
+        print('=== creating {} dataset ==='.format(name))
+        output_file.write('image_path,label\n')
+        for i in range(10):
+            path = '{}/'.format(name) + str(i)
+            for file in os.listdir(path):
+                if file.endswith(".png"):
+                    output_file.write('{},{}\n'.format(os.path.join(path, file), str(i)))
+
+```
+Now you should have `mnist_dataset_training.csv` and `mnist_dataset_testing.csv`
+containing 60000 and 10000 examples correspondingly and having the following format
+
+| image_path           | label |
+|----------------------|-------|
+| training/0/16585.png |  0    |
+| training/0/24537.png |  0    |
+| training/0/25629.png |  0    |
+
+## Train a model.
+
+From the directory where you have virtual environment with ludwig installed:
+```
+ludwig train \
+  --data_train_csv <full_path_to_mnist_dataset_training_csv> \
+  --data_test_csv <full path to mnist_dataset_test.csv> \
+  --model_definition_file model_definition.yaml
+```
+
+With `model_definition.yaml`:
+
+```yaml
+input_features:
+    -
+        name: image_path
+        type: image
+        encoder: stacked_cnn
+        conv_layers:
+            -
+                num_filters: 32
+                filter_size: 3
+                pool_size: 2
+                pool_stride: 2
+            -
+                num_filters: 64
+                filter_size: 3
+                pool_size: 2
+                pool_stride: 2
+                dropout: true
+        fc_layers:
+            -
+                fc_size: 128
+                dropout: true
+
+output_features:
+    -
+        name: label
+        type: category
+
+training:
+    dropout_rate: 0.4
+```
+
 Image Captioning
 ===
 
