@@ -96,7 +96,8 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
             norm=self.norm,
             dropout=self.dropout,
             dropout_rate=dropout_rate,
-            regularizer=regularizer
+            regularizer=regularizer,
+            initializer='ones'
         )
 
         logging.debug('  feature_representation: {0}'.format(
