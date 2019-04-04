@@ -255,7 +255,7 @@ output_features:
 
 Image Classification (MNIST)
 ===
-This is a complete example of training an image classification model on MNIST 
+This is a complete example of training an image classification model on the MNIST 
 dataset.
 
 ## Download the MNIST dataset.
