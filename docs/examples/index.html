@@ -347,8 +347,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-mnist-the-dataset" title="Download MNIST the dataset." class="md-nav__link">
-    Download MNIST the dataset.
+  <a href="#download-the-mnist-dataset" title="Download the MNIST dataset." class="md-nav__link">
+    Download the MNIST dataset.
   </a>
   
 </li>
@@ -563,8 +563,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#download-mnist-the-dataset" title="Download MNIST the dataset." class="md-nav__link">
-    Download MNIST the dataset.
+  <a href="#download-the-mnist-dataset" title="Download the MNIST dataset." class="md-nav__link">
+    Download the MNIST dataset.
   </a>
   
 </li>
@@ -1011,7 +1011,7 @@ For each task we show an example dataset and a sample model definition that can 
 <h2 id="image-classification-mnist">Image Classification (MNIST)<a class="headerlink" href="#image-classification-mnist" title="Permanent link">&para;</a></h2>
 <p>This is a complete example of training an image classification model on MNIST 
 dataset.</p>
-<h3 id="download-mnist-the-dataset">Download MNIST the dataset.<a class="headerlink" href="#download-mnist-the-dataset" title="Permanent link">&para;</a></h3>
+<h3 id="download-the-mnist-dataset">Download the MNIST dataset.<a class="headerlink" href="#download-the-mnist-dataset" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span>git clone https://github.com/myleott/mnist_png.git
 cd mnist_png/
 tar -xf mnist_png.tar.gz
@@ -1027,7 +1027,7 @@ for name in [&#39;training&#39;, &#39;testing&#39;]:
         print(&#39;=== creating {} dataset ===&#39;.format(name))
         output_file.write(&#39;image_path,label\n&#39;)
         for i in range(10):
-            path = &#39;{}/&#39;.format(name) + str(i)
+            path = &#39;{}/{}&#39;.format(name, i)
             for file in os.listdir(path):
                 if file.endswith(&quot;.png&quot;):
                     output_file.write(&#39;{},{}\n&#39;.format(os.path.join(path, file), str(i)))

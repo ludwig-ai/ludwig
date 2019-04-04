@@ -258,7 +258,7 @@ Image Classification (MNIST)
 This is a complete example of training an image classification model on MNIST 
 dataset.
 
-## Download MNIST the dataset.
+## Download the MNIST dataset.
 ```
 git clone https://github.com/myleott/mnist_png.git
 cd mnist_png/
@@ -275,7 +275,7 @@ for name in ['training', 'testing']:
         print('=== creating {} dataset ==='.format(name))
         output_file.write('image_path,label\n')
         for i in range(10):
-            path = '{}/'.format(name) + str(i)
+            path = '{}/{}'.format(name, i)
             for file in os.listdir(path):
                 if file.endswith(".png"):
                     output_file.write('{},{}\n'.format(os.path.join(path, file), str(i)))
