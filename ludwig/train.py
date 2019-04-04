@@ -244,8 +244,10 @@ def full_train(
     )
     if is_on_master():
         logging.info('Training set: {0}'.format(training_set.size))
-        logging.info('Validation set: {0}'.format(validation_set.size))
-        logging.info('Test set: {0}'.format(test_set.size))
+        if validation_set is not None:
+            logging.info('Validation set: {0}'.format(validation_set.size))
+        if test_set is not None:
+            logging.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
     update_model_definition_with_metadata(
@@ -299,26 +301,28 @@ def full_train(
     validation_field = model_definition['training']['validation_field']
     validation_measure = model_definition['training']['validation_measure']
     validation_field_result = train_valisest_stats[validation_field]
-    epoch_max_vali_measure, max_vali_measure = max(
-        enumerate(validation_field_result[validation_measure]),
-        key=lambda pair: pair[1]
-    )
-    max_vali_measure_epoch_test_measure = train_testset_stats[validation_field][
-        validation_measure][epoch_max_vali_measure]
+    if validation_set is not None:
+        epoch_max_vali_measure, max_vali_measure = max(
+            enumerate(validation_field_result[validation_measure]),
+            key=lambda pair: pair[1]
+        )
+        max_vali_measure_epoch_test_measure = train_testset_stats[validation_field][
+            validation_measure][epoch_max_vali_measure]
 
     # results of the model with highest validation test performance
     if is_on_master():
-        logging.info(
-            'Best validation model epoch:'.format(epoch_max_vali_measure + 1)
-        )
-        logging.info(
-            'Best validation model {0} on validation set {1}: {2}'.format(
-                validation_measure, validation_field, max_vali_measure
+        if validation_set is not None:
+            logging.info(
+                'Best validation model epoch:'.format(epoch_max_vali_measure + 1)
+            )
+            logging.info(
+                'Best validation model {0} on validation set {1}: {2}'.format(
+                    validation_measure, validation_field, max_vali_measure
+                ))
+            logging.info('Best validation model {0} on test set {1}: {2}'.format(
+                validation_measure, validation_field,
+                max_vali_measure_epoch_test_measure
             ))
-        logging.info('Best validation model {0} on test set {1}: {2}'.format(
-            validation_measure, validation_field,
-            max_vali_measure_epoch_test_measure
-        ))
         logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
         logging.info('Saved to: {0}'.format(experiment_dir_name))
 
