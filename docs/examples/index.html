@@ -339,6 +339,40 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#image-classification-mnist" title="Image Classification (MNIST)" class="md-nav__link">
+    Image Classification (MNIST)
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download-the-mnist-dataset" title="Download the MNIST dataset." class="md-nav__link">
+    Download the MNIST dataset.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-train-and-test-csvs" title="Create train and test CSVs." class="md-nav__link">
+    Create train and test CSVs.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#train-a-model" title="Train a model." class="md-nav__link">
+    Train a model.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#image-captioning" title="Image Captioning" class="md-nav__link">
     Image Captioning
   </a>
@@ -517,6 +551,40 @@
   <a href="#image-classification" title="Image Classification" class="md-nav__link">
     Image Classification
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-classification-mnist" title="Image Classification (MNIST)" class="md-nav__link">
+    Image Classification (MNIST)
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download-the-mnist-dataset" title="Download the MNIST dataset." class="md-nav__link">
+    Download the MNIST dataset.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-train-and-test-csvs" title="Create train and test CSVs." class="md-nav__link">
+    Create train and test CSVs.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#train-a-model" title="Train a model." class="md-nav__link">
+    Train a model.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -937,6 +1005,98 @@ For each task we show an example dataset and a sample model definition that can 
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">class</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+</pre></div>
+
+
+<h2 id="image-classification-mnist">Image Classification (MNIST)<a class="headerlink" href="#image-classification-mnist" title="Permanent link">&para;</a></h2>
+<p>This is a complete example of training an image classification model on the MNIST 
+dataset.</p>
+<h3 id="download-the-mnist-dataset">Download the MNIST dataset.<a class="headerlink" href="#download-the-mnist-dataset" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span>git clone https://github.com/myleott/mnist_png.git
+cd mnist_png/
+tar -xf mnist_png.tar.gz
+cd mnist_png/
+</pre></div>
+
+
+<h3 id="create-train-and-test-csvs">Create train and test CSVs.<a class="headerlink" href="#create-train-and-test-csvs" title="Permanent link">&para;</a></h3>
+<p>Open python shell in the same directory and run this:</p>
+<div class="codehilite"><pre><span></span>import os
+for name in [&#39;training&#39;, &#39;testing&#39;]:
+    with open(&#39;mnist_dataset_{}.csv&#39;.format(name), &#39;w&#39;) as output_file:
+        print(&#39;=== creating {} dataset ===&#39;.format(name))
+        output_file.write(&#39;image_path,label\n&#39;)
+        for i in range(10):
+            path = &#39;{}/{}&#39;.format(name, i)
+            for file in os.listdir(path):
+                if file.endswith(&quot;.png&quot;):
+                    output_file.write(&#39;{},{}\n&#39;.format(os.path.join(path, file), str(i)))
+</pre></div>
+
+
+<p>Now you should have <code>mnist_dataset_training.csv</code> and <code>mnist_dataset_testing.csv</code>
+containing 60000 and 10000 examples correspondingly and having the following format</p>
+<table>
+<thead>
+<tr>
+<th>image_path</th>
+<th>label</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>training/0/16585.png</td>
+<td>0</td>
+</tr>
+<tr>
+<td>training/0/24537.png</td>
+<td>0</td>
+</tr>
+<tr>
+<td>training/0/25629.png</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="train-a-model">Train a model.<a class="headerlink" href="#train-a-model" title="Permanent link">&para;</a></h3>
+<p>From the directory where you have virtual environment with ludwig installed:</p>
+<div class="codehilite"><pre><span></span>ludwig train \
+  --data_train_csv &lt;full_path_to_mnist_dataset_training_csv&gt; \
+  --data_test_csv &lt;full path to mnist_dataset_test.csv&gt; \
+  --model_definition_file model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">conv_layers</span><span class="p">:</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
+                <span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+                <span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+                <span class="nt">pool_stride</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+                <span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+                <span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+                <span class="nt">pool_stride</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+                <span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+        <span class="nt">fc_layers</span><span class="p">:</span>
+            <span class="p p-Indicator">-</span>
+                <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
+                <span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">label</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+
+<span class="nt">training</span><span class="p">:</span>
+    <span class="nt">dropout_rate</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.4</span>
 </pre></div>
 
 
