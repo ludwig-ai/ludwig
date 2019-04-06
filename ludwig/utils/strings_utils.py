@@ -181,6 +181,10 @@ def json_string_to_list(s):
     return json.loads(str.replace(s, '\'', '\''))
 
 
+def characters_to_list(s):
+    return s
+
+
 def space_string_to_list(s):
     return SPLIT_REGEX.split(s.strip())
 
@@ -206,26 +210,28 @@ def stripped_string_to_list(s):
 
 
 def english_tokenize(text):
-    return process_text(text, load_nlp_pipeline())
+    return process_text(text, load_nlp_pipeline('en'))
 
 
 def english_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline(),
+    return process_text(text, load_nlp_pipeline('en'),
                         filter_numbers=True,
                         filter_punctuation=True,
                         filter_short_tokens=True)
 
 
 def english_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline(), filter_stopwords=True)
+    return process_text(text, load_nlp_pipeline('en'),
+                        filter_stopwords=True)
 
 
 def english_lemmatize(text):
-    return process_text(text, load_nlp_pipeline(), return_lemma=True)
+    return process_text(text, load_nlp_pipeline('en'),
+                        return_lemma=True)
 
 
 def english_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline(),
+    return process_text(text, load_nlp_pipeline('en'),
                         return_lemma=True,
                         filter_numbers=True,
                         filter_punctuation=True,
@@ -233,16 +239,293 @@ def english_lemmatize_filter(text):
 
 
 def english_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline(),
+    return process_text(text, load_nlp_pipeline('en'),
                         return_lemma=True,
                         filter_stopwords=True)
 
 
-def characters_to_list(s):
-    return s
+def italian_tokenize(text):
+    return process_text(text, load_nlp_pipeline('it'))
+
+
+def italian_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('it'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def italian_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('it'),
+                        filter_stopwords=True)
+
+
+def italian_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('it'),
+                        return_lemma=True)
+
+
+def italian_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('it'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def italian_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('it'),
+                        return_lemma=True,
+                        filter_stopwords=True)
+
+
+def spanish_tokenize(text):
+    return process_text(text, load_nlp_pipeline('es'))
+
+
+def spanish_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('es'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def spanish_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('es'),
+                        filter_stopwords=True)
+
+
+def spanish_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('es'),
+                        return_lemma=True)
+
+
+def spanish_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('es'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def spanish_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('es'),
+                        return_lemma=True,
+                        filter_stopwords=True)
+
+
+def german_tokenize(text):
+    return process_text(text, load_nlp_pipeline('de'))
+
+
+def german_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('de'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def german_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('de'),
+                        filter_stopwords=True)
+
+
+def german_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('de'),
+                        return_lemma=True)
+
+
+def german_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('de'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def german_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('de'),
+                        return_lemma=True,
+                        filter_stopwords=True)
+
+
+def french_tokenize(text):
+    return process_text(text, load_nlp_pipeline('fr'))
+
+
+def french_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('fr'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def french_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('fr'),
+                        filter_stopwords=True)
+
+
+def french_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('fr'),
+                        return_lemma=True)
+
+
+def french_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('fr'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def french_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('fr'),
+                        return_lemma=True,
+                        filter_stopwords=True)
+
+
+def portuguese_tokenize(text):
+    return process_text(text, load_nlp_pipeline('pt'))
+
+
+def portuguese_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('pt'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def portuguese_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('pt'),
+                        filter_stopwords=True)
+
+
+def portuguese_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('pt'),
+                        return_lemma=True)
+
+
+def portuguese_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('pt'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def portuguese_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('pt'),
+                        return_lemma=True,
+                        filter_stopwords=True)
+
+
+def dutch_tokenize(text):
+    return process_text(text, load_nlp_pipeline('nl'))
+
+
+def dutch_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('nl'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def dutch_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('nl'),
+                        filter_stopwords=True)
+
+
+def dutch_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('nl'),
+                        return_lemma=True)
+
+
+def dutch_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('nl'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def dutch_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('nl'),
+                        return_lemma=True,
+                        filter_stopwords=True)
+
+
+def greek_tokenize(text):
+    return process_text(text, load_nlp_pipeline('el'))
+
+
+def greek_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('el'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def greek_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('el'),
+                        filter_stopwords=True)
+
+
+def greek_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('el'),
+                        return_lemma=True)
+
+
+def greek_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('el'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def greek_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('el'),
+                        return_lemma=True,
+                        filter_stopwords=True)
+
+
+def multi_tokenize(text):
+    return process_text(text, load_nlp_pipeline('xx'))
+
+
+def multi_tokenize_filter(text):
+    return process_text(text, load_nlp_pipeline('xx'),
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def multi_tokenize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('xx'),
+                        filter_stopwords=True)
+
+
+def multi_lemmatize(text):
+    return process_text(text, load_nlp_pipeline('xx'),
+                        return_lemma=True)
+
+
+def multi_lemmatize_filter(text):
+    return process_text(text, load_nlp_pipeline('xx'),
+                        return_lemma=True,
+                        filter_numbers=True,
+                        filter_punctuation=True,
+                        filter_short_tokens=True)
+
+
+def multi_lemmatize_remove_stopwords(text):
+    return process_text(text, load_nlp_pipeline('xx'),
+                        return_lemma=True,
+                        filter_stopwords=True)
 
 
 format_registry = {
+    'characters': characters_to_list,
     'json': json_string_to_list,
     'space': space_string_to_list,
     'space_punct': space_punctuation_string_to_list,
@@ -256,22 +539,52 @@ format_registry = {
     'english_lemmatize': english_lemmatize,
     'english_lemmatize_filter': english_lemmatize_filter,
     'english_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'characters': characters_to_list
-}
-
-format_dtype_registry = {
-    'json': np.int32,
-    'space': np.int32,
-    'space_punct': np.int32,
-    'underscore': np.int32,
-    'comma': np.int32,
-    'untokenized': np.int32,
-    'stripped': np.int32,
-    'english_tokenize': np.int32,
-    'english_tokenize_filter': np.int32,
-    'english_tokenize_remove_stopwords': np.int32,
-    'english_lemmatize': np.int32,
-    'english_lemmatize_filter': np.int32,
-    'english_lemmatize_remove_stopwords': np.int32,
-    'characters': np.int8
+    'italian_tokenize': english_tokenize,
+    'italian_tokenize_filter': english_tokenize_filter,
+    'italian_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'italian_lemmatize': english_lemmatize,
+    'italian_lemmatize_filter': english_lemmatize_filter,
+    'italian_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
+    'spanish_tokenize': english_tokenize,
+    'spanish_tokenize_filter': english_tokenize_filter,
+    'spanish_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'spanish_lemmatize': english_lemmatize,
+    'spanish_lemmatize_filter': english_lemmatize_filter,
+    'spanish_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
+    'german_tokenize': english_tokenize,
+    'german_tokenize_filter': english_tokenize_filter,
+    'german_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'german_lemmatize': english_lemmatize,
+    'german_lemmatize_filter': english_lemmatize_filter,
+    'german_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
+    'french_tokenize': english_tokenize,
+    'french_tokenize_filter': english_tokenize_filter,
+    'french_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'french_lemmatize': english_lemmatize,
+    'french_lemmatize_filter': english_lemmatize_filter,
+    'french_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
+    'portuguese_tokenize': english_tokenize,
+    'portuguese_tokenize_filter': english_tokenize_filter,
+    'portuguese_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'portuguese_lemmatize': english_lemmatize,
+    'portuguese_lemmatize_filter': english_lemmatize_filter,
+    'portuguese_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
+    'dutch_tokenize': english_tokenize,
+    'dutch_tokenize_filter': english_tokenize_filter,
+    'dutch_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'dutch_lemmatize': english_lemmatize,
+    'dutch_lemmatize_filter': english_lemmatize_filter,
+    'dutch_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
+    'greek_tokenize': english_tokenize,
+    'greek_tokenize_filter': english_tokenize_filter,
+    'greek_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'greek_lemmatize': english_lemmatize,
+    'greek_lemmatize_filter': english_lemmatize_filter,
+    'greek_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
+    'multi_tokenize': english_tokenize,
+    'multi_tokenize_filter': english_tokenize_filter,
+    'multi_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
+    'multi_lemmatize': english_lemmatize,
+    'multi_lemmatize_filter': english_lemmatize_filter,
+    'multi_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords
 }
