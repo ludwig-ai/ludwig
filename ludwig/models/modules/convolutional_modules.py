@@ -484,7 +484,7 @@ class ConvStack2D:
             default_num_filters=256,
             default_pool_size=2,
             default_activation='relu',
-            default_stride=1,
+            default_stride=2,
             default_pool_stride=None,
             default_norm=None,
             default_dropout=False,
@@ -494,9 +494,8 @@ class ConvStack2D:
         if layers is None:
             if num_layers is None:
                 self.layers = [
-                    {'filter_size': 3, 'num_filters': 256, 'pool_size': 2},
-                    {'filter_size': 7, 'num_filters': 256, 'pool_size': 2},
-                    {'filter_size': 7, 'num_filters': 256, 'pool_size': 2}
+                    {'num_filters': 32},
+                    {'num_filters': 64, 'dropout': True},
                 ]
             else:
                 self.layers = []

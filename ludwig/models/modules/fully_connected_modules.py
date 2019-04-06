@@ -107,7 +107,7 @@ class FCStack:
                 layer['regularize'] = default_regularize
             if 'initializer' not in layer:
                 layer['initializer'] = default_initializer
-
+        
     def __call__(
             self,
             inputs,
