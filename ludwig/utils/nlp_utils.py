@@ -15,8 +15,30 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import sys
 
-nlp_pipeline = None
+nlp_pipelines = {
+    'en': None,
+    'it': None,
+    'es': None,
+    'de': None,
+    'fr': None,
+    'pt': None,
+    'nl': None,
+    'el': None,
+    'xx': None
+}
+language_module_registry = {
+    'en': 'en_core_web_sm',
+    'it': 'it_core_news_sm',
+    'es': 'es_core_news_sm',
+    'de': 'de_core_news_sm',
+    'fr': 'fr_core_news_sm',
+    'pt': 'pt_core_news_sm',
+    'nl': 'nl_core_news_sm',
+    'el': 'el_core_news_sm',
+    'xx': 'xx_ent_wiki_sm'
+}
 default_characters = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
                       'k', 'l', 'm', 'n', 'o', 'p',
                       'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0',
@@ -29,18 +51,36 @@ default_characters = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 punctuation = {'.', ',', '@', '$', '%', '/', ':', ';', '+', '='}
 
 
-def load_nlp_pipeline():
-    global nlp_pipeline
-    if nlp_pipeline is None:
+def load_nlp_pipeline(language='xx'):
+    if language not in language_module_registry:
+        logging.error(
+            'Language {} is not supported.'
+            'Suported languages are: {}'.format(
+                language,
+                language_module_registry.keys()
+            ))
+        raise ValueError
+    else:
+        spacy_module_name = language_module_registry[language]
+    global nlp_pipelines
+    if nlp_pipelines[language] is None:
         logging.info('Loading NLP pipeline')
+        import spacy
         try:
-            import en_core_web_sm
-        except FileNotFoundError:
-            logging.error('Unable to load spacy model en_core_web_sm. '
-                          'Make sure to download it with: '
-                          'python -m spacy download en')
-        nlp_pipeline = en_core_web_sm.load(disable=['parser', 'tagger', 'ner'])
-    return nlp_pipeline
+            nlp_pipelines[language] = spacy.load(
+                spacy_module_name,
+                disable=['parser', 'tagger', 'ner']
+            )
+        except OSError:
+            logging.error(
+                ' Unable to load spacy model {}. '
+                'Make sure to download it with: '
+                'python -m spacy download {}'.format(
+                    spacy_module_name,
+                    spacy_module_name
+                ))
+            sys.exit(-1)
+    return nlp_pipelines[language]
 
 
 def pass_filters(
@@ -80,30 +120,6 @@ def process_text(
                                              filter_stopwords)
             ]
 
-
-# class Lemmatizer(object):
-#     def __init__(self):
-#         self.pipeline = load_nlp_pipeline()
-#
-#     def __call__(self, doc):
-#         tokens = [t.lemma_ for t in self.pipeline(doc)
-#                   if not t.like_num and len(t) > 2 and '.' not in t.orth_ and '/' not in t.orth_]
-#         return tokens
-#
-#
-# class Vectorizer():
-#     def __init__(self, weighting, min_df=0.005, max_df=0.995):
-#         self.tvectorizer = TfidfVectorizer(analyzer='word',
-#                                            min_df=min_df,
-#                                            max_df=max_df,
-#                                            tokenizer=Lemmatizer(),
-#                                            ngram_range=(1, 1))
-#
-#     def fit_transform(self, docs):
-#         return self.tvectorizer.fit_transform(docs).toarray()
-#
-#     def transform(self, docs):
-#         return self.tvectorizer.transform(docs).toarray()
 
 if __name__ == '__main__':
     text = 'Hello John, how are you doing my good old friend? Are you still number 732 in the list? Did you pay $32.43 or 54.21 for the book?'
