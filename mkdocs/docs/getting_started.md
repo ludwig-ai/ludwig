@@ -58,7 +58,6 @@ In order to install Ludwig just run:
 
 ```
 pip install ludwig
-python -m spacy download en
 ```
 
 or install it by building the source code from the repository:
@@ -69,9 +68,14 @@ cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate
 pip install -r requirements.txt
-python -m spacy download en
 python setup.py install
 ```
+
+If you intend to use text features and want to use [spaCy](jttp://spacy.io) based language tokenizers, install language specific models with:
+```
+python -m spacy download <language_code>
+```
+More details in the [User Guide](user_guide.md#spacy-based-word-format-options).
 
 Beware that in the `requirements.txt` file the `tensorflow` package is the regular one, not the GPU enabled one.
 To install the GPU enabled one replace it with `tensorflow-gpu`.

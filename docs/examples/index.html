@@ -701,8 +701,8 @@ For each task we show an example dataset and a sample model definition that can 
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -744,10 +744,13 @@ For each task we show an example dataset and a sample model definition that can 
 <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">utterance</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
         <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">word_format</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">space</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -794,12 +797,15 @@ For each task we show an example dataset and a sample model definition that can 
 <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">utterance</span>
-        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
         <span class="nt">bidirectional</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
         <span class="nt">num_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
         <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">word_format</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">space</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -849,19 +855,25 @@ For each task we show an example dataset and a sample model definition that can 
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">english</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
         <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">word_format</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">english_tokenize</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">italian</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
         <span class="nt">attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bahdanau</span>
         <span class="nt">loss</span><span class="p">:</span>
             <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sampled_softmax_cross_entropy</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">word_format</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">italian_tokenize</span>
 
 <span class="nt">training</span><span class="p">:</span>
     <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">96</span>
@@ -902,6 +914,7 @@ For each task we show an example dataset and a sample model definition that can 
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">user1</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
         <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
@@ -910,6 +923,7 @@ For each task we show an example dataset and a sample model definition that can 
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">user2</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
         <span class="nt">attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bahdanau</span>
@@ -955,8 +969,8 @@ For each task we show an example dataset and a sample model definition that can 
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">review</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1140,6 +1154,7 @@ containing 60000 and 10000 examples correspondingly and having the following for
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">caption</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
 </pre></div>
@@ -1249,13 +1264,14 @@ containing 60000 and 10000 examples correspondingly and having the following for
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">question</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">answer</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
+        <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
         <span class="nt">loss</span><span class="p">:</span>

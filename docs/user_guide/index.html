@@ -760,6 +760,19 @@
     Text Features Preprocessing
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spacy-based-word-format-options" title="spaCy based word format options" class="md-nav__link">
+    spaCy based word format options
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -1777,6 +1790,19 @@
   <a href="#text-features-preprocessing" title="Text Features Preprocessing" class="md-nav__link">
     Text Features Preprocessing
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#spacy-based-word-format-options" title="spaCy based word format options" class="md-nav__link">
+    spaCy based word format options
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -4081,12 +4107,29 @@ In the model definition you are able to specify which level of representation to
 <li><code>unknown_symbol</code> (default <code>&lt;UNK&gt;</code>): the string used as a unknown symbol. Is is mapped to the integer ID 1 in the vocabulary.</li>
 <li><code>lowercase</code> (default <code>false</code>): if the string has to be lowercased before being handled by the formatter.</li>
 <li><code>word_sequence_length_limit</code> (default <code>256</code>): the maximum length of the text in words. Texts that are longer than this value will be truncated, while texts that are shorter will be padded.</li>
-<li><code>word_format</code> (default <code>space_punct</code>): defines how to map from the raw string content of the CSV column to a sequence of words. The default value <code>space_punct</code> splits the string using a regular expression that separates also punctuation. Other options are: <code>space</code> (splits on space), <code>underscore</code> (splits on underscore), <code>comma</code>(splits on comma), <code>json</code> (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on <a href="https://spacy.io">spaCy</a>. The spaCy based ones are: <code>english_tokenize</code> (uses spaCy tokenizer), <code>english_tokenize_filter</code> (uses spaCy tokenizer and filters out punctuation, numbers, stopwords and words shorter than 3 characters), <code>english_tokenize_remove_stopwords</code> (uses spaCy tokenizer and filters out stopwords), <code>english_lemmatize</code> (uses spaCy lemmatizer), <code>english_lemmatize_filter</code> (uses spaCy lemmatizer and filters out punctuation, numbers, stopwords and words shorter than 3 characters), <code>english_lemmatize_remove_stopwords</code> (uses spaCy lemmatize and filters out stopwords).</li>
+<li><code>word_format</code> (default <code>space_punct</code>): defines how to map from the raw string content of the CSV column to a sequence of words. The default value <code>space_punct</code> splits the string using a regular expression that separates also punctuation. Other options are: <code>space</code> (splits on space), <code>underscore</code> (splits on underscore), <code>comma</code>(splits on comma), <code>json</code> (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on <a href="https://spacy.io">spaCy</a>.</li>
 <li><code>word_most_common</code> (default <code>20000</code>): the maximum number of most common words to be considered. If the data contains more than this amount, the most infrequent words will be treated as unknown.</li>
 <li><code>char_sequence_length_limit</code> (default <code>1024</code>): the maximum length of the text in characters. Texts that are longer than this value will be truncated, while sequences that are shorter will be padded.</li>
 <li><code>char_format</code> (default <code>characters</code>): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is <code>characters</code> and the behavior is to split the string at each character.</li>
 <li><code>char_most_common</code> (default <code>70</code>): the maximum number of most common characters to be considered. if the data contains more than this amount, the most infrequent characters will be treated as unknown.</li>
 </ul>
+<h5 id="spacy-based-word-format-options">spaCy based word format options<a class="headerlink" href="#spacy-based-word-format-options" title="Permanent link">&para;</a></h5>
+<p>The spaCy based <code>word_format</code> options are functions that use the powerful tokenization and NLP preprocessing models provided the library.
+Several languages are available: English (code <code>en</code>), Italian (code <code>it</code>), Spanish (code <code>es</code>), German (code <code>de</code>), French (code <code>fr</code>), Portuguese (code <code>pt</code>), Dutch (code <code>nl</code>), Greek (code <code>el</code>) and Multi (code <code>xx</code>, useful in case you have a dataset of different languages).
+For each language different functions are available:
+- <code>tokenize</code>: uses spaCy tokenizer,
+- <code>tokenize_filter</code>: uses spaCy tokenizer and filters out punctuation, numbers, stopwords and words shorter than 3 characters,
+- <code>tokenize_remove_stopwords</code>: uses spaCy tokenizer and filters out stopwords,
+- <code>lemmatize</code>: uses spaCy lemmatizer,
+- <code>lemmatize_filter</code>: uses spaCy lemmatizer and filters out punctuation, numbers, stopwords and words shorter than 3 characters,
+- <code>lemmatize_remove_stopwords</code>: uses spaCy lemmatize and filters out stopwords.</p>
+<p>In order to use these options, you have to download the the spaCy model:</p>
+<div class="codehilite"><pre><span></span>python -m spacy download &lt;language_code&gt;
+</pre></div>
+
+
+<p>and provide <code>&lt;language&gt;_&lt;function&gt;</code> as <code>word_format</code> like: <code>english_tokenizer</code>, <code>italian_lemmatize_filter</code>, <code>multi_tokenize_filter</code> and so on.
+More details on the models can be found in the <a href="https://spacy.io/models">spaCy documentation</a>.</p>
 <h4 id="text-input-features-and-encoders">Text Input Features and Encoders<a class="headerlink" href="#text-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>The encoders are the same used for the <a href="#sequence-input-features-and-encoders">Sequence Features</a>.
 The only difference is that you can specify an additional <code>level</code> parameter with possible values <code>word</code> or <code>char</code> to force to use the text words or characters as inputs (by default the encoder will use <code>word</code>).</p>
