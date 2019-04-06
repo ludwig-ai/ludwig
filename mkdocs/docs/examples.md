@@ -24,8 +24,8 @@ input_features:
     -
         name: text
         type: text
-        encoder: parallel_cnn
         level: word
+        encoder: parallel_cnn
 
 output_features:
     -
@@ -54,10 +54,13 @@ With `model_definition.yaml`:
 input_features:
     -
         name: utterance
-        type: sequence
+        type: text
+        level: word
         encoder: rnn
         cell_type: lstm
         reduce_output: null
+        preprocessing:
+          word_format: space
 
 output_features:
     -
@@ -88,12 +91,15 @@ With `model_definition.yaml`:
 input_features:
     -
         name: utterance
-        type: sequence
+        type: text
+        level: word
         encoder: rnn
         cell_type: lstm
         bidirectional: true
         num_layers: 2
         reduce_output: null
+        preprocessing:
+          word_format: space
 
 output_features:
     -
@@ -131,19 +137,25 @@ input_features:
     -
         name: english
         type: text
+        level: word
         encoder: rnn
         cell_type: lstm
         reduce_output: null
+        preprocessing:
+          word_format: english_tokenize
 
 output_features:
     -
         name: italian
         type: text
+        level: word
         decoder: generator
         cell_type: lstm
         attention: bahdanau
         loss:
             type: sampled_softmax_cross_entropy
+        preprocessing:
+          word_format: italian_tokenize
 
 training:
     batch_size: 96
@@ -172,6 +184,7 @@ input_features:
     -
         name: user1
         type: text
+        level: word
         encoder: rnn
         cell_type: lstm
         reduce_output: null
@@ -180,6 +193,7 @@ output_features:
     -
         name: user2
         type: text
+        level: word
         decoder: generator
         cell_type: lstm
         attention: bahdanau
@@ -213,8 +227,8 @@ input_features:
     -
         name: review
         type: text
-        encoder: parallel_cnn
         level: word
+        encoder: parallel_cnn
 
 output_features:
     -
@@ -362,6 +376,7 @@ output_features:
     -
         name: caption
         type: text
+        level: word
         decoder: generator
         cell_type: lstm
 ```
@@ -435,13 +450,14 @@ input_features:
     -
         name: question
         type: text
-        encoder: parallel_cnn
         level: word
+        encoder: parallel_cnn
 
 output_features:
     -
         name: answer
         type: text
+        level: word
         decoder: generator
         cell_type: lstm
         loss:

@@ -555,7 +555,6 @@ brew install python3      # on mac
 <p>You may want to use a virtual environment to maintain an isolated <a href="https://docs.python-guide.org/dev/virtualenvs/">Python environment</a>.</p>
 <p>In order to install Ludwig just run:</p>
 <div class="codehilite"><pre><span></span>pip install ludwig
-python -m spacy download en
 </pre></div>
 
 
@@ -565,11 +564,16 @@ cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate
 pip install -r requirements.txt
-python -m spacy download en
 python setup.py install
 </pre></div>
 
 
+<p>If you intend to use text features and want to use <a href="jttp://spacy.io">spaCy</a> based language tokenizers, install language specific models with:</p>
+<div class="codehilite"><pre><span></span>python -m spacy download &lt;language_code&gt;
+</pre></div>
+
+
+<p>More details in the <a href="../user_guide/#spacy-based-word-format-options">User Guide</a>.</p>
 <p>Beware that in the <code>requirements.txt</code> file the <code>tensorflow</code> package is the regular one, not the GPU enabled one.
 To install the GPU enabled one replace it with <code>tensorflow-gpu</code>.</p>
 <p>If you want to train Ludwig models in a distributed way, you need to also install the <code>horovod</code> and the <code>mpi4py</code> packages.
