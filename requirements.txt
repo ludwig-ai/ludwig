@@ -7,8 +7,7 @@ scipy>=0.18
 scikit-image==0.14.2
 scikit-learn
 seaborn>=0.7
-spacy>=2.0
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.0.0/en_core_web_sm-2.0.0.tar.gz
+spacy>=2.1
 tqdm
 tabulate>=0.7
 tensorflow==1.13.1
