@@ -46,7 +46,7 @@ setup(
                       'scikit-learn',
                       'scikit-image==0.14.2',
                       'seaborn>=0.7',
-                      'spacy>=2.0',
+                      'spacy>=2.1',
                       'tqdm',
                       'tabulate>=0.7',
                       'tensorflow==1.13.1',
