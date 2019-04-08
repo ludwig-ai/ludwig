@@ -470,6 +470,14 @@ Movie rating prediction
 | 1925 |   5700    |     1       | adventure comedy   |  8.3   |
 | 1927 |   9180    |     4       | drama comedy scifi |  8.4   |
 
+```
+ludwig experiment \
+--data_csv movie_ratings.csv \
+  --model_definition_file model_definition.yaml
+```
+
+With `model_definition.yaml`:
+
 ```yaml
 input_features:
     -
@@ -501,6 +509,14 @@ Multi-label classification
 | imagenet/image_000002.jpg | happy dog tie |
 | imagenet/image_000003.jpg | boat water    |
 
+```
+ludwig experiment \
+--data_csv image_data.csv \
+  --model_definition_file model_definition.yaml
+```
+
+With `model_definition.yaml`:
+
 ```yaml
 input_features:
     -
@@ -525,6 +541,14 @@ This example is inspired by the classic paper [Natural Language Processing (Almo
 | San Francisco is very foggy | B-NP I-NP B-VP B-ADJP I-ADJP | NNP NNP VBZ RB JJ | B-Loc I-Loc O O O   |
 | My dog likes eating sausage | B-NP I-NP B-VP B-VP B-NP     | PRP NN VBZ VBG NN | O O O O O           |
 | Brutus Killed Julius Caesar | B-NP B-VP B-NP I-NP          | NNP VBD NNP NNP   | B-Per O B-Per I-Per |
+
+```
+ludwig experiment \
+--data_csv nl_data.csv \
+  --model_definition_file model_definition.yaml
+```
+
+With `model_definition.yaml`:
 
 ```yaml
 input_features:
@@ -551,10 +575,10 @@ output_features:
         decoder: tagger
 ```
 
-Keras Predict Fuel Efficiency: Simple Regression
+Simple Regression: Fuel Efficiency Prediction
 ===
 
-This example replicates the Keras example at https://www.tensorflow.org/tutorials/keras/basic_regression to predict the continuous value, fuel ecomomy given other car characteristics in the [Auto MPG](https://archive.ics.uci.edu/ml/datasets/auto+mpg) dataset.
+This example replicates the Keras example at https://www.tensorflow.org/tutorials/keras/basic_regression to predict the miles per gallon of a car given its characteristics in the [Auto MPG](https://archive.ics.uci.edu/ml/datasets/auto+mpg) dataset.
 
 |MPG   |Cylinders |Displacement |Horsepower |Weight |Acceleration |ModelYear |Origin |
 |------|----------|-------------|-----------|-------|-------------|----------|-------|
@@ -562,6 +586,14 @@ This example replicates the Keras example at https://www.tensorflow.org/tutorial
 |15.0  |8         |350.0        |165.0      |3693.0 |11.5         |70        |1      |
 |18.0  |8         |318.0        |150.0      |3436.0 |11.0         |70        |1      |
 |16.0  |8         |304.0        |150.0      |3433.0 |12.0         |70        |1      |
+
+```
+ludwig experiment \
+--data_csv auto_mpg.csv \
+  --model_definition_file model_definition.yaml
+```
+
+With `model_definition.yaml`:
 
 ```yaml
 training:
