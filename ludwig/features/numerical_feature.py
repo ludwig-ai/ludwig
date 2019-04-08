@@ -96,7 +96,8 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
             norm=self.norm,
             dropout=self.dropout,
             dropout_rate=dropout_rate,
-            regularizer=regularizer
+            regularizer=regularizer,
+            initializer='ones'
         )
 
         logging.debug('  feature_representation: {0}'.format(
@@ -401,8 +402,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             {'type': 'mean_squared_error', 'weight': 1}
         )
         set_default_value(output_feature[LOSS], 'type', 'mean_squared_error')
+        set_default_value(output_feature[LOSS], 'weight', 1)
         set_default_value(output_feature, 'clip', None)
         set_default_value(output_feature, 'dependencies', [])
-        set_default_value(output_feature, 'weight', 1)
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
