@@ -345,7 +345,6 @@ def experiment(
             }
         )
 
-    
     if test_set is not None:
         if model_definition['training']['eval_batch_size'] > 0:
             batch_size = model_definition['training']['eval_batch_size']
