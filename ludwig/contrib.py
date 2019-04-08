@@ -28,10 +28,12 @@ import logging
 import sys
 
 
-## Contributors, add functions here:
+## Contributors, add classes here:
 
 class Comet():
-
+    """
+    Class that defines the methods necessary
+    """
     @staticmethod
     def import_call(argv, *args, **kwargs):
         """
@@ -41,34 +43,80 @@ class Comet():
         """
         try:
             import comet_ml
-            comet_ml.Experiment()
-        except:
-            logging.error("Ignored --comet " +
-                          "See: https://www.comet.ml/" +
-                          "docs/python-sdk/getting-started/ " +
-                          "for more information")
+        except ImportError:
+            logging.error("Ignored --comet: Please install comet_ml")
+            return None
 
+        return Comet()
 
-## Contributors, classes and call functions here:
+    def experiment(self, *args, **kwargs):
+        import comet_ml
+        self.experiment = comet_ml.Experiment(log_code=False)
+        config = comet_ml.get_config()
+        self._save_config(config)
+
+    def train(self, *args, **kwargs):
+        import comet_ml
+        self.experiment = comet_ml.Experiment(log_code=False)
+        config = comet_ml.get_config()
+        self._save_config(config)
+
+    def visualize(self, *args, **kwargs):
+        import comet_ml
+        self.experiment = comet_ml.ExistingExperiment()
+
+    def predict(self, *args, **kwargs):
+        import comet_ml
+        self.experiment = comet_ml.ExistingExperiment()
+
+    def _save_config(self, config):
+        config["comet.experiment_key"] = self.experiment.id
+        config.save()
 
 
 ## Contributors, add your class here:
 contrib_registry = {
-    'comet': Comet
+    'comet': {
+        "class": Comet,
+        "instance": None,
+        }
 }
 
 
-## NOTE: Other contribs may need more sophisticated
-##       arg parsing.
 def contrib_import():
+    """
+    Checks for contrib flags, and calls static method:
+
+    ContribClass.import_call(argv_list)
+
+    import_call() will return an instance to the class
+    if appropriate (all dependencies are met, for example).
+    """
     argv_list = sys.argv
     argv_set = set(argv_list)
-
-    for contrib_name, contrib_class in contrib_registry.items():
-        ## First, check for your flag(s):
+    for contrib_name in contrib_registry:
         parameter_name = '--' + contrib_name
         if parameter_name in argv_set:
-            ## Second, call your function:
-            contrib_class.import_call(argv_list)
-            ## Third, clean up and remove your flag(s)
+            ## Calls ContribClass.import_call(argv_list)
+            ## and return an instance, if appropriate
+            contrib_class = contrib_registry[contrib_name]["class"]
+            instance = contrib_class.import_call(argv_list)
+            ## Save instance in registry
+            if instance:
+                contrib_registry[contrib_name]["instance"] = instance
+            ## Clean up and remove your flag
             sys.argv.remove(parameter_name)
+
+def contrib_command(command, *args, **kwargs):
+    """
+    If a contrib has an instance in the registry,
+    this this will call:
+
+    ContribInstance.COMMAND(*args, **kwargs)
+    """
+    for contrib_name in contrib_registry:
+        instance = contrib_registry[contrib_name]["instance"]
+        if instance:
+            method = getattr(instance, command, None)
+            if method:
+                method(*args, **kwargs)
