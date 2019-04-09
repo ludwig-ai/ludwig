@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from datetime import datetime
+
 class Comet():
     """
     Class that defines the methods necessary
@@ -36,23 +38,36 @@ class Comet():
     def experiment(self, *args, **kwargs):
         import comet_ml
         self.experiment = comet_ml.Experiment(log_code=False)
+        self.experiment.set_code(" ".join(args))
+        self.experiment.set_filename("Ludwig CLI")
+        self._log_html(" ".join(args))
         config = comet_ml.get_config()
         self._save_config(config)
 
     def train(self, *args, **kwargs):
         import comet_ml
         self.experiment = comet_ml.Experiment(log_code=False)
+        self.experiment.set_code(" ".join(args))
+        self.experiment.set_filename("Ludwig CLI")
+        self._log_html(" ".join(args))
         config = comet_ml.get_config()
         self._save_config(config)
 
     def visualize(self, *args, **kwargs):
         import comet_ml
         self.experiment = comet_ml.ExistingExperiment()
+        self._log_html(" ".join(args))
 
     def predict(self, *args, **kwargs):
         import comet_ml
         self.experiment = comet_ml.ExistingExperiment()
+        self._log_html(" ".join(args))
 
     def _save_config(self, config):
         config["comet.experiment_key"] = self.experiment.id
         config.save()
+
+    def _log_html(self, text):
+        now = datetime.now()
+        timestamp = now.strftime("%m/%d/%Y %H:%M:%S")
+        self.experiment.log_html("<p><b>%s</b>: %s</p>" % (timestamp, text))
