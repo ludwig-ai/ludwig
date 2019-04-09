@@ -15,7 +15,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='ludwig',
 
-    version='0.1.0',
+    version='0.1.1',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
