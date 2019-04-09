@@ -32,12 +32,12 @@ import os
 import sys
 from pprint import pformat
 
+import ludwig.contrib
+ludwig.contrib.contrib_import()
+
 import pandas as pd
 import yaml
 
-import ludwig.contrib
-
-ludwig.contrib.contrib_import()
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
 from ludwig.data.preprocessing import build_data
