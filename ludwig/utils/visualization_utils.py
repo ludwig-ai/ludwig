@@ -36,6 +36,7 @@ from matplotlib import ticker
 from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
 
+import ludwig.contrib
 
 # plt.rc('xtick', labelsize='x-large')
 # plt.rc('ytick', labelsize='x-large')
@@ -78,6 +79,7 @@ def learning_curves_plot(train_values, vali_values, metric, algorithm_names=None
 
     ax.legend()
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -140,6 +142,7 @@ def compare_classifiers_plot(scores, metrics, algoritm_names=None,
 
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -171,6 +174,7 @@ def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,
 
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -202,6 +206,7 @@ def compare_classifiers_multiclass_multimetric_plot(scores, metrics,
 
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -279,6 +284,7 @@ def radar_chart(ground_truth, predictions, algorithms=None, log_scale=False,
 
     ax.legend(frameon=True, loc='upper left')
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -358,6 +364,7 @@ def donut(inside_values, inside_labels, outside_values, outside_labels,
 
     ax.legend(wedges, labels, frameon=True)
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -417,6 +424,7 @@ def confidence_fitlering_plot(thresholds, accuracies, dataset_kepts,
 
     ax1.legend(frameon=True, loc=3)
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -478,6 +486,7 @@ def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,
 
     ax.legend(frameon=True, loc=3)
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -525,6 +534,7 @@ def confidence_fitlering_data_vs_acc_multiline_plot(accuracies, dataset_kepts,
     legend_elements = [Line2D([0], [0], linewidth=1.0, color=colors[0])]
     ax.legend(legend_elements, models_names)
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -604,6 +614,7 @@ def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,
     ax.legend(frameon=True, loc=3, handles=[handle_1, handle_2])
 
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -645,6 +656,7 @@ def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,
 
     ax1.legend(frameon=True)
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -687,6 +699,7 @@ def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):
 
     ax.legend(frameon=True)
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -731,6 +744,7 @@ def calibration_plot(fraction_positives, mean_predicted_values,
     plt.title('Calibration (reliability curve)')
 
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -758,6 +772,7 @@ def brier_plot(brier_scores, algorithm_names=None, title=None):
 
     plt.legend()
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -787,6 +802,7 @@ def predictions_distribution_plot(probabilities, algorithm_names=None):
     plt.legend(loc='upper center', ncol=2)
 
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -811,6 +827,7 @@ def confusion_matrix_plot(confusion_matrix, labels=None, field=None):
     ax.set_ylabel('Actual {}'.format(field))
 
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -850,11 +867,13 @@ def double_axis_line_plot(y1_sorted, y2, y1_name, y2_name, labels=None,
              linewidth=4.0)
 
     fig.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
 def plot_matrix(matrix, cmap='hot'):
     plt.matshow(matrix, cmap=cmap)
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -884,6 +903,7 @@ def plot_distributions(distributions, labels=None, title=None):
 
     ax1.legend(frameon=True)
     fig.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -909,6 +929,7 @@ def plot_distributions_difference(distribution, labels=None, title=None):
     ax1.plot(distribution, color=colors[0])
 
     fig.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
 
 
@@ -956,4 +977,5 @@ def bar_plot(xs, ys, decimals=4, labels=None, title=None):
             [PathEffects.withStroke(linewidth=3, foreground='black')])
 
     plt.tight_layout()
+    ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()

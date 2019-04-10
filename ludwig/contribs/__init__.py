@@ -15,12 +15,24 @@
 # ==============================================================================
 
 """
-All classes must have the following functions:
-- import_call: Loaded first to handle items
-  that need to be setup before core modules,
-  like tensorflow.
-If a call doesn't apply, provide an empy
-implementation with `pass`.
+All contrib classes must have the following methods:
+
+- import_call: Run on import.
+
+Contrib classes can have the following methods:
+
+- train: Run on train.
+
+- visualize: Run on visualize.
+
+- visualize_figure: Run when a figure is shown.
+
+- experiment: Run on experiment.
+
+- predict: Run on predict.
+
+If you don't want to handle the call, either provide an empty
+method with `pass`, or just don't implement the method.
 """
 
 ## Contributors, import your class here:
