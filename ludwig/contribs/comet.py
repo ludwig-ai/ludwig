@@ -18,7 +18,7 @@ from datetime import datetime
 
 class Comet():
     """
-    Class that defines the methods necessary
+    Class that defines the methods necessary to hook into process.
     """
     @staticmethod
     def import_call(argv, *args, **kwargs):
@@ -30,44 +30,78 @@ class Comet():
         try:
             import comet_ml
         except ImportError:
-            logging.error("Ignored --comet: Please install comet_ml")
+            logging.error("Ignored --comet: Please install comet_ml; see www.comet.ml")
             return None
 
         return Comet()
 
     def experiment(self, *args, **kwargs):
         import comet_ml
-        self.experiment = comet_ml.Experiment(log_code=False)
-        self.experiment.set_code(" ".join(args))
+        try:
+            self.experiment = comet_ml.Experiment(log_code=False)
+        except Exception:
+            logging.error("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
+            return
+
+        cli = self._make_command_line(args)
+        self.experiment.set_code(cli)
         self.experiment.set_filename("Ludwig CLI")
-        self._log_html(" ".join(args))
+        self._log_html(cli)
         config = comet_ml.get_config()
         self._save_config(config)
 
     def train(self, *args, **kwargs):
         import comet_ml
-        self.experiment = comet_ml.Experiment(log_code=False)
-        self.experiment.set_code(" ".join(args))
+        try:
+            self.experiment = comet_ml.Experiment(log_code=False)
+        except Exception:
+            logging.error("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
+            return
+
+        cli = self._make_command_line(args)
+        self.experiment.set_code(cli)
         self.experiment.set_filename("Ludwig CLI")
-        self._log_html(" ".join(args))
+        self._log_html(cli)
         config = comet_ml.get_config()
         self._save_config(config)
 
     def visualize(self, *args, **kwargs):
         import comet_ml
-        self.experiment = comet_ml.ExistingExperiment()
-        self._log_html(" ".join(args))
+        try:
+            self.experiment = comet_ml.ExistingExperiment()
+        except Exception:
+            logging.error("Ignored --comet. No '.comet.config' file")
+            return
+
+        cli = self._make_command_line(args)
+        self._log_html(cli)
 
     def predict(self, *args, **kwargs):
         import comet_ml
-        self.experiment = comet_ml.ExistingExperiment()
-        self._log_html(" ".join(args))
+        try:
+            self.experiment = comet_ml.ExistingExperiment()
+        except Exception:
+            logging.error("Ignored --comet. No '.comet.config' file")
+            return
+
+        cli = self._make_command_line(args)
+        self._log_html(cli)
+
+    def visualize_figure(self, fig):
+        if self.experiment:
+            self.experiment.log_figure(fig)
 
     def _save_config(self, config):
+        ## save the .comet.config here:
         config["comet.experiment_key"] = self.experiment.id
         config.save()
 
     def _log_html(self, text):
+        ## log the text to the html tab:
         now = datetime.now()
         timestamp = now.strftime("%m/%d/%Y %H:%M:%S")
         self.experiment.log_html("<p><b>%s</b>: %s</p>" % (timestamp, text))
+
+    def _make_command_line(self, args):
+        ## put the commet flag back in:
+        return " ".join(list(args[:2]) + ["--comet"] + list(args[2:]))
