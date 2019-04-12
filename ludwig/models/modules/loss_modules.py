@@ -62,8 +62,9 @@ def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
                           softmax_function=None):
     batch_max_targets_sequence_lenght = tf.shape(targets)[1]
     batch_max_logits_sequence_lenght = tf.shape(logits)[1]
-    difference = batch_max_targets_sequence_lenght - batch_max_logits_sequence_lenght
+    difference = tf.maximum(0, batch_max_targets_sequence_lenght - batch_max_logits_sequence_lenght)
     padded_logits = tf.pad(logits, [[0, 0], [0, difference], [0, 0]])
+    padded_logits = padded_logits[:, :batch_max_targets_sequence_lenght, :]
 
     with tf.variable_scope('sequence_loss'):
         sequence_loss = tf.contrib.seq2seq.sequence_loss(
