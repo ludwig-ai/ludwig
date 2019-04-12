@@ -17,13 +17,8 @@
 import argparse
 import sys
 
-from ludwig import collect
-from ludwig import experiment
-from ludwig import predict
-from ludwig import train
-from ludwig import visualize
-
 import ludwig.contrib
+
 
 class CLI(object):
     """CLI describes a command line interface for interacting with Ludwig, there
@@ -65,26 +60,32 @@ Available sub-commands:
         getattr(self, args.command)()
 
     def experiment(self):
+        from ludwig import experiment
         ludwig.contrib.contrib_command("experiment", *sys.argv)
         experiment.cli(sys.argv[2:])
 
     def train(self):
+        from ludwig import train
         ludwig.contrib.contrib_command("train", *sys.argv)
         train.cli(sys.argv[2:])
 
     def predict(self):
+        from ludwig import predict
         ludwig.contrib.contrib_command("predict", *sys.argv)
         predict.cli(sys.argv[2:])
 
     def visualize(self):
+        from ludwig import visualize
         ludwig.contrib.contrib_command("visualize", *sys.argv)
         visualize.cli(sys.argv[2:])
 
     def collect_weights(self):
+        from ludwig import collect
         ludwig.contrib.contrib_command("collect_weights", *sys.argv)
         collect.cli_collect_weights(sys.argv[2:])
 
     def collect_activations(self):
+        from ludwig import collect
         ludwig.contrib.contrib_command("collect_activations", *sys.argv)
         collect.cli_collect_activations(sys.argv[2:])
 

@@ -37,7 +37,7 @@ model_definition_template = Template(
 
 
 def generate_data(input_features, output_features, filename='test_csv.csv',
-                  num_examples=500):
+                  num_examples=50):
     """
     Helper method to generate synthetic data based on input, output feature
     specs
