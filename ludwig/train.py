@@ -41,7 +41,7 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
-
+from ludwig.contrib import contrib_command
 
 def full_train(
         model_definition,
@@ -273,6 +273,7 @@ def full_train(
         random_seed=random_seed,
         debug=debug
     )
+
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
     model.close_session()
 
@@ -326,6 +327,7 @@ def full_train(
         logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
         logging.info('Saved to: {0}'.format(experiment_dir_name))
 
+    contrib_command("train_save", experiment_dir_name)
 
 def train(
         training_set,
@@ -402,6 +404,7 @@ def train(
         # Build model
         if is_on_master():
             print_boxed('BUILDING MODEL', print_fun=logging.debug)
+
         model = Model(
             model_definition['input_features'],
             model_definition['output_features'],
@@ -412,6 +415,8 @@ def train(
             random_seed=random_seed,
             debug=debug
         )
+
+    contrib_command("train_model", model, model_definition, model_load_path)
 
     # Train model
     if is_on_master():
