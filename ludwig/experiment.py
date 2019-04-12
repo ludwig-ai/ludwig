@@ -45,6 +45,7 @@ from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.contrib import contrib_command
 
 
 def experiment(
@@ -386,6 +387,7 @@ def experiment(
             experiment_name, model_name))
         logging.info('Saved to: {}'.format(experiment_dir_name))
 
+    contrib_command("experiment_save", experiment_dir_name)
     return experiment_dir_name
 
 
