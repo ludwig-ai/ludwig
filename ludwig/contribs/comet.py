@@ -15,6 +15,8 @@
 # ==============================================================================
 
 from datetime import datetime
+import logging
+import os
 
 class Comet():
     """
@@ -33,7 +35,14 @@ class Comet():
             logging.error("Ignored --comet: Please install comet_ml; see www.comet.ml")
             return None
 
-        return Comet()
+        try:
+            version = [int(i) for i in comet_ml.__version__.split(".")]
+        except Exception:
+            version = None
+        if version is not None and version >= [1, 0, 51]:
+            return Comet()
+        else:
+            logging.error("Ignored --comet: Need version 1.0.51 or greater")
 
     def experiment(self, *args, **kwargs):
         import comet_ml
@@ -43,6 +52,7 @@ class Comet():
             logging.error("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
+        logging.info("comet.experiment() called......")
         cli = self._make_command_line(args)
         self.experiment.set_code(cli)
         self.experiment.set_filename("Ludwig CLI")
@@ -58,12 +68,45 @@ class Comet():
             logging.error("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
+        logging.info("comet.train() called......")
         cli = self._make_command_line(args)
         self.experiment.set_code(cli)
         self.experiment.set_filename("Ludwig CLI")
         self._log_html(cli)
         config = comet_ml.get_config()
         self._save_config(config)
+
+    def train_model(self, *args, **kwargs):
+        logging.info("comet.train_model() called......")
+        if self.experiment:
+            model = args[0]
+            model_definition = args[1]
+            model_definition_path = args[2]
+            if model:
+                self.experiment.set_model_graph(str(model.graph.as_graph_def()))
+            if model_definition:
+                if model_definition_path:
+                    base_name = os.path.basename(model_definition_path)
+                else:
+                    base_name = "model_definition.yaml"
+                if "." in base_name:
+                    base_name = base_name.rsplit(".", 1)[0] + ".json"
+                else:
+                    base_name = base_name + ".json"
+                self.experiment.log_asset_data(model_definition,
+                                               base_name)
+
+    def train_save(self, *args, **kwargs):
+        logging.info("comet.train_save() called......")
+        experiment_dir_name = args[0]
+        if self.experiment:
+            self.experiment.log_asset_folder(experiment_dir_name)
+
+    def experiment_save(self, *args, **kwargs):
+        logging.info("comet.experiment_save() called......")
+        experiment_dir_name = args[0]
+        if self.experiment:
+            self.experiment.log_asset_folder(experiment_dir_name)
 
     def visualize(self, *args, **kwargs):
         import comet_ml
@@ -73,8 +116,14 @@ class Comet():
             logging.error("Ignored --comet. No '.comet.config' file")
             return
 
+        logging.info("comet.visualize() called......")
         cli = self._make_command_line(args)
         self._log_html(cli)
+
+    def visualize_figure(self, fig):
+        logging.info("comet.visualize_figure() called......")
+        if self.experiment:
+            self.experiment.log_figure(fig)
 
     def predict(self, *args, **kwargs):
         import comet_ml
@@ -84,12 +133,9 @@ class Comet():
             logging.error("Ignored --comet. No '.comet.config' file")
             return
 
+        logging.info("comet.predict() called......")
         cli = self._make_command_line(args)
         self._log_html(cli)
-
-    def visualize_figure(self, fig):
-        if self.experiment:
-            self.experiment.log_figure(fig)
 
     def _save_config(self, config):
         ## save the .comet.config here:
