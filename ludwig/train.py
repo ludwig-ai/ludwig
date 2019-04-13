@@ -26,6 +26,7 @@ from pprint import pformat
 
 import yaml
 
+from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
@@ -41,7 +42,7 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
-from ludwig.contrib import contrib_command
+
 
 def full_train(
         model_definition,
@@ -255,6 +256,18 @@ def full_train(
         train_set_metadata
     )
 
+    if is_on_master():
+        if not skip_save_model:
+            # save train set metadata
+            os.makedirs(model_dir, exist_ok=True)
+            save_json(
+                os.path.join(
+                    model_dir,
+                    TRAIN_SET_METADATA_FILE_NAME
+                ),
+                train_set_metadata
+            )
+
     # run the experiment
     model, result = train(
         training_set=training_set,
@@ -288,16 +301,6 @@ def full_train(
             }
         )
 
-        if not skip_save_model:
-            # save train set metadata
-            save_json(
-                os.path.join(
-                    model_dir,
-                    TRAIN_SET_METADATA_FILE_NAME
-                ),
-                train_set_metadata
-            )
-
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
     validation_measure = model_definition['training']['validation_measure']
@@ -328,6 +331,7 @@ def full_train(
         logging.info('Saved to: {0}'.format(experiment_dir_name))
 
     contrib_command("train_save", experiment_dir_name)
+
 
 def train(
         training_set,
