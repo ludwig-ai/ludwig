@@ -18,11 +18,11 @@ import tensorflow as tf
 from ludwig.constants import *
 from ludwig.utils.tf_utils import to_sparse
 
-measures = {ACCURACY, OVERALL_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
+measures = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
             MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
             PERPLEXITY}
 
-max_measures = {ACCURACY, OVERALL_ACCURACY, HITS_AT_K, R2, JACCARD}
+max_measures = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
 min_measures = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
                 PERPLEXITY}
 
@@ -74,9 +74,9 @@ def masked_accuracy(targets, predictions, sequence_lengths,
 
     filtered_out, masked_correct_predictions = tf.dynamic_partition(
         correct_predictions, mask, 2)
-    overall_accuracy = tf.reduce_mean(
+    token_accuracy = tf.reduce_mean(
         tf.cast(masked_correct_predictions, tf.float32),
-        name='overall_accuracy_{}'.format(output_feature_name))
+        name='token_accuracy_{}'.format(output_feature_name))
 
     one_masked_correct_prediction = 1.0 - tf.cast(mask, tf.float32) + (
             tf.cast(mask, tf.float32) * tf.cast(correct_predictions,
@@ -89,7 +89,7 @@ def masked_accuracy(targets, predictions, sequence_lengths,
                                       name='rowwise_accuracy_{}'.format(
                                           output_feature_name))
 
-    return overall_accuracy, masked_correct_predictions, rowwise_accuracy, rowwise_correct_predictions
+    return token_accuracy, masked_correct_predictions, rowwise_accuracy, rowwise_correct_predictions
 
 
 def hits_at_k(targets, predictions_logits, top_k, output_feature_name):
