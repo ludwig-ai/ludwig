@@ -26,6 +26,7 @@ from pprint import pformat
 
 import yaml
 
+from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
@@ -45,7 +46,6 @@ from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
-from ludwig.contrib import contrib_command
 
 
 def experiment(
@@ -263,6 +263,18 @@ def experiment(
     # update model definition with metadata properties
     update_model_definition_with_metadata(model_definition, train_set_metadata)
 
+    if is_on_master():
+        if not skip_save_model:
+            # save train set metadata
+            os.makedirs(model_dir, exist_ok=True)
+            save_json(
+                os.path.join(
+                    model_dir,
+                    TRAIN_SET_METADATA_FILE_NAME
+                ),
+                train_set_metadata
+            )
+
     # run the experiment
     model, training_results = train(
         training_set=training_set,
@@ -286,17 +298,6 @@ def experiment(
         train_valisest_stats,
         train_testset_stats
     ) = training_results
-
-    if is_on_master():
-        if not skip_save_model:
-            # save train set metadata
-            save_json(
-                os.path.join(
-                    model_dir,
-                    TRAIN_SET_METADATA_FILE_NAME
-                ),
-                train_set_metadata
-            )
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
