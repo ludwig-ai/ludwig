@@ -4436,7 +4436,15 @@ If a <code>b x h</code> input is provided to a generator decoder using an rnn wi
 
 
 <h4 id="sequence-features-measures">Sequence Features Measures<a class="headerlink" href="#sequence-features-measures" title="Permanent link">&para;</a></h4>
-<p>The measures that are calculated every epoch and are available for category features are <code>accuracy</code> (counts the number of datapoints where all the elements of the predicted sequence are correct over the number of all datapoints), <code>overall_accuracy</code> (computes the number of elements in all the sequences that are correctly predicted over the number of all the elements in all the sequences), <code>last_accuracy</code> (accuracy considering only the last element of the sequence, it is useful for being sure special end-of-sequence tokens are generated or tagged), <code>edit_distance</code> (the levenshtein distance between the predicted and ground truth sequence), <code>perplexity</code> (the perplexity of the ground truth sequence according to the model) and the <code>loss</code> itself.
+                <p>The measures that are calculated every epoch and are available for category features are <code>accuracy</code>
+                    (counts the number of datapoints where all the elements of the predicted sequence are correct over
+                    the number of all datapoints), <code>token_accuracy</code> (computes the number of elements in all
+                    the sequences that are correctly predicted over the number of all the elements in all the
+                    sequences), <code>last_accuracy</code> (accuracy considering only the last element of the sequence,
+                    it is useful for being sure special end-of-sequence tokens are generated or tagged), <code>edit_distance</code>
+                    (the levenshtein distance between the predicted and ground truth sequence), <code>perplexity</code>
+                    (the perplexity of the ground truth sequence according to the model) and the <code>loss</code>
+                    itself.
 You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
 <h3 id="text-features">Text Features<a class="headerlink" href="#text-features" title="Permanent link">&para;</a></h3>
 <h4 id="text-features-preprocessing">Text Features Preprocessing<a class="headerlink" href="#text-features-preprocessing" title="Permanent link">&para;</a></h4>
