@@ -307,7 +307,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         # ================ Measures ================
         (
             correct_last_predictions, last_accuracy,
-            correct_overall_predictions, overall_accuracy,
+            correct_overall_predictions, token_accuracy,
             correct_rowwise_predictions, rowwise_accuracy, edit_distance_val,
             mean_edit_distance, perplexity_val
         ) = self.sequence_measures(
@@ -327,7 +327,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         output_tensors[
             CORRECT_OVERALL_PREDICTIONS + '_' + feature_name
             ] = correct_overall_predictions
-        output_tensors[OVERALL_ACCURACY + '_' + feature_name] = overall_accuracy
+        output_tensors[TOKEN_ACCURACY + '_' + feature_name] = token_accuracy
         output_tensors[
             CORRECT_ROWWISE_PREDICTIONS + '_' + feature_name
             ] = correct_rowwise_predictions
@@ -341,8 +341,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 last_accuracy
             )
             tf.summary.scalar(
-                'train_batch_overall_accuracy_{}'.format(feature_name),
-                overall_accuracy
+                'train_batch_token_accuracy_{}'.format(feature_name),
+                token_accuracy
             )
             tf.summary.scalar(
                 'train_batch_rowwise_accuracy_{}'.format(feature_name),
@@ -434,7 +434,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
     ):
         with tf.variable_scope('measures_{}'.format(self.name)):
             (
-                overall_accuracy_val,
+                token_accuracy_val,
                 overall_correct_predictions,
                 rowwise_accuracy_val,
                 rowwise_correct_predictions
@@ -462,7 +462,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             correct_last_predictions,
             last_accuracy_val,
             overall_correct_predictions,
-            overall_accuracy_val,
+            token_accuracy_val,
             rowwise_correct_predictions,
             rowwise_accuracy_val,
             edit_distance_val,
@@ -541,7 +541,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             'value': 0,
             'type': MEASURE
         }),
-        (OVERALL_ACCURACY, {
+        (TOKEN_ACCURACY, {
             'output': CORRECT_OVERALL_PREDICTIONS,
             'aggregation': SEQ_SUM,
             'value': 0,

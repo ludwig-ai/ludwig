@@ -188,7 +188,7 @@ class ConfusionMatrix:
         return self.positive_predictive_value(
             idx) + self.negative_predictive_value(idx) - 1
 
-    def overall_accuracy(self):
+    def token_accuracy(self):
         return metrics.accuracy_score(self.conditions, self.predictions)
 
     def avg_precision(self, average='macro'):
@@ -247,7 +247,7 @@ class ConfusionMatrix:
 
     def stats(self):
         return {
-            'overall_accuracy': self.overall_accuracy(),
+            'token_accuracy': self.token_accuracy(),
             'avg_precision_macro': self.avg_precision(average='macro'),
             'avg_recall_macro': self.avg_recall(average='macro'),
             'avg_f1_score_macro': self.avg_f1_score(average='macro'),
