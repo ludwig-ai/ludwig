@@ -33,6 +33,7 @@ import sys
 from pprint import pformat
 
 import ludwig.contrib
+
 ludwig.contrib.contrib_import()
 
 import pandas as pd
@@ -500,6 +501,14 @@ class LudwigModel:
             train_set_metadata
         )
 
+        if not skip_save_model:
+            os.makedirs(model_dir, exist_ok=True)
+            train_set_metadata_path = os.path.join(
+                model_dir,
+                TRAIN_SET_METADATA_FILE_NAME
+            )
+            save_json(train_set_metadata_path, train_set_metadata)
+
         # run the experiment
         model, result = train(
             training_set=training_set,
@@ -517,13 +526,6 @@ class LudwigModel:
             random_seed=random_seed,
             debug=debug
         )
-
-        if not skip_save_model:
-            train_set_metadata_path = os.path.join(
-                model_dir,
-                TRAIN_SET_METADATA_FILE_NAME
-            )
-            save_json(train_set_metadata_path, train_set_metadata)
 
         train_trainset_stats, train_valisest_stats, train_testset_stats = result
         train_stats = {
@@ -1144,6 +1146,16 @@ def test_predict(
     )
 
     ludwig_model.close()
+    logging.critical(predictions)
+
+    predictions = ludwig_model.predict(
+        data_csv=data_csv,
+        batch_size=batch_size,
+        gpus=gpus,
+        gpu_fraction=gpu_fraction,
+        logging_level=logging_level
+    )
+
     logging.critical(predictions)
 
 
