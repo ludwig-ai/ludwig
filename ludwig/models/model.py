@@ -28,6 +28,7 @@ import re
 import signal
 import sys
 import time
+import threading
 from collections import OrderedDict
 
 import numpy as np
@@ -384,7 +385,9 @@ class Model:
         self.epochs = epochs
         digits_per_epochs = len(str(self.epochs))
         self.received_sigint = False
-        signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
+        # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
+        if threading.current_thread() == threading.main_thread():
+            signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
         if eval_batch_size < 1:
             eval_batch_size = batch_size
