@@ -19,6 +19,7 @@ import sys
 
 import ludwig.contrib
 
+
 class CLI(object):
     """CLI describes a command line interface for interacting with Ludwig, there
     are several different functions that can be performed. These functions are:
