@@ -39,7 +39,7 @@ model_definition_template = Template(
 def generate_data(input_features,
                   output_features,
                   filename='test_csv.csv',
-                  num_examples=50):
+                  num_examples=25):
     """
     Helper method to generate synthetic data based on input, output feature
     specs
@@ -154,13 +154,10 @@ def test_experiment_multi_input_intent_classification(csv_filename):
     # Multiple inputs, Single category output
     input_features_string = Template(
         "[{type: text, name: random_text, vocab_size: 100, max_len: 10,"
-        " encoder: ${encoder1}}, {type: numerical, name: random_number}, "
-        "{type: category, name: random_category, vocab_size: 10,"
-        " encoder: ${encoder2}}, {type: set, name: random_set, vocab_size: 10,"
-        " max_len: 10}, {type: sequence, name: random_sequence, vocab_size: 10,"
-        " max_len: 10}]")
-    output_features_string = "[{type: category, name: intent, reduce_input:" \
-                             " sum, vocab_size: 2}]"
+        " encoder: ${encoder1}}, {type: category, name: random_category,"
+        " vocab_size: 10, encoder: ${encoder2}}]")
+    output_features_string = ("[{type: category, name: intent, reduce_input:" 
+                              " sum, vocab_size: 2}]")
 
     # Generate test data
     rel_path = generate_data(
@@ -194,15 +191,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, rel_path)
 
-    input_features = "[{type: text, name: random_text, vocab_size: 100," \
-                     " max_len: 10, encoder: stacked_cnn}, " \
-                     "{type: numerical, name: random_number}, " \
-                     "{type: category, name: random_category, vocab_size: 10," \
-                     " encoder: stacked_parallel_cnn}, " \
-                     "{type: set, name: random_set, vocab_size: 10," \
-                     " max_len: 10}," \
-                     "{type: sequence, name: random_sequence, vocab_size: 10," \
-                     " max_len: 10, encoder: embed}]"
+    # Use generator as decoder
     output_features = "[{type: category, name: intent, reduce_input: sum," \
                       " vocab_size: 2, decoder: generator, " \
                       "reduce_input: sum}," \
@@ -213,15 +202,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, rel_path)
 
-    input_features = "[{type: text, name: random_text, vocab_size: 100," \
-                     " max_len: 10, encoder: stacked_cnn}, " \
-                     "{type: numerical, name: random_number}, " \
-                     "{type: category, name: random_category, vocab_size: 10," \
-                     " encoder: stacked_parallel_cnn}, " \
-                     "{type: set, name: random_set, vocab_size: 10," \
-                     " max_len: 10}," \
-                     "{type: sequence, name: random_sequence, vocab_size: 10," \
-                     " max_len: 10, encoder: embed}]"
+    # Generator decoder and reduce_input = None
     output_features = "[{type: category, name: intent, reduce_input: sum," \
                       " vocab_size: 2}," \
                       "{type: sequence, name: random_seq_op, vocab_size: 10," \
@@ -236,12 +217,13 @@ def test_experiment_image_inputs(csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features_template = Template(
-        "[{type: text, name: random_text, vocab_size: 100,"
+        "[{type: text, name: random_text, vocab_size: 10,"
         " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
         " name: random_number}, "
         "{type: image, name: random_image, encoder: ${encoder},"
-        "preprocessing: {in_memory: ${in_memory}, height: 10, width: 10, "
-        "num_channels: 3}, resnet_size: 8, destination_folder: ${folder}}]")
+        "preprocessing: {in_memory: ${in_memory}, height: 8, width: 8, "
+        "num_channels: 3}, resnet_size: 8, destination_folder: ${folder}, "
+        "fc_size: 32, num_filters: 8}]")
 
     # Resnet encoder
     input_features = input_features_template.substitute(
@@ -325,17 +307,17 @@ def test_experiment_attention(csv_filename):
 
 
 def test_experiment_sequence_combiner(csv_filename):
-    # Machine translation with attention
+    # Sequence combiner
     input_features_template = Template(
         '[{name: english, type: sequence, vocab_size: 10,'
-        ' max_len: 10, min_len: 10, encoder: rnn, cell_type: lstm,'
+        ' max_len: 5, min_len: 5, encoder: rnn, cell_type: lstm,'
         ' reduce_output: null}, {name: spanish, type: sequence, vocab_size: 10,'
-        ' max_len: 10, min_len: 10, encoder: rnn, cell_type: lstm,'
+        ' max_len: 5, min_len: 5, encoder: rnn, cell_type: lstm,'
         ' reduce_output: null}, {name: category,'
-        ' type: category, vocab_size: 10} ]')
+        ' type: category, vocab_size: 5} ]')
 
     output_features_string = "[{type: category, name: intent, reduce_input:" \
-                             " sum, vocab_size: 10}]"
+                             " sum, vocab_size: 5}]"
 
     model_definition_template2 = Template(
         '{input_features: ${input_name}, output_features: ${output_name}, '
@@ -345,7 +327,8 @@ def test_experiment_sequence_combiner(csv_filename):
     # Generate test data
     rel_path = generate_data(
         input_features_template.substitute(encoder1='rnn', encoder2='rnn'),
-        output_features_string, csv_filename)
+        output_features_string,
+        csv_filename)
 
     for encoder1, encoder2 in zip(encoders, encoders):
         input_features = input_features_template.substitute(
@@ -399,7 +382,8 @@ def test_experiment_various_feature_types(csv_filename):
     # Generate test data
     rel_path = generate_data(
         input_features_template.substitute(encoder='rnn'),
-        output_features, csv_filename)
+        output_features,
+        csv_filename)
     for encoder in encoders:
         run_experiment(input_features_template.substitute(encoder=encoder),
                        output_features, data_csv=rel_path)
@@ -413,54 +397,18 @@ def test_experiment_timeseries(csv_filename):
     # Generate test data
     rel_path = generate_data(
         input_features_template.substitute(encoder='rnn'),
-        output_features, csv_filename)
+        output_features,
+        csv_filename)
     for encoder in encoders:
         run_experiment(input_features_template.substitute(encoder=encoder),
                        output_features, data_csv=rel_path)
-
-
-def test_movie_rating_prediction(csv_filename):
-    input_features = '[{name: year, type: numerical, min: 1900, max: 2030},' \
-                     '{name: duration, type: numerical, min: 3600, max: 12000},' \
-                     '{name: nominations, type: numerical, min: 0, max: 25},' \
-                     '{name: categories, type: set, max_len: 5, vocab_size: 10}]'
-    output_features = "[ {name: rating, type: numerical, min: 1, max: 10}]"
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
-
-
-def test_example_with_set_output(csv_filename):
-    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
-    input_features_template = Template(
-        '[{name: image_path, type: image, encoder: ${encoder}, preprocessing: '
-        '{width: 10, height: 10, num_channels: 3}, resnet_size: 8, '
-        'destination_folder: ${folder}}]')
-
-    output_features = "[ {name: tags, type: set, max_len: 5, vocab_size: 10}]"
-
-    for encoder in ['resnet', 'stacked_cnn']:
-        input_features = input_features_template.substitute(
-            encoder=encoder,
-            folder=image_dest_folder)
-
-        rel_path = generate_data(input_features, output_features, csv_filename)
-        run_experiment(input_features, output_features, rel_path)
-
-    # Delete the temporary data created
-    all_images = glob.glob(os.path.join(image_dest_folder, '*.jpg'))
-    for im in all_images:
-        os.remove(im)
-
-    os.rmdir(image_dest_folder)
 
 
 def test_visual_question_answering(csv_filename):
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     input_features = Template(
         '[{name: image_path, type: image, encoder: stacked_cnn, preprocessing:'
-        ' {width: 10, height: 10, num_channels: 3}, resnet_size: 8, '
+        '{width: 10, height: 10, num_channels: 3}, resnet_size: 8, fc_size: 32,'
         'destination_folder: ${folder}}, {name: question, type: text, '
         'vocab_size: 20, max_len: 10,encoder: parallel_cnn, '
         'level: word}]').substitute(
@@ -496,9 +444,9 @@ def test_image_resizing_num_channel_handling(csv_filename):
         " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
         " name: random_number}, "
         "{type: image, name: random_image, encoder: ${encoder}, preprocessing:"
-        " {width: 10, in_memory: ${in_memory},"
-        " height: 10, num_channels: 3},"
-        " resnet_size: 8, destination_folder: ${folder}}]")
+        " {width: 8, in_memory: ${in_memory},"
+        " height: 8, num_channels: 3},"
+        " resnet_size: 8, fc_size: 32, destination_folder: ${folder}}]")
 
     # Resnet encoder
     input_features = input_features_template.substitute(
@@ -517,9 +465,9 @@ def test_image_resizing_num_channel_handling(csv_filename):
         "[{type: text, name: random_text, vocab_size: 100,"
         " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
         " name: random_number}, "
-        "{type: image, name: random_image, preprocessing: {width: 10,"
-        " in_memory: ${in_memory}, height: 10, num_channels: 1},"
-        " encoder: ${encoder},"
+        "{type: image, name: random_image, preprocessing: {width: 8,"
+        " in_memory: ${in_memory}, height: 8, num_channels: 1},"
+        " encoder: ${encoder}, fc_size: 32, "
         " resnet_size: 8, destination_folder: ${folder}}]")
 
     input_features = input_features_template.substitute(
@@ -540,9 +488,9 @@ def test_image_resizing_num_channel_handling(csv_filename):
         "[{type: text, name: random_text, vocab_size: 100,"
         " max_len: 10, encoder: stacked_cnn}, {type: numerical,"
         " name: random_number}, "
-        "{type: image, name: random_image, preprocessing: {width: 10, "
-        "in_memory: ${in_memory}, height: 10} , encoder: ${encoder},"
-        " resnet_size: 8, destination_folder: ${folder}}]")
+        "{type: image, name: random_image, preprocessing: {width: 8, "
+        "in_memory: ${in_memory}, height: 8} , encoder: ${encoder},"
+        " resnet_size: 8, fc_size: 32, destination_folder: ${folder}}]")
 
     input_features = input_features_template.substitute(
         encoder='resnet',
