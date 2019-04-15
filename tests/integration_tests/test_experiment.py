@@ -36,8 +36,10 @@ model_definition_template = Template(
     'training: {epochs: 2}, combiner: {type: concat, fc_size: 56}}')
 
 
-def generate_data(input_features, output_features, filename='test_csv.csv',
-                  num_examples=500):
+def generate_data(input_features,
+                  output_features,
+                  filename='test_csv.csv',
+                  num_examples=50):
     """
     Helper method to generate synthetic data based on input, output feature
     specs
@@ -562,6 +564,6 @@ def test_image_resizing_num_channel_handling(csv_filename):
 if __name__ == '__main__':
     """
     To run tests individually, run:
-    ```pytest tests/integration_tests/test_experiment.py::test_name```
+    ```python -m pytest tests/integration_tests/test_experiment.py::test_name```
     """
     pass
