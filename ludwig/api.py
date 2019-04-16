@@ -271,6 +271,7 @@ class LudwigModel:
             data_train_hdf5=None,
             data_validation_hdf5=None,
             data_test_hdf5=None,
+            data_dict=None,
             train_set_metadata_json=None,
             dataset_type='generic',
             model_name='run',
@@ -322,6 +323,14 @@ class LudwigModel:
                intermediate preprocess  version of the input CSV created the
                first time a CSV file is used in the same directory with the same
                name and a hdf5 extension
+        :param data_dict: (dict) input data dictionary. It is expected to
+               contain one key for each field and the values have to be lists of
+               the same length. Each index in the lists corresponds to one
+               datapoint. For example a data set consisting of two datapoints
+               with a text and a class may be provided as the following dict
+               ``{'text_field_name': ['text of the first datapoint', text of the
+               second datapoint'], 'class_filed_name': ['class_datapoints_1',
+               'class_datapoints_2']}`.
         :param train_set_metadata_json: (string) input metadata JSON file. It is an
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
@@ -447,6 +456,9 @@ class LudwigModel:
             logging.info('{0}: {1}'.format(key, pformat(value, indent=4)))
         logging.info('\n')
 
+        if data_df is None and data_dict is not None:
+            data_df = self._read_data(None, data_dict)
+
         # preprocess
         if data_df is not None or data_train_df is not None:
             (
@@ -463,8 +475,7 @@ class LudwigModel:
                 data_test_df=data_test_df,
                 train_set_metadata_json=train_set_metadata_json,
                 skip_save_processed_input=True,
-                preprocessing_params=
-                self.model_definition['preprocessing'],
+                preprocessing_params=self.model_definition['preprocessing'],
                 random_seed=random_seed)
         else:
             (
@@ -485,8 +496,7 @@ class LudwigModel:
                 data_test_hdf5=data_test_hdf5,
                 train_set_metadata_json=train_set_metadata_json,
                 skip_save_processed_input=skip_save_processed_input,
-                preprocessing_params=
-                self.model_definition['preprocessing'],
+                preprocessing_params=self.model_definition['preprocessing'],
                 random_seed=random_seed)
 
         logging.info('Training set: {0}'.format(training_set.size))
