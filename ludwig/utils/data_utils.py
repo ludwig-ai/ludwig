@@ -90,6 +90,7 @@ def load_hdf5(data_fp):
 
 # def save_hdf5(data_fp: str, data: Dict[str, object]):
 def save_hdf5(data_fp, data, metadata=None):
+
     if metadata is None:
         metadata = {}
     mode = 'w'
@@ -279,6 +280,22 @@ def load_from_file(file_name, field=None, dtype=int):
     else:
         array = load_matrix(file_name, dtype)
     return array
+
+
+def get_filepath_in_diff_format(file_path, desired_format):
+    """
+    Return a file path for a file with same name but different format.
+    a.csv, json -> a.json
+    a.csv, hdf5 -> a.hdf5
+    :param file_path: original file path
+    :param desired_format: desired file format
+    :return: file path with same name but different format
+    """
+    if '.' in desired_format:
+        # Handle the case if the user calls with '.hdf5' instead of 'hdf5'
+        desired_format = desired_format.replace('.', '').strip()
+
+    return os.path.splitext(file_path)[0] + '.' + desired_format
 
 
 class NumpyEncoder(json.JSONEncoder):
