@@ -323,7 +323,8 @@ def preprocess_for_training(
     if all(data_sources_none):
         raise ValueError('No training data is provided!')
 
-    # Check if hdf5 and json already exist
+    # Check if hdf5 and json already exist. If they do, use the hdf5 data,
+    # instead of the csvs
     data_hdf5_fp = None
 
     if data_csv is not None:
@@ -393,6 +394,7 @@ def preprocess_for_training(
     ) = get_dataset_fun(dataset_type)
 
     if data_df is not None or data_train_df is not None:
+        # Preprocess data frames
         training_set, test_set, validation_set, train_set_metadata = \
             _preprocess_df_for_training(
                 features,
@@ -404,6 +406,7 @@ def preprocess_for_training(
                 random_seed
             )
     elif data_csv is not None or data_train_csv is not None:
+        # Preprocess csv data
         training_set, test_set, validation_set, train_set_metadata = \
             _preprocess_csv_for_training(
                 features,
@@ -510,6 +513,19 @@ def _preprocess_csv_for_training(
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
 ):
+    """
+    Method to pre-process csv data
+    :param features: list of all features (input + output)
+    :param data_csv: path to the csv data
+    :param data_train_csv:  training csv data
+    :param data_validation_csv: validation csv data
+    :param data_test_csv: test csv data
+    :param skip_save_processed_input: if False, the pre-processed data is saved
+    as .hdf5 files in the same location as the csvs with the same names.
+    :param preprocessing_params: preprocessing parameters
+    :param random_seed: random seed
+    :return: training, test, validation datasets, training metadata
+    """
     if data_csv is not None:
         # Use data and ignore _train, _validation and _test.
         # Also ignore data and train set metadata needs preprocessing
@@ -610,6 +626,10 @@ def _preprocess_df_for_training(
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
 ):
+    """ Method to pre-process dataframes. This doesn't have the optoin to save the
+    processed data as hdf5 as we don't expect users to do this as the data can
+    be processed in memory
+    """
 
     if data_df is not None:
         # needs preprocessing
