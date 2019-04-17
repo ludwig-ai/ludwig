@@ -282,7 +282,7 @@ def load_from_file(file_name, field=None, dtype=int):
     return array
 
 
-def get_filepath_in_diff_format(file_path, desired_format):
+def replace_file_extension(file_path, desired_format):
     """
     Return a file path for a file with same name but different format.
     a.csv, json -> a.json
