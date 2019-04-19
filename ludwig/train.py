@@ -48,6 +48,10 @@ from ludwig.models.modules.measure_modules import get_best_function
 def full_train(
         model_definition,
         model_definition_file=None,
+        data_df=None,
+        data_train_df=None,
+        data_validation_df=None,
+        data_test_df=None,
         data_csv=None,
         data_train_csv=None,
         data_validation_csv=None,
@@ -76,6 +80,10 @@ def full_train(
     """*full_train* defines the entire training procedure used by Ludwig's
     internals. Requires most of the parameters that are taken into the model.
     Builds a full ludwig model and performs the training.
+    :param data_test_df:
+    :param data_df:
+    :param data_train_df:
+    :param data_validation_df:
     :param model_definition: Model definition which defines the different
            parameters of the model, features, preprocessing and training.
     :type model_definition: Dictionary
@@ -226,6 +234,10 @@ def full_train(
     # preprocess
     preprocessed_data = preprocess_for_training(
         model_definition,
+        data_df=data_df,
+        data_train_df=data_train_df,
+        data_validation_df=data_validation_df,
+        data_test_df=data_test_df,
         data_csv=data_csv,
         data_train_csv=data_train_csv,
         data_validation_csv=data_validation_csv,
@@ -290,19 +302,17 @@ def full_train(
     )
 
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
+    train_stats = {
+        'train': train_trainset_stats,
+        'validation': train_valisest_stats,
+        'test': train_testset_stats
+    }
 
     model.close_session()
 
     if is_on_master():
         # save training and test statistics
-        save_json(
-            training_stats_fn,
-            {
-                'train': train_trainset_stats,
-                'validation': train_valisest_stats,
-                'test': train_testset_stats
-            }
-        )
+        save_json(training_stats_fn, train_stats)
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -337,7 +347,7 @@ def full_train(
 
     contrib_command("train_save", experiment_dir_name)
 
-    return model, preprocessed_data, experiment_dir_name
+    return model, preprocessed_data, experiment_dir_name, train_stats
 
 
 def train(

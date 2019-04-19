@@ -156,6 +156,8 @@ def experiment(
     :param gpu_fraction: Fraction of the memory of each GPU to use at
            the beginning of the training. The memory may grow elastically.
     :type gpu_fraction: Integer
+    :param use_horovod: Flag for using horovod
+    :type use_horovod: Boolean
     :param random_seed: Random seed used for weights initialization,
            splits and any other random function.
     :type random_seed: Integer
@@ -163,32 +165,32 @@ def experiment(
     :type debug: Boolean
     """
 
-    model, preprocessed_data, experiment_dir_name = full_train(
+    model, preprocessed_data, experiment_dir_name, _ = full_train(
         model_definition,
-        model_definition_file,
-        data_csv,
-        data_train_csv,
-        data_validation_csv,
-        data_test_csv,
-        data_hdf5,
-        data_train_hdf5,
-        data_validation_hdf5,
-        data_test_hdf5,
-        train_set_metadata_json,
-        experiment_name,
-        model_name,
-        model_load_path,
-        model_resume_path,
-        skip_save_model,
-        skip_save_progress,
-        skip_save_log,
-        skip_save_processed_input,
-        output_directory,
-        gpus,
-        gpu_fraction,
-        use_horovod,
-        random_seed,
-        debug,
+        model_definition_file=model_definition_file,
+        data_csv=data_csv,
+        data_train_csv=data_train_csv,
+        data_validation_csv=data_validation_csv,
+        data_test_csv=data_test_csv,
+        data_hdf5=data_hdf5,
+        data_train_hdf5=data_train_hdf5,
+        data_validation_hdf5=data_validation_hdf5,
+        data_test_hdf5=data_test_hdf5,
+        train_set_metadata_json=train_set_metadata_json,
+        experiment_name=experiment_name,
+        model_name=model_name,
+        model_load_path=model_load_path,
+        model_resume_path=model_resume_path,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
+        skip_save_processed_input=skip_save_processed_input,
+        output_directory=output_directory,
+        gpus=gpus,
+        gpu_fraction=gpu_fraction,
+        use_horovod=use_horovod,
+        random_seed=random_seed,
+        debug=debug,
         **kwargs
     )
 
