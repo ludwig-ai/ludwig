@@ -60,6 +60,7 @@ def full_train(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
+        dataset_type='generic',
         train_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
@@ -249,7 +250,8 @@ def full_train(
         train_set_metadata_json=train_set_metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition['preprocessing'],
-        random_seed=random_seed
+        random_seed=random_seed,
+        dataset_type=dataset_type
     )
 
     (training_set,

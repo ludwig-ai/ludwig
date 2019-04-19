@@ -16,47 +16,18 @@
 import glob
 import logging
 import os
-import uuid
-from string import Template
-
 import pandas as pd
 import pytest
 import yaml
 
-from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
+from string import Template
 from ludwig.experiment import experiment
 from ludwig.predict import full_predict
 from ludwig.data.concatenate_datasets import concatenate_df
-
-encoders = ['embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
-            'stacked_cnn']
-
-model_definition_template = Template(
-    '{input_features: ${input_name}, output_features: ${output_name}, '
-    'training: {epochs: 2}, combiner: {type: concat, fc_size: 56}}')
-
-
-def generate_data(input_features,
-                  output_features,
-                  filename='test_csv.csv',
-                  num_examples=25):
-    """
-    Helper method to generate synthetic data based on input, output feature
-    specs
-    :param num_examples: number of examples to generate
-    :param input_features: schema
-    :param output_features: schema
-    :param filename: path to the file where data is stored
-    :return:
-    """
-    features = yaml.load(input_features) + yaml.load(output_features)
-    df = build_synthetic_dataset(num_examples, features)
-    data = [next(df) for _ in range(num_examples)]
-
-    dataframe = pd.DataFrame(data[1:], columns=data[0])
-    dataframe.to_csv(filename, index=False)
-
-    return filename
+from tests.integration_tests.utils import model_definition_template
+from tests.integration_tests.utils import ENCODERS
+from tests.integration_tests.utils import generate_data
+from tests.fixtures.csv_filename import csv_filename
 
 
 def run_experiment(input_features, output_features, data_csv):
@@ -72,59 +43,13 @@ def run_experiment(input_features, output_features, data_csv):
         output_name=output_features
     )
 
-    experiment(yaml.load(model_definition), skip_save_processed_input=True,
-               skip_save_progress=True,
-               skip_save_unprocessed_output=True, data_csv=data_csv
-               )
-
-
-def delete_temporary_data(csv_path):
-    """
-    Helper method to delete temporary data created for running tests. Deletes
-    the csv and hdf5/json data (if any)
-    :param csv_path: path to the csv data file
-    :return: None
-    """
-    if os.path.exists(csv_path):
-        os.remove(csv_path)
-
-    json_path = os.path.splitext(csv_path)[0] + '.json'
-    if os.path.exists(json_path):
-        os.remove(json_path)
-
-    hdf5_path = os.path.splitext(csv_path)[0] + '.hdf5'
-    if os.path.exists(hdf5_path):
-        os.remove(hdf5_path)
-
-
-@pytest.fixture()
-def csv_filename():
-    """
-    This methods returns a random filename for the tests to use for generating
-    temporary data. After the data is used, all the temporary data is deleted.
-    :return: None
-    """
-    csv_filename = uuid.uuid4().hex[:10].upper() + '.csv'
-    yield csv_filename
-
-    delete_temporary_data(csv_filename)
-
-
-def test_experiment_intent_classification(csv_filename):
-    # Single sequence input, single category output
-    input_features = Template('[{name: utterance, type: sequence,'
-                              'vocab_size: 10, max_len: 10, '
-                              'encoder: ${encoder}, reduce_output: sum}]')
-    output_features = "[{name: intent, type: category, vocab_size: 2," \
-                      " reduce_input: sum}] "
-
-    # Generate test data
-    rel_path = generate_data(input_features.substitute(encoder='rnn'),
-                             output_features, csv_filename)
-    for encoder in encoders:
-        run_experiment(input_features.substitute(encoder=encoder),
-                       output_features,
-                       data_csv=rel_path)
+    experiment(
+        yaml.load(model_definition),
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        data_csv=data_csv
+    )
 
 
 def test_experiment_seq_seq1(csv_filename):
@@ -140,7 +65,9 @@ def test_experiment_seq_seq1(csv_filename):
     # Generate test data
     rel_path = generate_data(
         input_features_template.substitute(encoder='rnn'),
-        output_features, csv_filename)
+        output_features,
+        csv_filename
+    )
 
     encoders2 = ['embed', 'rnn', 'cnnrnn']
     for encoder in encoders2:
@@ -162,9 +89,11 @@ def test_experiment_multi_input_intent_classification(csv_filename):
     # Generate test data
     rel_path = generate_data(
         input_features_string.substitute(encoder1='rnn', encoder2='rnn'),
-        output_features_string, csv_filename)
+        output_features_string,
+        csv_filename
+    )
 
-    for encoder1, encoder2 in zip(encoders, encoders):
+    for encoder1, encoder2 in zip(ENCODERS, ENCODERS):
         input_features = input_features_string.substitute(encoder1=encoder1,
                                                           encoder2=encoder2)
 
@@ -280,8 +209,10 @@ def test_experiment_tied_weights(csv_filename):
     # Generate test data
     rel_path = generate_data(
         input_features.substitute(encoder='rnn'),
-        output_features, csv_filename)
-    for encoder in encoders:
+        output_features,
+        csv_filename
+    )
+    for encoder in ENCODERS:
         run_experiment(input_features.substitute(encoder=encoder),
                        output_features,
                        data_csv=rel_path)
@@ -298,8 +229,10 @@ def test_experiment_attention(csv_filename):
 
     # Generate test data
     rel_path = generate_data(
-        input_features, output_features.substitute(attention='bahdanau'),
-        csv_filename)
+        input_features,
+        output_features.substitute(attention='bahdanau'),
+        csv_filename
+    )
 
     for attention in ['bahdanau', 'luong']:
         run_experiment(input_features, output_features.substitute(
@@ -328,9 +261,10 @@ def test_experiment_sequence_combiner(csv_filename):
     rel_path = generate_data(
         input_features_template.substitute(encoder1='rnn', encoder2='rnn'),
         output_features_string,
-        csv_filename)
+        csv_filename
+    )
 
-    for encoder1, encoder2 in zip(encoders, encoders):
+    for encoder1, encoder2 in zip(ENCODERS, ENCODERS):
         input_features = input_features_template.substitute(
             encoder1=encoder1,
             encoder2=encoder2)
@@ -340,7 +274,8 @@ def test_experiment_sequence_combiner(csv_filename):
             output_name=output_features_string
         )
 
-        experiment(yaml.load(model_definition), skip_save_processed_input=True,
+        experiment(yaml.load(model_definition),
+                   skip_save_processed_input=True,
                    skip_save_progress=True,
                    skip_save_unprocessed_output=True, data_csv=rel_path
                    )
@@ -383,8 +318,9 @@ def test_experiment_various_feature_types(csv_filename):
     rel_path = generate_data(
         input_features_template.substitute(encoder='rnn'),
         output_features,
-        csv_filename)
-    for encoder in encoders:
+        csv_filename
+    )
+    for encoder in ENCODERS:
         run_experiment(input_features_template.substitute(encoder=encoder),
                        output_features, data_csv=rel_path)
 
@@ -398,8 +334,9 @@ def test_experiment_timeseries(csv_filename):
     rel_path = generate_data(
         input_features_template.substitute(encoder='rnn'),
         output_features,
-        csv_filename)
-    for encoder in encoders:
+        csv_filename
+    )
+    for encoder in ENCODERS:
         run_experiment(input_features_template.substitute(encoder=encoder),
                        output_features, data_csv=rel_path)
 
@@ -457,8 +394,9 @@ def test_image_resizing_num_channel_handling(csv_filename):
     output_features = "[{type: binary, name: intent, reduce_input: sum}, " \
                       "{type: numerical, name: random_num_output}]"
 
-    rel_path = generate_data(input_features, output_features, csv_filename,
-                             num_examples=100)
+    rel_path = generate_data(
+        input_features, output_features, csv_filename, num_examples=100
+    )
 
     df1 = pd.read_csv(rel_path)
 
@@ -476,8 +414,9 @@ def test_image_resizing_num_channel_handling(csv_filename):
         folder=image_dest_folder,
         in_memory='true',
     )
-    rel_path = generate_data(input_features, output_features, csv_filename,
-                             num_examples=100)
+    rel_path = generate_data(
+        input_features, output_features, csv_filename, num_examples=100
+    )
     df2 = pd.read_csv(rel_path)
 
     df = concatenate_df(df1, df2, None)

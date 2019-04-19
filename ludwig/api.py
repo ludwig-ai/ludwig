@@ -30,7 +30,6 @@ import argparse
 import logging
 import os
 import sys
-from pprint import pformat
 
 import ludwig.contrib
 
@@ -44,7 +43,6 @@ from ludwig.data.postprocessing import postprocess_df, postprocess
 from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing import build_dataset
 from ludwig.data.preprocessing import load_metadata
-from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.data.preprocessing import replace_text_feature_level
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -52,17 +50,13 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.globals import set_disable_progressbar
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
-from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.predict import calculate_overall_stats
-from ludwig.train import get_experiment_dir_name, full_train
-from ludwig.train import get_file_names
-from ludwig.train import train
+from ludwig.train import full_train
 from ludwig.train import update_model_definition_with_metadata
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.misc import get_experiment_description
 from ludwig.utils.print_utils import logging_level_registry
 
 
@@ -416,6 +410,7 @@ class LudwigModel:
             data_train_hdf5=data_train_hdf5,
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
+            dataset_type=dataset_type,
             train_set_metadata_json=train_set_metadata_json,
             experiment_name='api_experiment',
             model_name=model_name,
