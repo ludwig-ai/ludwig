@@ -457,7 +457,8 @@ def test_image_resizing_num_channel_handling(csv_filename):
     output_features = "[{type: binary, name: intent, reduce_input: sum}, " \
                       "{type: numerical, name: random_num_output}]"
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename,
+                             num_examples=100)
 
     df1 = pd.read_csv(rel_path)
 
@@ -475,7 +476,8 @@ def test_image_resizing_num_channel_handling(csv_filename):
         folder=image_dest_folder,
         in_memory='true',
     )
-    rel_path = generate_data(input_features, output_features, csv_filename)
+    rel_path = generate_data(input_features, output_features, csv_filename,
+                             num_examples=100)
     df2 = pd.read_csv(rel_path)
 
     df = concatenate_df(df1, df2, None)

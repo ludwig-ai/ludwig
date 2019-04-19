@@ -20,30 +20,19 @@ from __future__ import print_function
 
 import argparse
 import logging
-import os
 import sys
-from pprint import pformat
 
 import yaml
 
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
-from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
-from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.predict import predict
 from ludwig.predict import print_prediction_results
 from ludwig.predict import save_prediction_outputs
 from ludwig.predict import save_prediction_statistics
-from ludwig.train import get_experiment_dir_name
-from ludwig.train import get_file_names
-from ludwig.train import train
-from ludwig.train import update_model_definition_with_metadata
-from ludwig.utils.data_utils import save_json
+from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.misc import get_experiment_description
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -173,181 +162,41 @@ def experiment(
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     """
-    # set input features defaults
-    if model_definition_file is not None:
-        with open(model_definition_file, 'r') as def_file:
-            model_definition = merge_with_defaults(yaml.load(def_file))
-    else:
-        model_definition = merge_with_defaults(model_definition)
 
-    # setup directories and file names
-    experiment_dir_name = None
-    if model_resume_path is not None:
-        if os.path.exists(model_resume_path):
-            experiment_dir_name = model_resume_path
-        else:
-            if is_on_master():
-                logging.info(
-                    'Model resume path does not exists, '
-                    'starting training from scratch'
-                )
-            model_resume_path = None
-
-    if model_resume_path is None:
-        if is_on_master():
-            experiment_dir_name = get_experiment_dir_name(
-                output_directory,
-                experiment_name,
-                model_name
-            )
-        else:
-            experiment_dir_name = '/'
-    description_fn, training_stats_fn, model_dir = get_file_names(
-        experiment_dir_name
-    )
-
-    # save description
-    description = get_experiment_description(
+    model, preprocessed_data, experiment_dir_name = full_train(
         model_definition,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        metadata_json=train_set_metadata_json,
-        random_seed=random_seed
+        model_definition_file,
+        data_csv,
+        data_train_csv,
+        data_validation_csv,
+        data_test_csv,
+        data_hdf5,
+        data_train_hdf5,
+        data_validation_hdf5,
+        data_test_hdf5,
+        train_set_metadata_json,
+        experiment_name,
+        model_name,
+        model_load_path,
+        model_resume_path,
+        skip_save_model,
+        skip_save_progress,
+        skip_save_log,
+        skip_save_processed_input,
+        output_directory,
+        gpus,
+        gpu_fraction,
+        use_horovod,
+        random_seed,
+        debug,
+        **kwargs
     )
-    if is_on_master():
-        save_json(description_fn, description)
-        # print description
-        logging.info('Experiment name: {}'.format(experiment_name))
-        logging.info('Model name: {}'.format(model_name))
-        logging.info('Output path: {}'.format(experiment_dir_name))
-        logging.info('')
-        for key, value in description.items():
-            logging.info('{}: {}'.format(key, pformat(value, indent=4)))
-        logging.info('')
 
-    # preprocess
-    (
-        training_set,
-        validation_set,
-        test_set,
-        train_set_metadata
-    ) = preprocess_for_training(
-        model_definition,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
-        skip_save_processed_input=skip_save_processed_input,
-        preprocessing_params=model_definition[
-            'preprocessing'],
-        random_seed=random_seed
-    )
-    if is_on_master():
-        logging.info('Training set: {0}'.format(training_set.size))
-        if validation_set is not None:
-            logging.info('Validation set: {0}'.format(validation_set.size))
-        if test_set is not None:
-            logging.info('Test set: {0}'.format(test_set.size))
+    (training_set,
+     validation_set,
+     test_set,
+     train_set_metadata) = preprocessed_data
 
-    # update model definition with metadata properties
-    update_model_definition_with_metadata(model_definition, train_set_metadata)
-
-    if is_on_master():
-        if not skip_save_model:
-            # save train set metadata
-            os.makedirs(model_dir, exist_ok=True)
-            save_json(
-                os.path.join(
-                    model_dir,
-                    TRAIN_SET_METADATA_FILE_NAME
-                ),
-                train_set_metadata
-            )
-
-    # run the experiment
-    model, training_results = train(
-        training_set=training_set,
-        validation_set=validation_set,
-        test_set=test_set,
-        model_definition=model_definition,
-        save_path=model_dir,
-        model_load_path=model_load_path,
-        resume=model_resume_path is not None,
-        skip_save_model=skip_save_model,
-        skip_save_progress=skip_save_progress,
-        skip_save_log=skip_save_log,
-        gpus=gpus,
-        gpu_fraction=gpu_fraction,
-        use_horovod=use_horovod,
-        random_seed=random_seed,
-        debug=debug
-    )
-    (
-        train_trainset_stats,
-        train_valisest_stats,
-        train_testset_stats
-    ) = training_results
-
-    # grab the results of the model with highest validation test performance
-    validation_field = model_definition['training']['validation_field']
-    validation_measure = model_definition['training']['validation_measure']
-    validation_field_result = train_valisest_stats[validation_field]
-
-    best_function = get_best_function(validation_measure)
-
-    # print results of the model with highest validation test performance
-    if is_on_master():
-        if validation_set is not None:
-            # max or min depending on the measure
-            epoch_best_vali_measure, best_vali_measure = best_function(
-                enumerate(validation_field_result[validation_measure]),
-                key=lambda pair: pair[1]
-            )
-            logging.info('Best validation model epoch: {0}'.format(
-                epoch_best_vali_measure + 1)
-            )
-            logging.info(
-                'Best validation model {0} on validation set {1}: {2}'.format(
-                    validation_measure,
-                    validation_field,
-                    best_vali_measure)
-            )
-        
-            if test_set is not None:
-                best_vali_measure_epoch_test_measure = train_testset_stats[
-                    validation_field
-                ][validation_measure][epoch_best_vali_measure]
-                logging.info(
-                    'Best validation model {0} on test set {1}: {2}'.format(
-                        validation_measure,
-                        validation_field,
-                        best_vali_measure_epoch_test_measure
-                    )
-                )
-
-    # save training statistics
-    if is_on_master():
-        save_json(
-            training_stats_fn,
-            {
-                'train': train_trainset_stats,
-                'validation': train_valisest_stats,
-                'test': train_testset_stats
-            }
-        )
-
-    
     if test_set is not None:
         if model_definition['training']['eval_batch_size'] > 0:
             batch_size = model_definition['training']['eval_batch_size']
