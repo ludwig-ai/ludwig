@@ -864,7 +864,7 @@ The preprocessing dictionary contains one key of each datatype, but you have to 
 Moreover, the preprocessing dictionary contains parameters related to how to split the data that are not feature specific.
 
 - `force_split` (default `false`): if `true` the `split` column in the CSV data file is ignored and the dataset is randomly split. If `false` the `split` column is used if available.
-- `split_probabilities` (default `[0.7, 0.2, 0.1]`): the proportion of the CSV data to end up in training, validation and test. The three values have to sum up to one.
+- `split_probabilities` (default `[0.7, 0.1, 0.2]`): the proportion of the CSV data to end up in training, validation and test. The three values have to sum up to one.
 - `stratify` (default `null`): if `null` the split is random, otherwise you can specify the name of a `category` feature and the split will be stratified on that feature.
 
 Example preprocessing dictionary (showing default values):
@@ -872,7 +872,7 @@ Example preprocessing dictionary (showing default values):
 ```yaml
 preprocessing:
     force_split: false
-    split_probabilities: [0.7, 0.2, 0.1]
+    split_probabilities: [0.7, 0.1, 0.2]
     stratify: null
     category: {...}
     sequence: {...}
