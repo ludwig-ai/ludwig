@@ -51,7 +51,7 @@ def build_single_input(input_feature,
         input_feature['type'],
         input_feature['name']
     ))
-    if input_feature['tied_weights'] is not None:
+    if input_feature.get('tied_weights', None) is not None:
         scope_name = input_feature['tied_weights']
 
     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
