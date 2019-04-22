@@ -77,7 +77,7 @@ def get_abs_path(data_csv_path, image_path):
 
 def num_channels_in_image(img):
     if img is None or img.ndim < 2:
-        raise ValueError('Image does not have (at least 2) channels')
+        raise ValueError('Invalid image data')
 
     if img.ndim == 2:
         return 1

@@ -149,7 +149,7 @@ def conv_2d_layer(inputs, kernel_shape, biases_shape, stride=1, padding='SAME',
 
 def flatten(hidden):
     hidden_size = 1
-    for x in hidden.shape:
+    for x in hidden.shape[1:]:
         if x.value is not None:
             hidden_size *= x.value
     hidden = tf.reshape(hidden, [-1, hidden_size], name='flatten')
