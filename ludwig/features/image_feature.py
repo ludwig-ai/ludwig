@@ -84,6 +84,9 @@ class ImageBaseFeature(BaseFeature):
         if img_num_channels == 1:
             img = img.reshape((img.shape[0], img.shape[1], 1))
 
+        if should_resize:
+            img = resize_image(img, (img_height, img_width), resize_method)
+
         if user_specified_num_channels is True:
             # Number of channels is specified by the user
             img_padded = np.zeros((img_height, img_width, num_channels))
@@ -105,9 +108,6 @@ class ImageBaseFeature(BaseFeature):
                     ' has {2} channels'.format(filepath,
                                                img_num_channels,
                                                num_channels))
-        if should_resize:
-            img = resize_image(img, (img_height, img_width), resize_method)
-
         return img
 
     @staticmethod
