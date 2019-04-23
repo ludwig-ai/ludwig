@@ -42,11 +42,16 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.models.modules.measure_modules import get_best_function
 
 
 def full_train(
         model_definition,
         model_definition_file=None,
+        data_df=None,
+        data_train_df=None,
+        data_validation_df=None,
+        data_test_df=None,
         data_csv=None,
         data_train_csv=None,
         data_validation_csv=None,
@@ -55,6 +60,7 @@ def full_train(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
+        dataset_type='generic',
         train_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
@@ -75,6 +81,10 @@ def full_train(
     """*full_train* defines the entire training procedure used by Ludwig's
     internals. Requires most of the parameters that are taken into the model.
     Builds a full ludwig model and performs the training.
+    :param data_test_df:
+    :param data_df:
+    :param data_train_df:
+    :param data_validation_df:
     :param model_definition: Model definition which defines the different
            parameters of the model, features, preprocessing and training.
     :type model_definition: Dictionary
@@ -223,13 +233,12 @@ def full_train(
         logging.info('\n')
 
     # preprocess
-    (
-        training_set,
-        validation_set,
-        test_set,
-        train_set_metadata
-    ) = preprocess_for_training(
+    preprocessed_data = preprocess_for_training(
         model_definition,
+        data_df=data_df,
+        data_train_df=data_train_df,
+        data_validation_df=data_validation_df,
+        data_test_df=data_test_df,
         data_csv=data_csv,
         data_train_csv=data_train_csv,
         data_validation_csv=data_validation_csv,
@@ -241,8 +250,15 @@ def full_train(
         train_set_metadata_json=train_set_metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition['preprocessing'],
-        random_seed=random_seed
+        random_seed=random_seed,
+        dataset_type=dataset_type
     )
+
+    (training_set,
+     validation_set,
+     test_set,
+     train_set_metadata) = preprocessed_data
+
     if is_on_master():
         logging.info('Training set: {0}'.format(training_set.size))
         if validation_set is not None:
@@ -288,49 +304,52 @@ def full_train(
     )
 
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
+    train_stats = {
+        'train': train_trainset_stats,
+        'validation': train_valisest_stats,
+        'test': train_testset_stats
+    }
+
     model.close_session()
 
     if is_on_master():
         # save training and test statistics
-        save_json(
-            training_stats_fn,
-            {
-                'train': train_trainset_stats,
-                'validation': train_valisest_stats,
-                'test': train_testset_stats
-            }
-        )
+        save_json(training_stats_fn, train_stats)
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
     validation_measure = model_definition['training']['validation_measure']
     validation_field_result = train_valisest_stats[validation_field]
-    if validation_set is not None:
-        epoch_max_vali_measure, max_vali_measure = max(
+
+    best_function = get_best_function(validation_measure)
+    # results of the model with highest validation test performance
+    if is_on_master() and validation_set is not None:
+        epoch_best_vali_measure, best_vali_measure = best_function(
             enumerate(validation_field_result[validation_measure]),
             key=lambda pair: pair[1]
         )
-        max_vali_measure_epoch_test_measure = train_testset_stats[validation_field][
-            validation_measure][epoch_max_vali_measure]
+        logging.info(
+            'Best validation model epoch:'.format(epoch_best_vali_measure+1)
+        )
+        logging.info(
+           'Best validation model {0} on validation set {1}: {2}'.format(
+               validation_measure, validation_field, best_vali_measure
+           ))
+        if test_set is not None:
+            best_vali_measure_epoch_test_measure = train_testset_stats[
+                validation_field][validation_measure][epoch_best_vali_measure]
 
-    # results of the model with highest validation test performance
-    if is_on_master():
-        if validation_set is not None:
-            logging.info(
-                'Best validation model epoch:'.format(epoch_max_vali_measure + 1)
-            )
-            logging.info(
-                'Best validation model {0} on validation set {1}: {2}'.format(
-                    validation_measure, validation_field, max_vali_measure
-                ))
-            logging.info('Best validation model {0} on test set {1}: {2}'.format(
-                validation_measure, validation_field,
-                max_vali_measure_epoch_test_measure
+            logging.info('Best validation model {0} on test set {1}: '
+                         '{2}'.format(validation_measure,
+                                      validation_field,
+                                      best_vali_measure_epoch_test_measure
             ))
         logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
         logging.info('Saved to: {0}'.format(experiment_dir_name))
 
     contrib_command("train_save", experiment_dir_name)
+
+    return model, preprocessed_data, experiment_dir_name, train_stats
 
 
 def train(
