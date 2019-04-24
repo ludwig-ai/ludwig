@@ -130,7 +130,7 @@ The HDF5 file contains the data mapped to numpy ndarrays, while the JSON file co
 For instance, for a categorical feature with 3 possible values, the HDF5 file will contain integers from 0 to 3 (with 0 being a `<UNK>` category), while the JSON file will contain a `idx2str` list containing all tokens (`[<UNK>, label_1, label_2, label_3]`), a `str2idx` dictionary (`{"<UNK>": 0, "label_1": 1, "label_2": 2, "label_3": 3}`) and a `str2freq` dictionary (`{"<UNK>": 0, "label_1": 93, "label_2": 55, "label_3": 24}`).
 
 The reason to have those  intermediate files is two-fold: on one hand, if you are going to train your model again Ludwig will try to load them instead of recomputing all tensors, which saves a consistent amount of time, and on the other hand when you want to use your model to predict, data has to be mapped to tensors in exactly the same way it was mapped during training, so you'll be required to load the JSON metadata file in the `predict` command.
-The way this works is: the first time you provide a CSV (`--data_csv`), the HDF5 and JSON files are created, from the second time on Ludwig will load them instead of the CSV even if you specify the CSV (it looks in the same directory for files names in the same way but with a different extension), finally you can directly specify the HDF5 and JSON files (`--data_hdf5` and `--metadata_json`).
+The way this works is: the first time you provide a UTF-8 encoded CSV (`--data_csv`), the HDF5 and JSON files are created, from the second time on Ludwig will load them instead of the CSV even if you specify the CSV (it looks in the same directory for files names in the same way but with a different extension), finally you can directly specify the HDF5 and JSON files (`--data_hdf5` and `--metadata_json`).
 
 As the mapping from raw data to tensors depends on the type of feature that you specify in your model definition, if you change type (for instance from `sequential` to `text`) you also have to redo the preprocessing, which is achieved by deleting the HDF5 and JSON files.
 Alternatively you can skip saving the HDF5 and JSON files specifying `--skip_save_processed_input`.
@@ -138,9 +138,9 @@ Alternatively you can skip saving the HDF5 and JSON files specifying `--skip_sav
 Splitting between train, validation and test set can be done in several ways.
 This allows for a few possible input data scenarios:
 
-- one single CSV file is provided (`-data_csv`). In this case if the csv contains a `split` column with values `0` for training, `1` for validation and `2` for test, this split will be used. If you want to ignore the split column and perform a random split, use a `force_split` argument in the model definition. In the case when there is no split column, a random `70-20-10` split will be performed. You can set the percentages and specify if you want stratified sampling in the model definition preprocessing section.
+- one single UTF-8 encoded CSV file is provided (`-data_csv`). In this case if the CSV contains a `split` column with values `0` for training, `1` for validation and `2` for test, this split will be used. If you want to ignore the split column and perform a random split, use a `force_split` argument in the model definition. In the case when there is no split column, a random `70-20-10` split will be performed. You can set the percentages and specify if you want stratified sampling in the model definition preprocessing section.
 
-- you can provide separate train, validation and test CSVs (`--data_train_csv`, `--data_validation_csv`, `--data_test_csv`).
+- you can provide separate UTF-8 encoded train, validation and test CSVs (`--data_train_csv`, `--data_validation_csv`, `--data_test_csv`).
 
 - the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (`--data_train_hdf5`, `--data_validation_hdf5`, `--data_test_hdf5`), with the only difference that you need to specify only one JSON file (`--metadata_json`) instead of three.
 The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure does not improve for a a certain amount of epochs.
@@ -246,7 +246,7 @@ optional arguments:
                         the level of logging to use
 ```
 
-The same distinction between CSV files and HDF5 / JSON files explained in the [train](#train) section also applies here.
+The same distinction between UTF-8 encoded CSV files and HDF5 / JSON files explained in the [train](#train) section also applies here.
 In either case, the JSON metadata file obtained during training is needed in order to map the new data into tensors.
 If the new data contains a split column, you can specify which split to use to calculate the predictions with the `--split` argument. By default it's `full` which means all the splits will be used.
 
@@ -554,11 +554,11 @@ tensorboard --logdir /path/to/model/log
 Data Preprocessing
 ==================
 
-Ludwig data preprocessing maps raw data coming in CSV format into an HDF5 file containing tensors and a JSON file containing mappings from strings to tensors when needed.
-This mapping is performed when a CSV is provided as input and both HDF5 and JSON files are saved in the same directory as the input CSV, unless the argument `--skip_save_processed_input` is used (both in `train` and `experiment` commands).
+Ludwig data preprocessing maps raw data coming in UTF-8 encoded CSV format into an HDF5 file containing tensors and a JSON file containing mappings from strings to tensors when needed.
+This mapping is performed when a UTF-8 encoded CSV is provided as input and both HDF5 and JSON files are saved in the same directory as the input CSV, unless the argument `--skip_save_processed_input` is used (both in `train` and `experiment` commands).
 The reason to save those files is both to provide a cache and avoid performing the preprocessing again (as, depending on the type of features involved, it could be time consuming) and to provide the needed mappings to be able to map unseen data into tensors.
 
-The preprocessing process is personalizable to fit the specifics of your data format, but the basic assumption is always that your CSV files contains one row for each datapoint and one column for each feature (either input or output), and that you are able to determine the type of that column among the ones supported by Ludwig.
+The preprocessing process is personalizable to fit the specifics of your data format, but the basic assumption is always that your UTF-8 encoded CSV files contains one row for each datapoint and one column for each feature (either input or output), and that you are able to determine the type of that column among the ones supported by Ludwig.
 The reason for that is that each data type is mapped into tensors in a different way and expects the content to be formatted in a specific way.
 Different datatypes may have different formatters that format the values of a cell.
 
@@ -666,9 +666,12 @@ The column name is added to the JSON file, with an associated dictionary contain
 CSV Format
 ----------
 
-Ludwig uses Pandas under the hood to read the CSV files. Pandas tries to automatically identify the separator (generally `','`) from the data.
-We are using `'\'` as the default escape character. For example, if `','` is the column separator and one of your data columns has a `','` in it, Pandas would fail to load the data properly.
-To handle such cases, we expect your data columns to be escaped with backslashes (replace `','` in the data with `'\\,'`)
+Ludwig uses Pandas under the hood to read the UTF-8 encoded CSV files.
+Pandas tries to automatically identify the separator (generally `','`) from the data.
+The default escape character is `'\'`.
+For example, if `','` is the column separator and one of your data columns has a `','` in it, Pandas would fail to load the data properly.
+To handle such cases, we expect the values in the columns to be escaped with backslashes (replace `','` in the data with `'\\,'`).
+
 
 Data Postprocessing
 ===================
