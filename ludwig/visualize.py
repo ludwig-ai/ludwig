@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import argparse
 import logging
+import os
 import sys
 
 import numpy as np
@@ -34,10 +35,24 @@ from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
 
 
-def learning_curves(training_statistics, field, model_names=None, **kwargs):
+def learning_curves(
+        training_statistics,
+        field,
+        model_names=None,
+        output_directory=None,
+        file_format='pdf',
+        **kwargs
+):
     if len(training_statistics) < 1:
         logging.error('No training_statistics provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'learning_curves_{}_{}.' + file_format
+        )
 
     training_statistics_per_model_name = [load_json(learning_stats_f)
                                           for learning_stats_f in
@@ -54,24 +69,41 @@ def learning_curves(training_statistics, field, model_names=None, **kwargs):
     for field in fields:
         for metric in metrics:
             if metric in training_statistics_per_model_name[0]['train'][field]:
+
+                filename = None
+                if filename_template:
+                    filename = filename_template.format(field, metric)
+                    os.makedirs(output_directory, exist_ok=True)
+
                 visualization_utils.learning_curves_plot(
                     [learning_stats['train'][field][metric]
                      for learning_stats in training_statistics_per_model_name],
                     [learning_stats['validation'][field][metric]
                      for learning_stats in training_statistics_per_model_name],
-                    metric, model_names,
-                    title='Learning Curves {}'.format(field)
+                    metric,
+                    model_names,
+                    title='Learning Curves {}'.format(field),
+                    filename=filename
                 )
 
 
 def compare_performance(
         prediction_statistics,
         field, model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(prediction_statistics) < 1:
         logging.error('No prediction_statistics provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'compare_performance_{}.' + file_format
+        )
 
     prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
                                             for prediction_statistics_f in
@@ -109,11 +141,17 @@ def compare_performance(
             measures.append(edit_distances)
             measures_names.append(EDIT_DISTANCE)
 
+        filename = None
+        if filename_template:
+            filename = filename_template.format(field)
+            os.makedirs(output_directory, exist_ok=True)
+
         visualization_utils.compare_classifiers_plot(
             measures,
             measures_names,
             model_names,
-            title='Performance comparison on {}'.format(field)
+            title='Performance comparison on {}'.format(field),
+            filename=filename
         )
 
 
@@ -124,6 +162,8 @@ def compare_classifiers_performance_from_prob(
         top_n_classes,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -169,10 +209,19 @@ def compare_classifiers_performance_from_prob(
                               prob.shape[1]))
         mrrs.append(mrr / len(gt))
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'compare_classifiers_performance_from_prob.' + file_format
+        )
+
     visualization_utils.compare_classifiers_plot(
         [accuracies, hits_at_ks, mrrs],
         [ACCURACY, HITS_AT_K, 'mrr'],
-        model_names
+        model_names,
+        filename=filename
     )
 
 
@@ -183,6 +232,8 @@ def compare_classifiers_performance_from_pred(
         field,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(predictions) < 1:
@@ -215,10 +266,19 @@ def compare_classifiers_performance_from_pred(
         recalls.append(sklearn.metrics.recall_score(gt, pred, average='macro'))
         f1s.append(sklearn.metrics.f1_score(gt, pred, average='macro'))
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'compare_classifiers_performance_from_pred.' + file_format
+        )
+
     visualization_utils.compare_classifiers_plot(
         [accuracies, precisions, recalls, f1s],
         [ACCURACY, 'precision', 'recall', 'f1'],
-        model_names
+        model_names,
+        filename=filename
     )
 
 
@@ -230,6 +290,8 @@ def compare_classifiers_performance_subset(
         labels_limit,
         subset,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -303,11 +365,20 @@ def compare_classifiers_performance_subset(
             'es' if k > 1 else ''
         )
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'compare_classifiers_performance_subset.' + file_format
+        )
+
     visualization_utils.compare_classifiers_plot(
         [accuracies, hits_at_ks],
         [ACCURACY, HITS_AT_K],
         model_names,
-        title=title
+        title=title,
+        filename=filename
     )
 
 
@@ -318,6 +389,8 @@ def compare_classifiers_performance_changing_k(
         top_k,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -350,11 +423,20 @@ def compare_classifiers_performance_changing_k(
                 hits_at_k[j] += np.in1d(gt[g], prob[g, -j - 1:])
         hits_at_ks.append(np.array(hits_at_k) / len(gt))
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'compare_classifiers_performance_changing_k.' + file_format
+        )
+
     visualization_utils.compare_classifiers_line_plot(
         np.arange(1, k + 1),
         hits_at_ks, 'hits@k',
         model_names,
-        title='Classifier comparison (hits@k)'
+        title='Classifier comparison (hits@k)',
+        filename=filename
     )
 
 
@@ -364,11 +446,20 @@ def compare_classifiers_multiclass_multimetric(
         ground_truth_metadata,
         top_n_classes,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(prediction_statistics) < 1:
         logging.error('No prediction_statistics provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'compare_classifiers_multiclass_multimetric_{}_{}_{}.' + file_format
+        )
 
     metadata = load_json(ground_truth_metadata)
     prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
@@ -424,6 +515,12 @@ def compare_classifiers_multiclass_multimetric(
 
             sorted_indices = f1_np.argsort()
             higher_f1s = sorted_indices[-k:][::-1]
+            filename = None
+            if filename_template:
+                os.makedirs(output_directory, exist_ok=True)
+                filename = filename_template.format(
+                    model_name_name, field, 'best{}'.format(k)
+                )
             visualization_utils.compare_classifiers_multiclass_multimetric_plot(
                 [p_np[higher_f1s],
                  r_np[higher_f1s],
@@ -432,9 +529,15 @@ def compare_classifiers_multiclass_multimetric(
                 labels=labels_np[higher_f1s].tolist(),
                 title='{} Multiclass Precision / Recall / '
                       'F1 Score best {} classes {}'.format(
-                    model_name_name, k, field)
+                    model_name_name, k, field),
+                filename=filename
             )
             lower_f1s = sorted_indices[:k]
+            filename = None
+            if filename_template:
+                filename = filename_template.format(
+                    model_name_name, field, 'worst{}'.format(k)
+                )
             visualization_utils.compare_classifiers_multiclass_multimetric_plot(
                 [p_np[lower_f1s],
                  r_np[lower_f1s],
@@ -442,9 +545,15 @@ def compare_classifiers_multiclass_multimetric(
                 ['precision', 'recall', 'f1 score'],
                 labels=labels_np[lower_f1s].tolist(),
                 title='{} Multiclass Precision / Recall / F1 Score worst '
-                      'k classes {}'.format(model_name_name, k, field)
+                      'k classes {}'.format(model_name_name, k, field),
+                filename=filename
             )
 
+            filename = None
+            if filename_template:
+                filename = filename_template.format(
+                    model_name_name, field, 'sorted'
+                )
             visualization_utils.compare_classifiers_multiclass_multimetric_plot(
                 [p_np[sorted_indices[::-1]],
                  r_np[sorted_indices[::-1]],
@@ -452,7 +561,8 @@ def compare_classifiers_multiclass_multimetric(
                 ['precision', 'recall', 'f1 score'],
                 labels=labels_np[sorted_indices[::-1]].tolist(),
                 title='{} Multiclass Precision / Recall / F1 Score '
-                      '{} sorted'.format(model_name_name, field)
+                      '{} sorted'.format(model_name_name, field),
+                filename=filename
             )
 
             logging.info('\n')
@@ -479,6 +589,8 @@ def compare_classifiers_predictions(
         field,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(predictions) < 2:
@@ -572,6 +684,16 @@ def compare_classifiers_predictions(
     )
     )
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'compare_classifiers_predictions_{}_{}.{}'.format(
+                name_c1, name_c2, file_format
+            )
+        )
+
     visualization_utils.donut(
         [both_right, one_right, both_wrong],
         ['both right', 'one right', 'both wrong'],
@@ -582,7 +704,8 @@ def compare_classifiers_predictions(
          '{} wrong / {} right'.format(name_c1, name_c2),
          'same prediction', 'different prediction'],
         [0, 1, 1, 2, 2],
-        title='{} vs {}'.format(name_c1, name_c2)
+        title='{} vs {}'.format(name_c1, name_c2),
+        filename=filename
     )
 
 
@@ -592,6 +715,8 @@ def compare_classifiers_predictions_distribution(
         field,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(predictions) < 1:
@@ -617,7 +742,20 @@ def compare_classifiers_predictions_distribution(
     prob_predictions = [alg_count_prediction / alg_count_prediction.sum()
                         for alg_count_prediction in counts_predictions]
 
-    visualization_utils.radar_chart(prob_gt, prob_predictions, model_names)
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'compare_classifiers_predictions_distribution.' + file_format
+        )
+
+    visualization_utils.radar_chart(
+        prob_gt,
+        prob_predictions,
+        model_names,
+        filename=filename
+    )
 
 
 def confidence_thresholding(
@@ -626,6 +764,8 @@ def confidence_thresholding(
         field,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -673,12 +813,21 @@ def confidence_thresholding(
         accuracies.append(accuracies_alg)
         dataset_kept.append(dataset_kept_alg)
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'confidence_thresholding.' + file_format
+        )
+
     visualization_utils.confidence_fitlering_plot(
         thresholds,
         accuracies,
         dataset_kept,
         model_names,
-        title='Confidence_Thresholding'
+        title='Confidence_Thresholding',
+        filename=filename
     )
 
 
@@ -688,6 +837,8 @@ def confidence_thresholding_data_vs_acc(
         field,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -733,11 +884,20 @@ def confidence_thresholding_data_vs_acc(
         accuracies.append(accuracies_alg)
         dataset_kept.append(dataset_kept_alg)
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'confidence_thresholding_data_vs_acc.' + file_format
+        )
+
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
         model_names,
-        title='Confidence_Thresholding (Data vs Accuracy)'
+        title='Confidence_Thresholding (Data vs Accuracy)',
+        filename=filename
     )
 
 
@@ -749,6 +909,8 @@ def confidence_thresholding_data_vs_acc_subset(
         labels_limit,
         subset,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -817,11 +979,20 @@ def confidence_thresholding_data_vs_acc_subset(
         accuracies.append(accuracies_alg)
         dataset_kept.append(dataset_kept_alg)
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'confidence_thresholding_data_vs_acc_subset.' + file_format
+        )
+
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
         model_names,
-        title='Confidence_Thresholding (Data vs Accuracy)'
+        title='Confidence_Thresholding (Data vs Accuracy)',
+        filename=filename
     )
 
 
@@ -834,11 +1005,20 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         labels_limit,
         subset,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
         logging.error('No probabilities provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_tempalte = os.path.join(
+            output_directory,
+            'confidence_thresholding_data_vs_acc_subset_per_class_{}.' + file_format
+        )
 
     metadata = load_json(ground_truth_metadata)
     k = top_n_classes[0]
@@ -904,11 +1084,19 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
             accuracies.append(accuracies_alg)
             dataset_kept.append(dataset_kept_alg)
 
+        field_name = metadata[field]['idx2str'][curr_k]
+
+        filename = None
+        if filename_template:
+            os.makedirs(output_directory, exist_ok=True)
+            filename = filename_template.format(field_name)
+
         visualization_utils.confidence_fitlering_data_vs_acc_plot(
             accuracies, dataset_kept, model_names,
             decimal_digits=2,
             title='Confidence_Thresholding (Data vs Accuracy) '
-                  'for class {}'.format(metadata[field]['idx2str'][curr_k])
+                  'for class {}'.format(field_name),
+            filename=filename
         )
 
 
@@ -918,6 +1106,8 @@ def confidence_thresholding_2thresholds_2d(
         threshold_fields,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 2:
@@ -932,6 +1122,13 @@ def confidence_thresholding_2thresholds_2d(
     if len(threshold_fields) > 2:
         logging.error('Too many threshold fields provided, only two are needed')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_tempalte = os.path.join(
+            output_directory,
+            'confidence_thresholding_2thresholds_2d_{}.' + file_format
+        )
 
     gt_1 = load_from_file(ground_truth, threshold_fields[0])
     gt_2 = load_from_file(ground_truth, threshold_fields[1])
@@ -1018,22 +1215,31 @@ def confidence_thresholding_2thresholds_2d(
     # ===========#
     # Multiline #
     # ===========#
+    filename = None
+    if filename_template:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = filename_template.format('multiline')
     visualization_utils.confidence_fitlering_data_vs_acc_multiline_plot(
         accuracies,
         dataset_kept,
         model_names,
-        title='Coverage vs Accuracy, two thresholds'
+        title='Coverage vs Accuracy, two thresholds',
+        filename=filename
     )
 
     # ==========#
     # Max line #
     # ==========#
+    filename = None
+    if filename_template:
+        filename = filename_template.format('maxline')
     max_accuracies = np.amax(np.array(interps), 0)
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         [max_accuracies],
         [thresholds],
         model_names,
-        title='Coverage vs Accuracy, two thresholds'
+        title='Coverage vs Accuracy, two thresholds',
+        filename=filename
     )
 
     # ==========================#
@@ -1055,13 +1261,20 @@ def confidence_thresholding_2thresholds_2d(
         t2_maxes.append(thresholds[threshold_indices[1]])
     model_name = model_names[0] if model_names is not None and len(
         model_names) > 0 else ''
+
+    filename = None
+    if filename_template:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = filename_template.format('maxline_with_thresholds')
+
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         [max_accuracies, t1_maxes, t2_maxes],
         [fixed_step_coverage, fixed_step_coverage, fixed_step_coverage],
         model_names=[model_name + ' accuracy', name_t1, name_t2],
         dotted=[False, True, True],
         y_label='',
-        title='Coverage vs Accuracy & Threshold'
+        title='Coverage vs Accuracy & Threshold',
+        filename=filename
     )
 
 
@@ -1070,6 +1283,8 @@ def confidence_thresholding_2thresholds_3d(
         ground_truth,
         threshold_fields,
         labels_limit,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 2:
@@ -1147,13 +1362,22 @@ def confidence_thresholding_2thresholds_3d(
         accuracies.append(curr_accuracies)
         dataset_kept.append(curr_dataset_kept)
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'confidence_thresholding_2thresholds_3d.' + file_format
+        )
+
     visualization_utils.confidence_fitlering_3d_plot(
         np.array(thresholds),
         np.array(thresholds),
         np.array(accuracies),
         np.array(dataset_kept),
         threshold_fields,
-        title='Confidence_Thresholding, two thresholds'
+        title='Confidence_Thresholding, two thresholds',
+        filename=filename
     )
 
 
@@ -1164,11 +1388,20 @@ def binary_threshold_vs_metric(
         metrics,
         positive_label=1,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
         logging.error('No probabilities provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'binary_threshold_vs_metric_{}.' + file_format
+        )
 
     gt = load_from_file(ground_truth, field)
 
@@ -1234,11 +1467,17 @@ def binary_threshold_vs_metric(
 
             scores.append(scores_alg)
 
+        filename = None
+        if output_directory:
+            os.makedirs(output_directory, exist_ok=True)
+            filename = filename_template.format(metric)
+
         visualization_utils.threshold_vs_metric_plot(
             thresholds,
             scores,
             model_names,
-            title='Binary threshold vs {}'.format(metric)
+            title='Binary threshold vs {}'.format(metric),
+            filename=filename
         )
 
 
@@ -1248,6 +1487,8 @@ def roc_curves(
         field,
         positive_label=1,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
@@ -1269,11 +1510,30 @@ def roc_curves(
         )
         fpr_tprs.append((fpr, tpr))
 
-    visualization_utils.roc_curves(fpr_tprs, model_names, title='ROC curves')
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'roc_curves.' + file_format
+        )
+
+    visualization_utils.roc_curves(
+        fpr_tprs,
+        model_names,
+        title='ROC curves',
+        filename=filename
+    )
 
 
-def roc_curves_from_prediction_statistics(prediction_statistics, field,
-                                          model_names=None, **kwargs):
+def roc_curves_from_prediction_statistics(
+        prediction_statistics,
+        field,
+        model_names=None,
+        output_directory=None,
+        file_format='pdf',
+        **kwargs
+):
     if len(prediction_statistics) < 1:
         logging.error('No prediction_statistics provided')
         return
@@ -1289,7 +1549,20 @@ def roc_curves_from_prediction_statistics(prediction_statistics, field,
             'true_positive_rate']
         fpr_tprs.append((fpr, tpr))
 
-    visualization_utils.roc_curves(fpr_tprs, model_names, title='ROC curves')
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = os.path.join(
+            output_directory,
+            'roc_curves_from_prediction_statistics.' + file_format
+        )
+
+    visualization_utils.roc_curves(
+        fpr_tprs,
+        model_names,
+        title='ROC curves',
+        filename=filename
+    )
 
 
 def calibration_1_vs_all(
@@ -1299,11 +1572,20 @@ def calibration_1_vs_all(
         top_n_classes,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
         logging.error('No probabilities provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'calibration_1_vs_all_{}.' + file_format
+        )
 
     gt = load_from_file(ground_truth, field)
     if labels_limit > 0:
@@ -1358,17 +1640,42 @@ def calibration_1_vs_all(
             )
 
         brier_scores.append(brier_scores_class)
+
+        filename = None
+        if output_directory:
+            os.makedirs(output_directory, exist_ok=True)
+            filename = filename_template.format(class_idx)
+
         visualization_utils.calibration_plot(
             fraction_positives_class,
             mean_predicted_vals_class,
-            model_names
-        )
-        visualization_utils.predictions_distribution_plot(
-            probs_class,
-            model_names
+            model_names,
+            filename=filename
         )
 
-    visualization_utils.brier_plot(np.array(brier_scores), model_names)
+        filename = None
+        if output_directory:
+            os.makedirs(output_directory, exist_ok=True)
+            filename = filename_template.format(
+                'prediction_distribution_' + str(class_idx)
+            )
+
+        visualization_utils.predictions_distribution_plot(
+            probs_class,
+            model_names,
+            filename=filename
+        )
+
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = filename_template.format('brier')
+
+    visualization_utils.brier_plot(
+        np.array(brier_scores),
+        model_names,
+        filename=filename
+    )
 
 
 def calibration_multiclass(
@@ -1377,11 +1684,20 @@ def calibration_multiclass(
         field,
         labels_limit,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(probabilities) < 1:
         logging.error('No probabilities provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'calibration_multiclass{}.' + file_format
+        )
 
     gt = load_from_file(ground_truth, field)
     if labels_limit > 0:
@@ -1425,18 +1741,31 @@ def calibration_multiclass(
             )
         )
 
+    filename = None
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+        filename = filename_template.format('')
+
     visualization_utils.calibration_plot(
         fraction_positives,
         mean_predicted_vals,
-        model_names
+        model_names,
+        filename=filename
     )
+
+    filename = None
+    if output_directory:
+        filename = filename_template.format('_brier')
+
     visualization_utils.compare_classifiers_plot(
         [brier_scores],
         ['brier'],
         model_names,
         adaptive=True,
-        decimals=8
+        decimals=8,
+        filename=filename
     )
+
     for i, brier_score in enumerate(brier_scores):
         if i < len(model_names):
             format_str = '{}: '.format(model_names[i])
@@ -1453,11 +1782,20 @@ def confusion_matrix(
         top_n_classes,
         normalize,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(prediction_statistics) < 1:
         logging.error('No prediction_statistics provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'confusion_matrix_{}_{}_{}.' + file_format
+        )
 
     metadata = load_json(ground_truth_metadata)
     prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
@@ -1497,10 +1835,21 @@ def confusion_matrix(
                             cm_norm[cm_norm == np.inf] = 0
                             cm_norm = np.nan_to_num(cm_norm)
                         cm = cm_norm
+
+                    filename = None
+                    if output_directory:
+                        os.makedirs(output_directory, exist_ok=True)
+                        filename = filename_template.format(
+                            model_name_name,
+                            field,
+                            'top' + str(k)
+                        )
+
                     visualization_utils.confusion_matrix_plot(
                         cm,
                         labels[:k],
-                        field=field
+                        field=field,
+                        filename=filename
                     )
 
                     entropies = []
@@ -1512,12 +1861,22 @@ def confusion_matrix(
                     class_entropy = np.array(entropies)
                     class_desc_entropy = np.argsort(class_entropy)[::-1]
                     desc_entropy = class_entropy[class_desc_entropy]
+
+                    filename = None
+                    if output_directory:
+                        filename = filename_template.format(
+                            'entropy_' + model_name_name,
+                            field,
+                            'top' + str(k)
+                        )
+
                     visualization_utils.bar_plot(
                         class_desc_entropy,
                         desc_entropy,
                         labels=[labels[i] for i in class_desc_entropy],
                         title='Classes ranked by entropy of '
-                              'Confusion Matrix row'
+                              'Confusion Matrix row',
+                        filename=filename
                     )
 
 
@@ -1527,11 +1886,20 @@ def frequency_vs_f1(
         field,
         top_n_classes,
         model_names=None,
+        output_directory=None,
+        file_format='pdf',
         **kwargs
 ):
     if len(prediction_statistics) < 1:
         logging.error('No prediction_statistics provided')
         return
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'frequency_vs_f1_{}_{}.' + file_format
+        )
 
     metadata = load_json(ground_truth_metadata)
     prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
@@ -1582,6 +1950,11 @@ def frequency_vs_f1(
             f1_reordered = f1_np[f1_sorted_indices[::-1]][
                            :len(f1_sorted_indices)]
 
+            filename = None
+            if output_directory:
+                os.makedirs(output_directory, exist_ok=True)
+                filename = filename_template.format(model_name_name, field)
+
             visualization_utils.double_axis_line_plot(
                 f1_reordered,
                 field_frequency_reordered,
@@ -1591,7 +1964,8 @@ def frequency_vs_f1(
                 title='{} F1 Score vs Frequency {}'.format(
                     model_name_name,
                     field
-                )
+                ),
+                filename=filename
             )
 
             frequency_sorted_indices = field_frequency_np.argsort()
@@ -1630,6 +2004,20 @@ def cli(sys_argv):
         '-gm',
         '--ground_truth_metadata',
         help='input metadata JSON file'
+    )
+
+    parser.add_argument(
+        '-od',
+        '--output_directory',
+        help='directory where to save plots.'
+             'If not specified, plots will be displayed in a window'
+    )
+    parser.add_argument(
+        '-ff',
+        '--file_format',
+        help='file format of output plots',
+        default='pdf',
+        choices=['pdf', 'png']
     )
 
     parser.add_argument(
