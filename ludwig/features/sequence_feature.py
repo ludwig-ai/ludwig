@@ -840,7 +840,7 @@ sequence_encoder_registry = {
     'cnnrnn': CNNRNN,
     'embed': EmbedEncoder,
     'none': PassthroughEncoder,
-    'nNone': PassthroughEncoder,
+    'None': PassthroughEncoder,
     None: PassthroughEncoder
 }
 
