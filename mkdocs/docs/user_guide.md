@@ -235,8 +235,11 @@ optional arguments:
                         skips saving intermediate NPY output files
   -bs BATCH_SIZE, --batch_size BATCH_SIZE
                         size of batches
-  -op, --only_predictions
-                        skip metrics calculation
+  -ep, --evaluate_performance
+                        performs performance metrics calculation.Requires that
+                        the dataset contains one column for each output
+                        feature the model predicts to use as ground truth for
+                        the performance calculation.
   -g GPUS, --gpus GPUS  list of gpu to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
                         fraction of gpu memory to initialize the process with
@@ -255,10 +258,11 @@ If you trained a model previously and got the results in, for instance, `./resul
 
 You can specify an output directory with the argument `--output-directory`, by default it will be `./result_0`, with increasing numbers if a directory with the same name is present.
 
-The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a `predict_statistics.json` file containing all prediction statistics.
-By specifying the argument `--only_prediction` you will not get the statistics. This parameter is needed in the case your data does not contain ground truth output values, and thus computing the prediction statistics would be impossible.
-If you receive an error regarding a missing output feature column in your data, you probably forgot to specify this argument.
-You can moreover specify not to save the raw NPY output files with the argument `skip_save_unprocessed_output`.
+The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors.
+You can specify not to save the raw NPY output files with the argument `skip_save_unprocessed_output`.
+If the argument `--evaluate_performance` if provided, a `predict_statistics.json` file containing all prediction statistics will also be outputted.
+If this parameter is specified, the data must contain columns for each output feature with ground truth output values in order to compute the performance statistics.
+If you receive an error regarding a missing output feature column in your data, it means that the data does not contain the columns for each output feature to use as ground truth.
 
 A specific batch size for speeding up the prediction can be specified using the argument `--batch_size`.
 

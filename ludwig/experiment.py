@@ -212,7 +212,7 @@ def experiment(
             model,
             model_definition,
             batch_size,
-            only_predictions=False,
+            evaluate_performance=True,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             debug=debug

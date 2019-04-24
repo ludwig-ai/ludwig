@@ -607,7 +607,7 @@ def preprocess_for_prediction(
         data_csv=None,
         data_hdf5=None,
         train_set_metadata=None,
-        only_predictions=False
+        evaluate_performance=True
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core
@@ -620,7 +620,7 @@ def preprocess_for_prediction(
         :param data_csv: The CSV input data file
         :param data_hdf5: The hdf5 data file if there is no csv data file
         :param train_set_metadata: Train set metadata for the input features
-        :param only_predictions: If False does not load output features
+        :param evaluate_performance: If False does not load output features
         :returns: Dataset, Train set metadata
         """
     model_definition = load_json(
@@ -640,6 +640,8 @@ def preprocess_for_prediction(
         default_preprocessing_parameters,
         model_definition['preprocessing']
     )
+    output_features = model_definition['output_features'] if evaluate_performance else []
+    features = model_definition['input_features'] + output_features
 
     # Check if hdf5 and json already exist
     if data_csv is not None:
@@ -650,19 +652,18 @@ def preprocess_for_prediction(
             )
             data_csv = None
             data_hdf5 = data_hdf5_fp
+    else:
+        data_hdf5_fp = None
 
     # Load data
     _, _, build_dataset, _ = get_dataset_fun(dataset_type)
     train_set_metadata = load_metadata(train_set_metadata)
-    features = (model_definition['input_features'] +
-                ([] if only_predictions
-                 else model_definition['output_features']))
     if split == 'full':
         if data_hdf5 is not None:
             dataset = load_data(
                 data_hdf5,
                 model_definition['input_features'],
-                [] if only_predictions else model_definition['output_features'],
+                output_features,
                 split_data=False, shuffle_training=False
             )
         else:
@@ -677,7 +678,7 @@ def preprocess_for_prediction(
             training, test, validation = load_data(
                 data_hdf5,
                 model_definition['input_features'],
-                [] if only_predictions else model_definition['output_features'],
+                output_features,
                 shuffle_training=False
             )
 
@@ -696,15 +697,14 @@ def preprocess_for_prediction(
             )
 
     replace_text_feature_level(
-        model_definition['input_features'] +
-        ([] if only_predictions else model_definition['output_features']),
+        features,
         [dataset]
     )
 
     dataset = Dataset(
         dataset,
         model_definition['input_features'],
-        [] if only_predictions else model_definition['output_features'],
+        output_features,
         data_hdf5_fp,
     )
 
