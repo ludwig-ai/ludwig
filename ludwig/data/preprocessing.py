@@ -317,10 +317,11 @@ def preprocess_for_training(
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
 ):
+    # Sanity Check to make sure some data source is provided
     data_sources_provided = [data_df, data_train_df, data_csv, data_train_csv,
                              data_hdf5, data_train_hdf5]
-    data_sources_none = [x is None for x in data_sources_provided]
-    if all(data_sources_none):
+    data_sources_not_none = [x is not None for x in data_sources_provided]
+    if not any(data_sources_not_none):
         raise ValueError('No training data is provided!')
 
     # Check if hdf5 and json already exist. If they do, use the hdf5 data,
