@@ -119,7 +119,7 @@ For example, given a text classification dataset like the following:
 | doc_text                              | class    |
 |---------------------------------------|----------|
 | Former president Barack Obama ...     | politics |
-| Juventus hired Cristiano Ronaldo ... | sport    |
+| Juventus hired Cristiano Ronaldo ...  | sport    |
 | LeBron James joins the Lakers ...     | sport    |
 | ...                                   | ...      |
 
@@ -136,7 +136,8 @@ and start the training typing the following command in your console:
 ludwig train --data_csv path/to/file.csv --model_definition "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
 ```
 
-and Ludwig will perform a random split of the data, preprocess it, build a WordCNN model (the default for text features) that decodes output classes through a softmax classifier, train the model on the training set until the accuracy on the validation set stops improving.
+where `path/to/file.csv` is the path to a UTF-8 encoded CSV file contaning the dataset in the previous table.
+Ludwig will perform a random split of the data, preprocess it, build a WordCNN model (the default for text features) that decodes output classes through a softmax classifier, train the model on the training set until the accuracy on the validation set stops improving.
 Training progress will be displayed in the console, but TensorBoard can also be used.
 
 If you prefer to use an RNN encoder and increase the number of epochs you want the model to train for, all you have to do is to change the model definition to:
