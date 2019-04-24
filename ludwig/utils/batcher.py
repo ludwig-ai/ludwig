@@ -36,12 +36,15 @@ class Batcher(object):
         self.total_size = dataset.size
         self.steps_per_epoch = int(math.ceil(self.total_size / self.batch_size))
         self.index = 0
+        self.step = 0
+        self.epoch = 0
 
     def next_batch(self):
         if self.last_batch():
             if self.should_shuffle:
                 self.dataset = shuffle_dict_unison_inplace(self.dataset)
             self.reset()
+            self.epoch += 1
 
         sub_batch = {}
         for features_name in self.dataset.features:
@@ -54,6 +57,7 @@ class Batcher(object):
             )
 
         self.index += self.batch_size
+        self.step += 1
         return sub_batch
 
     def last_batch(self):
@@ -63,6 +67,7 @@ class Batcher(object):
 
     def reset(self):
         self.index = 0
+        self.step = 0
 
 
 class BucketedBatcher(object):
@@ -99,6 +104,8 @@ class BucketedBatcher(object):
         self.steps_per_epoch = int(
             np.asscalar(np.sum(np.ceil(self.bucket_sizes / self.batch_size))))
         self.indices = np.array([0] * buckets)
+        self.step = 0
+        self.epoch = 0
 
     def shuffle(self, buckets_idcs):
         for i in range(len(buckets_idcs)):
@@ -109,6 +116,7 @@ class BucketedBatcher(object):
             if self.should_shuffle:
                 self.shuffle(self.buckets_idcs)
             self.reset()
+            self.epoch += 1
 
         if self.ignore_last:
             idcs_below_size = self.indices + self.batch_size < self.bucket_sizes
@@ -137,6 +145,7 @@ class BucketedBatcher(object):
                 sub_batch[key] = self.dataset.get(key, selected_idcs)
 
         self.indices[i] += self.batch_size
+        self.step += 1
         return sub_batch
 
     def last_batch(self):
@@ -148,6 +157,7 @@ class BucketedBatcher(object):
 
     def reset(self):
         self.indices = np.array([0] * len(self.buckets_idcs))
+        self.step = 0
 
 
 class DistributedBatcher(object):
