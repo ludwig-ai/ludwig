@@ -40,7 +40,6 @@ def collect_activations(
         tensors,
         data_csv=None,
         data_hdf5=None,
-        dataset_type='generic',
         split='test',
         batch_size=128,
         output_directory='results',
@@ -58,7 +57,6 @@ def collect_activations(
            the tensors are collected
     :param data_hdf5: The HDF5 file path if the CSV file path does not exist,
            an alternative source of providing the data to the model
-    :param dataset_type: Dataset type
     :param split: Split type
     :param batch_size: Batch size
     :param output_directory: Output directory
@@ -76,7 +74,6 @@ def collect_activations(
         experiment_dir_name = output_directory + '_' + str(suffix)
         suffix += 1
 
-    logging.info('Dataset type: {}'.format(dataset_type))
     logging.info('Dataset path: {}'.format(
         data_csv if data_csv is not None else data_hdf5)
     )
@@ -93,7 +90,6 @@ def collect_activations(
     dataset, train_set_metadata = preprocess_for_prediction(
         model_path,
         split,
-        dataset_type,
         data_csv,
         data_hdf5,
         train_set_metadata_fp

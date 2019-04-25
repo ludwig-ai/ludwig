@@ -27,7 +27,6 @@ import ludwig.globals
 
 
 def get_experiment_description(model_definition,
-                               dataset_type='generic',
                                data_csv=None,
                                data_hdf5=None,
                                metadata_json=None,
@@ -53,7 +52,6 @@ def get_experiment_description(model_definition,
     except:
         pass
 
-    description['dataset_type'] = dataset_type
     if random_seed is not None:
         description['random_seed'] = random_seed
     if data_csv is not None:

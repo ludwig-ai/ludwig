@@ -43,7 +43,6 @@ def full_predict(
         model_path,
         data_csv=None,
         data_hdf5=None,
-        dataset_type='generic',
         split='test',
         batch_size=128,
         skip_save_unprocessed_output=False,
@@ -63,7 +62,6 @@ def full_predict(
         suffix += 1
 
     if is_on_master():
-        logging.info('Dataset type: {}'.format(dataset_type))
         logging.info('Dataset path: {}'.format(
             data_csv if data_csv is not None else data_hdf5))
         logging.info('Model path: {}'.format(model_path))
@@ -79,7 +77,6 @@ def full_predict(
     dataset, train_set_metadata = preprocess_for_prediction(
         model_path,
         split,
-        dataset_type,
         data_csv,
         data_hdf5,
         train_set_metadata_json_fp,
