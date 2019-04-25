@@ -33,9 +33,9 @@ from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.data_utils import read_csv
+from ludwig.utils.data_utils import replace_file_extension
 from ludwig.utils.data_utils import split_dataset_tvt
 from ludwig.utils.data_utils import text_feature_data_field
-from ludwig.utils.data_utils import replace_file_extension
 from ludwig.utils.defaults import default_preprocessing_parameters
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_from_registry
@@ -280,26 +280,8 @@ def load_metadata(metadata_file_path):
     return data_utils.load_json(metadata_file_path)
 
 
-def get_dataset_fun(dataset_type):
-    return get_from_registry(
-        dataset_type,
-        dataset_type_registry
-    )
-
-
-dataset_type_registry = {
-    'generic': (
-        concatenate_csv,
-        concatenate_df,
-        build_dataset,
-        build_dataset_df
-    )
-}
-
-
 def preprocess_for_training(
         model_definition,
-        dataset_type='generic',
         data_df=None,
         data_train_df=None,
         data_validation_df=None,
@@ -386,12 +368,6 @@ def preprocess_for_training(
     # Decide if to preprocess or just load
     features = (model_definition['input_features'] +
                 model_definition['output_features'])
-    (
-        concatenate_csv,
-        concatenate_df,
-        build_dataset,
-        build_dataset_df
-    ) = get_dataset_fun(dataset_type)
 
     if data_df is not None or data_train_df is not None:
         # Preprocess data frames
@@ -671,7 +647,6 @@ def _preprocess_df_for_training(
 def preprocess_for_prediction(
         model_path,
         split,
-        dataset_type='generic',
         data_csv=None,
         data_hdf5=None,
         train_set_metadata=None,
@@ -682,8 +657,6 @@ def preprocess_for_prediction(
         :param model_path: The input data that is joined with the model
                hyperparameter file to create the model definition file
         :type model_path: Str
-        :param dataset_type: Generic
-        :type: Str
         :param split: Splits the data into the train and test sets
         :param data_csv: The CSV input data file
         :param data_hdf5: The hdf5 data file if there is no csv data file
@@ -723,7 +696,6 @@ def preprocess_for_prediction(
         data_hdf5_fp = None
 
     # Load data
-    _, _, build_dataset, _ = get_dataset_fun(dataset_type)
     train_set_metadata = load_metadata(train_set_metadata)
     if split == 'full':
         if data_hdf5 is not None:

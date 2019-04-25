@@ -34,6 +34,7 @@ from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
+from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
@@ -42,7 +43,6 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
-from ludwig.models.modules.measure_modules import get_best_function
 
 
 def full_train(
@@ -60,7 +60,6 @@ def full_train(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        dataset_type='generic',
         train_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
@@ -250,8 +249,7 @@ def full_train(
         train_set_metadata_json=train_set_metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition['preprocessing'],
-        random_seed=random_seed,
-        dataset_type=dataset_type
+        random_seed=random_seed
     )
 
     (training_set,
