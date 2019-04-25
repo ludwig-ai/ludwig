@@ -395,29 +395,37 @@ def preprocess_for_training(
 
     if data_df is not None or data_train_df is not None:
         # Preprocess data frames
-        training_set, test_set, validation_set, train_set_metadata = \
-            _preprocess_df_for_training(
-                features,
-                data_df,
-                data_train_df,
-                data_validation_df,
-                data_test_df,
-                preprocessing_params,
-                random_seed
-            )
+        (
+            training_set,
+            test_set,
+            validation_set,
+            train_set_metadata
+        ) = _preprocess_df_for_training(
+            features,
+            data_df,
+            data_train_df,
+            data_validation_df,
+            data_test_df,
+            preprocessing_params,
+            random_seed
+        )
     elif data_csv is not None or data_train_csv is not None:
         # Preprocess csv data
-        training_set, test_set, validation_set, train_set_metadata = \
-            _preprocess_csv_for_training(
-                features,
-                data_csv,
-                data_train_csv,
-                data_validation_csv,
-                data_test_csv,
-                skip_save_processed_input,
-                preprocessing_params,
-                random_seed
-            )
+        (
+            training_set,
+            test_set,
+            validation_set,
+            train_set_metadata
+        ) = _preprocess_csv_for_training(
+            features,
+            data_csv,
+            data_train_csv,
+            data_validation_csv,
+            data_test_csv,
+            skip_save_processed_input,
+            preprocessing_params,
+            random_seed
+        )
 
     elif data_hdf5 is not None and train_set_metadata_json is not None:
         # use data and train set metadata
@@ -546,8 +554,10 @@ def _preprocess_csv_for_training(
             data_utils.save_hdf5(data_hdf5_fp, data, train_set_metadata)
             logging.info('Writing train set metadata with vocabulary')
 
-            train_set_metadata_json_fp = replace_file_extension(data_csv,
-                                                                'json')
+            train_set_metadata_json_fp = replace_file_extension(
+                data_csv,
+                'json'
+            )
             data_utils.save_json(
                 train_set_metadata_json_fp, train_set_metadata)
 
