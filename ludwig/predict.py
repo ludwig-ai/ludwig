@@ -48,7 +48,7 @@ def full_predict(
         batch_size=128,
         skip_save_unprocessed_output=False,
         output_directory='results',
-        only_predictions=False,
+        evaluate_performance=True,
         gpus=None,
         gpu_fraction=1.0,
         use_horovod=False,
@@ -83,7 +83,7 @@ def full_predict(
         data_csv,
         data_hdf5,
         train_set_metadata_json_fp,
-        only_predictions
+        evaluate_performance
     )
 
     # run the prediction
@@ -98,7 +98,7 @@ def full_predict(
         model,
         model_definition,
         batch_size,
-        only_predictions,
+        evaluate_performance,
         gpus,
         gpu_fraction,
         debug
@@ -119,7 +119,7 @@ def full_predict(
 
         save_prediction_outputs(postprocessed_output, experiment_dir_name)
 
-        if not only_predictions:
+        if evaluate_performance:
             print_prediction_results(prediction_results)
             save_prediction_statistics(prediction_results, experiment_dir_name)
 
@@ -132,13 +132,13 @@ def predict(
         model,
         model_definition,
         batch_size=128,
-        only_predictions=False,
+        evaluate_performance=True,
         gpus=None,
         gpu_fraction=1.0,
         debug=False
 ):
     """Computes predictions based on the computed model.
-        :param dataset: Dataset contaning the data to calculate
+        :param dataset: Dataset containing the data to calculate
                the predictions from.
         :type dataset: Dataset
         :param model: The trained model used to produce the predictions.
@@ -148,32 +148,32 @@ def predict(
         :type model_definition: Dictionary
         :param batch_size: The size of batches when computing the predictions.
         :type batch_size: Integer
-        :param only_predictions: If this parameter is True, only the predictions
-               will be returned, if it is False, also performance metrics
+        :param evaluate_performance: If this parameter is False, only the predictions
+               will be returned, if it is True, also performance metrics
                will be calculated on the predictions. It requires the data
-               to contanin also ground truth for the output features, otherwise
+               to contain also ground truth for the output features, otherwise
                the metrics cannot be computed.
-        :type only_predictions: Bool
+        :type evaluate_performance: Bool
         :type gpus: List
         :type gpu_fraction: Integer
         :param debug: If true turns on tfdbg with inf_or_nan checks.
         :type debug: Boolean
 
-        :returns: A dictionary contaning the predictions of each output feature,
+        :returns: A dictionary containing the predictions of each output feature,
                   alongside with statistics on the quality of those predictions
-                  (if only_predictions is False).
+                  (if evaluate_performance is True).
         """
     if is_on_master():
         print_boxed('PREDICT')
     test_stats = model.predict(
         dataset,
         batch_size,
-        only_predictions=only_predictions,
+        evaluate_performance=evaluate_performance,
         gpus=gpus,
         gpu_fraction=gpu_fraction
     )
 
-    if not only_predictions:
+    if evaluate_performance:
         calculate_overall_stats(
             test_stats,
             model_definition['output_features'],
@@ -317,11 +317,14 @@ def cli(sys_argv):
         help='size of batches'
     )
     parser.add_argument(
-        '-op',
-        '--only_predictions',
+        '-ep',
+        '--evaluate_performance',
         action='store_true',
         default=False,
-        help='skip metrics calculation'
+        help='performs performance metrics calculation.'
+             'Requires that the dataset contains one column '
+             'for each output feature the model predicts '
+             'to use as ground truth for the performance calculation.'
     )
 
     # ------------------

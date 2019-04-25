@@ -1210,7 +1210,7 @@ class Model:
             self,
             dataset,
             batch_size,
-            only_predictions=False,
+            evaluate_performance=True,
             gpus=None,
             gpu_fraction=1,
             **kwargs
@@ -1231,7 +1231,7 @@ class Model:
             batch_size,
             is_training=False,
             collect_predictions=True,
-            only_predictions=only_predictions
+            only_predictions=not evaluate_performance
         )
 
         return predict_stats

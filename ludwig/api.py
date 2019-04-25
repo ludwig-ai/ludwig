@@ -645,7 +645,7 @@ class LudwigModel:
             batch_size=128,
             gpus=None,
             gpu_fraction=1,
-            only_predictions=True,
+            evaluate_performance=False,
             logging_level=logging.ERROR,
     ):
         logging.getLogger().setLevel(logging_level)
@@ -661,8 +661,12 @@ class LudwigModel:
 
         logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
         features_to_load = self.model_definition['input_features']
-        if not only_predictions:
-            features_to_load += self.model_definition['output_features']
+        if evaluate_performance:
+            output_features = self.model_definition['output_features']
+        else:
+            output_features = []
+        features_to_load += output_features
+
         preprocessed_data = build_data(
             data_df,
             features_to_load,
@@ -670,16 +674,13 @@ class LudwigModel:
             self.model_definition['preprocessing']
         )
         replace_text_feature_level(
-            self.model_definition['input_features'] +
-            ([] if only_predictions else self.model_definition[
-                'output_features']),
+            features_to_load,
             [preprocessed_data]
         )
         dataset = Dataset(
             preprocessed_data,
             self.model_definition['input_features'],
-            [] if only_predictions
-            else self.model_definition['output_features'],
+            output_features,
             None
         )
 
@@ -687,12 +688,12 @@ class LudwigModel:
         predict_results = self.model.predict(
             dataset,
             batch_size,
-            only_predictions=only_predictions,
+            evaluate_performance=evaluate_performance,
             gpus=gpus, gpu_fraction=gpu_fraction,
             session=getattr(self.model, 'session', None)
         )
 
-        if not only_predictions:
+        if evaluate_performance:
             calculate_overall_stats(
                 predict_results,
                 self.model_definition['output_features'],
@@ -804,6 +805,7 @@ class LudwigModel:
             batch_size=batch_size,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
+            evaluate_performance=False,
             logging_level=logging_level,
         )
 
@@ -888,7 +890,7 @@ class LudwigModel:
             batch_size=batch_size,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
-            only_predictions=False,
+            evaluate_performance=True,
             logging_level=logging_level,
         )
 
