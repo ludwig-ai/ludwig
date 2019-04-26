@@ -1,9 +1,23 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2019 Uber Technologies, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
 import numpy as np
 import tensorflow as tf
 
 from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder
 from ludwig.models.modules.loss_modules import regularizer_registry
-
 
 L1_REGULARIZER = regularizer_registry['l1'](0.1)
 L2_REGULARIZER = regularizer_registry['l2'](0.1)
@@ -25,13 +39,13 @@ def generate_images(image_size, num_images):
 
 
 def encoder_test(
-    encoder,
-    input_data,
-    regularizer,
-    dropout_rate,
-    output_dtype,
-    output_shape,
-    output_data=None,
+        encoder,
+        input_data,
+        regularizer,
+        dropout_rate,
+        output_dtype,
+        output_shape,
+        output_data=None,
 ):
     """
     Helper method to test different kinds of encoders
