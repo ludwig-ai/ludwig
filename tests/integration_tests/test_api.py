@@ -22,6 +22,7 @@ from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import model_definition_template
+# The following imports are pytest fixtures, required for running the tests
 from tests.fixtures.filenames import csv_filename
 
 
