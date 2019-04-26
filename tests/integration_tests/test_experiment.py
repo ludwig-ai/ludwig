@@ -83,7 +83,7 @@ def test_experiment_multi_input_intent_classification(csv_filename):
         "[{type: text, name: random_text, vocab_size: 100, max_len: 10,"
         " encoder: ${encoder1}}, {type: category, name: random_category,"
         " vocab_size: 10, encoder: ${encoder2}}]")
-    output_features_string = ("[{type: category, name: intent, reduce_input:" 
+    output_features_string = ("[{type: category, name: intent, reduce_input:"
                               " sum, vocab_size: 2}]")
 
     # Generate test data
