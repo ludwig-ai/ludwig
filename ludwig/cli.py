@@ -24,7 +24,7 @@ class CLI(object):
     """CLI describes a command line interface for interacting with Ludwig, there
     are several different functions that can be performed. These functions are:
     - experiment - run an experiment using ludwig
-    - predict - Given a list of $hat{y}$ values, compute $d(\hat{y}, y) under a
+    - predict - Given a list of $hat{y}$ values, compute $d(\\hat{y}, y) under a
       specified metric
     - train - trains a model on the input file specified to it
     - visualize - Analysis of the results for the model on the dataset and

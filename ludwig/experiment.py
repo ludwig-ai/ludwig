@@ -352,7 +352,7 @@ def cli(sys_argv):
     model_definition.add_argument(
         '-md',
         '--model_definition',
-        type=yaml.load,
+        type=yaml.safe_load,
         help='model definition'
     )
     model_definition.add_argument(
@@ -473,4 +473,5 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_command("experiment", *sys.argv)
     cli(sys.argv[1:])

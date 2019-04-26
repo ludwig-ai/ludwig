@@ -15,11 +15,12 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
-import numpy as np
 import os
 import random
 import string
 import uuid
+
+import numpy as np
 import yaml
 from skimage.io import imsave
 
@@ -275,7 +276,7 @@ if __name__ == '__main__':
           {name: timeseries_1, type: timeseries, max_len: 20}, \
           {name: timeseries_2, type: timeseries, max_len: 20}, \
           ]',
-        type=yaml.load, help='dataset features'
+        type=yaml.safe_load, help='dataset features'
     )
     args = parser.parse_args()
 

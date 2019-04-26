@@ -175,7 +175,7 @@ def full_train(
     # set input features defaults
     if model_definition_file is not None:
         with open(model_definition_file, 'r') as def_file:
-            model_definition = merge_with_defaults(yaml.load(def_file))
+            model_definition = merge_with_defaults(yaml.safe_load(def_file))
     else:
         model_definition = merge_with_defaults(model_definition)
 
@@ -649,7 +649,7 @@ def cli(sys_argv):
     model_definition.add_argument(
         '-md',
         '--model_definition',
-        type=yaml.load,
+        type=yaml.safe_load,
         help='model definition'
     )
     model_definition.add_argument(
@@ -765,4 +765,5 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_command("train", *sys.argv)
     cli(sys.argv[1:])
