@@ -404,7 +404,13 @@ class LudwigModel:
         if data_df is None and data_dict is not None:
             data_df = pd.DataFrame(data_dict)
 
-        self.model, preprocessed_data, _, train_stats = full_train(
+        (
+            self.model,
+            preprocessed_data,
+            _,
+            train_stats,
+            self.model_definition
+        ) = full_train(
             self.model_definition,
             data_df=data_df,
             data_train_df=data_train_df,
