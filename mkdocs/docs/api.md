@@ -373,7 +373,6 @@ train(
   data_validation_hdf5=None,
   data_test_hdf5=None,
   train_set_metadata_json=None,
-  dataset_type='generic',
   model_name='run',
   model_load_path=None,
   model_resume_path=None,
