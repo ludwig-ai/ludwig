@@ -30,7 +30,7 @@ __Example usage:__
 
 
 ```python
-from ludwig import LudwigModel
+from ludwig.api import LudwigModel
 ```
 
 Train a model:
