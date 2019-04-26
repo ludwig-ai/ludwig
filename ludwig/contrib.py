@@ -18,7 +18,6 @@
 Module for handling contributed support.
 """
 
-import logging
 import sys
 
 from .contribs import contrib_registry
