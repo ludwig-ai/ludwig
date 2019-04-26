@@ -95,7 +95,8 @@ def test_experiment_seq_seq1_model_def_file(csv_filename, yaml_filename):
         input_name=input_features,
         output_name=output_features
     ))
-    yaml.dump(model_definition, open(yaml_filename, 'w'))
+    with open(yaml_filename, 'w') as yaml_out:
+        yaml.dump(model_definition, yaml_out)
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     experiment(
