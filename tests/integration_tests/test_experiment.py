@@ -44,7 +44,7 @@ def run_experiment(input_features, output_features, data_csv):
     )
 
     experiment(
-        yaml._safe_load(model_definition),
+        yaml.safe_load(model_definition),
         skip_save_processed_input=True,
         skip_save_progress=True,
         skip_save_unprocessed_output=True,
@@ -274,7 +274,7 @@ def test_experiment_sequence_combiner(csv_filename):
             output_name=output_features_string
         )
 
-        experiment(yaml._safe_load(model_definition),
+        experiment(yaml.safe_load(model_definition),
                    skip_save_processed_input=True,
                    skip_save_progress=True,
                    skip_save_unprocessed_output=True, data_csv=rel_path
@@ -296,11 +296,11 @@ def test_experiment_model_resume(csv_filename):
         input_name=input_features, output_name=output_features
     )
 
-    exp_dir_name = experiment(yaml._safe_load(model_definition),
+    exp_dir_name = experiment(yaml.safe_load(model_definition),
                               data_csv=rel_path)
     logging.info('Experiment Directory: {0}'.format(exp_dir_name))
 
-    experiment(yaml._safe_load(model_definition), data_csv=rel_path,
+    experiment(yaml.safe_load(model_definition), data_csv=rel_path,
                model_resume_path=exp_dir_name)
 
     full_predict(os.path.join(exp_dir_name, 'model'), data_csv=rel_path)

@@ -132,7 +132,7 @@ class LudwigModel:
         if model_definition_file is not None:
             with open(model_definition_file, 'r') as def_file:
                 self.model_definition = merge_with_defaults(
-                    yaml._safe_load(def_file)
+                    yaml.safe_load(def_file)
                 )
         else:
             self.model_definition = merge_with_defaults(model_definition)
@@ -1046,7 +1046,7 @@ def main(sys_argv):
     parser.add_argument(
         '-md',
         '--model_definition',
-        type=yaml._safe_load,
+        type=yaml.safe_load,
         help='model definition'
     )
 

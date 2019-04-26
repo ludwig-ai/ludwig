@@ -803,14 +803,14 @@ if __name__ == '__main__':
     parser.add_argument(
         '-f',
         '--features',
-        type=yaml._safe_load,
+        type=yaml.safe_load,
         help='list of features in the CSV to map to hdf5 and JSON files'
     )
 
     parser.add_argument(
         '-p',
         '--preprocessing_parameters',
-        type=yaml._safe_load,
+        type=yaml.safe_load,
         default='{}',
         help='the parameters for preprocessing the different features'
     )

@@ -276,7 +276,7 @@ if __name__ == '__main__':
           {name: timeseries_1, type: timeseries, max_len: 20}, \
           {name: timeseries_2, type: timeseries, max_len: 20}, \
           ]',
-        type=yaml._safe_load, help='dataset features'
+        type=yaml.safe_load, help='dataset features'
     )
     args = parser.parse_args()
 

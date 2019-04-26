@@ -58,8 +58,6 @@ from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
-from ludwig.utils.data_utils import load_object
-from ludwig.utils.data_utils import save_object
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import default_training_params
 from ludwig.utils.math_utils import learning_rate_warmup
@@ -648,12 +646,11 @@ class Model:
             if is_on_master():
                 if not skip_save_progress:
                     self.save_weights(session, model_weights_progress_path)
-                    save_object(
+                    progress_tracker.save(
                         os.path.join(
                             save_path,
                             TRAINING_PROGRESS_FILE_NAME
-                        ),
-                        progress_tracker
+                        )
                     )
                     if skip_save_model:
                         self.save_hyperparameters(
@@ -688,7 +685,7 @@ class Model:
         batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
 
         # training step loop
-        bar = tqdm(
+        progress_bar = tqdm(
             desc='Trainining online',
             total=batcher.steps_per_epoch,
             file=sys.stdout,
@@ -708,9 +705,9 @@ class Model:
                     is_training=True
                 )
             )
-            bar.update(1)
+            progress_bar.update(1)
 
-        bar.close()
+        progress_bar.close()
 
     def evaluation(
             self,
@@ -789,7 +786,7 @@ class Model:
         )
 
         if is_on_master():
-            bar = tqdm(
+            progress_bar = tqdm(
                 desc='Evaluation' if name is None
                 else 'Evaluation {0: <5.5}'.format(name),
                 total=batcher.steps_per_epoch,
@@ -817,10 +814,10 @@ class Model:
                 result
             )
             if is_on_master():
-                bar.update(1)
+                progress_bar.update(1)
 
         if is_on_master():
-            bar.close()
+            progress_bar.close()
 
         if self.horovod:
             output_stats, seq_set_size = self.merge_workers_outputs(
@@ -878,7 +875,7 @@ class Model:
             should_shuffle=False
         )
 
-        bar = tqdm(
+        progress_bar = tqdm(
             desc='Collecting Tensors',
             total=batcher.steps_per_epoch,
             file=sys.stdout,
@@ -899,9 +896,9 @@ class Model:
                 for row in result[tensor_name]:
                     collected_tensors[tensor_name].append(row)
 
-            bar.update(1)
+            progress_bar.update(1)
 
-        bar.close()
+        progress_bar.close()
 
         return collected_tensors
 
@@ -1364,7 +1361,7 @@ class Model:
         if is_on_master():
             logging.info('Resuming training of model: {0}'.format(save_path))
         self.weights_save_path = model_weights_path
-        progress_tracker = load_object(
+        progress_tracker = ProgressTracker.load(
             os.path.join(
                 save_path,
                 TRAINING_PROGRESS_FILE_NAME
@@ -1598,13 +1595,14 @@ class ProgressTracker:
             num_increases_bs,
             train_stats,
             vali_stats,
-            test_stats
+            test_stats,
+            last_improvement=0
     ):
         self.batch_size = batch_size
         self.epoch = epoch
         self.steps = steps
         self.last_improvement_epoch = last_improvement_epoch
-        self.last_improvement = 0
+        self.last_improvement = last_improvement
         self.learning_rate = learning_rate
         self.best_valid_measure = best_valid_measure
         self.num_reductions_lr = num_reductions_lr
@@ -1612,6 +1610,14 @@ class ProgressTracker:
         self.train_stats = train_stats
         self.vali_stats = vali_stats
         self.test_stats = test_stats
+
+    def save(self, filepath):
+        save_json(filepath, self.__dict__)
+
+    @staticmethod
+    def load(filepath):
+        loaded = load_json(filepath)
+        return ProgressTracker(**loaded)
 
 
 def load_model_and_definition(model_dir, use_horovod=False):
