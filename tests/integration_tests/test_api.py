@@ -1,5 +1,3 @@
-import pytest
-import uuid
 import yaml
 
 from string import Template

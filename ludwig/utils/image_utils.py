@@ -20,7 +20,6 @@ import os
 import numpy as np
 from skimage import img_as_ubyte
 from skimage.transform import resize
-from skimage.io import imread
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
 
