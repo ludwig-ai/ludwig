@@ -42,9 +42,10 @@ def get_experiment_description(model_definition,
     description['command'] = ' '.join(sys.argv)
 
     try:
-        is_a_git_repo = subprocess.call(['git', 'branch'],
-                                    stderr=subprocess.STDOUT,
-                                    stdout=open(os.devnull, 'w')) == 0
+        with open(os.devnull, 'w') as devnull:
+            is_a_git_repo = subprocess.call(['git', 'branch'],
+                                            stderr=subprocess.STDOUT,
+                                            stdout=devnull) == 0
         if is_a_git_repo:
             description['commit_hash'] = \
                 subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode(
