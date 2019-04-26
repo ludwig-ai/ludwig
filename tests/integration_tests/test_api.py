@@ -37,7 +37,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         output_name=output_features
     )
 
-    model = LudwigModel(yaml.load(model_definition))
+    model = LudwigModel(yaml._safe_load(model_definition))
 
     # Training with csv
     model.train(

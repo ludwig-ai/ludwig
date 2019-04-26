@@ -41,7 +41,8 @@ def generate_data(input_features,
     :param filename: path to the file where data is stored
     :return:
     """
-    features = yaml.load(input_features) + yaml.load(output_features)
+    features = yaml._safe_load(input_features) + yaml._safe_load(
+        output_features)
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples)]
 
