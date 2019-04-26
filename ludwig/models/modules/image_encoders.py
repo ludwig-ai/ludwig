@@ -160,7 +160,6 @@ class ResNetEncoder:
             is_training=is_training
         )
         hidden, hidden_size = flatten(hidden)
-        # hidden_size = hidden.shape[-1].value
 
         # ================ Fully Connected ================
         hidden = self.fc_stack(

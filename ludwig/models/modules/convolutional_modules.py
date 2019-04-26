@@ -147,9 +147,11 @@ def conv_2d_layer(inputs, kernel_shape, biases_shape, stride=1, padding='SAME',
                       dimensions=2, is_training=is_training)
 
 
-def flatten(hidden):
+def flatten(hidden, skip_first=True):
     hidden_size = 1
-    for x in hidden.shape[1:]:
+    # if hidden is activation, the first dimension is the batch_size
+    start = 1 if skip_first else 0
+    for x in hidden.shape[start:]:
         if x.value is not None:
             hidden_size *= x.value
     hidden = tf.reshape(hidden, [-1, hidden_size], name='flatten')
