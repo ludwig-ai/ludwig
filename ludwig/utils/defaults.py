@@ -160,21 +160,21 @@ def _perform_sanity_checks(model_definition):
 
     if 'training' in model_definition:
         assert isinstance(model_definition['training'], dict), (
-            'There is an issue while reading the training section of the ' 
+            'There is an issue while reading the training section of the '
             'model definition. The parameters are expected to be'
             'read as a dictionary. Please check your model definition format.'
         )
 
     if 'preprocessing' in model_definition:
         assert isinstance(model_definition['preprocessing'], dict), (
-            'There is an issue while reading the preprocessing section of the ' 
+            'There is an issue while reading the preprocessing section of the '
             'model definition. The parameters are expected to be read'
             'as a dictionary. Please check your model definition format.'
         )
 
     if 'combiner' in model_definition:
         assert isinstance(model_definition['combiner'], dict), (
-            'There is an issue while reading the combiner section of the ' 
+            'There is an issue while reading the combiner section of the '
             'model definition. The parameters are expected to be read'
             'as a dictionary. Please check your model definition format.'
         )
@@ -206,13 +206,14 @@ def merge_with_defaults(model_definition):
     # ===== Training =====
     set_default_value(model_definition, 'training', default_training_params)
 
-    for param in default_training_params:
+    for param, value in default_training_params.items():
         set_default_value(model_definition['training'], param,
-                          default_training_params[param])
+                          value)
 
     set_default_value(
         model_definition['training'],
         'validation_measure',
+
         output_type_registry[model_definition['output_features'][0][
             'type']].default_validation_measure
     )
