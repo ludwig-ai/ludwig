@@ -2340,7 +2340,7 @@ Training a Model
 To train a model one has first to initialize it using the initializer `LudwigModel()` and a model definition dictionary, and then calling the `train()` function using either a dataframe or a CSV file.
 
 ```python
-from ludwig import LudwigModel
+from ludwig.api import LudwigModel
 
 model_definition = {...}
 model = LudwigModel(model_definition)
@@ -2359,7 +2359,7 @@ Loading a Pre-trained Model
 In order to load a pre-trained Ludwig model you have to call the static function `load()` of the `LudwigModel` class providing the path containing the model.
 
 ```python
-from ludwig import LudwigModel
+from ludwig.api import LudwigModel
 
 model = LudwigModel.load(model_path)
 ```
