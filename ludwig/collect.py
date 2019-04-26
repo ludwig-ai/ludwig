@@ -25,6 +25,7 @@ import sys
 
 import numpy as np
 
+from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -360,8 +361,10 @@ def cli_collect_weights(sys_argv):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'activations':
+            contrib_command("collect_activations", *sys.argv)
             cli_collect_activations(sys.argv[2:])
         elif sys.argv[1] == 'weights':
+            contrib_command("collect_weights", *sys.argv)
             cli_collect_weights(sys.argv[2:])
         else:
             print('Unrecognized command')

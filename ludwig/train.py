@@ -760,4 +760,5 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_command("train", *sys.argv)
     cli(sys.argv[1:])
