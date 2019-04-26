@@ -16,18 +16,18 @@
 import glob
 import logging
 import os
+from string import Template
+
 import pandas as pd
 import pytest
 import yaml
 
-from string import Template
+from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import experiment
 from ludwig.predict import full_predict
-from ludwig.data.concatenate_datasets import concatenate_df
-from tests.integration_tests.utils import model_definition_template
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
-from tests.fixtures.csv_filename import csv_filename
+from tests.integration_tests.utils import model_definition_template
 
 
 def run_experiment(input_features, output_features, data_csv):
