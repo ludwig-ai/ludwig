@@ -27,8 +27,8 @@ import os
 import re
 import signal
 import sys
-import time
 import threading
+import time
 from collections import OrderedDict
 
 import numpy as np
@@ -488,7 +488,7 @@ class Model:
 
             # ================ Train ================
             if is_on_master():
-                bar = tqdm(
+                progress_bar = tqdm(
                     desc='Training',
                     total=batcher.steps_per_epoch,
                     file=sys.stdout,
@@ -534,11 +534,11 @@ class Model:
 
                 progress_tracker.steps += 1
                 if is_on_master():
-                    bar.update(1)
+                    progress_bar.update(1)
 
             # post training
             if is_on_master():
-                bar.close()
+                progress_bar.close()
 
             progress_tracker.epoch += 1
             batcher.reset()  # todo this may be useless, doublecheck
