@@ -32,6 +32,20 @@ def csv_filename():
     delete_temporary_data(csv_filename)
 
 
+@pytest.fixture()
+def yaml_filename():
+    """
+    This methods returns a random filename for the tests to use for generating
+    a model definition file. After the test runs, this file will be deleted
+    :return: None
+    """
+    yaml_filename = 'model_def_' + uuid.uuid4().hex[:10].upper() + '.yaml'
+    yield yaml_filename
+
+    if os.path.exists(yaml_filename):
+        os.remove(yaml_filename)
+
+
 def delete_temporary_data(csv_path):
     """
     Helper method to delete temporary data created for running tests. Deletes

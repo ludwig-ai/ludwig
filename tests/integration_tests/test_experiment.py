@@ -28,6 +28,9 @@ from ludwig.predict import full_predict
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import model_definition_template
+# The following imports are pytest fixtures, required for running the tests
+from tests.fixtures.filenames import csv_filename
+from tests.fixtures.filenames import yaml_filename
 
 
 def run_experiment(input_features, output_features, data_csv):
@@ -75,6 +78,35 @@ def test_experiment_seq_seq1(csv_filename):
 
         input_features = input_features_template.substitute(encoder=encoder)
         run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+def test_experiment_seq_seq1_model_def_file(csv_filename, yaml_filename):
+    # seq-to-seq test to use model definition file instead of dictionary
+    input_features = ('[{name: utt, type: text, reduce_output: null, '
+                      'vocab_size: 10, min_len: 10, max_len: 10,'
+                      ' encoder: embed}]')
+
+    output_features = ('[{name: iob, type: text, reduce_input: null, '
+                       'vocab_size: 3, min_len: 10, max_len: 10,'
+                       ' decoder: tagger}]')
+
+    # Save the model definition to a yaml file
+    model_definition = yaml.load(model_definition_template.substitute(
+        input_name=input_features,
+        output_name=output_features
+    ))
+    with open(yaml_filename, 'w') as yaml_out:
+        yaml.dump(model_definition, yaml_out)
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    experiment(
+        model_definition=None,
+        model_definition_file=yaml_filename,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        data_csv=rel_path
+    )
 
 
 def test_experiment_multi_input_intent_classification(csv_filename):
