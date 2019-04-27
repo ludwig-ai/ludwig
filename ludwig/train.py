@@ -347,7 +347,12 @@ def full_train(
 
     contrib_command("train_save", experiment_dir_name)
 
-    return model, preprocessed_data, experiment_dir_name, train_stats
+    return (model,
+            preprocessed_data,
+            experiment_dir_name,
+            train_stats,
+            model_definition
+            )
 
 
 def train(

@@ -165,7 +165,13 @@ def experiment(
     :type debug: Boolean
     """
 
-    model, preprocessed_data, experiment_dir_name, _ = full_train(
+    (
+        model,
+        preprocessed_data,
+        experiment_dir_name,
+        _,
+        model_definition
+    ) = full_train(
         model_definition,
         model_definition_file=model_definition_file,
         data_csv=data_csv,
