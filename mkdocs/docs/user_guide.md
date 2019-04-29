@@ -606,7 +606,7 @@ Then a list `idx2str` and two dictionaries `str2idx` and `str2freq` are created 
 }
 ```
 
-Finally a numpy matrix is created with sizes `n x l` where `n` is the number of rows in the column and `l` is the minimum of the longest tokenized list and a `max_lenght` parameter that can be set.
+Finally a numpy matrix is created with sizes `n x l` where `n` is the number of rows in the column and `l` is the minimum of the longest tokenized list and a `max_length` parameter that can be set.
 All sequences shorter than `l` are padded on the right (but this behavior may also be modified through a parameter).
 
 | after formatter          | numpy matrix |
