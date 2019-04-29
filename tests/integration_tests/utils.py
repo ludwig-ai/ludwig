@@ -13,25 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from string import Template
 
 import pandas as pd
-import yaml
+import uuid
 
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
 
-ENCODERS = ['embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
-            'stacked_cnn']
-
-model_definition_template = Template(
-    '{input_features: ${input_name}, output_features: ${output_name}, '
-    'training: {epochs: 2}, combiner: {type: concat, fc_size: 56}}')
+ENCODERS = [
+    'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
+    'stacked_cnn'
+]
 
 
-def generate_data(input_features,
-                  output_features,
-                  filename='test_csv.csv',
-                  num_examples=25):
+def generate_data(
+        input_features,
+        output_features,
+        filename='test_csv.csv',
+        num_examples=25
+):
     """
     Helper method to generate synthetic data based on input, output feature
     specs
@@ -41,8 +40,7 @@ def generate_data(input_features,
     :param filename: path to the file where data is stored
     :return:
     """
-    features = yaml.safe_load(input_features) + yaml.safe_load(
-        output_features)
+    features = input_features + output_features
     df = build_synthetic_dataset(num_examples, features)
     data = [next(df) for _ in range(num_examples)]
 
@@ -50,3 +48,116 @@ def generate_data(input_features,
     dataframe.to_csv(filename, index=False)
 
     return filename
+
+
+def _random_name(length=5):
+    return uuid.uuid4().hex[:length].upper()
+
+
+def _numerical_feature():
+    return {'name': 'num_' + _random_name(), 'type': 'numerical'}
+
+
+def _categorical_feature(**kwargs):
+    cat_feature = {
+        'type': 'category',
+        'name': 'category_' + _random_name(),
+        'vocab_size': 10,
+        'embedding_size': 5
+    }
+
+    cat_feature.update(kwargs)
+    return cat_feature
+
+
+def _text_feature(**kwargs):
+    text_feature = {
+        'name': 'text_' + _random_name(),
+        'type': 'text',
+        'reduce_input': 'null',
+        'vocab_size': 5,
+        'min_len': 7,
+        'max_len': 7,
+        'embedding_size': 8,
+        'state_size': 8
+    }
+    text_feature.update(kwargs)
+    return text_feature
+
+
+def _set_feature(**kwargs):
+    set_feature = {
+        'type': 'set',
+        'name': 'set_' + _random_name(),
+        'vocab_size': 10,
+        'max_len': 5,
+        'embedding_size': 5
+    }
+    set_feature.update(kwargs)
+    return set_feature
+
+
+def _sequence_feature(**kwargs):
+    seq_feature = {
+        'type': 'sequence',
+        'name': 'sequence_' + _random_name(),
+        'vocab_size': 10,
+        'max_len': 7,
+        'encoder': 'embed',
+        'embedding_size': 8,
+        'fc_size': 8,
+        'state_size': 8,
+        'num_filters': 8
+    }
+    seq_feature.update(kwargs)
+    return seq_feature
+
+
+def _image_feature(folder, **kwargs):
+    img_feature = {
+        'type': 'image',
+        'name': 'image_' + _random_name(),
+        'encoder': 'resnet',
+        'preprocessing': {
+            'in_memory': True,
+            'height': 8,
+            'width': 8,
+            'num_channels': 3
+        },
+        'resnet_size': 8,
+        'destination_folder': folder,
+        'fc_size': 8,
+        'num_filters': 8
+    }
+    img_feature.update(kwargs)
+    return img_feature
+
+
+def _timeseries_feature(**kwargs):
+    ts_feature = {
+        'name': 'timeseries_' + _random_name(),
+        'type': 'timeseries',
+        'max_len': 7
+    }
+    ts_feature.update(kwargs)
+    return ts_feature
+
+
+def _binary_feature():
+    return {
+        'name': 'binary_' + _random_name(),
+        'type': 'binary'
+    }
+
+
+def _bag_feature(**kwargs):
+    bag_feature = {
+        'name': 'bag_' + _random_name(),
+        'type': 'bag',
+        'max_len': 5,
+        'vocab_size': 10,
+        'embedding_size': 5
+    }
+    bag_feature.update(kwargs)
+
+    return bag_feature

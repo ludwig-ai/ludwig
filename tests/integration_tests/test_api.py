@@ -13,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from string import Template
 
-import yaml
+import shutil
 
 from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import model_definition_template
+from tests.integration_tests.utils import _sequence_feature
+from tests.integration_tests.utils import _categorical_feature
 # The following imports are pytest fixtures, required for running the tests
 from tests.fixtures.filenames import csv_filename
 
@@ -34,12 +34,14 @@ def run_api_experiment(input_features, output_features, data_csv):
     :param data_csv: path to data
     :return: None
     """
-    model_definition = model_definition_template.substitute(
-        input_name=input_features,
-        output_name=output_features
-    )
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {'type': 'concat', 'fc_size': 14},
+        'training': {'epochs': 2}
+    }
 
-    model = LudwigModel(yaml.safe_load(model_definition))
+    model = LudwigModel(model_definition)
 
     # Training with csv
     model.train(
@@ -48,7 +50,11 @@ def run_api_experiment(input_features, output_features, data_csv):
         skip_save_progress=True,
         skip_save_unprocessed_output=True
     )
+
     model.predict(data_csv=data_csv)
+
+    # Remove results/intermediate data saved to disk
+    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
     # Training with dataframe
     data_df = read_csv(data_csv)
@@ -59,23 +65,16 @@ def run_api_experiment(input_features, output_features, data_csv):
         skip_save_unprocessed_output=True
     )
     model.predict(data_df=data_df)
+    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
 
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
-    input_features = Template('[{name: utterance, type: sequence,'
-                              'vocab_size: 10, max_len: 10, '
-                              'encoder: ${encoder}, reduce_output: sum}]')
-    output_features = "[{name: intent, type: category, vocab_size: 2," \
-                      " reduce_input: sum}] "
+    input_features = [_sequence_feature()]
+    output_features = [_categorical_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
-    rel_path = generate_data(
-        input_features.substitute(encoder='rnn'), output_features, csv_filename
-    )
+    rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in ENCODERS:
-        run_api_experiment(
-            input_features.substitute(encoder=encoder),
-            output_features,
-            data_csv=rel_path
-        )
+        input_features[0]['encoder'] = encoder
+        run_api_experiment(input_features, output_features, data_csv=rel_path)
