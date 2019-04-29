@@ -38,15 +38,14 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../images/ludwig_logo.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.1.1">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.2.0" name="generator">
     
     
       
         <title>API - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/application.3020aac5.css">
+
+
+      <link href="../assets/stylesheets/application.750b69bd.css" rel="stylesheet">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css">
       
@@ -54,10 +53,9 @@
         
         
         <meta name="theme-color" content="#757575">
-      
-    
-    
-      <script src="../assets/javascripts/modernizr.01ccdecf.js"></script>
+
+
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
@@ -123,7 +121,7 @@
             <div class="md-flex__cell md-flex__cell--shrink">
                 <a class="md-header-nav__button md-logo"
                    href="https://uber.github.io/ludwig/" title="Ludwig">
-                    <img src="../images/ludwig_logo.svg" style="height:2rem;">
+                    <img src="../images/ludwig_logo.svg" style="height:1.4rem;">
                 </a>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -211,7 +209,7 @@
     <label class="md-nav__title md-nav__title--site" for="__drawer">
         <a class="md-nav__button md-logo" href="https://uber.github.io/ludwig/"
            title="Ludwig">
-            <img src="../images/ludwig_logo.svg" style="width: 20.8rem">
+            <img src="../images/ludwig_logo.svg" style="width: 10rem">
         </a>
     </label>
     
@@ -538,8 +536,9 @@
                 
                 
                   <h1>API</h1>
-                
-                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L68">[source]</a></span></p>
+
+                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L63">[source]</a></span>
+                </p>
 <h2 id="ludwigmodel-class">LudwigModel class<a class="headerlink" href="#ludwigmodel-class" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">LudwigModel</span><span class="p">(</span>
   <span class="n">model_definition</span><span class="p">,</span>
@@ -564,7 +563,8 @@
    printed.</li>
 </ul>
 <p><strong>Example usage:</strong></p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">ludwig</span> <span class="kn">import</span> <span class="n">LudwigModel</span>
+                <div class="codehilite"><pre><span></span><span class="kn">from</span> <span
+                        class="nn">ludwig.api</span> <span class="kn">import</span> <span class="n">LudwigModel</span>
 </pre></div>
 
 
@@ -851,6 +851,7 @@ performance measures, confusion matrices and the like.</p>
   <span class="n">data_train_hdf5</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">data_validation_hdf5</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">data_test_hdf5</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">data_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">train_set_metadata_json</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;run&#39;</span><span class="p">,</span>
   <span class="n">model_load_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -862,6 +863,7 @@ performance measures, confusion matrices and the like.</p>
   <span class="n">output_directory</span><span class="o">=</span><span class="s1">&#39;results&#39;</span><span class="p">,</span>
   <span class="n">gpus</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">gpu_fraction</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+  <span class="n">use_horovod</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
   <span class="n">logging_level</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
   <span class="n">debug</span><span class="o">=</span><span class="bp">False</span>
@@ -902,6 +904,15 @@ specified dataset.</p>
    intermediate preprocess  version of the input CSV created the
    first time a CSV file is used in the same directory with the same
    name and a hdf5 extension</li>
+    <li><strong>data_dict</strong> (dict): input data dictionary. It is expected to
+        contain one key for each field and the values have to be lists of
+        the same length. Each index in the lists corresponds to one
+        datapoint. For example a data set consisting of two datapoints
+        with a text and a class may be provided as the following dict
+        <code>`{'text_field_name': ['text of the first datapoint', text of the
+            second datapoint'], 'class_filed_name': ['class_datapoints_1',
+            'class_datapoints_2']}</code>.
+    </li>
 <li><strong>train_set_metadata_json</strong> (string): input metadata JSON file. It is an
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
@@ -1133,8 +1144,8 @@ text of the second datapoint'], 'class_filed_name':
 </footer>
       
     </div>
-    
-      <script src="../assets/javascripts/application.dc02f8ce.js"></script>
+
+    <script src="../assets/javascripts/application.39abc4af.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
