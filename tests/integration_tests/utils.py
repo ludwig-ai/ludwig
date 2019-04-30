@@ -50,18 +50,18 @@ def generate_data(
     return filename
 
 
-def _random_name(length=5):
+def random_name(length=5):
     return uuid.uuid4().hex[:length].upper()
 
 
-def _numerical_feature():
-    return {'name': 'num_' + _random_name(), 'type': 'numerical'}
+def numerical_feature():
+    return {'name': 'num_' + random_name(), 'type': 'numerical'}
 
 
-def _categorical_feature(**kwargs):
+def categorical_feature(**kwargs):
     cat_feature = {
         'type': 'category',
-        'name': 'category_' + _random_name(),
+        'name': 'category_' + random_name(),
         'vocab_size': 10,
         'embedding_size': 5
     }
@@ -70,9 +70,9 @@ def _categorical_feature(**kwargs):
     return cat_feature
 
 
-def _text_feature(**kwargs):
-    text_feature = {
-        'name': 'text_' + _random_name(),
+def text_feature(**kwargs):
+    feature = {
+        'name': 'text_' + random_name(),
         'type': 'text',
         'reduce_input': 'null',
         'vocab_size': 5,
@@ -81,26 +81,26 @@ def _text_feature(**kwargs):
         'embedding_size': 8,
         'state_size': 8
     }
-    text_feature.update(kwargs)
-    return text_feature
+    feature.update(kwargs)
+    return feature
 
 
-def _set_feature(**kwargs):
-    set_feature = {
+def set_feature(**kwargs):
+    feature = {
         'type': 'set',
-        'name': 'set_' + _random_name(),
+        'name': 'set_' + random_name(),
         'vocab_size': 10,
         'max_len': 5,
         'embedding_size': 5
     }
-    set_feature.update(kwargs)
-    return set_feature
+    feature.update(kwargs)
+    return feature
 
 
-def _sequence_feature(**kwargs):
+def sequence_feature(**kwargs):
     seq_feature = {
         'type': 'sequence',
-        'name': 'sequence_' + _random_name(),
+        'name': 'sequence_' + random_name(),
         'vocab_size': 10,
         'max_len': 7,
         'encoder': 'embed',
@@ -113,10 +113,10 @@ def _sequence_feature(**kwargs):
     return seq_feature
 
 
-def _image_feature(folder, **kwargs):
+def image_feature(folder, **kwargs):
     img_feature = {
         'type': 'image',
-        'name': 'image_' + _random_name(),
+        'name': 'image_' + random_name(),
         'encoder': 'resnet',
         'preprocessing': {
             'in_memory': True,
@@ -133,9 +133,9 @@ def _image_feature(folder, **kwargs):
     return img_feature
 
 
-def _timeseries_feature(**kwargs):
+def timeseries_feature(**kwargs):
     ts_feature = {
-        'name': 'timeseries_' + _random_name(),
+        'name': 'timeseries_' + random_name(),
         'type': 'timeseries',
         'max_len': 7
     }
@@ -143,21 +143,21 @@ def _timeseries_feature(**kwargs):
     return ts_feature
 
 
-def _binary_feature():
+def binary_feature():
     return {
-        'name': 'binary_' + _random_name(),
+        'name': 'binary_' + random_name(),
         'type': 'binary'
     }
 
 
-def _bag_feature(**kwargs):
-    bag_feature = {
-        'name': 'bag_' + _random_name(),
+def bag_feature(**kwargs):
+    feature = {
+        'name': 'bag_' + random_name(),
         'type': 'bag',
         'max_len': 5,
         'vocab_size': 10,
         'embedding_size': 5
     }
-    bag_feature.update(kwargs)
+    feature.update(kwargs)
 
-    return bag_feature
+    return feature

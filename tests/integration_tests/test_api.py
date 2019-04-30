@@ -20,8 +20,8 @@ from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import _sequence_feature
-from tests.integration_tests.utils import _categorical_feature
+from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import categorical_feature
 # The following imports are pytest fixtures, required for running the tests
 from tests.fixtures.filenames import csv_filename
 
@@ -70,8 +70,8 @@ def run_api_experiment(input_features, output_features, data_csv):
 
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
-    input_features = [_sequence_feature()]
-    output_features = [_categorical_feature(vocab_size=2, reduce_input='sum')]
+    input_features = [sequence_feature(reduce_output='sum')]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
