@@ -594,10 +594,9 @@ def _preprocess_csv_for_training(
                     train_set_metadata
                 )
             logging.info('Writing train set metadata with vocabulary')
-            train_set_metadata_json_fp = replace_file_extension(data_csv,
+            train_set_metadata_json_fp = replace_file_extension(data_train_csv,
                                                                 'json')
-            data_utils.save_json(
-                train_set_metadata_json_fp, train_set_metadata)
+            data_utils.save_json(train_set_metadata_json_fp, train_set_metadata)
 
     return training_set, test_set, validation_set, train_set_metadata
 
