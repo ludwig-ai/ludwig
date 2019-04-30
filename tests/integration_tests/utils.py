@@ -14,8 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-import pandas as pd
 import uuid
+
+import pandas as pd
 
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
 

@@ -15,25 +15,25 @@
 # ==============================================================================
 import logging
 import os
+import shutil
 
 import pytest
 import yaml
-import shutil
 
-from ludwig.utils.data_utils import read_csv
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import experiment
 from ludwig.predict import full_predict
+from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
+from tests.integration_tests.utils import bag_feature
+from tests.integration_tests.utils import binary_feature
+from tests.integration_tests.utils import categorical_feature
 from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import image_feature
+from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
-from tests.integration_tests.utils import binary_feature
-from tests.integration_tests.utils import image_feature
-from tests.integration_tests.utils import numerical_feature
-from tests.integration_tests.utils import categorical_feature
-from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import timeseries_feature
 
 # The following imports are pytest fixtures, required for running the tests
