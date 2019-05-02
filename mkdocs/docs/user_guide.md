@@ -1021,7 +1021,7 @@ The available encoder parameters are:
 - `norm'` (default `null`): norm to apply after the single neuron. It can be `null`, `batch` or `layer`.
 - `tied_weights` (default `null`): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.
 
-Example binary feature entry in the output features list:
+Example numerical feature entry in the output features list:
 
 ```yaml
 name: numerical_csv_column_name
@@ -1077,7 +1077,7 @@ regularize: true
 ### Numerical Features Measures
 
 The measures that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
+You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
 
 Category Features
 -----------------
