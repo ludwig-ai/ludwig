@@ -17,6 +17,7 @@ import os
 import uuid
 
 import pytest
+from ludwig.utils.data_utils import replace_file_extension
 
 
 @pytest.fixture()
@@ -53,13 +54,13 @@ def delete_temporary_data(csv_path):
     :param csv_path: path to the csv data file
     :return: None
     """
-    if os.path.exists(csv_path):
+    if os.path.isfile(csv_path):
         os.remove(csv_path)
 
-    json_path = os.path.splitext(csv_path)[0] + '.json'
-    if os.path.exists(json_path):
+    json_path = replace_file_extension(csv_path, 'json')
+    if os.path.isfile(json_path):
         os.remove(json_path)
 
-    hdf5_path = os.path.splitext(csv_path)[0] + '.hdf5'
-    if os.path.exists(hdf5_path):
+    hdf5_path = replace_file_extension(csv_path, 'hdf5')
+    if os.path.isfile(hdf5_path):
         os.remove(hdf5_path)

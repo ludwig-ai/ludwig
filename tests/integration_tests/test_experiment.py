@@ -148,11 +148,11 @@ def test_experiment_seq_seq_train_test_valid(csv_filename):
         output_features,
         data_train_csv=train_csv,
         data_test_csv=test_csv,
-        data_validation_csv=valdation_csv,
-        skip_save_processed_input=False,
+        data_validation_csv=valdation_csv
     )
 
     # Delete the temporary data created
+    # This test is saving the processed data to hdf5
     for prefix in ['tr_', 'test_', 'val_']:
         if os.path.isfile(prefix + csv_filename):
             os.remove(prefix + csv_filename)
@@ -360,7 +360,7 @@ def test_experiment_sequence_combiner(csv_filename):
 
         exp_dir_name = experiment(
             model_definition,
-            skip_save_processed_input=True,
+            skip_save_processed_input=False,
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             data_csv=rel_path
