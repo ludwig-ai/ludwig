@@ -24,7 +24,6 @@ from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import experiment
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
-from ludwig.utils.data_utils import replace_file_extension
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
