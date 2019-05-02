@@ -24,6 +24,7 @@ from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import experiment
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
+from ludwig.utils.data_utils import replace_file_extension
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
@@ -149,10 +150,11 @@ def test_experiment_seq_seq_train_test_valid(csv_filename):
         data_train_csv=train_csv,
         data_test_csv=test_csv,
         data_validation_csv=valdation_csv,
-        skip_save_processed_input=False,
+        # skip_save_processed_input=False,
     )
 
     # Delete the temporary data created
+    # This test is saving the processed data to hdf5
     for prefix in ['tr_', 'test_', 'val_']:
         if os.path.isfile(prefix + csv_filename):
             os.remove(prefix + csv_filename)
@@ -360,7 +362,7 @@ def test_experiment_sequence_combiner(csv_filename):
 
         exp_dir_name = experiment(
             model_definition,
-            skip_save_processed_input=True,
+            skip_save_processed_input=False,
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
             data_csv=rel_path
