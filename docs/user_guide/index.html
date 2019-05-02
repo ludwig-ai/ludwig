@@ -3370,7 +3370,7 @@ There is only one decoder available for numerical features and it is a (potentia
 
 <h4 id="numerical-features-measures">Numerical Features Measures<a class="headerlink" href="#numerical-features-measures" title="Permanent link">&para;</a></h4>
 <p>The measures that are calculated every epoch and are available for numerical features are <code>mean_squared_error</code>, <code>mean_absolute_error</code>, <code>r2</code> and the <code>loss</code> itself.
-You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
+You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a numerical feature.</p>
 <h3 id="category-features">Category Features<a class="headerlink" href="#category-features" title="Permanent link">&para;</a></h3>
 <h4 id="category-features-preprocessing">Category Features Preprocessing<a class="headerlink" href="#category-features-preprocessing" title="Permanent link">&para;</a></h4>
 <p>Category features are transformed into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
