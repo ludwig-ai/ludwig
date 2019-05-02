@@ -149,8 +149,7 @@ def test_experiment_seq_seq_train_test_valid(csv_filename):
         output_features,
         data_train_csv=train_csv,
         data_test_csv=test_csv,
-        data_validation_csv=valdation_csv,
-        # skip_save_processed_input=False,
+        data_validation_csv=valdation_csv
     )
 
     # Delete the temporary data created
