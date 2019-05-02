@@ -4414,7 +4414,10 @@ The column name is added to the JSON file, with an associated dictionary contain
 <h5 id="resnet-encoder">ResNet Encoder<a class="headerlink" href="#resnet-encoder" title="Permanent link">&para;</a></h5>
 <p>ResNet Encoder takes the following optional parameters:</p>
 <ul>
-<li><code>resnet_size</code> (default <code>50</code>): A single integer for the size of the ResNet model.</li>
+    <li><code>resnet_size</code> (default <code>50</code>): A single integer for the size of the ResNet model. If has to
+        be one of the following values: `8</code>, `14</code>, `18</code>, <code>34</code>, <code>50</code>,
+        <code>101</code>, <code>152</code>, <code>200</code>.
+    </li>
 <li><code>num_filters</code> (default <code>16</code>): It indicates the number of filters, and by consequence the output channels of the 2d convolution.</li>
 <li><code>kernel_size</code> (default <code>3</code>): The kernel size to use for convolution.</li>
 <li><code>conv_stride</code> (default <code>1</code>): Stride size for the initial convolutional layer.</li>

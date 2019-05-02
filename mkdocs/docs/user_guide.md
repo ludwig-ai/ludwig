@@ -2130,7 +2130,7 @@ Convolutional Stack Encoder takes the following optional parameters:
 
 ResNet Encoder takes the following optional parameters:
 
-- `resnet_size` (default `50`): A single integer for the size of the ResNet model.
+- `resnet_size` (default `50`): A single integer for the size of the ResNet model. If has to be one of the following values: `8`, `14`, `18`, `34`, `50`, `101`, `152`, `200`.
 - `num_filters` (default `16`): It indicates the number of filters, and by consequence the output channels of the 2d convolution.
 - `kernel_size` (default `3`): The kernel size to use for convolution.
 - `conv_stride` (default `1`): Stride size for the initial convolutional layer.
