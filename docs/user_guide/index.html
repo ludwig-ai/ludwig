@@ -3370,7 +3370,7 @@ There is only one decoder available for numerical features and it is a (potentia
 
 <h4 id="numerical-features-measures">Numerical Features Measures<a class="headerlink" href="#numerical-features-measures" title="Permanent link">&para;</a></h4>
 <p>The measures that are calculated every epoch and are available for numerical features are <code>mean_squared_error</code>, <code>mean_absolute_error</code>, <code>r2</code> and the <code>loss</code> itself.
-You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
+You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a numerical feature.</p>
 <h3 id="category-features">Category Features<a class="headerlink" href="#category-features" title="Permanent link">&para;</a></h3>
 <h4 id="category-features-preprocessing">Category Features Preprocessing<a class="headerlink" href="#category-features-preprocessing" title="Permanent link">&para;</a></h4>
 <p>Category features are transformed into an integer valued vector of size <code>n</code> (where <code>n</code> is the size of the dataset) and added to HDF5 with a key that reflects the name of column in the CSV.
@@ -3499,7 +3499,7 @@ There is only one decoder available for category features and it is a (potential
 
 <h4 id="category-features-measures">Category Features Measures<a class="headerlink" href="#category-features-measures" title="Permanent link">&para;</a></h4>
 <p>The measures that are calculated every epoch and are available for category features are <code>accuracy</code>, <code>top_k</code> (computes accuracy considering as a match if the true category appears in the first <code>k</code> predicted categories ranked by decoder's confidence) and the <code>loss</code> itself.
-You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
+You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a category feature.</p>
 <h3 id="set-features">Set Features<a class="headerlink" href="#set-features" title="Permanent link">&para;</a></h3>
 <h4 id="set-features-preprocessing">Set Features Preprocessing<a class="headerlink" href="#set-features-preprocessing" title="Permanent link">&para;</a></h4>
 <p>Set features are transformed into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
@@ -4320,7 +4320,7 @@ If a <code>b x h</code> input is provided to a generator decoder using an rnn wi
                     (the levenshtein distance between the predicted and ground truth sequence), <code>perplexity</code>
                     (the perplexity of the ground truth sequence according to the model) and the <code>loss</code>
                     itself.
-You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a binary feature.</p>
+You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a sequence feature.</p>
 <h3 id="text-features">Text Features<a class="headerlink" href="#text-features" title="Permanent link">&para;</a></h3>
 <h4 id="text-features-preprocessing">Text Features Preprocessing<a class="headerlink" href="#text-features-preprocessing" title="Permanent link">&para;</a></h4>
 <p>Text features are treated in the same way of sequence features, with a couple differences.
