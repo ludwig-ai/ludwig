@@ -36,17 +36,34 @@ from tensorflow.python.lib.io import file_io
 
 
 def copy_file_from_gcs(gcs_file_path, file_path):
+    """Use Cloud SDK to copy GCS object to local path.
+
+    :param gcs_file_path:
+    :param file_path:
+    :return:
+    """
     subprocess.check_call(
         ['gsutil', '-m', 'cp', gcs_file_path, file_path])
 
 
 def copy_file_to_gcs(file_path, gcs_file_path):
+    """Use Cloud SDK to copy local file to GCS object.
+
+    :param file_path:
+    :param gcs_file_path:
+    :return:
+    """
     with file_io.FileIO(file_path, mode='rb') as input_f:
         with file_io.FileIO(gcs_file_path, mode='w+') as output_f:
             output_f.write(input_f.read())
 
 
 def handle_gcs_upload(fcn):
+    """Decorator to move local file to GCS object.
+
+    :param fcn:
+    :return:
+    """
     @wraps(fcn)
     def inner(data_fp, data, *args, **kwargs):
         # Handle GCS path
@@ -65,6 +82,11 @@ def handle_gcs_upload(fcn):
 
 
 def handle_gcs_download(fcn):
+    """Decorator to move GCS object to local file.
+
+    :param fcn:
+    :return:
+    """
     @wraps(fcn)
     def inner(data_fp, *args, **kwargs):
         # Handle GCS path

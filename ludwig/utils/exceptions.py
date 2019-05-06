@@ -17,6 +17,12 @@ class LudwigOptionalDependencyException(LudwigException):
 
 
 def missing_dependency_generator(package, dep):
+    """Generate a message with missing dependency to install.
+
+    :param package:
+    :param dep:
+    :return:
+    """
     def missing_dep():
         raise LudwigOptionalDependencyException(
             "The {package} optional dependency is missing. "

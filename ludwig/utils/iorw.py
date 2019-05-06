@@ -45,11 +45,11 @@ except NameError:
 
 
 class LudwigIO(object):
-    '''
+    """
     The holder which houses any io system registered with the system.
     This object is used in a singleton manner to save and load particular
     named Handler objects for reference externally.
-    '''
+    """
 
     def __init__(self):
         self.reset()
@@ -57,11 +57,17 @@ class LudwigIO(object):
     def read(self, path, extensions=['.csv', '.hdf5', '.json']):
         if not fnmatch.fnmatch(os.path.basename(path), '*.*'):
             warnings.warn(
-                "the file is not specified with any extension : " + os.path.basename(path)
+                "the file is not specified with any extension : " +
+                os.path.basename(
+                    path)
             )
-        elif not any(fnmatch.fnmatch(os.path.basename(path), '*' + ext) for ext in extensions):
+        elif not any(
+            fnmatch.fnmatch(os.path.basename(path), '*' + ext) for ext in
+            extensions):
             warnings.warn(
-                "The specified input file ({}) does not end in one of {}".format(path, extensions)
+                "The specified input file ({}) does not end in one of {"
+                "}".format(
+                    path, extensions)
             )
         file_metadata = self.get_handler(path).read(path)
         if isinstance(file_metadata, (bytes, bytearray)):
@@ -72,11 +78,17 @@ class LudwigIO(object):
         # Usually no return object here
         if not fnmatch.fnmatch(os.path.basename(path), '*.*'):
             warnings.warn(
-                "the file is not specified with any extension : " + os.path.basename(path)
+                "the file is not specified with any extension : " +
+                os.path.basename(
+                    path)
             )
-        elif not any(fnmatch.fnmatch(os.path.basename(path), '*' + ext) for ext in extensions):
+        elif not any(
+            fnmatch.fnmatch(os.path.basename(path), '*' + ext) for ext in
+            extensions):
             warnings.warn(
-                "The specified input file ({}) does not end in one of {}".format(path, extensions)
+                "The specified input file ({}) does not end in one of {"
+                "}".format(
+                    path, extensions)
             )
         return self.get_handler(path).write(buf, path)
 
@@ -112,7 +124,8 @@ class LudwigIO(object):
 
         if local_handler is None:
             raise LudwigException(
-                "Could not find a registered schema handler for: {}".format(path)
+                "Could not find a registered schema handler for: {}".format(
+                    path)
             )
 
         return local_handler

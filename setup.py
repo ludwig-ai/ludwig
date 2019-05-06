@@ -1,6 +1,6 @@
 # coding=utf-8
-'''Ludwig: a deep learning experimentation toolbox
-'''
+"""Ludwig: a deep learning experimentation toolbox."""
+
 from codecs import open
 from os import path
 
@@ -12,9 +12,11 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+
 def read(fname):
     with open(fname, 'r') as fhandle:
         return fhandle.read()
+
 
 def read_reqs(fname):
     req_path = path.join(here, fname)
