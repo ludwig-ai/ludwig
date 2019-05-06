@@ -25,6 +25,7 @@ TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'
 DISABLE_PROGRESSBAR = False
 
 ON_MASTER = True
+LUDWIG_FOLDER = '/tmp/'
 
 
 def set_disable_progressbar(value):

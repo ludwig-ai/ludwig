@@ -18,16 +18,67 @@ import collections
 import csv
 import json
 import logging
+import os
 import os.path
 import pickle
 import random
+import subprocess
 
 import h5py
 import numpy as np
 import pandas as pd
+from functools import wraps
 from pandas.errors import ParserError
 
+from ludwig.globals import LUDWIG_FOLDER
+from ludwig.utils.iorw import file_exists
+from tensorflow.python.lib.io import file_io
 
+
+def copy_file_from_gcs(gcs_file_path, file_path):
+    subprocess.check_call(
+        ['gsutil', '-m', 'cp', gcs_file_path, file_path])
+
+
+def copy_file_to_gcs(file_path, gcs_file_path):
+    with file_io.FileIO(file_path, mode='rb') as input_f:
+        with file_io.FileIO(gcs_file_path, mode='w+') as output_f:
+            output_f.write(input_f.read())
+
+
+def handle_gcs_upload(fcn):
+    @wraps(fcn)
+    def inner(data_fp, data, *args, **kwargs):
+        # Handle GCS path
+        gcs = False
+        if data_fp.startswith('gs://'):
+            logging.info('Saving file: %s', data_fp)
+            gcs = True
+            gcs_path = data_fp
+            data_fp = os.path.join(LUDWIG_FOLDER, os.path.basename(data_fp))
+        # Call decorated function
+        fcn(data_fp, data, *args, **kwargs)
+        # GCS upload
+        if gcs:
+            copy_file_to_gcs(data_fp, gcs_path)
+    return inner
+
+
+def handle_gcs_download(fcn):
+    @wraps(fcn)
+    def inner(data_fp, *args, **kwargs):
+        # Handle GCS path
+        if data_fp.startswith('gs://'):
+            local_data_fp = os.path.join(LUDWIG_FOLDER,
+                                         os.path.basename(data_fp))
+            copy_file_from_gcs(data_fp, local_data_fp)
+            data_fp = local_data_fp
+        # Call decorated function
+        return fcn(data_fp, *args, **kwargs)
+    return inner
+
+
+@handle_gcs_download
 def load_csv(data_fp):
     data = []
     with open(data_fp, 'rb') as f:
@@ -52,6 +103,7 @@ def read_csv(data_fp, header=0):
     return df
 
 
+@handle_gcs_upload
 def save_csv(data_fp, data):
     with open(data_fp, 'w', encoding='utf-8') as csv_file:
         writer = csv.writer(csv_file)
@@ -61,6 +113,7 @@ def save_csv(data_fp, data):
             writer.writerow(row)
 
 
+@handle_gcs_download
 def load_json(data_fp):
     data = []
     with open(data_fp, 'r') as input_file:
@@ -68,18 +121,19 @@ def load_json(data_fp):
     return data
 
 
+@handle_gcs_upload
 def save_json(data_fp, data, sort_keys=True, indent=4):
     with open(data_fp, 'w') as output_file:
         json.dump(data, output_file, cls=NumpyEncoder, sort_keys=sort_keys,
                   indent=indent)
-
 
 # to be tested
 # also, when loading an hdf5 file
 # most of the times you don't want
 # to put everything in memory
 # like this function does
-# it's jsut for convenience for relatively small datasets
+# it's just for convenience for relatively small datasets
+@handle_gcs_download
 def load_hdf5(data_fp):
     data = {}
     with h5py.File(data_fp, 'r') as h5_file:
@@ -89,12 +143,12 @@ def load_hdf5(data_fp):
 
 
 # def save_hdf5(data_fp: str, data: Dict[str, object]):
+@handle_gcs_upload
 def save_hdf5(data_fp, data, metadata=None):
-
     if metadata is None:
         metadata = {}
     mode = 'w'
-    if os.path.isfile(data_fp):
+    if file_exists(data_fp):
         mode = 'r+'
     with h5py.File(data_fp, mode) as h5_file:
         for key, value in data.items():

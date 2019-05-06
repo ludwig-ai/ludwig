@@ -36,6 +36,8 @@ from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
 from ludwig.utils.data_utils import split_dataset_tvt
 from ludwig.utils.data_utils import text_feature_data_field
+from ludwig.utils.data_utils import handle_gcs_download
+from ludwig.utils.iorw import file_exists
 from ludwig.utils.defaults import default_preprocessing_parameters
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_from_registry
@@ -227,6 +229,7 @@ def get_split(
     return split
 
 
+@handle_gcs_download
 def load_data(
         hdf5_file_path,
         input_features,
@@ -313,7 +316,7 @@ def preprocess_for_training(
     if data_csv is not None:
         data_hdf5_fp = replace_file_extension(data_csv, 'hdf5')
         train_set_metadata_json_fp = replace_file_extension(data_csv, 'json')
-        if os.path.isfile(data_hdf5_fp) and os.path.isfile(
+        if file_exists(data_hdf5_fp) and file_exists(
                 train_set_metadata_json_fp):
             logging.info(
                 'Found hdf5 and json with the same filename '
@@ -330,7 +333,7 @@ def preprocess_for_training(
             'json',
         )
 
-        if os.path.isfile(data_train_hdf5_fp) and os.path.isfile(
+        if file_exists(data_train_hdf5_fp) and file_exists(
                 train_set_metadata_json_fp):
             logging.info(
                 'Found hdf5 and json with the same filename of '
@@ -345,7 +348,7 @@ def preprocess_for_training(
             data_validation_csv,
             'hdf5'
         )
-        if os.path.isfile(data_validation_hdf5_fp):
+        if file_exists(data_validation_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of '
                 'the validation csv, using it instead'
@@ -355,7 +358,7 @@ def preprocess_for_training(
 
     if data_test_csv is not None:
         data_test_hdf5_fp = replace_file_extension(data_test_csv, 'hdf5')
-        if os.path.isfile(data_test_hdf5_fp):
+        if file_exists(data_test_hdf5_fp):
             logging.info(
                 'Found hdf5 with the same filename of '
                 'the test csv, using it instead'
@@ -525,7 +528,7 @@ def _preprocess_csv_for_training(
             random_seed=random_seed
         )
         if not skip_save_processed_input:
-            logging.info('Writing dataset')
+            logging.info('Writing dataset: %s', data_csv)
             data_hdf5_fp = replace_file_extension(data_csv, 'hdf5')
             data_utils.save_hdf5(data_hdf5_fp, data, train_set_metadata)
             logging.info('Writing train set metadata with vocabulary')
@@ -686,7 +689,7 @@ def preprocess_for_prediction(
     # Check if hdf5 file already exists
     if data_csv is not None:
         data_hdf5_fp = replace_file_extension(data_csv, 'hdf5')
-        if os.path.isfile(data_hdf5_fp):
+        if file_exists(data_hdf5_fp):
             logging.info('Found hdf5 with the same filename of the csv, '
                          'using it instead')
             data_csv = None

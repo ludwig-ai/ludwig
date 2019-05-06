@@ -12,47 +12,40 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+def read(fname):
+    with open(fname, 'r') as fhandle:
+        return fhandle.read()
+
+def read_reqs(fname):
+    req_path = path.join(here, fname)
+    return [req.strip() for req in read(req_path).splitlines() if req.strip()]
+
+
+gcs_reqs = read_reqs('requirements-gcs.txt')
+all_reqs = gcs_reqs
+extras_require = {
+    "all": all_reqs,
+    "gcs": gcs_reqs,
+ }
+
 setup(
     name='ludwig',
-
     version='0.1.2',
-
     description='A deep learning experimentation toolbox',
     long_description=long_description,
     long_description_content_type='text/markdown',
-
     url='https://ludwig.ai',
-
     author='Piero Molino',
     author_email='piero.molino@gmail.com',
-
     license='Apache 2.0',
-
-    keywords='ludwig deep learning deep_learning machine machine_learning natural language processing computer vision',
-
+    keywords='ludwig deep learning deep_learning machine machine_learning '
+    'natural language processing computer vision',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-
     python_requires='>=3',
-
     include_package_data=True,
     package_data={'ludwig': ['etc/*', 'examples/*.py']},
-
-    install_requires=['Cython>=0.25',
-                      'h5py>=2.6',
-                      'matplotlib>=3.0',
-                      'numpy>=1.15',
-                      'pandas>=0.19',
-                      'scipy>=0.18',
-                      'scikit-learn',
-                      'scikit-image==0.14.2',
-                      'seaborn>=0.7',
-                      'spacy>=2.1',
-                      'tqdm',
-                      'tabulate>=0.7',
-                      'tensorflow==1.13.1',
-                      'PyYAML>=3.12'
-                      ],
-
+    install_requires=read_reqs('requirements.txt'),
+    extras_require=extras_require,
     entry_points={
         'console_scripts': [
             'ludwig=ludwig.cli:main'

@@ -81,6 +81,11 @@ To install the GPU enabled one replace it with `tensorflow-gpu`.
 If you want to train Ludwig models in a distributed way, you need to also install the `horovod` and the `mpi4py` packages.
 Please follow the instructions on [Horovod's repository](https://github.com/uber/horovod) to install it.
 
+For all optional io dependencies, you can specify individual bundles like `gcs`.
+
+``` {.sourceCode .bash}
+pip install -r requirements-gcs.txt
+```
 
 Basic Principles
 ----------------
@@ -143,6 +148,16 @@ If you prefer to use an RNN encoder and increase the number of epochs you want t
 ```
 
 Refer to the [User Guide](http://uber.github.io/ludwig/user_guide/) to find out all the options available to you in the model definition and take a look at the [Examples](http://uber.github.io/ludwig/examples/) to see how you can use Ludwig for several different tasks.
+
+#### Supported Name Handlers
+
+Ludwig supports the following name handlers for input paths during execution: 
+   
+ * Google Cloud: [Google Cloud Storage](https://cloud.google.com/storage/) `gs://`
+
+```
+ludwig train --data_csv gs://bucket/file.csv --model_definition "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
+```
 
 After training, Ludwig will create a directory under `results` containing the trained model with its hyperparameters and summary statistics of the training process.
 You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:

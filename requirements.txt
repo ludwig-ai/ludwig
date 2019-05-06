@@ -3,6 +3,8 @@ h5py>=2.6
 matplotlib>=3.0
 numpy>=1.15
 pandas>=0.19
+entrypoints
+tenacity
 scipy>=0.18
 scikit-image==0.14.2
 scikit-learn
@@ -10,6 +12,7 @@ seaborn>=0.7
 spacy>=2.1
 tqdm
 tabulate>=0.7
+tenacity
 tensorflow==1.13.1
 PyYAML>=3.12
 pytest
