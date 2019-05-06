@@ -298,6 +298,41 @@ def replace_file_extension(file_path, desired_format):
     return os.path.splitext(file_path)[0] + '.' + desired_format
 
 
+def add_sequence_feature_column(df, col_name, seq_length):
+    """
+    Adds a new column to the dataframe computed from an existing column.
+    Values in the new column are space-delimited strings composed of preceding
+    values of the same column up to seq_length.
+    For example values of the i-th row of the new column will be a
+    space-delimited string of df[col_name][i-seq_length].
+
+    :param df: input dataframe
+    :param col_name: column name containing sequential data
+    :param seq_length: length of an array of preceeding column values to use
+    """
+
+    if col_name not in df.columns.values:
+        logging.error('{} column does not exist'.format(col_name))
+        return
+
+    new_col_name = col_name + '_feature'
+    if new_col_name in df.columns.values:
+        logging.warning(
+            '{} column already exists, values will be overridden'.format(
+                new_col_name
+            )
+        )
+
+    df[new_col_name] = np.nan
+
+    for i in range(seq_length, len(df)):
+        df.iloc[i, df.columns.get_loc(new_col_name)] = ' '.join(
+            str(j) for j in list((df.iloc[i - seq_length: i][col_name]))
+        )
+
+    df[new_col_name] = df[new_col_name].fillna(method='backfill')
+
+
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set):
