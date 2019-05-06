@@ -25,4 +25,4 @@ def missing_dependency_generator(package, dep):
                 package=package, dep=dep
             )
         )
-        return missing_dep
+    return missing_dep
