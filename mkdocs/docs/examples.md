@@ -577,6 +577,7 @@ This example illustrates univariate timeseries forecasting using historical temp
 Dowload and unpack historical hourly weather data available on Kaggle
 https://www.kaggle.com/selfishgene/historical-hourly-weather-data
 
+Run the following python script to prepare the training dataset:
 ```
 import pandas as pd
 from ludwig.utils.data_utils import add_sequence_feature_column
