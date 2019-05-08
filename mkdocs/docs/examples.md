@@ -502,7 +502,7 @@ input_features:
     -
         name: Age
         type: numerical
-        prepocessing:
+        preprocessing:
           missing_value_strategy: fill_with_mean
     -
         name: SibSp
@@ -513,7 +513,7 @@ input_features:
     -
         name: Fare
         type: numerical
-        prepocessing:
+        preprocessing:
           missing_value_strategy: fill_with_mean
     -
         name: Embarked
