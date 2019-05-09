@@ -60,30 +60,31 @@ def mean_confidence_penalty(probabilities, num_classes):
 
 def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
                           softmax_function=None):
-    batch_max_targets_sequence_lenght = tf.shape(targets)[1]
-    batch_max_logits_sequence_lenght = tf.shape(logits)[1]
-    difference = batch_max_targets_sequence_lenght - batch_max_logits_sequence_lenght
+    batch_max_targets_sequence_length = tf.shape(targets)[1]
+    batch_max_logits_sequence_length = tf.shape(logits)[1]
+    difference = tf.maximum(0, batch_max_targets_sequence_length - batch_max_logits_sequence_length)
     padded_logits = tf.pad(logits, [[0, 0], [0, difference], [0, 0]])
+    padded_logits = padded_logits[:, :batch_max_targets_sequence_length, :]
 
     with tf.variable_scope('sequence_loss'):
         sequence_loss = tf.contrib.seq2seq.sequence_loss(
             padded_logits,
             targets,
             tf.sequence_mask(targets_sequence_length,
-                             batch_max_targets_sequence_lenght,
+                             batch_max_targets_sequence_length,
                              dtype=tf.float32),
             average_across_timesteps=True,
             average_across_batch=False,
             softmax_loss_function=softmax_function
         )
 
-    # batch_max_seq_lenght = tf.shape(logits)[1]
+    # batch_max_seq_length = tf.shape(logits)[1]
     # unpadded_targets = targets[:, :tf.shape(logits)[1]]
     # with tf.variable_scope('sequence_loss'):
     #     sequence_loss = tf.contrib.seq2seq.sequence_loss(
     #         logits,
     #         unpadded_targets,
-    #         tf.sequence_mask(targets_sequence_length, batch_max_seq_lenght, dtype=tf.float32),
+    #         tf.sequence_mask(targets_sequence_length, batch_max_seq_length, dtype=tf.float32),
     #         average_across_timesteps=True,
     #         average_across_batch=False,
     #         softmax_loss_function=softmax_function
@@ -180,20 +181,20 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
                                            class_weights,
                                            class_biases, loss,
                                            num_classes):
-    batch_max_targets_sequence_lenght = tf.shape(targets)[1]
+    batch_max_targets_sequence_length = tf.shape(targets)[1]
 
-    batch_max_train_logits_sequence_lenght = tf.shape(train_logits)[1]
-    difference_train = batch_max_targets_sequence_lenght - batch_max_train_logits_sequence_lenght
+    batch_max_train_logits_sequence_length = tf.shape(train_logits)[1]
+    difference_train = batch_max_targets_sequence_length - batch_max_train_logits_sequence_length
     padded_train_logits = tf.pad(train_logits,
                                  [[0, 0], [0, difference_train], [0, 0]])
 
-    batch_max_eval_logits_sequence_lenght = tf.shape(eval_logits)[1]
-    difference_eval = batch_max_targets_sequence_lenght - batch_max_eval_logits_sequence_lenght
+    batch_max_eval_logits_sequence_length = tf.shape(eval_logits)[1]
+    difference_eval = batch_max_targets_sequence_length - batch_max_eval_logits_sequence_length
     padded_eval_logits = tf.pad(eval_logits,
                                 [[0, 0], [0, difference_eval], [0, 0]])
 
-    # batch_max_seq_lenght = tf.shape(train_logits)[1]
-    # unpadded_targets = targets[:, :batch_max_seq_lenght]
+    # batch_max_seq_length = tf.shape(train_logits)[1]
+    # unpadded_targets = targets[:, :batch_max_seq_length]
     # output_exp = tf.cast(tf.reshape(unpadded_targets, [-1, 1]), tf.int64)
     output_exp = tf.cast(tf.reshape(targets, [-1, 1]), tf.int64)
 
@@ -255,20 +256,20 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
         padded_train_logits,
         targets,
         tf.sequence_mask(targets_sequence_length,
-                         batch_max_targets_sequence_lenght, dtype=tf.float32),
+                         batch_max_targets_sequence_length, dtype=tf.float32),
         average_across_timesteps=True,
         average_across_batch=False,
         softmax_loss_function=_sampled_loss
     )
 
-    # batch_max_seq_lenght_eval = tf.shape(eval_logits)[1]
-    # unpadded_targets_eval = targets[:, :batch_max_seq_lenght_eval]
+    # batch_max_seq_length_eval = tf.shape(eval_logits)[1]
+    # unpadded_targets_eval = targets[:, :batch_max_seq_length_eval]
 
     eval_loss = tf.contrib.seq2seq.sequence_loss(
         padded_eval_logits,
         targets,
         tf.sequence_mask(targets_sequence_length,
-                         batch_max_targets_sequence_lenght, dtype=tf.float32),
+                         batch_max_targets_sequence_length, dtype=tf.float32),
         average_across_timesteps=True,
         average_across_batch=False
     )

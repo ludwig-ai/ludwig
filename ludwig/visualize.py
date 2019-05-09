@@ -29,6 +29,7 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 
 from ludwig.constants import *
+from ludwig.contrib import contrib_command
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
@@ -1832,4 +1833,5 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_command("visualize", *sys.argv)
     cli(sys.argv[1:])

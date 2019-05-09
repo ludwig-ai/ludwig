@@ -13,6 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.api import LudwigModel
-from ludwig.cli import CLI
 from ludwig.globals import LUDWIG_VERSION as __version__

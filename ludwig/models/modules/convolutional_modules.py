@@ -147,9 +147,11 @@ def conv_2d_layer(inputs, kernel_shape, biases_shape, stride=1, padding='SAME',
                       dimensions=2, is_training=is_training)
 
 
-def flatten(hidden):
+def flatten(hidden, skip_first=True):
     hidden_size = 1
-    for x in hidden.shape:
+    # if hidden is activation, the first dimension is the batch_size
+    start = 1 if skip_first else 0
+    for x in hidden.shape[start:]:
         if x.value is not None:
             hidden_size *= x.value
     hidden = tf.reshape(hidden, [-1, hidden_size], name='flatten')
@@ -646,6 +648,18 @@ def conv2d_fixed_padding(inputs, filters, kernel_size, strides,
         kernel_regularizer=regularizer)
 
 
+resnet_choices = {
+    8: [1, 2, 2],
+    14: [1, 2, 2],
+    18: [2, 2, 2, 2],
+    34: [3, 4, 6, 3],
+    50: [3, 4, 6, 3],
+    101: [3, 4, 23, 3],
+    152: [3, 8, 36, 3],
+    200: [3, 24, 36, 3]
+}
+
+
 def get_resnet_block_sizes(resnet_size):
     """Retrieve the size of each block_layer in the ResNet model.
     The number of block layers used for the Resnet model varies according
@@ -658,23 +672,12 @@ def get_resnet_block_sizes(resnet_size):
     Raises:
       KeyError: if invalid resnet_size is received.
     """
-    choices = {
-        8: [1, 2, 2],
-        14: [1, 2, 2],
-        18: [2, 2, 2, 2],
-        34: [3, 4, 6, 3],
-        50: [3, 4, 6, 3],
-        101: [3, 4, 23, 3],
-        152: [3, 8, 36, 3],
-        200: [3, 24, 36, 3]
-    }
-
     try:
-        return choices[resnet_size]
+        return resnet_choices[resnet_size]
     except KeyError:
         err = ('Could not find layers for selected Resnet size.\n'
                'Size received: {}; sizes allowed: {}.'.format(
-            resnet_size, choices.keys()))
+            resnet_size, resnet_choices.keys()))
         raise ValueError(err)
 
 

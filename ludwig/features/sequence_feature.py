@@ -307,7 +307,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         # ================ Measures ================
         (
             correct_last_predictions, last_accuracy,
-            correct_overall_predictions, overall_accuracy,
+            correct_overall_predictions, token_accuracy,
             correct_rowwise_predictions, rowwise_accuracy, edit_distance_val,
             mean_edit_distance, perplexity_val
         ) = self.sequence_measures(
@@ -327,7 +327,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         output_tensors[
             CORRECT_OVERALL_PREDICTIONS + '_' + feature_name
             ] = correct_overall_predictions
-        output_tensors[OVERALL_ACCURACY + '_' + feature_name] = overall_accuracy
+        output_tensors[TOKEN_ACCURACY + '_' + feature_name] = token_accuracy
         output_tensors[
             CORRECT_ROWWISE_PREDICTIONS + '_' + feature_name
             ] = correct_rowwise_predictions
@@ -341,8 +341,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 last_accuracy
             )
             tf.summary.scalar(
-                'train_batch_overall_accuracy_{}'.format(feature_name),
-                overall_accuracy
+                'train_batch_token_accuracy_{}'.format(feature_name),
+                token_accuracy
             )
             tf.summary.scalar(
                 'train_batch_rowwise_accuracy_{}'.format(feature_name),
@@ -434,7 +434,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
     ):
         with tf.variable_scope('measures_{}'.format(self.name)):
             (
-                overall_accuracy_val,
+                token_accuracy_val,
                 overall_correct_predictions,
                 rowwise_accuracy_val,
                 rowwise_correct_predictions
@@ -462,7 +462,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             correct_last_predictions,
             last_accuracy_val,
             overall_correct_predictions,
-            overall_accuracy_val,
+            token_accuracy_val,
             rowwise_correct_predictions,
             rowwise_accuracy_val,
             edit_distance_val,
@@ -541,7 +541,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             'value': 0,
             'type': MEASURE
         }),
-        (OVERALL_ACCURACY, {
+        (TOKEN_ACCURACY, {
             'output': CORRECT_OVERALL_PREDICTIONS,
             'aggregation': SEQ_SUM,
             'value': 0,
@@ -624,16 +624,16 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                     'class_similarities_temperature']
 
                 curr_row = 0
-                first_row_lenght = 0
+                first_row_length = 0
                 is_first_row = True
                 for row in similarities:
                     if is_first_row:
-                        first_row_lenght = len(row)
+                        first_row_length = len(row)
                         is_first_row = False
                         curr_row += 1
                     else:
-                        curr_row_lenght = len(row)
-                        if curr_row_lenght != first_row_lenght:
+                        curr_row_length = len(row)
+                        if curr_row_length != first_row_length:
                             raise ValueError(
                                 'The length of row {} of the class_similarities '
                                 'of {} is {}, different from the length of '
@@ -641,13 +641,13 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                                 'the same length.'.format(
                                     curr_row,
                                     output_feature['name'],
-                                    curr_row_lenght,
-                                    first_row_lenght
+                                    curr_row_length,
+                                    first_row_length
                                 )
                             )
                         else:
                             curr_row += 1
-                all_rows_length = first_row_lenght
+                all_rows_length = first_row_length
 
                 if all_rows_length != len(similarities):
                     raise ValueError(
@@ -762,11 +762,13 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 if len(probs) > 0 and isinstance(probs[0], list):
                     prob = []
                     for i in range(len(probs)):
+                        # todo: should adapt for the case of beam > 1
                         for j in range(len(probs[i])):
                             probs[i][j] = np.max(probs[i][j])
                         prob.append(np.prod(probs[i]))
-                else:
-                    probs = np.amax(probs, axis=-1)
+                elif isinstance(probs, np.ndarray):
+                    if (probs.shape) == 3:  # prob of each class of each token
+                        probs = np.amax(probs, axis=-1)
                     prob = np.prod(probs, axis=-1)
 
                 postprocessed[PROBABILITIES] = probs
@@ -839,8 +841,10 @@ sequence_encoder_registry = {
     'rnn': RNN,
     'cnnrnn': CNNRNN,
     'embed': EmbedEncoder,
+    'passthrough': PassthroughEncoder,
+    'null': PassthroughEncoder,
     'none': PassthroughEncoder,
-    'nNone': PassthroughEncoder,
+    'None': PassthroughEncoder,
     None: PassthroughEncoder
 }
 

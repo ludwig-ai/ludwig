@@ -281,16 +281,16 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             if is_timeseries:
                 start_tokens = tf.cast(start_tokens, tf.float32)
                 end_tokens = tf.cast(end_tokens, tf.float32)
-            targets_with_go = tf.concat([
+            targets_with_go_and_eos = tf.concat([
                 tf.expand_dims(start_tokens, 1),
                 targets,
                 tf.expand_dims(end_tokens, 1)], 1)
-            logging.debug('  targets_with_go: {0}'.format(targets_with_go))
+            logging.debug('  targets_with_go: {0}'.format(targets_with_go_and_eos))
             targets_sequence_length_with_eos = targets_sequence_length + 1  # the EOS symbol is 0 so it's not increasing the real length of the sequence
 
         # ================ Embeddings ================
         if is_timeseries:
-            targets_embedded = tf.expand_dims(targets_with_go, -1)
+            targets_embedded = tf.expand_dims(targets_with_go_and_eos, -1)
             targets_embeddings = None
         else:
             with tf.variable_scope('embedding'):
@@ -320,7 +320,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                     '  targets_embeddings: {0}'.format(targets_embeddings))
 
                 targets_embedded = tf.nn.embedding_lookup(targets_embeddings,
-                                                          targets_with_go,
+                                                          targets_with_go_and_eos,
                                                           name='decoder_input_embeddings')
         logging.debug('  targets_embedded: {0}'.format(targets_embedded))
 
@@ -381,8 +381,11 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                             attention_mechanism))
                 cell = tf.contrib.seq2seq.AttentionWrapper(
                     cell, attention_mechanism, attention_layer_size=state_size)
-                initial_state = cell.zero_state(dtype=tf.float32,
-                                                batch_size=batch_size)
+                initial_state = cell.zero_state(
+                    dtype=tf.float32,
+                    batch_size=batch_size)
+                initial_state = initial_state.clone(
+                    cell_state=reduce_sequence(encoder_outputs, 'last'))
 
             for v in tf.global_variables():
                 if v.name.startswith(vs.name):
@@ -439,7 +442,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             train_helper = tf.contrib.seq2seq.TrainingHelper(
                 inputs=targets_embedded,
                 sequence_length=targets_sequence_length_with_eos)
-            final_outputs_train, final_state_train, final_sequence_lengths_train, = decode(
+            final_outputs_train, final_state_train, final_sequence_lengths_train = decode(
                 initial_state,
                 cell,
                 train_helper,

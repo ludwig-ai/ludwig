@@ -55,8 +55,7 @@ class TextBaseFeature(BaseFeature):
     }
 
     @staticmethod
-    def feature_meta(column, most_common_characters, most_common_words,
-                     lowercase):
+    def feature_meta(column, preprocessing_parameters):
         (
             char_idx2str,
             char_str2idx,
@@ -65,8 +64,8 @@ class TextBaseFeature(BaseFeature):
         ) = create_vocabulary(
             column,
             'characters',
-            num_most_frequent=most_common_characters,
-            lowercase=lowercase
+            num_most_frequent=preprocessing_parameters['char_most_common'],
+            lowercase=preprocessing_parameters['lowercase']
         )
         (
             word_idx2str,
@@ -75,9 +74,9 @@ class TextBaseFeature(BaseFeature):
             word_max_len
         ) = create_vocabulary(
             column,
-            'english_tokenize',
-            num_most_frequent=most_common_words,
-            lowercase=lowercase
+            preprocessing_parameters['word_format'],
+            num_most_frequent=preprocessing_parameters['word_most_common'],
+            lowercase=preprocessing_parameters['lowercase']
         )
         return (
             char_idx2str,
@@ -93,10 +92,7 @@ class TextBaseFeature(BaseFeature):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         tf_meta = TextBaseFeature.feature_meta(
-            column,
-            preprocessing_parameters['char_most_common'],
-            preprocessing_parameters['word_most_common'],
-            preprocessing_parameters['lowercase']
+            column, preprocessing_parameters
         )
         (
             char_idx2str,
@@ -286,7 +282,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             'value': 0,
             'type': MEASURE
         }),
-        (OVERALL_ACCURACY, {
+        (TOKEN_ACCURACY, {
             'output': CORRECT_OVERALL_PREDICTIONS,
             'aggregation': SEQ_SUM,
             'value': 0,

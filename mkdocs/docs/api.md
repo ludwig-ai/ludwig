@@ -1,4 +1,4 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L68)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L63)</span>
 # LudwigModel class
 
 ```python
@@ -30,7 +30,7 @@ __Example usage:__
 
 
 ```python
-from ludwig import LudwigModel
+from ludwig.api import LudwigModel
 ```
 
 Train a model:
@@ -372,8 +372,8 @@ train(
   data_train_hdf5=None,
   data_validation_hdf5=None,
   data_test_hdf5=None,
+  data_dict=None,
   train_set_metadata_json=None,
-  dataset_type='generic',
   model_name='run',
   model_load_path=None,
   model_resume_path=None,
@@ -384,6 +384,7 @@ train(
   output_directory='results',
   gpus=None,
   gpu_fraction=1.0,
+  use_horovod=False,
   random_seed=42,
   logging_level=40,
   debug=False
@@ -426,13 +427,18 @@ __Inputs__
    intermediate preprocess  version of the input CSV created the
    first time a CSV file is used in the same directory with the same
    name and a hdf5 extension
+- __data_dict__ (dict): input data dictionary. It is expected to
+   contain one key for each field and the values have to be lists of
+   the same length. Each index in the lists corresponds to one
+   datapoint. For example a data set consisting of two datapoints
+   with a text and a class may be provided as the following dict
+   ``{'text_field_name': ['text of the first datapoint', text of the
+   second datapoint'], 'class_filed_name': ['class_datapoints_1',
+   'class_datapoints_2']}`.
 - __train_set_metadata_json__ (string): input metadata JSON file. It is an
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
    directory with the same name and a json extension
-- __dataset_type__ (string, default: `'default'`): determines the type
-   of preprocessing will be applied to the data. Only `generic` is
-   available at the moment
 - __model_name__ (string): a name for the model, user for the save
    directory
 - __model_load_path__ (string): path of a pretrained model to load as

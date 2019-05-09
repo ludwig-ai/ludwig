@@ -19,7 +19,8 @@ import random
 
 
 def split(input_path, output1, output2, split):
-    lines = open(input_path, 'r').readlines()
+    with open(input_path, 'r') as file:
+        lines = file.readlines()
 
     random.shuffle(lines)
     split_idx = int(len(lines) * split)
