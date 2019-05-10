@@ -25,6 +25,8 @@ def optimize(loss, training_parameters, learning_rate, global_step,
             training_parameters['decay_rate'],
             staircase=training_parameters['staircase'])
 
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+
     with tf.variable_scope('optimizer'):
         if training_parameters is not None:
             optimizer_args = dict(training_parameters['optimizer'])
@@ -58,6 +60,8 @@ def optimize(loss, training_parameters, learning_rate, global_step,
 
             optimize = optimizer.minimize(loss,
                                           global_step=global_step)
+
+    optimize = tf.group([optimize, update_ops])
 
     return optimize, learning_rate
 

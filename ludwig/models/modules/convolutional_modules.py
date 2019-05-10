@@ -601,15 +601,19 @@ class ConvStack2D:
 ################################################################################
 # Convenience functions for building the ResNet model.
 ################################################################################
-def resnet_batch_norm(inputs, is_training):
+def resnet_batch_norm(inputs, is_training,
+                      batch_norm_momentum=0.9, batch_norm_epsilon=0.001):
     """Performs a batch normalization using a standard set of parameters."""
     # We set fused=True for a significant performance boost. See
     # https://www.tensorflow.org/performance/performance_guide#common_fused_ops
-    _BATCH_NORM_DECAY = 0.997
-    _BATCH_NORM_EPSILON = 1e-5
+    # Original implementation default values:
+    # _BATCH_NORM_DECAY = 0.997
+    # _BATCH_NORM_EPSILON = 1e-5
+    # they lead to a big difference between the loss
+    # at train and prediction time
     return tf.layers.batch_normalization(
         inputs=inputs, axis=3,
-        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON, center=True,
+        momentum=batch_norm_momentum, epsilon=batch_norm_epsilon, center=True,
         scale=True, training=is_training, fused=True)
 
 
@@ -685,7 +689,8 @@ def get_resnet_block_sizes(resnet_size):
 # ResNet block definitions.
 ################################################################################
 def resnet_block(inputs, filters, is_training, projection_shortcut, strides,
-                 regularizer=None):
+                 regularizer=None, batch_norm_momentum=0.9,
+                 batch_norm_epsilon=0.001):
     """A single block for ResNet v2, without a bottleneck.
     Batch normalization then ReLu then convolution as described by:
       Identity Mappings in Deep Residual Networks
@@ -705,7 +710,9 @@ def resnet_block(inputs, filters, is_training, projection_shortcut, strides,
       The output tensor of the block; shape should match inputs.
     """
     shortcut = inputs
-    inputs = resnet_batch_norm(inputs, is_training)
+    inputs = resnet_batch_norm(inputs, is_training,
+                               batch_norm_momentum=batch_norm_momentum,
+                               batch_norm_epsilon=batch_norm_epsilon)
     inputs = tf.nn.relu(inputs)
 
     # The projection shortcut should come after the first batch norm and ReLU
@@ -717,7 +724,9 @@ def resnet_block(inputs, filters, is_training, projection_shortcut, strides,
         inputs=inputs, filters=filters, kernel_size=3, strides=strides,
         regularizer=regularizer)
 
-    inputs = resnet_batch_norm(inputs, is_training)
+    inputs = resnet_batch_norm(inputs, is_training,
+                               batch_norm_momentum=batch_norm_momentum,
+                               batch_norm_epsilon=batch_norm_epsilon)
     inputs = tf.nn.relu(inputs)
     inputs = conv2d_fixed_padding(
         inputs=inputs, filters=filters, kernel_size=3, strides=1,
@@ -727,7 +736,8 @@ def resnet_block(inputs, filters, is_training, projection_shortcut, strides,
 
 
 def resnet_bottleneck_block(inputs, filters, is_training, projection_shortcut,
-                            strides, regularizer=None):
+                            strides, regularizer=None, batch_norm_momentum=0.9,
+                            batch_norm_epsilon=0.001):
     """A single block for ResNet v2, with a bottleneck.
     Similar to _building_block_v2(), except using the "bottleneck" blocks
     described in:
@@ -754,7 +764,9 @@ def resnet_bottleneck_block(inputs, filters, is_training, projection_shortcut,
       The output tensor of the block; shape should match inputs.
     """
     shortcut = inputs
-    inputs = resnet_batch_norm(inputs, is_training)
+    inputs = resnet_batch_norm(inputs, is_training,
+                               batch_norm_momentum=batch_norm_momentum,
+                               batch_norm_epsilon=batch_norm_epsilon)
     inputs = tf.nn.relu(inputs)
 
     # The projection shortcut should come after the first batch norm and ReLU
@@ -766,13 +778,17 @@ def resnet_bottleneck_block(inputs, filters, is_training, projection_shortcut,
         inputs=inputs, filters=filters, kernel_size=1, strides=1,
         regularizer=regularizer)
 
-    inputs = resnet_batch_norm(inputs, is_training)
+    inputs = resnet_batch_norm(inputs, is_training,
+                               batch_norm_momentum=batch_norm_momentum,
+                               batch_norm_epsilon=batch_norm_epsilon)
     inputs = tf.nn.relu(inputs)
     inputs = conv2d_fixed_padding(
         inputs=inputs, filters=filters, kernel_size=3, strides=strides,
         regularizer=regularizer)
 
-    inputs = resnet_batch_norm(inputs, is_training)
+    inputs = resnet_batch_norm(inputs, is_training,
+                               batch_norm_momentum=batch_norm_momentum,
+                               batch_norm_epsilon=batch_norm_epsilon)
     inputs = tf.nn.relu(inputs)
     inputs = conv2d_fixed_padding(
         inputs=inputs, filters=4 * filters, kernel_size=1, strides=1,
@@ -782,7 +798,8 @@ def resnet_bottleneck_block(inputs, filters, is_training, projection_shortcut,
 
 
 def resnet_block_layer(inputs, filters, bottleneck, block_fn, blocks, strides,
-                       is_training, name, regularizer=None):
+                       is_training, name, regularizer=None,
+                       batch_norm_momentum=0.9, batch_norm_epsilon=0.001):
     """Creates one layer of blocks for the ResNet model.
     Args:
       inputs: A tensor of size [batch, channels, height_in, width_in] or
@@ -811,11 +828,15 @@ def resnet_block_layer(inputs, filters, bottleneck, block_fn, blocks, strides,
 
     # Only the first block per block_layer uses projection_shortcut and strides
     inputs = block_fn(inputs, filters, is_training, projection_shortcut,
-                      strides, regularizer=regularizer)
+                      strides, regularizer=regularizer,
+                      batch_norm_momentum=batch_norm_momentum,
+                      batch_norm_epsilon=batch_norm_epsilon)
 
     for _ in range(1, blocks):
         inputs = block_fn(inputs, filters, is_training, None, 1,
-                          regularizer=regularizer)
+                          regularizer=regularizer,
+                          batch_norm_momentum=batch_norm_momentum,
+                          batch_norm_epsilon=batch_norm_epsilon)
 
     return tf.identity(inputs, name)
 
@@ -825,7 +846,8 @@ class ResNet(object):
 
     def __init__(self, resnet_size, bottleneck, num_filters,
                  kernel_size, conv_stride, first_pool_size, first_pool_stride,
-                 block_sizes, block_strides):
+                 block_sizes, block_strides, batch_norm_momentum=0.9,
+                 batch_norm_epsilon=0.001):
         """Creates a model obtaining an image representation.
 
         Implements ResNet v2:
@@ -869,6 +891,8 @@ class ResNet(object):
         self.block_sizes = block_sizes
         self.block_strides = block_strides
         self.pre_activation = True
+        self.batch_norm_momentum = batch_norm_momentum
+        self.batch_norm_epsilon = batch_norm_epsilon
 
     def __call__(
             self,
@@ -908,12 +932,18 @@ class ResNet(object):
                     block_fn=self.block_fn, blocks=num_blocks,
                     strides=self.block_strides[i], is_training=is_training,
                     name='block_layer{}'.format(i + 1),
-                    regularizer=regularizer)
+                    regularizer=regularizer,
+                    batch_norm_momentum=self.batch_norm_momentum,
+                    batch_norm_epsilon=self.batch_norm_epsilon
+                )
 
             # Only apply the BN and ReLU for model that does pre_activation in each
             # building/bottleneck block, eg resnet V2.
             if self.pre_activation:
-                inputs = resnet_batch_norm(inputs, is_training)
+                inputs = resnet_batch_norm(
+                    inputs, is_training,
+                    batch_norm_momentum=self.batch_norm_momentum,
+                    batch_norm_epsilon=self.batch_norm_epsilon)
                 inputs = tf.nn.relu(inputs)
 
             # The current top layer has shape
