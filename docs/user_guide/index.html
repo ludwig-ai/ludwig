@@ -4433,7 +4433,8 @@ The column name is added to the JSON file, with an associated dictionary contain
 <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
 </ul>
 <h5 id="resnet-encoder">ResNet Encoder<a class="headerlink" href="#resnet-encoder" title="Permanent link">&para;</a></h5>
-<p>ResNet Encoder takes the following optional parameters:</p>
+                <p><a href="https://arxiv.org/abs/1603.05027">ResNet</a> Encoder takes the following optional
+                    parameters:</p>
 <ul>
     <li><code>resnet_size</code> (default <code>50</code>): A single integer for the size of the ResNet model. If has to
         be one of the following values: <code>8</code>, <code>14</code>, <code>18</code>, <code>34</code>,
@@ -4443,6 +4444,17 @@ The column name is added to the JSON file, with an associated dictionary contain
 <li><code>kernel_size</code> (default <code>3</code>): The kernel size to use for convolution.</li>
 <li><code>conv_stride</code> (default <code>1</code>): Stride size for the initial convolutional layer.</li>
 <li><code>first_pool_size</code> (default <code>null</code>): Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.</li>
+    <li><code>batch_norm_momentum</code> (default <code>0.9</code>): Momentum of the batch norm running statistics. The
+        suggested parameter in <a
+                href="https://github.com/tensorflow/models/blob/master/official/resnet/resnet_model.py#L36">TensorFlow's
+            implementation</a> is <code>0.997</code>, but that leads to a big discrepancy between the normalization at
+        training time and test time, so the default value is a more conservative <code>0.9</code>.
+    </li>
+    <li><code>batch_norm_epsilon</code> (default <code>0.001</code>): Epsilon of the batch norm. The suggested parameter
+        in <a href="https://github.com/tensorflow/models/blob/master/official/resnet/resnet_model.py#L37">TensorFlow's
+            implementation</a> is <code>1e-5</code>, but that leads to a big discrepancy between the normalization at
+        training time and test time, so the default value is a more conservative <code>0.001</code>.
+    </li>
 <li><code>fc_layers</code> (default <code>null</code>): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: <code>fc_size</code>, <code>norm</code>, <code>activation</code> and <code>regularize</code>. If any of those values is missing from the dictionary, the default one specified as a parameter of the encoder will be used instead. If both <code>fc_layers</code> and <code>num_fc_layers</code> are <code>null</code>, a default list will be assigned to <code>fc_layers</code> with the value <code>[{fc_size: 512}, {fc_size: 256}]</code>. (only applies if <code>reduce_output</code> is not <code>null</code>).</li>
 <li><code>num_fc_layers</code> (default <code>1</code>): This is the number of stacked fully connected layers.</li>
 <li><code>fc_size</code> (default <code>256</code>): if a <code>fc_size</code> is not already specified in <code>fc_layers</code> this is the default <code>fc_size</code> that will be used for each layer. It indicates the size of the output of a fully connected layer.</li>
