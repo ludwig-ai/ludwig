@@ -3316,7 +3316,7 @@ Inputs are of size <code>b</code> while outputs are fo size <code>b x 1</code> w
 <li><code>norm'</code> (default <code>null</code>): norm to apply after the single neuron. It can be <code>null</code>, <code>batch</code> or <code>layer</code>.</li>
 <li><code>tied_weights</code> (default <code>null</code>): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.</li>
 </ul>
-<p>Example binary feature entry in the output features list:</p>
+                <p>Example numerical feature entry in the output features list:</p>
                 <div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span
                         class="l l-Scalar l-Scalar-Plain">numerical_csv_column_name</span>
 <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
@@ -4380,7 +4380,8 @@ The only difference is that time series features don't have an embedding layer a
 <p>As no time series decoders are available at the moment, there are also no time series measures.</p>
 <h3 id="image-features">Image Features<a class="headerlink" href="#image-features" title="Permanent link">&para;</a></h3>
 <h4 id="image-features-preprocessing">Image Features Preprocessing<a class="headerlink" href="#image-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Ludwig supports grayscale and color images, image type is automatically inferred.
+                <p>Ludwig supports both grayscale and color images, the number of channels is inferred, but make sure
+                    all your images have the same number of channels.
 During preprocessing raw image files are transformed into numpy ndarrays and saved in the hdf5 format.
 Images should have the same size.
 If they have different sizes they can be converted to the same size which should be set in the feature preprocessing parameters.</p>
@@ -4390,7 +4391,27 @@ If they have different sizes they can be converted to the same size which should
 <li><code>height</code> (default: null): image height in pixels, must be set if resizing is required</li>
 <li><code>width</code> (default: null): image width in pixels, must be set if resizing is required</li>
 </ul>
-<h4 id="image-input-features-and-encoders">Image Input Features and Encoders<a class="headerlink" href="#image-input-features-and-encoders" title="Permanent link">&para;</a></h4>
+                <p>Depending on the application, do not to exceed a size of <code>256 x 256</code> as bigger sizes will,
+                    in most cases, not provide much advantage and considerably slow down trainin and inference and also
+                    make both forward and backward passes consume a lot of memory leading to memory overflow on machines
+                    with limited amounts of RAM or on GPUs with limited amounts of VRAM.</p>
+                <p>Example of a preprocessing specification:</p>
+                <div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">image_feature_name</span>
+<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
+<span class="nt">preprocessing</span><span class="p">:</span>
+  <span class="nt">heights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
+  <span class="nt">width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
+  <span class="nt">resize_method</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">crop_or_pad</span>
+</pre>
+                </div>
+
+
+                <h4 id="image-input-features-and-encoders">Image Input Features and Encoders<a class="headerlink"
+                                                                                               href="#image-input-features-and-encoders"
+                                                                                               title="Permanent link">&para;</a>
+                </h4>
 <p>Input image features are transformed into a float valued tensors of size <code>N x H x W x C</code> (where <code>N</code> is the size of the dataset and <code>H x W</code> is a specific resizing of the image that can be set, and <code>C</code> is the number of channels) and added to HDF5 with a key that reflects the name of column in the CSV.
 The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.</p>
 <p>Currently there are two encoders supported for images: Convolutional Stack Encoder and ResNet encoder which can be set by setting <code>encoder</code> parameter to <code>stacked_cnn</code> or <code>resnet</code> in the input feature dictionary in the model definition (<code>stacked_cnn</code> is the default one).</p>
@@ -4416,8 +4437,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 <ul>
     <li><code>resnet_size</code> (default <code>50</code>): A single integer for the size of the ResNet model. If has to
         be one of the following values: <code>8</code>, <code>14</code>, <code>18</code>, <code>34</code>,
-        <code>50</code>,
-        <code>101</code>, <code>152</code>, <code>200</code>.
+        <code>50</code>, <code>101</code>, <code>152</code>, <code>200</code>.
     </li>
 <li><code>num_filters</code> (default <code>16</code>): It indicates the number of filters, and by consequence the output channels of the 2d convolution.</li>
 <li><code>kernel_size</code> (default <code>3</code>): The kernel size to use for convolution.</li>
