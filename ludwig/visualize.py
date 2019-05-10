@@ -1692,7 +1692,7 @@ def cli(sys_argv):
         help='probabilities files'
     )
     parser.add_argument(
-        '-ts',
+        '-trs',
         '--training_statistics',
         default=[],
         nargs='+',
@@ -1700,8 +1700,8 @@ def cli(sys_argv):
         help='training stats files'
     )
     parser.add_argument(
-        '-ps',
-        '--prediction_statistics',
+        '-tes',
+        '--test_statistics',
         default=[],
         nargs='+',
         type=str,
