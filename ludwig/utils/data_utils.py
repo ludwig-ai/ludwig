@@ -174,7 +174,7 @@ def load_pretrained_embeddings(embeddings_path, vocab):
 def load_glove(file_path):
     logging.info('  Loading Glove format file {}'.format(file_path))
     embeddings = {}
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             if line:
                 split = line.split()
