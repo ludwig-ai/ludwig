@@ -2090,7 +2090,7 @@ Image Features
 
 ### Image Features Preprocessing
 
-Ludwig supports grayscale and color images, image type is automatically inferred.
+Ludwig supports both grayscale and color images, the number of channels is inferred, but make sure all your images have the same number of channels.
 During preprocessing raw image files are transformed into numpy ndarrays and saved in the hdf5 format.
 Images should have the same size.
 If they have different sizes they can be converted to the same size which should be set in the feature preprocessing parameters.
@@ -2099,6 +2099,19 @@ If they have different sizes they can be converted to the same size which should
 - `resize_method` (default: `crop_or_pad`): available options: `crop_or_pad` - crops larger images to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation.
 - `height` (default: null): image height in pixels, must be set if resizing is required
 - `width` (default: null): image width in pixels, must be set if resizing is required
+
+Depending on the application, do not to exceed a size of `256 x 256` as bigger sizes will, in most cases, not provide much advantage and considerably slow down trainin and inference and also make both forward and backward passes consume a lot of memory leading to memory overflow on machines with limited amounts of RAM or on GPUs with limited amounts of VRAM.
+
+Example of a preprocessing specification:
+
+```yaml
+name: image_feature_name
+type: image
+preprocessing:
+  heights: 128
+  width: 128
+  resize_method: crop_or_pad
+```
 
 
 ### Image Input Features and Encoders
