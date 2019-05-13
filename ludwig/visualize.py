@@ -1448,7 +1448,7 @@ def calibration_multiclass(
 
 
 def confusion_matrix(
-        prediction_statistics,
+        test_statistics,
         ground_truth_metadata,
         field,
         top_n_classes,
@@ -1456,27 +1456,27 @@ def confusion_matrix(
         model_names=None,
         **kwargs
 ):
-    if len(prediction_statistics) < 1:
-        logging.error('No prediction_statistics provided')
+    if len(test_statistics) < 1:
+        logging.error('No test_statistics provided')
         return
 
     metadata = load_json(ground_truth_metadata)
-    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                            for prediction_statistics_f in
-                                            prediction_statistics]
+    test_statistics_per_model_name = [load_json(test_statistics_f)
+                                            for test_statistics_f in
+                                            test_statistics]
 
     fields_set = set()
-    for ls in prediction_statistics_per_model_name:
+    for ls in test_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
 
-    for i, prediction_statistics in enumerate(
-            prediction_statistics_per_model_name):
+    for i, test_statistics in enumerate(
+            test_statistics_per_model_name):
         for field in fields:
-            if 'confusion_matrix' in prediction_statistics[field]:
+            if 'confusion_matrix' in test_statistics[field]:
                 confusion_matrix = np.array(
-                    prediction_statistics[field]['confusion_matrix']
+                    test_statistics[field]['confusion_matrix']
                 )
                 model_name_name = model_names[i] if (
                         model_names is not None and i < len(model_names)
