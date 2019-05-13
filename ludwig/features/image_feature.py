@@ -20,6 +20,7 @@ import os
 import h5py
 import numpy as np
 import tensorflow as tf
+from skimage.color import rgb2gray
 from skimage.io import imread
 
 from ludwig.constants import *
@@ -28,8 +29,8 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
 from ludwig.utils.image_utils import get_abs_path
-from ludwig.utils.image_utils import resize_image
 from ludwig.utils.image_utils import num_channels_in_image
+from ludwig.utils.image_utils import resize_image
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 
@@ -88,10 +89,17 @@ class ImageBaseFeature(BaseFeature):
             img = resize_image(img, (img_height, img_width), resize_method)
 
         if user_specified_num_channels is True:
+
+            # convert to greyscale if needed
+            if user_specified_num_channels == 1 and (
+                    img_num_channels == 3 or img_num_channels == 4):
+                img = rgb2gray(img)
+                img_num_channels = 1
+
             # Number of channels is specified by the user
             img_padded = np.zeros((img_height, img_width, num_channels))
             min_num_channels = min(num_channels, img_num_channels)
-            img_padded[:,:,:min_num_channels] = img[:,:,:min_num_channels]
+            img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
             img = img_padded
 
             if img_num_channels != num_channels:
@@ -105,9 +113,11 @@ class ImageBaseFeature(BaseFeature):
             if img_num_channels != num_channels:
                 raise ValueError(
                     'Image {0} has {1} channels, unlike the first image, which'
-                    ' has {2} channels'.format(filepath,
-                                               img_num_channels,
-                                               num_channels))
+                    ' has {2} channels. Make sure all the iamges have the same'
+                    'number of channels or use the num_channels property in'
+                    'image preprocessing'.format(filepath,
+                                                 img_num_channels,
+                                                 num_channels))
         return img
 
     @staticmethod
@@ -199,8 +209,8 @@ class ImageBaseFeature(BaseFeature):
             )
             for i in range(len(dataset_df)):
                 filepath = get_abs_path(
-                        csv_path,
-                        dataset_df[feature['name']][i]
+                    csv_path,
+                    dataset_df[feature['name']][i]
                 )
 
                 img = ImageBaseFeature._read_image_and_resize(
@@ -226,8 +236,8 @@ class ImageBaseFeature(BaseFeature):
                 )
                 for i in range(len(dataset_df)):
                     filepath = get_abs_path(
-                            csv_path,
-                            dataset_df[feature['name']][i]
+                        csv_path,
+                        dataset_df[feature['name']][i]
                     )
 
                     img = ImageBaseFeature._read_image_and_resize(
