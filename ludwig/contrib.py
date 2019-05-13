@@ -39,17 +39,22 @@ def contrib_import():
             ## Calls ContribClass.import_call(argv_list)
             ## and return an instance, if appropriate
             contrib_class = contrib_registry["classes"][contrib_name]
-            instance = contrib_class.import_call(argv_list)
-            ## Save instance in registry
-            if instance:
-                contrib_registry["instances"].append(instance)
-            ## Clean up and remove your flag
+            if contrib_class not in [
+                    obj.__class__ for obj in contrib_registry["instances"]]:
+                try:
+                    instance = contrib_class.import_call(argv_list)
+                except Exception:
+                    instance = None
+                ## Save instance in registry
+                if instance:
+                    contrib_registry["instances"].append(instance)
+            ## Clean up and remove the flag
             sys.argv.remove(parameter_name)
 
 def contrib_command(command, *args, **kwargs):
     """
     If a contrib has an instance in the registry,
-    this this will call:
+    this will call:
 
     ContribInstance.COMMAND(*args, **kwargs)
     """
