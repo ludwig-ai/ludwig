@@ -22,6 +22,7 @@ from ludwig.constants import SEQUENCE
 from ludwig.constants import SET
 from ludwig.constants import TEXT
 from ludwig.constants import TIMESERIES
+from ludwig.constants import BOUNDING_BOX
 from ludwig.features.bag_feature import BagBaseFeature
 from ludwig.features.bag_feature import BagInputFeature
 from ludwig.features.binary_feature import BinaryBaseFeature
