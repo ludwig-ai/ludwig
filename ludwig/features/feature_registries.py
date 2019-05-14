@@ -46,6 +46,8 @@ from ludwig.features.text_feature import TextInputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesBaseFeature
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
+from ludwig.feautres.boundingbox_feature import BoundingBoxBaseFeature
+from ludwig.feautres.boundingbox_feature import BoundingBoxOutputFeature
 
 base_type_registry = {
     TEXT: TextBaseFeature,
@@ -56,7 +58,8 @@ base_type_registry = {
     NUMERICAL: NumericalBaseFeature,
     SEQUENCE: SequenceBaseFeature,
     TIMESERIES: TimeseriesBaseFeature,
-    IMAGE: ImageBaseFeature
+    IMAGE: ImageBaseFeature,
+    BOUNDING_BOX: BoundingBoxBaseFeature
 }
 input_type_registry = {
     TEXT: TextInputFeature,
@@ -75,5 +78,6 @@ output_type_registry = {
     NUMERICAL: NumericalOutputFeature,
     SEQUENCE: SequenceOutputFeature,
     SET: SetOutputFeature,
-    TEXT: TextOutputFeature
+    TEXT: TextOutputFeature,
+    BOUNDING_BOX: BoundingBoxOutputFeature
 }
