@@ -2095,10 +2095,11 @@ During preprocessing raw image files are transformed into numpy ndarrays and sav
 Images should have the same size.
 If they have different sizes they can be converted to the same size which should be set in the feature preprocessing parameters.
 
-- `in_memory` (default: `true`): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.
-- `resize_method` (default: `crop_or_pad`): available options: `crop_or_pad` - crops larger images to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation.
-- `height` (default: null): image height in pixels, must be set if resizing is required
-- `width` (default: null): image width in pixels, must be set if resizing is required
+- `in_memory` (default `true`): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.
+- `resize_method` (default `crop_or_pad`): available options: `crop_or_pad` - crops larger images to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation.
+- `height` (default `null`): image height in pixels, must be set if resizing is required
+- `width` (default `null`): image width in pixels, must be set if resizing is required
+- `num_channels` (default `null`): number of channels in the images. By default, if the value is `null`, the number of channels of the first image of the dataset will be used and if there is an image in the dataset with a different number of channels, an error will be reported. If the value specified is not `null`, images in the dataset will be adapted to the specified size. If the value is `1`, all images with more then one channel will be greyscaled and reduced to one channel (trasparecy will be lost). If the value is `3` all images with 1 channel will be repeated 3 times to obtain 3 channels, while images with 4 channels will lose the transparecy channel. If the value is `4`, all the images with less than 4 channels will have the remaining channels filled with zeros.
 
 Depending on the application, do not to exceed a size of `256 x 256` as bigger sizes will, in most cases, not provide much advantage and considerably slow down trainin and inference and also make both forward and backward passes consume a lot of memory leading to memory overflow on machines with limited amounts of RAM or on GPUs with limited amounts of VRAM.
 

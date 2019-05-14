@@ -4386,10 +4386,26 @@ During preprocessing raw image files are transformed into numpy ndarrays and sav
 Images should have the same size.
 If they have different sizes they can be converted to the same size which should be set in the feature preprocessing parameters.</p>
 <ul>
-<li><code>in_memory</code> (default: <code>true</code>): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.</li>
-<li><code>resize_method</code> (default: <code>crop_or_pad</code>): available options: <code>crop_or_pad</code> - crops larger images to the desired size or pads smalled images using edge padding; <code>interpolate</code> - uses interpolation.</li>
-<li><code>height</code> (default: null): image height in pixels, must be set if resizing is required</li>
-<li><code>width</code> (default: null): image width in pixels, must be set if resizing is required</li>
+    <li><code>in_memory</code> (default <code>true</code>): defines whether image dataset will reside in memory during
+        the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a
+        training batch of input images will be fetched from disk each training iteration.
+    </li>
+    <li><code>resize_method</code> (default <code>crop_or_pad</code>): available options: <code>crop_or_pad</code> -
+        crops larger images to the desired size or pads smalled images using edge padding; <code>interpolate</code> -
+        uses interpolation.
+    </li>
+    <li><code>height</code> (default <code>null</code>): image height in pixels, must be set if resizing is required
+    </li>
+    <li><code>width</code> (default <code>null</code>): image width in pixels, must be set if resizing is required</li>
+    <li><code>num_channels</code> (default <code>null</code>): number of channels in the images. By default, if the
+        value is <code>null</code>, the number of channels of the first image of the dataset will be used and if there
+        is an image in the dataset with a different number of channels, an error will be reported. If the value
+        specified is not <code>null</code>, images in the dataset will be adapted to the specified size. If the value is
+        <code>1</code>, all images with more then one channel will be greyscaled and reduced to one channel (trasparecy
+        will be lost). If the value is <code>3</code> all images with 1 channel will be repeated 3 times to obtain 3
+        channels, while images with 4 channels will lose the transparecy channel. If the value is <code>4</code>, all
+        the images with less than 4 channels will have the remaining channels filled with zeros.
+    </li>
 </ul>
                 <p>Depending on the application, do not to exceed a size of <code>256 x 256</code> as bigger sizes will,
                     in most cases, not provide much advantage and considerably slow down trainin and inference and also
