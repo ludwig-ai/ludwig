@@ -24,7 +24,6 @@ from tensorflow.python.ops.losses.losses_impl import Reduction
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
-from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.fully_connected_modules import fc_layer
 from ludwig.models.modules.initializer_modules import get_initializer
@@ -65,7 +64,7 @@ class BoundingBoxBaseFeature(BaseFeature):
 
 
 
-class BoundingBoxOutputFeature(NumericalBaseFeature, OutputFeature):
+class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
@@ -90,7 +89,47 @@ class BoundingBoxOutputFeature(NumericalBaseFeature, OutputFeature):
             hidden_size,
             regularizer=None
     ):
-    	pass
+        if not self.regularize:
+            regularizer = None
+
+        with tf.variable_scope('predictions_{}'.format(self.name)):
+            initializer_obj = get_initializer(self.initializer)
+            weights = tf.get_variable(
+                'weights',
+                initializer=initializer_obj([hidden_size, 1]),
+                regularizer=regularizer
+            )
+            logging.debug('  regression_weights: {0}'.format(weights))
+
+            biases = tf.get_variable('biases', [1])
+            logging.debug('  regression_biases: {0}'.format(biases))
+
+            predictions = tf.reshape(
+                tf.matmul(hidden, weights) + biases,
+                [-1]
+            )
+            logging.debug('  predictions: {0}'.format(predictions))
+
+            if self.clip is not None:
+                if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
+                    predictions = tf.clip_by_value(
+                        predictions,
+                        self.clip[0],
+                        self.clip[1]
+                    )
+                    logging.debug(
+                        '  clipped_predictions: {0}'.format(predictions)
+                    )
+                else:
+                    raise ValueError(
+                        'The clip parameter of {} is {}. '
+                        'It must be a list or a tuple of length 2.'.format(
+                            self.name,
+                            self.clip
+                        )
+                    )
+
+        return predictions
 
     def _get_loss(self, targets, predictions):
     	pass

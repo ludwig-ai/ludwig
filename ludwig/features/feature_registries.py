@@ -47,8 +47,8 @@ from ludwig.features.text_feature import TextInputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesBaseFeature
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
-from ludwig.feautres.boundingbox_feature import BoundingBoxBaseFeature
-from ludwig.feautres.boundingbox_feature import BoundingBoxOutputFeature
+from ludwig.features.boundingbox_feature import BoundingBoxBaseFeature
+from ludwig.features.boundingbox_feature import BoundingBoxOutputFeature
 
 base_type_registry = {
     TEXT: TextBaseFeature,
