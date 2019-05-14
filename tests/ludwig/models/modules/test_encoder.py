@@ -266,7 +266,7 @@ def test_sequence_encoders():
     }
 
     # Different values for reduce_output and the corresponding expected size
-    # Figure out the output size for parallel 1d conv
+    # TODO Figure out the output size for parallel 1d conv
     reduce_outputs = ['sum', 'max']
     output_shapes = [
         [num_sentences, fc_size],
