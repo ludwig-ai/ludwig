@@ -73,13 +73,14 @@ class BoundingBoxOutputFeature(NumericalBaseFeature, OutputFeature):
         self.clip = None
         self.initializer = None
         self.regularize = True
+        self.box_coordinates = [None, None, None, None]
 
         _ = self.overwrite_defaults(feature)
 
     def _get_output_placeholder(self):
         return tf.placeholder(
             tf.int64,
-            [None],  # None is for dealing with variable batch size
+            [None, len(self.box_coordinates)],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
         )
 
