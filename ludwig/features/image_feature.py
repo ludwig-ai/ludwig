@@ -93,7 +93,7 @@ class ImageBaseFeature(BaseFeature):
             # convert to greyscale if needed
             if user_specified_num_channels == 1 and (
                     img_num_channels == 3 or img_num_channels == 4):
-                img = rgb2gray(img)
+                img = np.expand_dims(rgb2gray(img), axis=2)
                 img_num_channels = 1
 
             # Number of channels is specified by the user
