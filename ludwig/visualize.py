@@ -501,87 +501,99 @@ def compare_classifiers_multiclass_multimetric(
                 rs = recalls[0:k]
                 fs = f1_scores[0:k]
                 ls = labels[0:k]
+
+                filename = None
+                if filename_template:
+                    os.makedirs(output_directory, exist_ok=True)
+                    filename = filename_template.format(
+                        model_name_name, field, 'top{}'.format(k)
+                    )
+
                 visualization_utils.compare_classifiers_multiclass_multimetric_plot(
                     [ps, rs, fs],
                     ['precision', 'recall', 'f1 score'],
                     labels=ls,
                     title='{} Multiclass Precision / Recall / '
-                          'F1 Score top {} {}'.format(model_name_name, k, field)
+                          'F1 Score top {} {}'.format(model_name_name, k,
+                                                      field),
+                    filename=filename
                 )
 
-            p_np = np.nan_to_num(np.array(precisions, dtype=np.float32))
-            r_np = np.nan_to_num(np.array(recalls, dtype=np.float32))
-            f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
-            labels_np = np.nan_to_num(np.array(labels))
+                p_np = np.nan_to_num(np.array(precisions, dtype=np.float32))
+                r_np = np.nan_to_num(np.array(recalls, dtype=np.float32))
+                f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
+                labels_np = np.nan_to_num(np.array(labels))
 
-            sorted_indices = f1_np.argsort()
-            higher_f1s = sorted_indices[-k:][::-1]
-            filename = None
-            if filename_template:
-                os.makedirs(output_directory, exist_ok=True)
-                filename = filename_template.format(
-                    model_name_name, field, 'best{}'.format(k)
+                sorted_indices = f1_np.argsort()
+                higher_f1s = sorted_indices[-k:][::-1]
+                filename = None
+                if filename_template:
+                    os.makedirs(output_directory, exist_ok=True)
+                    filename = filename_template.format(
+                        model_name_name, field, 'best{}'.format(k)
+                    )
+                visualization_utils.compare_classifiers_multiclass_multimetric_plot(
+                    [p_np[higher_f1s],
+                     r_np[higher_f1s],
+                     f1_np[higher_f1s]],
+                    ['precision', 'recall', 'f1 score'],
+                    labels=labels_np[higher_f1s].tolist(),
+                    title='{} Multiclass Precision / Recall / '
+                          'F1 Score best {} classes {}'.format(
+                        model_name_name, k, field),
+                    filename=filename
                 )
-            visualization_utils.compare_classifiers_multiclass_multimetric_plot(
-                [p_np[higher_f1s],
-                 r_np[higher_f1s],
-                 f1_np[higher_f1s]],
-                ['precision', 'recall', 'f1 score'],
-                labels=labels_np[higher_f1s].tolist(),
-                title='{} Multiclass Precision / Recall / '
-                      'F1 Score best {} classes {}'.format(
-                    model_name_name, k, field),
-                filename=filename
-            )
-            lower_f1s = sorted_indices[:k]
-            filename = None
-            if filename_template:
-                filename = filename_template.format(
-                    model_name_name, field, 'worst{}'.format(k)
+                lower_f1s = sorted_indices[:k]
+                filename = None
+                if filename_template:
+                    filename = filename_template.format(
+                        model_name_name, field, 'worst{}'.format(k)
+                    )
+                visualization_utils.compare_classifiers_multiclass_multimetric_plot(
+                    [p_np[lower_f1s],
+                     r_np[lower_f1s],
+                     f1_np[lower_f1s]],
+                    ['precision', 'recall', 'f1 score'],
+                    labels=labels_np[lower_f1s].tolist(),
+                    title='{} Multiclass Precision / Recall / F1 Score worst '
+                          'k classes {}'.format(model_name_name, k, field),
+                    filename=filename
                 )
-            visualization_utils.compare_classifiers_multiclass_multimetric_plot(
-                [p_np[lower_f1s],
-                 r_np[lower_f1s],
-                 f1_np[lower_f1s]],
-                ['precision', 'recall', 'f1 score'],
-                labels=labels_np[lower_f1s].tolist(),
-                title='{} Multiclass Precision / Recall / F1 Score worst '
-                      'k classes {}'.format(model_name_name, k, field),
-                filename=filename
-            )
 
-            filename = None
-            if filename_template:
-                filename = filename_template.format(
-                    model_name_name, field, 'sorted'
+                filename = None
+                if filename_template:
+                    filename = filename_template.format(
+                        model_name_name, field, 'sorted'
+                    )
+                visualization_utils.compare_classifiers_multiclass_multimetric_plot(
+                    [p_np[sorted_indices[::-1]],
+                     r_np[sorted_indices[::-1]],
+                     f1_np[sorted_indices[::-1]]],
+                    ['precision', 'recall', 'f1 score'],
+                    labels=labels_np[sorted_indices[::-1]].tolist(),
+                    title='{} Multiclass Precision / Recall / F1 Score '
+                          '{} sorted'.format(model_name_name, field),
+                    filename=filename
                 )
-            visualization_utils.compare_classifiers_multiclass_multimetric_plot(
-                [p_np[sorted_indices[::-1]],
-                 r_np[sorted_indices[::-1]],
-                 f1_np[sorted_indices[::-1]]],
-                ['precision', 'recall', 'f1 score'],
-                labels=labels_np[sorted_indices[::-1]].tolist(),
-                title='{} Multiclass Precision / Recall / F1 Score '
-                      '{} sorted'.format(model_name_name, field),
-                filename=filename
-            )
 
-            logging.info('\n')
-            logging.info(model_name_name)
-            tmp_str = '{0} best 5 classes: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(higher_f1s))
-            logging.info(f1_np[higher_f1s])
-            tmp_str = '{0} worst 5 classes: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(lower_f1s))
-            logging.info(f1_np[lower_f1s])
-            tmp_str = '{0} number of classes with f1 score > 0: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(np.sum(f1_np > 0)))
-            tmp_str = '{0} number of classes with f1 score = 0: '.format(field)
-            tmp_str += '{}'
-            logging.info(tmp_str.format(np.sum(f1_np == 0)))
+                logging.info('\n')
+                logging.info(model_name_name)
+                tmp_str = '{0} best 5 classes: '.format(field)
+                tmp_str += '{}'
+                logging.info(tmp_str.format(higher_f1s))
+                logging.info(f1_np[higher_f1s])
+                tmp_str = '{0} worst 5 classes: '.format(field)
+                tmp_str += '{}'
+                logging.info(tmp_str.format(lower_f1s))
+                logging.info(f1_np[lower_f1s])
+                tmp_str = '{0} number of classes with f1 score > 0: '.format(
+                    field)
+                tmp_str += '{}'
+                logging.info(tmp_str.format(np.sum(f1_np > 0)))
+                tmp_str = '{0} number of classes with f1 score = 0: '.format(
+                    field)
+                tmp_str += '{}'
+                logging.info(tmp_str.format(np.sum(f1_np == 0)))
 
 
 def compare_classifiers_predictions(
