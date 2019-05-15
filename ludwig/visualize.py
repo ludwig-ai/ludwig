@@ -481,6 +481,12 @@ def compare_classifiers_multiclass_multimetric(
                 if model_names is not None and i < len(model_names)
                 else ''
             )
+            if 'per_class_stats' not in test_statistics[field]:
+                logging.warning(
+                    'The field {} in test statistics does not contain "{}", '
+                    'skipping it'.format(field, per_class_stats)
+                )
+                break
             per_class_stats = test_statistics[field]['per_class_stats']
             precisions = []
             recalls = []
