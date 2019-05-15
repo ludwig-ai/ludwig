@@ -4584,7 +4584,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}, --visualization {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}
+  -v {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}, --visualization {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -4621,7 +4621,11 @@ optional arguments:
 
 <p>Some additional information on the parameters:</p>
 <ul>
-<li>The list parameters are considered to be aligned, meaning <code>predictions</code>, <code>probabilities</code>, <code>training_statistics</code>, <code>prediction_statistics</code> and <code>model_names</code> are indexed altogether, for instance the name of the model producing the second predictions in the list will be the second in the model names.</li>
+    <li>The list parameters are considered to be aligned, meaning <code>predictions</code>, <code>probabilities</code>,
+        <code>training_statistics</code>, <code>test_statistics</code> and <code>model_names</code> are indexed
+        altogether, for instance the name of the model producing the second predictions in the list will be the second
+        in the model names.
+    </li>
 <li><code>data_csv</code> is intended to be the data the model(s) were trained on.</li>
 <li><code>ground_truth</code> and <code>ground_truth_metadata</code> are respectively the <code>HDF5</code> and <code>JSON</code> file obtained during training preprocessing. If you plan to use the visualizations then be sure not to use the <code>skip_save_preprocessing</code> when training. Those files are needed because they contain the split performed at preprocessing time, so it is easy to extract the test set from them.</li>
 <li><code>field</code> is the output feature to use for creating the visualization.</li>
@@ -4635,16 +4639,22 @@ For each model (in the aligned lists of <code>training_statistics</code> and <co
 <p><img alt="Learning Curves Accuracy" src="../images/learning_curves_accuracy.png" title="Learning Curves Accuracy" /></p>
 <h3 id="confusion-matrix">Confusion Matrix<a class="headerlink" href="#confusion-matrix" title="Permanent link">&para;</a></h3>
 <h4 id="confusion_matrix">confusion_matrix<a class="headerlink" href="#confusion_matrix" title="Permanent link">&para;</a></h4>
-<p>This visualization uses the <code>top_n_classes</code>, <code>normalize</code>, <code>ground_truth_metadata</code>, <code>prediction_statistics</code> and <code>model_names</code> parameters.
-For each model (in the aligned lists of <code>prediction_statistics</code> and <code>model_names</code>) it produces a heatmap of the confusion matrix in the predictions for each field that has a confusion matrix in <code>prediction_statistics</code>.
+                <p>This visualization uses the <code>top_n_classes</code>, <code>normalize</code>, <code>ground_truth_metadata</code>,
+                    <code>test_statistics</code> and <code>model_names</code> parameters.
+                    For each model (in the aligned lists of <code>test_statistics</code> and <code>model_names</code>)
+                    it produces a heatmap of the confusion matrix in the predictions for each field that has a confusion
+                    matrix in <code>test_statistics</code>.
 The value of <code>top_n_classes</code> limits the heatmap to the <code>n</code> most frequent classes.</p>
 <p><img alt="Confusion Matrix" src="../images/confusion_matrix.png" title="Confusion Matrix" /></p>
 <p>The second plot produced, is a barplot showing the entropy of each class, ranked from most entropic to least entropic.</p>
 <p><img alt="Confusion Matrix Entropy" src="../images/confusion_matrix_entropy.png" title="Confusion Matrix Entropy" /></p>
 <h3 id="compare-performance">Compare Performance<a class="headerlink" href="#compare-performance" title="Permanent link">&para;</a></h3>
 <h4 id="compare_performance">compare_performance<a class="headerlink" href="#compare_performance" title="Permanent link">&para;</a></h4>
-<p>This visualization uses the <code>field</code>, <code>prediction_statistics</code> and <code>model_names</code> parameters.
-For each model (in the aligned lists of <code>prediction_statistics</code> and <code>model_names</code>) it produces bars in a bar plot, one for each overall metric available in the <code>prediction_statistics</code> file for the specified <code>field</code>.</p>
+                <p>This visualization uses the <code>field</code>, <code>test_statistics</code> and
+                    <code>model_names</code> parameters.
+                    For each model (in the aligned lists of <code>test_statistics</code> and <code>model_names</code>)
+                    it produces bars in a bar plot, one for each overall metric available in the
+                    <code>test_statistics</code> file for the specified <code>field</code>.</p>
 <p><img alt="Compare Classifiers Performance" src="../images/compare_performance.png" title="Compare Classifiers Performance" /></p>
 <h4 id="compare_classifiers_performance_from_prob">compare_classifiers_performance_from_prob<a class="headerlink" href="#compare_classifiers_performance_from_prob" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>ground_truth</code>, <code>field</code>, <code>probabilities</code> and <code>model_names</code> parameters.
@@ -4671,9 +4681,12 @@ The way the subset is obtained is using the <code>top_n_classes</code> and <code
 For each model (in the aligned lists of <code>probabilities</code> and <code>model_names</code>) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first <code>k</code>) while changing <code>k</code> from 1 to <code>top_k</code> for the specified <code>field</code>.</p>
 <p><img alt="Compare Classifiers Performance Changing K" src="../images/compare_classifiers_performance_changing_k.png" title="Compare Classifiers Performance  Changing K" /></p>
 <h4 id="compare_classifiers_multiclass_multimetric">compare_classifiers_multiclass_multimetric<a class="headerlink" href="#compare_classifiers_multiclass_multimetric" title="Permanent link">&para;</a></h4>
-<p>This visualization uses the <code>top_n_classes</code>, <code>ground_truth_metadata</code>, <code>field</code>, <code>prediction_statistics</code> and <code>model_names</code> parameters.
+                <p>This visualization uses the <code>top_n_classes</code>, <code>ground_truth_metadata</code>, <code>field</code>,
+                    <code>test_statistics</code> and <code>model_names</code> parameters.
 <code>field</code> needs to be a category.
-For each model (in the aligned lists of <code>prediction_statistics</code> and <code>model_names</code>) it produces four plots that show the precision, recall and F1 of the model on several classes for the specified <code>field</code>.</p>
+                    For each model (in the aligned lists of <code>test_statistics</code> and <code>model_names</code>)
+                    it produces four plots that show the precision, recall and F1 of the model on several classes for
+                    the specified <code>field</code>.</p>
 <p>The first one show the measures on the <code>n</code> most frequent classes.</p>
 <p><img alt="Multiclass Multimetric top k" src="../images/compare_classifiers_multiclass_multimetric_topk.png" title="Multiclass Multimetric most frequent classes" /></p>
 <p>The second one shows the measures on the <code>n</code> classes where the model performs the best.</p>
@@ -4763,10 +4776,12 @@ If <code>field</code> is a category feature, <code>positive_label</code> indicat
 It needs to be an integer, to figure out the association between classes and integers check the <code>ground_truth_metadata</code> JSON file.</p>
 <p><img alt="ROC Curves" src="../images/roc_curves.png" title="ROC Curves" /></p>
 <h4 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink" href="#roc_curves_from_test_statistics" title="Permanent link">&para;</a></h4>
-<p>This visualization uses the <code>field</code>, <code>prediction_statistics</code> and <code>model_names</code> parameters.
+                <p>This visualization uses the <code>field</code>, <code>test_statistics</code> and
+                    <code>model_names</code> parameters.
 <code>field</code> needs to be binary feature.
 This visualization produces a line chart plotting the roc curves for the specified <code>field</code>.</p>
-<p><img alt="ROC Curves from Prediction Statistics" src="../images/roc_curves_from_prediction_statistics.png" title="ROC Curves from Prediction Statistics" /></p>
+                <p><img alt="ROC Curves from Prediction Statistics" src="../images/roc_curves_from_test_statistics.png"
+                        title="ROC Curves from Prediction Statistics"/></p>
 <h3 id="calibration-plot">Calibration Plot<a class="headerlink" href="#calibration-plot" title="Permanent link">&para;</a></h3>
 <h4 id="calibration_1_vs_all">calibration_1_vs_all<a class="headerlink" href="#calibration_1_vs_all" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>top_k</code>, <code>ground_truth</code>, <code>field</code>, <code>probabilities</code> and <code>model_names</code> parameters.
@@ -4786,9 +4801,11 @@ For each class, produces two plots computed on the fly from the probabilities of
 <p><img alt="Calibration Multiclass Brier" src="../images/calibration_multiclass_brier.png" title="Calibration Multiclass Brier" /></p>
 <h3 id="class-frequency-vs-f1-score">Class Frequency vs. F1 score<a class="headerlink" href="#class-frequency-vs-f1-score" title="Permanent link">&para;</a></h3>
 <h4 id="frequency_vs_f1">frequency_vs_f1<a class="headerlink" href="#frequency_vs_f1" title="Permanent link">&para;</a></h4>
-<p>This visualization uses the <code>ground_truth_metadata</code>, <code>field</code>, <code>prediction_statistics</code> and <code>model_names</code> parameters.
+                <p>This visualization uses the <code>ground_truth_metadata</code>, <code>field</code>, <code>test_statistics</code>
+                    and <code>model_names</code> parameters.
 <code>field</code> needs to be a category.
-For each model (in the aligned lists of <code>prediction_statistics</code> and <code>model_names</code>), produces two plots statistics of predictions for the specified <code>field</code>.</p>
+                    For each model (in the aligned lists of <code>test_statistics</code> and <code>model_names</code>),
+                    produces two plots statistics of predictions for the specified <code>field</code>.</p>
 <p>The first plot is a line plot with one x axis representing the different classes and two vertical axes colored in orange and blue respectively.
 The orange one is the frequency of the class and an orange line is plotted to show the trend.
 The blue one is the F1 score for that class and a blue line is plotted to show the trend. 
