@@ -158,3 +158,22 @@ def r2(targets, predictions, output_feature_name):
     r2 = tf.subtract(1., res_ss / tot_ss,
                      name='r2_{}'.format(output_feature_name))
     return r2
+
+def bbbox_iou(targets, predictions, output_feature_name):
+    x11, y11, x12, y12 = tf.split(targets, 4, axis=1)
+    x21, y21, x22, y22 = tf.split(predictions, 4, axis=1)
+
+    xI1 = tf.maximum(x11, tf.transpose(x21))
+    xI2 = tf.minimum(x12, tf.transpose(x22))
+
+    yI1 = tf.minimum(y11, tf.transpose(y21))
+    yI2 = tf.maximum(y12, tf.transpose(y22))
+
+    inter_area = tf.maximum((xI2 - xI1), 0) * tf.maximum((yI1 - yI2), 0)
+
+    bboxes1_area = (x12 - x11) * (y11 - y12)
+    bboxes2_area = (x22 - x21) * (y21 - y22)
+
+    union = (bboxes1_area + tf.transpose(bboxes2_area)) - inter_area
+
+    return inter_area / (union+0.0001)

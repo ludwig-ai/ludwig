@@ -30,6 +30,9 @@ from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.measure_modules import \
     absolute_error as get_absolute_error
 from ludwig.models.modules.measure_modules import error as get_error
+from ludwig.models.modules.measure_modules import bbbox_iou as get_bbbox_iou
+
+
 from ludwig.models.modules.measure_modules import r2 as get_r2
 from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
@@ -72,7 +75,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
         self.clip = None
         self.initializer = None
         self.regularize = True
-        self.box_coordinates = [None, None, None, None]
+        self.box_coordinates = (None, None, None, None)
 
         _ = self.overwrite_defaults(feature)
 
@@ -132,10 +135,25 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
         return predictions
 
     def _get_loss(self, targets, predictions):
-    	pass
+        with tf.variable_scope('loss_{}'.format(self.name)):
 
     def _get_measures(self, targets, predictions):
-    	pass
+        with tf.variable_scope('measures_{}'.format(self.name)):
+            error_val = get_error(
+                targets,
+                predictions,
+                self.name
+            )
+
+            intersection_over_union = get_bbbox_iou(
+                targets,
+                predictions,
+                self.name
+            )
+
+            mean_average_precision = None
+
+        return error_val, intersection_over_union, mean_average_precision
 
     def build_output(
             self,
@@ -144,7 +162,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             regularizer=None,
             **kwargs
     ):
-    	pass
+        pass
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -172,9 +190,9 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             experiment_dir_name,
             skip_save_unprocessed_output=False
     ):
-    	pass
+        pass
 
     @staticmethod
     def populate_defaults(output_feature):
-    	pass
+        pass
 
