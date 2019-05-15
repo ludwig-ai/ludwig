@@ -1034,7 +1034,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
     filename_template = None
     if output_directory:
-        filename_tempalte = os.path.join(
+        filename_template = os.path.join(
             output_directory,
             'confidence_thresholding_data_vs_acc_subset_per_class_{}.' + file_format
         )
