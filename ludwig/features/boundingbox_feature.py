@@ -71,12 +71,15 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-        self.loss = {'type': 'huber_loss'} #add this to constants.py
+        self.loss = {
+            'type': 'huber_loss', #add this to constants.py
+            # 'weight': 1
+        } 
         self.clip = None
         self.initializer = None
         self.regularize = True
         self.box_coordinates = (None, None, None, None)
-        self._delta = 1
+        self._delta = 1.
 
         _ = self.overwrite_defaults(feature)
 
@@ -100,12 +103,15 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             initializer_obj = get_initializer(self.initializer)
             weights = tf.get_variable(
                 'weights',
-                initializer=initializer_obj([hidden_size, 4]),
+                initializer=initializer_obj([hidden_size, len(self.box_coordinates)]),
                 regularizer=regularizer
             )
             logging.debug('  regression_weights: {0}'.format(weights))
 
-            biases = tf.get_variable('biases', [1])
+            biases = tf.get_variable(
+                'biases', 
+                [len(self.box_coordinates)]
+            )
             logging.debug('  regression_biases: {0}'.format(biases))
 
             predictions = tf.reshape(
@@ -231,7 +237,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
 
         return train_mean_loss, eval_loss, output_tensors
 
-    default_validation_measure = MEAN_SQUARED_ERROR
+    default_validation_measure = 'mean_iou'
 
     output_config = OrderedDict([
         (LOSS, {
@@ -240,20 +246,8 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             'value': 0,
             'type': MEASURE
         }),
-        (MEAN_SQUARED_ERROR, {
-            'output': SQUARED_ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (MEAN_ABSOLUTE_ERROR, {
-            'output': ABSOLUTE_ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (R2, {
-            'output': R2,
+        ('mean_iou', {
+            'output': 'iou',
             'aggregation': SUM,
             'value': 0,
             'type': MEASURE
@@ -298,9 +292,41 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             experiment_dir_name,
             skip_save_unprocessed_output=False
     ):
-        pass
+        postprocessed = {}
+        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        name = output_feature['name']
+
+        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
+            postprocessed[PREDICTIONS] = result[PREDICTIONS]
+            if not skip_save_unprocessed_output:
+                np.save(
+                    npy_filename.format(name, PREDICTIONS),
+                    result[PREDICTIONS]
+                )
+            del result[PREDICTIONS]
+
+        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
+            postprocessed[PROBABILITIES] = result[PROBABILITIES]
+            if not skip_save_unprocessed_output:
+                np.save(
+                    npy_filename.format(name, PROBABILITIES),
+                    result[PROBABILITIES]
+                )
+            del result[PROBABILITIES]
+
+        return postprocessed
 
     @staticmethod
     def populate_defaults(output_feature):
-        pass
+        set_default_value(
+            output_feature,
+            LOSS,
+            {'type': 'huber_loss', 'weight': 1}
+        )
+        set_default_value(output_feature[LOSS], 'type', 'huber_loss')
+        set_default_value(output_feature[LOSS], 'weight', 1)
+        set_default_value(output_feature, 'clip', None)
+        set_default_value(output_feature, 'dependencies', [])
+        set_default_value(output_feature, 'reduce_input', SUM)
+        set_default_value(output_feature, 'reduce_dependencies', SUM)
 
