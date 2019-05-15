@@ -89,7 +89,8 @@ def learning_curves_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def compare_classifiers_plot(
@@ -161,7 +162,8 @@ def compare_classifiers_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def compare_classifiers_line_plot(
@@ -201,7 +203,8 @@ def compare_classifiers_line_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def compare_classifiers_multiclass_multimetric_plot(
@@ -240,7 +243,8 @@ def compare_classifiers_multiclass_multimetric_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def radar_chart(
@@ -326,7 +330,8 @@ def radar_chart(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def pie(ax, values, **kwargs):
@@ -415,7 +420,8 @@ def donut(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def confidence_fitlering_plot(
@@ -483,7 +489,8 @@ def confidence_fitlering_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def confidence_fitlering_data_vs_acc_plot(
@@ -551,7 +558,8 @@ def confidence_fitlering_data_vs_acc_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def confidence_fitlering_data_vs_acc_multiline_plot(
@@ -605,7 +613,8 @@ def confidence_fitlering_data_vs_acc_multiline_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def confidence_fitlering_3d_plot(
@@ -693,7 +702,8 @@ def confidence_fitlering_3d_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def threshold_vs_metric_plot(
@@ -742,7 +752,8 @@ def threshold_vs_metric_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def roc_curves(
@@ -793,7 +804,8 @@ def roc_curves(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def calibration_plot(
@@ -844,7 +856,8 @@ def calibration_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def brier_plot(
@@ -879,7 +892,8 @@ def brier_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def predictions_distribution_plot(
@@ -915,7 +929,8 @@ def predictions_distribution_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def confusion_matrix_plot(
@@ -947,7 +962,8 @@ def confusion_matrix_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def double_axis_line_plot(
@@ -996,7 +1012,8 @@ def double_axis_line_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def plot_matrix(
@@ -1008,7 +1025,8 @@ def plot_matrix(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def plot_distributions(
@@ -1045,7 +1063,8 @@ def plot_distributions(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def plot_distributions_difference(
@@ -1078,7 +1097,8 @@ def plot_distributions_difference(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
 
 
 def bar_plot(
@@ -1135,4 +1155,5 @@ def bar_plot(
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     if filename:
         plt.savefig(filename)
-    plt.show()
+    else:
+        plt.show()
