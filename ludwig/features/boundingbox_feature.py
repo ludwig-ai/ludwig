@@ -43,7 +43,7 @@ from ludwig.utils.misc import set_default_value
 class BoundingBoxBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
-        self.type = "bounding_box" #add this to constants.py
+        self.type = BOUNDING_BOX 
 
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
@@ -63,7 +63,7 @@ class BoundingBoxBaseFeature(BaseFeature):
             preprocessing_parameters,
     ):
         data[feature['name']] = np.stack(dataset_df[feature['name']], 
-                                         axis=0).astype(np.float32)
+                                         axis=0).astype(np.int32)
 
 
 
@@ -72,21 +72,19 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
         super().__init__(feature)
 
         self.loss = {
-            'type': 'huber_loss', #add this to constants.py
-            # 'weight': 1
+            'type': HUBER_LOSS
         } 
         self.clip = None
         self.initializer = None
         self.regularize = True
-        self.box_coordinates = (None, None, None, None)
-        self._delta = 1.
+        self.bounding_box_size = 4
 
         _ = self.overwrite_defaults(feature)
 
     def _get_output_placeholder(self):
         return tf.placeholder(
-            tf.float32,
-            [None, len(self.box_coordinates)],  # None is for dealing with variable batch size
+            tf.int32,
+            [None, self.bounding_box_size],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
         )
 
@@ -103,14 +101,14 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             initializer_obj = get_initializer(self.initializer)
             weights = tf.get_variable(
                 'weights',
-                initializer=initializer_obj([hidden_size, len(self.box_coordinates)]),
+                initializer=initializer_obj([hidden_size, self.bounding_box_size]),
                 regularizer=regularizer
             )
             logging.debug('  regression_weights: {0}'.format(weights))
 
             biases = tf.get_variable(
                 'biases', 
-                [len(self.box_coordinates)]
+                [self.bounding_box_size]
             )
             logging.debug('  regression_biases: {0}'.format(biases))
 
@@ -118,6 +116,8 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                 tf.matmul(hidden, weights) + biases,
                 [-1, 4]
             )
+
+            predictions = tf.to_int32(predictions)
 
             logging.debug('  predictions: {0}'.format(predictions))
 
@@ -139,20 +139,19 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                             self.clip
                         )
                     )
-        return predictions
 
+        return predictions
 
     def _get_loss(self, targets, predictions):
         with tf.variable_scope('loss_{}'.format(self.name)):
-            if self.loss['type'] == 'huber_loss':
+            if self.loss['type'] == HUBER_LOSS:
                 train_loss = tf.losses.huber_loss(
                     targets,
                     predictions,
-                    delta=self._delta,
                     loss_collection=None,
                     reduction=Reduction.NONE)
 
-            elif self.loss['type'] == 'yolov3_loss':
+            elif self.loss['type'] == 'yolov3_loss': #to implement
                 pass
             else:
                 train_mean_loss = None
@@ -234,7 +233,6 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             'train_mean_loss_{}'.format(self.name),
             train_mean_loss,
         )
-
         return train_mean_loss, eval_loss, output_tensors
 
     default_validation_measure = 'mean_iou'
@@ -313,7 +311,6 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                     result[PROBABILITIES]
                 )
             del result[PROBABILITIES]
-
         return postprocessed
 
     @staticmethod
