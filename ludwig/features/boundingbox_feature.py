@@ -43,7 +43,7 @@ from ludwig.utils.misc import set_default_value
 class BoundingBoxBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
-        self.type = NUMERICAL
+        self.type = "bounding_box" #add this to constants.py
 
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
@@ -63,7 +63,7 @@ class BoundingBoxBaseFeature(BaseFeature):
             preprocessing_parameters,
     ):
         data[feature['name']] = np.stack(dataset_df[feature['name']], 
-                                         axis=0)
+                                         axis=0).astype(np.int32)
 
 
 
@@ -71,7 +71,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-        self.loss = {'type': 'huber_loss'} #add this to constants
+        self.loss = {'type': 'huber_loss'} #add this to constants.py
         self.clip = None
         self.initializer = None
         self.regularize = True
@@ -81,7 +81,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
 
     def _get_output_placeholder(self):
         return tf.placeholder(
-            tf.int64,
+            tf.int32,
             [None, len(self.box_coordinates)],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
         )
