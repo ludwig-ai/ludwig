@@ -46,7 +46,7 @@ def read_csv(data_fp, header=0):
         df = pd.read_csv(data_fp, header=header)
     except ParserError:
         logging.warning('Failed to parse the CSV with pandas default way,'
-                        ' trying \ as escape character.')
+                        ' trying \\ as escape character.')
         df = pd.read_csv(data_fp, header=header, escapechar='\\')
 
     return df
@@ -56,7 +56,8 @@ def save_csv(data_fp, data):
     with open(data_fp, 'w', encoding='utf-8') as csv_file:
         writer = csv.writer(csv_file)
         for row in data:
-            if not isinstance(row, collections.Iterable) or isinstance(row, str):
+            if not isinstance(row, collections.Iterable) or isinstance(row,
+                                                                       str):
                 row = [row]
             writer.writerow(row)
 
@@ -173,13 +174,37 @@ def load_pretrained_embeddings(embeddings_path, vocab):
 def load_glove(file_path):
     logging.info('  Loading Glove format file {}'.format(file_path))
     embeddings = {}
-    with open(file_path, 'r') as f:
-        for line in f:
+    embedding_size = 0
+
+    # collect embeddings size assuming the first line is correct
+    with open(file_path, 'r', encoding='utf-8') as f:
+        found_line = False
+        while not found_line:
+            line = f.readline()
             if line:
-                split = line.split()
-                word = split[0]
-                embedding = np.array([float(val) for val in split[1:]])
-                embeddings[word] = embedding
+                embedding_size = len(line.split()) - 1
+                found_line = True
+
+    # collect embeddings
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line_number, line in enumerate(f):
+            if line:
+                try:
+                    split = line.split()
+                    if len(split) != embedding_size + 1:
+                        raise ValueError
+                    word = split[0]
+                    embedding = np.array(
+                        [float(val) for val in split[-embedding_size:]]
+                    )
+                    embeddings[word] = embedding
+                except ValueError:
+                    logging.warning(
+                        'Line {} in the GloVe file {} is malformed, '
+                        'skipping it'.format(
+                            line_number, file_path
+                        )
+                    )
     logging.info('  {0} embeddings loaded'.format(len(embeddings)))
     return embeddings
 
@@ -279,6 +304,56 @@ def load_from_file(file_name, field=None, dtype=int):
     else:
         array = load_matrix(file_name, dtype)
     return array
+
+
+def replace_file_extension(file_path, desired_format):
+    """
+    Return a file path for a file with same name but different format.
+    a.csv, json -> a.json
+    a.csv, hdf5 -> a.hdf5
+    :param file_path: original file path
+    :param desired_format: desired file format
+    :return: file path with same name but different format
+    """
+    if '.' in desired_format:
+        # Handle the case if the user calls with '.hdf5' instead of 'hdf5'
+        desired_format = desired_format.replace('.', '').strip()
+
+    return os.path.splitext(file_path)[0] + '.' + desired_format
+
+
+def add_sequence_feature_column(df, col_name, seq_length):
+    """
+    Adds a new column to the dataframe computed from an existing column.
+    Values in the new column are space-delimited strings composed of preceding
+    values of the same column up to seq_length.
+    For example values of the i-th row of the new column will be a
+    space-delimited string of df[col_name][i-seq_length].
+     :param df: input dataframe
+    :param col_name: column name containing sequential data
+    :param seq_length: length of an array of preceeding column values to use
+    """
+
+    if col_name not in df.columns.values:
+        logging.error('{} column does not exist'.format(col_name))
+        return
+
+    new_col_name = col_name + '_feature'
+    if new_col_name in df.columns.values:
+        logging.warning(
+            '{} column already exists, values will be overridden'.format(
+                new_col_name
+            )
+        )
+
+    df[new_col_name] = np.nan
+
+    for i in range(seq_length, len(df)):
+        df.iloc[i, df.columns.get_loc(new_col_name)] = ' '.join(
+            str(j) for j in list((df.iloc[i - seq_length: i][col_name]))
+        )
+
+    df[new_col_name] = df[new_col_name].fillna(method='backfill')
 
 
 class NumpyEncoder(json.JSONEncoder):

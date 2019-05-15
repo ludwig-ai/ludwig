@@ -30,6 +30,7 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import brier_score_loss
 
 from ludwig.constants import *
+from ludwig.contrib import contrib_command
 from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
@@ -88,14 +89,14 @@ def learning_curves(
 
 
 def compare_performance(
-        prediction_statistics,
+        test_statistics,
         field, model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(prediction_statistics) < 1:
-        logging.error('No prediction_statistics provided')
+    if len(test_statistics) < 1:
+        logging.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -105,12 +106,12 @@ def compare_performance(
             'compare_performance_{}.' + file_format
         )
 
-    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                            for prediction_statistics_f in
-                                            prediction_statistics]
+    test_statistics_per_model_name = [load_json(prediction_statistics_f)
+                                      for prediction_statistics_f in
+                                      test_statistics]
 
     fields_set = set()
-    for ls in prediction_statistics_per_model_name:
+    for ls in test_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
@@ -120,14 +121,14 @@ def compare_performance(
         hits_at_ks = []
         edit_distances = []
 
-        for prediction_statistics in prediction_statistics_per_model_name:
-            if ACCURACY in prediction_statistics[field]:
-                accuracies.append(prediction_statistics[field][ACCURACY])
-            if HITS_AT_K in prediction_statistics[field]:
-                hits_at_ks.append(prediction_statistics[field][HITS_AT_K])
-            if EDIT_DISTANCE in prediction_statistics[field]:
+        for test_statistics in test_statistics_per_model_name:
+            if ACCURACY in test_statistics[field]:
+                accuracies.append(test_statistics[field][ACCURACY])
+            if HITS_AT_K in test_statistics[field]:
+                hits_at_ks.append(test_statistics[field][HITS_AT_K])
+            if EDIT_DISTANCE in test_statistics[field]:
                 edit_distances.append(
-                    prediction_statistics[field][EDIT_DISTANCE])
+                    test_statistics[field][EDIT_DISTANCE])
 
         measures = []
         measures_names = []
@@ -441,7 +442,7 @@ def compare_classifiers_performance_changing_k(
 
 
 def compare_classifiers_multiclass_multimetric(
-        prediction_statistics,
+        test_statistics,
         field,
         ground_truth_metadata,
         top_n_classes,
@@ -450,8 +451,8 @@ def compare_classifiers_multiclass_multimetric(
         file_format='pdf',
         **kwargs
 ):
-    if len(prediction_statistics) < 1:
-        logging.error('No prediction_statistics provided')
+    if len(test_statistics) < 1:
+        logging.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -462,25 +463,25 @@ def compare_classifiers_multiclass_multimetric(
         )
 
     metadata = load_json(ground_truth_metadata)
-    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                            for prediction_statistics_f in
-                                            prediction_statistics]
+    test_statistics_per_model_name = [load_json(test_statistics_f)
+                                      for test_statistics_f in
+                                      test_statistics]
 
     fields_set = set()
-    for ls in prediction_statistics_per_model_name:
+    for ls in test_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
 
-    for i, prediction_statistics in enumerate(
-            prediction_statistics_per_model_name):
+    for i, test_statistics in enumerate(
+            test_statistics_per_model_name):
         for field in fields:
             model_name_name = (
                 model_names[i]
                 if model_names is not None and i < len(model_names)
                 else ''
             )
-            per_class_stats = prediction_statistics[field]['per_class_stats']
+            per_class_stats = test_statistics[field]['per_class_stats']
             precisions = []
             recalls = []
             f1_scores = []
@@ -1526,26 +1527,26 @@ def roc_curves(
     )
 
 
-def roc_curves_from_prediction_statistics(
-        prediction_statistics,
+def roc_curves_from_test_statistics(
+        test_statistics,
         field,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(prediction_statistics) < 1:
+    if len(test_statistics) < 1:
         logging.error('No prediction_statistics provided')
         return
 
-    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                            for prediction_statistics_f in
-                                            prediction_statistics]
+    test_statistics_per_model_name = [load_json(test_statistics_f)
+                                      for test_statistics_f in
+                                      test_statistics]
     fpr_tprs = []
-    for curr_prediction_statistics in prediction_statistics_per_model_name:
-        fpr = curr_prediction_statistics[field]['roc_curve'][
+    for curr_test_statistics in test_statistics_per_model_name:
+        fpr = curr_test_statistics[field]['roc_curve'][
             'false_positive_rate']
-        tpr = curr_prediction_statistics[field]['roc_curve'][
+        tpr = curr_test_statistics[field]['roc_curve'][
             'true_positive_rate']
         fpr_tprs.append((fpr, tpr))
 
@@ -1776,7 +1777,7 @@ def calibration_multiclass(
 
 
 def confusion_matrix(
-        prediction_statistics,
+        test_statistics,
         ground_truth_metadata,
         field,
         top_n_classes,
@@ -1786,8 +1787,8 @@ def confusion_matrix(
         file_format='pdf',
         **kwargs
 ):
-    if len(prediction_statistics) < 1:
-        logging.error('No prediction_statistics provided')
+    if len(test_statistics) < 1:
+        logging.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -1798,22 +1799,22 @@ def confusion_matrix(
         )
 
     metadata = load_json(ground_truth_metadata)
-    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                            for prediction_statistics_f in
-                                            prediction_statistics]
+    test_statistics_per_model_name = [load_json(test_statistics_f)
+                                      for test_statistics_f in
+                                      test_statistics]
 
     fields_set = set()
-    for ls in prediction_statistics_per_model_name:
+    for ls in test_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
 
-    for i, prediction_statistics in enumerate(
-            prediction_statistics_per_model_name):
+    for i, test_statistics in enumerate(
+            test_statistics_per_model_name):
         for field in fields:
-            if 'confusion_matrix' in prediction_statistics[field]:
+            if 'confusion_matrix' in test_statistics[field]:
                 confusion_matrix = np.array(
-                    prediction_statistics[field]['confusion_matrix']
+                    test_statistics[field]['confusion_matrix']
                 )
                 model_name_name = model_names[i] if (
                         model_names is not None and i < len(model_names)
@@ -1881,7 +1882,7 @@ def confusion_matrix(
 
 
 def frequency_vs_f1(
-        prediction_statistics,
+        test_statistics,
         ground_truth_metadata,
         field,
         top_n_classes,
@@ -1890,8 +1891,8 @@ def frequency_vs_f1(
         file_format='pdf',
         **kwargs
 ):
-    if len(prediction_statistics) < 1:
-        logging.error('No prediction_statistics provided')
+    if len(test_statistics) < 1:
+        logging.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -1902,25 +1903,25 @@ def frequency_vs_f1(
         )
 
     metadata = load_json(ground_truth_metadata)
-    prediction_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                            for prediction_statistics_f in
-                                            prediction_statistics]
+    test_statistics_per_model_name = [load_json(test_statistics_f)
+                                      for test_statistics_f in
+                                      test_statistics]
     k = top_n_classes[0]
 
     fields_set = set()
-    for ls in prediction_statistics_per_model_name:
+    for ls in test_statistics_per_model_name:
         for key in ls:
             fields_set.add(key)
     fields = [field] if field is not None and len(field) > 0 else fields_set
 
-    for i, prediction_statistics in enumerate(
-            prediction_statistics_per_model_name):
+    for i, test_statistics in enumerate(
+            test_statistics_per_model_name):
         for field in fields:
             model_name_name = (model_names[i]
                                if model_names is not None and i < len(
                 model_names)
                                else '')
-            per_class_stats = prediction_statistics[field]['per_class_stats']
+            per_class_stats = test_statistics[field]['per_class_stats']
             f1_scores = []
             labels = []
             class_names = metadata[field]['idx2str']
@@ -2041,7 +2042,7 @@ def cli(sys_argv):
                  'confidence_thresholding_2thresholds_3d',
                  'binary_threshold_vs_metric',
                  'roc_curves',
-                 'roc_curves_from_prediction_statistics',
+                 'roc_curves_from_test_statistics',
                  'calibration_1_vs_all',
                  'calibration_multiclass',
                  'confusion_matrix',
@@ -2079,7 +2080,7 @@ def cli(sys_argv):
         help='probabilities files'
     )
     parser.add_argument(
-        '-ts',
+        '-trs',
         '--training_statistics',
         default=[],
         nargs='+',
@@ -2087,8 +2088,8 @@ def cli(sys_argv):
         help='training stats files'
     )
     parser.add_argument(
-        '-ps',
-        '--prediction_statistics',
+        '-tes',
+        '--test_statistics',
         default=[],
         nargs='+',
         type=str,
@@ -2203,8 +2204,8 @@ def cli(sys_argv):
         binary_threshold_vs_metric(**vars(args))
     elif args.visualization == 'roc_curves':
         roc_curves(**vars(args))
-    elif args.visualization == 'roc_curves_from_prediction_statistics':
-        roc_curves_from_prediction_statistics(**vars(args))
+    elif args.visualization == 'roc_curves_from_test_statistics':
+        roc_curves_from_test_statistics(**vars(args))
     elif args.visualization == 'calibration_1_vs_all':
         calibration_1_vs_all(**vars(args))
     elif args.visualization == 'calibration_multiclass':
@@ -2220,4 +2221,5 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_command("visualize", *sys.argv)
     cli(sys.argv[1:])

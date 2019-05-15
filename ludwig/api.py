@@ -80,7 +80,7 @@ class LudwigModel:
     # Example usage:
 
     ```python
-    from ludwig import LudwigModel
+    from ludwig.api import LudwigModel
     ```
 
     Train a model:
@@ -132,12 +132,13 @@ class LudwigModel:
         if model_definition_file is not None:
             with open(model_definition_file, 'r') as def_file:
                 self.model_definition = merge_with_defaults(
-                    yaml.load(def_file)
+                    yaml.safe_load(def_file)
                 )
         else:
             self.model_definition = merge_with_defaults(model_definition)
         self.train_set_metadata = None
         self.model = None
+        self.exp_dir_name = None
 
     @staticmethod
     def _read_data(data_csv, data_dict):
@@ -267,7 +268,6 @@ class LudwigModel:
             data_test_hdf5=None,
             data_dict=None,
             train_set_metadata_json=None,
-            dataset_type='generic',
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
@@ -330,9 +330,6 @@ class LudwigModel:
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
-        :param dataset_type: (string, default: `'default'`) determines the type
-               of preprocessing will be applied to the data. Only `generic` is
-               available at the moment
         :param model_name: (string) a name for the model, user for the save
                directory
         :param model_load_path: (string) path of a pretrained model to load as
@@ -408,7 +405,13 @@ class LudwigModel:
         if data_df is None and data_dict is not None:
             data_df = pd.DataFrame(data_dict)
 
-        self.model, preprocessed_data, _, train_stats = full_train(
+        (
+            self.model,
+            preprocessed_data,
+            self.exp_dir_name,
+            train_stats,
+            self.model_definition
+        ) = full_train(
             self.model_definition,
             data_df=data_df,
             data_train_df=data_train_df,
@@ -422,7 +425,6 @@ class LudwigModel:
             data_train_hdf5=data_train_hdf5,
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
-            dataset_type=dataset_type,
             train_set_metadata_json=train_set_metadata_json,
             experiment_name='api_experiment',
             model_name=model_name,
@@ -645,7 +647,7 @@ class LudwigModel:
             batch_size=128,
             gpus=None,
             gpu_fraction=1,
-            only_predictions=True,
+            evaluate_performance=False,
             logging_level=logging.ERROR,
     ):
         logging.getLogger().setLevel(logging_level)
@@ -661,8 +663,12 @@ class LudwigModel:
 
         logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
         features_to_load = self.model_definition['input_features']
-        if not only_predictions:
-            features_to_load += self.model_definition['output_features']
+        if evaluate_performance:
+            output_features = self.model_definition['output_features']
+        else:
+            output_features = []
+        features_to_load += output_features
+
         preprocessed_data = build_data(
             data_df,
             features_to_load,
@@ -670,16 +676,13 @@ class LudwigModel:
             self.model_definition['preprocessing']
         )
         replace_text_feature_level(
-            self.model_definition['input_features'] +
-            ([] if only_predictions else self.model_definition[
-                'output_features']),
+            features_to_load,
             [preprocessed_data]
         )
         dataset = Dataset(
             preprocessed_data,
             self.model_definition['input_features'],
-            [] if only_predictions
-            else self.model_definition['output_features'],
+            output_features,
             None
         )
 
@@ -687,12 +690,12 @@ class LudwigModel:
         predict_results = self.model.predict(
             dataset,
             batch_size,
-            only_predictions=only_predictions,
+            evaluate_performance=evaluate_performance,
             gpus=gpus, gpu_fraction=gpu_fraction,
             session=getattr(self.model, 'session', None)
         )
 
-        if not only_predictions:
+        if evaluate_performance:
             calculate_overall_stats(
                 predict_results,
                 self.model_definition['output_features'],
@@ -804,6 +807,7 @@ class LudwigModel:
             batch_size=batch_size,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
+            evaluate_performance=False,
             logging_level=logging_level,
         )
 
@@ -888,7 +892,7 @@ class LudwigModel:
             batch_size=batch_size,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
-            only_predictions=False,
+            evaluate_performance=True,
             logging_level=logging_level,
         )
 
@@ -1049,7 +1053,7 @@ def main(sys_argv):
     parser.add_argument(
         '-md',
         '--model_definition',
-        type=yaml.load,
+        type=yaml.safe_load,
         help='model definition'
     )
 

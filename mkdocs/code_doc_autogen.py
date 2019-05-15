@@ -30,6 +30,7 @@ import sys
 sys.path.append("../")
 
 import ludwig
+from ludwig.api import LudwigModel
 
 EXCLUDE = {}
 
@@ -73,7 +74,7 @@ PAGES = [
     {
         'page': 'api.md',
         'classes': [
-            (ludwig.api.LudwigModel, "*")
+            (LudwigModel, "*")
         ]
     },
     # {

@@ -28,9 +28,9 @@ from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.predict import predict
-from ludwig.predict import print_prediction_results
+from ludwig.predict import print_test_results
 from ludwig.predict import save_prediction_outputs
-from ludwig.predict import save_prediction_statistics
+from ludwig.predict import save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry
@@ -165,7 +165,13 @@ def experiment(
     :type debug: Boolean
     """
 
-    model, preprocessed_data, experiment_dir_name, _ = full_train(
+    (
+        model,
+        preprocessed_data,
+        experiment_dir_name,
+        _,
+        model_definition
+    ) = full_train(
         model_definition,
         model_definition_file=model_definition_file,
         data_csv=data_csv,
@@ -212,7 +218,7 @@ def experiment(
             model,
             model_definition,
             batch_size,
-            only_predictions=False,
+            evaluate_performance=True,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             debug=debug
@@ -227,10 +233,9 @@ def experiment(
         )
 
         if is_on_master():
-            print_prediction_results(test_results)
-
+            print_test_results(test_results)
             save_prediction_outputs(postprocessed_output, experiment_dir_name)
-            save_prediction_statistics(test_results, experiment_dir_name)
+            save_test_statistics(test_results, experiment_dir_name)
     
     model.close_session()
 
@@ -346,7 +351,7 @@ def cli(sys_argv):
     model_definition.add_argument(
         '-md',
         '--model_definition',
-        type=yaml.load,
+        type=yaml.safe_load,
         help='model definition'
     )
     model_definition.add_argument(
@@ -467,4 +472,5 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_command("experiment", *sys.argv)
     cli(sys.argv[1:])

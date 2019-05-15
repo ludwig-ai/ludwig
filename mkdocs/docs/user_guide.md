@@ -5,6 +5,7 @@ Ludwig provides six command line interface entry points
 
 - train
 - predict
+- test
 - experiment
 - visualize
 - collect_weights
@@ -235,8 +236,6 @@ optional arguments:
                         skips saving intermediate NPY output files
   -bs BATCH_SIZE, --batch_size BATCH_SIZE
                         size of batches
-  -op, --only_predictions
-                        skip metrics calculation
   -g GPUS, --gpus GPUS  list of gpu to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
                         fraction of gpu memory to initialize the process with
@@ -255,10 +254,11 @@ If you trained a model previously and got the results in, for instance, `./resul
 
 You can specify an output directory with the argument `--output-directory`, by default it will be `./result_0`, with increasing numbers if a directory with the same name is present.
 
-The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors and a `predict_statistics.json` file containing all prediction statistics.
-By specifying the argument `--only_prediction` you will not get the statistics. This parameter is needed in the case your data does not contain ground truth output values, and thus computing the prediction statistics would be impossible.
-If you receive an error regarding a missing output feature column in your data, you probably forgot to specify this argument.
-You can moreover specify not to save the raw NPY output files with the argument `skip_save_unprocessed_output`.
+The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors.
+You can specify not to save the raw NPY output files with the argument `skip_save_unprocessed_output`.
+If the argument `--evaluate_performance` if provided, a `predict_statistics.json` file containing all prediction statistics will also be outputted.
+If this parameter is specified, the data must contain columns for each output feature with ground truth output values in order to compute the performance statistics.
+If you receive an error regarding a missing output feature column in your data, it means that the data does not contain the columns for each output feature to use as ground truth.
 
 A specific batch size for speeding up the prediction can be specified using the argument `--batch_size`.
 
@@ -269,10 +269,78 @@ Example:
 ludwig predict --data_csv reuters-allcats.csv --model_path results/experiment_run_0/model/
 ```
 
+test
+----
+
+This command lets you use a previously trained model to predict on new data and evaluate the performance of the prediction compared to ground truth.
+You can call it with:
+
+```
+ludwig test [options]
+```
+
+or with
+
+```
+python -m ludwig.test_performance [options]
+```
+
+from within Ludwig's main directory.
+
+These are the available arguments:
+
+```
+usage: ludwig predict [options]
+
+This script loads a pretrained model and uses it to predict.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_csv DATA_CSV   input data CSV file. If it has a split column, it will
+                        be used for splitting (0: train, 1: validation, 2:
+                        test), otherwise the dataset will be randomly split
+  --data_hdf5 DATA_HDF5
+                        input data HDF5 file. It is an intermediate preprocess
+                        version of the input CSV created the first time a CSV
+                        file is used in the same directory with the same name
+                        and a hdf5 extension
+  --train_set_metadata_json TRAIN_SET_METADATA_JSON
+                        input metadata JSON file. It is an intermediate
+                        preprocess file containing the mappings of the input
+                        CSV created the first time a CSV file is used in the
+                        same directory with the same name and a json extension
+  -s {training,validation,test,full}, --split {training,validation,test,full}
+                        the split to test the model on
+  -m MODEL_PATH, --model_path MODEL_PATH
+                        model to load
+  -od OUTPUT_DIRECTORY, --output_directory OUTPUT_DIRECTORY
+                        directory that contains the results
+  -ssuo, --skip_save_unprocessed_output
+                        skips saving intermediate NPY output files
+  -bs BATCH_SIZE, --batch_size BATCH_SIZE
+                        size of batches
+  -g GPUS, --gpus GPUS  list of gpu to use
+  -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
+                        fraction of gpu memory to initialize the process with
+  -uh, --use_horovod    uses horovod for distributed training
+  -dbg, --debug         enables debugging mode
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+```
+
+All parameters are the same of [predict](#predict) and the behavior is the same.
+The only difference isthat `test` requires the dataset to contain also columns with the same name of output features.
+This is needed because `test` compares the predictions produced by the model with the ground truth and will save all those statistics in a `test_statistics.json` file in the result directory.
+
+Example:
+```
+ludwig test --data_csv reuters-allcats.csv --model_path results/experiment_run_0/model/
+```
+
 experiment
 ----------
 
-This command combines training and prediction into a single handy command.
+This command combines training and test into a single handy command.
 You can call it with:
 
 ```
@@ -369,7 +437,7 @@ optional arguments:
                         the level of logging to use
 ```
 
-The parameters combine parameters from both [train](#train) and [predict](#predict) so please refer to those sections for an in depth explanation.
+The parameters combine parameters from both [train](#train) and [test](#test) so refer to those sections for an in depth explanation.
 The output directory will contain the outputs both commands produce.
 
 Example:
@@ -602,7 +670,7 @@ Then a list `idx2str` and two dictionaries `str2idx` and `str2freq` are created 
 }
 ```
 
-Finally a numpy matrix is created with sizes `n x l` where `n` is the number of rows in the column and `l` is the minimum of the longest tokenized list and a `max_lenght` parameter that can be set.
+Finally a numpy matrix is created with sizes `n x l` where `n` is the number of rows in the column and `l` is the minimum of the longest tokenized list and a `max_length` parameter that can be set.
 All sequences shorter than `l` are padded on the right (but this behavior may also be modified through a parameter).
 
 | after formatter          | numpy matrix |
@@ -1017,7 +1085,7 @@ The available encoder parameters are:
 - `norm'` (default `null`): norm to apply after the single neuron. It can be `null`, `batch` or `layer`.
 - `tied_weights` (default `null`): name of the input feature to tie the weights the encoder with. It needs to be the name of a feature of the same type and with the same encoder parameters.
 
-Example binary feature entry in the output features list:
+Example numerical feature entry in the output features list:
 
 ```yaml
 name: numerical_csv_column_name
@@ -1073,7 +1141,7 @@ regularize: true
 ### Numerical Features Measures
 
 The measures that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
+You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
 
 Category Features
 -----------------
@@ -1208,7 +1276,7 @@ top_k: 3
 ### Category Features Measures
 
 The measures that are calculated every epoch and are available for category features are `accuracy`, `top_k` (computes accuracy considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence) and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
+You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a category feature.
 
 Set Features
 ------------
@@ -1336,7 +1404,7 @@ threshold: 0.5
 ### Set Features Measures
 
 The measures that are calculated every epoch and are available for category features are `jaccard_index` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
+You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a set feature.
 
 Bag Features
 ------------
@@ -1999,7 +2067,7 @@ attention_mechanism: null
 ### Sequence Features Measures
 
 The measures that are calculated every epoch and are available for category features are `accuracy` (counts the number of datapoints where all the elements of the predicted sequence are correct over the number of all datapoints), `token_accuracy` (computes the number of elements in all the sequences that are correctly predicted over the number of all the elements in all the sequences), `last_accuracy` (accuracy considering only the last element of the sequence, it is useful for being sure special end-of-sequence tokens are generated or tagged), `edit_distance` (the levenshtein distance between the predicted and ground truth sequence), `perplexity` (the perplexity of the ground truth sequence according to the model) and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
+You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a sequence feature.
 
 Text Features
 -------------
@@ -2086,15 +2154,29 @@ Image Features
 
 ### Image Features Preprocessing
 
-Ludwig supports grayscale and color images, image type is automatically inferred.
+Ludwig supports both grayscale and color images, the number of channels is inferred, but make sure all your images have the same number of channels.
 During preprocessing raw image files are transformed into numpy ndarrays and saved in the hdf5 format.
 Images should have the same size.
 If they have different sizes they can be converted to the same size which should be set in the feature preprocessing parameters.
 
-- `in_memory` (default: `true`): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.
-- `resize_method` (default: `crop_or_pad`): available options: `crop_or_pad` - crops larger images to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation.
-- `height` (default: null): image height in pixels, must be set if resizing is required
-- `width` (default: null): image width in pixels, must be set if resizing is required
+- `in_memory` (default `true`): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.
+- `resize_method` (default `crop_or_pad`): available options: `crop_or_pad` - crops larger images to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation.
+- `height` (default `null`): image height in pixels, must be set if resizing is required
+- `width` (default `null`): image width in pixels, must be set if resizing is required
+- `num_channels` (default `null`): number of channels in the images. By default, if the value is `null`, the number of channels of the first image of the dataset will be used and if there is an image in the dataset with a different number of channels, an error will be reported. If the value specified is not `null`, images in the dataset will be adapted to the specified size. If the value is `1`, all images with more then one channel will be greyscaled and reduced to one channel (trasparecy will be lost). If the value is `3` all images with 1 channel will be repeated 3 times to obtain 3 channels, while images with 4 channels will lose the transparecy channel. If the value is `4`, all the images with less than 4 channels will have the remaining channels filled with zeros.
+
+Depending on the application, do not to exceed a size of `256 x 256` as bigger sizes will, in most cases, not provide much advantage and considerably slow down trainin and inference and also make both forward and backward passes consume a lot of memory leading to memory overflow on machines with limited amounts of RAM or on GPUs with limited amounts of VRAM.
+
+Example of a preprocessing specification:
+
+```yaml
+name: image_feature_name
+type: image
+preprocessing:
+  heights: 128
+  width: 128
+  resize_method: crop_or_pad
+```
 
 
 ### Image Input Features and Encoders
@@ -2124,13 +2206,15 @@ Convolutional Stack Encoder takes the following optional parameters:
 
 #### ResNet Encoder
 
-ResNet Encoder takes the following optional parameters:
+[ResNet](https://arxiv.org/abs/1603.05027) Encoder takes the following optional parameters:
 
-- `resnet_size` (default `50`): A single integer for the size of the ResNet model.
+- `resnet_size` (default `50`): A single integer for the size of the ResNet model. If has to be one of the following values: `8`, `14`, `18`, `34`, `50`, `101`, `152`, `200`.
 - `num_filters` (default `16`): It indicates the number of filters, and by consequence the output channels of the 2d convolution.
 - `kernel_size` (default `3`): The kernel size to use for convolution.
 - `conv_stride` (default `1`): Stride size for the initial convolutional layer.
 - `first_pool_size` (default `null`): Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.
+- `batch_norm_momentum` (default `0.9`): Momentum of the batch norm running statistics. The suggested parameter in [TensorFlow's implementation](https://github.com/tensorflow/models/blob/master/official/resnet/resnet_model.py#L36) is `0.997`, but that leads to a big discrepancy between the normalization at training time and test time, so the default value is a more conservative `0.9`.
+- `batch_norm_epsilon` (default `0.001`): Epsilon of the batch norm. The suggested parameter in [TensorFlow's implementation](https://github.com/tensorflow/models/blob/master/official/resnet/resnet_model.py#L37) is `1e-5`, but that leads to a big discrepancy between the normalization at training time and test time, so the default value is a more conservative `0.001`.
 - `fc_layers` (default `null`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the encoder will be used instead. If both `fc_layers` and `num_fc_layers` are `null`, a default list will be assigned to `fc_layers` with the value `[{fc_size: 512}, {fc_size: 256}]`. (only applies if `reduce_output` is not `null`).
 - `num_fc_layers` (default `1`): This is the number of stacked fully connected layers.
 - `fc_size` (default `256`): if a `fc_size` is not already specified in `fc_layers` this is the default `fc_size` that will be used for each layer. It indicates the size of the output of a fully connected layer.
@@ -2336,7 +2420,7 @@ Training a Model
 To train a model one has first to initialize it using the initializer `LudwigModel()` and a model definition dictionary, and then calling the `train()` function using either a dataframe or a CSV file.
 
 ```python
-from ludwig import LudwigModel
+from ludwig.api import LudwigModel
 
 model_definition = {...}
 model = LudwigModel(model_definition)
@@ -2355,7 +2439,7 @@ Loading a Pre-trained Model
 In order to load a pre-trained Ludwig model you have to call the static function `load()` of the `LudwigModel` class providing the path containing the model.
 
 ```python
-from ludwig import LudwigModel
+from ludwig.api import LudwigModel
 
 model = LudwigModel.load(model_path)
 ```
@@ -2405,7 +2489,7 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -v {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}, --visualization {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_prediction_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}
+  -v {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}, --visualization {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}
                         type of visualization
   -f FIELD, --field FIELD
                         field containing ground truth
@@ -2415,9 +2499,9 @@ optional arguments:
                         predictions files
   -prob PROBABILITIES [PROBABILITIES ...], --probabilities PROBABILITIES [PROBABILITIES ...]
                         probabilities files
-  -ts TRAINING_STATISTICS [TRAINING_STATISTICS ...], --training_statistics TRAINING_STATISTICS [TRAINING_STATISTICS ...]
+  -trs TRAINING_STATS [TRAINING_STATS ...], --training_statistics TRAINING_STATS [TRAINING_STATS ...]
                         training stats files
-  -ps PREDICTION_STATISTICS [PREDICTION_STATISTICS ...], --prediction_statistics PREDICTION_STATISTICS [PREDICTION_STATISTICS ...]
+  -tes TEST_STATS [TEST_STATS ...], --test_statistics TEST_STATS [TEST_STATS ...]
                         test stats files
   -mn MODEL_NAMES [MODEL_NAMES ...], --model_names MODEL_NAMES [MODEL_NAMES ...]
                         names of the models to use as labels
@@ -2441,7 +2525,7 @@ optional arguments:
 
 Some additional information on the parameters:
 
-- The list parameters are considered to be aligned, meaning `predictions`, `probabilities`, `training_statistics`, `prediction_statistics` and `model_names` are indexed altogether, for instance the name of the model producing the second predictions in the list will be the second in the model names.
+- The list parameters are considered to be aligned, meaning `predictions`, `probabilities`, `training_statistics`, `test_statistics` and `model_names` are indexed altogether, for instance the name of the model producing the second predictions in the list will be the second in the model names.
 - `data_csv` is intended to be the data the model(s) were trained on.
 - `ground_truth` and `ground_truth_metadata` are respectively the `HDF5` and `JSON` file obtained during training preprocessing. If you plan to use the visualizations then be sure not to use the `skip_save_preprocessing` when training. Those files are needed because they contain the split performed at preprocessing time, so it is easy to extract the test set from them.
 - `field` is the output feature to use for creating the visualization.
@@ -2466,8 +2550,8 @@ Confusion Matrix
 
 ### confusion_matrix
 
-This visualization uses the `top_n_classes`, `normalize`, `ground_truth_metadata`, `prediction_statistics` and `model_names` parameters.
-For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces a heatmap of the confusion matrix in the predictions for each field that has a confusion matrix in `prediction_statistics`.
+This visualization uses the `top_n_classes`, `normalize`, `ground_truth_metadata`, `test_statistics` and `model_names` parameters.
+For each model (in the aligned lists of `test_statistics` and `model_names`) it produces a heatmap of the confusion matrix in the predictions for each field that has a confusion matrix in `test_statistics`.
 The value of `top_n_classes` limits the heatmap to the `n` most frequent classes.
 
 ![Confusion Matrix](images/confusion_matrix.png "Confusion Matrix")
@@ -2482,8 +2566,8 @@ Compare Performance
 
 ### compare_performance
 
-This visualization uses the `field`, `prediction_statistics` and `model_names` parameters.
-For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces bars in a bar plot, one for each overall metric available in the `prediction_statistics` file for the specified `field`.
+This visualization uses the `field`, `test_statistics` and `model_names` parameters.
+For each model (in the aligned lists of `test_statistics` and `model_names`) it produces bars in a bar plot, one for each overall metric available in the `test_statistics` file for the specified `field`.
 
 ![Compare Classifiers Performance](images/compare_performance.png "Compare Classifiers Performance")
 
@@ -2533,9 +2617,9 @@ For each model (in the aligned lists of `probabilities` and `model_names`) it pr
 
 ### compare_classifiers_multiclass_multimetric
 
-This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `prediction_statistics` and `model_names` parameters.
+This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `test_statistics` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `prediction_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes for the specified `field`.
+For each model (in the aligned lists of `test_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes for the specified `field`.
 
 The first one show the measures on the `n` most frequent classes.
 
@@ -2693,11 +2777,11 @@ It needs to be an integer, to figure out the association between classes and int
 
 ### roc_curves_from_test_statistics
 
-This visualization uses the `field`, `prediction_statistics` and `model_names` parameters.
+This visualization uses the `field`, `test_statistics` and `model_names` parameters.
 `field` needs to be binary feature.
 This visualization produces a line chart plotting the roc curves for the specified `field`.
 
-![ROC Curves from Prediction Statistics](images/roc_curves_from_prediction_statistics.png "ROC Curves from Prediction Statistics")
+![ROC Curves from Prediction Statistics](images/roc_curves_from_test_statistics.png "ROC Curves from Prediction Statistics")
 
 
 Calibration Plot
@@ -2738,9 +2822,9 @@ Class Frequency vs. F1 score
 
 ### frequency_vs_f1
 
-This visualization uses the `ground_truth_metadata`, `field`, `prediction_statistics` and `model_names` parameters.
+This visualization uses the `ground_truth_metadata`, `field`, `test_statistics` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `prediction_statistics` and `model_names`), produces two plots statistics of predictions for the specified `field`.
+For each model (in the aligned lists of `test_statistics` and `model_names`), produces two plots statistics of predictions for the specified `field`.
 
 The first plot is a line plot with one x axis representing the different classes and two vertical axes colored in orange and blue respectively.
 The orange one is the frequency of the class and an orange line is plotted to show the trend.

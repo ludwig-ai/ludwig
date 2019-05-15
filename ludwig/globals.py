@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-LUDWIG_VERSION = '0.1.1'
+LUDWIG_VERSION = '0.1.2'
 
 MODEL_WEIGHTS_FILE_NAME = 'model_weights'
 MODEL_WEIGHTS_PROGRESS_FILE_NAME = 'model_weights_progress'
 MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'
-TRAINING_PROGRESS_FILE_NAME = 'training_progress.p'
+TRAINING_PROGRESS_FILE_NAME = 'training_progress.json'
 TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'
 
 DISABLE_PROGRESSBAR = False

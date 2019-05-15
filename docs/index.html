@@ -22,8 +22,8 @@
 
     <!-- CSS
    ================================================== -->
-    <link href="assets/stylesheets/application.572ca0f0.css" rel="stylesheet">
-    <link href="assets/stylesheets/application-palette.22915126.css" rel="stylesheet">
+    <link href="assets/stylesheets/application.750b69bd.css" rel="stylesheet">
+    <link href="assets/stylesheets/application-palette.224b79ff.css" rel="stylesheet">
     <link href="assets/fonts/material-icons.css" rel="stylesheet">
     <link href="stylesheets/extra.css" rel="stylesheet">
     <link href="stylesheets/monokai.css" rel="stylesheet">
@@ -355,7 +355,7 @@
                 Train models and use them to predict directly from Python
             </p>
 
-            <pre data-aos="fade-up"><code>from ludwig import LudwigModel
+            <pre data-aos="fade-up"><code>from ludwig.api import LudwigModel
 
 # train a model
 model_definition = {...}
@@ -382,13 +382,17 @@ predictions = model.predict(test_dataframe)</code></pre>
 ================================================== -->
 <footer class="md-footer">
 
+    <!-- Link to previous and/or next page -->
+
     <div class="md-footer-nav">
         <nav class="md-footer-nav__inner md-grid">
 
+            <!-- Link to next page -->
 
-            <a class="md-flex md-footer-nav__link md-footer-nav__link--next" href="getting_started/"
-               rel="next" title="Getting Started">
-                <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--next" href="getting_started/" rel="next"
+               title="Examples">
+                <div class="md-flex__cell md-flex__cell--stretch
+                  md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
@@ -397,22 +401,25 @@ predictions = model.predict(test_dataframe)</code></pre>
               </span>
                 </div>
                 <div class="md-flex__cell md-flex__cell--shrink">
-                    <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+                    <i class="md-icon md-icon--arrow-forward
+                    md-footer-nav__button"></i>
                 </div>
             </a>
 
         </nav>
     </div>
 
+
+    <!-- Further information -->
     <div class="md-footer-meta md-typeset">
         <div class="md-footer-meta__inner md-grid">
-            <div class="md-footer-copyright">
 
+            <!-- Copyright and theme information -->
+            <div class="md-footer-copyright">
                 <div class="footer-logo-smallpad"></div>
-                <!--<a href="htto://github.com/uber/ludwig"><i class="fa fa-github"></i></a>-->
 
                 <div class="md-footer-copyright__highlight">
-                    Copyright © 2019 Uber Technologies Inc.
+                    Copyright © 2018 - 2019 Uber Technologies Inc.
                 </div>
 
                 Website by <a href="http://w4nderlu.st">w4nderlust</a> powered by
@@ -420,12 +427,14 @@ predictions = model.predict(test_dataframe)</code></pre>
                 <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>,
                 <a href="http://www.styleshout.com/">styleshout</a> and
                 <a href="http://cables.gl/">cables</a>.
-                </div>
+            </div>
+
+            <!-- Social links -->
+
 
 
         </div>
     </div>
-
 </footer>
 
 <div id="preloader">

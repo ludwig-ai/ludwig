@@ -71,7 +71,7 @@ pip install -r requirements.txt
 python setup.py install
 ```
 
-If you intend to use text features and want to use [spaCy](jttp://spacy.io) based language tokenizers, install language specific models with:
+If you intend to use text features and want to use [spaCy](http://spacy.io) based language tokenizers, install language specific models with:
 ```
 python -m spacy download <language_code>
 ```
@@ -198,7 +198,7 @@ Programmatic API
 Ludwig also provides a simple programmatic API that allows you to train or load a model and use it to obtain predictions on new data:
 
 ```python
-from ludwig import LudwigModel
+from ludwig.api import LudwigModel
 
 # train a model
 model_definition = {...}
