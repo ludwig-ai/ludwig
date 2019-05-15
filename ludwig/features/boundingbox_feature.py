@@ -71,7 +71,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-        self.loss = {'type': MEAN_SQUARED_ERROR}
+        self.loss = {'type': MEAN_SQUARED_ERROR} #change to huber_loss
         self.clip = None
         self.initializer = None
         self.regularize = True
@@ -134,9 +134,40 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
 
         return predictions
 
+
     def _get_loss(self, targets, predictions):
         with tf.variable_scope('loss_{}'.format(self.name)):
+            if self.loss['type'] == 'huber_loss':
+                train_loss = tf.losses.huber_loss(
+                    target_tensor,
+                    prediction_tensor,
+                    delta=self._delta,
+                    loss_collection=None,
+                    reduction=Reduction.NONE)
+                # train_loss = tf.losses.mean_squared_error(
+                #     labels=targets,
+                #     predictions=predictions,
+                #     reduction=Reduction.NONE)
+            elif self.loss['type'] == 'type_2':
+                pass
+                # train_loss = tf.losses.absolute_difference(
+                #     labels=targets,
+                #     predictions=predictions,
+                #     reduction=Reduction.NONE
+                # )
+            else:
+                train_mean_loss = None
+                train_loss = None
+                raise ValueError(
+                    'Unsupported loss type {}'.format(self.loss['type'])
+                )
 
+            train_mean_loss = tf.reduce_mean(
+                train_loss,
+                name='train_mean_loss_{}'.format(self.name)
+            )
+
+        return train_mean_loss, train_loss
     def _get_measures(self, targets, predictions):
         with tf.variable_scope('measures_{}'.format(self.name)):
             error_val = get_error(
@@ -153,7 +184,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
 
             mean_average_precision = None
 
-        return error_val, intersection_over_union, mean_average_precision
+        return error_val, iou_val #, mean_average_precision
 
     def build_output(
             self,
@@ -162,7 +193,90 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             regularizer=None,
             **kwargs
     ):
-        pass
+        output_tensors = {}
+
+        # ================ Placeholder ================
+        targets = self._get_output_placeholder()
+        output_tensors[self.name] = targets
+        logging.debug('  targets_placeholder: {0}'.format(targets))
+
+        # ================ Predictions ================
+        predictions = self._get_predictions(
+            hidden,
+            hidden_size
+        )
+
+        output_tensors[PREDICTIONS + '_' + self.name] = predictions
+
+        # ================ Measures ================
+        error_val, iou = self._get_measures(
+            targets,
+            predictions
+        )
+
+        output_tensors[ERROR + '_' + self.name] = error
+        output_tensors[IOU + '_' + self.name] = iou
+
+        if 'sampled' not in self.loss['type']:
+            tf.summary.scalar(
+                'train_batch_mean_iou_{}'.format(self.name),
+                tf.reduce_mean(iou)
+            )
+
+        # ================ Loss ================
+        train_mean_loss, eval_loss = self._get_loss(targets, predictions)
+
+        output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
+        output_tensors[
+            TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
+
+        tf.summary.scalar(
+            'train_mean_loss_{}'.format(self.name),
+            train_mean_loss,
+        )
+
+        return train_mean_loss, eval_loss, output_tensors
+
+    default_validation_measure = MEAN_SQUARED_ERROR
+
+    output_config = OrderedDict([
+        (LOSS, {
+            'output': EVAL_LOSS,
+            'aggregation': SUM,
+            'value': 0,
+            'type': MEASURE
+        }),
+        (MEAN_SQUARED_ERROR, {
+            'output': SQUARED_ERROR,
+            'aggregation': SUM,
+            'value': 0,
+            'type': MEASURE
+        }),
+        (MEAN_ABSOLUTE_ERROR, {
+            'output': ABSOLUTE_ERROR,
+            'aggregation': SUM,
+            'value': 0,
+            'type': MEASURE
+        }),
+        (R2, {
+            'output': R2,
+            'aggregation': SUM,
+            'value': 0,
+            'type': MEASURE
+        }),
+        (ERROR, {
+            'output': ERROR,
+            'aggregation': SUM,
+            'value': 0,
+            'type': MEASURE
+        }),
+        (PREDICTIONS, {
+            'output': PREDICTIONS,
+            'aggregation': APPEND,
+            'value': [],
+            'type': PREDICTION
+        })
+    ])
 
     @staticmethod
     def update_model_definition_with_metadata(
