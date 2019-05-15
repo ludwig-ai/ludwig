@@ -62,8 +62,8 @@ class BoundingBoxBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters,
     ):
-        data[feature['name']] = dataset_df[feature['name']].astype(
-            np.float32).as_matrix()
+        data[feature['name']] = np.stack(dataset_df[feature['name']], 
+                                         axis=0)
 
 
 
@@ -71,7 +71,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-        self.loss = {'type': MEAN_SQUARED_ERROR} #change to huber_loss
+        self.loss = {'type': 'huber_loss'} #add this to constants
         self.clip = None
         self.initializer = None
         self.regularize = True
@@ -144,11 +144,8 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                     delta=self._delta,
                     loss_collection=None,
                     reduction=Reduction.NONE)
-                # train_loss = tf.losses.mean_squared_error(
-                #     labels=targets,
-                #     predictions=predictions,
-                #     reduction=Reduction.NONE)
-            elif self.loss['type'] == 'type_2':
+
+            elif self.loss['type'] == 'yolov3_loss':
                 pass
                 # train_loss = tf.losses.absolute_difference(
                 #     labels=targets,
