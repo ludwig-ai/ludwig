@@ -63,7 +63,7 @@ class BoundingBoxBaseFeature(BaseFeature):
             preprocessing_parameters,
     ):
         data[feature['name']] = np.stack(dataset_df[feature['name']], 
-                                         axis=0).astype(np.int32)
+                                         axis=0).astype(np.float32)
 
 
 
@@ -76,12 +76,13 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
         self.initializer = None
         self.regularize = True
         self.box_coordinates = (None, None, None, None)
+        self._delta = 1
 
         _ = self.overwrite_defaults(feature)
 
     def _get_output_placeholder(self):
         return tf.placeholder(
-            tf.int32,
+            tf.float32,
             [None, len(self.box_coordinates)],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
         )
@@ -99,7 +100,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             initializer_obj = get_initializer(self.initializer)
             weights = tf.get_variable(
                 'weights',
-                initializer=initializer_obj([hidden_size, 1]),
+                initializer=initializer_obj([hidden_size, 4]),
                 regularizer=regularizer
             )
             logging.debug('  regression_weights: {0}'.format(weights))
@@ -109,8 +110,9 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
 
             predictions = tf.reshape(
                 tf.matmul(hidden, weights) + biases,
-                [-1]
+                [-1, 4]
             )
+
             logging.debug('  predictions: {0}'.format(predictions))
 
             if self.clip is not None:
@@ -131,7 +133,6 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                             self.clip
                         )
                     )
-
         return predictions
 
 
@@ -139,19 +140,14 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
         with tf.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == 'huber_loss':
                 train_loss = tf.losses.huber_loss(
-                    target_tensor,
-                    prediction_tensor,
+                    targets,
+                    predictions,
                     delta=self._delta,
                     loss_collection=None,
                     reduction=Reduction.NONE)
 
             elif self.loss['type'] == 'yolov3_loss':
                 pass
-                # train_loss = tf.losses.absolute_difference(
-                #     labels=targets,
-                #     predictions=predictions,
-                #     reduction=Reduction.NONE
-                # )
             else:
                 train_mean_loss = None
                 train_loss = None
@@ -165,6 +161,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             )
 
         return train_mean_loss, train_loss
+
     def _get_measures(self, targets, predictions):
         with tf.variable_scope('measures_{}'.format(self.name)):
             error_val = get_error(
@@ -173,7 +170,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                 self.name
             )
 
-            intersection_over_union = get_bbbox_iou(
+            iou_val = get_bbbox_iou(
                 targets,
                 predictions,
                 self.name
@@ -206,7 +203,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
         output_tensors[PREDICTIONS + '_' + self.name] = predictions
 
         # ================ Measures ================
-        error_val, iou = self._get_measures(
+        error, iou = self._get_measures(
             targets,
             predictions
         )
