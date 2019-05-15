@@ -5,6 +5,7 @@ Ludwig provides six command line interface entry points
 
 - train
 - predict
+- test
 - experiment
 - visualize
 - collect_weights
@@ -235,11 +236,6 @@ optional arguments:
                         skips saving intermediate NPY output files
   -bs BATCH_SIZE, --batch_size BATCH_SIZE
                         size of batches
-  -ep, --evaluate_performance
-                        performs performance metrics calculation.Requires that
-                        the dataset contains one column for each output
-                        feature the model predicts to use as ground truth for
-                        the performance calculation.
   -g GPUS, --gpus GPUS  list of gpu to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
                         fraction of gpu memory to initialize the process with
@@ -273,10 +269,78 @@ Example:
 ludwig predict --data_csv reuters-allcats.csv --model_path results/experiment_run_0/model/
 ```
 
+test
+----
+
+This command lets you use a previously trained model to predict on new data and evaluate the performance of the prediction compared to ground truth.
+You can call it with:
+
+```
+ludwig test [options]
+```
+
+or with
+
+```
+python -m ludwig.test_performance [options]
+```
+
+from within Ludwig's main directory.
+
+These are the available arguments:
+
+```
+usage: ludwig predict [options]
+
+This script loads a pretrained model and uses it to predict.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_csv DATA_CSV   input data CSV file. If it has a split column, it will
+                        be used for splitting (0: train, 1: validation, 2:
+                        test), otherwise the dataset will be randomly split
+  --data_hdf5 DATA_HDF5
+                        input data HDF5 file. It is an intermediate preprocess
+                        version of the input CSV created the first time a CSV
+                        file is used in the same directory with the same name
+                        and a hdf5 extension
+  --train_set_metadata_json TRAIN_SET_METADATA_JSON
+                        input metadata JSON file. It is an intermediate
+                        preprocess file containing the mappings of the input
+                        CSV created the first time a CSV file is used in the
+                        same directory with the same name and a json extension
+  -s {training,validation,test,full}, --split {training,validation,test,full}
+                        the split to test the model on
+  -m MODEL_PATH, --model_path MODEL_PATH
+                        model to load
+  -od OUTPUT_DIRECTORY, --output_directory OUTPUT_DIRECTORY
+                        directory that contains the results
+  -ssuo, --skip_save_unprocessed_output
+                        skips saving intermediate NPY output files
+  -bs BATCH_SIZE, --batch_size BATCH_SIZE
+                        size of batches
+  -g GPUS, --gpus GPUS  list of gpu to use
+  -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
+                        fraction of gpu memory to initialize the process with
+  -uh, --use_horovod    uses horovod for distributed training
+  -dbg, --debug         enables debugging mode
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+```
+
+All parameters are the same of [predict](#predict) and the behavior is the same.
+The only difference isthat `test` requires the dataset to contain also columns with the same name of output features.
+This is needed because `test` compares the predictions produced by the model with the ground truth and will save all those statistics in a `test_statistics.json` file in the result directory.
+
+Example:
+```
+ludwig test --data_csv reuters-allcats.csv --model_path results/experiment_run_0/model/
+```
+
 experiment
 ----------
 
-This command combines training and prediction into a single handy command.
+This command combines training and test into a single handy command.
 You can call it with:
 
 ```
@@ -373,7 +437,7 @@ optional arguments:
                         the level of logging to use
 ```
 
-The parameters combine parameters from both [train](#train) and [predict](#predict) so please refer to those sections for an in depth explanation.
+The parameters combine parameters from both [train](#train) and [test](#test) so refer to those sections for an in depth explanation.
 The output directory will contain the outputs both commands produce.
 
 Example:

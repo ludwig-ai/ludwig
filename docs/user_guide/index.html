@@ -322,7 +322,14 @@
   </a>
   
 </li>
-        
+
+          <li class="md-nav__item">
+              <a class="md-nav__link" href="#test" title="test">
+                  test
+              </a>
+
+          </li>
+
           <li class="md-nav__item">
   <a href="#experiment" title="experiment" class="md-nav__link">
     experiment
@@ -1373,7 +1380,14 @@
   </a>
   
 </li>
-        
+
+          <li class="md-nav__item">
+              <a class="md-nav__link" href="#test" title="test">
+                  test
+              </a>
+
+          </li>
+
           <li class="md-nav__item">
   <a href="#experiment" title="experiment" class="md-nav__link">
     experiment
@@ -2364,6 +2378,7 @@
 <ul>
 <li>train</li>
 <li>predict</li>
+    <li>test</li>
 <li>experiment</li>
 <li>visualize</li>
 <li>collect_weights</li>
@@ -2574,11 +2589,6 @@ optional arguments:
                         skips saving intermediate NPY output files
   -bs BATCH_SIZE, --batch_size BATCH_SIZE
                         size of batches
-  -ep, --evaluate_performance
-                        performs performance metrics calculation.Requires that
-                        the dataset contains one column for each output
-                        feature the model predicts to use as ground truth for
-                        the performance calculation.
   -g GPUS, --gpus GPUS  list of gpu to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
                         fraction of gpu memory to initialize the process with
@@ -2607,8 +2617,78 @@ If you receive an error regarding a missing output feature column in your data, 
 </pre></div>
 
 
-<h3 id="experiment">experiment<a class="headerlink" href="#experiment" title="Permanent link">&para;</a></h3>
-<p>This command combines training and prediction into a single handy command.
+                <h3 id="test">test<a class="headerlink" href="#test" title="Permanent link">&para;</a></h3>
+                <p>This command lets you use a previously trained model to predict on new data and evaluate the
+                    performance of the prediction compared to ground truth.
+                    You can call it with:</p>
+                <div class="codehilite"><pre><span></span>ludwig test [options]
+</pre>
+                </div>
+
+
+                <p>or with</p>
+                <div class="codehilite"><pre><span></span>python -m ludwig.test_performance [options]
+</pre>
+                </div>
+
+
+                <p>from within Ludwig's main directory.</p>
+                <p>These are the available arguments:</p>
+                <div class="codehilite"><pre><span></span>usage: ludwig predict [options]
+
+This script loads a pretrained model and uses it to predict.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_csv DATA_CSV   input data CSV file. If it has a split column, it will
+                        be used for splitting (0: train, 1: validation, 2:
+                        test), otherwise the dataset will be randomly split
+  --data_hdf5 DATA_HDF5
+                        input data HDF5 file. It is an intermediate preprocess
+                        version of the input CSV created the first time a CSV
+                        file is used in the same directory with the same name
+                        and a hdf5 extension
+  --train_set_metadata_json TRAIN_SET_METADATA_JSON
+                        input metadata JSON file. It is an intermediate
+                        preprocess file containing the mappings of the input
+                        CSV created the first time a CSV file is used in the
+                        same directory with the same name and a json extension
+  -s {training,validation,test,full}, --split {training,validation,test,full}
+                        the split to test the model on
+  -m MODEL_PATH, --model_path MODEL_PATH
+                        model to load
+  -od OUTPUT_DIRECTORY, --output_directory OUTPUT_DIRECTORY
+                        directory that contains the results
+  -ssuo, --skip_save_unprocessed_output
+                        skips saving intermediate NPY output files
+  -bs BATCH_SIZE, --batch_size BATCH_SIZE
+                        size of batches
+  -g GPUS, --gpus GPUS  list of gpu to use
+  -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
+                        fraction of gpu memory to initialize the process with
+  -uh, --use_horovod    uses horovod for distributed training
+  -dbg, --debug         enables debugging mode
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+</pre>
+                </div>
+
+
+                <p>All parameters are the same of <a href="#predict">predict</a> and the behavior is the same.
+                    The only difference isthat <code>test</code> requires the dataset to contain also columns with the
+                    same name of output features.
+                    This is needed because <code>test</code> compares the predictions produced by the model with the
+                    ground truth and will save all those statistics in a <code>test_statistics.json</code> file in the
+                    result directory.</p>
+                <p>Example:</p>
+                <div class="codehilite"><pre><span></span>ludwig test --data_csv reuters-allcats.csv --model_path results/experiment_run_0/model/
+</pre>
+                </div>
+
+
+                <h3 id="experiment">experiment<a class="headerlink" href="#experiment" title="Permanent link">&para;</a>
+                </h3>
+                <p>This command combines training and test into a single handy command.
 You can call it with:</p>
 <div class="codehilite"><pre><span></span>ludwig experiment [options]
 </pre></div>
@@ -2701,7 +2781,8 @@ optional arguments:
 </pre></div>
 
 
-<p>The parameters combine parameters from both <a href="#train">train</a> and <a href="#predict">predict</a> so please refer to those sections for an in depth explanation.
+                <p>The parameters combine parameters from both <a href="#train">train</a> and <a href="#test">test</a>
+                    so refer to those sections for an in depth explanation.
 The output directory will contain the outputs both commands produce.</p>
 <p>Example:</p>
 <div class="codehilite"><pre><span></span>ludwig experiment --data_csv reuters-allcats.csv --model_definition &quot;{input_features: [{name: text, type: text, encoder: parallel_cnn, level: word}], output_features: [{name: class, type: category}]}&quot;
