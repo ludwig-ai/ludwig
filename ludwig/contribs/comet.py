@@ -23,6 +23,7 @@ class Comet():
     """
     Class that defines the methods necessary to hook into process.
     """
+
     @staticmethod
     def import_call(argv, *args, **kwargs):
         """
@@ -33,7 +34,8 @@ class Comet():
         try:
             import comet_ml
         except ImportError:
-            logging.error("Ignored --comet: Please install comet_ml; see www.comet.ml")
+            logging.error(
+                "Ignored --comet: Please install comet_ml; see www.comet.ml")
             return None
 
         try:
@@ -50,7 +52,8 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
-            logging.error("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
+            logging.error(
+                "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
         logging.info("comet.experiment() called......")
@@ -66,7 +69,8 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
-            logging.error("comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
+            logging.error(
+                "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
         logging.info("comet.train() called......")
@@ -136,6 +140,18 @@ class Comet():
             return
 
         logging.info("comet.predict() called......")
+        cli = self._make_command_line(args)
+        self._log_html(cli)
+
+    def test(self, *args, **kwargs):
+        import comet_ml
+        try:
+            self.cometml_experiment = comet_ml.ExistingExperiment()
+        except Exception:
+            logging.error("Ignored --comet. No '.comet.config' file")
+            return
+
+        logging.info("comet.test() called......")
         cli = self._make_command_line(args)
         self._log_html(cli)
 

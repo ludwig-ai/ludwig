@@ -118,8 +118,8 @@ def full_predict(
         save_prediction_outputs(postprocessed_output, experiment_dir_name)
 
         if evaluate_performance:
-            print_prediction_results(prediction_results)
-            save_prediction_statistics(prediction_results, experiment_dir_name)
+            print_test_results(prediction_results)
+            save_test_statistics(prediction_results, experiment_dir_name)
 
         logging.info('Saved to: {0}'.format(experiment_dir_name))
 
@@ -208,18 +208,18 @@ def save_prediction_outputs(
                 save_csv(csv_filename.format(output_field, output_type), values)
 
 
-def save_prediction_statistics(prediction_stats, experiment_dir_name):
+def save_test_statistics(test_stats, experiment_dir_name):
     test_stats_fn = os.path.join(
         experiment_dir_name,
-        'prediction_statistics.json'
+        'test_statistics.json'
     )
-    save_json(test_stats_fn, prediction_stats)
+    save_json(test_stats_fn, test_stats)
 
 
-def print_prediction_results(prediction_stats):
-    for output_field, result in prediction_stats.items():
+def print_test_results(test_stats):
+    for output_field, result in test_stats.items():
         if (output_field != 'combined' or
-                (output_field == 'combined' and len(prediction_stats) > 2)):
+                (output_field == 'combined' and len(test_stats) > 2)):
             logging.info('\n===== {} ====='.format(output_field))
             for measure in sorted(list(result)):
                 if measure != 'confusion_matrix' and measure != 'roc_curve':
@@ -313,16 +313,6 @@ def cli(sys_argv):
         type=int,
         default=128,
         help='size of batches'
-    )
-    parser.add_argument(
-        '-ep',
-        '--evaluate_performance',
-        action='store_true',
-        default=False,
-        help='performs performance metrics calculation.'
-             'Requires that the dataset contains one column '
-             'for each output feature the model predicts '
-             'to use as ground truth for the performance calculation.'
     )
 
     # ------------------
