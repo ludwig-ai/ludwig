@@ -176,4 +176,6 @@ def bbbox_iou(targets, predictions, output_feature_name):
 
     union = (bboxes1_area + tf.transpose(bboxes2_area)) - inter_area
 
-    return inter_area / (union+0.0001)
+    bbbox_iou = tf.identity(inter_area / (union+0.0001), 
+                            name='bbox_iou_{}'.format(output_feature_name))
+    return bbbox_iou
