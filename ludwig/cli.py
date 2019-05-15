@@ -46,6 +46,7 @@ Available sub-commands:
    experiment            Runs a full experiment training a model and testing it
    train                 Trains a model
    predict               Predicts using a pretrained model
+   test                  Tests a pretrained model
    visualize             Visualizes experimental results
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
@@ -75,6 +76,11 @@ Available sub-commands:
         from ludwig import predict
         ludwig.contrib.contrib_command("predict", *sys.argv)
         predict.cli(sys.argv[2:])
+
+    def test(self):
+        from ludwig import test_performance
+        ludwig.contrib.contrib_command("test", *sys.argv)
+        test_performance.cli(sys.argv[2:])
 
     def visualize(self):
         from ludwig import visualize

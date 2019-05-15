@@ -28,9 +28,9 @@ from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.predict import predict
-from ludwig.predict import print_prediction_results
+from ludwig.predict import print_test_results
 from ludwig.predict import save_prediction_outputs
-from ludwig.predict import save_prediction_statistics
+from ludwig.predict import save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry
@@ -233,10 +233,9 @@ def experiment(
         )
 
         if is_on_master():
-            print_prediction_results(test_results)
-
+            print_test_results(test_results)
             save_prediction_outputs(postprocessed_output, experiment_dir_name)
-            save_prediction_statistics(test_results, experiment_dir_name)
+            save_test_statistics(test_results, experiment_dir_name)
     
     model.close_session()
 
