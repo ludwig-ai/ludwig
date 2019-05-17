@@ -70,6 +70,7 @@ def full_train(
         skip_save_log=False,
         skip_save_processed_input=False,
         output_directory='results',
+        should_close_session=True,
         gpus=None,
         gpu_fraction=1.0,
         use_horovod=False,
@@ -308,7 +309,8 @@ def full_train(
         'test': train_testset_stats
     }
 
-    model.close_session()
+    if should_close_session:
+        model.close_session()
 
     if is_on_master():
         # save training and test statistics
