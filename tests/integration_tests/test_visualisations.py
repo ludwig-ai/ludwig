@@ -18,6 +18,7 @@ import logging
 import shutil
 import subprocess
 import threading
+import glob
 from unittest import mock
 
 from pynput.keyboard import Key, Controller
@@ -74,8 +75,7 @@ def run_experiment(input_features, output_features, **kwargs):
 
 def execute_command(e, cmd):
     global proc
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
     proc.communicate()
     e.set()
@@ -156,9 +156,6 @@ def test_visualisation_learning_curves_module(csv_filename):
     exp_dir_name = run_experiment(input_features, output_features,
                                   data_csv=rel_path)
     train_stats = exp_dir_name + '/training_statistics.json'
-    test_cmd = ['python', '-m', 'ludwig.visualize', '--visualization',
-                'learning_curves', '--training_statistics', train_stats]
-
     with mock.patch.object(visualization_utils.plt, 'show',
                            autospec=True) as mock_plt_show:
         learning_curves([train_stats], [])
@@ -167,6 +164,75 @@ def test_visualisation_learning_curves_module(csv_filename):
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
+
+def test_visualisation_learning_curves_output_pdf(csv_filename):
+    """It should be possible to save figures as pdf in the specified directory.
+
+    """
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    logging.info('seq to seq test, Encoder: {0}'.format(encoder))
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+
+    vis_output_pattern = exp_dir_name + '/*.pdf'
+    train_stats = exp_dir_name + '/training_statistics.json'
+    test_cmd = ['python', '-m', 'ludwig.visualize', '--visualization',
+                'learning_curves', '--training_statistics', train_stats,
+                '-od', exp_dir_name]
+
+    result = subprocess.run(
+        test_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    pdf_figure_cnt = glob.glob(vis_output_pattern)
+
+    assert 0 == result.returncode
+    # 5 pdf figures should be saved
+    assert 5 == len(pdf_figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+
+
+def test_visualisation_learning_curves_output_png(csv_filename):
+    """It should be possible to save figures as png in the specified directory.
+
+    """
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    logging.info('seq to seq test, Encoder: {0}'.format(encoder))
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+
+    vis_output_pattern = exp_dir_name + '/*.png'
+    train_stats = exp_dir_name + '/training_statistics.json'
+    test_cmd = ['python', '-m', 'ludwig.visualize', '--visualization',
+                'learning_curves', '--training_statistics', train_stats,
+                '-od', exp_dir_name, '-ff', 'png']
+
+    result = subprocess.run(
+        test_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    pdf_figure_cnt = glob.glob(vis_output_pattern)
+
+    assert 0 == result.returncode
+    # 5 png figures should be saved
+    assert 5 == len(pdf_figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 if __name__ == '__main__':
     """
