@@ -204,7 +204,6 @@ def test_visualisation_confusion_matrix_output_png(csv_filename):
     png_figure_cnt = glob.glob(vis_output_pattern)
 
     assert 0 == result.returncode
-
     assert 2 == len(png_figure_cnt)
 
     # clean up experiment files.
@@ -216,6 +215,111 @@ def test_visualisation_confusion_matrix_output_png(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
+def test_visualisation_compare_perfomance_output_pdf(csv_filename):
+    """It should be possible to save figures as pdf in the specified directory.
+
+    Compare performance between two models. To reduce test complexity
+    one model is compared to it self.
+    """
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    logging.info('seq to seq test, Encoder: {0}'.format(encoder))
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern = exp_dir_name + '/*.pdf'
+    experiment_source_data_name = csv_filename.split('.')[0]
+    test_stats = exp_dir_name + '/test_statistics.json'
+
+    test_cmd = ['python',
+                '-m',
+                'ludwig.visualize',
+                '--visualization',
+                'compare_performance',
+                '--test_statistics',
+                test_stats,
+                test_stats,
+                '-m',
+                'Model1',
+                'Model2',
+                '-od', exp_dir_name]
+
+    result = subprocess.run(
+        test_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    pdf_figure_cnt = glob.glob(vis_output_pattern)
+
+    assert 0 == result.returncode
+    assert 2 == len(pdf_figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_visualisation_compare_perfomance_output_png(csv_filename):
+    """It should be possible to save figures as png in the specified directory.
+
+    Compare performance between two models. To reduce test complexity
+    one model is compared to it self.
+    """
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    logging.info('seq to seq test, Encoder: {0}'.format(encoder))
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern = exp_dir_name + '/*.png'
+    experiment_source_data_name = csv_filename.split('.')[0]
+    test_stats = exp_dir_name + '/test_statistics.json'
+
+    test_cmd = ['python',
+                '-m',
+                'ludwig.visualize',
+                '--visualization',
+                'compare_performance',
+                '--test_statistics',
+                test_stats,
+                test_stats,
+                '-m',
+                'Model1',
+                'Model2',
+                '-od', exp_dir_name,
+                '-ff', 'png']
+
+    result = subprocess.run(
+        test_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    png_figure_cnt = glob.glob(vis_output_pattern)
+
+    assert 0 == result.returncode
+    assert 2 == len(png_figure_cnt)
+
+    # clean up experiment files.
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
 
 if __name__ == '__main__':
     """
