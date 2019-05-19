@@ -202,6 +202,8 @@ class Model:
             )
 
             tf.summary.scalar('train_reg_mean_loss', self.train_reg_mean_loss)
+            eval_mean_loss = tf.reduce_sum(self.eval_combined_loss)
+            tf.summary.scalar('eval_mean_loss', eval_mean_loss)
 
             self.merged_summary = tf.summary.merge_all()
             self.graph = graph
