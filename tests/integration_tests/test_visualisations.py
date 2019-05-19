@@ -32,8 +32,6 @@ from tests.integration_tests.utils import text_feature
 # The following imports are pytest fixtures, required for running the tests
 from tests.fixtures.filenames import *
 # Globals needed for the thread communicating their results.
-proc = None
-matplot_call_count = 0
 
 
 def run_experiment(input_features, output_features, **kwargs):
@@ -71,98 +69,6 @@ def run_experiment(input_features, output_features, **kwargs):
     exp_dir_name = experiment(**args)
 
     return exp_dir_name
-
-
-def execute_command(e, cmd):
-    global proc
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-
-    proc.communicate()
-    e.set()
-
-
-def close_active_window(e, timeout):
-    global matplot_call_count
-    while not e.isSet():
-        event_is_set = e.wait(timeout)
-        if event_is_set:
-            return
-        else:
-            keyboard = Controller()
-            with keyboard.pressed(Key.alt):
-                keyboard.press(Key.f4)
-                keyboard.release(Key.f4)
-                matplot_call_count += 1
-
-
-def test_visualisation_learning_curves_with_system_call(csv_filename):
-    """Test full command sequence for visualisation.
-
-    Due to pyplot.show() been used as blocking method from ludwig two separate threads are required.
-    One to execute the CLI command and the other one to hit Alt+F4 on timeout in order to close
-    the active opened pyplot figures.
-    We keep count of the total number of times the second thread timeout
-    while waiting for event signal from the first one that the process call have completed.
-    This is equal to the number of pyplot figures shown by the execution of the CLI command.
-    """
-    input_features = [text_feature(reduce_output=None, encoder='rnn')]
-    output_features = [text_feature(reduce_input=None, decoder='tagger')]
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    encoder = 'cnnrnn'
-    logging.info('seq to seq test, Encoder: {0}'.format(encoder))
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
-    train_stats = exp_dir_name + '/training_statistics.json'
-    test_cmd = ['python', '-m', 'ludwig.visualize', '--visualization',
-                'learning_curves', '--training_statistics', train_stats]
-    e = threading.Event()
-    t1 = threading.Thread(name='blocking',
-                          target=execute_command,
-                          args=(e, test_cmd))
-    t1.start()
-
-    t2 = threading.Thread(name='non-blocking',
-                          target=close_active_window,
-                          args=(e, 3))
-
-    t2.start()
-    t1.join()
-    t2.join()
-
-    assert 0 == proc.returncode
-    assert 5 == matplot_call_count
-
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
-
-
-def test_visualisation_learning_curves_module(csv_filename):
-    """Test the visualisation using call to the visualisation module.
-
-    Mock the matplotlib pyplot and assert how many times it was called.
-    """
-    input_features = [text_feature(reduce_output=None, encoder='rnn')]
-    output_features = [text_feature(reduce_input=None, decoder='tagger')]
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    encoder = 'cnnrnn'
-    logging.info('seq to seq test, Encoder: {0}'.format(encoder))
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
-    train_stats = exp_dir_name + '/training_statistics.json'
-    with mock.patch.object(visualization_utils.plt, 'show',
-                           autospec=True) as mock_plt_show:
-        learning_curves([train_stats], [])
-
-    assert 5 == mock_plt_show.call_count
-
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
 def test_visualisation_learning_curves_output_pdf(csv_filename):
