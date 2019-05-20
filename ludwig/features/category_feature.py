@@ -72,7 +72,8 @@ class CategoryBaseFeature(BaseFeature):
         return np.array(
             column.map(
                 lambda x: (
-                    metadata['str2idx'][x] if x in metadata['str2idx']
+                    metadata['str2idx'][x.strip()]
+                    if x.strip() in metadata['str2idx']
                     else metadata['str2idx'][UNKNOWN_SYMBOL]
                 )
             ),
@@ -307,8 +308,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                             class_similarities.shape[1] > self.num_classes):
                         # keep only the first num_classes rows and columns
                         class_similarities = class_similarities[
-                                          :self.num_classes,
-                                          :self.num_classes
+                                             :self.num_classes,
+                                             :self.num_classes
                                              ]
                     elif (class_similarities.shape[0] < self.num_classes and
                           class_similarities.shape[1] < self.num_classes):
