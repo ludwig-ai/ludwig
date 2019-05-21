@@ -22,7 +22,20 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
-from ludwig.constants import *
+from ludwig.constants import (BOUNDING_BOX, 
+                              FILL_WITH_CONST, 
+                              HUBER_LOSS,
+                              PREDICTIONS,
+                              PREDICTION,
+                              PROBABILITIES,
+                              ERROR,
+                              IOU,
+                              LOSS,
+                              EVAL_LOSS,
+                              TRAIN_MEAN_LOSS,
+                              MEASURE,
+                              SUM,
+                              APPEND)
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.fully_connected_modules import fc_layer
