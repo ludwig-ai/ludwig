@@ -77,8 +77,8 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
 
         self.loss = {
             'type': HUBER_LOSS
-        } 
-        self.clip = None
+        }
+        self.clip = []
         self.initializer = None
         self.regularize = True
         self.bounding_box_size = 4
@@ -125,7 +125,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
 
             logging.debug('  predictions: {0}'.format(predictions))
 
-            if self.clip is not None:
+            if self.clip:
                 if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
                     predictions = tf.clip_by_value(
                         predictions,
