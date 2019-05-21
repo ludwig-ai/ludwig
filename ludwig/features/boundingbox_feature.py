@@ -22,8 +22,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
-from ludwig.constants import (BOUNDING_BOX, 
-                              FILL_WITH_CONST, 
+from ludwig.constants import (BOUNDING_BOX,
+                              FILL_WITH_CONST,
                               HUBER_LOSS,
                               PREDICTIONS,
                               PREDICTION,
@@ -38,19 +38,10 @@ from ludwig.constants import (BOUNDING_BOX,
                               APPEND)
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.fully_connected_modules import fc_layer
 from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.measure_modules import \
-    absolute_error as get_absolute_error
-from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.models.modules.measure_modules import bbbox_iou as get_bbbox_iou
-
-
-from ludwig.models.modules.measure_modules import r2 as get_r2
-from ludwig.models.modules.measure_modules import \
-    squared_error as get_squared_error
+from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.utils.misc import set_default_value
-
 
 
 class BoundingBoxBaseFeature(BaseFeature):
