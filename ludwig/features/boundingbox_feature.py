@@ -39,7 +39,7 @@ from ludwig.constants import (BOUNDING_BOX,
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.measure_modules import bbbox_iou as get_bbbox_iou
+from ludwig.models.modules.measure_modules import bbox_iou as get_bbox_iou
 from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.utils.misc import set_default_value
 
@@ -179,7 +179,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                 self.name
             )
 
-            iou_val = get_bbbox_iou(
+            iou_val = get_bbox_iou(
                 targets,
                 predictions,
                 self.name

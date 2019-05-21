@@ -159,7 +159,8 @@ def r2(targets, predictions, output_feature_name):
                      name='r2_{}'.format(output_feature_name))
     return r2
 
-def bbbox_iou(targets, predictions, output_feature_name):
+
+def bbox_iou(targets, predictions, output_feature_name):
     x11, y11, x12, y12 = tf.split(targets, 4, axis=1)
     x21, y21, x22, y22 = tf.split(predictions, 4, axis=1)
 
@@ -176,6 +177,6 @@ def bbbox_iou(targets, predictions, output_feature_name):
 
     union = (bboxes1_area + tf.transpose(bboxes2_area)) - inter_area
 
-    bbbox_iou = tf.identity(inter_area/union,
-                            name='bbox_iou_{}'.format(output_feature_name))
-    return bbbox_iou
+    bbox_iou = tf.identity(inter_area / union,
+                           name='bbox_iou_{}'.format(output_feature_name))
+    return bbox_iou
