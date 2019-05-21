@@ -37,7 +37,7 @@ from ludwig.utils.print_utils import print_ludwig
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def experiment(

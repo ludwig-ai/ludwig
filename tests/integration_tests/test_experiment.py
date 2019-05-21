@@ -41,6 +41,10 @@ from tests.fixtures.filenames import csv_filename
 from tests.fixtures.filenames import yaml_filename
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 def run_experiment(input_features, output_features, **kwargs):
     """
     Helper method to avoid code repetition in running an experiment. Deletes
@@ -88,7 +92,7 @@ def test_experiment_seq_seq(csv_filename):
 
     encoders2 = ['cnnrnn', 'stacked_cnn']
     for encoder in encoders2:
-        logging.info('seq to seq test, Encoder: {0}'.format(encoder))
+        logger.info('seq to seq test, Encoder: {0}'.format(encoder))
         input_features[0]['encoder'] = encoder
         run_experiment(input_features, output_features, data_csv=rel_path)
 
@@ -349,7 +353,7 @@ def test_experiment_sequence_combiner(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     for encoder in ENCODERS[:-2]:
-        logging.error('sequence combiner. encoders: {0}, {1}'.format(
+        logger.error('sequence combiner. encoders: {0}, {1}'.format(
             encoder,
             encoder
         ))
@@ -384,7 +388,7 @@ def test_experiment_model_resume(csv_filename):
     }
 
     exp_dir_name = experiment(model_definition, data_csv=rel_path)
-    logging.info('Experiment Directory: {0}'.format(exp_dir_name))
+    logger.info('Experiment Directory: {0}'.format(exp_dir_name))
 
     experiment(
         model_definition,
