@@ -255,7 +255,7 @@ save(
 ```
 
 
-This function allows for loading pretrained models
+This function allows to save models on disk
 
 __Inputs__
 
