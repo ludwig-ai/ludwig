@@ -27,7 +27,6 @@ from ludwig.constants import (BOUNDING_BOX,
                               HUBER_LOSS,
                               PREDICTIONS,
                               PREDICTION,
-                              PROBABILITIES,
                               ERROR,
                               IOU,
                               LOSS,
@@ -47,8 +46,8 @@ from ludwig.utils.misc import set_default_value
 class BoundingBoxBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
-        self.type = BOUNDING_BOX 
-
+        self.type = BOUNDING_BOX
+        
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0
@@ -66,10 +65,11 @@ class BoundingBoxBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters,
     ):
-        data[feature['name']] = np.stack(dataset_df[feature['name']], 
-                                         axis=0).astype(np.int32)
-
-
+        data[feature['name']] = np.array(
+            dataset_df[feature['name']] \
+                .apply(lambda x: np.fromstring(x, sep=' ', dtype=np.int32)) \
+                .tolist()
+        )
 
 class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
     def __init__(self, feature):
@@ -88,7 +88,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
     def _get_output_placeholder(self):
         return tf.placeholder(
             tf.int32,
-            [None, self.bounding_box_size],  # None is for dealing with variable batch size
+            [None, self.bounding_box_size],  # None is for variable batch size
             name='{}_placeholder'.format(self.name)
         )
 
@@ -249,7 +249,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             'type': MEASURE
         }),
         ('mean_iou', {
-            'output': 'iou',
+            'output': IOU,
             'aggregation': SUM,
             'value': 0,
             'type': MEASURE
@@ -307,14 +307,6 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                 )
             del result[PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = result[PROBABILITIES]
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PROBABILITIES),
-                    result[PROBABILITIES]
-                )
-            del result[PROBABILITIES]
         return postprocessed
 
     @staticmethod
