@@ -34,7 +34,7 @@ We also want to address some of the current limitations:
 
 ## Who are the authors of Ludwig?
 
-- [Piero Molino](jttp://w4nderlu.st) is the main architect and maintainer
+- [Piero Molino](http://w4nderlu.st) is the main architect and maintainer
 - Yaroslav Dudin is a key contributor
 - Sai Sumanth Miryala contributed all the testing and polishing.
 

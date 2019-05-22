@@ -71,7 +71,7 @@ pip install -r requirements.txt
 python setup.py install
 ```
 
-If you intend to use text features and want to use [spaCy](jttp://spacy.io) based language tokenizers, install language specific models with:
+If you intend to use text features and want to use [spaCy](http://spacy.io) based language tokenizers, install language specific models with:
 ```
 python -m spacy download <language_code>
 ```

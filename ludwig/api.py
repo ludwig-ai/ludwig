@@ -138,6 +138,7 @@ class LudwigModel:
             self.model_definition = merge_with_defaults(model_definition)
         self.train_set_metadata = None
         self.model = None
+        self.exp_dir_name = None
 
     @staticmethod
     def _read_data(data_csv, data_dict):
@@ -407,7 +408,7 @@ class LudwigModel:
         (
             self.model,
             preprocessed_data,
-            _,
+            self.exp_dir_name,
             train_stats,
             self.model_definition
         ) = full_train(
@@ -434,6 +435,7 @@ class LudwigModel:
             skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
             output_directory=output_directory,
+            should_close_session=False,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             use_horovod=use_horovod,

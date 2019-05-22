@@ -38,14 +38,15 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../images/ludwig_logo.png">
-      <meta content="mkdocs-1.0.4, mkdocs-material-4.2.0" name="generator">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.2.0">
     
     
       
         <title>Examples - Ludwig</title>
-
-
-      <link href="../assets/stylesheets/application.750b69bd.css" rel="stylesheet">
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.750b69bd.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css">
       
@@ -53,8 +54,9 @@
         
         
         <meta name="theme-color" content="#757575">
-
-
+      
+    
+    
       <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
@@ -406,6 +408,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#time-series-forecasting-weather-data-example" title="Time series forecasting (weather data example)" class="md-nav__link">
+    Time series forecasting (weather data example)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#movie-rating-prediction" title="Movie rating prediction" class="md-nav__link">
     Movie rating prediction
   </a>
@@ -425,24 +434,25 @@
   </a>
   
 </li>
-
+      
         <li class="md-nav__item">
-            <a class="md-nav__link" href="#simple-regression-fuel-efficiency-prediction"
-               title="Simple Regression: Fuel Efficiency Prediction">
-                Simple Regression: Fuel Efficiency Prediction
-            </a>
-
-        </li>
-
+  <a href="#simple-regression-fuel-efficiency-prediction" title="Simple Regression: Fuel Efficiency Prediction" class="md-nav__link">
+    Simple Regression: Fuel Efficiency Prediction
+  </a>
+  
+</li>
+      
         <li class="md-nav__item">
-            <a class="md-nav__link" href="#binary-classification-fraud-transactions-identification"
-               title="Binary Classification: Fraud Transactions Identification">
-                Binary Classification: Fraud Transactions Identification
-            </a>
-
-        </li>
-
-
+  <a href="#binary-classification-fraud-transactions-identification" title="Binary Classification: Fraud Transactions Identification" class="md-nav__link">
+    Binary Classification: Fraud Transactions Identification
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
     </ul>
   
 </nav>
@@ -635,6 +645,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#time-series-forecasting-weather-data-example" title="Time series forecasting (weather data example)" class="md-nav__link">
+    Time series forecasting (weather data example)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#movie-rating-prediction" title="Movie rating prediction" class="md-nav__link">
     Movie rating prediction
   </a>
@@ -654,24 +671,25 @@
   </a>
   
 </li>
-
+      
         <li class="md-nav__item">
-            <a class="md-nav__link" href="#simple-regression-fuel-efficiency-prediction"
-               title="Simple Regression: Fuel Efficiency Prediction">
-                Simple Regression: Fuel Efficiency Prediction
-            </a>
-
-        </li>
-
+  <a href="#simple-regression-fuel-efficiency-prediction" title="Simple Regression: Fuel Efficiency Prediction" class="md-nav__link">
+    Simple Regression: Fuel Efficiency Prediction
+  </a>
+  
+</li>
+      
         <li class="md-nav__item">
-            <a class="md-nav__link" href="#binary-classification-fraud-transactions-identification"
-               title="Binary Classification: Fraud Transactions Identification">
-                Binary Classification: Fraud Transactions Identification
-            </a>
-
-        </li>
-
-
+  <a href="#binary-classification-fraud-transactions-identification" title="Binary Classification: Fraud Transactions Identification" class="md-nav__link">
+    Binary Classification: Fraud Transactions Identification
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
     </ul>
   
 </nav>
@@ -721,13 +739,12 @@ For each task we show an example dataset and a sample model definition that can 
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -766,18 +783,16 @@ For each task we show an example dataset and a sample model definition that can 
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">utterance</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
-        <span class="nt">reduce_output</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
         <span class="nt">preprocessing</span><span class="p">:</span>
-          <span class="nt">word_format</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">space</span>
+          <span class="nt">word_format</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">space</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -821,21 +836,18 @@ For each task we show an example dataset and a sample model definition that can 
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">utterance</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
-        <span class="nt">bidirectional</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">true</span>
+        <span class="nt">bidirectional</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
         <span class="nt">num_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
-        <span class="nt">reduce_output</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
         <span class="nt">preprocessing</span><span class="p">:</span>
-          <span class="nt">word_format</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">space</span>
+          <span class="nt">word_format</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">space</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -881,15 +893,14 @@ For each task we show an example dataset and a sample model definition that can 
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">english</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
-        <span class="nt">reduce_output</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
         <span class="nt">preprocessing</span><span class="p">:</span>
           <span class="nt">word_format</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">english_tokenize</span>
 
@@ -900,8 +911,7 @@ For each task we show an example dataset and a sample model definition that can 
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
-        <span class="nt">attention</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">bahdanau</span>
+        <span class="nt">attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bahdanau</span>
         <span class="nt">loss</span><span class="p">:</span>
             <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sampled_softmax_cross_entropy</span>
         <span class="nt">preprocessing</span><span class="p">:</span>
@@ -942,15 +952,14 @@ For each task we show an example dataset and a sample model definition that can 
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">user1</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
-        <span class="nt">reduce_output</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -959,8 +968,7 @@ For each task we show an example dataset and a sample model definition that can 
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">generator</span>
         <span class="nt">cell_type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
-        <span class="nt">attention</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">bahdanau</span>
+        <span class="nt">attention</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bahdanau</span>
         <span class="nt">loss</span><span class="p">:</span>
             <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sampled_softmax_cross_entropy</span>
 
@@ -999,13 +1007,12 @@ For each task we show an example dataset and a sample model definition that can 
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">review</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1044,12 +1051,11 @@ For each task we show an example dataset and a sample model definition that can 
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1118,39 +1124,27 @@ containing 60000 and 10000 examples correspondingly and having the following for
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
         <span class="nt">conv_layers</span><span class="p">:</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">num_filters</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">32</span>
-                <span class="nt">filter_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">3</span>
-                <span class="nt">pool_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">2</span>
-                <span class="nt">pool_stride</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">2</span>
+                <span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
+                <span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+                <span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+                <span class="nt">pool_stride</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">num_filters</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">64</span>
-                <span class="nt">filter_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">3</span>
-                <span class="nt">pool_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">2</span>
-                <span class="nt">pool_stride</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">2</span>
-                <span class="nt">dropout</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">true</span>
+                <span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
+                <span class="nt">filter_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">3</span>
+                <span class="nt">pool_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+                <span class="nt">pool_stride</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+                <span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
         <span class="nt">fc_layers</span><span class="p">:</span>
             <span class="p p-Indicator">-</span>
-                <span class="nt">fc_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">128</span>
-                <span class="nt">dropout</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">true</span>
+                <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
+                <span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1192,12 +1186,11 @@ containing 60000 and 10000 examples correspondingly and having the following for
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1249,20 +1242,18 @@ containing 60000 and 10000 examples correspondingly and having the following for
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path_1</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
         <span class="nt">resize_image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
         <span class="nt">width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
         <span class="nt">height</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path_2</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
         <span class="nt">resize_image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
         <span class="nt">width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
         <span class="nt">height</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">28</span>
@@ -1307,18 +1298,16 @@ containing 60000 and 10000 examples correspondingly and having the following for
 </tr>
 </tbody>
 </table>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">question</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">text</span>
         <span class="nt">level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">word</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">parallel_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1401,7 +1390,7 @@ disaster. Here's a sample of the data:</p>
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Pclass</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
@@ -1411,7 +1400,8 @@ disaster. Here's a sample of the data:</p>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Age</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
-        <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SibSp</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
@@ -1421,7 +1411,8 @@ disaster. Here's a sample of the data:</p>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Fare</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
-        <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Embarked</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
@@ -1481,10 +1472,9 @@ disaster. Here's a sample of the data:</p>
 
 
 <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">timeseries_data</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">timeseries_data</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">timeseries</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
@@ -1502,6 +1492,70 @@ disaster. Here's a sample of the data:</p>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">y5</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+</pre></div>
+
+
+<h2 id="time-series-forecasting-weather-data-example">Time series forecasting (weather data example)<a class="headerlink" href="#time-series-forecasting-weather-data-example" title="Permanent link">&para;</a></h2>
+<p>This example illustrates univariate timeseries forecasting using historical temperature data for Los Angeles.</p>
+<p>Dowload and unpack historical hourly weather data available on Kaggle
+https://www.kaggle.com/selfishgene/historical-hourly-weather-data</p>
+<p>Run the following python script to prepare the training dataset:</p>
+<div class="codehilite"><pre><span></span>import pandas as pd
+from ludwig.utils.data_utils import add_sequence_feature_column
+
+df = pd.read_csv(
+    &#39;&lt;PATH_TO_FILE&gt;/temperature.csv&#39;,
+    usecols=[&#39;Los Angeles&#39;]
+).rename(
+    columns={&quot;Los Angeles&quot;: &quot;temperature&quot;}
+).fillna(method=&#39;backfill&#39;).fillna(method=&#39;ffill&#39;)
+
+# normalize
+df.temperature = ((df.temperature-df.temperature.mean()) /
+                  df.temperature.std())
+
+train_size = int(0.6 * len(df))
+vali_size = int(0.2 * len(df))
+
+# train, validation, test split
+df[&#39;split&#39;] = 0
+df.loc[
+    (
+        (df.index.values &gt;= train_size) &amp;
+        (df.index.values &lt; train_size + vali_size)
+    ),
+    (&#39;split&#39;)
+] = 1
+df.loc[
+    df.index.values &gt;= train_size + vali_size,
+    (&#39;split&#39;)
+] = 2
+
+# prepare timeseries input feature colum
+# (here we are using 20 preceeding values to predict the target)
+add_sequence_feature_column(df, &#39;temperature&#39;, 20)
+df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
+</pre></div>
+
+
+<div class="codehilite"><pre><span></span>ludwig experiment \
+--data_csv &lt;PATH_TO_FILE&gt;/temperature_la.csv \
+  --model_definition_file model_definition.yaml
+</pre></div>
+
+
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">temperature_feature</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">timeseries</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>  
+        <span class="nt">embedding_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
+        <span class="nt">state_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class=" -Error"> </span><span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">temperature</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
 </pre></div>
 
@@ -1541,15 +1595,14 @@ disaster. Here's a sample of the data:</p>
 </tr>
 </tbody>
 </table>
-                <div class="codehilite"><pre><span></span>ludwig experiment \
+<div class="codehilite"><pre><span></span>ludwig experiment \
 --data_csv movie_ratings.csv \
   --model_definition_file model_definition.yaml
-</pre>
-                </div>
+</pre></div>
 
 
-                <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">year</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
@@ -1593,20 +1646,18 @@ disaster. Here's a sample of the data:</p>
 </tr>
 </tbody>
 </table>
-                <div class="codehilite"><pre><span></span>ludwig experiment \
+<div class="codehilite"><pre><span></span>ludwig experiment \
 --data_csv image_data.csv \
   --model_definition_file model_definition.yaml
-</pre>
-                </div>
+</pre></div>
 
 
-                <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_path</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-        <span class="nt">encoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+        <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1647,24 +1698,21 @@ disaster. Here's a sample of the data:</p>
 </tr>
 </tbody>
 </table>
-                <div class="codehilite"><pre><span></span>ludwig experiment \
+<div class="codehilite"><pre><span></span>ludwig experiment \
 --data_csv nl_data.csv \
   --model_definition_file model_definition.yaml
-</pre>
-                </div>
+</pre></div>
 
 
-                <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sentence</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
         <span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rnn</span>
         <span class="nt">cell</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">lstm</span>
-        <span class="nt">bidirectional</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">true</span>
-        <span class="nt">reduce_output</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+        <span class="nt">bidirectional</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+        <span class="nt">reduce_output</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
     <span class="p p-Indicator">-</span>
@@ -1672,91 +1720,82 @@ disaster. Here's a sample of the data:</p>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">part_of_speech</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">part_of_speech</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
     <span class="p p-Indicator">-</span>
-        <span class="nt">name</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">named_entities</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">named_entities</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
         <span class="nt">decoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">tagger</span>
-</pre>
-                </div>
+</pre></div>
 
 
-                <h2 id="simple-regression-fuel-efficiency-prediction">Simple Regression: Fuel Efficiency Prediction<a
-                        class="headerlink" href="#simple-regression-fuel-efficiency-prediction" title="Permanent link">&para;</a>
-                </h2>
-                <p>This example replicates the Keras example at
-                    https://www.tensorflow.org/tutorials/keras/basic_regression to predict the miles per gallon of a car
-                    given its characteristics in the <a href="https://archive.ics.uci.edu/ml/datasets/auto+mpg">Auto
-                        MPG</a> dataset.</p>
-                <table>
-                    <thead>
-                    <tr>
-                        <th>MPG</th>
-                        <th>Cylinders</th>
-                        <th>Displacement</th>
-                        <th>Horsepower</th>
-                        <th>Weight</th>
-                        <th>Acceleration</th>
-                        <th>ModelYear</th>
-                        <th>Origin</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>18.0</td>
-                        <td>8</td>
-                        <td>307.0</td>
-                        <td>130.0</td>
-                        <td>3504.0</td>
-                        <td>12.0</td>
-                        <td>70</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>15.0</td>
-                        <td>8</td>
-                        <td>350.0</td>
-                        <td>165.0</td>
-                        <td>3693.0</td>
-                        <td>11.5</td>
-                        <td>70</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>18.0</td>
-                        <td>8</td>
-                        <td>318.0</td>
-                        <td>150.0</td>
-                        <td>3436.0</td>
-                        <td>11.0</td>
-                        <td>70</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>16.0</td>
-                        <td>8</td>
-                        <td>304.0</td>
-                        <td>150.0</td>
-                        <td>3433.0</td>
-                        <td>12.0</td>
-                        <td>70</td>
-                        <td>1</td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div class="codehilite"><pre><span></span>ludwig experiment \
+<h2 id="simple-regression-fuel-efficiency-prediction">Simple Regression: Fuel Efficiency Prediction<a class="headerlink" href="#simple-regression-fuel-efficiency-prediction" title="Permanent link">&para;</a></h2>
+<p>This example replicates the Keras example at https://www.tensorflow.org/tutorials/keras/basic_regression to predict the miles per gallon of a car given its characteristics in the <a href="https://archive.ics.uci.edu/ml/datasets/auto+mpg">Auto MPG</a> dataset.</p>
+<table>
+<thead>
+<tr>
+<th>MPG</th>
+<th>Cylinders</th>
+<th>Displacement</th>
+<th>Horsepower</th>
+<th>Weight</th>
+<th>Acceleration</th>
+<th>ModelYear</th>
+<th>Origin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>18.0</td>
+<td>8</td>
+<td>307.0</td>
+<td>130.0</td>
+<td>3504.0</td>
+<td>12.0</td>
+<td>70</td>
+<td>1</td>
+</tr>
+<tr>
+<td>15.0</td>
+<td>8</td>
+<td>350.0</td>
+<td>165.0</td>
+<td>3693.0</td>
+<td>11.5</td>
+<td>70</td>
+<td>1</td>
+</tr>
+<tr>
+<td>18.0</td>
+<td>8</td>
+<td>318.0</td>
+<td>150.0</td>
+<td>3436.0</td>
+<td>11.0</td>
+<td>70</td>
+<td>1</td>
+</tr>
+<tr>
+<td>16.0</td>
+<td>8</td>
+<td>304.0</td>
+<td>150.0</td>
+<td>3433.0</td>
+<td>12.0</td>
+<td>70</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
 --data_csv auto_mpg.csv \
   --model_definition_file model_definition.yaml
-</pre>
-                </div>
+</pre></div>
 
 
-                <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">training</span><span class="p">:</span>
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">training</span><span class="p">:</span>
     <span class="nt">batch_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">32</span>
     <span class="nt">epochs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1000</span>
     <span class="nt">early_stop</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">50</span>
@@ -1793,93 +1832,88 @@ disaster. Here's a sample of the data:</p>
             <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">mean_squared_error</span>
         <span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
         <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">64</span>
-</pre>
-                </div>
+</pre></div>
 
 
-                <h2 id="binary-classification-fraud-transactions-identification">Binary Classification: Fraud
-                    Transactions Identification<a class="headerlink"
-                                                  href="#binary-classification-fraud-transactions-identification"
-                                                  title="Permanent link">&para;</a></h2>
-                <table>
-                    <thead>
-                    <tr>
-                        <th>transaction_id</th>
-                        <th>card_id</th>
-                        <th>customer_id</th>
-                        <th>customer_zipcode</th>
-                        <th>merchant_id</th>
-                        <th>merchant_name</th>
-                        <th>merchant_category</th>
-                        <th>merchant_zipcode</th>
-                        <th>merchant_country</th>
-                        <th>transaction_amount</th>
-                        <th>authorization_response_code</th>
-                        <th>atm_network_xid</th>
-                        <th>cvv_2_response_xflg</th>
-                        <th>fraud_label</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>469483</td>
-                        <td>9003</td>
-                        <td>1085</td>
-                        <td>23039</td>
-                        <td>893</td>
-                        <td>Wright Group</td>
-                        <td>7917</td>
-                        <td>91323</td>
-                        <td>GB</td>
-                        <td>1962</td>
-                        <td>C</td>
-                        <td>C</td>
-                        <td>N</td>
-                        <td>0</td>
-                    </tr>
-                    <tr>
-                        <td>926515</td>
-                        <td>9009</td>
-                        <td>1001</td>
-                        <td>32218</td>
-                        <td>1011</td>
-                        <td>Mums Kitchen</td>
-                        <td>5813</td>
-                        <td>10001</td>
-                        <td>US</td>
-                        <td>1643</td>
-                        <td>C</td>
-                        <td>D</td>
-                        <td>M</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>730021</td>
-                        <td>9064</td>
-                        <td>1174</td>
-                        <td>9165</td>
-                        <td>916</td>
-                        <td>Keller</td>
-                        <td>7582</td>
-                        <td>38332</td>
-                        <td>DE</td>
-                        <td>1184</td>
-                        <td>D</td>
-                        <td>B</td>
-                        <td>M</td>
-                        <td>0</td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div class="codehilite"><pre><span></span>ludwig experiment \
+<h2 id="binary-classification-fraud-transactions-identification">Binary Classification: Fraud Transactions Identification<a class="headerlink" href="#binary-classification-fraud-transactions-identification" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>transaction_id</th>
+<th>card_id</th>
+<th>customer_id</th>
+<th>customer_zipcode</th>
+<th>merchant_id</th>
+<th>merchant_name</th>
+<th>merchant_category</th>
+<th>merchant_zipcode</th>
+<th>merchant_country</th>
+<th>transaction_amount</th>
+<th>authorization_response_code</th>
+<th>atm_network_xid</th>
+<th>cvv_2_response_xflg</th>
+<th>fraud_label</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>469483</td>
+<td>9003</td>
+<td>1085</td>
+<td>23039</td>
+<td>893</td>
+<td>Wright Group</td>
+<td>7917</td>
+<td>91323</td>
+<td>GB</td>
+<td>1962</td>
+<td>C</td>
+<td>C</td>
+<td>N</td>
+<td>0</td>
+</tr>
+<tr>
+<td>926515</td>
+<td>9009</td>
+<td>1001</td>
+<td>32218</td>
+<td>1011</td>
+<td>Mums Kitchen</td>
+<td>5813</td>
+<td>10001</td>
+<td>US</td>
+<td>1643</td>
+<td>C</td>
+<td>D</td>
+<td>M</td>
+<td>1</td>
+</tr>
+<tr>
+<td>730021</td>
+<td>9064</td>
+<td>1174</td>
+<td>9165</td>
+<td>916</td>
+<td>Keller</td>
+<td>7582</td>
+<td>38332</td>
+<td>DE</td>
+<td>1184</td>
+<td>D</td>
+<td>B</td>
+<td>M</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span>ludwig experiment \
 --data_csv transactions.csv \
   --model_definition_file model_definition.yaml
-</pre>
-                </div>
+</pre></div>
 
 
-                <p>With <code>model_definition.yaml</code>:</p>
-                <div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+<p>With <code>model_definition.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
   <span class="p p-Indicator">-</span>
     <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">customer_id</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
@@ -1890,15 +1924,13 @@ disaster. Here's a sample of the data:</p>
     <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">merchant_id</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
   <span class="p p-Indicator">-</span>
-    <span class="nt">name</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">merchant_category</span>
+    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">merchant_category</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
   <span class="p p-Indicator">-</span>
     <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">merchant_zipcode</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
   <span class="p p-Indicator">-</span>
-    <span class="nt">name</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">transaction_amount</span>
+    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transaction_amount</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
   <span class="p p-Indicator">-</span>
     <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">authorization_response_code</span>
@@ -1907,8 +1939,7 @@ disaster. Here's a sample of the data:</p>
     <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">atm_network_xid</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
   <span class="p p-Indicator">-</span>
-    <span class="nt">name</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">cvv_2_response_xflg</span>
+    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">cvv_2_response_xflg</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
 
 <span class="nt">combiner</span><span class="p">:</span>
@@ -2020,8 +2051,8 @@ disaster. Here's a sample of the data:</p>
 </footer>
       
     </div>
-
-    <script src="../assets/javascripts/application.39abc4af.js"></script>
+    
+      <script src="../assets/javascripts/application.39abc4af.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
