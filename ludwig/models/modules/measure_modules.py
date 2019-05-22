@@ -161,6 +161,11 @@ def r2(targets, predictions, output_feature_name):
 
 
 def bbox_iou(targets, predictions, output_feature_name):
+    """Calculates batch bounding boxes intersection over union (IoU)
+    :param targets tf.Tensor with shape (None, 4)
+    :param predictions tf.Tensor with shape (None, 4)
+    :param output_feature_name String  
+    """
     x11, y11, x12, y12 = tf.split(targets, 4, axis=1)
     x21, y21, x22, y22 = tf.split(predictions, 4, axis=1)
 
