@@ -185,9 +185,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
                 self.name
             )
 
-            mean_average_precision = None
-
-        return error_val, iou_val #, mean_average_precision
+        return error_val, iou_val 
 
     def build_output(
             self,
