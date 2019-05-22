@@ -29,6 +29,7 @@ from ludwig.constants import (BOUNDING_BOX,
                               PREDICTION,
                               ERROR,
                               IOU,
+                              MEAN_IOU,
                               LOSS,
                               EVAL_LOSS,
                               TRAIN_MEAN_LOSS,
@@ -237,7 +238,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
         )
         return train_mean_loss, eval_loss, output_tensors
 
-    default_validation_measure = 'mean_iou'
+    default_validation_measure = MEAN_IOU
 
     output_config = OrderedDict([
         (LOSS, {
@@ -246,7 +247,7 @@ class BoundingBoxOutputFeature(BoundingBoxBaseFeature, OutputFeature):
             'value': 0,
             'type': MEASURE
         }),
-        ('mean_iou', {
+        (MEAN_IOU, {
             'output': IOU,
             'aggregation': SUM,
             'value': 0,
