@@ -762,11 +762,13 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 if len(probs) > 0 and isinstance(probs[0], list):
                     prob = []
                     for i in range(len(probs)):
+                        # todo: should adapt for the case of beam > 1
                         for j in range(len(probs[i])):
                             probs[i][j] = np.max(probs[i][j])
                         prob.append(np.prod(probs[i]))
-                else:
-                    probs = np.amax(probs, axis=-1)
+                elif isinstance(probs, np.ndarray):
+                    if (probs.shape) == 3:  # prob of each class of each token
+                        probs = np.amax(probs, axis=-1)
                     prob = np.prod(probs, axis=-1)
 
                 postprocessed[PROBABILITIES] = probs

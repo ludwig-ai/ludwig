@@ -381,8 +381,11 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                             attention_mechanism))
                 cell = tf.contrib.seq2seq.AttentionWrapper(
                     cell, attention_mechanism, attention_layer_size=state_size)
-                initial_state = cell.zero_state(dtype=tf.float32,
-                                                batch_size=batch_size)
+                initial_state = cell.zero_state(
+                    dtype=tf.float32,
+                    batch_size=batch_size)
+                initial_state = initial_state.clone(
+                    cell_state=reduce_sequence(encoder_outputs, 'last'))
 
             for v in tf.global_variables():
                 if v.name.startswith(vs.name):
