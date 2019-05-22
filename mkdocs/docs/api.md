@@ -144,7 +144,7 @@ load(
 ```
 
 
-This function allows for loading pretrained models
+This function allows for loading pretrained models.
 
 
 __Inputs__
@@ -255,7 +255,7 @@ save(
 ```
 
 
-This function allows for loading pretrained models
+This function allows saving trained models.
 
 __Inputs__
 

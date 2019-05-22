@@ -161,7 +161,7 @@ class LudwigModel:
 
     @staticmethod
     def load(model_dir, logging_level=logging.ERROR):
-        """This function allows for loading pretrained models
+        """This function allows for loading pretrained models.
 
 
         # Inputs
@@ -204,7 +204,7 @@ class LudwigModel:
         return ludwig_model
 
     def save(self, save_path):
-        """This function allows for loading pretrained models
+        """This function allows saving trained models.
 
         # Inputs
 
