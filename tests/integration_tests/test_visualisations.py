@@ -758,6 +758,7 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
 def test_visualisation_compare_classifiers_changing_k_output_png(csv_filename):
     """It should be possible to save figures as png in the specified directory.
 
@@ -820,6 +821,7 @@ def test_visualisation_compare_classifiers_changing_k_output_png(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
 def test_visualisation_compare_classifiers_multiclass_multimetric_output_pdf(
         csv_filename
 ):
@@ -874,6 +876,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_pdf(
             os.remove(file)
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
+
 
 def test_visualisation_compare_classifiers_multiclass_multimetric_output_png(
         csv_filename
@@ -931,6 +934,130 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_png(
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
+def test_visualisation_compare_classifiers_predictions_output_pdf(csv_filename):
+    """It should be possible to save figures as pdf in the specified directory.
+
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern = exp_dir_name + '/*.pdf'
+    field_name = get_output_field_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth_metadata = experiment_source_data_name + '.json'
+    test_cmd = ['python',
+                '-m',
+                'ludwig.visualize',
+                '--visualization',
+                'compare_classifiers_predictions',
+                '--ground_truth_metadata',
+                ground_truth_metadata,
+                '--ground_truth',
+                ground_truth,
+                '--field',
+                field_name,
+                '--predictions',
+                prediction,
+                prediction,
+                '--model_names',
+                'Model1',
+                'Model2',
+                '-od', exp_dir_name]
+    result = subprocess.run(
+        test_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    pdf_figure_cnt = glob.glob(vis_output_pattern)
+
+    assert 0 == result.returncode
+    assert 1 == len(pdf_figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_visualisation_compare_classifiers_predictions_output_png(csv_filename):
+    """It should be possible to save figures as png in the specified directory.
+
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth_metadata = experiment_source_data_name + '.json'
+    test_cmd = ['python',
+                '-m',
+                'ludwig.visualize',
+                '--visualization',
+                'compare_classifiers_predictions',
+                '--ground_truth_metadata',
+                ground_truth_metadata,
+                '--ground_truth',
+                ground_truth,
+                '--field',
+                field_name,
+                '--predictions',
+                prediction,
+                prediction,
+                '--model_names',
+                'Model1',
+                'Model2',
+                '-od', exp_dir_name,
+                '-ff', 'png']
+    result = subprocess.run(
+        test_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    png_figure_cnt = glob.glob(vis_output_pattern)
+
+    assert 0 == result.returncode
+    assert 1 == len(png_figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
 
 if __name__ == '__main__':
     """
