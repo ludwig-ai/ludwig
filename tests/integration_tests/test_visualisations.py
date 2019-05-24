@@ -419,7 +419,7 @@ def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_subset_output_pdf(csv_filename):
+def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
@@ -440,39 +440,62 @@ def test_visualisation_compare_classifiers_subset_output_pdf(csv_filename):
     input_features[0]['encoder'] = encoder
     exp_dir_name = run_experiment(input_features, output_features,
                                   data_csv=rel_path)
-    vis_output_pattern = exp_dir_name + '/*.pdf'
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
     probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    test_cmd = ['python',
-                '-m',
-                'ludwig.visualize',
-                '--visualization',
-                'compare_classifiers_performance_subset',
-                '--field',
-                field_name,
-                '--probabilities',
-                probability,
-                probability,
-                '--model_names',
-                'Model1',
-                'Model2',
-                '--ground_truth',
-                ground_truth,
-                '--top_n_classes',
-                '6',
-                '-od', exp_dir_name]
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_performance_subset',
+                    '--field',
+                    field_name,
+                    '--probabilities',
+                    probability,
+                    probability,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '--ground_truth',
+                    ground_truth,
+                    '--top_n_classes',
+                    '6',
+                    '-od', exp_dir_name]
+    test_cmd_png = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_performance_subset',
+                    '--field',
+                    field_name,
+                    '--probabilities',
+                    probability,
+                    probability,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '--ground_truth',
+                    ground_truth,
+                    '--top_n_classes',
+                    '6',
+                    '-od', exp_dir_name,
+                    '-ff', 'png']
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
-    result = subprocess.run(
-        test_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    pdf_figure_cnt = glob.glob(vis_output_pattern)
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        figure_cnt = glob.glob(viz_pattern)
 
-    assert 0 == result.returncode
-    assert 1 == len(pdf_figure_cnt)
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
     shutil.rmtree('results', ignore_errors=True)
