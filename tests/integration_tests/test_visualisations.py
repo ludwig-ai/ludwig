@@ -18,9 +18,10 @@ import glob
 import shutil
 import subprocess
 import json
+import os
 
 from ludwig.experiment import experiment
-from tests.fixtures.filenames import *
+from tests.fixtures.filenames import csv_filename
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature, categorical_feature
 
@@ -66,7 +67,12 @@ def run_experiment(input_features, output_features, **kwargs):
 
 
 def get_output_field_name(experiment_dir):
-    """Helper function to extract output feature name."""
+    """Helper function to extract the first output feature name.
+
+    :param experiment_dir: Path to the experiment directory
+    :return field_name: name of the first output feature name
+                        from the experiment
+    """
     description_file = experiment_dir + '/description.json'
     with open(description_file, 'rb') as f:
         content = json.load(f)
@@ -75,7 +81,11 @@ def get_output_field_name(experiment_dir):
 
 
 def test_visualisation_learning_curves_output_saved(csv_filename):
-    """Ensure pdf and png figures from the experiments can be saved."""
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
     output_features = [text_feature(reduce_input=None, decoder='tagger')]
 
@@ -113,7 +123,11 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
 
 
 def test_visualisation_confusion_matrix_output_saved(csv_filename):
-    """Ensure pdf and png figures from the experiments can be saved."""
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
     output_features = [text_feature(reduce_input=None, decoder='tagger')]
 
@@ -164,6 +178,9 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
 
     Compare performance between two models. To reduce test complexity
     one model is compared to it self.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
     """
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
     output_features = [text_feature(reduce_input=None, decoder='tagger')]
@@ -230,7 +247,11 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
 
 
 def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
-    """Ensure pdf and png figures from the experiments can be saved."""
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
         categorical_feature(
@@ -311,7 +332,11 @@ def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
 
 
 def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
-    """Ensure pdf and png figures from the experiments can be saved."""
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
         categorical_feature(
@@ -384,6 +409,70 @@ def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
 
         assert 0 == result.returncode
         assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_visualisation_compare_classifiers_subset_output_pdf(csv_filename):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern = exp_dir_name + '/*.pdf'
+    field_name = get_output_field_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    test_cmd = ['python',
+                '-m',
+                'ludwig.visualize',
+                '--visualization',
+                'compare_classifiers_performance_subset',
+                '--field',
+                field_name,
+                '--probabilities',
+                probability,
+                probability,
+                '--model_names',
+                'Model1',
+                'Model2',
+                '--ground_truth',
+                ground_truth,
+                '--top_n_classes',
+                '6',
+                '-od', exp_dir_name]
+
+    result = subprocess.run(
+        test_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    pdf_figure_cnt = glob.glob(vis_output_pattern)
+
+    assert 0 == result.returncode
+    assert 1 == len(pdf_figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
     shutil.rmtree('results', ignore_errors=True)
