@@ -14,17 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 
+import glob
 import shutil
 import subprocess
-import glob
-import json
 
 from ludwig.experiment import experiment
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import text_feature, categorical_feature
+from tests.integration_tests.utils import text_feature
+from tests.fixtures.filenames import *
 
 # The following imports are pytest fixtures, required for running the tests
-from tests.fixtures.filenames import *
 
 
 def run_experiment(input_features, output_features, **kwargs):
@@ -63,6 +62,7 @@ def run_experiment(input_features, output_features, **kwargs):
 
     return exp_dir_name
 
+
 def test_visualisation_learning_curves_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
@@ -81,11 +81,11 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
     vis_output_pattern_png = exp_dir_name + '/*.png'
     train_stats = exp_dir_name + '/training_statistics.json'
     test_cmd_pdf = ['python', '-m', 'ludwig.visualize', '--visualization',
-                'learning_curves', '--training_statistics', train_stats,
-                '-od', exp_dir_name]
+                    'learning_curves', '--training_statistics', train_stats,
+                    '-od', exp_dir_name]
     test_cmd_png = ['python', '-m', 'ludwig.visualize', '--visualization',
-                'learning_curves', '--training_statistics', train_stats,
-                '-od', exp_dir_name, '-ff', 'png']
+                    'learning_curves', '--training_statistics', train_stats,
+                    '-od', exp_dir_name, '-ff', 'png']
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
