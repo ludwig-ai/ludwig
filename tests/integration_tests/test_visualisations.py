@@ -19,9 +19,10 @@ import shutil
 import subprocess
 
 from ludwig.experiment import experiment
+from tests.fixtures.filenames import *
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature
-from tests.fixtures.filenames import *
+
 
 # The following imports are pytest fixtures, required for running the tests
 
@@ -64,9 +65,7 @@ def run_experiment(input_features, output_features, **kwargs):
 
 
 def test_visualisation_learning_curves_output_saved(csv_filename):
-    """Ensure pdf and png figures from the experiments can be saved.
-
-    """
+    """Ensure pdf and png figures from the experiments can be saved."""
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
     output_features = [text_feature(reduce_input=None, decoder='tagger')]
 
@@ -101,3 +100,50 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
         assert 5 == len(figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
+
+
+def test_visualisation_confusion_matrix_output_saved(csv_filename):
+    """Ensure pdf and png figures from the experiments can be saved."""
+    input_features = [text_feature(reduce_output=None, encoder='rnn')]
+    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth_metadata = experiment_source_data_name + '.json'
+    test_stats = exp_dir_name + '/test_statistics.json'
+    test_cmd_pdf = ['python', '-m', 'ludwig.visualize', '--visualization',
+                    'confusion_matrix', '--test_statistics', test_stats,
+                    '--ground_truth_metadata', ground_truth_metadata,
+                    '-od', exp_dir_name]
+    test_cmd_png = ['python', '-m', 'ludwig.visualize', '--visualization',
+                    'confusion_matrix', '--test_statistics', test_stats,
+                    '--ground_truth_metadata', ground_truth_metadata,
+                    '-od', exp_dir_name, '-ff', 'png']
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 2 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
