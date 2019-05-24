@@ -23,7 +23,8 @@ import os
 from ludwig.experiment import experiment
 from tests.fixtures.filenames import csv_filename
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import text_feature, categorical_feature
+from tests.integration_tests.utils import text_feature, categorical_feature, \
+    numerical_feature, set_feature, sequence_feature
 
 
 # The following imports are pytest fixtures, required for running the tests
@@ -66,8 +67,8 @@ def run_experiment(input_features, output_features, **kwargs):
     return exp_dir_name
 
 
-def get_output_field_name(experiment_dir):
-    """Helper function to extract the first output feature name.
+def get_output_field_name(experiment_dir, output_feature=0):
+    """Helper function to extract specified output feature name.
 
     :param experiment_dir: Path to the experiment directory
     :return field_name: name of the first output feature name
@@ -76,7 +77,7 @@ def get_output_field_name(experiment_dir):
     description_file = experiment_dir + '/description.json'
     with open(description_file, 'rb') as f:
         content = json.load(f)
-    field_name = content['model_definition']['output_features'][0]['name']
+    field_name = content['model_definition']['output_features'][output_feature]['name']
     return field_name
 
 
@@ -1187,6 +1188,98 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
         assert 0 == result.returncode
         # 3 figures should be saved because experiment setting top_n_classes = 3
         # hence one figure per class
+        assert 3 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
+        numerical_feature(),
+        categorical_feature(vocab_size=10, embedding_size=5),
+        set_feature(),
+        sequence_feature(vocab_size=10, max_len=10, encoder='embed')
+    ]
+    output_features = [
+        categorical_feature(vocab_size=2, reduce_input='sum'),
+        sequence_feature(vocab_size=10, max_len=5),
+        numerical_feature()
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    treshhold_field1 = get_output_field_name(exp_dir_name)
+    treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(treshhold_field1)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'confidence_thresholding_2thresholds_2d',
+                    '--ground_truth',
+                    ground_truth,
+                    '--probabilities',
+                    probability,
+                    probability,
+                    '--threshold_fields',
+                    treshhold_field1,
+                    treshhold_field2,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name]
+    test_cmd_png = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'confidence_thresholding_2thresholds_2d',
+                    '--ground_truth',
+                    ground_truth,
+                    '--probabilities',
+                    probability,
+                    probability,
+                    '--threshold_fields',
+                    treshhold_field1,
+                    treshhold_field2,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name,
+                    '-ff', 'png']
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
         assert 3 == len(figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
