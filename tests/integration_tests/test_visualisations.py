@@ -1230,7 +1230,9 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
     treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(treshhold_field1)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(
+        treshhold_field1
+    )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -1322,7 +1324,9 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
     treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(treshhold_field1)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(
+        treshhold_field1
+    )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
