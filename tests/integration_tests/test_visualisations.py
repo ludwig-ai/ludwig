@@ -1530,8 +1530,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     :return: None
     """
     input_features = [binary_feature(), bag_feature()]
-    output_features = [set_feature(max_len=3, vocab_size=5)]
-
+    output_features = [binary_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     encoder = 'cnnrnn'
@@ -1541,31 +1540,19 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    test_stats = exp_dir_name + '/test_statistics.json'
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
                     '--visualization',
-                    'roc_curves',
-                    '--positive_label',
-                    '2',
-                    '--metrics',
-                    'accuracy',
-                    '--ground_truth',
-                    ground_truth,
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
+                    'roc_curves_from_test_statistics',
                     '--field',
                     field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
+                    '--test_statistics',
+                    test_stats,
                     '--model_names',
                     'Model1',
-                    'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
     commands = [test_cmd_pdf, test_cmd_png]
