@@ -31,6 +31,7 @@ from tests.integration_tests.utils import text_feature, categorical_feature, \
 # The following imports are pytest fixtures, required for running the tests
 from tests.fixtures.filenames import csv_filename
 
+
 def run_experiment(input_features, output_features, **kwargs):
     """
     Helper method to avoid code repetition in running an experiment. Deletes
@@ -72,13 +73,15 @@ def get_output_field_name(experiment_dir, output_feature=0):
     """Helper function to extract specified output feature name.
 
     :param experiment_dir: Path to the experiment directory
+    :param output_feature: position of the output feature the description.json
     :return field_name: name of the first output feature name
                         from the experiment
     """
     description_file = experiment_dir + '/description.json'
     with open(description_file, 'rb') as f:
         content = json.load(f)
-    field_name = content['model_definition']['output_features'][output_feature]['name']
+    field_name = \
+        content['model_definition']['output_features'][output_feature]['name']
     return field_name
 
 
@@ -617,6 +620,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
                                   data_csv=rel_path)
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
     test_stats = exp_dir_name + '/test_statistics.json'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth_metadata = experiment_source_data_name + '.json'
@@ -625,6 +629,8 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_multiclass_multimetric',
+                    '--field',
+                    field_name,
                     '--test_statistics',
                     test_stats,
                     test_stats,
@@ -636,6 +642,8 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_multiclass_multimetric',
+                    '--field',
+                    field_name,
                     '--test_statistics',
                     test_stats,
                     test_stats,
