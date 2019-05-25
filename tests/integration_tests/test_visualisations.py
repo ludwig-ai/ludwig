@@ -104,12 +104,16 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     train_stats = exp_dir_name + '/training_statistics.json'
-    test_cmd_pdf = ['python', '-m', 'ludwig.visualize', '--visualization',
-                    'learning_curves', '--training_statistics', train_stats,
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'learning_curves',
+                    '--training_statistics',
+                    train_stats,
                     '-od', exp_dir_name]
-    test_cmd_png = ['python', '-m', 'ludwig.visualize', '--visualization',
-                    'learning_curves', '--training_statistics', train_stats,
-                    '-od', exp_dir_name, '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -147,14 +151,17 @@ def test_visualisation_confusion_matrix_output_saved(csv_filename):
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth_metadata = experiment_source_data_name + '.json'
     test_stats = exp_dir_name + '/test_statistics.json'
-    test_cmd_pdf = ['python', '-m', 'ludwig.visualize', '--visualization',
-                    'confusion_matrix', '--test_statistics', test_stats,
-                    '--ground_truth_metadata', ground_truth_metadata,
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'confusion_matrix',
+                    '--test_statistics',
+                    test_stats,
+                    '--ground_truth_metadata',
+                    ground_truth_metadata,
                     '-od', exp_dir_name]
-    test_cmd_png = ['python', '-m', 'ludwig.visualize', '--visualization',
-                    'confusion_matrix', '--test_statistics', test_stats,
-                    '--ground_truth_metadata', ground_truth_metadata,
-                    '-od', exp_dir_name, '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -213,20 +220,7 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_performance',
-                    '--test_statistics',
-                    test_stats,
-                    test_stats,
-                    '-m',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
@@ -295,23 +289,7 @@ def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_classifiers_performance_from_prob',
-                    '--ground_truth',
-                    ground_truth,
-                    '--field',
-                    field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
@@ -382,25 +360,8 @@ def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_classifiers_performance_from_pred',
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
-                    '--ground_truth',
-                    ground_truth,
-                    '--field',
-                    field_name,
-                    '--predictions',
-                    prediction,
-                    prediction,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -469,25 +430,8 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
                     '--top_n_classes',
                     '6',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_classifiers_performance_subset',
-                    '--field',
-                    field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '--ground_truth',
-                    ground_truth,
-                    '--top_n_classes',
-                    '6',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -554,25 +498,8 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
                     '--top_n_classes',
                     '6',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_classifiers_performance_changing_k',
-                    '--field',
-                    field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '--ground_truth',
-                    ground_truth,
-                    '--top_n_classes',
-                    '6',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
     for command, viz_pattern in zip(commands, vis_patterns):
@@ -637,20 +564,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
                     '--ground_truth_metadata',
                     ground_truth_metadata,
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_classifiers_multiclass_multimetric',
-                    '--field',
-                    field_name,
-                    '--test_statistics',
-                    test_stats,
-                    test_stats,
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
@@ -723,25 +637,8 @@ def test_visualisation_compare_classifiers_predictions_output_saved(
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_classifiers_predictions',
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
-                    '--ground_truth',
-                    ground_truth,
-                    '--field',
-                    field_name,
-                    '--predictions',
-                    prediction,
-                    prediction,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -813,25 +710,8 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'compare_classifiers_predictions_distribution',
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
-                    '--ground_truth',
-                    ground_truth,
-                    '--field',
-                    field_name,
-                    '--predictions',
-                    prediction,
-                    prediction,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -898,23 +778,8 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'confidence_thresholding',
-                    '--ground_truth',
-                    ground_truth,
-                    '--field',
-                    field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -983,23 +848,8 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'confidence_thresholding_data_vs_acc',
-                    '--ground_truth',
-                    ground_truth,
-                    '--field',
-                    field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1070,25 +920,8 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
                     '--top_n_classes',
                     '3',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'confidence_thresholding_data_vs_acc_subset',
-                    '--ground_truth',
-                    ground_truth,
-                    '--field',
-                    field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '--top_n_classes',
-                    '3',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1162,27 +995,8 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
                     '--top_n_classes',
                     '3',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'confidence_thresholding_data_vs_acc_subset_per_class',
-                    '--ground_truth',
-                    ground_truth,
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
-                    '--field',
-                    field_name,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '--top_n_classes',
-                    '3',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1261,24 +1075,8 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
                     'Model1',
                     'Model2',
                     '-od', exp_dir_name]
-    test_cmd_png = ['python',
-                    '-m',
-                    'ludwig.visualize',
-                    '--visualization',
-                    'confidence_thresholding_2thresholds_2d',
-                    '--ground_truth',
-                    ground_truth,
-                    '--probabilities',
-                    probability,
-                    probability,
-                    '--threshold_fields',
-                    treshhold_field1,
-                    treshhold_field2,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
-                    '-od', exp_dir_name,
-                    '-ff', 'png']
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1354,6 +1152,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
                     'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1432,6 +1231,7 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
                     'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1506,6 +1306,7 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
                     'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1563,6 +1364,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
                     'Model1',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1636,6 +1438,7 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
                     '6',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1703,6 +1506,7 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
                     'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
@@ -1770,6 +1574,7 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
                     'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
