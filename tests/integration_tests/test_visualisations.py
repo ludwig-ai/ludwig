@@ -12,6 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Integration tests for the visualisation commands.
+#
+# Author: Ivaylo Stefanov
+# email: ivaylo.stefanov82@gmail.com
+# github: https://github.com/istefano82
 # ==============================================================================
 
 import glob
