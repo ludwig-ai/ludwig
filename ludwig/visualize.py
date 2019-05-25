@@ -2007,7 +2007,8 @@ def frequency_vs_f1(
                 title='{} F1 Score vs Frequency {}'.format(
                     model_name_name,
                     field
-                )
+                ),
+                filename=filename
             )
 
 
