@@ -208,7 +208,7 @@ class LudwigModel:
         return ludwig_model
 
     def save(self, save_path):
-        """This function allows for loading pretrained models
+        """This function allows to save models on disk
 
         # Inputs
 

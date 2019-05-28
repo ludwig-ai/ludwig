@@ -32,14 +32,17 @@ logger = logging.getLogger(__name__)
 
 
 def print_ludwig(message, ludwig_version):
-    logger.info('\n'.join([' _         _        _      ',
-                           '| |_  _ __| |_ __ _(_)__ _ ',
-                           '| | || / _` \\ V  V / / _` |',
-                           '|_|\\_,_\\__,_|\\_/\\_/|_\\__, |',
-                           '                     |___/ ',
-                           'ludwig v{1} - {0}'.format(message, ludwig_version),
-                           '']
-                          ))
+    logger.info('\n'.join([
+        '███████████████████████',
+        '█ █ █ █  ▜█ █ █ █ █   █',
+        '█ █ █ █ █ █ █ █ █ █ ███',
+        '█ █   █ █ █ █ █ █ █ ▌ █',
+        '█ █████ █ █ █ █ █ █ █ █',
+        '█     █  ▟█     █ █   █',
+        '███████████████████████',
+        'ludwig v{0} - {1}'.format(ludwig_version, message),
+        ''
+    ]))
 
 
 def print_boxed(text, print_fun=logger.info):
