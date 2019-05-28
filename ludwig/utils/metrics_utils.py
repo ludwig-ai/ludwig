@@ -26,6 +26,9 @@ from sklearn import metrics
 from sklearn.metrics import confusion_matrix
 
 
+logger = logging.getLogger(__name__)
+
+
 class ConfusionMatrix:
     def __init__(self, conditions, predictions, labels=None,
                  sample_weight=None):
@@ -273,7 +276,7 @@ def roc_auc_score(conditions, prediction_scores, average='micro',
         return metrics.roc_auc_score(conditions, prediction_scores, average,
                                      sample_weight)
     except ValueError as ve:
-        logging.info(ve)
+        logger.info(ve)
 
 
 def precision_recall_curve(conditions, prediction_scores, pos_label=None,

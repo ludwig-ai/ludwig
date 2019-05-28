@@ -50,6 +50,9 @@ from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 
 
+logger = logging.getLogger(__name__)
+
+
 class SequenceBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)

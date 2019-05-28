@@ -17,6 +17,9 @@
 import logging
 
 
+logger = logging.getLogger(__name__)
+
+
 def topological_sort(graph_unsorted):
     """
     Repeatedly go through all of the nodes in the graph, moving each of
@@ -97,8 +100,8 @@ if __name__ == '__main__':
                       (10, []),
                       (8, [9]),
                       (3, [10, 8])]
-    logging.info(topological_sort(graph_unsorted))
+    logger.info(topological_sort(graph_unsorted))
     graph_unsorted = [('macro', ['action', 'contact_type']),
                       ('contact_type', None),
                       ('action', ['contact_type'])]
-    logging.info(topological_sort(graph_unsorted))
+    logger.info(topological_sort(graph_unsorted))

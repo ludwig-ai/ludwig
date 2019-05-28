@@ -35,6 +35,9 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 
 
+logger = logging.getLogger(__name__)
+
+
 class ImageBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
@@ -103,7 +106,7 @@ class ImageBaseFeature(BaseFeature):
             img = img_padded
 
             if img_num_channels != num_channels:
-                logging.warning(
+                logger.warning(
                     "Image {0} has {1} channels, where as {2}"
                     " channels are expected. Dropping/adding channels"
                     "with 0s as appropriate".format(
@@ -291,7 +294,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('  targets_placeholder: {0}'.format(placeholder))
+        logger.debug('  targets_placeholder: {0}'.format(placeholder))
 
         feature_representation, feature_representation_size = self.encoder_obj(
             placeholder,
@@ -299,7 +302,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
             dropout_rate,
             is_training,
         )
-        logging.debug(
+        logger.debug(
             '  feature_representation: {0}'.format(feature_representation)
         )
 

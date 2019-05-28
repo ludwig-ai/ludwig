@@ -16,9 +16,14 @@
 import tensorflow as tf
 
 
-def optimize(loss, training_parameters, learning_rate, global_step,
-             horovod=None):
-    if training_parameters is not None and training_parameters['decay'] == True:
+def optimize(
+        loss,
+        training_parameters,
+        learning_rate,
+        global_step,
+        horovod=None
+):
+    if training_parameters is not None and training_parameters['decay'] is True:
         learning_rate = tf.train.exponential_decay(
             learning_rate, global_step,
             training_parameters['decay_steps'],

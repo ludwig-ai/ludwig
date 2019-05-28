@@ -28,6 +28,9 @@ import pandas as pd
 from pandas.errors import ParserError
 
 
+logger = logging.getLogger(__name__)
+
+
 def load_csv(data_fp):
     data = []
     with open(data_fp, 'rb') as f:
@@ -40,13 +43,14 @@ def read_csv(data_fp, header=0):
     Helper method to read a csv file. Wraps around pd.read_csv to handle some
     exceptions. Can extend to cover cases as necessary
     :param data_fp: path to the csv file
+    :param header: header argument for pandas to read the csv
     :return: Pandas dataframe with the data
     """
     try:
         df = pd.read_csv(data_fp, header=header)
     except ParserError:
-        logging.warning('Failed to parse the CSV with pandas default way,'
-                        ' trying \\ as escape character.')
+        logger.warning('Failed to parse the CSV with pandas default way,'
+                       ' trying \\ as escape character.')
         df = pd.read_csv(data_fp, header=header, escapechar='\\')
 
     return df
@@ -172,7 +176,7 @@ def load_pretrained_embeddings(embeddings_path, vocab):
 
 
 def load_glove(file_path):
-    logging.info('  Loading Glove format file {}'.format(file_path))
+    logger.info('  Loading Glove format file {}'.format(file_path))
     embeddings = {}
     embedding_size = 0
 
@@ -199,13 +203,13 @@ def load_glove(file_path):
                     )
                     embeddings[word] = embedding
                 except ValueError:
-                    logging.warning(
+                    logger.warning(
                         'Line {} in the GloVe file {} is malformed, '
                         'skipping it'.format(
                             line_number, file_path
                         )
                     )
-    logging.info('  {0} embeddings loaded'.format(len(embeddings)))
+    logger.info('  {0} embeddings loaded'.format(len(embeddings)))
     return embeddings
 
 
@@ -335,12 +339,12 @@ def add_sequence_feature_column(df, col_name, seq_length):
     """
 
     if col_name not in df.columns.values:
-        logging.error('{} column does not exist'.format(col_name))
+        logger.error('{} column does not exist'.format(col_name))
         return
 
     new_col_name = col_name + '_feature'
     if new_col_name in df.columns.values:
-        logging.warning(
+        logger.warning(
             '{} column already exists, values will be overridden'.format(
                 new_col_name
             )

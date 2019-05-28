@@ -22,6 +22,9 @@ from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
 
 
+logger = logging.getLogger(__name__)
+
+
 def embedding_matrix(vocab, embedding_size, representation='dense',
                      embeddings_trainable=True, pretrained_embeddings=None,
                      initializer=None, regularizer=None):
@@ -41,7 +44,7 @@ def embedding_matrix(vocab, embedding_size, representation='dense',
             initializer_obj = tf.constant(embeddings_matrix, dtype=tf.float32)
         else:
             if vocab_size < embedding_size:
-                logging.info(
+                logger.info(
                     '  embedding_size ({}) is greater than vocab_size ({}). '
                     'Setting embedding size to be equal to vocab_size.'.format(
                         embedding_size, vocab_size
@@ -128,16 +131,16 @@ class Embed:
                 initializer=self.initializer,
                 regularizer=regularizer
             )
-        logging.debug('  embeddings: {0}'.format(embeddings))
+        logger.debug('  embeddings: {0}'.format(embeddings))
 
         embedded = tf.nn.embedding_lookup(embeddings, input_ids,
                                           name='embeddings_lookup')
-        logging.debug('  embedded: {0}'.format(embedded))
+        logger.debug('  embedded: {0}'.format(embedded))
 
         if self.dropout and dropout_rate is not None:
             embedded = tf.layers.dropout(embedded, rate=dropout_rate,
                                          training=is_training)
-            logging.debug('  embedded_dropout: {}'.format(embedded))
+            logger.debug('  embedded_dropout: {}'.format(embedded))
 
         return embedded, embedding_size
 
@@ -196,7 +199,7 @@ class EmbedWeighted:
                 initializer=self.initializer,
                 regularizer=regularizer
             )
-        logging.debug('  embeddings: {0}'.format(embeddings))
+        logger.debug('  embeddings: {0}'.format(embeddings))
 
         signed_input = tf.cast(tf.sign(tf.abs(input_ids)), tf.int32)
         multiple_hot_indexes = tf.multiply(
@@ -208,20 +211,20 @@ class EmbedWeighted:
             multiple_hot_indexes,
             name='embeddings_lookup'
         )
-        logging.debug('  embedded: {0}'.format(embedded))
+        logger.debug('  embedded: {0}'.format(embedded))
 
         # Get the multipliers to embeddings
         weights_mask = tf.expand_dims(input_ids, -1)
         weighted_embedded = tf.multiply(embedded, weights_mask)
-        logging.debug('  weighted_embedded: {0}'.format(weighted_embedded))
+        logger.debug('  weighted_embedded: {0}'.format(weighted_embedded))
 
         embedded_reduced = tf.reduce_sum(weighted_embedded, 1)
-        logging.debug('  embedded_reduced: {0}'.format(embedded_reduced))
+        logger.debug('  embedded_reduced: {0}'.format(embedded_reduced))
 
         if self.dropout and dropout_rate is not None:
             embedded = tf.layers.dropout(embedded, rate=dropout_rate,
                                          training=is_training)
-            logging.debug('  embedded_dropout: {}'.format(embedded))
+            logger.debug('  embedded_dropout: {}'.format(embedded))
 
         return embedded_reduced, embedding_size
 
@@ -282,7 +285,7 @@ class EmbedSparse:
                 initializer=self.initializer,
                 regularizer=regularizer
             )
-        logging.debug('  embeddings: {0}'.format(embeddings))
+        logger.debug('  embeddings: {0}'.format(embeddings))
 
         multiple_hot_indexes = tf.multiply(
             input_sparse,
@@ -303,7 +306,7 @@ class EmbedSparse:
             sp_weights=None,
             combiner=self.reduce_output
         )
-        logging.debug('  embedded_reduced: {0}'.format(embedded_reduced))
+        logger.debug('  embedded_reduced: {0}'.format(embedded_reduced))
 
         # Old dense implementation
         # embedded = tf.nn.embedding_lookup(
@@ -319,7 +322,7 @@ class EmbedSparse:
             embedded_reduced = tf.layers.dropout(embedded_reduced,
                                                  rate=dropout_rate,
                                                  training=is_training)
-            logging.debug(
+            logger.debug(
                 '  embedded_reduced_dropout: {}'.format(embedded_reduced))
 
         return embedded_reduced, embedding_size

@@ -19,6 +19,9 @@ import time
 from datetime import datetime, timedelta
 
 
+logger = logging.getLogger(__name__)
+
+
 class WithTimer(object):
     def __init__(self, title='', quiet=False):
         self.title = title
@@ -39,7 +42,7 @@ class WithTimer(object):
     def __exit__(self, *args):
         if not self.quiet:
             elapsed_wp = self.elapsed()
-            logging.info(
+            logger.info(
                 'Elapsed {}: wall {:.06f}, sys {:.06f}'.format(self.title,
                                                                elapsed_wp[0],
                                                                elapsed_wp[1]))
