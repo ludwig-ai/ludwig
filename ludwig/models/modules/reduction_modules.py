@@ -23,6 +23,9 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 
+logger = logging.getLogger(__name__)
+
+
 def reduce_last(sequence, **kwargs):
     batch_size = tf.shape(sequence)[0]
     sequence_length = sequence_length_3D(sequence)
@@ -47,7 +50,7 @@ def reduce_concat(sequence, **kwargs):
     if sequence.shape.as_list()[-2] is None or sequence.shape.as_list()[
         -1] is None:
         # this the case of outputs coming from rnn encoders
-        logging.warning('  WARNING: '
+        logger.warning('  WARNING: '
                         'The sequence length dimension is undefined '
                         '(probably because of an RNN based encoder), '
                         'so the sequence cannot be reduced by concatenation. '

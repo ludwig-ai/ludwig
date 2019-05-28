@@ -23,30 +23,33 @@ import pandas as pd
 from ludwig.utils.data_utils import read_csv
 
 
+logger = logging.getLogger(__name__)
+
+
 def concatenate(train_csv, vali_csv, test_csv, output_csv):
     concatenated_df = concatenate_csv(train_csv, vali_csv, test_csv)
 
-    logging.info('Saving concatenated csv..')
+    logger.info('Saving concatenated csv..')
     concatenated_df.to_csv(output_csv, encoding='utf-8', index=False)
-    logging.info('done')
+    logger.info('done')
 
 
 def concatenate_csv(train_csv, vali_csv, test_csv):
-    logging.info('Loading training csv...')
+    logger.info('Loading training csv...')
     train_df = read_csv(train_csv)
-    logging.info('done')
+    logger.info('done')
 
-    logging.info('Loading validation csv..')
+    logger.info('Loading validation csv..')
     vali_df = read_csv(vali_csv) if vali_csv is not None else None
-    logging.info('done')
+    logger.info('done')
 
-    logging.info('Loading test csv..')
+    logger.info('Loading test csv..')
     test_df = read_csv(test_csv) if test_csv is not None else None
-    logging.info('done')
+    logger.info('done')
 
-    logging.info('Concatenating csvs..')
+    logger.info('Concatenating csvs..')
     concatenated_df = concatenate_df(train_df, vali_df, test_df)
-    logging.info('done')
+    logger.info('done')
 
     return concatenated_df
 

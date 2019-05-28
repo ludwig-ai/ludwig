@@ -30,6 +30,9 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 
+logger = logging.getLogger(__name__)
+
+
 class ConcatCombiner:
     def __init__(
             self,
@@ -83,7 +86,7 @@ class ConcatCombiner:
             hidden = tf.concat(representations, 1)
             hidden_size = representations_size
 
-            logging.debug('  concat_hidden: {0}'.format(hidden))
+            logger.debug('  concat_hidden: {0}'.format(hidden))
 
             # ================ Fully Connected ================
             if self.fc_stack is not None:
@@ -96,7 +99,7 @@ class ConcatCombiner:
                 )
 
                 hidden_size = self.fc_stack.layers[-1]['fc_size']
-                logging.debug('  final_hidden: {0}'.format(hidden))
+                logger.debug('  final_hidden: {0}'.format(hidden))
 
             hidden = tf.identity(hidden, name=scope_name)
 
@@ -203,7 +206,7 @@ class SequenceConcatCombiner:
                             tf.expand_dims(fe_properties['representation'], 1),
                             multipliers
                         )
-                        logging.debug('  tiled_representation: {0}'.format(
+                        logger.debug('  tiled_representation: {0}'.format(
                             tiled_representation))
 
                         mask = tf.sequence_mask(
@@ -230,7 +233,7 @@ class SequenceConcatCombiner:
                     representations_size += fe_properties['size']
 
             hidden = tf.concat(representations, 2)
-            logging.debug('  concat_hidden: {0}'.format(hidden))
+            logger.debug('  concat_hidden: {0}'.format(hidden))
             hidden_size = representations_size
 
             # ================ Mask ================
@@ -247,7 +250,7 @@ class SequenceConcatCombiner:
                 hidden,
                 self.reduce_output
             )
-            logging.debug('  reduced_concat_hidden: {0}'.format(hidden))
+            logger.debug('  reduced_concat_hidden: {0}'.format(hidden))
 
             hidden = tf.identity(hidden, name=scope_name)
 
@@ -298,7 +301,7 @@ class SequenceCombiner:
                 dropout_rate=dropout_rate,
                 is_training=is_training
             )
-            logging.debug('  sequence_hidden: {0}'.format(hidden))
+            logger.debug('  sequence_hidden: {0}'.format(hidden))
 
             hidden = tf.identity(hidden, name=scope_name)
 

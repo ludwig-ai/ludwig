@@ -34,6 +34,9 @@ from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import format_registry
 
 
+logger = logging.getLogger(__name__)
+
+
 class TimeseriesBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
@@ -86,7 +89,7 @@ class TimeseriesBaseFeature(BaseFeature):
                 max_length = len(ts_vector)
 
         if max_length < length_limit:
-            logging.debug(
+            logger.debug(
                 'max length of {0}: {1} < limit: {2}'.format(
                     format_str,
                     max_length,
@@ -153,7 +156,7 @@ class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('  placeholder: {0}'.format(placeholder))
+        logger.debug('  placeholder: {0}'.format(placeholder))
 
         return self.build_sequence_input(
             placeholder,
@@ -253,7 +256,7 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         # ================ Placeholder ================
         targets = self._get_output_placeholder()
         output_tensors[self.name] = targets
-        logging.debug('  targets_placeholder: {0}'.format(targets))
+        logger.debug('  targets_placeholder: {0}'.format(targets))
 
         # ================ Predictions ================
         (

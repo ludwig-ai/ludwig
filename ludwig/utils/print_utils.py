@@ -28,8 +28,11 @@ logging_level_registry = {
 }
 
 
+logger = logging.getLogger(__name__)
+
+
 def print_ludwig(message, ludwig_version):
-    logging.info('\n'.join([
+    logger.info('\n'.join([
         '███████████████████████',
         '█ █ █ █  ▜█ █ █ █ █   █',
         '█ █ █ █ █ █ █ █ █ █ ███',
@@ -42,7 +45,7 @@ def print_ludwig(message, ludwig_version):
     ]))
 
 
-def print_boxed(text, print_fun=logging.info):
+def print_boxed(text, print_fun=logger.info):
     box_width = len(text) + 2
     print_fun('')
     print_fun('╒{}╕'.format('═' * box_width))

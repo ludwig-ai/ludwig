@@ -23,6 +23,9 @@ from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.misc import get_from_registry
 
 
+logger = logging.getLogger(__name__)
+
+
 def build_outputs(output_features, hidden, hidden_size, regularizer,
                   dropout_rate,
                   is_training=True, **kwargs):
@@ -53,7 +56,7 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
             tf.GraphKeys.REGULARIZATION_LOSSES)
         if regularization_losses:
             regularization_loss = tf.add_n(regularization_losses)
-            logging.debug('- Regularization losses: {0}'.format(
+            logger.debug('- Regularization losses: {0}'.format(
                 regularization_losses))
 
         else:
@@ -73,7 +76,7 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
 def build_single_output(output_feature, feature_hidden, feature_hidden_size,
                         final_hidden,
                         dropout_rate, regularizer, is_training=True, **kwargs):
-    logging.debug('- Output {} feature {}'.format(
+    logger.debug('- Output {} feature {}'.format(
         output_feature['type'],
         output_feature['name']
     ))

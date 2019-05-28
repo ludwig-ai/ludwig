@@ -34,6 +34,9 @@ from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 
 
+logger = logging.getLogger(__name__)
+
+
 class TextBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
@@ -192,7 +195,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('  targets_placeholder: {0}'.format(placeholder))
+        logger.debug('  targets_placeholder: {0}'.format(placeholder))
 
         return self.build_sequence_input(
             placeholder,

@@ -20,6 +20,9 @@ import tensorflow as tf
 from ludwig.models.modules.initializer_modules import get_initializer
 
 
+logger = logging.getLogger(__name__)
+
+
 def conv_1d(inputs, weights, biases,
             stride=1, padding='SAME',
             activation='relu', norm=None,
@@ -95,11 +98,11 @@ def conv_layer(inputs, kernel_shape, biases_shape,
             regularizer=regularizer,
             initializer=initializer
         )
-    logging.debug('  conv_weights: {0}'.format(weights))
+    logger.debug('  conv_weights: {0}'.format(weights))
 
     biases = tf.get_variable('biases', biases_shape,
                              initializer=tf.constant_initializer(0.01))
-    logging.debug('  conv_biases: {0}'.format(biases))
+    logger.debug('  conv_biases: {0}'.format(biases))
 
     if dimensions == 1:
         return conv_1d(inputs, weights, biases,
@@ -155,7 +158,7 @@ def flatten(hidden, skip_first=True):
         if x.value is not None:
             hidden_size *= x.value
     hidden = tf.reshape(hidden, [-1, hidden_size], name='flatten')
-    logging.debug('  flatten hidden: {0}'.format(hidden))
+    logger.debug('  flatten hidden: {0}'.format(hidden))
     return hidden, hidden_size
 
 
@@ -251,7 +254,7 @@ class ConvStack1D:
                                                  'regularize'] else None,
                                              is_training=is_training)
                 prev_num_filters = layer['num_filters']
-                logging.debug('  conv_{}: {}'.format(i, layer_output))
+                logger.debug('  conv_{}: {}'.format(i, layer_output))
 
                 # Pooling
                 if layer['pool_size'] is not None:
@@ -262,11 +265,11 @@ class ConvStack1D:
                         padding='VALID',
                         name='pool_{}'.format(layer['filter_size'])
                     )
-                    logging.debug('  pool_{}: {}'.format(
+                    logger.debug('  pool_{}: {}'.format(
                         i, layer_output))
 
             hidden = layer_output
-            logging.debug('  hidden: {0}'.format(hidden))
+            logger.debug('  hidden: {0}'.format(hidden))
 
         return hidden
 
@@ -351,7 +354,7 @@ class ParallelConv1D:
                                                  'regularize'] else None,
                                              is_training=is_training)
 
-                logging.debug('  conv_{}_fs{}: {}'.format(
+                logger.debug('  conv_{}_fs{}: {}'.format(
                     i,
                     layer['filter_size'],
                     layer_output)
@@ -366,7 +369,7 @@ class ParallelConv1D:
                         padding='VALID',
                         name='pool_{}'.format(layer['filter_size'])
                     )
-                    logging.debug('  pool_{}_fs{}: {}'.format(
+                    logger.debug('  pool_{}_fs{}: {}'.format(
                         i,
                         layer['filter_size'],
                         layer_output
@@ -467,7 +470,7 @@ class StackParallelConv1D:
                     dropout_rate=dropout_rate,
                     is_training=is_training
                 )
-                logging.debug('  hidden: {}'.format(hidden))
+                logger.debug('  hidden: {}'.format(hidden))
 
             prev_num_filters = 0
             for layer in parallel_conv_layers:
@@ -565,7 +568,7 @@ class ConvStack2D:
                                              initializer=layer['initializer'],
                                              is_training=is_training)
                 prev_num_filters = layer['num_filters']
-                logging.debug('  conv_{}: {}'.format(i, layer_output))
+                logger.debug('  conv_{}: {}'.format(i, layer_output))
 
                 # Pooling
                 if layer['pool_size'] is not None:
@@ -584,11 +587,11 @@ class ConvStack2D:
                         name='pool_{}'.format(i)
                     )
 
-                    logging.debug('  pool_{}: {}'.format(
+                    logger.debug('  pool_{}: {}'.format(
                         i, layer_output))
 
             hidden = layer_output
-            logging.debug('  hidden: {0}'.format(hidden))
+            logger.debug('  hidden: {0}'.format(hidden))
 
         return hidden
 
@@ -679,9 +682,12 @@ def get_resnet_block_sizes(resnet_size):
     try:
         return resnet_choices[resnet_size]
     except KeyError:
-        err = ('Could not find layers for selected Resnet size.\n'
-               'Size received: {}; sizes allowed: {}.'.format(
-            resnet_size, resnet_choices.keys()))
+        err = (
+            'Could not find layers for selected Resnet size.\n'
+            'Size received: {}; sizes allowed: {}.'.format(
+                resnet_size, resnet_choices.keys()
+            )
+        )
         raise ValueError(err)
 
 
