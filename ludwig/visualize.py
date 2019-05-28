@@ -1144,7 +1144,7 @@ def confidence_thresholding_2thresholds_2d(
 
     filename_template = None
     if output_directory:
-        filename_tempalte = os.path.join(
+        filename_template = os.path.join(
             output_directory,
             'confidence_thresholding_2thresholds_2d_{}.' + file_format
         )
@@ -2007,7 +2007,8 @@ def frequency_vs_f1(
                 title='{} F1 Score vs Frequency {}'.format(
                     model_name_name,
                     field
-                )
+                ),
+                filename=filename
             )
 
 
