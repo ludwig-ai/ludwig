@@ -374,7 +374,6 @@ class ParallelCNN(object):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        self.should_embed = should_embed
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -395,40 +394,41 @@ class ParallelCNN(object):
             self.num_conv_layers = 4
         else:
             raise ValueError(
-                'Invalid layer parametrization, use either conv_layers or num_conv_layers')
+                'Invalid layer parametrization, use either conv_layers or'
+                ' num_conv_layers'
+            )
 
-        if fc_layers is not None and num_fc_layers is None:
-            # use custom-defined layers
-            fc_layers = fc_layers
-            num_fc_layers = len(fc_layers)
-        elif fc_layers is None and num_fc_layers is not None:
-            # generate num_fc_layers with default parameters
-            fc_layers = None
-            num_fc_layers = num_fc_layers
-        elif fc_layers is None and num_fc_layers is None:
+        # The user is expected to provide fc_layers or num_fc_layers
+        # The following logic handles the case where the user either provides
+        # both or neither.
+        if fc_layers is None and num_fc_layers is None:
             # use default layers with varying filter sizes
             fc_layers = [
                 {'fc_size': 512},
                 {'fc_size': 256}
             ]
             num_fc_layers = 2
-        else:
+        elif fc_layers is not None and num_fc_layers is not None:
             raise ValueError(
-                'Invalid layer parametrization, use either fc_layers or num_fc_layers')
+                'Invalid layer parametrization, use either fc_layers or '
+                'num_fc_layers only. Not both.'
+            )
 
         self.reduce_output = reduce_output
-
-        self.embed_sequence = EmbedSequence(
-            vocab,
-            embedding_size,
-            representation=representation,
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
-        )
+        self.should_embed = should_embed
+        self.embed_sequence = None
+        if self.should_embed:
+            self.embed_sequence = EmbedSequence(
+                vocab,
+                embedding_size,
+                representation=representation,
+                embeddings_trainable=embeddings_trainable,
+                pretrained_embeddings=pretrained_embeddings,
+                embeddings_on_cpu=embeddings_on_cpu,
+                dropout=dropout,
+                initializer=initializer,
+                regularize=regularize
+            )
 
         self.parallel_conv_1d = ParallelConv1D(
             layers=self.conv_layers,
@@ -733,41 +733,41 @@ class StackedCNN:
             self.num_conv_layers = 6
         else:
             raise ValueError(
-                'Invalid layer parametrization, use either conv_layers or num_conv_layers')
+                'Invalid layer parametrization, use either conv_layers or '
+                'num_conv_layers'
+            )
 
-        if fc_layers is not None and num_fc_layers is None:
-            # use custom-defined layers
-            fc_layers = fc_layers
-            num_fc_layers = len(fc_layers)
-        elif fc_layers is None and num_fc_layers is not None:
-            # generate num_fc_layers with default parameters
-            fc_layers = None
-            num_fc_layers = num_fc_layers
-        elif fc_layers is None and num_fc_layers is None:
+        # The user is expected to provide fc_layers or num_fc_layers
+        # The following logic handles the case where the user either provides
+        # both or neither.
+        if fc_layers is None and num_fc_layers is None:
             # use default layers with varying filter sizes
             fc_layers = [
                 {'fc_size': 512},
                 {'fc_size': 256}
             ]
             num_fc_layers = 2
-        else:
+        elif fc_layers is not None and num_fc_layers is not None:
             raise ValueError(
-                'Invalid layer parametrization, use either fc_layers or num_fc_layers')
+                'Invalid layer parametrization, use either fc_layers or '
+                'num_fc_layers only. Not both.'
+            )
 
-        self.should_embed = should_embed
         self.reduce_output = reduce_output
-
-        self.embed_sequence = EmbedSequence(
-            vocab,
-            embedding_size,
-            representation=representation,
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
-        )
+        self.should_embed = should_embed
+        self.embed_sequence = None
+        if self.should_embed:
+            self.embed_sequence = EmbedSequence(
+                vocab,
+                embedding_size,
+                representation=representation,
+                embeddings_trainable=embeddings_trainable,
+                pretrained_embeddings=pretrained_embeddings,
+                embeddings_on_cpu=embeddings_on_cpu,
+                dropout=dropout,
+                initializer=initializer,
+                regularize=regularize
+            )
 
         self.conv_stack_1d = ConvStack1D(
             layers=self.conv_layers,
@@ -1067,41 +1067,41 @@ class StackedParallelCNN:
             self.num_stacked_layers = 6
         else:
             raise ValueError(
-                'Invalid layer parametrization, use either stacked_layers or num_stacked_layers')
+                'Invalid layer parametrization, use either stacked_layers or'
+                ' num_stacked_layers'
+            )
 
-        if fc_layers is not None and num_fc_layers is None:
-            # use custom-defined layers
-            fc_layers = fc_layers
-            num_fc_layers = len(fc_layers)
-        elif fc_layers is None and num_fc_layers is not None:
-            # generate num_fc_layers with default parameters
-            fc_layers = None
-            num_fc_layers = num_fc_layers
-        elif fc_layers is None and num_fc_layers is None:
+        # The user is expected to provide fc_layers or num_fc_layers
+        # The following logic handles the case where the user either provides
+        # both or neither.
+        if fc_layers is None and num_fc_layers is None:
             # use default layers with varying filter sizes
             fc_layers = [
                 {'fc_size': 512},
                 {'fc_size': 256}
             ]
             num_fc_layers = 2
-        else:
+        elif fc_layers is not None and num_fc_layers is not None:
             raise ValueError(
-                'Invalid layer parametrization, use either fc_layers or num_fc_layers')
+                'Invalid layer parametrization, use either fc_layers or '
+                'num_fc_layers only. Not both.'
+            )
 
-        self.should_embed = should_embed
         self.reduce_output = reduce_output
-
-        self.embed_sequence = EmbedSequence(
-            vocab,
-            embedding_size,
-            representation=representation,
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
-        )
+        self.should_embed = should_embed
+        self.embed_sequence = None
+        if self.should_embed:
+            self.embed_sequence = EmbedSequence(
+                vocab,
+                embedding_size,
+                representation=representation,
+                embeddings_trainable=embeddings_trainable,
+                pretrained_embeddings=pretrained_embeddings,
+                embeddings_on_cpu=embeddings_on_cpu,
+                dropout=dropout,
+                initializer=initializer,
+                regularize=regularize
+            )
 
         self.stack_parallel_conv_1d = StackParallelConv1D(
             stacked_layers=self.stacked_layers,
@@ -1553,7 +1553,9 @@ class CNNRNN:
             self.num_conv_layers = 2
         else:
             raise ValueError(
-                'Invalid layer parametrization, use either conv_layers or num_conv_layers')
+                'Invalid layer parametrization, use either conv_layers or '
+                'num_conv_layers'
+            )
 
         self.should_embed = should_embed
 
