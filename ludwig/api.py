@@ -335,7 +335,7 @@ class LudwigModel:
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
-        :param experiment_name: The name for the experiment.
+        :param experiment_name: The name for  the experiment.
         :param model_name: (string) a name for the model, user for the save
                directory
         :param model_load_path: (string) path of a pretrained model to load as
