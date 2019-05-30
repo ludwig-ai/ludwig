@@ -1,4 +1,4 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L67)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L63)</span>
 # LudwigModel class
 
 ```python
@@ -374,7 +374,6 @@ train(
   data_test_hdf5=None,
   data_dict=None,
   train_set_metadata_json=None,
-  experiment_name='api_experiment',
   model_name='run',
   model_load_path=None,
   model_resume_path=None,
@@ -440,7 +439,6 @@ __Inputs__
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
    directory with the same name and a json extension
-- __experiment_name__ (experiment_name: The name for the experiment):experiment_name: The name for the experiment.
 - __model_name__ (string): a name for the model, user for the save
    directory
 - __model_load_path__ (string): path of a pretrained model to load as

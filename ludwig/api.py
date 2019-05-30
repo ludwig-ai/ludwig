@@ -272,7 +272,6 @@ class LudwigModel:
             data_test_hdf5=None,
             data_dict=None,
             train_set_metadata_json=None,
-            experiment_name='api_experiment',
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
@@ -335,7 +334,6 @@ class LudwigModel:
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
-        :param experiment_name: The name for  the experiment.
         :param model_name: (string) a name for the model, user for the save
                directory
         :param model_load_path: (string) path of a pretrained model to load as
@@ -432,7 +430,7 @@ class LudwigModel:
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
             train_set_metadata_json=train_set_metadata_json,
-            experiment_name=experiment_name,
+            experiment_name='api_experiment',
             model_name=model_name,
             model_load_path=model_load_path,
             model_resume_path=model_resume_path,
