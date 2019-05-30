@@ -538,8 +538,9 @@
                 
                 
                   <h1>API</h1>
-                
-                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L63">[source]</a></span></p>
+
+                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L67">[source]</a></span>
+                </p>
 <h2 id="ludwigmodel-class">LudwigModel class<a class="headerlink" href="#ludwigmodel-class" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">LudwigModel</span><span class="p">(</span>
   <span class="n">model_definition</span><span class="p">,</span>
@@ -853,6 +854,8 @@ performance measures, confusion matrices and the like.</p>
   <span class="n">data_test_hdf5</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">data_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">train_set_metadata_json</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">experiment_name</span><span class="o">=</span><span class="s1">&#39;api_experiment&#39;</span><span
+            class="p">,</span>
   <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;run&#39;</span><span class="p">,</span>
   <span class="n">model_load_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">model_resume_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -916,7 +919,10 @@ specified dataset.</p>
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
    directory with the same name and a json extension</li>
-<li><strong>model_name</strong> (string): a name for the model, user for the save
+    <li><strong>experiment_name</strong> (string): a name for the experiment, used for the save
+        directory
+    </li>
+    <li><strong>model_name</strong> (string): a name for the model, used for the save
    directory</li>
 <li><strong>model_load_path</strong> (string): path of a pretrained model to load as
    initialization</li>
