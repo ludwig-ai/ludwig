@@ -440,8 +440,9 @@ __Inputs__
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
    directory with the same name and a json extension
-- __experiment_name__ (experiment_name: The name for the experiment):experiment_name: The name for the experiment.
-- __model_name__ (string): a name for the model, user for the save
+- __experiment_name__ (string): a name for the experiment, used for the save
+               directory
+- __model_name__ (string): a name for the model, used for the save
    directory
 - __model_load_path__ (string): path of a pretrained model to load as
    initialization
