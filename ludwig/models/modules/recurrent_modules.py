@@ -466,6 +466,13 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                 projection_layer=projection_layer)
 
             if beam_width > 1:
+                # sample a random index
+                # note: this will return the same i'th beam prediction for all
+                # the inputs, but if called more than once, it will return different
+                # indices.
+                random.seed(int(time.time()))
+                chosen_sequence_index = random.randint(0, beam_width-1)
+
                 predictions_sequence = final_outputs_pred.beam_search_decoder_output.predicted_ids[
                                        :, :, 0]
                 # final_outputs_pred..predicted_ids[:,:,0] would work too, but it contains -1s for padding
