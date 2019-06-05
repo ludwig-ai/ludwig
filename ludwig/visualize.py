@@ -22,7 +22,7 @@ import argparse
 import logging
 import os
 import sys
-
+import json
 import numpy as np
 import sklearn
 from scipy.stats import entropy
@@ -36,6 +36,54 @@ from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
 
 
+
+def learning_curves_api(
+        training_statistics,
+        field,
+        model_names=None,
+        output_directory=None,
+        file_format='pdf',
+        **kwargs
+):
+
+    filename_template = None
+    if output_directory:
+        filename_template = os.path.join(
+            output_directory,
+            'learning_curves_{}_{}.' + file_format
+        )
+
+    training_statistics_per_model_name = [training_statistics]
+
+    fields_set = set()
+    for ls in training_statistics_per_model_name:
+        for _, values in ls.items():
+            for key in values:
+                fields_set.add(key)
+    fields = [field] if field is not None and len(field) > 0 else fields_set
+
+    metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
+    for field in fields:
+        for metric in metrics:
+            if metric in training_statistics_per_model_name[0]['train'][field]:
+
+                filename = None
+                if filename_template:
+                    filename = filename_template.format(field, metric)
+                    os.makedirs(output_directory, exist_ok=True)
+
+                visualization_utils.learning_curves_plot(
+                    [learning_stats['train'][field][metric]
+                     for learning_stats in training_statistics_per_model_name],
+                    [learning_stats['validation'][field][metric]
+                     for learning_stats in training_statistics_per_model_name],
+                    metric,
+                    model_names,
+                    title='Learning Curves {}'.format(field),
+                    filename=filename
+                )
+
+
 def learning_curves(
         training_statistics,
         field,
@@ -44,6 +92,7 @@ def learning_curves(
         file_format='pdf',
         **kwargs
 ):
+    print("Training statistics are {} field is {}".format(training_statistics, field))
     if len(training_statistics) < 1:
         logging.error('No training_statistics provided')
         return
@@ -58,7 +107,7 @@ def learning_curves(
     training_statistics_per_model_name = [load_json(learning_stats_f)
                                           for learning_stats_f in
                                           training_statistics]
-
+    print("training_statistics_per_model_name", training_statistics_per_model_name)
     fields_set = set()
     for ls in training_statistics_per_model_name:
         for _, values in ls.items():
