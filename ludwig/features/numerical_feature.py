@@ -47,12 +47,31 @@ class NumericalBaseFeature(BaseFeature):
 
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': 0
+        'fill_value': 0,
+        'normalization_strategy': None
     }
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        return {}
+        if preprocessing_parameters['normalization_strategy'] is not None:
+            if preprocessing_parameters['normalization_strategy'] is 'zscore':
+                return {'normalization_strategy': {
+                    'mean': column.mean(),
+                    'std': column.std()
+                }}
+            elif preprocessing_parameters['normalization_strategy'] is 'minmax':
+                return {'normalization_strategy': {
+                    'min': column.min(),
+                    'max': column.max()
+                }}
+            else:
+                logger.info(
+                    'Currently zscore and minmax are the only'
+                    'normalization strategies available'
+                )
+                return {}
+        else:
+            return {}
 
     @staticmethod
     def add_feature_data(
@@ -64,6 +83,15 @@ class NumericalBaseFeature(BaseFeature):
     ):
         data[feature['name']] = dataset_df[feature['name']].astype(
             np.float32).as_matrix()
+        if preprocessing_parameters['normalization_strategy'] is not None:
+            if preprocessing_parameters['normalization_strategy'] is 'zscore':
+                mean = metadata['normalization_strategy']['mean']
+                std = mean = metadata['normalization_strategy']['std']
+                data[feature['name']] = (data[feature['name']]-mean)/std
+            elif preprocessing_parameters['normalization_strategy'] is 'minmax':
+                min_ = metadata['normalization_strategy']['min']
+                max_ = metadata['normalization_strategy']['max']
+                data[feature['name']] = (data[feature['name']]-min_)/(max_-min_)
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
