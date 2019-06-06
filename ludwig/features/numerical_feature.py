@@ -56,13 +56,13 @@ class NumericalBaseFeature(BaseFeature):
         if preprocessing_parameters['normalization_strategy'] is not None:
             if preprocessing_parameters['normalization_strategy']=='zscore':
                 return {'stats': {
-                    'mean': column.mean(),
-                    'std': column.std()
+                    'mean': column.astype(np.float32).mean(),
+                    'std': column.astype(np.float32).std()
                 }}
             elif preprocessing_parameters['normalization_strategy']=='minmax':
                 return {'stats': {
-                    'min': column.min(),
-                    'max': column.max()
+                    'min': column.astype(np.float32).min(),
+                    'max': column.astype(np.float32).max()
                 }}
             else:
                 logger.info(

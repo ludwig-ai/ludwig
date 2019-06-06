@@ -123,7 +123,7 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                 feature['type']
             ]
         train_set_metadata[feature['name']] = get_feature_meta(
-            dataset_df[feature['name']],
+            dataset_df[feature['name']].astype(str),
             preprocessing_parameters
         )
     return train_set_metadata
