@@ -54,20 +54,21 @@ class NumericalBaseFeature(BaseFeature):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         if preprocessing_parameters['normalization_strategy'] is not None:
-            if preprocessing_parameters['normalization_strategy'] is 'zscore':
-                return {'normalization_strategy': {
+            if preprocessing_parameters['normalization_strategy']=='zscore':
+                return {'stats': {
                     'mean': column.mean(),
                     'std': column.std()
                 }}
-            elif preprocessing_parameters['normalization_strategy'] is 'minmax':
-                return {'normalization_strategy': {
+            elif preprocessing_parameters['normalization_strategy']=='minmax':
+                return {'stats': {
                     'min': column.min(),
                     'max': column.max()
                 }}
             else:
                 logger.info(
-                    'Currently zscore and minmax are the only'
-                    'normalization strategies available'
+                    'Currently zscore and minmax are the only '
+                    'normalization strategies available. No {}'.format(
+                    preprocessing_parameters['normalization_strategy'])
                 )
                 return {}
         else:
@@ -84,14 +85,14 @@ class NumericalBaseFeature(BaseFeature):
         data[feature['name']] = dataset_df[feature['name']].astype(
             np.float32).as_matrix()
         if preprocessing_parameters['normalization_strategy'] is not None:
-            if preprocessing_parameters['normalization_strategy'] is 'zscore':
-                mean = metadata['normalization_strategy']['mean']
-                std = mean = metadata['normalization_strategy']['std']
+            if preprocessing_parameters['normalization_strategy']=='zscore':
+                mean = metadata[feature['name']]['stats']['mean']
+                std = metadata[feature['name']]['stats']['std']
                 data[feature['name']] = (data[feature['name']]-mean)/std
-            elif preprocessing_parameters['normalization_strategy'] is 'minmax':
-                min_ = metadata['normalization_strategy']['min']
-                max_ = metadata['normalization_strategy']['max']
-                data[feature['name']] = (data[feature['name']]-min_)/(max_-min_)
+            elif preprocessing_parameters['normalization_strategy']=='minmax':
+                min_ = metadata['stats']['min']
+                max_ = metadata['stats']['max']
+                data[feature['name']]=(data[feature['name']]-min_)/(max_-min_)
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
