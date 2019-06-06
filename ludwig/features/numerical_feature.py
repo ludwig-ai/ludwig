@@ -47,12 +47,32 @@ class NumericalBaseFeature(BaseFeature):
 
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': 0
+        'fill_value': 0,
+        'normalization_strategy': None
     }
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        return {}
+        if preprocessing_parameters['normalization_strategy'] is not None:
+            if preprocessing_parameters['normalization_strategy']=='zscore':
+                return {'stats': {
+                    'mean': column.astype(np.float32).mean(),
+                    'std': column.astype(np.float32).std()
+                }}
+            elif preprocessing_parameters['normalization_strategy']=='minmax':
+                return {'stats': {
+                    'min': column.astype(np.float32).min(),
+                    'max': column.astype(np.float32).max()
+                }}
+            else:
+                logger.info(
+                    'Currently zscore and minmax are the only '
+                    'normalization strategies available. No {}'.format(
+                    preprocessing_parameters['normalization_strategy'])
+                )
+                return {}
+        else:
+            return {}
 
     @staticmethod
     def add_feature_data(
@@ -64,6 +84,15 @@ class NumericalBaseFeature(BaseFeature):
     ):
         data[feature['name']] = dataset_df[feature['name']].astype(
             np.float32).as_matrix()
+        if preprocessing_parameters['normalization_strategy'] is not None:
+            if preprocessing_parameters['normalization_strategy']=='zscore':
+                mean = metadata[feature['name']]['stats']['mean']
+                std = metadata[feature['name']]['stats']['std']
+                data[feature['name']] = (data[feature['name']]-mean)/std
+            elif preprocessing_parameters['normalization_strategy']=='minmax':
+                min_ = metadata['stats']['min']
+                max_ = metadata['stats']['max']
+                data[feature['name']]=(data[feature['name']]-min_)/(max_-min_)
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
