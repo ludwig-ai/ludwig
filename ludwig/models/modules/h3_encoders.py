@@ -168,13 +168,6 @@ class H3Embed:
             dropout_rate,
             is_training=is_training
         )
-        # Todo don't embed resolution and just ask it for masking the output of embed_cells
-        embedded_resolution, _ = self.embed_resolution(
-            input_vector[:, 2],
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
         embedded_base_cell, _ = self.embed_base_cell(
             input_vector[:, 3],
             regularizer,
@@ -188,9 +181,13 @@ class H3Embed:
             is_training=is_training
         )
 
+        resolution = input_vector[:, 2]
+        mask = tf.sequence_mask(resolution, 15)
+        masked_embedded_cells = embedded_cells * mask
+
         concatenated = tf.concat(
-            [embedded_mode, embedded_edge, embedded_resolution,
-             embedded_base_cell, embedded_cells],
+            [embedded_mode, embedded_edge,
+             embedded_base_cell, masked_embedded_cells],
             axis=1)
 
         hidden = reduce_sequence(concatenated, self.reduce_output)
