@@ -22,7 +22,7 @@ import tensorflow as tf
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
-from ludwig.models.modules.h3_encoders import H3WeightedSum, H3RNN
+from ludwig.models.modules.h3_encoders import H3WeightedSum, H3RNN, H3Embed
 from ludwig.utils.h3_util import h3_to_components
 from ludwig.utils.misc import set_default_value, get_from_registry
 
@@ -143,6 +143,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
 
 
 h3_encoder_registry = {
+    'embed': H3Embed,
     'weighted_sum': H3WeightedSum,
     'rnn': H3RNN
 }
