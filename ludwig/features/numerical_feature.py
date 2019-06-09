@@ -83,7 +83,7 @@ class NumericalBaseFeature(BaseFeature):
             preprocessing_parameters,
     ):
         data[feature['name']] = dataset_df[feature['name']].astype(
-            np.float32).as_matrix()
+            np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 mean = metadata[feature['name']]['mean']
