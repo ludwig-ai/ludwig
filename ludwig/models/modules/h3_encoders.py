@@ -162,18 +162,24 @@ class H3Embed:
             dropout_rate,
             is_training=is_training
         )
+        embedded_mode = tf.expand_dims(embedded_mode, axis=1)
+
         embedded_edge, _ = self.embed_edge(
             input_vector[:, 1],
             regularizer,
             dropout_rate,
             is_training=is_training
         )
+        embedded_edge = tf.expand_dims(embedded_edge, axis=1)
+
         embedded_base_cell, _ = self.embed_base_cell(
             input_vector[:, 3],
             regularizer,
             dropout_rate,
             is_training=True
         )
+        embedded_base_cell = tf.expand_dims(embedded_base_cell, axis=1)
+
         embedded_cells, _ = self.embed_cells(
             input_vector[:, 4:],
             regularizer,
@@ -202,8 +208,8 @@ class H3WeightedSum:
             embedding_size=10,
             embeddings_on_cpu=False,
             should_softmax=False,
-            fc_layers=0,
-            num_fc_layers=None,
+            fc_layers=None,
+            num_fc_layers=0,
             fc_size=10,
             norm=None,
             activation='relu',
