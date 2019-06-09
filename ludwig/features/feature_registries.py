@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.constants import BAG
+from ludwig.constants import BAG, DATE
 from ludwig.constants import BINARY
 from ludwig.constants import CATEGORY
 from ludwig.constants import IMAGE
@@ -30,6 +30,7 @@ from ludwig.features.binary_feature import BinaryOutputFeature
 from ludwig.features.category_feature import CategoryBaseFeature
 from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.features.category_feature import CategoryOutputFeature
+from ludwig.features.date_feature import DateBaseFeature, DateInputFeature
 from ludwig.features.image_feature import ImageBaseFeature
 from ludwig.features.image_feature import ImageInputFeature
 from ludwig.features.numerical_feature import NumericalBaseFeature
@@ -56,7 +57,8 @@ base_type_registry = {
     NUMERICAL: NumericalBaseFeature,
     SEQUENCE: SequenceBaseFeature,
     TIMESERIES: TimeseriesBaseFeature,
-    IMAGE: ImageBaseFeature
+    IMAGE: ImageBaseFeature,
+    DATE: DateBaseFeature
 }
 input_type_registry = {
     TEXT: TextInputFeature,
@@ -67,7 +69,8 @@ input_type_registry = {
     SEQUENCE: SequenceInputFeature,
     IMAGE: ImageInputFeature,
     TIMESERIES: TimeseriesInputFeature,
-    BAG: BagInputFeature
+    BAG: BagInputFeature,
+    DATE: DateInputFeature
 }
 output_type_registry = {
     CATEGORY: CategoryOutputFeature,
