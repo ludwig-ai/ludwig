@@ -63,7 +63,7 @@ class NumericalBaseFeature(BaseFeature):
             preprocessing_parameters,
     ):
         data[feature['name']] = dataset_df[feature['name']].astype(
-            np.float32).as_matrix()
+            np.float32).values
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
