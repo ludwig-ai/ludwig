@@ -36,11 +36,11 @@ output_features:
 Named Entity Recognition Tagging
 ===
 
-| utterance                                         | tag                                            |
-|---------------------------------------------------|------------------------------------------------|
-| John Smith was born in New York on July 21st 1982 | Person Person O O O City City O Date Date Date |
-| Jane Smith was born in Boston on May 1st 1973     | Person Person O O O City City O Date Date Date |
-| My friend Carlos was born in San Jose             | O O Person O O O City City                     |
+| utterance                                                                        | tag                                                             |
+|----------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| Blade Runner is a 1982 neo-noir science fiction film directed by Ridley Scott    | Movie Movie O O Date O O O O O O Person Person                  |
+| Harrison Ford and Rutger Hauer starred in it                                     | Person Person O Person person O O O                             |
+| Philip Dick 's novel Do Androids Dream of Electric Sheep ? was published in 1968 | Person Person O O Book Book Book Book Book Book Book O O O Date |
 
 ```
 ludwig experiment \
