@@ -185,7 +185,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     # Multiple inputs, Multiple outputs
     input_features = [
         text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
-        numerical_feature(),
+        numerical_feature(normalization='zscore'),
         categorical_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
@@ -213,7 +213,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
         sequence_feature(max_len=5, decoder='generator', reduce_input=None),
-        numerical_feature()
+        numerical_feature(normalization='minmax')
     ]
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
@@ -238,7 +238,7 @@ def test_experiment_image_inputs(csv_filename):
             num_filters=8
         ),
         text_feature(encoder='embed', min_len=1),
-        numerical_feature()
+        numerical_feature(normalization='zscore')
     ]
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
@@ -475,7 +475,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
             num_filters=8
         ),
         text_feature(encoder='embed', min_len=1),
-        numerical_feature()
+        numerical_feature(normalization='minmax')
     ]
     output_features = [binary_feature(), numerical_feature()]
     rel_path = generate_data(

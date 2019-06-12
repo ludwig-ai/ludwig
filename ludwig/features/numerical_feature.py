@@ -47,12 +47,32 @@ class NumericalBaseFeature(BaseFeature):
 
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': 0
+        'fill_value': 0,
+        'normalization': None
     }
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        return {}
+        if preprocessing_parameters['normalization'] is not None:
+            if preprocessing_parameters['normalization'] == 'zscore':
+                return {
+                    'mean': column.astype(np.float32).mean(),
+                    'std': column.astype(np.float32).std()
+                }
+            elif preprocessing_parameters['normalization'] == 'minmax':
+                return {
+                    'min': column.astype(np.float32).min(),
+                    'max': column.astype(np.float32).max()
+                }
+            else:
+                logger.info(
+                    'Currently zscore and minmax are the only '
+                    'normalization strategies available. No {}'.format(
+                        preprocessing_parameters['normalization'])
+                )
+                return {}
+        else:
+            return {}
 
     @staticmethod
     def add_feature_data(
@@ -64,6 +84,16 @@ class NumericalBaseFeature(BaseFeature):
     ):
         data[feature['name']] = dataset_df[feature['name']].astype(
             np.float32).values
+        if preprocessing_parameters['normalization'] is not None:
+            if preprocessing_parameters['normalization'] == 'zscore':
+                mean = metadata[feature['name']]['mean']
+                std = metadata[feature['name']]['std']
+                data[feature['name']] = (data[feature['name']]-mean)/std
+            elif preprocessing_parameters['normalization'] == 'minmax':
+                min_ = metadata[feature['name']]['min']
+                max_ = metadata[feature['name']]['max']
+                data[feature['name']] = (
+                    data[feature['name']]-min_)/(max_-min_)
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
