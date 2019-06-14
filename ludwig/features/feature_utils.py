@@ -42,6 +42,6 @@ def set_str_to_idx(set_string, feature_dict, format_func):
         raise Exception('Format {} not supported'.format(format_func))
 
     out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in
-           tokenizer.tokenize(set_string)]
+           tokenizer(set_string)]
 
     return np.array(out, dtype=np.int32)

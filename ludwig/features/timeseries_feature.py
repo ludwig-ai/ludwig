@@ -59,7 +59,7 @@ class TimeseriesBaseFeature(BaseFeature):
         )()
         max_length = 0
         for timeseries in column:
-            processed_line = tokenizer.tokenize(timeseries)
+            processed_line = tokenizer(timeseries)
             max_length = max(max_length, len(processed_line))
         max_length = min(
             preprocessing_parameters['timeseries_length_limit'],
@@ -83,7 +83,7 @@ class TimeseriesBaseFeature(BaseFeature):
         max_length = 0
         ts_vectors = []
         for ts in timeseries:
-            ts_vector = np.array(tokenizer.tokenize(ts)).astype(np.float32)
+            ts_vector = np.array(tokenizer(ts)).astype(np.float32)
             ts_vectors.append(ts_vector)
             if len(ts_vector) > max_length:
                 max_length = len(ts_vector)
