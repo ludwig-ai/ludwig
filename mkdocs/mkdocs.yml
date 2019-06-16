@@ -28,7 +28,7 @@ theme:
   name: 'material'
   language: 'en'
   logo: 'images/ludwig_logo.svg'
-  favicon: 'images/ludwig_logo.png'
+  favicon: 'favicon.ico'
   custom_dir: 'custom/'
   palette:
     primary: 'grey'
