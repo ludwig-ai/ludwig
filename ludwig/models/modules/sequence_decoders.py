@@ -153,7 +153,7 @@ class Tagger:
             regularizer,
             is_timeseries=False
     ):
-        logger.info('  hidden shape: {0}'.format(hidden.shape))
+        logger.debug('  hidden shape: {0}'.format(hidden.shape))
         if len(hidden.shape) != 3:
             raise ValueError(
                 'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
