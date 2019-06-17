@@ -14,11 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from abc import ABC, abstractmethod
-
-import json
 import logging
 import re
+from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
@@ -181,52 +179,52 @@ class BaseTokenizer:
         pass
 
     @abstractmethod
-    def __call__(self, s):
+    def __call__(self, text):
         pass
 
 
 class CharactersToListTokenizer(BaseTokenizer):
-    def __call__(self, s):
-        return s
+    def __call__(self, text):
+        return text
 
 
 class SpaceStringToListTokenizer(BaseTokenizer):
-    def __call__(self, s):
-        return SPLIT_REGEX.split(s.strip())
+    def __call__(self, text):
+        return SPLIT_REGEX.split(text.strip())
 
 
 class SpacePunctuationStringToListTokenizer(BaseTokenizer):
-    def __call__(self, s):
-        return SPACE_PUNCTUATION_REGEX.findall(s.strip())
+    def __call__(self, text):
+        return SPACE_PUNCTUATION_REGEX.findall(text.strip())
 
 
 class UnderscoreStringToListTokenizer(BaseTokenizer):
-    def __call__(self, s):
-        return UNDERSCORE_REGEX.split(s.strip())
+    def __call__(self, text):
+        return UNDERSCORE_REGEX.split(text.strip())
 
 
 class CommaStringToListTokenizer(BaseTokenizer):
-    def __call__(self, s):
-        return COMMA_REGEX.split(s.strip())
+    def __call__(self, text):
+        return COMMA_REGEX.split(text.strip())
 
 
 class UntokenizedStringToListTokenizer(BaseTokenizer):
-    def __call__(self, s):
-        return [s]
+    def __call__(self, text):
+        return [text]
 
 
 class StrippedStringToListTokenizer(BaseTokenizer):
-    def __call__(self, s):
-        return [s.strip()]
+    def __call__(self, text):
+        return [text.strip()]
 
 
 class EnglishTokenizer(BaseTokenizer):
-    def __call__(self, s):
+    def __call__(self, text):
         return process_text(text, load_nlp_pipeline('en'))
 
 
 class EnglishFilterTokenizer(BaseTokenizer):
-    def __call__(self, s):
+    def __call__(self, text):
         return process_text(
             text,
             load_nlp_pipeline('en'),
@@ -237,7 +235,7 @@ class EnglishFilterTokenizer(BaseTokenizer):
 
 
 class EnglishRemoveStopwordsTokenizer(BaseTokenizer):
-    def __call__(self, s):
+    def __call__(self, text):
         return process_text(
             text,
             load_nlp_pipeline('en'),
@@ -246,7 +244,7 @@ class EnglishRemoveStopwordsTokenizer(BaseTokenizer):
 
 
 class EnglishLemmatizeTokenizer(BaseTokenizer):
-    def __call__(self, s):
+    def __call__(self, text):
         process_text(text, load_nlp_pipeline('en'), return_lemma=True)
 
 
