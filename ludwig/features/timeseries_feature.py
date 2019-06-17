@@ -31,7 +31,7 @@ from ludwig.models.modules.measure_modules import r2
 from ludwig.models.modules.measure_modules import squared_error
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
-from ludwig.utils.strings_utils import format_registry
+from ludwig.utils.strings_utils import tokenizer_registry
 
 
 logger = logging.getLogger(__name__)
@@ -53,13 +53,13 @@ class TimeseriesBaseFeature(BaseFeature):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        format_function = get_from_registry(
+        tokenizer = get_from_registry(
             preprocessing_parameters['format'],
-            format_registry
-        )
+            tokenizer_registry
+        )()
         max_length = 0
         for timeseries in column:
-            processed_line = format_function(timeseries)
+            processed_line = tokenizer(timeseries)
             max_length = max(max_length, len(processed_line))
         max_length = min(
             preprocessing_parameters['timeseries_length_limit'],
@@ -76,14 +76,14 @@ class TimeseriesBaseFeature(BaseFeature):
             padding_value,
             padding='right'
     ):
-        format_function = get_from_registry(
+        tokenizer = get_from_registry(
             format_str,
-            format_registry
-        )
+            tokenizer_registry
+        )()
         max_length = 0
         ts_vectors = []
         for ts in timeseries:
-            ts_vector = np.array(format_function(ts)).astype(np.float32)
+            ts_vector = np.array(tokenizer(ts)).astype(np.float32)
             ts_vectors.append(ts_vector)
             if len(ts_vector) > max_length:
                 max_length = len(ts_vector)
