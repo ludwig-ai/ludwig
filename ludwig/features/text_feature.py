@@ -68,7 +68,7 @@ class TextBaseFeature(BaseFeature):
             char_max_len
         ) = create_vocabulary(
             column,
-            format='characters',
+            tokenizer_type='characters',
             num_most_frequent=preprocessing_parameters['char_most_common'],
             lowercase=preprocessing_parameters['lowercase']
         )
@@ -79,7 +79,7 @@ class TextBaseFeature(BaseFeature):
             word_max_len
         ) = create_vocabulary(
             column,
-            format=preprocessing_parameters['word_tokenizer'],
+            tokenizer_type=preprocessing_parameters['word_tokenizer'],
             num_most_frequent=preprocessing_parameters['word_most_common'],
             lowercase=preprocessing_parameters['lowercase'],
             vocab_file=preprocessing_parameters['word_tokenizer_vocab_file']

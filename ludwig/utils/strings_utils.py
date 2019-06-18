@@ -75,7 +75,7 @@ def match_replace(string_to_match, list_regex):
 
 def create_vocabulary(
     data,
-    format='space',
+    tokenizer_type='space',
     custom_vocabulary=(),
     add_unknown=True,
     add_padding=True,
@@ -86,11 +86,11 @@ def create_vocabulary(
     max_line_length = 0
     unit_counts = Counter()
 
-    if format == 'custom':
+    if tokenizer_type == 'custom':
         vocab = sorted(list(set(custom_vocabulary)))
     else:
         tokenizer = get_from_registry(
-            format,
+            tokenizer_type,
             tokenizer_registry
         )(vocab_file=vocab_file)
         for line in data:
