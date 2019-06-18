@@ -113,8 +113,8 @@ def create_vocabulary(
     return vocab, str2idx, str2freq, max_line_length
 
 
-def get_sequence_vector(sequence, format, unit_to_id, lowercase=True):
-    tokenizer = get_from_registry(format, tokenizer_registry)()
+def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
+    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)()
     format_dtype = int_type(len(unit_to_id) - 1)
     return _get_sequence_vector(
         sequence,
@@ -148,14 +148,14 @@ def _get_sequence_vector(
 def build_sequence_matrix(
     sequences,
     inverse_vocabulary,
-    tokenizer,
+    tokenizer_type,
     length_limit,
     padding_symbol,
     padding='right',
     lowercase=True,
     tokenizer_vocab_file=None,
 ):
-    tokenizer = get_from_registry(tokenizer, tokenizer_registry)(
+    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file
     )
     format_dtype = int_type(len(inverse_vocabulary) - 1)
