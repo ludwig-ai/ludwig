@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.2.0">
     
     
       
@@ -46,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.0284f74d.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.750b69bd.css">
       
-        <link rel="stylesheet" href="../assets/stylesheets/application-palette.01803549.css">
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css">
       
       
         
@@ -62,7 +62,7 @@
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -87,7 +87,24 @@
       <defs>
         
         
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
         
       </defs>
     </svg>
@@ -4238,14 +4255,14 @@ In the model definition you are able to specify which level of representation to
 <li><code>unknown_symbol</code> (default <code>&lt;UNK&gt;</code>): the string used as a unknown symbol. Is is mapped to the integer ID 1 in the vocabulary.</li>
 <li><code>lowercase</code> (default <code>false</code>): if the string has to be lowercased before being handled by the formatter.</li>
 <li><code>word_sequence_length_limit</code> (default <code>256</code>): the maximum length of the text in words. Texts that are longer than this value will be truncated, while texts that are shorter will be padded.</li>
-<li><code>word_format</code> (default <code>space_punct</code>): defines how to map from the raw string content of the CSV column to a sequence of words. The default value <code>space_punct</code> splits the string using a regular expression that separates also punctuation. Other options are: <code>space</code> (splits on space), <code>underscore</code> (splits on underscore), <code>comma</code>(splits on comma), <code>json</code> (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on <a href="https://spacy.io">spaCy</a>.</li>
+<li><code>word_tokenizer</code> (default <code>space_punct</code>): defines how to map from the raw string content of the CSV column to a sequence of words. The default value <code>space_punct</code> splits the string using a regular expression that separates also punctuation. Other options are: <code>space</code> (splits on space), <code>underscore</code> (splits on underscore), <code>comma</code>(splits on comma), <code>json</code> (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on <a href="https://spacy.io">spaCy</a>.</li>
 <li><code>word_most_common</code> (default <code>20000</code>): the maximum number of most common words to be considered. If the data contains more than this amount, the most infrequent words will be treated as unknown.</li>
 <li><code>char_sequence_length_limit</code> (default <code>1024</code>): the maximum length of the text in characters. Texts that are longer than this value will be truncated, while sequences that are shorter will be padded.</li>
-<li><code>char_format</code> (default <code>characters</code>): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is <code>characters</code> and the behavior is to split the string at each character.</li>
+<li><code>char_tokenizer</code> (default <code>characters</code>): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is <code>characters</code> and the behavior is to split the string at each character.</li>
 <li><code>char_most_common</code> (default <code>70</code>): the maximum number of most common characters to be considered. if the data contains more than this amount, the most infrequent characters will be treated as unknown.</li>
 </ul>
 <h5 id="spacy-based-word-format-options">spaCy based word format options<a class="headerlink" href="#spacy-based-word-format-options" title="Permanent link">&para;</a></h5>
-<p>The spaCy based <code>word_format</code> options are functions that use the powerful tokenization and NLP preprocessing models provided the library.
+<p>The spaCy based <code>tokenizer</code> options are functions that use the powerful tokenization and NLP preprocessing models provided the library.
 Several languages are available: English (code <code>en</code>), Italian (code <code>it</code>), Spanish (code <code>es</code>), German (code <code>de</code>), French (code <code>fr</code>), Portuguese (code <code>pt</code>), Dutch (code <code>nl</code>), Greek (code <code>el</code>) and Multi (code <code>xx</code>, useful in case you have a dataset of different languages).
 For each language different functions are available:
 - <code>tokenize</code>: uses spaCy tokenizer,
@@ -4259,7 +4276,7 @@ For each language different functions are available:
 </pre></div>
 
 
-<p>and provide <code>&lt;language&gt;_&lt;function&gt;</code> as <code>word_format</code> like: <code>english_tokenizer</code>, <code>italian_lemmatize_filter</code>, <code>multi_tokenize_filter</code> and so on.
+<p>and provide <code>&lt;language&gt;_&lt;function&gt;</code> as <code>tokenizer</code> like: <code>english_tokenizer</code>, <code>italian_lemmatize_filter</code>, <code>multi_tokenize_filter</code> and so on.
 More details on the models can be found in the <a href="https://spacy.io/models">spaCy documentation</a>.</p>
 <h4 id="text-input-features-and-encoders">Text Input Features and Encoders<a class="headerlink" href="#text-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>The encoders are the same used for the <a href="#sequence-input-features-and-encoders">Sequence Features</a>.
@@ -4870,7 +4887,7 @@ The classes on the x axis are sorted by f1 score.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.245445c6.js"></script>
+      <script src="../assets/javascripts/application.39abc4af.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

@@ -160,6 +160,8 @@ def build_data(
         train_set_metadata[
             feature['name']
         ]['preprocessing'] = preprocessing_parameters
+        print('==============')
+        print(preprocessing_parameters)
         add_feature_data(
             feature,
             dataset_df,

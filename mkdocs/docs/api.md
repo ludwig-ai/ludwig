@@ -441,7 +441,7 @@ __Inputs__
    CSV created the first time a CSV file is used in the same
    directory with the same name and a json extension
 - __experiment_name__ (string): a name for the experiment, used for the save
-               directory
+   directory
 - __model_name__ (string): a name for the model, used for the save
    directory
 - __model_load_path__ (string): path of a pretrained model to load as

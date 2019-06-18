@@ -2089,15 +2089,15 @@ The parameters available for preprocessing are:
 - `unknown_symbol` (default `<UNK>`): the string used as a unknown symbol. Is is mapped to the integer ID 1 in the vocabulary.
 - `lowercase` (default `false`): if the string has to be lowercased before being handled by the formatter.
 - `word_sequence_length_limit` (default `256`): the maximum length of the text in words. Texts that are longer than this value will be truncated, while texts that are shorter will be padded.
-- `word_format` (default `space_punct`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `space_punct` splits the string using a regular expression that separates also punctuation. Other options are: `space` (splits on space), `underscore` (splits on underscore), `comma`(splits on comma), `json` (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on [spaCy](https://spacy.io).
+- `word_tokenizer` (default `space_punct`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `space_punct` splits the string using a regular expression that separates also punctuation. Other options are: `space` (splits on space), `underscore` (splits on underscore), `comma`(splits on comma), `json` (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on [spaCy](https://spacy.io).
 - `word_most_common` (default `20000`): the maximum number of most common words to be considered. If the data contains more than this amount, the most infrequent words will be treated as unknown.
 - `char_sequence_length_limit` (default `1024`): the maximum length of the text in characters. Texts that are longer than this value will be truncated, while sequences that are shorter will be padded.
-- `char_format` (default `characters`): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is `characters` and the behavior is to split the string at each character.
+- `char_tokenizer` (default `characters`): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is `characters` and the behavior is to split the string at each character.
 - `char_most_common` (default `70`): the maximum number of most common characters to be considered. if the data contains more than this amount, the most infrequent characters will be treated as unknown.
 
 #### spaCy based word format options
 
-The spaCy based `word_format` options are functions that use the powerful tokenization and NLP preprocessing models provided the library.
+The spaCy based `tokenizer` options are functions that use the powerful tokenization and NLP preprocessing models provided the library.
 Several languages are available: English (code `en`), Italian (code `it`), Spanish (code `es`), German (code `de`), French (code `fr`), Portuguese (code `pt`), Dutch (code `nl`), Greek (code `el`) and Multi (code `xx`, useful in case you have a dataset of different languages).
 For each language different functions are available:
 - `tokenize`: uses spaCy tokenizer,
@@ -2111,7 +2111,7 @@ In order to use these options, you have to download the the spaCy model:
 ```
 python -m spacy download <language_code>
 ```
-and provide `<language>_<function>` as `word_format` like: `english_tokenizer`, `italian_lemmatize_filter`, `multi_tokenize_filter` and so on.
+and provide `<language>_<function>` as `tokenizer` like: `english_tokenizer`, `italian_lemmatize_filter`, `multi_tokenize_filter` and so on.
 More details on the models can be found in the [spaCy documentation](https://spacy.io/models).
 
 ### Text Input Features and Encoders
