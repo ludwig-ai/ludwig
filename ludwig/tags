@@ -1,0 +1,1541 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ABSOLUTE_ERROR	constants.py	/^ABSOLUTE_ERROR = 'absolute_error'$/;"	v
+ACCURACY	constants.py	/^ACCURACY = 'accuracy'$/;"	v
+APPEND	constants.py	/^APPEND = 'append'$/;"	v
+AVG_EXP	constants.py	/^AVG_EXP = 'avg_exp'$/;"	v
+BACKFILL	constants.py	/^BACKFILL = 'backfill'$/;"	v
+BAG	constants.py	/^BAG = 'bag'$/;"	v
+BERTTokenizer	utils/strings_utils.py	/^class BERTTokenizer(BaseTokenizer):$/;"	c
+BINARY	constants.py	/^BINARY = 'binary'$/;"	v
+BagBaseFeature	features/bag_feature.py	/^class BagBaseFeature(BaseFeature):$/;"	c
+BagInputFeature	features/bag_feature.py	/^class BagInputFeature(BagBaseFeature, InputFeature):$/;"	c
+BaseFeature	features/base_feature.py	/^class BaseFeature:$/;"	c
+BaseTokenizer	utils/strings_utils.py	/^class BaseTokenizer:$/;"	c
+BasicDecoder	models/modules/recurrent_modules.py	/^class BasicDecoder(tf.contrib.seq2seq.BasicDecoder):$/;"	c
+BasicDecoderOutput	models/modules/recurrent_modules.py	/^                           ('rnn_output', 'sample_id', 'projection_input'))):$/;"	c
+Batcher	utils/batcher.py	/^class Batcher(object):$/;"	c
+BinaryBaseFeature	features/binary_feature.py	/^class BinaryBaseFeature(BaseFeature):$/;"	c
+BinaryInputFeature	features/binary_feature.py	/^class BinaryInputFeature(BinaryBaseFeature, InputFeature):$/;"	c
+BinaryOutputFeature	features/binary_feature.py	/^class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):$/;"	c
+BucketedBatcher	utils/batcher.py	/^class BucketedBatcher(object):$/;"	c
+CATEGORY	constants.py	/^CATEGORY = 'category'$/;"	v
+CLI	cli.py	/^class CLI(object):$/;"	c
+CNNRNN	models/modules/sequence_encoders.py	/^class CNNRNN:$/;"	c
+COMMA_REGEX	utils/strings_utils.py	/^COMMA_REGEX = re.compile(r'\\s*,\\s*')$/;"	v
+CORRECT_LAST_PREDICTIONS	constants.py	/^CORRECT_LAST_PREDICTIONS = 'correct_last_predictions'$/;"	v
+CORRECT_OVERALL_PREDICTIONS	constants.py	/^CORRECT_OVERALL_PREDICTIONS = 'correct_overall_predictions'$/;"	v
+CORRECT_PREDICTIONS	constants.py	/^CORRECT_PREDICTIONS = 'correct_predictions'$/;"	v
+CORRECT_ROWWISE_PREDICTIONS	constants.py	/^CORRECT_ROWWISE_PREDICTIONS = 'correct_rowwise_predictions'$/;"	v
+CROP_OR_PAD	constants.py	/^CROP_OR_PAD = 'crop_or_pad'$/;"	v
+CategoryBaseFeature	features/category_feature.py	/^class CategoryBaseFeature(BaseFeature):$/;"	c
+CategoryInputFeature	features/category_feature.py	/^class CategoryInputFeature(CategoryBaseFeature, InputFeature):$/;"	c
+CategoryOutputFeature	features/category_feature.py	/^class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):$/;"	c
+CharactersToListTokenizer	utils/strings_utils.py	/^class CharactersToListTokenizer(BaseTokenizer):$/;"	c
+Comet	contribs/comet.py	/^class Comet():$/;"	c
+CommaStringToListTokenizer	utils/strings_utils.py	/^class CommaStringToListTokenizer(BaseTokenizer):$/;"	c
+ConcatCombiner	models/combiners.py	/^class ConcatCombiner:$/;"	c
+ConfusionMatrix	utils/metrics_utils.py	/^class ConfusionMatrix:$/;"	c
+ConvStack1D	models/modules/convolutional_modules.py	/^class ConvStack1D:$/;"	c
+ConvStack2D	models/modules/convolutional_modules.py	/^class ConvStack2D:$/;"	c
+DISABLE_PROGRESSBAR	globals.py	/^DISABLE_PROGRESSBAR = False$/;"	v
+Dataset	data/dataset.py	/^class Dataset:$/;"	c
+Dense	models/modules/dense_encoders.py	/^class Dense:$/;"	c
+DistributedBatcher	utils/batcher.py	/^class DistributedBatcher(object):$/;"	c
+DutchFilterTokenizer	utils/strings_utils.py	/^class DutchFilterTokenizer(BaseTokenizer):$/;"	c
+DutchLemmatizeFilterTokenizer	utils/strings_utils.py	/^class DutchLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+DutchLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class DutchLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+DutchLemmatizeTokenizer	utils/strings_utils.py	/^class DutchLemmatizeTokenizer(BaseTokenizer):$/;"	c
+DutchRemoveStopwordsTokenizer	utils/strings_utils.py	/^class DutchRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+DutchTokenizer	utils/strings_utils.py	/^class DutchTokenizer(BaseTokenizer):$/;"	c
+EDIT_DISTANCE	constants.py	/^EDIT_DISTANCE = 'edit_distance'$/;"	v
+ERROR	constants.py	/^ERROR = 'error'$/;"	v
+EVAL_LOSS	constants.py	/^EVAL_LOSS = 'eval_loss'$/;"	v
+Embed	models/modules/embedding_modules.py	/^class Embed:$/;"	c
+EmbedEncoder	models/modules/sequence_encoders.py	/^class EmbedEncoder:$/;"	c
+EmbedSequence	models/modules/embedding_modules.py	/^class EmbedSequence:$/;"	c
+EmbedSparse	models/modules/embedding_modules.py	/^class EmbedSparse:$/;"	c
+EmbedWeighted	models/modules/embedding_modules.py	/^class EmbedWeighted:$/;"	c
+EnglishFilterTokenizer	utils/strings_utils.py	/^class EnglishFilterTokenizer(BaseTokenizer):$/;"	c
+EnglishLemmatizeFilterTokenizer	utils/strings_utils.py	/^class EnglishLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+EnglishLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class EnglishLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+EnglishLemmatizeTokenizer	utils/strings_utils.py	/^class EnglishLemmatizeTokenizer(BaseTokenizer):$/;"	c
+EnglishRemoveStopwordsTokenizer	utils/strings_utils.py	/^class EnglishRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+EnglishTokenizer	utils/strings_utils.py	/^class EnglishTokenizer(BaseTokenizer):$/;"	c
+FCStack	models/modules/fully_connected_modules.py	/^class FCStack:$/;"	c
+FILL_WITH_CONST	constants.py	/^FILL_WITH_CONST = 'fill_with_const'$/;"	v
+FILL_WITH_MEAN	constants.py	/^FILL_WITH_MEAN = 'fill_with_mean'$/;"	v
+FILL_WITH_MODE	constants.py	/^FILL_WITH_MODE = 'fill_with_mode'$/;"	v
+FrenchFilterTokenizer	utils/strings_utils.py	/^class FrenchFilterTokenizer(BaseTokenizer):$/;"	c
+FrenchLemmatizeFilterTokenizer	utils/strings_utils.py	/^class FrenchLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+FrenchLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class FrenchLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+FrenchLemmatizeTokenizer	utils/strings_utils.py	/^class FrenchLemmatizeTokenizer(BaseTokenizer):$/;"	c
+FrenchRemoveStopwordsTokenizer	utils/strings_utils.py	/^class FrenchRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+FrenchTokenizer	utils/strings_utils.py	/^class FrenchTokenizer(BaseTokenizer):$/;"	c
+Generator	models/modules/sequence_decoders.py	/^class Generator:$/;"	c
+GermanFilterTokenizer	utils/strings_utils.py	/^class GermanFilterTokenizer(BaseTokenizer):$/;"	c
+GermanLemmatizeFilterTokenizer	utils/strings_utils.py	/^class GermanLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+GermanLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class GermanLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+GermanLemmatizeTokenizer	utils/strings_utils.py	/^class GermanLemmatizeTokenizer(BaseTokenizer):$/;"	c
+GermanRemoveStopwordsTokenizer	utils/strings_utils.py	/^class GermanRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+GermanTokenizer	utils/strings_utils.py	/^class GermanTokenizer(BaseTokenizer):$/;"	c
+GreekFilterTokenizer	utils/strings_utils.py	/^class GreekFilterTokenizer(BaseTokenizer):$/;"	c
+GreekLemmatizeFilterTokenizer	utils/strings_utils.py	/^class GreekLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+GreekLemmatizeRemoveStopwordsFilterTokenizer	utils/strings_utils.py	/^class GreekLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):$/;"	c
+GreekLemmatizeTokenizer	utils/strings_utils.py	/^class GreekLemmatizeTokenizer(BaseTokenizer):$/;"	c
+GreekRemoveStopwordsTokenizer	utils/strings_utils.py	/^class GreekRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+GreekTokenizer	utils/strings_utils.py	/^class GreekTokenizer(BaseTokenizer):$/;"	c
+HEIGHT	constants.py	/^HEIGHT = 'height'$/;"	v
+HITS_AT_K	constants.py	/^HITS_AT_K = 'hits_at_k'$/;"	v
+HTMLStripper	utils/html_utils.py	/^class HTMLStripper(HTMLParser):$/;"	c
+IMAGE	constants.py	/^IMAGE = 'image'$/;"	v
+INTERPOLATE	constants.py	/^INTERPOLATE = 'interpolate'$/;"	v
+ImageBaseFeature	features/image_feature.py	/^class ImageBaseFeature(BaseFeature):$/;"	c
+ImageInputFeature	features/image_feature.py	/^class ImageInputFeature(ImageBaseFeature, InputFeature):$/;"	c
+InputFeature	features/base_feature.py	/^class InputFeature(ABC):$/;"	c
+ItalianFilterTokenizer	utils/strings_utils.py	/^class ItalianFilterTokenizer(BaseTokenizer):$/;"	c
+ItalianLemmatizeFilterTokenizer	utils/strings_utils.py	/^class ItalianLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+ItalianLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class ItalianLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+ItalianLemmatizeTokenizer	utils/strings_utils.py	/^class ItalianLemmatizeTokenizer(BaseTokenizer):$/;"	c
+ItalianRemoveStopwordsTokenizer	utils/strings_utils.py	/^class ItalianRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+ItalianTokenizer	utils/strings_utils.py	/^class ItalianTokenizer(BaseTokenizer):$/;"	c
+JACCARD	constants.py	/^JACCARD = 'jaccard'$/;"	v
+LAST_ACCURACY	constants.py	/^LAST_ACCURACY = 'last_accuracy'$/;"	v
+LAST_PREDICTIONS	constants.py	/^LAST_PREDICTIONS = 'last_predictions'$/;"	v
+LAST_PROBABILTIES	constants.py	/^LAST_PROBABILTIES = 'last_probabilities'$/;"	v
+LENGTHS	constants.py	/^LENGTHS = 'lengths'$/;"	v
+LOSS	constants.py	/^LOSS = 'loss'$/;"	v
+LUDWIG_VERSION	globals.py	/^LUDWIG_VERSION = '0.1.2'$/;"	v
+LudwigModel	api.py	/^class LudwigModel:$/;"	c
+MEAN_ABSOLUTE_ERROR	constants.py	/^MEAN_ABSOLUTE_ERROR = 'mean_absolute_error'$/;"	v
+MEAN_HITS_AT_K	constants.py	/^MEAN_HITS_AT_K = 'mean_hits_at_k'$/;"	v
+MEAN_SQUARED_ERROR	constants.py	/^MEAN_SQUARED_ERROR = 'mean_squared_error'$/;"	v
+MEASURE	constants.py	/^MEASURE = 'measure'$/;"	v
+MODEL_HYPERPARAMETERS_FILE_NAME	globals.py	/^MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'$/;"	v
+MODEL_WEIGHTS_FILE_NAME	globals.py	/^MODEL_WEIGHTS_FILE_NAME = 'model_weights'$/;"	v
+MODEL_WEIGHTS_PROGRESS_FILE_NAME	globals.py	/^MODEL_WEIGHTS_PROGRESS_FILE_NAME = 'model_weights_progress'$/;"	v
+Model	models/model.py	/^class Model:$/;"	c
+MultiFilterTokenizer	utils/strings_utils.py	/^class MultiFilterTokenizer(BaseTokenizer):$/;"	c
+MultiLemmatizeFilterTokenizer	utils/strings_utils.py	/^class MultiLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+MultiLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+MultiLemmatizeTokenizer	utils/strings_utils.py	/^class MultiLemmatizeTokenizer(BaseTokenizer):$/;"	c
+MultiRemoveStopwordsTokenizer	utils/strings_utils.py	/^class MultiRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+MultiTokenizer	utils/strings_utils.py	/^class MultiTokenizer(BaseTokenizer):$/;"	c
+NUMERICAL	constants.py	/^NUMERICAL = 'numerical'$/;"	v
+NUM_CHANNELS	constants.py	/^NUM_CHANNELS = 'num_channels'$/;"	v
+NumericalBaseFeature	features/numerical_feature.py	/^class NumericalBaseFeature(BaseFeature):$/;"	c
+NumericalInputFeature	features/numerical_feature.py	/^class NumericalInputFeature(NumericalBaseFeature, InputFeature):$/;"	c
+NumericalOutputFeature	features/numerical_feature.py	/^class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):$/;"	c
+NumpyEncoder	utils/data_utils.py	/^class NumpyEncoder(json.JSONEncoder):$/;"	c
+ON_MASTER	globals.py	/^ON_MASTER = True$/;"	v
+OutputFeature	features/base_feature.py	/^class OutputFeature(ABC, BaseFeature):$/;"	c
+PADDING_SYMBOL	utils/strings_utils.py	/^PADDING_SYMBOL = '<PAD>'$/;"	v
+PERPLEXITY	constants.py	/^PERPLEXITY = 'perplexity'$/;"	v
+PREDICTION	constants.py	/^PREDICTION = 'prediction'$/;"	v
+PREDICTIONS	constants.py	/^PREDICTIONS = 'predictions'$/;"	v
+PROBABILITIES	constants.py	/^PROBABILITIES = 'probabilities'$/;"	v
+ParallelCNN	models/modules/sequence_encoders.py	/^class ParallelCNN(object):$/;"	c
+ParallelConv1D	models/modules/convolutional_modules.py	/^class ParallelConv1D:$/;"	c
+PassthroughEncoder	models/modules/sequence_encoders.py	/^class PassthroughEncoder:$/;"	c
+PortugueseFilterTokenizer	utils/strings_utils.py	/^class PortugueseFilterTokenizer(BaseTokenizer):$/;"	c
+PortugueseLemmatizeFilterTokenizer	utils/strings_utils.py	/^class PortugueseLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+PortugueseLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class PortugueseLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+PortugueseLemmatizeTokenizer	utils/strings_utils.py	/^class PortugueseLemmatizeTokenizer(BaseTokenizer):$/;"	c
+PortugueseRemoveStopwordsTokenizer	utils/strings_utils.py	/^class PortugueseRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+PortugueseTokenizer	utils/strings_utils.py	/^class PortugueseTokenizer(BaseTokenizer):$/;"	c
+ProgressTracker	models/model.py	/^class ProgressTracker:$/;"	c
+Projection	models/modules/recurrent_modules.py	/^class Projection(tf.layers.Layer):$/;"	c
+R2	constants.py	/^R2 = 'r2'$/;"	v
+RNN	models/modules/sequence_encoders.py	/^class RNN:$/;"	c
+ROWWISE_ACCURACY	constants.py	/^ROWWISE_ACCURACY = 'rowwise_accuracy'$/;"	v
+RecurrentStack	models/modules/recurrent_modules.py	/^class RecurrentStack:$/;"	c
+ResNet	models/modules/convolutional_modules.py	/^class ResNet(object):$/;"	c
+ResNetEncoder	models/modules/image_encoders.py	/^class ResNetEncoder:$/;"	c
+SAMPLED_SOFTMAX_CROSS_ENTROPY	constants.py	/^SAMPLED_SOFTMAX_CROSS_ENTROPY = 'sampled_softmax_cross_entropy'$/;"	v
+SEQUENCE	constants.py	/^SEQUENCE = 'sequence'$/;"	v
+SEQUENCE_TYPES	features/feature_utils.py	/^SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}$/;"	v
+SEQ_SUM	constants.py	/^SEQ_SUM = 'seq_sum'$/;"	v
+SET	constants.py	/^SET = 'set'$/;"	v
+SOFTMAX_CROSS_ENTROPY	constants.py	/^SOFTMAX_CROSS_ENTROPY = 'softmax_cross_entropy'$/;"	v
+SPACE_PUNCTUATION_REGEX	utils/strings_utils.py	/^SPACE_PUNCTUATION_REGEX = re.compile(r'\\w+|[^\\w\\s]')$/;"	v
+SPLIT_REGEX	utils/strings_utils.py	/^SPLIT_REGEX = re.compile(r'\\s+')$/;"	v
+SQUARED_ERROR	constants.py	/^SQUARED_ERROR = 'squared_error'$/;"	v
+SUM	constants.py	/^SUM = 'sum'$/;"	v
+SequenceBaseFeature	features/sequence_feature.py	/^class SequenceBaseFeature(BaseFeature):$/;"	c
+SequenceCombiner	models/combiners.py	/^class SequenceCombiner:$/;"	c
+SequenceConcatCombiner	models/combiners.py	/^class SequenceConcatCombiner:$/;"	c
+SequenceInputFeature	features/sequence_feature.py	/^class SequenceInputFeature(SequenceBaseFeature, InputFeature):$/;"	c
+SequenceOutputFeature	features/sequence_feature.py	/^class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):$/;"	c
+SetBaseFeature	features/set_feature.py	/^class SetBaseFeature(BaseFeature):$/;"	c
+SetInputFeature	features/set_feature.py	/^class SetInputFeature(SetBaseFeature, InputFeature):$/;"	c
+SetOutputFeature	features/set_feature.py	/^class SetOutputFeature(SetBaseFeature, OutputFeature):$/;"	c
+SpacePunctuationStringToListTokenizer	utils/strings_utils.py	/^class SpacePunctuationStringToListTokenizer(BaseTokenizer):$/;"	c
+SpaceStringToListTokenizer	utils/strings_utils.py	/^class SpaceStringToListTokenizer(BaseTokenizer):$/;"	c
+SpanishFilterTokenizer	utils/strings_utils.py	/^class SpanishFilterTokenizer(BaseTokenizer):$/;"	c
+SpanishLemmatizeFilterTokenizer	utils/strings_utils.py	/^class SpanishLemmatizeFilterTokenizer(BaseTokenizer):$/;"	c
+SpanishLemmatizeRemoveStopwordsTokenizer	utils/strings_utils.py	/^class SpanishLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+SpanishLemmatizeTokenizer	utils/strings_utils.py	/^class SpanishLemmatizeTokenizer(BaseTokenizer):$/;"	c
+SpanishRemoveStopwordsTokenizer	utils/strings_utils.py	/^class SpanishRemoveStopwordsTokenizer(BaseTokenizer):$/;"	c
+SpanishTokenizer	utils/strings_utils.py	/^class SpanishTokenizer(BaseTokenizer):$/;"	c
+StackParallelConv1D	models/modules/convolutional_modules.py	/^class StackParallelConv1D:$/;"	c
+Stacked2DCNN	models/modules/image_encoders.py	/^class Stacked2DCNN:$/;"	c
+StackedCNN	models/modules/sequence_encoders.py	/^class StackedCNN:$/;"	c
+StackedParallelCNN	models/modules/sequence_encoders.py	/^class StackedParallelCNN:$/;"	c
+StrippedStringToListTokenizer	utils/strings_utils.py	/^class StrippedStringToListTokenizer(BaseTokenizer):$/;"	c
+TEXT	constants.py	/^TEXT = 'text'$/;"	v
+TIMESERIES	constants.py	/^TIMESERIES = 'timeseries'$/;"	v
+TOKEN_ACCURACY	constants.py	/^TOKEN_ACCURACY = 'token_accuracy'$/;"	v
+TOP_K_PREDICTIONS	constants.py	/^TOP_K_PREDICTIONS = 'top_k_predictions'$/;"	v
+TRAINING_PROGRESS_FILE_NAME	globals.py	/^TRAINING_PROGRESS_FILE_NAME = 'training_progress.json'$/;"	v
+TRAIN_MEAN_LOSS	constants.py	/^TRAIN_MEAN_LOSS = 'train_mean_loss'$/;"	v
+TRAIN_SET_METADATA_FILE_NAME	globals.py	/^TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'$/;"	v
+Tagger	models/modules/sequence_decoders.py	/^class Tagger:$/;"	c
+TextBaseFeature	features/text_feature.py	/^class TextBaseFeature(BaseFeature):$/;"	c
+TextInputFeature	features/text_feature.py	/^class TextInputFeature(TextBaseFeature, SequenceInputFeature):$/;"	c
+TextOutputFeature	features/text_feature.py	/^class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):$/;"	c
+Timer	utils/time_utils.py	/^class Timer(object):$/;"	c
+TimeseriesBaseFeature	features/timeseries_feature.py	/^class TimeseriesBaseFeature(BaseFeature):$/;"	c
+TimeseriesInputFeature	features/timeseries_feature.py	/^class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):$/;"	c
+TimeseriesOutputFeature	features/timeseries_feature.py	/^class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):$/;"	c
+TimeseriesTrainingHelper	models/modules/recurrent_modules.py	/^class TimeseriesTrainingHelper(tf.contrib.seq2seq.TrainingHelper):$/;"	c
+UNDERSCORE_REGEX	utils/strings_utils.py	/^UNDERSCORE_REGEX = re.compile(r'\\s*_\\s*')$/;"	v
+UNKNOWN_SYMBOL	utils/strings_utils.py	/^UNKNOWN_SYMBOL = '<UNK>'$/;"	v
+UnderscoreStringToListTokenizer	utils/strings_utils.py	/^class UnderscoreStringToListTokenizer(BaseTokenizer):$/;"	c
+UntokenizedStringToListTokenizer	utils/strings_utils.py	/^class UntokenizedStringToListTokenizer(BaseTokenizer):$/;"	c
+WIDTH	constants.py	/^WIDTH = 'width'$/;"	v
+WithTimer	utils/time_utils.py	/^class WithTimer(object):$/;"	c
+__build	models/model.py	/^    def __build($/;"	m	class:Model	file:
+__call__	models/combiners.py	/^    def __call__($/;"	m	class:ConcatCombiner	file:
+__call__	models/combiners.py	/^    def __call__($/;"	m	class:SequenceCombiner	file:
+__call__	models/combiners.py	/^    def __call__($/;"	m	class:SequenceConcatCombiner	file:
+__call__	models/modules/convolutional_modules.py	/^    def __call__($/;"	m	class:ConvStack1D	file:
+__call__	models/modules/convolutional_modules.py	/^    def __call__($/;"	m	class:ConvStack2D	file:
+__call__	models/modules/convolutional_modules.py	/^    def __call__($/;"	m	class:ParallelConv1D	file:
+__call__	models/modules/convolutional_modules.py	/^    def __call__($/;"	m	class:ResNet	file:
+__call__	models/modules/convolutional_modules.py	/^    def __call__($/;"	m	class:StackParallelConv1D	file:
+__call__	models/modules/dense_encoders.py	/^    def __call__($/;"	m	class:Dense	file:
+__call__	models/modules/embedding_modules.py	/^    def __call__($/;"	m	class:Embed	file:
+__call__	models/modules/embedding_modules.py	/^    def __call__($/;"	m	class:EmbedSequence	file:
+__call__	models/modules/embedding_modules.py	/^    def __call__($/;"	m	class:EmbedSparse	file:
+__call__	models/modules/embedding_modules.py	/^    def __call__($/;"	m	class:EmbedWeighted	file:
+__call__	models/modules/fully_connected_modules.py	/^    def __call__($/;"	m	class:FCStack	file:
+__call__	models/modules/image_encoders.py	/^    def __call__($/;"	m	class:ResNetEncoder	file:
+__call__	models/modules/image_encoders.py	/^    def __call__($/;"	m	class:Stacked2DCNN	file:
+__call__	models/modules/recurrent_modules.py	/^    def __call__($/;"	m	class:RecurrentStack	file:
+__call__	models/modules/sequence_decoders.py	/^    def __call__($/;"	m	class:Generator	file:
+__call__	models/modules/sequence_decoders.py	/^    def __call__($/;"	m	class:Tagger	file:
+__call__	models/modules/sequence_encoders.py	/^    def __call__($/;"	m	class:CNNRNN	file:
+__call__	models/modules/sequence_encoders.py	/^    def __call__($/;"	m	class:EmbedEncoder	file:
+__call__	models/modules/sequence_encoders.py	/^    def __call__($/;"	m	class:ParallelCNN	file:
+__call__	models/modules/sequence_encoders.py	/^    def __call__($/;"	m	class:PassthroughEncoder	file:
+__call__	models/modules/sequence_encoders.py	/^    def __call__($/;"	m	class:RNN	file:
+__call__	models/modules/sequence_encoders.py	/^    def __call__($/;"	m	class:StackedCNN	file:
+__call__	models/modules/sequence_encoders.py	/^    def __call__($/;"	m	class:StackedParallelCNN	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:BERTTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:BaseTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:CharactersToListTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:CommaStringToListTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:DutchFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:DutchLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:DutchLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:DutchLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:DutchRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:DutchTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:EnglishFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:EnglishLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:EnglishLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:EnglishLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:EnglishRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:EnglishTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:FrenchFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:FrenchLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:FrenchLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:FrenchLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:FrenchRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:FrenchTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GermanFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GermanLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GermanLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GermanLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GermanRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GermanTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GreekFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GreekLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GreekLemmatizeRemoveStopwordsFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GreekLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GreekRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:GreekTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:ItalianFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:ItalianLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:ItalianLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:ItalianLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:ItalianRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:ItalianTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:MultiFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:MultiLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:MultiLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:MultiLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:MultiRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:MultiTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:PortugueseFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:PortugueseLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:PortugueseLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:PortugueseLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:PortugueseRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:PortugueseTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpacePunctuationStringToListTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpaceStringToListTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpanishFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpanishLemmatizeFilterTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpanishLemmatizeRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpanishLemmatizeTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpanishRemoveStopwordsTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:SpanishTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:StrippedStringToListTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:UnderscoreStringToListTokenizer	file:
+__call__	utils/strings_utils.py	/^    def __call__(self, text):$/;"	m	class:UntokenizedStringToListTokenizer	file:
+__enter__	utils/time_utils.py	/^    def __enter__(self):$/;"	m	class:WithTimer	file:
+__exit__	utils/time_utils.py	/^    def __exit__(self, *args):$/;"	m	class:WithTimer	file:
+__init__	api.py	/^    def __init__($/;"	m	class:LudwigModel
+__init__	cli.py	/^    def __init__(self):$/;"	m	class:CLI
+__init__	data/dataset.py	/^    def __init__(self, dataset, input_features, output_features, data_hdf5_fp):$/;"	m	class:Dataset
+__init__	features/bag_feature.py	/^    def __init__(self, feature):$/;"	m	class:BagBaseFeature
+__init__	features/bag_feature.py	/^    def __init__(self, feature):$/;"	m	class:BagInputFeature
+__init__	features/base_feature.py	/^    def __init__(self, feature):$/;"	m	class:BaseFeature
+__init__	features/base_feature.py	/^    def __init__(self, feature):$/;"	m	class:OutputFeature
+__init__	features/binary_feature.py	/^    def __init__(self, feature):$/;"	m	class:BinaryBaseFeature
+__init__	features/binary_feature.py	/^    def __init__(self, feature):$/;"	m	class:BinaryInputFeature
+__init__	features/binary_feature.py	/^    def __init__(self, feature):$/;"	m	class:BinaryOutputFeature
+__init__	features/category_feature.py	/^    def __init__(self, feature):$/;"	m	class:CategoryBaseFeature
+__init__	features/category_feature.py	/^    def __init__(self, feature):$/;"	m	class:CategoryInputFeature
+__init__	features/category_feature.py	/^    def __init__(self, feature):$/;"	m	class:CategoryOutputFeature
+__init__	features/image_feature.py	/^    def __init__(self, feature):$/;"	m	class:ImageBaseFeature
+__init__	features/image_feature.py	/^    def __init__(self, feature):$/;"	m	class:ImageInputFeature
+__init__	features/numerical_feature.py	/^    def __init__(self, feature):$/;"	m	class:NumericalBaseFeature
+__init__	features/numerical_feature.py	/^    def __init__(self, feature):$/;"	m	class:NumericalInputFeature
+__init__	features/numerical_feature.py	/^    def __init__(self, feature):$/;"	m	class:NumericalOutputFeature
+__init__	features/sequence_feature.py	/^    def __init__(self, feature):$/;"	m	class:SequenceBaseFeature
+__init__	features/sequence_feature.py	/^    def __init__(self, feature):$/;"	m	class:SequenceInputFeature
+__init__	features/sequence_feature.py	/^    def __init__(self, feature):$/;"	m	class:SequenceOutputFeature
+__init__	features/set_feature.py	/^    def __init__(self, feature):$/;"	m	class:SetBaseFeature
+__init__	features/set_feature.py	/^    def __init__(self, feature):$/;"	m	class:SetInputFeature
+__init__	features/set_feature.py	/^    def __init__(self, feature):$/;"	m	class:SetOutputFeature
+__init__	features/text_feature.py	/^    def __init__(self, feature):$/;"	m	class:TextBaseFeature
+__init__	features/text_feature.py	/^    def __init__(self, feature):$/;"	m	class:TextInputFeature
+__init__	features/text_feature.py	/^    def __init__(self, feature):$/;"	m	class:TextOutputFeature
+__init__	features/timeseries_feature.py	/^    def __init__(self, feature):$/;"	m	class:TimeseriesBaseFeature
+__init__	features/timeseries_feature.py	/^    def __init__(self, feature):$/;"	m	class:TimeseriesInputFeature
+__init__	features/timeseries_feature.py	/^    def __init__(self, feature):$/;"	m	class:TimeseriesOutputFeature
+__init__	models/combiners.py	/^    def __init__($/;"	m	class:ConcatCombiner
+__init__	models/combiners.py	/^    def __init__($/;"	m	class:SequenceCombiner
+__init__	models/combiners.py	/^    def __init__($/;"	m	class:SequenceConcatCombiner
+__init__	models/model.py	/^    def __init__($/;"	m	class:Model
+__init__	models/model.py	/^    def __init__($/;"	m	class:ProgressTracker
+__init__	models/modules/convolutional_modules.py	/^    def __init__($/;"	m	class:ConvStack1D
+__init__	models/modules/convolutional_modules.py	/^    def __init__($/;"	m	class:ConvStack2D
+__init__	models/modules/convolutional_modules.py	/^    def __init__($/;"	m	class:ParallelConv1D
+__init__	models/modules/convolutional_modules.py	/^    def __init__($/;"	m	class:StackParallelConv1D
+__init__	models/modules/convolutional_modules.py	/^    def __init__(self, resnet_size, bottleneck, num_filters,$/;"	m	class:ResNet
+__init__	models/modules/dense_encoders.py	/^    def __init__($/;"	m	class:Dense
+__init__	models/modules/embedding_modules.py	/^    def __init__($/;"	m	class:Embed
+__init__	models/modules/embedding_modules.py	/^    def __init__($/;"	m	class:EmbedSequence
+__init__	models/modules/embedding_modules.py	/^    def __init__($/;"	m	class:EmbedSparse
+__init__	models/modules/embedding_modules.py	/^    def __init__($/;"	m	class:EmbedWeighted
+__init__	models/modules/fully_connected_modules.py	/^    def __init__($/;"	m	class:FCStack
+__init__	models/modules/image_encoders.py	/^    def __init__($/;"	m	class:ResNetEncoder
+__init__	models/modules/image_encoders.py	/^    def __init__($/;"	m	class:Stacked2DCNN
+__init__	models/modules/recurrent_modules.py	/^    def __init__($/;"	m	class:RecurrentStack
+__init__	models/modules/recurrent_modules.py	/^    def __init__(self, projection_weights, projection_biases, name=None,$/;"	m	class:Projection
+__init__	models/modules/sequence_decoders.py	/^    def __init__($/;"	m	class:Generator
+__init__	models/modules/sequence_decoders.py	/^    def __init__($/;"	m	class:Tagger
+__init__	models/modules/sequence_encoders.py	/^    def __init__($/;"	m	class:CNNRNN
+__init__	models/modules/sequence_encoders.py	/^    def __init__($/;"	m	class:EmbedEncoder
+__init__	models/modules/sequence_encoders.py	/^    def __init__($/;"	m	class:ParallelCNN
+__init__	models/modules/sequence_encoders.py	/^    def __init__($/;"	m	class:PassthroughEncoder
+__init__	models/modules/sequence_encoders.py	/^    def __init__($/;"	m	class:RNN
+__init__	models/modules/sequence_encoders.py	/^    def __init__($/;"	m	class:StackedCNN
+__init__	models/modules/sequence_encoders.py	/^    def __init__($/;"	m	class:StackedParallelCNN
+__init__	utils/batcher.py	/^    def __init__(self, dataset, batch_size=128, should_shuffle=True,$/;"	m	class:Batcher
+__init__	utils/batcher.py	/^    def __init__(self, dataset, bucketing_field, batch_size=128, buckets=10,$/;"	m	class:BucketedBatcher
+__init__	utils/batcher.py	/^    def __init__(self, dataset, partition_number, horovod, batch_size=128,$/;"	m	class:DistributedBatcher
+__init__	utils/html_utils.py	/^    def __init__(self):$/;"	m	class:HTMLStripper
+__init__	utils/metrics_utils.py	/^    def __init__(self, conditions, predictions, labels=None,$/;"	m	class:ConfusionMatrix
+__init__	utils/strings_utils.py	/^    def __init__(self, **kwargs):$/;"	m	class:BaseTokenizer
+__init__	utils/strings_utils.py	/^    def __init__(self, vocab_file=None, **kwargs):$/;"	m	class:BERTTokenizer
+__init__	utils/time_utils.py	/^    def __init__(self):$/;"	m	class:Timer
+__init__	utils/time_utils.py	/^    def __init__(self, title='', quiet=False):$/;"	m	class:WithTimer
+_get_coord_info_new	utils/visualization_utils.py	/^        def _get_coord_info_new(self, renderer):$/;"	f	function:confidence_fitlering_3d_plot
+_get_input_placeholder	features/bag_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:BagInputFeature
+_get_input_placeholder	features/binary_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:BinaryInputFeature
+_get_input_placeholder	features/category_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:CategoryInputFeature
+_get_input_placeholder	features/image_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:ImageInputFeature
+_get_input_placeholder	features/numerical_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:NumericalInputFeature
+_get_input_placeholder	features/sequence_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:SequenceInputFeature
+_get_input_placeholder	features/set_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:SetInputFeature
+_get_input_placeholder	features/text_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:TextInputFeature
+_get_input_placeholder	features/timeseries_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:TimeseriesInputFeature
+_get_loss	features/binary_feature.py	/^    def _get_loss(self, targets, logits, probabilities):$/;"	m	class:BinaryOutputFeature
+_get_loss	features/category_feature.py	/^    def _get_loss($/;"	m	class:CategoryOutputFeature
+_get_loss	features/numerical_feature.py	/^    def _get_loss(self, targets, predictions):$/;"	m	class:NumericalOutputFeature
+_get_loss	features/set_feature.py	/^    def _get_loss($/;"	m	class:SetOutputFeature
+_get_loss	features/timeseries_feature.py	/^    def _get_loss(self, targets, predictions):$/;"	m	class:TimeseriesOutputFeature
+_get_measures	features/binary_feature.py	/^    def _get_measures(self, targets, predictions):$/;"	m	class:BinaryOutputFeature
+_get_measures	features/category_feature.py	/^    def _get_measures(self, targets, predictions, logits):$/;"	m	class:CategoryOutputFeature
+_get_measures	features/numerical_feature.py	/^    def _get_measures(self, targets, predictions):$/;"	m	class:NumericalOutputFeature
+_get_measures	features/set_feature.py	/^    def _get_measures(self, targets, predictions):$/;"	m	class:SetOutputFeature
+_get_measures	features/timeseries_feature.py	/^    def _get_measures(self, targets, predictions):$/;"	m	class:TimeseriesOutputFeature
+_get_output_placeholder	features/binary_feature.py	/^    def _get_output_placeholder(self):$/;"	m	class:BinaryOutputFeature
+_get_output_placeholder	features/category_feature.py	/^    def _get_output_placeholder(self):$/;"	m	class:CategoryOutputFeature
+_get_output_placeholder	features/numerical_feature.py	/^    def _get_output_placeholder(self):$/;"	m	class:NumericalOutputFeature
+_get_output_placeholder	features/sequence_feature.py	/^    def _get_output_placeholder(self):$/;"	m	class:SequenceOutputFeature
+_get_output_placeholder	features/set_feature.py	/^    def _get_output_placeholder(self):$/;"	m	class:SetOutputFeature
+_get_output_placeholder	features/text_feature.py	/^    def _get_output_placeholder(self):$/;"	m	class:TextOutputFeature
+_get_output_placeholder	features/timeseries_feature.py	/^    def _get_output_placeholder(self):$/;"	m	class:TimeseriesOutputFeature
+_get_predictions	features/binary_feature.py	/^    def _get_predictions($/;"	m	class:BinaryOutputFeature
+_get_predictions	features/category_feature.py	/^    def _get_predictions($/;"	m	class:CategoryOutputFeature
+_get_predictions	features/numerical_feature.py	/^    def _get_predictions($/;"	m	class:NumericalOutputFeature
+_get_predictions	features/set_feature.py	/^    def _get_predictions($/;"	m	class:SetOutputFeature
+_get_sequence_vector	utils/strings_utils.py	/^def _get_sequence_vector($/;"	f
+_log_html	contribs/comet.py	/^    def _log_html(self, text):$/;"	m	class:Comet
+_make_command_line	contribs/comet.py	/^    def _make_command_line(self, args):$/;"	m	class:Comet
+_perform_sanity_checks	utils/defaults.py	/^def _perform_sanity_checks(model_definition):$/;"	f
+_predict	api.py	/^    def _predict($/;"	m	class:LudwigModel
+_preprocess_csv_for_training	data/preprocessing.py	/^def _preprocess_csv_for_training($/;"	f
+_preprocess_df_for_training	data/preprocessing.py	/^def _preprocess_df_for_training($/;"	f
+_projection_input_size	models/modules/recurrent_modules.py	/^    def _projection_input_size(self):$/;"	m	class:BasicDecoder
+_read_data	api.py	/^    def _read_data(data_csv, data_dict):$/;"	m	class:LudwigModel
+_read_image_and_resize	features/image_feature.py	/^    def _read_image_and_resize(filepath,$/;"	m	class:ImageBaseFeature
+_sampled_loss	models/modules/loss_modules.py	/^    def _sampled_loss(labels, logits):$/;"	f	function:sequence_sampled_softmax_cross_entropy
+_save_config	contribs/comet.py	/^    def _save_config(self, config):$/;"	m	class:Comet
+absolute_error	models/modules/measure_modules.py	/^def absolute_error(targets, predictions, output_feature_name):$/;"	f
+acc_matrix	visualize.py	/^    acc_matrix = np.array(accuracies)$/;"	v
+accuracies	visualize.py	/^        accuracies = []$/;"	v
+accuracies	visualize.py	/^    accuracies = []$/;"	v
+accuracies_alg	visualize.py	/^            accuracies_alg = []$/;"	v
+accuracies_alg	visualize.py	/^        accuracies_alg = []$/;"	v
+accuracy	models/modules/measure_modules.py	/^def accuracy(targets, predictions, output_feature_name):$/;"	f
+accuracy	utils/metrics_utils.py	/^    def accuracy(self, idx):$/;"	m	class:ConfusionMatrix
+accuracy	visualize.py	/^                accuracy = ((filtered_gt == filtered_predictions).sum() \/$/;"	v
+accuracy	visualize.py	/^            accuracy = ($/;"	v
+accuracy	visualize.py	/^            accuracy = ((filtered_gt == filtered_predictions).sum() \/$/;"	v
+adaptive	visualize.py	/^        adaptive=True,$/;"	v
+add_feature_data	features/bag_feature.py	/^    def add_feature_data($/;"	m	class:BagBaseFeature
+add_feature_data	features/binary_feature.py	/^    def add_feature_data($/;"	m	class:BinaryBaseFeature
+add_feature_data	features/category_feature.py	/^    def add_feature_data($/;"	m	class:CategoryBaseFeature
+add_feature_data	features/image_feature.py	/^    def add_feature_data($/;"	m	class:ImageBaseFeature
+add_feature_data	features/numerical_feature.py	/^    def add_feature_data($/;"	m	class:NumericalBaseFeature
+add_feature_data	features/sequence_feature.py	/^    def add_feature_data($/;"	m	class:SequenceBaseFeature
+add_feature_data	features/set_feature.py	/^    def add_feature_data($/;"	m	class:SetBaseFeature
+add_feature_data	features/text_feature.py	/^    def add_feature_data($/;"	m	class:TextBaseFeature
+add_feature_data	features/timeseries_feature.py	/^    def add_feature_data($/;"	m	class:TimeseriesBaseFeature
+add_sequence_feature_column	utils/data_utils.py	/^def add_sequence_feature_column(df, col_name, seq_length):$/;"	f
+all	visualize.py	/^    all = len(gt)$/;"	v
+apply_grads	models/modules/optimization_modules.py	/^                apply_grads = optimizer.apply_gradients($/;"	v
+args	data/concatenate_datasets.py	/^    args = parser.parse_args()$/;"	v
+args	data/dataset_synthesyzer.py	/^    args = parser.parse_args()$/;"	v
+args	data/preprocessing.py	/^    args = parser.parse_args()$/;"	v
+args	data/split_dataset.py	/^    args = parser.parse_args()$/;"	v
+assign_vocab	data/dataset_synthesyzer.py	/^def assign_vocab(feature):$/;"	f
+average_precision_score	utils/metrics_utils.py	/^def average_precision_score(conditions, prediction_scores, average='micro',$/;"	f
+avg_f1_score	utils/metrics_utils.py	/^    def avg_f1_score(self, average='macro'):$/;"	m	class:ConfusionMatrix
+avg_fbeta_score	utils/metrics_utils.py	/^    def avg_fbeta_score(self, beta, average='macro'):$/;"	m	class:ConfusionMatrix
+avg_precision	utils/metrics_utils.py	/^    def avg_precision(self, average='macro'):$/;"	m	class:ConfusionMatrix
+avg_recall	utils/metrics_utils.py	/^    def avg_recall(self, average='macro'):$/;"	m	class:ConfusionMatrix
+bar_plot	utils/visualization_utils.py	/^def bar_plot(xs, ys, decimals=4, labels=None, title=None):$/;"	f
+base_dir_name	train.py	/^    base_dir_name = os.path.join($/;"	v
+base_type_registry	features/feature_registries.py	/^base_type_registry = {$/;"	v
+batch_collect_activations	models/model.py	/^    def batch_collect_activations($/;"	m	class:Model
+batch_evaluation	models/model.py	/^    def batch_evaluation($/;"	m	class:Model
+batch_size	api.py	/^        batch_size=128,$/;"	v
+batch_size	api.py	/^        batch_size=batch_size,$/;"	v
+batch_size	experiment.py	/^            batch_size = model_definition['training']['batch_size']$/;"	v
+batch_size	experiment.py	/^            batch_size = model_definition['training']['eval_batch_size']$/;"	v
+best_function	train.py	/^    best_function = get_best_function(validation_measure)$/;"	v
+best_vali_measure_epoch_test_measure	train.py	/^            best_vali_measure_epoch_test_measure = train_testset_stats[$/;"	v
+binary_cycle	data/dataset_synthesyzer.py	/^binary_cycle = False$/;"	v
+binary_threshold_vs_metric	visualize.py	/^def binary_threshold_vs_metric($/;"	f
+both_right	visualize.py	/^    both_right = 0$/;"	v
+both_wrong	visualize.py	/^    both_wrong = both_wrong_same + both_wrong_different$/;"	v
+both_wrong_different	visualize.py	/^    both_wrong_different = 0$/;"	v
+both_wrong_same	visualize.py	/^    both_wrong_same = 0$/;"	v
+brier_plot	utils/visualization_utils.py	/^def brier_plot(brier_scores, algorithm_names=None, title=None):$/;"	f
+brier_scores	visualize.py	/^    brier_scores = []$/;"	v
+brier_scores_class	visualize.py	/^        brier_scores_class = []$/;"	v
+build_data	data/preprocessing.py	/^def build_data($/;"	f
+build_dataset	data/preprocessing.py	/^def build_dataset($/;"	f
+build_dataset_df	data/preprocessing.py	/^def build_dataset_df($/;"	f
+build_feature_parameters	data/dataset_synthesyzer.py	/^def build_feature_parameters(features):$/;"	f
+build_input	features/bag_feature.py	/^    def build_input($/;"	m	class:BagInputFeature
+build_input	features/base_feature.py	/^    def build_input($/;"	m	class:InputFeature
+build_input	features/binary_feature.py	/^    def build_input($/;"	m	class:BinaryInputFeature
+build_input	features/category_feature.py	/^    def build_input($/;"	m	class:CategoryInputFeature
+build_input	features/image_feature.py	/^    def build_input($/;"	m	class:ImageInputFeature
+build_input	features/numerical_feature.py	/^    def build_input($/;"	m	class:NumericalInputFeature
+build_input	features/sequence_feature.py	/^    def build_input($/;"	m	class:SequenceInputFeature
+build_input	features/set_feature.py	/^    def build_input($/;"	m	class:SetInputFeature
+build_input	features/text_feature.py	/^    def build_input($/;"	m	class:TextInputFeature
+build_input	features/timeseries_feature.py	/^    def build_input($/;"	m	class:TimeseriesInputFeature
+build_inputs	models/inputs.py	/^def build_inputs(input_features,$/;"	f
+build_matrix	features/timeseries_feature.py	/^    def build_matrix($/;"	m	class:TimeseriesBaseFeature
+build_metadata	data/preprocessing.py	/^def build_metadata(dataset_df, features, global_preprocessing_parameters):$/;"	f
+build_output	features/base_feature.py	/^    def build_output($/;"	m	class:OutputFeature
+build_output	features/binary_feature.py	/^    def build_output($/;"	m	class:BinaryOutputFeature
+build_output	features/category_feature.py	/^    def build_output($/;"	m	class:CategoryOutputFeature
+build_output	features/numerical_feature.py	/^    def build_output($/;"	m	class:NumericalOutputFeature
+build_output	features/sequence_feature.py	/^    def build_output($/;"	m	class:SequenceOutputFeature
+build_output	features/set_feature.py	/^    def build_output($/;"	m	class:SetOutputFeature
+build_output	features/text_feature.py	/^    def build_output($/;"	m	class:TextOutputFeature
+build_output	features/timeseries_feature.py	/^    def build_output($/;"	m	class:TimeseriesOutputFeature
+build_outputs	models/outputs.py	/^def build_outputs(output_features, hidden, hidden_size, regularizer,$/;"	f
+build_sequence_input	features/sequence_feature.py	/^    def build_sequence_input($/;"	m	class:SequenceInputFeature
+build_sequence_matrix	utils/strings_utils.py	/^def build_sequence_matrix($/;"	f
+build_sequence_output	features/sequence_feature.py	/^    def build_sequence_output($/;"	m	class:SequenceOutputFeature
+build_single_input	models/inputs.py	/^def build_single_input(input_feature,$/;"	f
+build_single_output	models/outputs.py	/^def build_single_output(output_feature, feature_hidden, feature_hidden_size,$/;"	f
+build_synthetic_dataset	data/dataset_synthesyzer.py	/^def build_synthetic_dataset(dataset_size, features):$/;"	f
+build_vocab	data/dataset_synthesyzer.py	/^def build_vocab(size):$/;"	f
+c1_right_c2_wrong	visualize.py	/^    c1_right_c2_wrong = 0$/;"	v
+c1_wrong_c2_right	visualize.py	/^    c1_wrong_c2_right = 0$/;"	v
+calculate_overall_stats	features/base_feature.py	/^    def calculate_overall_stats($/;"	m	class:OutputFeature
+calculate_overall_stats	features/binary_feature.py	/^    def calculate_overall_stats($/;"	m	class:BinaryOutputFeature
+calculate_overall_stats	features/category_feature.py	/^    def calculate_overall_stats($/;"	m	class:CategoryOutputFeature
+calculate_overall_stats	features/numerical_feature.py	/^    def calculate_overall_stats($/;"	m	class:NumericalOutputFeature
+calculate_overall_stats	features/sequence_feature.py	/^    def calculate_overall_stats($/;"	m	class:SequenceOutputFeature
+calculate_overall_stats	features/set_feature.py	/^    def calculate_overall_stats($/;"	m	class:SetOutputFeature
+calculate_overall_stats	features/text_feature.py	/^    def calculate_overall_stats($/;"	m	class:TextOutputFeature
+calculate_overall_stats	features/timeseries_feature.py	/^    def calculate_overall_stats($/;"	m	class:TimeseriesOutputFeature
+calculate_overall_stats	predict.py	/^def calculate_overall_stats(test_stats, output_features, dataset,$/;"	f
+calibration_1_vs_all	visualize.py	/^def calibration_1_vs_all($/;"	f
+calibration_multiclass	visualize.py	/^def calibration_multiclass($/;"	f
+calibration_plot	utils/visualization_utils.py	/^def calibration_plot(fraction_positives, mean_predicted_values,$/;"	f
+call	models/modules/recurrent_modules.py	/^    def call(self, inputs, **kwargs):$/;"	m	class:Projection
+category_cycle	data/dataset_synthesyzer.py	/^category_cycle = 0$/;"	v
+check_progress_on_validation	models/model.py	/^    def check_progress_on_validation($/;"	m	class:Model
+class_counts	utils/data_utils.py	/^def class_counts(dataset, labels_field):$/;"	f
+class_desc_entropy	visualize.py	/^                    class_desc_entropy = np.argsort(class_entropy)[::-1]$/;"	v
+class_entropy	visualize.py	/^                    class_entropy = np.array(entropies)$/;"	v
+class_names	visualize.py	/^                class_names = class_names[:k]$/;"	v
+class_names	visualize.py	/^            class_names = metadata[field]['idx2str']$/;"	v
+class_stats	utils/metrics_utils.py	/^    def class_stats(self, idx):$/;"	m	class:ConfusionMatrix
+class_stats	visualize.py	/^                class_stats = per_class_stats[class_name]$/;"	v
+classes	visualize.py	/^    classes = (min(num_classes, top_n_classes[0]) if top_n_classes[0] > 0$/;"	v
+clean_html	utils/html_utils.py	/^def clean_html(html_text):$/;"	f
+cli	experiment.py	/^def cli(sys_argv):$/;"	f
+cli	predict.py	/^def cli(sys_argv):$/;"	f
+cli	test_performance.py	/^def cli(sys_argv):$/;"	f
+cli	train.py	/^def cli(sys_argv):$/;"	f
+cli	visualize.py	/^def cli(sys_argv):$/;"	f
+cli_collect_activations	collect.py	/^def cli_collect_activations(sys_argv):$/;"	f
+cli_collect_weights	collect.py	/^def cli_collect_weights(sys_argv):$/;"	f
+close	api.py	/^    def close(self):$/;"	m	class:LudwigModel
+close_session	models/model.py	/^    def close_session(self):$/;"	m	class:Model
+cm	visualize.py	/^                        cm = cm_norm$/;"	v
+cm	visualize.py	/^                    cm = confusion_matrix[:k, :k]$/;"	v
+cm_norm	visualize.py	/^                            cm_norm = np.nan_to_num(cm_norm)$/;"	v
+cm_norm	visualize.py	/^                            cm_norm = np.true_divide(cm,$/;"	v
+collapse_rare_labels	utils/data_utils.py	/^def collapse_rare_labels(labels, labels_limit):$/;"	f
+collect_activations	cli.py	/^    def collect_activations(self):$/;"	m	class:CLI
+collect_activations	collect.py	/^def collect_activations($/;"	f
+collect_activations	models/model.py	/^    def collect_activations($/;"	m	class:Model
+collect_weights	cli.py	/^    def collect_weights(self):$/;"	m	class:CLI
+collect_weights	collect.py	/^def collect_weights($/;"	f
+collect_weights	models/model.py	/^    def collect_weights($/;"	m	class:Model
+collected_tensors	collect.py	/^    collected_tensors = model.collect_activations($/;"	v
+collected_tensors	collect.py	/^    collected_tensors = model.collect_weights(tensors)$/;"	v
+combiner_registry	models/combiners.py	/^combiner_registry = {$/;"	v
+compare_classifiers_line_plot	utils/visualization_utils.py	/^def compare_classifiers_line_plot(xs, scores, metric, algorithm_names=None,$/;"	f
+compare_classifiers_multiclass_multimetric	visualize.py	/^def compare_classifiers_multiclass_multimetric($/;"	f
+compare_classifiers_multiclass_multimetric_plot	utils/visualization_utils.py	/^def compare_classifiers_multiclass_multimetric_plot(scores, metrics,$/;"	f
+compare_classifiers_performance_changing_k	visualize.py	/^def compare_classifiers_performance_changing_k($/;"	f
+compare_classifiers_performance_from_pred	visualize.py	/^def compare_classifiers_performance_from_pred($/;"	f
+compare_classifiers_performance_from_prob	visualize.py	/^def compare_classifiers_performance_from_prob($/;"	f
+compare_classifiers_performance_subset	visualize.py	/^def compare_classifiers_performance_subset($/;"	f
+compare_classifiers_plot	utils/visualization_utils.py	/^def compare_classifiers_plot(scores, metrics, algoritm_names=None,$/;"	f
+compare_classifiers_predictions	visualize.py	/^def compare_classifiers_predictions($/;"	f
+compare_classifiers_predictions_distribution	visualize.py	/^def compare_classifiers_predictions_distribution($/;"	f
+compare_performance	visualize.py	/^def compare_performance($/;"	f
+compute_output_shape	models/modules/recurrent_modules.py	/^    def compute_output_shape(self, input_shape):$/;"	m	class:Projection
+concat_dependencies	features/base_feature.py	/^    def concat_dependencies(self, hidden, hidden_size, final_hidden):$/;"	m	class:OutputFeature
+concat_dependencies_and_build_output	features/base_feature.py	/^    def concat_dependencies_and_build_output($/;"	m	class:OutputFeature
+concatenate	data/concatenate_datasets.py	/^def concatenate(train_csv, vali_csv, test_csv, output_csv):$/;"	f
+concatenate_csv	data/concatenate_datasets.py	/^def concatenate_csv(train_csv, vali_csv, test_csv):$/;"	f
+concatenate_df	data/concatenate_datasets.py	/^def concatenate_df(train_df, vali_df, test_df):$/;"	f
+concatenated_df	data/preprocessing.py	/^        concatenated_df = concatenate_csv($/;"	v
+confidence_fitlering_3d_plot	utils/visualization_utils.py	/^def confidence_fitlering_3d_plot(thresholds_1, thresholds_2, accuracies,$/;"	f
+confidence_fitlering_data_vs_acc_multiline_plot	utils/visualization_utils.py	/^def confidence_fitlering_data_vs_acc_multiline_plot(accuracies, dataset_kepts,$/;"	f
+confidence_fitlering_data_vs_acc_plot	utils/visualization_utils.py	/^def confidence_fitlering_data_vs_acc_plot(accuracies, dataset_kepts,$/;"	f
+confidence_fitlering_plot	utils/visualization_utils.py	/^def confidence_fitlering_plot(thresholds, accuracies, dataset_kepts,$/;"	f
+confidence_thresholding	visualize.py	/^def confidence_thresholding($/;"	f
+confidence_thresholding_2thresholds_2d	visualize.py	/^def confidence_thresholding_2thresholds_2d($/;"	f
+confidence_thresholding_2thresholds_3d	visualize.py	/^def confidence_thresholding_2thresholds_3d($/;"	f
+confidence_thresholding_data_vs_acc	visualize.py	/^def confidence_thresholding_data_vs_acc($/;"	f
+confidence_thresholding_data_vs_acc_subset	visualize.py	/^def confidence_thresholding_data_vs_acc_subset($/;"	f
+confidence_thresholding_data_vs_acc_subset_per_class	visualize.py	/^def confidence_thresholding_data_vs_acc_subset_per_class($/;"	f
+confusion_matrix	visualize.py	/^                confusion_matrix = np.array($/;"	v
+confusion_matrix	visualize.py	/^def confusion_matrix($/;"	f
+confusion_matrix_plot	utils/visualization_utils.py	/^def confusion_matrix_plot(confusion_matrix, labels=None, field=None):$/;"	f
+contrib_command	contrib.py	/^def contrib_command(command, *args, **kwargs):$/;"	f
+contrib_import	contrib.py	/^def contrib_import():$/;"	f
+contrib_registry	contribs/__init__.py	/^contrib_registry = {$/;"	v
+conv2d_fixed_padding	models/modules/convolutional_modules.py	/^def conv2d_fixed_padding(inputs, filters, kernel_size, strides,$/;"	f
+conv_1d	models/modules/convolutional_modules.py	/^def conv_1d(inputs, weights, biases,$/;"	f
+conv_1d_layer	models/modules/convolutional_modules.py	/^def conv_1d_layer(inputs, kernel_shape, biases_shape, stride=1, padding='SAME',$/;"	f
+conv_2d	models/modules/convolutional_modules.py	/^def conv_2d(inputs, weights, biases,$/;"	f
+conv_2d_layer	models/modules/convolutional_modules.py	/^def conv_2d_layer(inputs, kernel_shape, biases_shape, stride=1, padding='SAME',$/;"	f
+conv_layer	models/modules/convolutional_modules.py	/^def conv_layer(inputs, kernel_shape, biases_shape,$/;"	f
+convert_size	utils/math_utils.py	/^def convert_size(size_bytes):$/;"	f
+counts_gt	visualize.py	/^    counts_gt = np.bincount(ground_truth)$/;"	v
+counts_predictions	visualize.py	/^    counts_predictions = [np.bincount(alg_predictions)$/;"	v
+cov_matrix	visualize.py	/^    cov_matrix = np.array(dataset_kept)$/;"	v
+coverage	visualize.py	/^            coverage = len(filtered_gt_1) \/ len(gt_1)$/;"	v
+create_vocabulary	utils/strings_utils.py	/^def create_vocabulary($/;"	f
+crop	utils/image_utils.py	/^def crop(img, size, axis):$/;"	f
+crop_or_pad	utils/image_utils.py	/^def crop_or_pad(img, new_size_tuple):$/;"	f
+cross_entropy_sequence_loss	models/modules/loss_modules.py	/^def cross_entropy_sequence_loss(logits, targets, sequence_length):$/;"	f
+csv_filename	predict.py	/^    csv_filename = os.path.join(experiment_dir_name, '{}_{}.csv')$/;"	v
+curr_accuracies	visualize.py	/^        curr_accuracies = []$/;"	v
+curr_dataset_kept	visualize.py	/^        curr_dataset_kept = []$/;"	v
+curr_unit	utils/strings_utils.py	/^        curr_unit = unit_sequence[i]$/;"	v
+cycle_binary	data/dataset_synthesyzer.py	/^def cycle_binary(feature):$/;"	f
+cycle_category	data/dataset_synthesyzer.py	/^def cycle_category(feature):$/;"	f
+cyclers_registry	data/dataset_synthesyzer.py	/^cyclers_registry = {$/;"	v
+data_csv	api.py	/^        data_csv=data_csv,$/;"	v
+data_csv	data/preprocessing.py	/^            data_csv = None$/;"	v
+data_csv	experiment.py	/^        data_csv=data_csv,$/;"	v
+data_csv	train.py	/^        data_csv=data_csv,$/;"	v
+data_df	data/preprocessing.py	/^        data_df = concatenate_df($/;"	v
+data_df	train.py	/^        data_df=data_df,$/;"	v
+data_hdf5	data/preprocessing.py	/^            data_hdf5 = data_hdf5_fp$/;"	v
+data_hdf5	experiment.py	/^        data_hdf5=data_hdf5,$/;"	v
+data_hdf5	train.py	/^        data_hdf5=data_hdf5,$/;"	v
+data_hdf5_fp	data/preprocessing.py	/^            data_hdf5_fp = replace_file_extension(data_csv, 'hdf5')$/;"	v
+data_hdf5_fp	data/preprocessing.py	/^        data_hdf5_fp = None$/;"	v
+data_hdf5_fp	data/preprocessing.py	/^        data_hdf5_fp = replace_file_extension(data_csv, 'hdf5')$/;"	v
+data_hdf5_fp	data/preprocessing.py	/^    data_hdf5_fp = None$/;"	v
+data_sources_not_none	data/preprocessing.py	/^    data_sources_not_none = [x is not None for x in data_sources_provided]$/;"	v
+data_sources_provided	data/preprocessing.py	/^    data_sources_provided = [data_df, data_train_df, data_csv, data_train_csv,$/;"	v
+data_test_csv	data/preprocessing.py	/^            data_test_csv = None$/;"	v
+data_test_csv	experiment.py	/^        data_test_csv=data_test_csv,$/;"	v
+data_test_csv	train.py	/^        data_test_csv=data_test_csv,$/;"	v
+data_test_df	train.py	/^        data_test_df=data_test_df,$/;"	v
+data_test_hdf5	data/preprocessing.py	/^            data_test_hdf5 = data_test_hdf5_fp$/;"	v
+data_test_hdf5	experiment.py	/^        data_test_hdf5=data_test_hdf5,$/;"	v
+data_test_hdf5	train.py	/^        data_test_hdf5=data_test_hdf5,$/;"	v
+data_test_hdf5_fp	data/preprocessing.py	/^                data_test_hdf5_fp = replace_file_extension(data_test_csv,$/;"	v
+data_test_hdf5_fp	data/preprocessing.py	/^        data_test_hdf5_fp = replace_file_extension(data_test_csv, 'hdf5')$/;"	v
+data_train_csv	data/preprocessing.py	/^            data_train_csv = None$/;"	v
+data_train_csv	experiment.py	/^        data_train_csv=data_train_csv,$/;"	v
+data_train_csv	train.py	/^        data_train_csv=data_train_csv,$/;"	v
+data_train_df	train.py	/^        data_train_df=data_train_df,$/;"	v
+data_train_hdf5	data/preprocessing.py	/^            data_train_hdf5 = data_train_hdf5_fp$/;"	v
+data_train_hdf5	experiment.py	/^        data_train_hdf5=data_train_hdf5,$/;"	v
+data_train_hdf5	train.py	/^        data_train_hdf5=data_train_hdf5,$/;"	v
+data_train_hdf5_fp	data/preprocessing.py	/^            data_train_hdf5_fp = replace_file_extension(data_train_csv, 'hdf5')$/;"	v
+data_train_hdf5_fp	data/preprocessing.py	/^        data_train_hdf5_fp = replace_file_extension(data_train_csv, 'hdf5')$/;"	v
+data_val	data/preprocessing.py	/^    data_val = build_data($/;"	v
+data_validation_csv	data/preprocessing.py	/^            data_validation_csv = None$/;"	v
+data_validation_csv	experiment.py	/^        data_validation_csv=data_validation_csv,$/;"	v
+data_validation_csv	train.py	/^        data_validation_csv=data_validation_csv,$/;"	v
+data_validation_df	train.py	/^        data_validation_df=data_validation_df,$/;"	v
+data_validation_hdf5	data/preprocessing.py	/^            data_validation_hdf5 = data_validation_hdf5_fp$/;"	v
+data_validation_hdf5	experiment.py	/^        data_validation_hdf5=data_validation_hdf5,$/;"	v
+data_validation_hdf5	train.py	/^        data_validation_hdf5=data_validation_hdf5,$/;"	v
+data_validation_hdf5_fp	data/preprocessing.py	/^                data_validation_hdf5_fp = replace_file_extension($/;"	v
+data_validation_hdf5_fp	data/preprocessing.py	/^        data_validation_hdf5_fp = replace_file_extension($/;"	v
+dataset	data/dataset_synthesyzer.py	/^    dataset = build_synthetic_dataset(args.dataset_size, args.features)$/;"	v
+dataset	data/preprocessing.py	/^                dataset = test$/;"	v
+dataset	data/preprocessing.py	/^                dataset = training$/;"	v
+dataset	data/preprocessing.py	/^                dataset = validation$/;"	v
+dataset	data/preprocessing.py	/^            dataset = load_data($/;"	v
+dataset	data/preprocessing.py	/^    dataset = Dataset($/;"	v
+dataset	data/preprocessing.py	/^    dataset = {}$/;"	v
+dataset_df	data/preprocessing.py	/^    dataset_df = read_csv(dataset_csv)$/;"	v
+dataset_kept	visualize.py	/^        dataset_kept = []$/;"	v
+dataset_kept	visualize.py	/^    dataset_kept = []$/;"	v
+dataset_kept_alg	visualize.py	/^            dataset_kept_alg = []$/;"	v
+dataset_kept_alg	visualize.py	/^        dataset_kept_alg = []$/;"	v
+debug	api.py	/^        debug=debug$/;"	v
+debug	experiment.py	/^            debug=debug$/;"	v
+debug	experiment.py	/^        debug=debug,$/;"	v
+debug	train.py	/^            debug=debug$/;"	v
+debug	train.py	/^        debug=debug$/;"	v
+decimal_digits	visualize.py	/^            decimal_digits=2,$/;"	v
+decimals	visualize.py	/^        decimals=8$/;"	v
+decode	models/modules/recurrent_modules.py	/^        def decode(initial_state, cell, helper, beam_width=1,$/;"	f	function:recurrent_decoder
+default	data/dataset_synthesyzer.py	/^          ]',$/;"	v
+default	data/dataset_synthesyzer.py	/^        default=100$/;"	v
+default	data/preprocessing.py	/^        default='{}',$/;"	v
+default	data/preprocessing.py	/^        default=42,$/;"	v
+default	data/split_dataset.py	/^        default=0.8,$/;"	v
+default	utils/data_utils.py	/^    def default(self, obj):$/;"	m	class:NumpyEncoder
+default_characters	utils/nlp_utils.py	/^default_characters = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',$/;"	v
+default_combiner_type	utils/defaults.py	/^default_combiner_type = 'concat'$/;"	v
+default_optimizer_params_registry	utils/defaults.py	/^default_optimizer_params_registry = {$/;"	v
+default_preprocessing_force_split	utils/defaults.py	/^default_preprocessing_force_split = False$/;"	v
+default_preprocessing_parameters	utils/defaults.py	/^default_preprocessing_parameters = {$/;"	v
+default_preprocessing_split_probabilities	utils/defaults.py	/^default_preprocessing_split_probabilities = (0.7, 0.1, 0.2)$/;"	v
+default_preprocessing_stratify	utils/defaults.py	/^default_preprocessing_stratify = None$/;"	v
+default_random_seed	utils/defaults.py	/^default_random_seed = 42$/;"	v
+default_training_params	utils/defaults.py	/^default_training_params = {$/;"	v
+default_validation_measure	features/base_feature.py	/^    def default_validation_measure(self):$/;"	m	class:OutputFeature
+default_validation_measure	features/binary_feature.py	/^    default_validation_measure = ACCURACY$/;"	v	class:BinaryOutputFeature
+default_validation_measure	features/category_feature.py	/^    default_validation_measure = ACCURACY$/;"	v	class:CategoryOutputFeature
+default_validation_measure	features/numerical_feature.py	/^    default_validation_measure = MEAN_SQUARED_ERROR$/;"	v	class:NumericalOutputFeature
+default_validation_measure	features/sequence_feature.py	/^    default_validation_measure = LOSS$/;"	v	class:SequenceOutputFeature
+default_validation_measure	features/set_feature.py	/^    default_validation_measure = JACCARD$/;"	v	class:SetOutputFeature
+default_validation_measure	features/text_feature.py	/^    default_validation_measure = LOSS$/;"	v	class:TextOutputFeature
+default_validation_measure	features/timeseries_feature.py	/^    default_validation_measure = LOSS$/;"	v	class:TimeseriesOutputFeature
+desc_entropy	visualize.py	/^                    desc_entropy = class_entropy[class_desc_entropy]$/;"	v
+description	data/concatenate_datasets.py	/^        description='Concatenate train validation and test set'$/;"	v
+description	data/dataset_synthesyzer.py	/^        description='This script generates a synthetic dataset.')$/;"	v
+description	data/preprocessing.py	/^        description='This script takes csv files as input and outputs a HDF5 '$/;"	v
+description	data/split_dataset.py	/^        description='Split a file based on its lines'$/;"	v
+description	train.py	/^    description = get_experiment_description($/;"	v
+dir_name	train.py	/^        dir_name = '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)$/;"	v
+dir_name	train.py	/^        dir_name = base_dir_name$/;"	v
+doc	utils/nlp_utils.py	/^    doc = nlp_pipeline.tokenizer(text)$/;"	v
+dont_reduce	models/modules/reduction_modules.py	/^def dont_reduce(sequence, **kwargs):$/;"	f
+donut	utils/visualization_utils.py	/^def donut(inside_values, inside_labels, outside_values, outside_labels,$/;"	f
+dotted	visualize.py	/^        dotted=[False, True, True],$/;"	v
+double_axis_line_plot	utils/visualization_utils.py	/^def double_axis_line_plot(y1_sorted, y2, y1_name, y2_name, labels=None,$/;"	f
+draw_polygon	utils/visualization_utils.py	/^    def draw_polygon(values, label, color='grey'):$/;"	f	function:radar_chart
+dtype	utils/strings_utils.py	/^                              dtype=format_dtype)$/;"	v
+dtype	visualize.py	/^                dtype=np.int32$/;"	v
+dynamic_length_encoders	models/inputs.py	/^dynamic_length_encoders = {$/;"	v
+edit_distance	models/modules/measure_modules.py	/^def edit_distance(targets, target_seq_length, predictions_sequence,$/;"	f
+elapsed	utils/time_utils.py	/^    def elapsed(self):$/;"	m	class:Timer
+elapsed	utils/time_utils.py	/^    def elapsed(self):$/;"	m	class:WithTimer
+elapsed_str	utils/time_utils.py	/^    def elapsed_str(self):$/;"	m	class:Timer
+embedding_matrix	models/modules/embedding_modules.py	/^def embedding_matrix(vocab, embedding_size, representation='dense',$/;"	f
+enter	utils/time_utils.py	/^    def enter(self):$/;"	m	class:WithTimer
+entropies	visualize.py	/^                    entropies = []$/;"	v
+error	models/modules/measure_modules.py	/^def error(targets, predictions, output_feature_name):$/;"	f
+error	utils/html_utils.py	/^    def error(self, message):$/;"	m	class:HTMLStripper
+evaluate_performance	experiment.py	/^            evaluate_performance=True,$/;"	v
+evaluate_performance	predict.py	/^        evaluate_performance=evaluate_performance,$/;"	v
+evaluation	models/model.py	/^    def evaluation($/;"	m	class:Model
+experiment	cli.py	/^    def experiment(self):$/;"	m	class:CLI
+experiment	contribs/comet.py	/^    def experiment(self, *args, **kwargs):$/;"	m	class:Comet
+experiment	experiment.py	/^def experiment($/;"	f
+experiment_dir_name	collect.py	/^        experiment_dir_name = output_directory + '_' + str(suffix)$/;"	v
+experiment_dir_name	collect.py	/^    experiment_dir_name = output_directory$/;"	v
+experiment_dir_name	data/postprocessing.py	/^            experiment_dir_name=experiment_dir_name,$/;"	v
+experiment_dir_name	predict.py	/^        experiment_dir_name = output_directory + '_' + str(suffix)$/;"	v
+experiment_dir_name	predict.py	/^    experiment_dir_name = output_directory$/;"	v
+experiment_dir_name	train.py	/^            experiment_dir_name = '\/'$/;"	v
+experiment_dir_name	train.py	/^            experiment_dir_name = get_experiment_dir_name($/;"	v
+experiment_dir_name	train.py	/^            experiment_dir_name = model_resume_path$/;"	v
+experiment_dir_name	train.py	/^    experiment_dir_name = None$/;"	v
+experiment_name	experiment.py	/^        experiment_name=experiment_name,$/;"	v
+experiment_save	contribs/comet.py	/^    def experiment_save(self, *args, **kwargs):$/;"	m	class:Comet
+f1_np	visualize.py	/^            f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))$/;"	v
+f1_reordered	visualize.py	/^            f1_reordered = f1_np[f1_sorted_indices[::-1]][$/;"	v
+f1_reordered	visualize.py	/^            f1_reordered = np.zeros(len(field_frequency_reordered))$/;"	v
+f1_score	utils/metrics_utils.py	/^    def f1_score(self, idx):$/;"	m	class:ConfusionMatrix
+f1_scores	visualize.py	/^            f1_scores = []$/;"	v
+f1_sorted_indices	visualize.py	/^            f1_sorted_indices = f1_np.argsort()$/;"	v
+f1s	visualize.py	/^    f1s = []$/;"	v
+fall_out	utils/metrics_utils.py	/^    def fall_out(self, idx):$/;"	m	class:ConfusionMatrix
+false_discovery_rate	utils/metrics_utils.py	/^    def false_discovery_rate(self, idx):$/;"	m	class:ConfusionMatrix
+false_negative_rate	utils/metrics_utils.py	/^    def false_negative_rate(self, idx):$/;"	m	class:ConfusionMatrix
+false_negatives	utils/metrics_utils.py	/^    def false_negatives(self, idx):$/;"	m	class:ConfusionMatrix
+false_omission_rate	utils/metrics_utils.py	/^    def false_omission_rate(self, idx):$/;"	m	class:ConfusionMatrix
+false_positive_rate	utils/metrics_utils.py	/^    def false_positive_rate(self, idx):$/;"	m	class:ConfusionMatrix
+false_positives	utils/metrics_utils.py	/^    def false_positives(self, idx):$/;"	m	class:ConfusionMatrix
+fbeta_score	utils/metrics_utils.py	/^    def fbeta_score(self, beta, idx):$/;"	m	class:ConfusionMatrix
+fc_layer	models/modules/fully_connected_modules.py	/^def fc_layer(inputs, in_count, out_count,$/;"	f
+feature	data/postprocessing.py	/^    feature = get_from_registry($/;"	v
+feature_data	features/bag_feature.py	/^    def feature_data(column, metadata, preprocessing_parameters):$/;"	m	class:BagBaseFeature
+feature_data	features/category_feature.py	/^    def feature_data(column, metadata):$/;"	m	class:CategoryBaseFeature
+feature_data	features/sequence_feature.py	/^    def feature_data(column, metadata, preprocessing_parameters):$/;"	m	class:SequenceBaseFeature
+feature_data	features/set_feature.py	/^    def feature_data(column, metadata, preprocessing_parameters):$/;"	m	class:SetBaseFeature
+feature_data	features/text_feature.py	/^    def feature_data(column, metadata, preprocessing_parameters):$/;"	m	class:TextBaseFeature
+feature_data	features/timeseries_feature.py	/^    def feature_data(column, metadata, preprocessing_parameters):$/;"	m	class:TimeseriesBaseFeature
+feature_meta	features/text_feature.py	/^    def feature_meta(column, preprocessing_parameters):$/;"	m	class:TextBaseFeature
+features	data/preprocessing.py	/^    features = (model_definition['input_features'] +$/;"	v
+features	data/preprocessing.py	/^    features = model_definition['input_features'] + output_features$/;"	v
+feed_dict	models/model.py	/^    def feed_dict($/;"	m	class:Model
+feed_forward_attention	models/modules/attention_modules.py	/^def feed_forward_attention(current_inputs, feature_hidden_size,$/;"	f
+feed_forward_memory_attention	models/modules/attention_modules.py	/^def feed_forward_memory_attention(current_inputs, memory, hidden_size=256):$/;"	f
+field	visualize.py	/^                        field=field$/;"	v
+field_frequency_dict	visualize.py	/^            field_frequency_dict = {$/;"	v
+field_frequency_np	visualize.py	/^            field_frequency_np = np.array($/;"	v
+field_frequency_reordered	visualize.py	/^            field_frequency_reordered = field_frequency_np[$/;"	v
+fields	visualize.py	/^    fields = [field] if field is not None and len(field) > 0 else fields_set$/;"	v
+fields_set	visualize.py	/^    fields_set = set()$/;"	v
+filter_numbers	utils/nlp_utils.py	/^                       filter_numbers=True,$/;"	v
+filter_punctuation	utils/nlp_utils.py	/^                       filter_punctuation=True,$/;"	v
+filter_short_tokens	utils/nlp_utils.py	/^                       filter_short_tokens=True))$/;"	v
+filter_stopwords	utils/nlp_utils.py	/^                       filter_stopwords=True))$/;"	v
+filtered_gt	visualize.py	/^                filtered_gt = gt_subset[filtered_indices]$/;"	v
+filtered_gt	visualize.py	/^            filtered_gt = gt[filtered_indices]$/;"	v
+filtered_gt	visualize.py	/^            filtered_gt = gt_subset[filtered_indices]$/;"	v
+filtered_gt_1	visualize.py	/^            filtered_gt_1 = gt_1[filtered_indices]$/;"	v
+filtered_gt_2	visualize.py	/^            filtered_gt_2 = gt_2[filtered_indices]$/;"	v
+filtered_indices	visualize.py	/^            filtered_indices = np.logical_and($/;"	v
+filtered_predictions	visualize.py	/^                filtered_predictions = predictions[filtered_indices]$/;"	v
+filtered_predictions	visualize.py	/^            filtered_predictions = predictions[filtered_indices]$/;"	v
+filtered_predictions_1	visualize.py	/^            filtered_predictions_1 = predictions_1[filtered_indices]$/;"	v
+filtered_predictions_2	visualize.py	/^            filtered_predictions_2 = predictions_2[filtered_indices]$/;"	v
+fixed_padding	models/modules/convolutional_modules.py	/^def fixed_padding(inputs, kernel_size):$/;"	f
+fixed_step_coverage	visualize.py	/^    fixed_step_coverage = thresholds$/;"	v
+flatten	models/modules/convolutional_modules.py	/^def flatten(hidden, skip_first=True):$/;"	f
+force_split	data/preprocessing.py	/^        force_split=global_preprocessing_parameters['force_split'],$/;"	v
+format_dtype	utils/strings_utils.py	/^    format_dtype = int_type(len(inverse_vocabulary) - 1)$/;"	v
+format_str	visualize.py	/^            format_str = '{}'$/;"	v
+format_str	visualize.py	/^            format_str = '{}: '.format(model_names[i])$/;"	v
+formatter	utils/visualization_utils.py	/^    def formatter(pct):$/;"	f	function:pie
+found_previous_results	train.py	/^            found_previous_results = os.path.isdir($/;"	v
+found_previous_results	train.py	/^        found_previous_results = os.path.isdir($/;"	v
+fpr_tprs	visualize.py	/^    fpr_tprs = []$/;"	v
+fraction_positives	visualize.py	/^    fraction_positives = []$/;"	v
+fraction_positives_class	visualize.py	/^        fraction_positives_class = []$/;"	v
+frequency_sorted_indices	visualize.py	/^            frequency_sorted_indices = field_frequency_np.argsort()$/;"	v
+frequency_vs_f1	visualize.py	/^def frequency_vs_f1($/;"	f
+fs	visualize.py	/^                fs = f1_scores[0:k]$/;"	v
+full_predict	predict.py	/^def full_predict($/;"	f
+full_train	train.py	/^def full_train($/;"	f
+generate_bag	data/dataset_synthesyzer.py	/^def generate_bag(feature):$/;"	f
+generate_binary	data/dataset_synthesyzer.py	/^def generate_binary(feature):$/;"	f
+generate_category	data/dataset_synthesyzer.py	/^def generate_category(feature):$/;"	f
+generate_datapoint	data/dataset_synthesyzer.py	/^def generate_datapoint(features):$/;"	f
+generate_image	data/dataset_synthesyzer.py	/^def generate_image(feature):$/;"	f
+generate_numerical	data/dataset_synthesyzer.py	/^def generate_numerical(feature):$/;"	f
+generate_sequence	data/dataset_synthesyzer.py	/^def generate_sequence(feature):$/;"	f
+generate_set	data/dataset_synthesyzer.py	/^def generate_set(feature):$/;"	f
+generate_string	data/dataset_synthesyzer.py	/^def generate_string(length):$/;"	f
+generate_text	data/dataset_synthesyzer.py	/^def generate_text(feature):$/;"	f
+generate_timeseries	data/dataset_synthesyzer.py	/^def generate_timeseries(feature):$/;"	f
+generators_registry	data/dataset_synthesyzer.py	/^generators_registry = {$/;"	v
+get	data/dataset.py	/^    def get(self, feature_name, idx=None):$/;"	m	class:Dataset
+get_abs_path	utils/image_utils.py	/^def get_abs_path(data_csv_path, image_path):$/;"	f
+get_best_function	models/modules/measure_modules.py	/^def get_best_function(measure):$/;"	f
+get_build_combiner	models/combiners.py	/^def get_build_combiner(combiner_type):$/;"	f
+get_cell_fun	models/modules/recurrent_modules.py	/^def get_cell_fun(cell_type):$/;"	f
+get_data	utils/html_utils.py	/^    def get_data(self):$/;"	m	class:HTMLStripper
+get_dataset	data/dataset.py	/^    def get_dataset(self):$/;"	m	class:Dataset
+get_default_optimizer_params	utils/defaults.py	/^def get_default_optimizer_params(optimizer_type):$/;"	f
+get_experiment_description	utils/misc.py	/^def get_experiment_description(model_definition,$/;"	f
+get_experiment_dir_name	train.py	/^def get_experiment_dir_name($/;"	f
+get_feature_meta	features/bag_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:BagBaseFeature
+get_feature_meta	features/binary_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:BinaryBaseFeature
+get_feature_meta	features/category_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:CategoryBaseFeature
+get_feature_meta	features/image_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:ImageBaseFeature
+get_feature_meta	features/numerical_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:NumericalBaseFeature
+get_feature_meta	features/sequence_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:SequenceBaseFeature
+get_feature_meta	features/set_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:SetBaseFeature
+get_feature_meta	features/text_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:TextBaseFeature
+get_feature_meta	features/timeseries_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:TimeseriesBaseFeature
+get_file_names	train.py	/^def get_file_names(experiment_dir_name):$/;"	f
+get_from_registry	utils/misc.py	/^def get_from_registry(key, registry):$/;"	f
+get_image_encoder	features/image_feature.py	/^    def get_image_encoder(self, encoder_parameters):$/;"	m	class:ImageInputFeature
+get_improved_fun	models/modules/measure_modules.py	/^def get_improved_fun(measure):$/;"	f
+get_initial_validation_value	models/modules/measure_modules.py	/^def get_initial_validation_value(measure):$/;"	f
+get_initializer	models/modules/initializer_modules.py	/^def get_initializer(parameters):$/;"	f
+get_optimizer_fun	models/modules/optimization_modules.py	/^def get_optimizer_fun(optimizer_type):$/;"	f
+get_output_nodes	models/model.py	/^    def get_output_nodes(self, collect_predictions, only_predictions=False):$/;"	m	class:Model
+get_outputs_stats	models/model.py	/^    def get_outputs_stats(self):$/;"	m	class:Model
+get_resnet_block_sizes	models/modules/convolutional_modules.py	/^def get_resnet_block_sizes(resnet_size):$/;"	f
+get_sequence_decoder	features/sequence_feature.py	/^    def get_sequence_decoder(self, decoder_parameters):$/;"	m	class:SequenceOutputFeature
+get_sequence_encoder	features/sequence_feature.py	/^    def get_sequence_encoder(self, encoder_parameters):$/;"	m	class:SequenceInputFeature
+get_sequence_vector	utils/strings_utils.py	/^def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):$/;"	f
+get_split	data/preprocessing.py	/^def get_split($/;"	f
+get_stat_names	models/model.py	/^    def get_stat_names(self, output_features):$/;"	m	class:Model
+get_tf_config	utils/tf_utils.py	/^def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,$/;"	f
+global_preprocessing_parameters	data/preprocessing.py	/^    global_preprocessing_parameters = merge_dict($/;"	v
+global_step	models/modules/optimization_modules.py	/^                                          global_step=global_step)$/;"	v
+gpu_fraction	api.py	/^        gpu_fraction=gpu_fraction,$/;"	v
+gpu_fraction	collect.py	/^        gpu_fraction=gpu_fraction$/;"	v
+gpu_fraction	experiment.py	/^            gpu_fraction=gpu_fraction,$/;"	v
+gpu_fraction	experiment.py	/^        gpu_fraction=gpu_fraction,$/;"	v
+gpu_fraction	predict.py	/^        gpu_fraction=gpu_fraction$/;"	v
+gpu_fraction	train.py	/^        gpu_fraction=gpu_fraction,$/;"	v
+gpus	api.py	/^        gpus=gpus,$/;"	v
+gpus	collect.py	/^        gpus=gpus,$/;"	v
+gpus	experiment.py	/^            gpus=gpus,$/;"	v
+gpus	experiment.py	/^        gpus=gpus,$/;"	v
+gpus	predict.py	/^        gpus=gpus,$/;"	v
+gpus	train.py	/^        gpus=gpus,$/;"	v
+grad_clip_norm	models/modules/optimization_modules.py	/^                grad_clip_norm = training_parameters['gradient_clipping']$/;"	v
+graph_unsorted	utils/algorithms_utils.py	/^    graph_unsorted = [('macro', ['action', 'contact_type']),$/;"	v
+graph_unsorted	utils/algorithms_utils.py	/^    graph_unsorted = [(2, []),$/;"	v
+greyscale	utils/image_utils.py	/^def greyscale(img):$/;"	f
+ground_truth	visualize.py	/^    ground_truth = load_from_file(ground_truth, field)$/;"	v
+ground_truth_field	visualize.py	/^    ground_truth_field = field$/;"	v
+ground_truth_fn	visualize.py	/^    ground_truth_fn = ground_truth$/;"	v
+gt	visualize.py	/^    gt = load_from_file(ground_truth, field)$/;"	v
+gt	visualize.py	/^    gt = load_from_file(ground_truth_fn, ground_truth_field)$/;"	v
+gt_1	visualize.py	/^    gt_1 = load_from_file(ground_truth, threshold_fields[0])$/;"	v
+gt_2	visualize.py	/^    gt_2 = load_from_file(ground_truth, threshold_fields[1])$/;"	v
+gt_class	visualize.py	/^            gt_class = (gt == class_idx).astype(int)$/;"	v
+gt_one_hot	visualize.py	/^    gt_one_hot = np.zeros((len(gt), gt_one_hot_dim_2))$/;"	v
+gt_one_hot_dim_2	visualize.py	/^    gt_one_hot_dim_2 = max(prob_classes, max(gt) + 1)$/;"	v
+gt_one_hot_flat	visualize.py	/^    gt_one_hot_flat = gt_one_hot.flatten()$/;"	v
+gt_subset	visualize.py	/^                gt_subset = gt[subset_indices]$/;"	v
+gt_subset	visualize.py	/^            gt_subset = gt[subset_indices]$/;"	v
+gt_subset	visualize.py	/^        gt_subset = gt$/;"	v
+gt_subset	visualize.py	/^        gt_subset = gt[subset_indices]$/;"	v
+gt_subset	visualize.py	/^    gt_subset = gt$/;"	v
+handle_data	utils/html_utils.py	/^    def handle_data(self, data):$/;"	m	class:HTMLStripper
+handle_missing_values	data/preprocessing.py	/^def handle_missing_values(dataset_df, feature, preprocessing_parameters):$/;"	f
+hdf5_data	data/preprocessing.py	/^    hdf5_data = h5py.File(hdf5_file_path, 'r')$/;"	v
+help	data/concatenate_datasets.py	/^        help='CSV containing the test set'$/;"	v
+help	data/concatenate_datasets.py	/^        help='CSV containing the training set'$/;"	v
+help	data/concatenate_datasets.py	/^        help='CSV containing the validation set'$/;"	v
+help	data/dataset_synthesyzer.py	/^        help='size of the dataset',$/;"	v
+help	data/preprocessing.py	/^        help='CSV containing contacts',$/;"	v
+help	data/preprocessing.py	/^        help='HDF5 containing output data',$/;"	v
+help	data/preprocessing.py	/^        help='Input JSON containing metadata'$/;"	v
+help	data/preprocessing.py	/^        help='JSON containing metadata',$/;"	v
+help	data/preprocessing.py	/^        help='a random seed that is going to be used anywhere there is a call '$/;"	v
+help	data/preprocessing.py	/^        help='list of features in the CSV to map to hdf5 and JSON files'$/;"	v
+help	data/preprocessing.py	/^        help='the parameters for preprocessing the different features'$/;"	v
+help	data/split_dataset.py	/^        help='output 1 file name'$/;"	v
+help	data/split_dataset.py	/^        help='output 2 file name'$/;"	v
+help	data/split_dataset.py	/^        help='percentage of the split'$/;"	v
+higher_f1s	visualize.py	/^            higher_f1s = sorted_indices[-k:][::-1]$/;"	v
+hit_rate	utils/metrics_utils.py	/^    def hit_rate(self, idx):$/;"	m	class:ConfusionMatrix
+hits_at_k	models/modules/measure_modules.py	/^def hits_at_k(targets, predictions_logits, top_k, output_feature_name):$/;"	f
+hits_at_k	visualize.py	/^        hits_at_k = 0$/;"	v
+hits_at_k	visualize.py	/^        hits_at_k = [0.0] * k$/;"	v
+hits_at_ks	visualize.py	/^    hits_at_ks = []$/;"	v
+idx_list	data/preprocessing.py	/^                idx_list = ($/;"	v
+image_encoder_registry	features/image_feature.py	/^image_encoder_registry = {$/;"	v
+import_call	contribs/comet.py	/^    def import_call(argv, *args, **kwargs):$/;"	m	class:Comet
+increase_batch_size	models/model.py	/^    def increase_batch_size($/;"	m	class:Model
+increment_global_step	models/modules/optimization_modules.py	/^                increment_global_step = tf.assign(global_step, global_step + 1)$/;"	v
+indices	visualize.py	/^        indices = np.logical_and(cov_matrix >= lower, cov_matrix < upper)$/;"	v
+informedness	utils/metrics_utils.py	/^    def informedness(self, idx):$/;"	m	class:ConfusionMatrix
+initialize_batcher	models/model.py	/^    def initialize_batcher($/;"	m	class:Model
+initialize_model	api.py	/^    def initialize_model($/;"	m	class:LudwigModel
+initialize_session	models/model.py	/^    def initialize_session(self, gpus=None, gpu_fraction=1):$/;"	m	class:Model
+initialize_training_stats	models/model.py	/^    def initialize_training_stats(self, output_features):$/;"	m	class:Model
+initializers_registry	models/modules/initializer_modules.py	/^initializers_registry = {$/;"	v
+input_type_registry	features/feature_registries.py	/^input_type_registry = {$/;"	v
+int_type	utils/math_utils.py	/^def int_type(number):$/;"	f
+interps	visualize.py	/^    interps = []$/;"	v
+is_on_master	globals.py	/^def is_on_master():$/;"	f
+is_progressbar_disabled	globals.py	/^def is_progressbar_disabled():$/;"	f
+k	visualize.py	/^                    k = (min(k, confusion_matrix.shape[0])$/;"	v
+k	visualize.py	/^                k = min(k, len(precisions)) if k > 0 else len(precisions)$/;"	v
+k	visualize.py	/^    k = top_k$/;"	v
+k	visualize.py	/^    k = top_n_classes[0]$/;"	v
+kappa_score	utils/metrics_utils.py	/^    def kappa_score(self):$/;"	m	class:ConfusionMatrix
+key	train.py	/^            key=lambda pair: pair[1]$/;"	v
+key	visualize.py	/^                    key=lambda tup: tup[0]):$/;"	v
+label_to_idx	utils/metrics_utils.py	/^    def label_to_idx(self, label):$/;"	m	class:ConfusionMatrix
+labels	visualize.py	/^                        labels=[labels[i] for i in class_desc_entropy],$/;"	v
+labels	visualize.py	/^                    labels = list(range(len(confusion_matrix)))$/;"	v
+labels	visualize.py	/^                    labels = metadata[field]['idx2str']$/;"	v
+labels	visualize.py	/^                    labels=ls,$/;"	v
+labels	visualize.py	/^                labels=labels,$/;"	v
+labels	visualize.py	/^                labels=labels_np[higher_f1s].tolist(),$/;"	v
+labels	visualize.py	/^                labels=labels_np[lower_f1s].tolist(),$/;"	v
+labels	visualize.py	/^                labels=labels_np[sorted_indices[::-1]].tolist(),$/;"	v
+labels	visualize.py	/^            labels = []$/;"	v
+labels_np	visualize.py	/^            labels_np = np.nan_to_num(np.array(labels))$/;"	v
+language_module_registry	utils/nlp_utils.py	/^language_module_registry = {$/;"	v
+last_batch	utils/batcher.py	/^    def last_batch(self):$/;"	m	class:Batcher
+last_batch	utils/batcher.py	/^    def last_batch(self):$/;"	m	class:BucketedBatcher
+last_batch	utils/batcher.py	/^    def last_batch(self):$/;"	m	class:DistributedBatcher
+learning_curves	visualize.py	/^def learning_curves(training_statistics, field, model_names=None, **kwargs):$/;"	f
+learning_curves_plot	utils/visualization_utils.py	/^def learning_curves_plot(train_values, vali_values, metric, algorithm_names=None,$/;"	f
+learning_rate	models/modules/optimization_modules.py	/^        learning_rate = tf.train.exponential_decay($/;"	v
+learning_rate_warmup	utils/math_utils.py	/^def learning_rate_warmup(learning_rate, epoch, warmup_epochs, num_workers,$/;"	f
+left	visualize.py	/^                left=1,$/;"	v
+letters	data/dataset_synthesyzer.py	/^letters = string.ascii_letters$/;"	v
+limit	utils/strings_utils.py	/^        limit = min(vector.shape[0], max_length)$/;"	v
+load	api.py	/^    def load(model_dir, logging_level=logging.ERROR):$/;"	m	class:LudwigModel
+load	models/model.py	/^    def load(filepath):$/;"	m	class:ProgressTracker
+load	models/model.py	/^    def load(load_path, use_horovod=False):$/;"	m	class:Model
+load_array	utils/data_utils.py	/^def load_array(data_fp, dtype=float):$/;"	f
+load_csv	utils/data_utils.py	/^def load_csv(data_fp):$/;"	f
+load_data	data/preprocessing.py	/^def load_data($/;"	f
+load_from_file	utils/data_utils.py	/^def load_from_file(file_name, field=None, dtype=int):$/;"	f
+load_glove	utils/data_utils.py	/^def load_glove(file_path):$/;"	f
+load_hdf5	utils/data_utils.py	/^def load_hdf5(data_fp):$/;"	f
+load_json	utils/data_utils.py	/^def load_json(data_fp):$/;"	f
+load_matrix	utils/data_utils.py	/^def load_matrix(data_fp, dtype=float):$/;"	f
+load_metadata	data/preprocessing.py	/^def load_metadata(metadata_file_path):$/;"	f
+load_model_and_definition	models/model.py	/^def load_model_and_definition(model_dir, use_horovod=False):$/;"	f
+load_nlp_pipeline	utils/nlp_utils.py	/^def load_nlp_pipeline(language='xx'):$/;"	f
+load_object	utils/data_utils.py	/^def load_object(object_fp):$/;"	f
+load_pretrained_embeddings	utils/data_utils.py	/^def load_pretrained_embeddings(embeddings_path, vocab):$/;"	f
+logger	api.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	collect.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	contribs/comet.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	data/concatenate_datasets.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	data/preprocessing.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	experiment.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/bag_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/binary_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/category_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/image_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/numerical_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/sequence_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/set_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/text_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	features/timeseries_feature.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/combiners.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/inputs.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/model.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/attention_modules.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/convolutional_modules.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/embedding_modules.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/fully_connected_modules.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/recurrent_modules.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/reduction_modules.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/sequence_decoders.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/modules/sequence_encoders.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	models/outputs.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	predict.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	test_performance.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	train.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/algorithms_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/data_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/html_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/metrics_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/nlp_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/print_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/time_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	utils/visualization_utils.py	/^logger = logging.getLogger(__name__)$/;"	v
+logger	visualize.py	/^logger = logging.getLogger(__name__)$/;"	v
+logging_level	api.py	/^        logging_level=logging_level$/;"	v
+logging_level	api.py	/^        logging_level=logging_level,$/;"	v
+logging_level_registry	utils/print_utils.py	/^logging_level_registry = {$/;"	v
+loss_multilabel	models/modules/loss_modules.py	/^def loss_multilabel(logits, vector_labels, loss):$/;"	f
+lower	visualize.py	/^        lower = fixed_step_coverage[i]$/;"	v
+lower_f1s	visualize.py	/^            lower_f1s = sorted_indices[:k]$/;"	v
+lowercase	utils/strings_utils.py	/^            lowercase=lowercase$/;"	v
+ls	visualize.py	/^                ls = labels[0:k]$/;"	v
+ludwig_model	api.py	/^    ludwig_model = LudwigModel($/;"	v
+ludwig_model	api.py	/^    ludwig_model = LudwigModel(model_definition, logging_level=logging_level)$/;"	v
+ludwig_model	api.py	/^    ludwig_model = LudwigModel.load($/;"	v
+main	api.py	/^def main(sys_argv):$/;"	f
+main	cli.py	/^def main():$/;"	f
+make_safe_filename	utils/strings_utils.py	/^def make_safe_filename(s):$/;"	f
+mapped_preds	visualize.py	/^    mapped_preds = []$/;"	v
+markedness	utils/metrics_utils.py	/^    def markedness(self, idx):$/;"	m	class:ConfusionMatrix
+masked_accuracy	models/modules/measure_modules.py	/^def masked_accuracy(targets, predictions, sequence_lengths,$/;"	f
+match_replace	utils/strings_utils.py	/^def match_replace(string_to_match, list_regex):$/;"	f
+matthews_correlation_coefficient	utils/metrics_utils.py	/^    def matthews_correlation_coefficient(self, idx):$/;"	m	class:ConfusionMatrix
+max_accuracies	visualize.py	/^    max_accuracies = np.amax(np.array(interps), 0)$/;"	v
+max_length	utils/strings_utils.py	/^            max_length = len(unit_indices_vector)$/;"	v
+max_length	utils/strings_utils.py	/^    max_length = 0$/;"	v
+max_length	utils/strings_utils.py	/^    max_length = length_limit$/;"	v
+max_line_length	utils/strings_utils.py	/^            max_line_length = max(max_line_length, len(processed_line))$/;"	v
+max_line_length	utils/strings_utils.py	/^    max_line_length = 0$/;"	v
+max_measures	models/modules/measure_modules.py	/^max_measures = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}$/;"	v
+max_prob	visualize.py	/^            max_prob = np.max(prob_subset, axis=1)$/;"	v
+max_prob	visualize.py	/^        max_prob = np.max(prob, axis=1)$/;"	v
+max_prob	visualize.py	/^        max_prob = np.max(prob_subset, axis=1)$/;"	v
+max_prob_1	visualize.py	/^    max_prob_1 = np.max(probs[0], axis=1)$/;"	v
+max_prob_2	visualize.py	/^    max_prob_2 = np.max(probs[1], axis=1)$/;"	v
+mean_confidence_penalty	models/modules/loss_modules.py	/^def mean_confidence_penalty(probabilities, num_classes):$/;"	f
+mean_predicted_vals	visualize.py	/^    mean_predicted_vals = []$/;"	v
+mean_predicted_vals_class	visualize.py	/^        mean_predicted_vals_class = []$/;"	v
+measures	models/modules/measure_modules.py	/^measures = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,$/;"	v
+merge_dict	utils/misc.py	/^def merge_dict(dct, merge_dct):$/;"	f
+merge_with_defaults	utils/defaults.py	/^def merge_with_defaults(model_definition):$/;"	f
+merge_workers_outputs	models/model.py	/^    def merge_workers_outputs(self, output_stats, seq_set_size):$/;"	m	class:Model
+metadata	visualize.py	/^    metadata = load_json(ground_truth_metadata)$/;"	v
+metadata_json	train.py	/^        metadata_json=train_set_metadata_json,$/;"	v
+metric_score	visualize.py	/^                    metric_score = sklearn.metrics.accuracy_score($/;"	v
+metric_score	visualize.py	/^                    metric_score = sklearn.metrics.f1_score($/;"	v
+metric_score	visualize.py	/^                    metric_score = sklearn.metrics.precision_score($/;"	v
+metric_score	visualize.py	/^                    metric_score = sklearn.metrics.recall_score($/;"	v
+min_measures	models/modules/measure_modules.py	/^min_measures = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,$/;"	v
+miss_rate	utils/metrics_utils.py	/^    def miss_rate(self, idx):$/;"	m	class:ConfusionMatrix
+model	train.py	/^        model = Model($/;"	v
+model_definition	api.py	/^    model_definition = merge_with_defaults(model_definition)$/;"	v
+model_definition	data/preprocessing.py	/^    model_definition = load_json($/;"	v
+model_definition	train.py	/^            model_definition = merge_with_defaults(yaml.safe_load(def_file))$/;"	v
+model_definition	train.py	/^        model_definition = merge_with_defaults(model_definition)$/;"	v
+model_definition	train.py	/^        model_definition=model_definition,$/;"	v
+model_definition_file	experiment.py	/^        model_definition_file=model_definition_file,$/;"	v
+model_load_path	experiment.py	/^        model_load_path=model_load_path,$/;"	v
+model_load_path	train.py	/^        model_load_path=model_load_path,$/;"	v
+model_name	experiment.py	/^        model_name=model_name,$/;"	v
+model_name	visualize.py	/^    model_name = model_names[0] if model_names is not None and len($/;"	v
+model_name_name	visualize.py	/^                model_name_name = model_names[i] if ($/;"	v
+model_name_name	visualize.py	/^            model_name_name = ($/;"	v
+model_name_name	visualize.py	/^            model_name_name = (model_names[i]$/;"	v
+model_names	visualize.py	/^        model_names=[model_name + ' accuracy', name_t1, name_t2],$/;"	v
+model_resume_path	experiment.py	/^        model_resume_path=model_resume_path,$/;"	v
+model_resume_path	train.py	/^            model_resume_path = None$/;"	v
+mrr	visualize.py	/^        mrr = 0$/;"	v
+mrrs	visualize.py	/^    mrrs = []$/;"	v
+n_bins	visualize.py	/^            n_bins=21$/;"	v
+name_c1	visualize.py	/^    name_c1 = ($/;"	v
+name_c2	visualize.py	/^    name_c2 = ($/;"	v
+name_t1	visualize.py	/^    name_t1 = '{} threshold'.format(threshold_fields[0])$/;"	v
+name_t2	visualize.py	/^    name_t2 = '{} threshold'.format(threshold_fields[1])$/;"	v
+negative_predictive_value	utils/metrics_utils.py	/^    def negative_predictive_value(self, idx):$/;"	m	class:ConfusionMatrix
+next_batch	utils/batcher.py	/^    def next_batch(self):$/;"	m	class:Batcher
+next_batch	utils/batcher.py	/^    def next_batch(self):$/;"	m	class:BucketedBatcher
+next_batch	utils/batcher.py	/^    def next_batch(self):$/;"	m	class:DistributedBatcher
+nlp_pipelines	utils/nlp_utils.py	/^nlp_pipelines = {$/;"	v
+num_channels_in_image	utils/image_utils.py	/^def num_channels_in_image(img):$/;"	f
+num_classes	visualize.py	/^    num_classes = max(gt)$/;"	v
+one_right	visualize.py	/^    one_right = c1_right_c2_wrong + c1_wrong_c2_right$/;"	v
+optimize	models/modules/optimization_modules.py	/^                optimize = tf.group(apply_grads, increment_global_step)$/;"	v
+optimize	models/modules/optimization_modules.py	/^            optimize = optimizer.minimize(loss,$/;"	v
+optimize	models/modules/optimization_modules.py	/^    optimize = tf.group([optimize, update_ops])$/;"	v
+optimize	models/modules/optimization_modules.py	/^def optimize($/;"	f
+optimizer	models/modules/optimization_modules.py	/^                optimizer = horovod.DistributedOptimizer(optimizer)$/;"	v
+optimizer	models/modules/optimization_modules.py	/^                optimizer = optimizer_fun(learning_rate, **optimizer_args)$/;"	v
+optimizer	models/modules/optimization_modules.py	/^                optimizer = optimizer_fun(learning_rate, global_step,$/;"	v
+optimizer	models/modules/optimization_modules.py	/^            optimizer = tf.train.AdamOptimizer(learning_rate)$/;"	v
+optimizer_args	models/modules/optimization_modules.py	/^            optimizer_args = dict(training_parameters['optimizer'])$/;"	v
+optimizer_fun	models/modules/optimization_modules.py	/^            optimizer_fun = get_optimizer_fun(optimizer_type)$/;"	v
+optimizer_type	models/modules/optimization_modules.py	/^            optimizer_type = optimizer_args.pop('type')$/;"	v
+output_config	features/base_feature.py	/^    def output_config(self):$/;"	m	class:OutputFeature
+output_config	features/binary_feature.py	/^    output_config = OrderedDict([$/;"	v	class:BinaryOutputFeature
+output_config	features/category_feature.py	/^    output_config = OrderedDict([$/;"	v	class:CategoryOutputFeature
+output_config	features/numerical_feature.py	/^    output_config = OrderedDict([$/;"	v	class:NumericalOutputFeature
+output_config	features/sequence_feature.py	/^    output_config = OrderedDict([$/;"	v	class:SequenceOutputFeature
+output_config	features/set_feature.py	/^    output_config = OrderedDict([$/;"	v	class:SetOutputFeature
+output_config	features/text_feature.py	/^    output_config = OrderedDict([$/;"	v	class:TextOutputFeature
+output_config	features/timeseries_feature.py	/^    output_config = OrderedDict([$/;"	v	class:TimeseriesOutputFeature
+output_directory	experiment.py	/^        output_directory=output_directory,$/;"	v
+output_dtype	models/modules/recurrent_modules.py	/^    def output_dtype(self):$/;"	m	class:BasicDecoder
+output_features	data/preprocessing.py	/^    output_features = model_definition['output_features'] if evaluate_performance else []$/;"	v
+output_size	models/modules/recurrent_modules.py	/^    def output_size(self):$/;"	m	class:BasicDecoder
+output_specific_fully_connected	features/base_feature.py	/^    def output_specific_fully_connected($/;"	m	class:OutputFeature
+output_type_registry	features/feature_registries.py	/^output_type_registry = {$/;"	v
+overwrite_defaults	features/base_feature.py	/^    def overwrite_defaults(self, feature):$/;"	m	class:BaseFeature
+p	data/preprocessing.py	/^                    p=split_probabilities,$/;"	v
+p	data/preprocessing.py	/^                p=split_probabilities,$/;"	v
+p_np	visualize.py	/^            p_np = np.nan_to_num(np.array(precisions, dtype=np.float32))$/;"	v
+pad	utils/image_utils.py	/^def pad(img, size, axis):$/;"	f
+parameters_builders_registry	data/dataset_synthesyzer.py	/^parameters_builders_registry = {$/;"	v
+parser	data/concatenate_datasets.py	/^    parser = argparse.ArgumentParser($/;"	v
+parser	data/dataset_synthesyzer.py	/^    parser = argparse.ArgumentParser($/;"	v
+parser	data/preprocessing.py	/^    parser = argparse.ArgumentParser($/;"	v
+parser	data/split_dataset.py	/^    parser = argparse.ArgumentParser($/;"	v
+pass_filters	utils/nlp_utils.py	/^def pass_filters($/;"	f
+passes_filters	utils/nlp_utils.py	/^        passes_filters = len(token) > 2$/;"	v
+passes_filters	utils/nlp_utils.py	/^        passes_filters = not bool(set(token.orth_) & punctuation)$/;"	v
+passes_filters	utils/nlp_utils.py	/^        passes_filters = not token.is_stop$/;"	v
+passes_filters	utils/nlp_utils.py	/^        passes_filters = not token.like_num$/;"	v
+passes_filters	utils/nlp_utils.py	/^    passes_filters = True$/;"	v
+per_class_stats	utils/metrics_utils.py	/^    def per_class_stats(self):$/;"	m	class:ConfusionMatrix
+per_class_stats	visualize.py	/^            per_class_stats = test_statistics[field]['per_class_stats']$/;"	v
+perplexity	models/modules/measure_modules.py	/^def perplexity(cross_entropy_loss):$/;"	f
+pie	utils/visualization_utils.py	/^def pie(ax, values, **kwargs):$/;"	f
+plot_distributions	utils/visualization_utils.py	/^def plot_distributions(distributions, labels=None, title=None):$/;"	f
+plot_distributions_difference	utils/visualization_utils.py	/^def plot_distributions_difference(distribution, labels=None, title=None):$/;"	f
+plot_matrix	utils/visualization_utils.py	/^def plot_matrix(matrix, cmap='hot'):$/;"	f
+populate_defaults	features/bag_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:BagInputFeature
+populate_defaults	features/base_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:InputFeature
+populate_defaults	features/base_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:OutputFeature
+populate_defaults	features/binary_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:BinaryInputFeature
+populate_defaults	features/binary_feature.py	/^    def populate_defaults(output_feature):$/;"	m	class:BinaryOutputFeature
+populate_defaults	features/category_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:CategoryInputFeature
+populate_defaults	features/category_feature.py	/^    def populate_defaults(output_feature):$/;"	m	class:CategoryOutputFeature
+populate_defaults	features/image_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:ImageInputFeature
+populate_defaults	features/numerical_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:NumericalInputFeature
+populate_defaults	features/numerical_feature.py	/^    def populate_defaults(output_feature):$/;"	m	class:NumericalOutputFeature
+populate_defaults	features/sequence_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:SequenceInputFeature
+populate_defaults	features/sequence_feature.py	/^    def populate_defaults(output_feature):$/;"	m	class:SequenceOutputFeature
+populate_defaults	features/set_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:SetInputFeature
+populate_defaults	features/set_feature.py	/^    def populate_defaults(output_feature):$/;"	m	class:SetOutputFeature
+populate_defaults	features/text_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:TextInputFeature
+populate_defaults	features/text_feature.py	/^    def populate_defaults(output_feature):$/;"	m	class:TextOutputFeature
+populate_defaults	features/timeseries_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:TimeseriesInputFeature
+populate_defaults	features/timeseries_feature.py	/^    def populate_defaults(output_feature):$/;"	m	class:TimeseriesOutputFeature
+pos_label	visualize.py	/^                pos_label=1$/;"	v
+pos_label	visualize.py	/^            pos_label=positive_label$/;"	v
+positive_predictive_value	utils/metrics_utils.py	/^    def positive_predictive_value(self, idx):$/;"	m	class:ConfusionMatrix
+postprocess	data/postprocessing.py	/^def postprocess($/;"	f
+postprocess_df	data/postprocessing.py	/^def postprocess_df(model_output, output_features, metadata):$/;"	f
+postprocess_results	data/postprocessing.py	/^def postprocess_results($/;"	f
+postprocess_results	features/base_feature.py	/^    def postprocess_results($/;"	m	class:OutputFeature
+postprocess_results	features/binary_feature.py	/^    def postprocess_results($/;"	m	class:BinaryOutputFeature
+postprocess_results	features/category_feature.py	/^    def postprocess_results($/;"	m	class:CategoryOutputFeature
+postprocess_results	features/numerical_feature.py	/^    def postprocess_results($/;"	m	class:NumericalOutputFeature
+postprocess_results	features/sequence_feature.py	/^    def postprocess_results($/;"	m	class:SequenceOutputFeature
+postprocess_results	features/set_feature.py	/^    def postprocess_results($/;"	m	class:SetOutputFeature
+postprocess_results	features/text_feature.py	/^    def postprocess_results($/;"	m	class:TextOutputFeature
+postprocess_results	features/timeseries_feature.py	/^    def postprocess_results($/;"	m	class:TimeseriesOutputFeature
+postprocessed	data/postprocessing.py	/^    postprocessed = {}$/;"	v
+postprocessed_output	experiment.py	/^        postprocessed_output = postprocess($/;"	v
+postprocessed_output	predict.py	/^        postprocessed_output = postprocess($/;"	v
+precision	utils/metrics_utils.py	/^    def precision(self, idx):$/;"	m	class:ConfusionMatrix
+precision_recall_curve	utils/metrics_utils.py	/^def precision_recall_curve(conditions, prediction_scores, pos_label=None,$/;"	f
+precisions	visualize.py	/^            precisions = []$/;"	v
+precisions	visualize.py	/^    precisions = []$/;"	v
+pred_c1	visualize.py	/^    pred_c1 = load_from_file(predictions_1_fn, dtype=int)$/;"	v
+pred_c2	visualize.py	/^    pred_c2 = load_from_file(predictions_2_fn, dtype=int)$/;"	v
+predict	api.py	/^    def predict($/;"	m	class:LudwigModel
+predict	cli.py	/^    def predict(self):$/;"	m	class:CLI
+predict	contribs/comet.py	/^    def predict(self, *args, **kwargs):$/;"	m	class:Comet
+predict	models/model.py	/^    def predict($/;"	m	class:Model
+predict	predict.py	/^def predict($/;"	f
+prediction_results	predict.py	/^    prediction_results = predict($/;"	v
+predictions	api.py	/^    predictions = ludwig_model.predict($/;"	v
+predictions	visualize.py	/^            predictions = np.argmax(prob_subset, axis=1)$/;"	v
+predictions	visualize.py	/^        predictions = np.argmax(prob, axis=1)$/;"	v
+predictions	visualize.py	/^        predictions = np.argmax(prob_subset, axis=1)$/;"	v
+predictions	visualize.py	/^    predictions = [load_from_file(predictions_fn, dtype=int)$/;"	v
+predictions_1	visualize.py	/^    predictions_1 = np.argmax(probs[0], axis=1)$/;"	v
+predictions_1_fn	visualize.py	/^    predictions_1_fn = predictions[0]$/;"	v
+predictions_2	visualize.py	/^    predictions_2 = np.argmax(probs[1], axis=1)$/;"	v
+predictions_2_fn	visualize.py	/^    predictions_2_fn = predictions[1]$/;"	v
+predictions_distribution_plot	utils/visualization_utils.py	/^def predictions_distribution_plot(probabilities, algorithm_names=None):$/;"	f
+preds	visualize.py	/^    preds = [load_from_file(preds_fn, dtype=str) for preds_fn in predictions]$/;"	v
+preds	visualize.py	/^    preds = mapped_preds$/;"	v
+preprocess_for_prediction	data/preprocessing.py	/^def preprocess_for_prediction($/;"	f
+preprocess_for_training	data/preprocessing.py	/^def preprocess_for_training($/;"	f
+preprocessed_data	train.py	/^    preprocessed_data = preprocess_for_training($/;"	v
+preprocessing_defaults	features/bag_feature.py	/^    preprocessing_defaults = {$/;"	v	class:BagBaseFeature
+preprocessing_defaults	features/binary_feature.py	/^    preprocessing_defaults = {$/;"	v	class:BinaryBaseFeature
+preprocessing_defaults	features/category_feature.py	/^    preprocessing_defaults = {$/;"	v	class:CategoryBaseFeature
+preprocessing_defaults	features/image_feature.py	/^    preprocessing_defaults = {$/;"	v	class:ImageBaseFeature
+preprocessing_defaults	features/numerical_feature.py	/^    preprocessing_defaults = {$/;"	v	class:NumericalBaseFeature
+preprocessing_defaults	features/sequence_feature.py	/^    preprocessing_defaults = {$/;"	v	class:SequenceBaseFeature
+preprocessing_defaults	features/set_feature.py	/^    preprocessing_defaults = {$/;"	v	class:SetBaseFeature
+preprocessing_defaults	features/text_feature.py	/^    preprocessing_defaults = {$/;"	v	class:TextBaseFeature
+preprocessing_defaults	features/timeseries_feature.py	/^    preprocessing_defaults = {$/;"	v	class:TimeseriesBaseFeature
+preprocessing_params	data/preprocessing.py	/^    preprocessing_params = merge_dict($/;"	v
+preprocessing_params	train.py	/^        preprocessing_params=model_definition['preprocessing'],$/;"	v
+print_boxed	utils/print_utils.py	/^def print_boxed(text, print_fun=logger.info):$/;"	f
+print_ludwig	utils/print_utils.py	/^def print_ludwig(message, ludwig_version):$/;"	f
+print_test_results	predict.py	/^def print_test_results(test_stats):$/;"	f
+prob	visualize.py	/^                    prob = prob[:, positive_label]$/;"	v
+prob	visualize.py	/^                prob = prob_limit$/;"	v
+prob	visualize.py	/^            prob = prob[:, positive_label]$/;"	v
+prob	visualize.py	/^            prob = prob_limit$/;"	v
+prob	visualize.py	/^        prob = np.argsort(prob, axis=1)$/;"	v
+prob_class	visualize.py	/^            prob_class = prob[:, class_idx]$/;"	v
+prob_classes	visualize.py	/^            prob_classes = probs[i].shape[1]$/;"	v
+prob_classes	visualize.py	/^    prob_classes = 0$/;"	v
+prob_flat	visualize.py	/^        prob_flat = prob.flatten()$/;"	v
+prob_gt	visualize.py	/^    prob_gt = counts_gt \/ counts_gt.sum()$/;"	v
+prob_limit	visualize.py	/^                prob_limit = prob[:, :labels_limit + 1]$/;"	v
+prob_limit	visualize.py	/^            prob_limit = prob[:, :labels_limit + 1]$/;"	v
+prob_limit	visualize.py	/^        prob_limit = probs[0][:, :labels_limit + 1]$/;"	v
+prob_limit	visualize.py	/^        prob_limit = probs[1][:, :labels_limit + 1]$/;"	v
+prob_predictions	visualize.py	/^    prob_predictions = [alg_count_prediction \/ alg_count_prediction.sum()$/;"	v
+prob_subset	visualize.py	/^            prob_subset = prob[subset_indices]$/;"	v
+prob_subset	visualize.py	/^        prob_subset = np.argsort(prob_subset, axis=1)$/;"	v
+prob_subset	visualize.py	/^        prob_subset = prob[subset_indices]$/;"	v
+probs	visualize.py	/^    probs = [load_from_file(probs_fn, dtype=float)$/;"	v
+probs_class	visualize.py	/^        probs_class = []$/;"	v
+proc	utils/time_utils.py	/^    def proc(self):$/;"	m	class:Timer
+process_text	utils/nlp_utils.py	/^def process_text($/;"	f
+processed_line	utils/strings_utils.py	/^            processed_line = tokenizer(line.lower() if lowercase else line)$/;"	v
+projection_shortcut	models/modules/convolutional_modules.py	/^    def projection_shortcut(inputs):$/;"	f	function:resnet_block_layer
+ps	visualize.py	/^                ps = precisions[0:k]$/;"	v
+quit_training	models/model.py	/^    def quit_training(self, signum, frame):$/;"	m	class:Model
+r2	models/modules/measure_modules.py	/^def r2(targets, predictions, output_feature_name):$/;"	f
+r_np	visualize.py	/^            r_np = np.nan_to_num(np.array(recalls, dtype=np.float32))$/;"	v
+radar_chart	utils/visualization_utils.py	/^def radar_chart(ground_truth, predictions, algorithms=None, log_scale=False,$/;"	f
+random_seed	data/preprocessing.py	/^            random_seed=random_seed$/;"	v
+random_seed	data/preprocessing.py	/^        random_seed=random_seed$/;"	v
+random_seed	experiment.py	/^        random_seed=random_seed,$/;"	v
+random_seed	train.py	/^            random_seed=random_seed,$/;"	v
+random_seed	train.py	/^        random_seed=random_seed$/;"	v
+random_seed	train.py	/^        random_seed=random_seed,$/;"	v
+read_csv	utils/data_utils.py	/^def read_csv(data_fp, header=0):$/;"	f
+recall	utils/metrics_utils.py	/^    def recall(self, idx):$/;"	m	class:ConfusionMatrix
+recalls	visualize.py	/^            recalls = []$/;"	v
+recalls	visualize.py	/^    recalls = []$/;"	v
+recurrent_decoder	models/modules/recurrent_modules.py	/^def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,$/;"	f
+reduce_concat	models/modules/reduction_modules.py	/^def reduce_concat(sequence, **kwargs):$/;"	f
+reduce_feed_forward_attention	models/modules/attention_modules.py	/^def reduce_feed_forward_attention(current_inputs, hidden_size=256):$/;"	f
+reduce_last	models/modules/reduction_modules.py	/^def reduce_last(sequence, **kwargs):$/;"	f
+reduce_learning_rate	models/model.py	/^    def reduce_learning_rate($/;"	m	class:Model
+reduce_max	models/modules/reduction_modules.py	/^def reduce_max(sequence, **kwargs):$/;"	f
+reduce_mean	models/modules/reduction_modules.py	/^def reduce_mean(sequence, **kwargs):$/;"	f
+reduce_mode_registry	models/modules/reduction_modules.py	/^reduce_mode_registry = {$/;"	v
+reduce_sequence	models/modules/reduction_modules.py	/^def reduce_sequence(sequence, mode):$/;"	f
+reduce_sequence_list	models/modules/reduction_modules.py	/^def reduce_sequence_list(sequence_list, mode):$/;"	f
+reduce_sum	models/modules/reduction_modules.py	/^def reduce_sum(sequence, **kwargs):$/;"	f
+regularizer_registry	models/modules/loss_modules.py	/^regularizer_registry = {'l1': tf.contrib.layers.l1_regularizer,$/;"	v
+replace_file_extension	utils/data_utils.py	/^def replace_file_extension(file_path, desired_format):$/;"	f
+replace_text_feature_level	data/preprocessing.py	/^def replace_text_feature_level(features, datasets):$/;"	f
+repr_ordered_dict	utils/print_utils.py	/^def repr_ordered_dict(d: OrderedDict):$/;"	f
+required	data/preprocessing.py	/^        required=True$/;"	v
+required	data/split_dataset.py	/^        required=True,$/;"	v
+res_post	utils/html_utils.py	/^res_post = [$/;"	v
+res_pre	utils/html_utils.py	/^res_pre = [$/;"	v
+reset	utils/batcher.py	/^    def reset(self):$/;"	m	class:Batcher
+reset	utils/batcher.py	/^    def reset(self):$/;"	m	class:BucketedBatcher
+reset	utils/batcher.py	/^    def reset(self):$/;"	m	class:DistributedBatcher
+reset	utils/time_utils.py	/^    def reset(self):$/;"	m	class:Timer
+resize_image	utils/image_utils.py	/^def resize_image(img, new_size_typle, resize_method):$/;"	f
+resnet_batch_norm	models/modules/convolutional_modules.py	/^def resnet_batch_norm(inputs, is_training,$/;"	f
+resnet_block	models/modules/convolutional_modules.py	/^def resnet_block(inputs, filters, is_training, projection_shortcut, strides,$/;"	f
+resnet_block_layer	models/modules/convolutional_modules.py	/^def resnet_block_layer(inputs, filters, bottleneck, block_fn, blocks, strides,$/;"	f
+resnet_bottleneck_block	models/modules/convolutional_modules.py	/^def resnet_bottleneck_block(inputs, filters, is_training, projection_shortcut,$/;"	f
+resnet_choices	models/modules/convolutional_modules.py	/^resnet_choices = {$/;"	v
+restore	models/model.py	/^    def restore(self, session, weights_path):$/;"	m	class:Model
+results_dir	train.py	/^    results_dir = output_directory$/;"	v
+resume	train.py	/^        resume=model_resume_path is not None,$/;"	v
+resume	train.py	/^        resume=resume,$/;"	v
+resume_session	models/model.py	/^    def resume_session($/;"	m	class:Model
+resume_training	models/model.py	/^    def resume_training(self, save_path, model_weights_path):$/;"	m	class:Model
+return_lemma	utils/nlp_utils.py	/^                       return_lemma=True))$/;"	v
+return_lemma	utils/nlp_utils.py	/^                       return_lemma=True,$/;"	v
+return_none	data/dataset_synthesyzer.py	/^def return_none(feature):$/;"	f
+right	visualize.py	/^                right=0$/;"	v
+roc_auc_score	utils/metrics_utils.py	/^def roc_auc_score(conditions, prediction_scores, average='micro',$/;"	f
+roc_curve	utils/metrics_utils.py	/^def roc_curve(conditions, prediction_scores, pos_label=None,$/;"	f
+roc_curves	utils/visualization_utils.py	/^def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):$/;"	f
+roc_curves	visualize.py	/^def roc_curves($/;"	f
+roc_curves_from_test_statistics	visualize.py	/^def roc_curves_from_test_statistics(test_statistics, field,$/;"	f
+rs	visualize.py	/^                rs = recalls[0:k]$/;"	v
+safe_char	utils/strings_utils.py	/^    def safe_char(c):$/;"	f	function:make_safe_filename
+sample	models/modules/recurrent_modules.py	/^    def sample(self, time, outputs, name=None, **unused_kwargs):$/;"	m	class:TimeseriesTrainingHelper
+sampled_softmax_cross_entropy	models/modules/loss_modules.py	/^def sampled_softmax_cross_entropy(output_placeholder, feature_hidden, logits,$/;"	f
+save	api.py	/^    def save(self, save_path):$/;"	m	class:LudwigModel
+save	models/model.py	/^    def save(self, filepath):$/;"	m	class:ProgressTracker
+save_array	utils/data_utils.py	/^def save_array(data_fp, array):$/;"	f
+save_csv	utils/data_utils.py	/^def save_csv(data_fp, data):$/;"	f
+save_hdf5	utils/data_utils.py	/^def save_hdf5(data_fp, data, metadata=None):$/;"	f
+save_hyperparameters	models/model.py	/^    def save_hyperparameters(self, hyperparameters, save_path):$/;"	m	class:Model
+save_json	utils/data_utils.py	/^def save_json(data_fp, data, sort_keys=True, indent=4):$/;"	f
+save_object	utils/data_utils.py	/^def save_object(object_fp, obj):$/;"	f
+save_path	train.py	/^        save_path=model_dir,$/;"	v
+save_path	train.py	/^        save_path=save_path,$/;"	v
+save_prediction_outputs	predict.py	/^def save_prediction_outputs($/;"	f
+save_tensors	collect.py	/^def save_tensors(collected_tensors, experiment_dir_name):$/;"	f
+save_test_statistics	predict.py	/^def save_test_statistics(test_stats, experiment_dir_name):$/;"	f
+save_weights	models/model.py	/^    def save_weights(self, session, save_path):$/;"	m	class:Model
+scores	visualize.py	/^        scores = []$/;"	v
+scores_alg	visualize.py	/^            scores_alg = []$/;"	v
+selected_acc	visualize.py	/^        selected_acc = acc_matrix.copy()$/;"	v
+sensitivity	utils/metrics_utils.py	/^    def sensitivity(self, idx):$/;"	m	class:ConfusionMatrix
+seq2seq_sequence_loss	models/modules/loss_modules.py	/^def seq2seq_sequence_loss(targets, targets_sequence_length, logits,$/;"	f
+sequence_decoder_registry	features/sequence_feature.py	/^sequence_decoder_registry = {$/;"	v
+sequence_encoder_registry	features/sequence_feature.py	/^sequence_encoder_registry = {$/;"	v
+sequence_encoder_registry	models/combiners.py	/^sequence_encoder_registry = {$/;"	v
+sequence_length_2D	utils/tf_utils.py	/^def sequence_length_2D(sequence):$/;"	f
+sequence_length_3D	utils/tf_utils.py	/^def sequence_length_3D(sequence):$/;"	f
+sequence_loss	features/sequence_feature.py	/^    def sequence_loss($/;"	m	class:SequenceOutputFeature
+sequence_matrix	utils/strings_utils.py	/^    sequence_matrix = np.full((len(sequences), max_length),$/;"	v
+sequence_measures	features/sequence_feature.py	/^    def sequence_measures($/;"	m	class:SequenceOutputFeature
+sequence_predictions	features/sequence_feature.py	/^    def sequence_predictions($/;"	m	class:SequenceOutputFeature
+sequence_sampled_softmax_cross_entropy	models/modules/loss_modules.py	/^def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,$/;"	f
+set_dataset	data/dataset.py	/^    def set_dataset(self, dataset):$/;"	m	class:Dataset
+set_default_value	utils/misc.py	/^def set_default_value(dictionary, key, value):$/;"	f
+set_disable_progressbar	globals.py	/^def set_disable_progressbar(value):$/;"	f
+set_epochs_to_1_or_quit	models/model.py	/^    def set_epochs_to_1_or_quit(self, signum, frame):$/;"	m	class:Model
+set_on_master	globals.py	/^def set_on_master(use_horovod):$/;"	f
+set_random_seed	utils/misc.py	/^def set_random_seed(random_seed):$/;"	f
+set_str_to_idx	features/feature_utils.py	/^def set_str_to_idx(set_string, feature_dict, format_func):$/;"	f
+should_close_session	experiment.py	/^        should_close_session=False,$/;"	v
+should_regularize	features/feature_utils.py	/^def should_regularize(regularize_layers):$/;"	f
+shuffle	utils/batcher.py	/^    def shuffle(self, buckets_idcs):$/;"	m	class:BucketedBatcher
+shuffle_dict_unison_inplace	utils/data_utils.py	/^def shuffle_dict_unison_inplace(np_dict, random_state=None):$/;"	f
+shuffle_inplace	utils/data_utils.py	/^def shuffle_inplace(np_dict):$/;"	f
+shuffle_training	data/preprocessing.py	/^                shuffle_training=False$/;"	v
+shuffle_training	data/preprocessing.py	/^            shuffle_training=True$/;"	v
+shuffle_unison_inplace	utils/data_utils.py	/^def shuffle_unison_inplace(list_of_lists, random_state=None):$/;"	f
+sigmoid_cross_entropy_with_class_weighting	models/modules/loss_modules.py	/^def sigmoid_cross_entropy_with_class_weighting(logits, multi_class_labels,$/;"	f
+simple_memory_attention	models/modules/attention_modules.py	/^def simple_memory_attention(current_inputs, context):$/;"	f
+skip_output_types	predict.py	/^        skip_output_types = set()$/;"	v
+skip_save_log	experiment.py	/^        skip_save_log=skip_save_log,$/;"	v
+skip_save_log	train.py	/^        skip_save_log=skip_save_log,$/;"	v
+skip_save_model	experiment.py	/^        skip_save_model=skip_save_model,$/;"	v
+skip_save_model	train.py	/^        skip_save_model=skip_save_model,$/;"	v
+skip_save_processed_input	experiment.py	/^        skip_save_processed_input=skip_save_processed_input,$/;"	v
+skip_save_processed_input	train.py	/^        skip_save_processed_input=skip_save_processed_input,$/;"	v
+skip_save_progress	experiment.py	/^        skip_save_progress=skip_save_progress,$/;"	v
+skip_save_progress	train.py	/^        skip_save_progress=skip_save_progress,$/;"	v
+skip_save_unprocessed_output	data/postprocessing.py	/^            skip_save_unprocessed_output=skip_save_unprocessed_output$/;"	v
+skip_save_unprocessed_output	data/postprocessing.py	/^        skip_save_unprocessed_output=skip_save_unprocessed_output$/;"	v
+softmax	utils/math_utils.py	/^def softmax(x, temperature=1.0):$/;"	f
+softmax_cross_entropy_with_class_weighting	models/modules/loss_modules.py	/^def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,$/;"	f
+sorted_indices	visualize.py	/^            sorted_indices = f1_np.argsort()$/;"	v
+specificity	utils/metrics_utils.py	/^    def specificity(self, idx):$/;"	m	class:ConfusionMatrix
+split	data/preprocessing.py	/^            split = np.random.choice($/;"	v
+split	data/preprocessing.py	/^            split = np.zeros(len(dataset_df))$/;"	v
+split	data/preprocessing.py	/^        split = dataset_df['split']$/;"	v
+split	data/preprocessing.py	/^    split = hdf5_data['split'].value$/;"	v
+split	data/split_dataset.py	/^def split(input_path, output1, output2, split):$/;"	f
+split_data	data/preprocessing.py	/^                split_data=False$/;"	v
+split_data	data/preprocessing.py	/^            split_data=False$/;"	v
+split_data	utils/data_utils.py	/^def split_data(split, data):$/;"	f
+split_dataset	utils/data_utils.py	/^def split_dataset(dataset, split, value_to_split=0):$/;"	f
+split_dataset_tvt	utils/data_utils.py	/^def split_dataset_tvt(dataset, split):$/;"	f
+split_probabilities	data/preprocessing.py	/^        split_probabilities=global_preprocessing_parameters[$/;"	v
+squared_error	models/modules/measure_modules.py	/^def squared_error(targets, predictions, output_feature_name):$/;"	f
+staircase	models/modules/optimization_modules.py	/^            staircase=training_parameters['staircase'])$/;"	v
+stats	utils/metrics_utils.py	/^    def stats(self):$/;"	m	class:ConfusionMatrix
+step	models/modules/recurrent_modules.py	/^    def step(self, time, inputs, state, name=None):$/;"	m	class:BasicDecoder
+str2bool	utils/strings_utils.py	/^def str2bool(v):$/;"	f
+str2freq	utils/strings_utils.py	/^    str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for$/;"	v
+str2idx	utils/strings_utils.py	/^    str2idx = {unit: i for i, unit in enumerate(vocab)}$/;"	v
+stratify	data/preprocessing.py	/^        stratify=global_preprocessing_parameters['stratify'],$/;"	v
+strdelta	utils/time_utils.py	/^def strdelta(tdelta):$/;"	f
+strip_accents	utils/strings_utils.py	/^def strip_accents(s):$/;"	f
+strip_tags	utils/html_utils.py	/^def strip_tags(html):$/;"	f
+subset_indices	visualize.py	/^                subset_indices = np.argmax(prob, axis=1) == curr_k$/;"	v
+subset_indices	visualize.py	/^            subset_indices = np.argmax(prob, axis=1) < k$/;"	v
+subset_indices	visualize.py	/^        subset_indices = gt < k$/;"	v
+subset_indices	visualize.py	/^        subset_indices = gt > 0$/;"	v
+subset_indices	visualize.py	/^    subset_indices = gt > 0$/;"	v
+suffix	collect.py	/^    suffix = 0$/;"	v
+suffix	predict.py	/^    suffix = 0$/;"	v
+suffix	train.py	/^        suffix = 0$/;"	v
+sum_dicts	utils/misc.py	/^def sum_dicts(dicts, dict_type=dict):$/;"	f
+supported_metrics	visualize.py	/^    supported_metrics = {'f1', 'precision', 'recall', 'accuracy'}$/;"	v
+t1_maxes	visualize.py	/^    t1_maxes = [1]$/;"	v
+t2_maxes	visualize.py	/^    t2_maxes = [1]$/;"	v
+table	visualize.py	/^    table = [[name_t1, name_t2, 'coverage', ACCURACY]]$/;"	v
+test	api.py	/^    def test($/;"	m	class:LudwigModel
+test	cli.py	/^    def test(self):$/;"	m	class:CLI
+test	contribs/comet.py	/^    def test(self, *args, **kwargs):$/;"	m	class:Comet
+test_dataset	data/preprocessing.py	/^        test_dataset = Dataset($/;"	v
+test_dataset	data/preprocessing.py	/^    test_dataset = None$/;"	v
+test_predict	api.py	/^def test_predict($/;"	f
+test_results	experiment.py	/^        test_results = predict($/;"	v
+test_set	data/preprocessing.py	/^            test_set = None$/;"	v
+test_set	data/preprocessing.py	/^            test_set = load_data($/;"	v
+test_set	train.py	/^        test_set=test_set,$/;"	v
+test_statistics_per_model_name	visualize.py	/^    test_statistics_per_model_name = [load_json(test_statistics_f)$/;"	v
+test_stats	predict.py	/^    test_stats = model.predict($/;"	v
+test_train	api.py	/^def test_train($/;"	f
+test_train_online	api.py	/^def test_train_online($/;"	f
+text	utils/nlp_utils.py	/^    text = 'Hello John, how are you doing my good old friend? Are you still number 732 in the list? Did you pay $32.43 or 54.21 for the book?'$/;"	v
+text_data_field	data/preprocessing.py	/^            text_data_field = text_feature_data_field(input_feature)$/;"	v
+text_feature_data_field	utils/data_utils.py	/^def text_feature_data_field(text_feature):$/;"	f
+threshold	visualize.py	/^                threshold = threshold if threshold < 1 else 0.99$/;"	v
+threshold	visualize.py	/^                threshold = threshold if threshold < 1 else 0.999$/;"	v
+threshold	visualize.py	/^            threshold = threshold if threshold < 1 else 0.999$/;"	v
+threshold_1	visualize.py	/^        threshold_1 = threshold_1 if threshold_1 < 1 else 0.999$/;"	v
+threshold_2	visualize.py	/^            threshold_2 = threshold_2 if threshold_2 < 1 else 0.999$/;"	v
+threshold_indices	visualize.py	/^        threshold_indices = np.unravel_index(np.argmax(selected_acc, axis=None),$/;"	v
+threshold_vs_metric_plot	utils/visualization_utils.py	/^def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,$/;"	f
+thresholds	visualize.py	/^    thresholds = [t \/ 100 for t in range(0, 101, 5)]$/;"	v
+tic	utils/time_utils.py	/^    def tic(self):$/;"	m	class:Timer
+timestamp	utils/time_utils.py	/^def timestamp():$/;"	f
+title	visualize.py	/^                        title='Classes ranked by entropy of '$/;"	v
+title	visualize.py	/^                    title='{} Multiclass Precision \/ Recall \/ '$/;"	v
+title	visualize.py	/^                title='{} F1 Score vs Frequency {}'.format($/;"	v
+title	visualize.py	/^                title='{} Multiclass Precision \/ Recall \/ '$/;"	v
+title	visualize.py	/^                title='{} Multiclass Precision \/ Recall \/ F1 Score '$/;"	v
+title	visualize.py	/^                title='{} Multiclass Precision \/ Recall \/ F1 Score worst '$/;"	v
+title	visualize.py	/^            title='Binary threshold vs {}'.format(metric)$/;"	v
+title	visualize.py	/^            title='Confidence_Thresholding (Data vs Accuracy) '$/;"	v
+title	visualize.py	/^        title = 'Classifier performance on first {} class{} ({:.2f}%)'.format($/;"	v
+title	visualize.py	/^        title = 'Classifier performance on first {} class{}'.format($/;"	v
+title	visualize.py	/^        title='Classifier comparison (hits@k)'$/;"	v
+title	visualize.py	/^        title='Confidence_Thresholding (Data vs Accuracy)'$/;"	v
+title	visualize.py	/^        title='Confidence_Thresholding'$/;"	v
+title	visualize.py	/^        title='Coverage vs Accuracy & Threshold'$/;"	v
+title	visualize.py	/^        title='Coverage vs Accuracy, two thresholds'$/;"	v
+title	visualize.py	/^        title='{} vs {}'.format(name_c1, name_c2)$/;"	v
+title	visualize.py	/^        title=title$/;"	v
+title	visualize.py	/^    title = None$/;"	v
+tmp_str	visualize.py	/^            tmp_str = '{0} best 5 classes: '.format(field)$/;"	v
+tmp_str	visualize.py	/^            tmp_str = '{0} number of classes with f1 score > 0: '.format(field)$/;"	v
+tmp_str	visualize.py	/^            tmp_str = '{0} worst 5 classes: '.format(field)$/;"	v
+to_sparse	utils/tf_utils.py	/^def to_sparse(tensor, lengths, max_length):$/;"	f
+toc	utils/time_utils.py	/^    def toc(self):$/;"	m	class:Timer
+tocproc	utils/time_utils.py	/^    def tocproc(self):$/;"	m	class:Timer
+token_accuracy	utils/metrics_utils.py	/^    def token_accuracy(self):$/;"	m	class:ConfusionMatrix
+tokenizer	utils/strings_utils.py	/^        tokenizer = get_from_registry($/;"	v
+tokenizer	utils/strings_utils.py	/^    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)($/;"	v
+tokenizer_registry	utils/strings_utils.py	/^tokenizer_registry = {$/;"	v
+top1	visualize.py	/^        top1 = prob[:, -1]$/;"	v
+top1_subset	visualize.py	/^        top1_subset = prob_subset[:, -1]$/;"	v
+top3_subset	visualize.py	/^        top3_subset = prob_subset[:, -3:]$/;"	v
+topk	visualize.py	/^        topk = prob[:, -k:]$/;"	v
+topological_sort	utils/algorithms_utils.py	/^def topological_sort(graph_unsorted):$/;"	f
+topological_sort_feature_dependencies	utils/algorithms_utils.py	/^def topological_sort_feature_dependencies(features):$/;"	f
+train	api.py	/^    def train($/;"	m	class:LudwigModel
+train	cli.py	/^    def train(self):$/;"	m	class:CLI
+train	contribs/comet.py	/^    def train(self, *args, **kwargs):$/;"	m	class:Comet
+train	models/model.py	/^    def train($/;"	m	class:Model
+train	train.py	/^def train($/;"	f
+train_model	contribs/comet.py	/^    def train_model(self, *args, **kwargs):$/;"	m	class:Comet
+train_online	api.py	/^    def train_online($/;"	m	class:LudwigModel
+train_online	models/model.py	/^    def train_online($/;"	m	class:Model
+train_save	contribs/comet.py	/^    def train_save(self, *args, **kwargs):$/;"	m	class:Comet
+train_set_metadata	api.py	/^        train_set_metadata=train_set_metadata,$/;"	v
+train_set_metadata	data/preprocessing.py	/^                train_set_metadata=train_set_metadata$/;"	v
+train_set_metadata	data/preprocessing.py	/^        train_set_metadata = build_metadata($/;"	v
+train_set_metadata	data/preprocessing.py	/^        train_set_metadata = load_metadata(train_set_metadata_json)$/;"	v
+train_set_metadata	data/preprocessing.py	/^    train_set_metadata = load_metadata(train_set_metadata)$/;"	v
+train_set_metadata_fp	collect.py	/^    train_set_metadata_fp = os.path.join($/;"	v
+train_set_metadata_json	data/preprocessing.py	/^            train_set_metadata_json = train_set_metadata_json_fp$/;"	v
+train_set_metadata_json	experiment.py	/^        train_set_metadata_json=train_set_metadata_json,$/;"	v
+train_set_metadata_json	train.py	/^        train_set_metadata_json=train_set_metadata_json,$/;"	v
+train_set_metadata_json_fp	data/preprocessing.py	/^            train_set_metadata_json_fp = replace_file_extension($/;"	v
+train_set_metadata_json_fp	data/preprocessing.py	/^            train_set_metadata_json_fp = replace_file_extension(data_train_csv,$/;"	v
+train_set_metadata_json_fp	data/preprocessing.py	/^        train_set_metadata_json_fp = replace_file_extension($/;"	v
+train_set_metadata_json_fp	data/preprocessing.py	/^        train_set_metadata_json_fp = replace_file_extension(data_csv, 'json')$/;"	v
+train_set_metadata_json_fp	predict.py	/^    train_set_metadata_json_fp = os.path.join($/;"	v
+train_stats	api.py	/^    train_stats = ludwig_model.train($/;"	v
+train_stats	train.py	/^    train_stats = {$/;"	v
+training_dataset	data/preprocessing.py	/^    training_dataset = Dataset($/;"	v
+training_set	data/preprocessing.py	/^        training_set = data_utils.shuffle_dict_unison_inplace(training_set)$/;"	v
+training_set	data/preprocessing.py	/^        training_set = load_data($/;"	v
+training_set	train.py	/^        training_set=training_set,$/;"	v
+true_negative_rate	utils/metrics_utils.py	/^    def true_negative_rate(self, idx):$/;"	m	class:ConfusionMatrix
+true_negatives	utils/metrics_utils.py	/^    def true_negatives(self, idx):$/;"	m	class:ConfusionMatrix
+true_positive_rate	utils/metrics_utils.py	/^    def true_positive_rate(self, idx):$/;"	m	class:ConfusionMatrix
+true_positives	utils/metrics_utils.py	/^    def true_positives(self, idx):$/;"	m	class:ConfusionMatrix
+type	data/dataset_synthesyzer.py	/^        type=int,$/;"	v
+type	data/preprocessing.py	/^        type=int,$/;"	v
+type	data/preprocessing.py	/^        type=yaml.safe_load,$/;"	v
+type	data/split_dataset.py	/^        type=float,$/;"	v
+unit_counts	utils/strings_utils.py	/^    unit_counts = Counter()$/;"	v
+unit_indices_vector	utils/strings_utils.py	/^        unit_indices_vector = _get_sequence_vector($/;"	v
+unit_indices_vector	utils/strings_utils.py	/^    unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)$/;"	v
+unit_sequence	utils/strings_utils.py	/^    unit_sequence = tokenizer($/;"	v
+unit_vectors	utils/strings_utils.py	/^    unit_vectors = []$/;"	v
+update_model_definition_with_metadata	features/bag_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:BagInputFeature
+update_model_definition_with_metadata	features/base_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:InputFeature
+update_model_definition_with_metadata	features/base_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:OutputFeature
+update_model_definition_with_metadata	features/binary_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:BinaryInputFeature
+update_model_definition_with_metadata	features/binary_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:BinaryOutputFeature
+update_model_definition_with_metadata	features/category_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:CategoryInputFeature
+update_model_definition_with_metadata	features/category_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:CategoryOutputFeature
+update_model_definition_with_metadata	features/image_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:ImageInputFeature
+update_model_definition_with_metadata	features/numerical_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:NumericalInputFeature
+update_model_definition_with_metadata	features/numerical_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:NumericalOutputFeature
+update_model_definition_with_metadata	features/sequence_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:SequenceInputFeature
+update_model_definition_with_metadata	features/sequence_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:SequenceOutputFeature
+update_model_definition_with_metadata	features/set_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:SetInputFeature
+update_model_definition_with_metadata	features/set_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:SetOutputFeature
+update_model_definition_with_metadata	features/text_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:TextInputFeature
+update_model_definition_with_metadata	features/text_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:TextOutputFeature
+update_model_definition_with_metadata	features/timeseries_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:TimeseriesInputFeature
+update_model_definition_with_metadata	features/timeseries_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:TimeseriesOutputFeature
+update_model_definition_with_metadata	train.py	/^def update_model_definition_with_metadata(model_definition, train_set_metadata):$/;"	f
+update_ops	models/modules/optimization_modules.py	/^    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)$/;"	v
+update_output_stats	models/model.py	/^    def update_output_stats($/;"	m	class:Model
+update_output_stats_batch	models/model.py	/^    def update_output_stats_batch($/;"	m	class:Model
+upper	visualize.py	/^        upper = fixed_step_coverage[i + 1]$/;"	v
+use_horovod	experiment.py	/^        use_horovod=use_horovod,$/;"	v
+use_horovod	predict.py	/^                                                        use_horovod=use_horovod)$/;"	v
+use_horovod	train.py	/^            use_horovod=use_horovod,$/;"	v
+use_horovod	train.py	/^        use_horovod=use_horovod,$/;"	v
+val_list	data/preprocessing.py	/^                val_list = np.random.choice($/;"	v
+validation_dataset	data/preprocessing.py	/^        validation_dataset = Dataset($/;"	v
+validation_dataset	data/preprocessing.py	/^    validation_dataset = None$/;"	v
+validation_field	train.py	/^    validation_field = model_definition['training']['validation_field']$/;"	v
+validation_field_result	train.py	/^    validation_field_result = train_valisest_stats[validation_field]$/;"	v
+validation_measure	train.py	/^    validation_measure = model_definition['training']['validation_measure']$/;"	v
+validation_set	data/preprocessing.py	/^            validation_set = None$/;"	v
+validation_set	data/preprocessing.py	/^            validation_set = load_data($/;"	v
+validation_set	train.py	/^        validation_set=validation_set,$/;"	v
+visualize	cli.py	/^    def visualize(self):$/;"	m	class:CLI
+visualize	contribs/comet.py	/^    def visualize(self, *args, **kwargs):$/;"	m	class:Comet
+visualize_figure	contribs/comet.py	/^    def visualize_figure(self, fig):$/;"	m	class:Comet
+vocab	utils/strings_utils.py	/^        vocab = [PADDING_SYMBOL] + vocab$/;"	v
+vocab	utils/strings_utils.py	/^        vocab = [UNKNOWN_SYMBOL] + vocab$/;"	v
+vocab	utils/strings_utils.py	/^        vocab = [unit for unit, count in$/;"	v
+vocab	utils/strings_utils.py	/^        vocab = sorted(list(set(custom_vocabulary)))$/;"	v
+vocab_file	utils/strings_utils.py	/^        vocab_file=tokenizer_vocab_file$/;"	v
+wall	utils/time_utils.py	/^    def wall(self):$/;"	m	class:Timer
+weighted_softmax_cross_entropy	models/modules/loss_modules.py	/^def weighted_softmax_cross_entropy(logits, vector_labels, loss):$/;"	f
+y_label	visualize.py	/^        y_label='',$/;"	v
