@@ -73,17 +73,26 @@ def match_replace(string_to_match, list_regex):
     return string_to_match, matched
 
 
-def create_vocabulary(data, format='space', custom_vocabulary=(),
-                      add_unknown=True, add_padding=True,
-                      lowercase=True,
-                      num_most_frequent=None):
+def create_vocabulary(
+    data,
+    tokenizer_type='space',
+    custom_vocabulary=(),
+    add_unknown=True,
+    add_padding=True,
+    lowercase=True,
+    num_most_frequent=None,
+    vocab_file=None
+):
     max_line_length = 0
     unit_counts = Counter()
 
-    if format == 'custom':
+    if tokenizer_type == 'custom':
         vocab = sorted(list(set(custom_vocabulary)))
     else:
-        tokenizer = get_from_registry(format, tokenizer_registry)()
+        tokenizer = get_from_registry(
+            tokenizer_type,
+            tokenizer_registry
+        )(vocab_file=vocab_file)
         for line in data:
             processed_line = tokenizer(line.lower() if lowercase else line)
             unit_counts.update(processed_line)
@@ -104,8 +113,8 @@ def create_vocabulary(data, format='space', custom_vocabulary=(),
     return vocab, str2idx, str2freq, max_line_length
 
 
-def get_sequence_vector(sequence, format, unit_to_id, lowercase=True):
-    tokenizer = get_from_registry(format, tokenizer_registry)()
+def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
+    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)()
     format_dtype = int_type(len(unit_to_id) - 1)
     return _get_sequence_vector(
         sequence,
@@ -136,10 +145,19 @@ def _get_sequence_vector(
     return unit_indices_vector
 
 
-def build_sequence_matrix(sequences, inverse_vocabulary, format, length_limit,
-                          padding_symbol, padding='right',
-                          lowercase=True):
-    tokenizer = get_from_registry(format, tokenizer_registry)()
+def build_sequence_matrix(
+    sequences,
+    inverse_vocabulary,
+    tokenizer_type,
+    length_limit,
+    padding_symbol,
+    padding='right',
+    lowercase=True,
+    tokenizer_vocab_file=None,
+):
+    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+        vocab_file=tokenizer_vocab_file
+    )
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
     max_length = 0
@@ -702,6 +720,22 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
         )
 
 
+class BERTTokenizer(BaseTokenizer):
+    def __init__(self, vocab_file=None, **kwargs):
+
+        if vocab_file is None:
+            raise ValueError(
+                'Vocabulary file is required to initialize BERT tokenizer'
+            )
+
+        from bert.tokenization import FullTokenizer
+
+        self.tokenizer = FullTokenizer(vocab_file)
+
+    def __call__(self, text):
+        return self.tokenizer.tokenize(text)
+
+
 tokenizer_registry = {
     'characters': CharactersToListTokenizer,
     'space': SpaceStringToListTokenizer,
@@ -763,5 +797,6 @@ tokenizer_registry = {
     'multi_tokenize_remove_stopwords': MultiRemoveStopwordsTokenizer,
     'multi_lemmatize': MultiLemmatizeTokenizer,
     'multi_lemmatize_filter': MultiLemmatizeFilterTokenizer,
-    'multi_lemmatize_remove_stopwords': MultiLemmatizeRemoveStopwordsTokenizer
+    'multi_lemmatize_remove_stopwords': MultiLemmatizeRemoveStopwordsTokenizer,
+    'bert': BERTTokenizer
 }
