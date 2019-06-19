@@ -22,6 +22,7 @@ from ludwig.constants import SEQUENCE
 from ludwig.constants import SET
 from ludwig.constants import TEXT
 from ludwig.constants import TIMESERIES
+from ludwig.constants import AUDIO
 from ludwig.features.bag_feature import BagBaseFeature
 from ludwig.features.bag_feature import BagInputFeature
 from ludwig.features.binary_feature import BinaryBaseFeature
@@ -32,6 +33,8 @@ from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.features.category_feature import CategoryOutputFeature
 from ludwig.features.image_feature import ImageBaseFeature
 from ludwig.features.image_feature import ImageInputFeature
+from ludwig.features.audio_feature import AudioBaseFeature
+from ludwig.features.audio_feature import AudioInputFeature
 from ludwig.features.numerical_feature import NumericalBaseFeature
 from ludwig.features.numerical_feature import NumericalInputFeature
 from ludwig.features.numerical_feature import NumericalOutputFeature
@@ -56,7 +59,8 @@ base_type_registry = {
     NUMERICAL: NumericalBaseFeature,
     SEQUENCE: SequenceBaseFeature,
     TIMESERIES: TimeseriesBaseFeature,
-    IMAGE: ImageBaseFeature
+    IMAGE: ImageBaseFeature,
+    AUDIO: AudioBaseFeature
 }
 input_type_registry = {
     TEXT: TextInputFeature,
@@ -67,7 +71,8 @@ input_type_registry = {
     SEQUENCE: SequenceInputFeature,
     IMAGE: ImageInputFeature,
     TIMESERIES: TimeseriesInputFeature,
-    BAG: BagInputFeature
+    BAG: BagInputFeature,
+    AUDIO: AudioInputFeature
 }
 output_type_registry = {
     CATEGORY: CategoryOutputFeature,
