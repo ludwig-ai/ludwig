@@ -18,7 +18,7 @@ Other datasets available on the same webpage, like [OHSUMED](http://boston.lti.c
 
 ```
 ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv text_classification.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -221,7 +221,7 @@ Sentiment Analysis
 
 ```
 ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv sentiment.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -245,15 +245,15 @@ output_features:
 Image Classification
 ===
 
-| image_path                | class |
-|---------------------------|-------|
-| imagenet/image_000001.jpg | car   |
-| imagenet/image_000002.jpg | dog   |
-| imagenet/image_000003.jpg | boat  |
+| image_path              | class |
+|-------------------------|-------|
+| images/image_000001.jpg | car   |
+| images/image_000002.jpg | dog   |
+| images/image_000003.jpg | boat  |
 
 ```
 ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv image_classification.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -314,8 +314,8 @@ containing 60000 and 10000 examples correspondingly and having the following for
 From the directory where you have virtual environment with ludwig installed:
 ```
 ludwig train \
-  --data_train_csv <full_path_to_mnist_dataset_training_csv> \
-  --data_test_csv <full path to mnist_dataset_test.csv> \
+  --data_train_csv <PATH_TO_MNIST_DATASET_TRAINING_CSV> \
+  --data_test_csv <PATH_TO_MNIST_DATASET_TEST_CSV> \
   --model_definition_file model_definition.yaml
 ```
 
@@ -364,7 +364,7 @@ Image Captioning
 
 ```
 ludwig experiment \
---data_csv reuters-allcats.csv \
+--data_csv image captioning.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -390,7 +390,8 @@ output_features:
 One-shot Learning with Siamese Networks
 ===
 
-This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset. The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
+This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset.
+The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
 
 | image_path_1                     |   image_path_2                   | similarity |
 |----------------------------------|----------------------------------|------------|
@@ -447,6 +448,14 @@ Visual Question Answering
 | imdata/image_000003.jpg | What kind of utensil is in the glass bowl | knife  |
 
 
+```
+ludwig experiment \
+--data_csv vqa.csv \
+  --model_definition_file model_definition.yaml
+```
+
+With `model_definition.yaml`:
+
 ```yaml
 input_features:
     -
@@ -491,7 +500,7 @@ The full data and the column descriptions can be found [here](https://www.kaggle
 After downloading the data, to train a model on this dataset using Ludwig,
 ```
 ludwig experiment \
-  --data_csv PATH_TO_TITANIC_TRAIN.CSV \
+  --data_csv <PATH_TO_TITANIC_CSV> \
   --model_definition_file model_definition.yaml
 ```
 
@@ -690,11 +699,11 @@ output_features:
 Multi-label classification
 ===
 
-| image_path                | tags          |
-|---------------------------|---------------|
-| imagenet/image_000001.jpg | car man       |
-| imagenet/image_000002.jpg | happy dog tie |
-| imagenet/image_000003.jpg | boat water    |
+| image_path              | tags          |
+|-------------------------|---------------|
+| images/image_000001.jpg | car man       |
+| images/image_000002.jpg | happy dog tie |
+| images/image_000003.jpg | boat water    |
 
 ```
 ludwig experiment \
