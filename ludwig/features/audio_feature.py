@@ -32,7 +32,6 @@ from ludwig.utils.audio_utils import get_group_delay
 from ludwig.utils.audio_utils import get_phase_stft_magnitude
 from ludwig.utils.audio_utils import get_stft_magnitude
 from ludwig.utils.audio_utils import get_non_symmetric_length
-from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 
 
