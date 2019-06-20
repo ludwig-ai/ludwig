@@ -18,6 +18,7 @@ from math import floor, ceil
 
 import os
 import numpy as np
+import ipdb
 from scipy.signal.windows import get_window
 from scipy.signal import lfilter
 
@@ -40,13 +41,11 @@ def get_group_delay(raw_data, sampling_rate_in_hz, window_length_in_s, window_sh
     denominator = np.square(np.abs(X_stft_transform))
     group_delay = np.divide(nominator, denominator + 1e-10)
     assert not np.isnan(group_delay).any(), 'There are NaN values in group delay'
-    group_delay_non_symmetric = get_non_symmetric_data(group_delay)
-    return np.transpose(group_delay_non_symmetric)
+    return np.transpose(group_delay)
 
 def get_phase_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type):  
     stft = get_stft(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)  
-    non_symmetric_stft = get_non_symmetric_data(stft)
-    abs_stft = np.abs(non_symmetric_stft)
+    abs_stft = np.abs(stft)
     phase = np.angle(stft)
     stft_phase = np.concatenate((phase, abs_stft), axis=1)
     return np.transpose(stft_phase)
