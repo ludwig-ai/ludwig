@@ -21,7 +21,6 @@ import h5py
 import numpy as np
 import tensorflow as tf
 import soundfile
-import ipdb
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -232,7 +231,6 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
         placeholder = self._get_input_placeholder()
         logger.debug('  placeholder: {0}'.format(placeholder))
 
-        ipdb.set_trace()
         return self.build_sequence_input(
                 placeholder, 
                 self.encoder_obj,
