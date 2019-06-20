@@ -1,4 +1,115 @@
-<!doctype html><html lang="en" class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="description" content="Deep learning toolbox"><link rel="canonical" href="https://uber.github.io/ludwig/user_guide/"><meta name="author" content="Piero Molino"><meta name="lang:clipboard.copy" content="Copy to clipboard"><meta name="lang:clipboard.copied" content="Copied to clipboard"><meta name="lang:search.language" content="en"><meta name="lang:search.pipeline.stopwords" content="True"><meta name="lang:search.pipeline.trimmer" content="True"><meta name="lang:search.result.none" content="No matching documents"><meta name="lang:search.result.one" content="1 matching document"><meta name="lang:search.result.other" content="# matching documents"><meta name="lang:search.tokenizer" content="[\s\-]+"><link rel="shortcut icon" href="../favicon.ico"><meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.3.1"><title>User Guide - Ludwig</title><link rel="stylesheet" href="../assets/stylesheets/application.4031d38b.css"><link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css"><meta name="theme-color" content="#757575"><script src="../assets/javascripts/modernizr.74668098.js"></script><link href="https://fonts.gstatic.com" rel="preconnect" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=swap"><style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style><link rel="stylesheet" href="../assets/fonts/material-icons.css"><link rel="stylesheet" href="../stylesheets/extra.css"><link rel="stylesheet" href="../stylesheets/monokai.css"></head><body dir="ltr" data-md-color-primary="grey" data-md-color-accent="grey"><svg class="md-svg"><defs><svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg></defs></svg> <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off"> <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off"> <label class="md-overlay" data-md-component="overlay" for="__drawer"></label><a href="#command-line-interface" tabindex="1" class="md-skip">Skip to content </a><header class="md-header" data-md-component="header">
+<!doctype html>
+<html class="no-js" lang="en">
+<head>
+
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1" name="viewport">
+    <meta content="ie=edge" http-equiv="x-ua-compatible">
+
+    <meta content="Deep learning toolbox" name="description">
+
+
+    <link href="https://uber.github.io/ludwig/user_guide/" rel="canonical">
+
+
+    <meta content="Piero Molino" name="author">
+
+
+    <meta content="Copy to clipboard" name="lang:clipboard.copy">
+
+    <meta content="Copied to clipboard" name="lang:clipboard.copied">
+
+    <meta content="en" name="lang:search.language">
+
+    <meta content="True" name="lang:search.pipeline.stopwords">
+
+    <meta content="True" name="lang:search.pipeline.trimmer">
+
+    <meta content="No matching documents" name="lang:search.result.none">
+
+    <meta content="1 matching document" name="lang:search.result.one">
+
+    <meta content="# matching documents" name="lang:search.result.other">
+
+    <meta content="[\s\-]+" name="lang:search.tokenizer">
+
+    <link href="../favicon.ico" rel="shortcut icon">
+    <meta content="mkdocs-1.0.4, mkdocs-material-4.2.0" name="generator">
+
+
+    <title>User Guide - Ludwig</title>
+
+
+    <link href="../assets/stylesheets/application.750b69bd.css" rel="stylesheet">
+
+    <link href="../assets/stylesheets/application-palette.224b79ff.css" rel="stylesheet">
+
+
+    <meta content="#757575" name="theme-color">
+
+
+    <script src="../assets/javascripts/modernizr.74668098.js"></script>
+
+
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono" rel="stylesheet">
+    <style>body, input {
+        font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif
+    }
+
+    code, kbd, pre {
+        font-family: "Roboto Mono", "Courier New", Courier, monospace
+    }</style>
+
+
+    <link href="../assets/fonts/material-icons.css" rel="stylesheet">
+
+
+    <link href="../stylesheets/extra.css" rel="stylesheet">
+
+    <link href="../stylesheets/monokai.css" rel="stylesheet">
+
+
+</head>
+
+
+<body data-md-color-accent="grey" data-md-color-primary="grey" dir="ltr">
+
+<svg class="md-svg">
+    <defs>
+
+
+        <svg height="448" id="__github" viewBox="0 0 416 448"
+             width="416" xmlns="http://www.w3.org/2000/svg">
+            <path d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" fill="currentColor"/>
+        </svg>
+
+    </defs>
+</svg>
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox">
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox">
+<label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+
+<a class="md-skip" href="#command-line-interface" tabindex="1">
+    Skip to content
+</a>
+
+
+<header class="md-header" data-md-component="header">
     <nav class="md-header-nav md-grid">
         <div class="md-flex">
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -23,20 +134,71 @@
                 
                 
                 <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-                <div class="md-search" data-md-component="search" role="dialog"><label class="md-search__overlay" for="__search"></label><div class="md-search__inner" role="search"><form class="md-search__form" name="search"><input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active"> <label class="md-icon md-search__icon" for="__search"></label> <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">&#xE5CD;</button></form><div class="md-search__output"><div class="md-search__scrollwrap" data-md-scrollfix><div class="md-search-result" data-md-component="result"><div class="md-search-result__meta">Type to start searching</div><ol class="md-search-result__list"></ol></div></div></div></div></div>
-                
-                
+
+                <div class="md-search" data-md-component="search" role="dialog">
+                    <label class="md-search__overlay" for="__search"></label>
+                    <div class="md-search__inner" role="search">
+                        <form class="md-search__form" name="search">
+                            <input autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input"
+                                   data-md-component="query" data-md-state="active" name="query" placeholder="Search"
+                                   spellcheck="false" type="text">
+                            <label class="md-icon md-search__icon" for="__search"></label>
+                            <button class="md-icon md-search__icon" data-md-component="reset" tabindex="-1"
+                                    type="reset">
+                                &#xE5CD;
+                            </button>
+                        </form>
+                        <div class="md-search__output">
+                            <div class="md-search__scrollwrap" data-md-scrollfix>
+                                <div class="md-search-result" data-md-component="result">
+                                    <div class="md-search-result__meta">
+                                        Type to start searching
+                                    </div>
+                                    <ol class="md-search-result__list"></ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
             
             <div class="md-flex__cell md-flex__cell--shrink">
                 <div class="md-header-nav__source">
-                    <a href="https://github.com/uber/ludwig/" title="Go to repository" class="md-source" data-md-source="github"><div class="md-source__icon"><svg viewBox="0 0 24 24" width="24" height="24"><use xlink:href="#__github" width="24" height="24"></use></svg></div><div class="md-source__repository">uber/ludwig</div></a>
+
+
+                    <a class="md-source" data-md-source="github" href="https://github.com/uber/ludwig/"
+                       title="Go to repository">
+
+                        <div class="md-source__icon">
+                            <svg height="24" viewBox="0 0 24 24" width="24">
+                                <use height="24" width="24" xlink:href="#__github"></use>
+                            </svg>
+                        </div>
+
+                        <div class="md-source__repository">
+                            uber/ludwig
+                        </div>
+                    </a>
                 </div>
             </div>
             
         </div>
     </nav>
-</header><div class="md-container"><main class="md-main"><div class="md-main__inner md-grid" data-md-component="container"><div class="md-sidebar md-sidebar--primary" data-md-component="navigation"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--primary" data-md-level="0">
+</header>
+
+<div class="md-container">
+
+
+    <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+
+
+            <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                    <div class="md-sidebar__inner">
+                        <nav class="md-nav md-nav--primary" data-md-level="0">
     <label class="md-nav__title md-nav__title--site" for="__drawer">
         <a class="md-nav__button md-logo" href="https://uber.github.io/ludwig/"
            title="Ludwig">
@@ -45,41 +207,2362 @@
     </label>
     
     <div class="md-nav__source">
-        <a href="https://github.com/uber/ludwig/" title="Go to repository" class="md-source" data-md-source="github"><div class="md-source__icon"><svg viewBox="0 0 24 24" width="24" height="24"><use xlink:href="#__github" width="24" height="24"></use></svg></div><div class="md-source__repository">uber/ludwig</div></a>
+
+
+        <a class="md-source" data-md-source="github" href="https://github.com/uber/ludwig/" title="Go to repository">
+
+            <div class="md-source__icon">
+                <svg height="24" viewBox="0 0 24 24" width="24">
+                    <use height="24" width="24" xlink:href="#__github"></use>
+                </svg>
+            </div>
+
+            <div class="md-source__repository">
+                uber/ludwig
+            </div>
+        </a>
     </div>
-    
+
+                            <ul class="md-nav__list" data-md-scrollfix>
+
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href=".." title="About">
+                                        About
+                                    </a>
+                                </li>
+
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="../getting_started/" title="Getting Started">
+                                        Getting Started
+                                    </a>
+                                </li>
+
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="../examples/" title="Examples">
+                                        Examples
+                                    </a>
+                                </li>
+
+
+                                <li class="md-nav__item md-nav__item--active">
+
+                                    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" id="__toc"
+                                           type="checkbox">
+
+
+                                    <label class="md-nav__link md-nav__link--active" for="__toc">
+                                        User Guide
+                                    </label>
+
+                                    <a class="md-nav__link md-nav__link--active" href="./" title="User Guide">
+                                        User Guide
+                                    </a>
+
+
+                                    <nav class="md-nav md-nav--secondary">
+
+
+                                        <label class="md-nav__title" for="__toc">Table of contents</label>
+                                        <ul class="md-nav__list" data-md-scrollfix>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#command-line-interface"
+                                                   title="Command Line Interface">
+                                                    Command Line Interface
+                                                </a>
+
+                                                <nav class="md-nav">
+                                                    <ul class="md-nav__list">
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#train" title="train">
+                                                                train
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#predict" title="predict">
+                                                                predict
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#test" title="test">
+                                                                test
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#experiment"
+                                                               title="experiment">
+                                                                experiment
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#visualize" title="visualize">
+                                                                visualize
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#collect_weights"
+                                                               title="collect_weights">
+                                                                collect_weights
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#collect_activations"
+                                                               title="collect_activations">
+                                                                collect_activations
+                                                            </a>
+
+                                                        </li>
+
+                                                    </ul>
+                                                </nav>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#data-preprocessing"
+                                                   title="Data Preprocessing">
+                                                    Data Preprocessing
+                                                </a>
+
+                                                <nav class="md-nav">
+                                                    <ul class="md-nav__list">
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#csv-format"
+                                                               title="CSV Format">
+                                                                CSV Format
+                                                            </a>
+
+                                                        </li>
+
+                                                    </ul>
+                                                </nav>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#data-postprocessing"
+                                                   title="Data Postprocessing">
+                                                    Data Postprocessing
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#model-definition"
+                                                   title="Model Definition">
+                                                    Model Definition
+                                                </a>
+
+                                                <nav class="md-nav">
+                                                    <ul class="md-nav__list">
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#input-features"
+                                                               title="Input features">
+                                                                Input features
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#combiner" title="Combiner">
+                                                                Combiner
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#output-features"
+                                                               title="Output Features">
+                                                                Output Features
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#output-features-dependencies"
+                                                               title="Output Features Dependencies">
+                                                                Output Features Dependencies
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#training" title="Training">
+                                                                Training
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#optimizers-details"
+                                                                           title="Optimizers details">
+                                                                            Optimizers details
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#preprocessing"
+                                                               title="Preprocessing">
+                                                                Preprocessing
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#binary-features"
+                                                               title="Binary Features">
+                                                                Binary Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#binary-features-preprocessing"
+                                                                           title="Binary Features Preprocessing">
+                                                                            Binary Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#binary-input-features-and-encoders"
+                                                                           title="Binary Input Features and Encoders">
+                                                                            Binary Input Features and Encoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#binary-output-features-and-decoders"
+                                                                           title="Binary Output Features and Decoders">
+                                                                            Binary Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#binary-features-measures"
+                                                                           title="Binary Features Measures">
+                                                                            Binary Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#numerical-features"
+                                                               title="Numerical Features">
+                                                                Numerical Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#numerical-features-preprocessing"
+                                                                           title="Numerical Features Preprocessing">
+                                                                            Numerical Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#numerical-input-features-and-encoders"
+                                                                           title="Numerical Input Features and Encoders">
+                                                                            Numerical Input Features and Encoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#numerical-output-features-and-decoders"
+                                                                           title="Numerical Output Features and Decoders">
+                                                                            Numerical Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#numerical-features-measures"
+                                                                           title="Numerical Features Measures">
+                                                                            Numerical Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#category-features"
+                                                               title="Category Features">
+                                                                Category Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#category-features-preprocessing"
+                                                                           title="Category Features Preprocessing">
+                                                                            Category Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#category-input-features-and-encoders"
+                                                                           title="Category Input Features and Encoders">
+                                                                            Category Input Features and Encoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#category-output-features-and-decoders"
+                                                                           title="Category Output Features and Decoders">
+                                                                            Category Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#category-features-measures"
+                                                                           title="Category Features Measures">
+                                                                            Category Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#set-features"
+                                                               title="Set Features">
+                                                                Set Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#set-features-preprocessing"
+                                                                           title="Set Features Preprocessing">
+                                                                            Set Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#set-input-features-and-encoders"
+                                                                           title="Set Input Features and Encoders">
+                                                                            Set Input Features and Encoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#set-output-features-and-decoders"
+                                                                           title="Set Output Features and Decoders">
+                                                                            Set Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#set-features-measures"
+                                                                           title="Set Features Measures">
+                                                                            Set Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#bag-features"
+                                                               title="Bag Features">
+                                                                Bag Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#bag-features-preprocessing"
+                                                                           title="Bag Features Preprocessing">
+                                                                            Bag Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#bag-input-features-and-encoders"
+                                                                           title="Bag Input Features and Encoders">
+                                                                            Bag Input Features and Encoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#bag-output-features-and-decoders"
+                                                                           title="Bag Output Features and Decoders">
+                                                                            Bag Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#bag-features-measures"
+                                                                           title="Bag Features Measures">
+                                                                            Bag Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#sequence-features"
+                                                               title="Sequence Features">
+                                                                Sequence Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#sequence-features-preprocessing"
+                                                                           title="Sequence Features Preprocessing">
+                                                                            Sequence Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#sequence-input-features-and-encoders"
+                                                                           title="Sequence Input Features and Encoders">
+                                                                            Sequence Input Features and Encoders
+                                                                        </a>
+
+                                                                        <nav class="md-nav">
+                                                                            <ul class="md-nav__list">
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#embed-encoder"
+                                                                                       title="Embed Encoder">
+                                                                                        Embed Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#parallel-cnn-encoder"
+                                                                                       title="Parallel CNN Encoder">
+                                                                                        Parallel CNN Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#stacked-cnn-encoder"
+                                                                                       title="Stacked CNN Encoder">
+                                                                                        Stacked CNN Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#stacked-parallel-cnn-encoder"
+                                                                                       title="Stacked Parallel CNN Encoder">
+                                                                                        Stacked Parallel CNN Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#rnn-encoder"
+                                                                                       title="RNN Encoder">
+                                                                                        RNN Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#cnn-rnn-encoder"
+                                                                                       title="CNN RNN Encoder">
+                                                                                        CNN RNN Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#passthrough-encoder"
+                                                                                       title="Passthrough Encoder">
+                                                                                        Passthrough Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                            </ul>
+                                                                        </nav>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#sequence-output-features-and-decoders"
+                                                                           title="Sequence Output Features and Decoders">
+                                                                            Sequence Output Features and Decoders
+                                                                        </a>
+
+                                                                        <nav class="md-nav">
+                                                                            <ul class="md-nav__list">
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#tagger-decoder"
+                                                                                       title="Tagger Decoder">
+                                                                                        Tagger Decoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#generator-decoder"
+                                                                                       title="Generator Decoder">
+                                                                                        Generator Decoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                            </ul>
+                                                                        </nav>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#sequence-features-measures"
+                                                                           title="Sequence Features Measures">
+                                                                            Sequence Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#text-features"
+                                                               title="Text Features">
+                                                                Text Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#text-features-preprocessing"
+                                                                           title="Text Features Preprocessing">
+                                                                            Text Features Preprocessing
+                                                                        </a>
+
+                                                                        <nav class="md-nav">
+                                                                            <ul class="md-nav__list">
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#spacy-based-word-format-options"
+                                                                                       title="spaCy based word format options">
+                                                                                        spaCy based word format options
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                            </ul>
+                                                                        </nav>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#text-input-features-and-encoders"
+                                                                           title="Text Input Features and Encoders">
+                                                                            Text Input Features and Encoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#text-output-features-and-decoders"
+                                                                           title="Text Output Features and Decoders">
+                                                                            Text Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#text-features-measures"
+                                                                           title="Text Features Measures">
+                                                                            Text Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#time-series-features"
+                                                               title="Time Series Features">
+                                                                Time Series Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#time-series-features-preprocessing"
+                                                                           title="Time Series Features Preprocessing">
+                                                                            Time Series Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#time-series-input-features-and-encoders"
+                                                                           title="Time Series Input Features and Encoders">
+                                                                            Time Series Input Features and Encoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#time-series-output-features-and-decoders"
+                                                                           title="Time Series Output Features and Decoders">
+                                                                            Time Series Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#time-series-features-measures"
+                                                                           title="Time Series Features Measures">
+                                                                            Time Series Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#image-features"
+                                                               title="Image Features">
+                                                                Image Features
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#image-features-preprocessing"
+                                                                           title="Image Features Preprocessing">
+                                                                            Image Features Preprocessing
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#image-input-features-and-encoders"
+                                                                           title="Image Input Features and Encoders">
+                                                                            Image Input Features and Encoders
+                                                                        </a>
+
+                                                                        <nav class="md-nav">
+                                                                            <ul class="md-nav__list">
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#convolutional-stack-encoder"
+                                                                                       title="Convolutional Stack Encoder">
+                                                                                        Convolutional Stack Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                                <li class="md-nav__item">
+                                                                                    <a class="md-nav__link"
+                                                                                       href="#resnet-encoder"
+                                                                                       title="ResNet Encoder">
+                                                                                        ResNet Encoder
+                                                                                    </a>
+
+                                                                                </li>
+
+                                                                            </ul>
+                                                                        </nav>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#image-output-features-and-decoders"
+                                                                           title="Image Output Features and Decoders">
+                                                                            Image Output Features and Decoders
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#image-features-measures"
+                                                                           title="Image Features Measures">
+                                                                            Image Features Measures
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#combiners" title="Combiners">
+                                                                Combiners
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link" href="#concat-combiner"
+                                                                           title="Concat Combiner">
+                                                                            Concat Combiner
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#sequence-concat-combiner"
+                                                                           title="Sequence Concat Combiner">
+                                                                            Sequence Concat Combiner
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#sequence-combiner"
+                                                                           title="Sequence Combiner">
+                                                                            Sequence Combiner
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                    </ul>
+                                                </nav>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#distributed-training"
+                                                   title="Distributed Training">
+                                                    Distributed Training
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#programmatic-api"
+                                                   title="Programmatic API">
+                                                    Programmatic API
+                                                </a>
+
+                                                <nav class="md-nav">
+                                                    <ul class="md-nav__list">
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#training-a-model"
+                                                               title="Training a Model">
+                                                                Training a Model
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#loading-a-pre-trained-model"
+                                                               title="Loading a Pre-trained Model">
+                                                                Loading a Pre-trained Model
+                                                            </a>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#predicting"
+                                                               title="Predicting">
+                                                                Predicting
+                                                            </a>
+
+                                                        </li>
+
+                                                    </ul>
+                                                </nav>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#visualizations" title="Visualizations">
+                                                    Visualizations
+                                                </a>
+
+                                                <nav class="md-nav">
+                                                    <ul class="md-nav__list">
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#learning-curves"
+                                                               title="Learning Curves">
+                                                                Learning Curves
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link" href="#learning_curves"
+                                                                           title="learning_curves">
+                                                                            learning_curves
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#confusion-matrix"
+                                                               title="Confusion Matrix">
+                                                                Confusion Matrix
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link" href="#confusion_matrix"
+                                                                           title="confusion_matrix">
+                                                                            confusion_matrix
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#compare-performance"
+                                                               title="Compare Performance">
+                                                                Compare Performance
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_performance"
+                                                                           title="compare_performance">
+                                                                            compare_performance
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_classifiers_performance_from_prob"
+                                                                           title="compare_classifiers_performance_from_prob">
+                                                                            compare_classifiers_performance_from_prob
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_classifiers_performance_from_pred"
+                                                                           title="compare_classifiers_performance_from_pred">
+                                                                            compare_classifiers_performance_from_pred
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_classifiers_performance_subset"
+                                                                           title="compare_classifiers_performance_subset">
+                                                                            compare_classifiers_performance_subset
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_classifiers_performance_changing_k"
+                                                                           title="compare_classifiers_performance_changing_k">
+                                                                            compare_classifiers_performance_changing_k
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_classifiers_multiclass_multimetric"
+                                                                           title="compare_classifiers_multiclass_multimetric">
+                                                                            compare_classifiers_multiclass_multimetric
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link"
+                                                               href="#compare-classifier-predictions"
+                                                               title="Compare Classifier Predictions">
+                                                                Compare Classifier Predictions
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_classifiers_predictions"
+                                                                           title="compare_classifiers_predictions">
+                                                                            compare_classifiers_predictions
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#compare_classifiers_predictions_distribution"
+                                                                           title="compare_classifiers_predictions_distribution">
+                                                                            compare_classifiers_predictions_distribution
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#confidence_thresholding"
+                                                               title="Confidence_Thresholding">
+                                                                Confidence_Thresholding
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#confidence_thresholding_1"
+                                                                           title="confidence_thresholding">
+                                                                            confidence_thresholding
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#confidence_thresholding_data_vs_acc"
+                                                                           title="confidence_thresholding_data_vs_acc">
+                                                                            confidence_thresholding_data_vs_acc
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#confidence_thresholding_data_vs_acc_subset"
+                                                                           title="confidence_thresholding_data_vs_acc_subset">
+                                                                            confidence_thresholding_data_vs_acc_subset
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#confidence_thresholding_data_vs_acc_subset_per_class"
+                                                                           title="confidence_thresholding_data_vs_acc_subset_per_class">
+                                                                            confidence_thresholding_data_vs_acc_subset_per_class
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#confidence_thresholding_2thresholds_2d"
+                                                                           title="confidence_thresholding_2thresholds_2d">
+                                                                            confidence_thresholding_2thresholds_2d
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#confidence_thresholding_2thresholds_3d"
+                                                                           title="confidence_thresholding_2thresholds_3d">
+                                                                            confidence_thresholding_2thresholds_3d
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#binary-threshold-vs-metric"
+                                                               title="Binary Threshold vs. Metric">
+                                                                Binary Threshold vs. Metric
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#binary_threshold_vs_metric"
+                                                                           title="binary_threshold_vs_metric">
+                                                                            binary_threshold_vs_metric
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#roc-curves"
+                                                               title="ROC Curves">
+                                                                ROC Curves
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link" href="#roc_curves"
+                                                                           title="roc_curves">
+                                                                            roc_curves
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#roc_curves_from_test_statistics"
+                                                                           title="roc_curves_from_test_statistics">
+                                                                            roc_curves_from_test_statistics
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#calibration-plot"
+                                                               title="Calibration Plot">
+                                                                Calibration Plot
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#calibration_1_vs_all"
+                                                                           title="calibration_1_vs_all">
+                                                                            calibration_1_vs_all
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link"
+                                                                           href="#calibration_multiclass"
+                                                                           title="calibration_multiclass">
+                                                                            calibration_multiclass
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                        <li class="md-nav__item">
+                                                            <a class="md-nav__link" href="#class-frequency-vs-f1-score"
+                                                               title="Class Frequency vs. F1 score">
+                                                                Class Frequency vs. F1 score
+                                                            </a>
+
+                                                            <nav class="md-nav">
+                                                                <ul class="md-nav__list">
+
+                                                                    <li class="md-nav__item">
+                                                                        <a class="md-nav__link" href="#frequency_vs_f1"
+                                                                           title="frequency_vs_f1">
+                                                                            frequency_vs_f1
+                                                                        </a>
+
+                                                                    </li>
+
+                                                                </ul>
+                                                            </nav>
+
+                                                        </li>
+
+                                                    </ul>
+                                                </nav>
+
+                                            </li>
+
+
+                                        </ul>
+
+                                    </nav>
+
+                                </li>
+
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="../developer_guide/" title="Developer Guide">
+                                        Developer Guide
+                                    </a>
+                                </li>
+
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="../api/" title="API">
+                                        API
+                                    </a>
+                                </li>
+
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="../faq/" title="FAQ">
+                                        FAQ
+                                    </a>
+                                </li>
+
+
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                    <div class="md-sidebar__inner">
+
+                        <nav class="md-nav md-nav--secondary">
+
+
+                            <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-        
-        <li class="md-nav__item"><a href=".." title="About" class="md-nav__link">About</a></li>
-        
-        
-        
-        <li class="md-nav__item"><a href="../getting_started/" title="Getting Started" class="md-nav__link">Getting Started</a></li>
-        
-        
-        
-        <li class="md-nav__item"><a href="../examples/" title="Examples" class="md-nav__link">Examples</a></li>
-        
-        
-        
-        <li class="md-nav__item md-nav__item--active"><input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc"><label class="md-nav__link md-nav__link--active" for="__toc">User Guide</label><a href="./" title="User Guide" class="md-nav__link md-nav__link--active">User Guide</a><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="__toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="#command-line-interface" title="Command Line Interface" class="md-nav__link">Command Line Interface</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#train" title="train" class="md-nav__link">train</a></li><li class="md-nav__item"><a href="#predict" title="predict" class="md-nav__link">predict</a></li><li class="md-nav__item"><a href="#test" title="test" class="md-nav__link">test</a></li><li class="md-nav__item"><a href="#experiment" title="experiment" class="md-nav__link">experiment</a></li><li class="md-nav__item"><a href="#visualize" title="visualize" class="md-nav__link">visualize</a></li><li class="md-nav__item"><a href="#collect_weights" title="collect_weights" class="md-nav__link">collect_weights</a></li><li class="md-nav__item"><a href="#collect_activations" title="collect_activations" class="md-nav__link">collect_activations</a></li></ul></nav></li><li class="md-nav__item"><a href="#data-preprocessing" title="Data Preprocessing" class="md-nav__link">Data Preprocessing</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#csv-format" title="CSV Format" class="md-nav__link">CSV Format</a></li></ul></nav></li><li class="md-nav__item"><a href="#data-postprocessing" title="Data Postprocessing" class="md-nav__link">Data Postprocessing</a></li><li class="md-nav__item"><a href="#model-definition" title="Model Definition" class="md-nav__link">Model Definition</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#input-features" title="Input features" class="md-nav__link">Input features</a></li><li class="md-nav__item"><a href="#combiner" title="Combiner" class="md-nav__link">Combiner</a></li><li class="md-nav__item"><a href="#output-features" title="Output Features" class="md-nav__link">Output Features</a></li><li class="md-nav__item"><a href="#output-features-dependencies" title="Output Features Dependencies" class="md-nav__link">Output Features Dependencies</a></li><li class="md-nav__item"><a href="#training" title="Training" class="md-nav__link">Training</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#optimizers-details" title="Optimizers details" class="md-nav__link">Optimizers details</a></li></ul></nav></li><li class="md-nav__item"><a href="#preprocessing" title="Preprocessing" class="md-nav__link">Preprocessing</a></li><li class="md-nav__item"><a href="#binary-features" title="Binary Features" class="md-nav__link">Binary Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#binary-features-preprocessing" title="Binary Features Preprocessing" class="md-nav__link">Binary Features Preprocessing</a></li><li class="md-nav__item"><a href="#binary-input-features-and-encoders" title="Binary Input Features and Encoders" class="md-nav__link">Binary Input Features and Encoders</a></li><li class="md-nav__item"><a href="#binary-output-features-and-decoders" title="Binary Output Features and Decoders" class="md-nav__link">Binary Output Features and Decoders</a></li><li class="md-nav__item"><a href="#binary-features-measures" title="Binary Features Measures" class="md-nav__link">Binary Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#numerical-features" title="Numerical Features" class="md-nav__link">Numerical Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#numerical-features-preprocessing" title="Numerical Features Preprocessing" class="md-nav__link">Numerical Features Preprocessing</a></li><li class="md-nav__item"><a href="#numerical-input-features-and-encoders" title="Numerical Input Features and Encoders" class="md-nav__link">Numerical Input Features and Encoders</a></li><li class="md-nav__item"><a href="#numerical-output-features-and-decoders" title="Numerical Output Features and Decoders" class="md-nav__link">Numerical Output Features and Decoders</a></li><li class="md-nav__item"><a href="#numerical-features-measures" title="Numerical Features Measures" class="md-nav__link">Numerical Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#category-features" title="Category Features" class="md-nav__link">Category Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#category-features-preprocessing" title="Category Features Preprocessing" class="md-nav__link">Category Features Preprocessing</a></li><li class="md-nav__item"><a href="#category-input-features-and-encoders" title="Category Input Features and Encoders" class="md-nav__link">Category Input Features and Encoders</a></li><li class="md-nav__item"><a href="#category-output-features-and-decoders" title="Category Output Features and Decoders" class="md-nav__link">Category Output Features and Decoders</a></li><li class="md-nav__item"><a href="#category-features-measures" title="Category Features Measures" class="md-nav__link">Category Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#set-features" title="Set Features" class="md-nav__link">Set Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#set-features-preprocessing" title="Set Features Preprocessing" class="md-nav__link">Set Features Preprocessing</a></li><li class="md-nav__item"><a href="#set-input-features-and-encoders" title="Set Input Features and Encoders" class="md-nav__link">Set Input Features and Encoders</a></li><li class="md-nav__item"><a href="#set-output-features-and-decoders" title="Set Output Features and Decoders" class="md-nav__link">Set Output Features and Decoders</a></li><li class="md-nav__item"><a href="#set-features-measures" title="Set Features Measures" class="md-nav__link">Set Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#bag-features" title="Bag Features" class="md-nav__link">Bag Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#bag-features-preprocessing" title="Bag Features Preprocessing" class="md-nav__link">Bag Features Preprocessing</a></li><li class="md-nav__item"><a href="#bag-input-features-and-encoders" title="Bag Input Features and Encoders" class="md-nav__link">Bag Input Features and Encoders</a></li><li class="md-nav__item"><a href="#bag-output-features-and-decoders" title="Bag Output Features and Decoders" class="md-nav__link">Bag Output Features and Decoders</a></li><li class="md-nav__item"><a href="#bag-features-measures" title="Bag Features Measures" class="md-nav__link">Bag Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#sequence-features" title="Sequence Features" class="md-nav__link">Sequence Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#sequence-features-preprocessing" title="Sequence Features Preprocessing" class="md-nav__link">Sequence Features Preprocessing</a></li><li class="md-nav__item"><a href="#sequence-input-features-and-encoders" title="Sequence Input Features and Encoders" class="md-nav__link">Sequence Input Features and Encoders</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#embed-encoder" title="Embed Encoder" class="md-nav__link">Embed Encoder</a></li><li class="md-nav__item"><a href="#parallel-cnn-encoder" title="Parallel CNN Encoder" class="md-nav__link">Parallel CNN Encoder</a></li><li class="md-nav__item"><a href="#stacked-cnn-encoder" title="Stacked CNN Encoder" class="md-nav__link">Stacked CNN Encoder</a></li><li class="md-nav__item"><a href="#stacked-parallel-cnn-encoder" title="Stacked Parallel CNN Encoder" class="md-nav__link">Stacked Parallel CNN Encoder</a></li><li class="md-nav__item"><a href="#rnn-encoder" title="RNN Encoder" class="md-nav__link">RNN Encoder</a></li><li class="md-nav__item"><a href="#cnn-rnn-encoder" title="CNN RNN Encoder" class="md-nav__link">CNN RNN Encoder</a></li><li class="md-nav__item"><a href="#passthrough-encoder" title="Passthrough Encoder" class="md-nav__link">Passthrough Encoder</a></li></ul></nav></li><li class="md-nav__item"><a href="#sequence-output-features-and-decoders" title="Sequence Output Features and Decoders" class="md-nav__link">Sequence Output Features and Decoders</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#tagger-decoder" title="Tagger Decoder" class="md-nav__link">Tagger Decoder</a></li><li class="md-nav__item"><a href="#generator-decoder" title="Generator Decoder" class="md-nav__link">Generator Decoder</a></li></ul></nav></li><li class="md-nav__item"><a href="#sequence-features-measures" title="Sequence Features Measures" class="md-nav__link">Sequence Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#text-features" title="Text Features" class="md-nav__link">Text Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#text-features-preprocessing" title="Text Features Preprocessing" class="md-nav__link">Text Features Preprocessing</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#spacy-based-word-format-options" title="spaCy based word format options" class="md-nav__link">spaCy based word format options</a></li></ul></nav></li><li class="md-nav__item"><a href="#text-input-features-and-encoders" title="Text Input Features and Encoders" class="md-nav__link">Text Input Features and Encoders</a></li><li class="md-nav__item"><a href="#text-output-features-and-decoders" title="Text Output Features and Decoders" class="md-nav__link">Text Output Features and Decoders</a></li><li class="md-nav__item"><a href="#text-features-measures" title="Text Features Measures" class="md-nav__link">Text Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#time-series-features" title="Time Series Features" class="md-nav__link">Time Series Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#time-series-features-preprocessing" title="Time Series Features Preprocessing" class="md-nav__link">Time Series Features Preprocessing</a></li><li class="md-nav__item"><a href="#time-series-input-features-and-encoders" title="Time Series Input Features and Encoders" class="md-nav__link">Time Series Input Features and Encoders</a></li><li class="md-nav__item"><a href="#time-series-output-features-and-decoders" title="Time Series Output Features and Decoders" class="md-nav__link">Time Series Output Features and Decoders</a></li><li class="md-nav__item"><a href="#time-series-features-measures" title="Time Series Features Measures" class="md-nav__link">Time Series Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#image-features" title="Image Features" class="md-nav__link">Image Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#image-features-preprocessing" title="Image Features Preprocessing" class="md-nav__link">Image Features Preprocessing</a></li><li class="md-nav__item"><a href="#image-input-features-and-encoders" title="Image Input Features and Encoders" class="md-nav__link">Image Input Features and Encoders</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#convolutional-stack-encoder" title="Convolutional Stack Encoder" class="md-nav__link">Convolutional Stack Encoder</a></li><li class="md-nav__item"><a href="#resnet-encoder" title="ResNet Encoder" class="md-nav__link">ResNet Encoder</a></li></ul></nav></li><li class="md-nav__item"><a href="#image-output-features-and-decoders" title="Image Output Features and Decoders" class="md-nav__link">Image Output Features and Decoders</a></li><li class="md-nav__item"><a href="#image-features-measures" title="Image Features Measures" class="md-nav__link">Image Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#combiners" title="Combiners" class="md-nav__link">Combiners</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#concat-combiner" title="Concat Combiner" class="md-nav__link">Concat Combiner</a></li><li class="md-nav__item"><a href="#sequence-concat-combiner" title="Sequence Concat Combiner" class="md-nav__link">Sequence Concat Combiner</a></li><li class="md-nav__item"><a href="#sequence-combiner" title="Sequence Combiner" class="md-nav__link">Sequence Combiner</a></li></ul></nav></li></ul></nav></li><li class="md-nav__item"><a href="#distributed-training" title="Distributed Training" class="md-nav__link">Distributed Training</a></li><li class="md-nav__item"><a href="#programmatic-api" title="Programmatic API" class="md-nav__link">Programmatic API</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#training-a-model" title="Training a Model" class="md-nav__link">Training a Model</a></li><li class="md-nav__item"><a href="#loading-a-pre-trained-model" title="Loading a Pre-trained Model" class="md-nav__link">Loading a Pre-trained Model</a></li><li class="md-nav__item"><a href="#predicting" title="Predicting" class="md-nav__link">Predicting</a></li></ul></nav></li><li class="md-nav__item"><a href="#visualizations" title="Visualizations" class="md-nav__link">Visualizations</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#learning-curves" title="Learning Curves" class="md-nav__link">Learning Curves</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#learning_curves" title="learning_curves" class="md-nav__link">learning_curves</a></li></ul></nav></li><li class="md-nav__item"><a href="#confusion-matrix" title="Confusion Matrix" class="md-nav__link">Confusion Matrix</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#confusion_matrix" title="confusion_matrix" class="md-nav__link">confusion_matrix</a></li></ul></nav></li><li class="md-nav__item"><a href="#compare-performance" title="Compare Performance" class="md-nav__link">Compare Performance</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#compare_performance" title="compare_performance" class="md-nav__link">compare_performance</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_from_prob" title="compare_classifiers_performance_from_prob" class="md-nav__link">compare_classifiers_performance_from_prob</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_from_pred" title="compare_classifiers_performance_from_pred" class="md-nav__link">compare_classifiers_performance_from_pred</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_subset" title="compare_classifiers_performance_subset" class="md-nav__link">compare_classifiers_performance_subset</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_changing_k" title="compare_classifiers_performance_changing_k" class="md-nav__link">compare_classifiers_performance_changing_k</a></li><li class="md-nav__item"><a href="#compare_classifiers_multiclass_multimetric" title="compare_classifiers_multiclass_multimetric" class="md-nav__link">compare_classifiers_multiclass_multimetric</a></li></ul></nav></li><li class="md-nav__item"><a href="#compare-classifier-predictions" title="Compare Classifier Predictions" class="md-nav__link">Compare Classifier Predictions</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#compare_classifiers_predictions" title="compare_classifiers_predictions" class="md-nav__link">compare_classifiers_predictions</a></li><li class="md-nav__item"><a href="#compare_classifiers_predictions_distribution" title="compare_classifiers_predictions_distribution" class="md-nav__link">compare_classifiers_predictions_distribution</a></li></ul></nav></li><li class="md-nav__item"><a href="#confidence_thresholding" title="Confidence_Thresholding" class="md-nav__link">Confidence_Thresholding</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#confidence_thresholding_1" title="confidence_thresholding" class="md-nav__link">confidence_thresholding</a></li><li class="md-nav__item"><a href="#confidence_thresholding_data_vs_acc" title="confidence_thresholding_data_vs_acc" class="md-nav__link">confidence_thresholding_data_vs_acc</a></li><li class="md-nav__item"><a href="#confidence_thresholding_data_vs_acc_subset" title="confidence_thresholding_data_vs_acc_subset" class="md-nav__link">confidence_thresholding_data_vs_acc_subset</a></li><li class="md-nav__item"><a href="#confidence_thresholding_data_vs_acc_subset_per_class" title="confidence_thresholding_data_vs_acc_subset_per_class" class="md-nav__link">confidence_thresholding_data_vs_acc_subset_per_class</a></li><li class="md-nav__item"><a href="#confidence_thresholding_2thresholds_2d" title="confidence_thresholding_2thresholds_2d" class="md-nav__link">confidence_thresholding_2thresholds_2d</a></li><li class="md-nav__item"><a href="#confidence_thresholding_2thresholds_3d" title="confidence_thresholding_2thresholds_3d" class="md-nav__link">confidence_thresholding_2thresholds_3d</a></li></ul></nav></li><li class="md-nav__item"><a href="#binary-threshold-vs-metric" title="Binary Threshold vs. Metric" class="md-nav__link">Binary Threshold vs. Metric</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#binary_threshold_vs_metric" title="binary_threshold_vs_metric" class="md-nav__link">binary_threshold_vs_metric</a></li></ul></nav></li><li class="md-nav__item"><a href="#roc-curves" title="ROC Curves" class="md-nav__link">ROC Curves</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#roc_curves" title="roc_curves" class="md-nav__link">roc_curves</a></li><li class="md-nav__item"><a href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics" class="md-nav__link">roc_curves_from_test_statistics</a></li></ul></nav></li><li class="md-nav__item"><a href="#calibration-plot" title="Calibration Plot" class="md-nav__link">Calibration Plot</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#calibration_1_vs_all" title="calibration_1_vs_all" class="md-nav__link">calibration_1_vs_all</a></li><li class="md-nav__item"><a href="#calibration_multiclass" title="calibration_multiclass" class="md-nav__link">calibration_multiclass</a></li></ul></nav></li><li class="md-nav__item"><a href="#class-frequency-vs-f1-score" title="Class Frequency vs. F1 score" class="md-nav__link">Class Frequency vs. F1 score</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#frequency_vs_f1" title="frequency_vs_f1" class="md-nav__link">frequency_vs_f1</a></li></ul></nav></li></ul></nav></li></ul></nav></li>
-        
-        
-        
-        <li class="md-nav__item"><a href="../developer_guide/" title="Developer Guide" class="md-nav__link">Developer Guide</a></li>
-        
-        
-        
-        <li class="md-nav__item"><a href="../api/" title="API" class="md-nav__link">API</a></li>
-        
-        
-        
-        <li class="md-nav__item"><a href="../faq/" title="FAQ" class="md-nav__link">FAQ</a></li>
-        
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#command-line-interface" title="Command Line Interface">
+                Command Line Interface
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#train" title="train">
+                            train
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#predict" title="predict">
+                            predict
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#test" title="test">
+                            test
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#experiment" title="experiment">
+                            experiment
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#visualize" title="visualize">
+                            visualize
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#collect_weights" title="collect_weights">
+                            collect_weights
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#collect_activations" title="collect_activations">
+                            collect_activations
+                        </a>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#data-preprocessing" title="Data Preprocessing">
+                Data Preprocessing
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#csv-format" title="CSV Format">
+                            CSV Format
+                        </a>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#data-postprocessing" title="Data Postprocessing">
+                Data Postprocessing
+            </a>
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#model-definition" title="Model Definition">
+                Model Definition
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#input-features" title="Input features">
+                            Input features
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#combiner" title="Combiner">
+                            Combiner
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#output-features" title="Output Features">
+                            Output Features
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#output-features-dependencies"
+                           title="Output Features Dependencies">
+                            Output Features Dependencies
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#training" title="Training">
+                            Training
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#optimizers-details" title="Optimizers details">
+                                        Optimizers details
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#preprocessing" title="Preprocessing">
+                            Preprocessing
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#binary-features" title="Binary Features">
+                            Binary Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#binary-features-preprocessing"
+                                       title="Binary Features Preprocessing">
+                                        Binary Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#binary-input-features-and-encoders"
+                                       title="Binary Input Features and Encoders">
+                                        Binary Input Features and Encoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#binary-output-features-and-decoders"
+                                       title="Binary Output Features and Decoders">
+                                        Binary Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#binary-features-measures"
+                                       title="Binary Features Measures">
+                                        Binary Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#numerical-features" title="Numerical Features">
+                            Numerical Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#numerical-features-preprocessing"
+                                       title="Numerical Features Preprocessing">
+                                        Numerical Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#numerical-input-features-and-encoders"
+                                       title="Numerical Input Features and Encoders">
+                                        Numerical Input Features and Encoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#numerical-output-features-and-decoders"
+                                       title="Numerical Output Features and Decoders">
+                                        Numerical Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#numerical-features-measures"
+                                       title="Numerical Features Measures">
+                                        Numerical Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#category-features" title="Category Features">
+                            Category Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#category-features-preprocessing"
+                                       title="Category Features Preprocessing">
+                                        Category Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#category-input-features-and-encoders"
+                                       title="Category Input Features and Encoders">
+                                        Category Input Features and Encoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#category-output-features-and-decoders"
+                                       title="Category Output Features and Decoders">
+                                        Category Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#category-features-measures"
+                                       title="Category Features Measures">
+                                        Category Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#set-features" title="Set Features">
+                            Set Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#set-features-preprocessing"
+                                       title="Set Features Preprocessing">
+                                        Set Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#set-input-features-and-encoders"
+                                       title="Set Input Features and Encoders">
+                                        Set Input Features and Encoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#set-output-features-and-decoders"
+                                       title="Set Output Features and Decoders">
+                                        Set Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#set-features-measures" title="Set Features Measures">
+                                        Set Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#bag-features" title="Bag Features">
+                            Bag Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#bag-features-preprocessing"
+                                       title="Bag Features Preprocessing">
+                                        Bag Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#bag-input-features-and-encoders"
+                                       title="Bag Input Features and Encoders">
+                                        Bag Input Features and Encoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#bag-output-features-and-decoders"
+                                       title="Bag Output Features and Decoders">
+                                        Bag Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#bag-features-measures" title="Bag Features Measures">
+                                        Bag Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#sequence-features" title="Sequence Features">
+                            Sequence Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#sequence-features-preprocessing"
+                                       title="Sequence Features Preprocessing">
+                                        Sequence Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#sequence-input-features-and-encoders"
+                                       title="Sequence Input Features and Encoders">
+                                        Sequence Input Features and Encoders
+                                    </a>
+
+                                    <nav class="md-nav">
+                                        <ul class="md-nav__list">
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#embed-encoder" title="Embed Encoder">
+                                                    Embed Encoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#parallel-cnn-encoder"
+                                                   title="Parallel CNN Encoder">
+                                                    Parallel CNN Encoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#stacked-cnn-encoder"
+                                                   title="Stacked CNN Encoder">
+                                                    Stacked CNN Encoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#stacked-parallel-cnn-encoder"
+                                                   title="Stacked Parallel CNN Encoder">
+                                                    Stacked Parallel CNN Encoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#rnn-encoder" title="RNN Encoder">
+                                                    RNN Encoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#cnn-rnn-encoder" title="CNN RNN Encoder">
+                                                    CNN RNN Encoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#passthrough-encoder"
+                                                   title="Passthrough Encoder">
+                                                    Passthrough Encoder
+                                                </a>
+
+                                            </li>
+
+                                        </ul>
+                                    </nav>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#sequence-output-features-and-decoders"
+                                       title="Sequence Output Features and Decoders">
+                                        Sequence Output Features and Decoders
+                                    </a>
+
+                                    <nav class="md-nav">
+                                        <ul class="md-nav__list">
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#tagger-decoder" title="Tagger Decoder">
+                                                    Tagger Decoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#generator-decoder"
+                                                   title="Generator Decoder">
+                                                    Generator Decoder
+                                                </a>
+
+                                            </li>
+
+                                        </ul>
+                                    </nav>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#sequence-features-measures"
+                                       title="Sequence Features Measures">
+                                        Sequence Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#text-features" title="Text Features">
+                            Text Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#text-features-preprocessing"
+                                       title="Text Features Preprocessing">
+                                        Text Features Preprocessing
+                                    </a>
+
+                                    <nav class="md-nav">
+                                        <ul class="md-nav__list">
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#spacy-based-word-format-options"
+                                                   title="spaCy based word format options">
+                                                    spaCy based word format options
+                                                </a>
+
+                                            </li>
+
+                                        </ul>
+                                    </nav>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#text-input-features-and-encoders"
+                                       title="Text Input Features and Encoders">
+                                        Text Input Features and Encoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#text-output-features-and-decoders"
+                                       title="Text Output Features and Decoders">
+                                        Text Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#text-features-measures"
+                                       title="Text Features Measures">
+                                        Text Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#time-series-features" title="Time Series Features">
+                            Time Series Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#time-series-features-preprocessing"
+                                       title="Time Series Features Preprocessing">
+                                        Time Series Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#time-series-input-features-and-encoders"
+                                       title="Time Series Input Features and Encoders">
+                                        Time Series Input Features and Encoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#time-series-output-features-and-decoders"
+                                       title="Time Series Output Features and Decoders">
+                                        Time Series Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#time-series-features-measures"
+                                       title="Time Series Features Measures">
+                                        Time Series Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#image-features" title="Image Features">
+                            Image Features
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#image-features-preprocessing"
+                                       title="Image Features Preprocessing">
+                                        Image Features Preprocessing
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#image-input-features-and-encoders"
+                                       title="Image Input Features and Encoders">
+                                        Image Input Features and Encoders
+                                    </a>
+
+                                    <nav class="md-nav">
+                                        <ul class="md-nav__list">
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#convolutional-stack-encoder"
+                                                   title="Convolutional Stack Encoder">
+                                                    Convolutional Stack Encoder
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link" href="#resnet-encoder" title="ResNet Encoder">
+                                                    ResNet Encoder
+                                                </a>
+
+                                            </li>
+
+                                        </ul>
+                                    </nav>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#image-output-features-and-decoders"
+                                       title="Image Output Features and Decoders">
+                                        Image Output Features and Decoders
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#image-features-measures"
+                                       title="Image Features Measures">
+                                        Image Features Measures
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#combiners" title="Combiners">
+                            Combiners
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#concat-combiner" title="Concat Combiner">
+                                        Concat Combiner
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#sequence-concat-combiner"
+                                       title="Sequence Concat Combiner">
+                                        Sequence Concat Combiner
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#sequence-combiner" title="Sequence Combiner">
+                                        Sequence Combiner
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#distributed-training" title="Distributed Training">
+                Distributed Training
+            </a>
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#programmatic-api" title="Programmatic API">
+                Programmatic API
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#training-a-model" title="Training a Model">
+                            Training a Model
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#loading-a-pre-trained-model" title="Loading a Pre-trained Model">
+                            Loading a Pre-trained Model
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#predicting" title="Predicting">
+                            Predicting
+                        </a>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#visualizations" title="Visualizations">
+                Visualizations
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#learning-curves" title="Learning Curves">
+                            Learning Curves
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#learning_curves" title="learning_curves">
+                                        learning_curves
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#confusion-matrix" title="Confusion Matrix">
+                            Confusion Matrix
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confusion_matrix" title="confusion_matrix">
+                                        confusion_matrix
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#compare-performance" title="Compare Performance">
+                            Compare Performance
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_performance" title="compare_performance">
+                                        compare_performance
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_from_prob"
+                                       title="compare_classifiers_performance_from_prob">
+                                        compare_classifiers_performance_from_prob
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_from_pred"
+                                       title="compare_classifiers_performance_from_pred">
+                                        compare_classifiers_performance_from_pred
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_subset"
+                                       title="compare_classifiers_performance_subset">
+                                        compare_classifiers_performance_subset
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_changing_k"
+                                       title="compare_classifiers_performance_changing_k">
+                                        compare_classifiers_performance_changing_k
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_multiclass_multimetric"
+                                       title="compare_classifiers_multiclass_multimetric">
+                                        compare_classifiers_multiclass_multimetric
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#compare-classifier-predictions"
+                           title="Compare Classifier Predictions">
+                            Compare Classifier Predictions
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_predictions"
+                                       title="compare_classifiers_predictions">
+                                        compare_classifiers_predictions
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_predictions_distribution"
+                                       title="compare_classifiers_predictions_distribution">
+                                        compare_classifiers_predictions_distribution
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#confidence_thresholding" title="Confidence_Thresholding">
+                            Confidence_Thresholding
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_1"
+                                       title="confidence_thresholding">
+                                        confidence_thresholding
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_data_vs_acc"
+                                       title="confidence_thresholding_data_vs_acc">
+                                        confidence_thresholding_data_vs_acc
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_data_vs_acc_subset"
+                                       title="confidence_thresholding_data_vs_acc_subset">
+                                        confidence_thresholding_data_vs_acc_subset
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_data_vs_acc_subset_per_class"
+                                       title="confidence_thresholding_data_vs_acc_subset_per_class">
+                                        confidence_thresholding_data_vs_acc_subset_per_class
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_2thresholds_2d"
+                                       title="confidence_thresholding_2thresholds_2d">
+                                        confidence_thresholding_2thresholds_2d
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_2thresholds_3d"
+                                       title="confidence_thresholding_2thresholds_3d">
+                                        confidence_thresholding_2thresholds_3d
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#binary-threshold-vs-metric" title="Binary Threshold vs. Metric">
+                            Binary Threshold vs. Metric
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#binary_threshold_vs_metric"
+                                       title="binary_threshold_vs_metric">
+                                        binary_threshold_vs_metric
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#roc-curves" title="ROC Curves">
+                            ROC Curves
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#roc_curves" title="roc_curves">
+                                        roc_curves
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#roc_curves_from_test_statistics"
+                                       title="roc_curves_from_test_statistics">
+                                        roc_curves_from_test_statistics
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#calibration-plot" title="Calibration Plot">
+                            Calibration Plot
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#calibration_1_vs_all" title="calibration_1_vs_all">
+                                        calibration_1_vs_all
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#calibration_multiclass"
+                                       title="calibration_multiclass">
+                                        calibration_multiclass
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#class-frequency-vs-f1-score"
+                           title="Class Frequency vs. F1 score">
+                            Class Frequency vs. F1 score
+                        </a>
+
+                        <nav class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#frequency_vs_f1" title="frequency_vs_f1">
+                                        frequency_vs_f1
+                                    </a>
+
+                                </li>
+
+                            </ul>
+                        </nav>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
+
+
     </ul>
-</nav></div></div></div><div class="md-sidebar md-sidebar--secondary" data-md-component="toc"><div class="md-sidebar__scrollwrap"><div class="md-sidebar__inner"><nav class="md-nav md-nav--secondary"><label class="md-nav__title" for="__toc">Table of contents</label><ul class="md-nav__list" data-md-scrollfix><li class="md-nav__item"><a href="#command-line-interface" title="Command Line Interface" class="md-nav__link">Command Line Interface</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#train" title="train" class="md-nav__link">train</a></li><li class="md-nav__item"><a href="#predict" title="predict" class="md-nav__link">predict</a></li><li class="md-nav__item"><a href="#test" title="test" class="md-nav__link">test</a></li><li class="md-nav__item"><a href="#experiment" title="experiment" class="md-nav__link">experiment</a></li><li class="md-nav__item"><a href="#visualize" title="visualize" class="md-nav__link">visualize</a></li><li class="md-nav__item"><a href="#collect_weights" title="collect_weights" class="md-nav__link">collect_weights</a></li><li class="md-nav__item"><a href="#collect_activations" title="collect_activations" class="md-nav__link">collect_activations</a></li></ul></nav></li><li class="md-nav__item"><a href="#data-preprocessing" title="Data Preprocessing" class="md-nav__link">Data Preprocessing</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#csv-format" title="CSV Format" class="md-nav__link">CSV Format</a></li></ul></nav></li><li class="md-nav__item"><a href="#data-postprocessing" title="Data Postprocessing" class="md-nav__link">Data Postprocessing</a></li><li class="md-nav__item"><a href="#model-definition" title="Model Definition" class="md-nav__link">Model Definition</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#input-features" title="Input features" class="md-nav__link">Input features</a></li><li class="md-nav__item"><a href="#combiner" title="Combiner" class="md-nav__link">Combiner</a></li><li class="md-nav__item"><a href="#output-features" title="Output Features" class="md-nav__link">Output Features</a></li><li class="md-nav__item"><a href="#output-features-dependencies" title="Output Features Dependencies" class="md-nav__link">Output Features Dependencies</a></li><li class="md-nav__item"><a href="#training" title="Training" class="md-nav__link">Training</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#optimizers-details" title="Optimizers details" class="md-nav__link">Optimizers details</a></li></ul></nav></li><li class="md-nav__item"><a href="#preprocessing" title="Preprocessing" class="md-nav__link">Preprocessing</a></li><li class="md-nav__item"><a href="#binary-features" title="Binary Features" class="md-nav__link">Binary Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#binary-features-preprocessing" title="Binary Features Preprocessing" class="md-nav__link">Binary Features Preprocessing</a></li><li class="md-nav__item"><a href="#binary-input-features-and-encoders" title="Binary Input Features and Encoders" class="md-nav__link">Binary Input Features and Encoders</a></li><li class="md-nav__item"><a href="#binary-output-features-and-decoders" title="Binary Output Features and Decoders" class="md-nav__link">Binary Output Features and Decoders</a></li><li class="md-nav__item"><a href="#binary-features-measures" title="Binary Features Measures" class="md-nav__link">Binary Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#numerical-features" title="Numerical Features" class="md-nav__link">Numerical Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#numerical-features-preprocessing" title="Numerical Features Preprocessing" class="md-nav__link">Numerical Features Preprocessing</a></li><li class="md-nav__item"><a href="#numerical-input-features-and-encoders" title="Numerical Input Features and Encoders" class="md-nav__link">Numerical Input Features and Encoders</a></li><li class="md-nav__item"><a href="#numerical-output-features-and-decoders" title="Numerical Output Features and Decoders" class="md-nav__link">Numerical Output Features and Decoders</a></li><li class="md-nav__item"><a href="#numerical-features-measures" title="Numerical Features Measures" class="md-nav__link">Numerical Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#category-features" title="Category Features" class="md-nav__link">Category Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#category-features-preprocessing" title="Category Features Preprocessing" class="md-nav__link">Category Features Preprocessing</a></li><li class="md-nav__item"><a href="#category-input-features-and-encoders" title="Category Input Features and Encoders" class="md-nav__link">Category Input Features and Encoders</a></li><li class="md-nav__item"><a href="#category-output-features-and-decoders" title="Category Output Features and Decoders" class="md-nav__link">Category Output Features and Decoders</a></li><li class="md-nav__item"><a href="#category-features-measures" title="Category Features Measures" class="md-nav__link">Category Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#set-features" title="Set Features" class="md-nav__link">Set Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#set-features-preprocessing" title="Set Features Preprocessing" class="md-nav__link">Set Features Preprocessing</a></li><li class="md-nav__item"><a href="#set-input-features-and-encoders" title="Set Input Features and Encoders" class="md-nav__link">Set Input Features and Encoders</a></li><li class="md-nav__item"><a href="#set-output-features-and-decoders" title="Set Output Features and Decoders" class="md-nav__link">Set Output Features and Decoders</a></li><li class="md-nav__item"><a href="#set-features-measures" title="Set Features Measures" class="md-nav__link">Set Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#bag-features" title="Bag Features" class="md-nav__link">Bag Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#bag-features-preprocessing" title="Bag Features Preprocessing" class="md-nav__link">Bag Features Preprocessing</a></li><li class="md-nav__item"><a href="#bag-input-features-and-encoders" title="Bag Input Features and Encoders" class="md-nav__link">Bag Input Features and Encoders</a></li><li class="md-nav__item"><a href="#bag-output-features-and-decoders" title="Bag Output Features and Decoders" class="md-nav__link">Bag Output Features and Decoders</a></li><li class="md-nav__item"><a href="#bag-features-measures" title="Bag Features Measures" class="md-nav__link">Bag Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#sequence-features" title="Sequence Features" class="md-nav__link">Sequence Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#sequence-features-preprocessing" title="Sequence Features Preprocessing" class="md-nav__link">Sequence Features Preprocessing</a></li><li class="md-nav__item"><a href="#sequence-input-features-and-encoders" title="Sequence Input Features and Encoders" class="md-nav__link">Sequence Input Features and Encoders</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#embed-encoder" title="Embed Encoder" class="md-nav__link">Embed Encoder</a></li><li class="md-nav__item"><a href="#parallel-cnn-encoder" title="Parallel CNN Encoder" class="md-nav__link">Parallel CNN Encoder</a></li><li class="md-nav__item"><a href="#stacked-cnn-encoder" title="Stacked CNN Encoder" class="md-nav__link">Stacked CNN Encoder</a></li><li class="md-nav__item"><a href="#stacked-parallel-cnn-encoder" title="Stacked Parallel CNN Encoder" class="md-nav__link">Stacked Parallel CNN Encoder</a></li><li class="md-nav__item"><a href="#rnn-encoder" title="RNN Encoder" class="md-nav__link">RNN Encoder</a></li><li class="md-nav__item"><a href="#cnn-rnn-encoder" title="CNN RNN Encoder" class="md-nav__link">CNN RNN Encoder</a></li><li class="md-nav__item"><a href="#passthrough-encoder" title="Passthrough Encoder" class="md-nav__link">Passthrough Encoder</a></li></ul></nav></li><li class="md-nav__item"><a href="#sequence-output-features-and-decoders" title="Sequence Output Features and Decoders" class="md-nav__link">Sequence Output Features and Decoders</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#tagger-decoder" title="Tagger Decoder" class="md-nav__link">Tagger Decoder</a></li><li class="md-nav__item"><a href="#generator-decoder" title="Generator Decoder" class="md-nav__link">Generator Decoder</a></li></ul></nav></li><li class="md-nav__item"><a href="#sequence-features-measures" title="Sequence Features Measures" class="md-nav__link">Sequence Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#text-features" title="Text Features" class="md-nav__link">Text Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#text-features-preprocessing" title="Text Features Preprocessing" class="md-nav__link">Text Features Preprocessing</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#spacy-based-word-format-options" title="spaCy based word format options" class="md-nav__link">spaCy based word format options</a></li></ul></nav></li><li class="md-nav__item"><a href="#text-input-features-and-encoders" title="Text Input Features and Encoders" class="md-nav__link">Text Input Features and Encoders</a></li><li class="md-nav__item"><a href="#text-output-features-and-decoders" title="Text Output Features and Decoders" class="md-nav__link">Text Output Features and Decoders</a></li><li class="md-nav__item"><a href="#text-features-measures" title="Text Features Measures" class="md-nav__link">Text Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#time-series-features" title="Time Series Features" class="md-nav__link">Time Series Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#time-series-features-preprocessing" title="Time Series Features Preprocessing" class="md-nav__link">Time Series Features Preprocessing</a></li><li class="md-nav__item"><a href="#time-series-input-features-and-encoders" title="Time Series Input Features and Encoders" class="md-nav__link">Time Series Input Features and Encoders</a></li><li class="md-nav__item"><a href="#time-series-output-features-and-decoders" title="Time Series Output Features and Decoders" class="md-nav__link">Time Series Output Features and Decoders</a></li><li class="md-nav__item"><a href="#time-series-features-measures" title="Time Series Features Measures" class="md-nav__link">Time Series Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#image-features" title="Image Features" class="md-nav__link">Image Features</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#image-features-preprocessing" title="Image Features Preprocessing" class="md-nav__link">Image Features Preprocessing</a></li><li class="md-nav__item"><a href="#image-input-features-and-encoders" title="Image Input Features and Encoders" class="md-nav__link">Image Input Features and Encoders</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#convolutional-stack-encoder" title="Convolutional Stack Encoder" class="md-nav__link">Convolutional Stack Encoder</a></li><li class="md-nav__item"><a href="#resnet-encoder" title="ResNet Encoder" class="md-nav__link">ResNet Encoder</a></li></ul></nav></li><li class="md-nav__item"><a href="#image-output-features-and-decoders" title="Image Output Features and Decoders" class="md-nav__link">Image Output Features and Decoders</a></li><li class="md-nav__item"><a href="#image-features-measures" title="Image Features Measures" class="md-nav__link">Image Features Measures</a></li></ul></nav></li><li class="md-nav__item"><a href="#combiners" title="Combiners" class="md-nav__link">Combiners</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#concat-combiner" title="Concat Combiner" class="md-nav__link">Concat Combiner</a></li><li class="md-nav__item"><a href="#sequence-concat-combiner" title="Sequence Concat Combiner" class="md-nav__link">Sequence Concat Combiner</a></li><li class="md-nav__item"><a href="#sequence-combiner" title="Sequence Combiner" class="md-nav__link">Sequence Combiner</a></li></ul></nav></li></ul></nav></li><li class="md-nav__item"><a href="#distributed-training" title="Distributed Training" class="md-nav__link">Distributed Training</a></li><li class="md-nav__item"><a href="#programmatic-api" title="Programmatic API" class="md-nav__link">Programmatic API</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#training-a-model" title="Training a Model" class="md-nav__link">Training a Model</a></li><li class="md-nav__item"><a href="#loading-a-pre-trained-model" title="Loading a Pre-trained Model" class="md-nav__link">Loading a Pre-trained Model</a></li><li class="md-nav__item"><a href="#predicting" title="Predicting" class="md-nav__link">Predicting</a></li></ul></nav></li><li class="md-nav__item"><a href="#visualizations" title="Visualizations" class="md-nav__link">Visualizations</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#learning-curves" title="Learning Curves" class="md-nav__link">Learning Curves</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#learning_curves" title="learning_curves" class="md-nav__link">learning_curves</a></li></ul></nav></li><li class="md-nav__item"><a href="#confusion-matrix" title="Confusion Matrix" class="md-nav__link">Confusion Matrix</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#confusion_matrix" title="confusion_matrix" class="md-nav__link">confusion_matrix</a></li></ul></nav></li><li class="md-nav__item"><a href="#compare-performance" title="Compare Performance" class="md-nav__link">Compare Performance</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#compare_performance" title="compare_performance" class="md-nav__link">compare_performance</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_from_prob" title="compare_classifiers_performance_from_prob" class="md-nav__link">compare_classifiers_performance_from_prob</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_from_pred" title="compare_classifiers_performance_from_pred" class="md-nav__link">compare_classifiers_performance_from_pred</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_subset" title="compare_classifiers_performance_subset" class="md-nav__link">compare_classifiers_performance_subset</a></li><li class="md-nav__item"><a href="#compare_classifiers_performance_changing_k" title="compare_classifiers_performance_changing_k" class="md-nav__link">compare_classifiers_performance_changing_k</a></li><li class="md-nav__item"><a href="#compare_classifiers_multiclass_multimetric" title="compare_classifiers_multiclass_multimetric" class="md-nav__link">compare_classifiers_multiclass_multimetric</a></li></ul></nav></li><li class="md-nav__item"><a href="#compare-classifier-predictions" title="Compare Classifier Predictions" class="md-nav__link">Compare Classifier Predictions</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#compare_classifiers_predictions" title="compare_classifiers_predictions" class="md-nav__link">compare_classifiers_predictions</a></li><li class="md-nav__item"><a href="#compare_classifiers_predictions_distribution" title="compare_classifiers_predictions_distribution" class="md-nav__link">compare_classifiers_predictions_distribution</a></li></ul></nav></li><li class="md-nav__item"><a href="#confidence_thresholding" title="Confidence_Thresholding" class="md-nav__link">Confidence_Thresholding</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#confidence_thresholding_1" title="confidence_thresholding" class="md-nav__link">confidence_thresholding</a></li><li class="md-nav__item"><a href="#confidence_thresholding_data_vs_acc" title="confidence_thresholding_data_vs_acc" class="md-nav__link">confidence_thresholding_data_vs_acc</a></li><li class="md-nav__item"><a href="#confidence_thresholding_data_vs_acc_subset" title="confidence_thresholding_data_vs_acc_subset" class="md-nav__link">confidence_thresholding_data_vs_acc_subset</a></li><li class="md-nav__item"><a href="#confidence_thresholding_data_vs_acc_subset_per_class" title="confidence_thresholding_data_vs_acc_subset_per_class" class="md-nav__link">confidence_thresholding_data_vs_acc_subset_per_class</a></li><li class="md-nav__item"><a href="#confidence_thresholding_2thresholds_2d" title="confidence_thresholding_2thresholds_2d" class="md-nav__link">confidence_thresholding_2thresholds_2d</a></li><li class="md-nav__item"><a href="#confidence_thresholding_2thresholds_3d" title="confidence_thresholding_2thresholds_3d" class="md-nav__link">confidence_thresholding_2thresholds_3d</a></li></ul></nav></li><li class="md-nav__item"><a href="#binary-threshold-vs-metric" title="Binary Threshold vs. Metric" class="md-nav__link">Binary Threshold vs. Metric</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#binary_threshold_vs_metric" title="binary_threshold_vs_metric" class="md-nav__link">binary_threshold_vs_metric</a></li></ul></nav></li><li class="md-nav__item"><a href="#roc-curves" title="ROC Curves" class="md-nav__link">ROC Curves</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#roc_curves" title="roc_curves" class="md-nav__link">roc_curves</a></li><li class="md-nav__item"><a href="#roc_curves_from_test_statistics" title="roc_curves_from_test_statistics" class="md-nav__link">roc_curves_from_test_statistics</a></li></ul></nav></li><li class="md-nav__item"><a href="#calibration-plot" title="Calibration Plot" class="md-nav__link">Calibration Plot</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#calibration_1_vs_all" title="calibration_1_vs_all" class="md-nav__link">calibration_1_vs_all</a></li><li class="md-nav__item"><a href="#calibration_multiclass" title="calibration_multiclass" class="md-nav__link">calibration_multiclass</a></li></ul></nav></li><li class="md-nav__item"><a href="#class-frequency-vs-f1-score" title="Class Frequency vs. F1 score" class="md-nav__link">Class Frequency vs. F1 score</a><nav class="md-nav"><ul class="md-nav__list"><li class="md-nav__item"><a href="#frequency_vs_f1" title="frequency_vs_f1" class="md-nav__link">frequency_vs_f1</a></li></ul></nav></li></ul></nav></li></ul></nav></div></div></div><div class="md-content"><article class="md-content__inner md-typeset"><a href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/user_guide.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a><h1>User Guide</h1><h2 id="command-line-interface">Command Line Interface<a class="headerlink" href="#command-line-interface" title="Permanent link">&para;</a></h2>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="md-content">
+                <article class="md-content__inner md-typeset">
+
+
+                    <a class="md-icon md-content__icon"
+                       href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/user_guide.md"
+                       title="Edit this page">&#xE3C9;</a>
+
+
+                    <h1>User Guide</h1>
+
+                    <h2 id="command-line-interface">Command Line Interface<a class="headerlink"
+                                                                             href="#command-line-interface"
+                                                                             title="Permanent link">&para;</a></h2>
 <p>Ludwig provides six command line interface entry points</p>
 <ul>
 <li>train</li>
@@ -2492,9 +4975,17 @@ The blue one is the F1 score for that class and a blue line is plotted to show t
 The classes on the x axis are sorted by f1 score.</p>
 <p><img alt="Frequency vs F1 sorted by F1" src="../images/freq_vs_f1_sorted_f1.png" title="Frequency vs F1 sorted by F1" /></p>
 <p>The second plot has the same structure of the first one, but the axes are flipped and the classes on the x axis are sorted by frequency.</p>
-<p><img alt="Frequency vs F1 sorted by Frequency" src="../images/freq_vs_f1_sorted_freq.png" title="Frequency vs F1 sorted by Frequency" /></p></article></div></div></main>
+                    <p><img alt="Frequency vs F1 sorted by Frequency" src="../images/freq_vs_f1_sorted_freq.png"
+                            title="Frequency vs F1 sorted by Frequency"/></p>
 
-<!-- Application footer -->
+
+                </article>
+            </div>
+        </div>
+    </main>
+
+
+    <!-- Application footer -->
 <footer class="md-footer">
 
     <!-- Link to previous and/or next page -->
@@ -2574,4 +5065,14 @@ The classes on the x axis are sorted by f1 score.</p>
             
         </div>
     </div>
-</footer></div><script src="../assets/javascripts/application.b260a35d.js"></script><script>app.initialize({version:"1.0.4",url:{base:".."}})</script></body></html>
+</footer>
+
+</div>
+
+<script src="../assets/javascripts/application.39abc4af.js"></script>
+
+<script>app.initialize({version: "1.0.4", url: {base: ".."}})</script>
+
+
+</body>
+</html>
