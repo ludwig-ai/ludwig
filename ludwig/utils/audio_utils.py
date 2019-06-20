@@ -19,6 +19,7 @@ from math import floor, ceil
 import os
 import numpy as np
 from scipy.signal.windows import get_window
+from scipy.signal import lfilter
 
 def pre_emphasize_data(data, emphasize_value=0.97):
     filter_window = np.asarray([1, -emphasize_value])
@@ -28,9 +29,9 @@ def pre_emphasize_data(data, emphasize_value=0.97):
 def get_length_in_samp(sampling_rate_in_hz, length_in_s):
     return int(sampling_rate_in_hz * length_in_s)
 
-def get_group_delay(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type):
-    X_stft_transform = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)
-    Y_stft_transform = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type, data_transformation='group_delay')
+def get_group_delay(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type):
+    X_stft_transform = get_stft(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)
+    Y_stft_transform = get_stft(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type, data_transformation='group_delay')
     X_stft_transform_real = np.real(X_stft_transform)
     X_stft_transform_imag = np.imag(X_stft_transform)
     Y_stft_transform_real = np.real(Y_stft_transform)
@@ -40,26 +41,26 @@ def get_group_delay(raw_data, window_length_in_s, window_shift_in_s, num_fft_poi
     group_delay = np.divide(nominator, denominator + 1e-10)
     assert not np.isnan(group_delay).any(), 'There are NaN values in group delay'
     group_delay_non_symmetric = get_non_symmetric_data(group_delay)
-    return group_delay_non_symmetric 
+    return np.transpose(group_delay_non_symmetric)
 
-def get_phase_stft_magnitude(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type):  
-    stft = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)  
+def get_phase_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type):  
+    stft = get_stft(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)  
     non_symmetric_stft = get_non_symmetric_data(stft)
     abs_stft = np.abs(non_symmetric_stft)
     phase = np.angle(stft)
     stft_phase = np.concatenate((phase, abs_stft), axis=1)
-    return stft_phase
+    return np.transpose(stft_phase)
 
-def get_stft_magnitude(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type): 
-    stft = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)
+def get_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type): 
+    stft = get_stft(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)
     stft_magnitude = np.abs(stft)
-    return stft_magnitude
+    return np.transpose(stft_magnitude)
 
-def get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation=None): 
+def get_stft(raw_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation=None): 
     pre_emphasized_data = pre_emphasize_data(raw_data)
-    stft_data = short_time_fourier_transform(pre_emphasized_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation)
+    stft = short_time_fourier_transform(pre_emphasized_data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation)
     non_symmetric_stft = get_non_symmetric_data(stft)
-    return non_symmetric_data
+    return non_symmetric_stft
 
 def short_time_fourier_transform(data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation=None):
     window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
@@ -83,12 +84,6 @@ def preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_sam
         zero_padded_matrix[num_output_idx, :end_padded_idx] = data[start_idx:end_idx]
     return zero_padded_matrix
 
-def get_num_output_padded_to_fit_input_from_s(num_input, window_length_in_s, window_shift_in_s, sampling_rate_in_hz):
-    window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
-    window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)
-    num_output_padded = get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp)
-    return num_output_padded
-
 def get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp):
     num_output_valid = (num_input - window_length_in_samp) / float(window_shift_in_samp) + 1
     return int(np.ceil(num_output_valid))
@@ -100,7 +95,10 @@ def weight_data_matrix(data_matrix, window_type, data_transformation=None):
         window *= np.arange(window_length_in_samp)
     return data_matrix * window
 
+def get_non_symmetric_length(symmetric_length):
+    return int(symmetric_length/2) + 1
+
 def get_non_symmetric_data(data):
     num_fft_points = data.shape[-1]
-    num_ess_fft_points = int(num_fft_points/2) + 1
+    num_ess_fft_points = get_non_symmetric_length(num_fft_points)
     return data[:, :num_ess_fft_points]

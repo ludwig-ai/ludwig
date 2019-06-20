@@ -136,7 +136,6 @@ class AudioBaseFeature(BaseFeature):
             feature_dim = 1
         elif(feature_type == 'stft_phase'):
             feature_dim_symmetric = get_length_in_samp(audio_feature_dict['window_length_in_s'], sampling_rate_in_hz)
-            feature_dim = 2 * get_non_symmetric_length(feature_dim_symmetric)
         elif(feature_type in ['stft', 'group_delay']):
             feature_dim_symmetric = get_length_in_samp(audio_feature_dict['window_length_in_s'], sampling_rate_in_hz)
             feature_dim = get_non_symmetric_length(feature_dim_symmetric)
