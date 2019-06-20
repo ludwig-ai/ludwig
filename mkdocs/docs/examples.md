@@ -414,8 +414,9 @@ input_features:
         type: image
         encoder: stacked_cnn
         resize_image: true
-        width: 28
-        height: 28
+        preprocessing:
+          width: 28
+          height: 28
     -
         name: image_path_2
         type: image
