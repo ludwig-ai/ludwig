@@ -617,6 +617,7 @@ def _preprocess_df_for_training(
     processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
+
     if data_df is not None:
         # needs preprocessing
         logger.info('Using full dataframe')
