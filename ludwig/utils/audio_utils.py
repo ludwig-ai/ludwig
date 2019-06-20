@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from math import floor, ceil
-
-import os
 import numpy as np
 from scipy.signal.windows import get_window
 from scipy.signal import lfilter

@@ -17,12 +17,11 @@
 import logging
 import os
 
-import h5py
 import numpy as np
 import tensorflow as tf
 import soundfile
 
-from ludwig.constants import *
+from ludwig.constants import AUDIO, BACKFILL
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 
