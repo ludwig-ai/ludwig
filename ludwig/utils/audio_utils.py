@@ -1,0 +1,106 @@
+#! /usr/bin/env python
+# coding=utf-8
+# Copyright (c) 2019 Uber Technologies, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+from math import floor, ceil
+
+import os
+import numpy as np
+from scipy.signal.windows import get_window
+
+def pre_emphasize_data(data, emphasize_value=0.97):
+    filter_window = np.asarray([1, -emphasize_value])
+    pre_emphasized_data = lfilter(filter_window, 1, data)
+    return pre_emphasized_data
+
+def get_length_in_samp(sampling_rate_in_hz, length_in_s):
+    return int(sampling_rate_in_hz * length_in_s)
+
+def get_group_delay(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type):
+    X_stft_transform = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)
+    Y_stft_transform = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type, data_transformation='group_delay')
+    X_stft_transform_real = np.real(X_stft_transform)
+    X_stft_transform_imag = np.imag(X_stft_transform)
+    Y_stft_transform_real = np.real(Y_stft_transform)
+    Y_stft_transform_imag = np.imag(Y_stft_transform)
+    nominator = np.multiply(X_stft_transform_real, Y_stft_transform_real) + np.multiply(X_stft_transform_imag, Y_stft_transform_imag)
+    denominator = np.square(np.abs(X_stft_transform))
+    group_delay = np.divide(nominator, denominator + 1e-10)
+    assert not np.isnan(group_delay).any(), 'There are NaN values in group delay'
+    group_delay_non_symmetric = get_non_symmetric_data(group_delay)
+    return group_delay_non_symmetric 
+
+def get_phase_stft_magnitude(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type):  
+    stft = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)  
+    non_symmetric_stft = get_non_symmetric_data(stft)
+    abs_stft = np.abs(non_symmetric_stft)
+    phase = np.angle(stft)
+    stft_phase = np.concatenate((phase, abs_stft), axis=1)
+    return stft_phase
+
+def get_stft_magnitude(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type): 
+    stft = get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type=window_type)
+    stft_magnitude = np.abs(stft)
+    return stft_magnitude
+
+def get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation=None): 
+    pre_emphasized_data = pre_emphasize_data(raw_data)
+    stft_data = short_time_fourier_transform(pre_emphasized_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation)
+    non_symmetric_stft = get_non_symmetric_data(stft)
+    return non_symmetric_data
+
+def short_time_fourier_transform(data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation=None):
+    window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
+    window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)
+    if(num_fft_points < window_length_in_samp):
+        num_fft_points = window_length_in_samp
+    preprocessed_data_matrix = preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_samp)
+    weighted_data_matrix = weight_data_matrix(preprocessed_data_matrix, window_type, data_transformation=data_transformation)
+    fft = np.fft.fft(weighted_data_matrix, n=num_fft_points)
+    return fft
+
+def preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_samp):
+    num_input = data.shape[0]
+    num_output = get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp)
+    zero_padded_matrix = np.zeros((num_output, window_length_in_samp), dtype=np.float)
+    for num_output_idx in range(num_output):
+        start_idx = window_shift_in_samp*num_output_idx
+        is_last_output = num_output_idx == num_output - 1
+        end_idx = start_idx + window_length_in_samp if not is_last_output else num_input
+        end_padded_idx = window_length_in_samp if not is_last_output else end_idx - start_idx
+        zero_padded_matrix[num_output_idx, :end_padded_idx] = data[start_idx:end_idx]
+    return zero_padded_matrix
+
+def get_num_output_padded_to_fit_input_from_s(num_input, window_length_in_s, window_shift_in_s, sampling_rate_in_hz):
+    window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
+    window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)
+    num_output_padded = get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp)
+    return num_output_padded
+
+def get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp):
+    num_output_valid = (num_input - window_length_in_samp) / float(window_shift_in_samp) + 1
+    return int(np.ceil(num_output_valid))
+
+def weight_data_matrix(data_matrix, window_type, data_transformation=None):
+    window_length_in_samp = data_matrix[0].shape[0]
+    window = get_window(window_type, window_length_in_samp, fftbins=False)
+    if(data_transformation == 'group_delay'):
+        window *= np.arange(window_length_in_samp)
+    return data_matrix * window
+
+def get_non_symmetric_data(data):
+    num_fft_points = data.shape[-1]
+    num_ess_fft_points = int(num_fft_points/2) + 1
+    return data[:, :num_ess_fft_points]

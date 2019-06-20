@@ -9,6 +9,8 @@ ACCURACY	constants.py	/^ACCURACY = 'accuracy'$/;"	v
 APPEND	constants.py	/^APPEND = 'append'$/;"	v
 AUDIO	constants.py	/^AUDIO = 'audio'$/;"	v
 AVG_EXP	constants.py	/^AVG_EXP = 'avg_exp'$/;"	v
+AudioBaseFeature	features/audio_feature.py	/^class AudioBaseFeature(BaseFeature):$/;"	c
+AudioInputFeature	features/audio_feature.py	/^class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):$/;"	c
 BACKFILL	constants.py	/^BACKFILL = 'backfill'$/;"	v
 BAG	constants.py	/^BAG = 'bag'$/;"	v
 BERTTokenizer	utils/strings_utils.py	/^class BERTTokenizer(BaseTokenizer):$/;"	c
@@ -95,9 +97,7 @@ HITS_AT_K	constants.py	/^HITS_AT_K = 'hits_at_k'$/;"	v
 HTMLStripper	utils/html_utils.py	/^class HTMLStripper(HTMLParser):$/;"	c
 IMAGE	constants.py	/^IMAGE = 'image'$/;"	v
 INTERPOLATE	constants.py	/^INTERPOLATE = 'interpolate'$/;"	v
-ImageBaseFeature	features/audio_feature.py	/^class ImageBaseFeature(BaseFeature):$/;"	c
 ImageBaseFeature	features/image_feature.py	/^class ImageBaseFeature(BaseFeature):$/;"	c
-ImageInputFeature	features/audio_feature.py	/^class ImageInputFeature(ImageBaseFeature, InputFeature):$/;"	c
 ImageInputFeature	features/image_feature.py	/^class ImageInputFeature(ImageBaseFeature, InputFeature):$/;"	c
 InputFeature	features/base_feature.py	/^class InputFeature(ABC):$/;"	c
 ItalianFilterTokenizer	utils/strings_utils.py	/^class ItalianFilterTokenizer(BaseTokenizer):$/;"	c
@@ -306,8 +306,8 @@ __exit__	utils/time_utils.py	/^    def __exit__(self, *args):$/;"	m	class:WithTi
 __init__	api.py	/^    def __init__($/;"	m	class:LudwigModel
 __init__	cli.py	/^    def __init__(self):$/;"	m	class:CLI
 __init__	data/dataset.py	/^    def __init__(self, dataset, input_features, output_features, data_hdf5_fp):$/;"	m	class:Dataset
-__init__	features/audio_feature.py	/^    def __init__(self, feature):$/;"	m	class:ImageBaseFeature
-__init__	features/audio_feature.py	/^    def __init__(self, feature):$/;"	m	class:ImageInputFeature
+__init__	features/audio_feature.py	/^    def __init__(self, feature):$/;"	m	class:AudioBaseFeature
+__init__	features/audio_feature.py	/^    def __init__(self, feature):$/;"	m	class:AudioInputFeature
 __init__	features/bag_feature.py	/^    def __init__(self, feature):$/;"	m	class:BagBaseFeature
 __init__	features/bag_feature.py	/^    def __init__(self, feature):$/;"	m	class:BagInputFeature
 __init__	features/base_feature.py	/^    def __init__(self, feature):$/;"	m	class:BaseFeature
@@ -374,7 +374,7 @@ __init__	utils/strings_utils.py	/^    def __init__(self, vocab_file=None, **kwar
 __init__	utils/time_utils.py	/^    def __init__(self):$/;"	m	class:Timer
 __init__	utils/time_utils.py	/^    def __init__(self, title='', quiet=False):$/;"	m	class:WithTimer
 _get_coord_info_new	utils/visualization_utils.py	/^        def _get_coord_info_new(self, renderer):$/;"	f	function:confidence_fitlering_3d_plot
-_get_input_placeholder	features/audio_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:ImageInputFeature
+_get_input_placeholder	features/audio_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:AudioInputFeature
 _get_input_placeholder	features/bag_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:BagInputFeature
 _get_input_placeholder	features/binary_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:BinaryInputFeature
 _get_input_placeholder	features/category_feature.py	/^    def _get_input_placeholder(self):$/;"	m	class:CategoryInputFeature
@@ -413,8 +413,8 @@ _predict	api.py	/^    def _predict($/;"	m	class:LudwigModel
 _preprocess_csv_for_training	data/preprocessing.py	/^def _preprocess_csv_for_training($/;"	f
 _preprocess_df_for_training	data/preprocessing.py	/^def _preprocess_df_for_training($/;"	f
 _projection_input_size	models/modules/recurrent_modules.py	/^    def _projection_input_size(self):$/;"	m	class:BasicDecoder
+_read_audio_and_transform_to_feature	features/audio_feature.py	/^    def _read_audio_and_transform_to_feature(filepath, audio_feature):$/;"	m	class:AudioBaseFeature
 _read_data	api.py	/^    def _read_data(data_csv, data_dict):$/;"	m	class:LudwigModel
-_read_image_and_resize	features/audio_feature.py	/^    def _read_image_and_resize(filepath,$/;"	m	class:ImageBaseFeature
 _read_image_and_resize	features/image_feature.py	/^    def _read_image_and_resize(filepath,$/;"	m	class:ImageBaseFeature
 _sampled_loss	models/modules/loss_modules.py	/^    def _sampled_loss(labels, logits):$/;"	f	function:sequence_sampled_softmax_cross_entropy
 _save_config	contribs/comet.py	/^    def _save_config(self, config):$/;"	m	class:Comet
@@ -430,7 +430,7 @@ accuracy	visualize.py	/^                accuracy = ((filtered_gt == filtered_pre
 accuracy	visualize.py	/^            accuracy = ($/;"	v
 accuracy	visualize.py	/^            accuracy = ((filtered_gt == filtered_predictions).sum() \/$/;"	v
 adaptive	visualize.py	/^        adaptive=True,$/;"	v
-add_feature_data	features/audio_feature.py	/^    def add_feature_data($/;"	m	class:ImageBaseFeature
+add_feature_data	features/audio_feature.py	/^    def add_feature_data($/;"	m	class:AudioBaseFeature
 add_feature_data	features/bag_feature.py	/^    def add_feature_data($/;"	m	class:BagBaseFeature
 add_feature_data	features/binary_feature.py	/^    def add_feature_data($/;"	m	class:BinaryBaseFeature
 add_feature_data	features/category_feature.py	/^    def add_feature_data($/;"	m	class:CategoryBaseFeature
@@ -477,7 +477,7 @@ build_data	data/preprocessing.py	/^def build_data($/;"	f
 build_dataset	data/preprocessing.py	/^def build_dataset($/;"	f
 build_dataset_df	data/preprocessing.py	/^def build_dataset_df($/;"	f
 build_feature_parameters	data/dataset_synthesyzer.py	/^def build_feature_parameters(features):$/;"	f
-build_input	features/audio_feature.py	/^    def build_input($/;"	m	class:ImageInputFeature
+build_input	features/audio_feature.py	/^    def build_input($/;"	m	class:AudioInputFeature
 build_input	features/bag_feature.py	/^    def build_input($/;"	m	class:BagInputFeature
 build_input	features/base_feature.py	/^    def build_input($/;"	m	class:InputFeature
 build_input	features/binary_feature.py	/^    def build_input($/;"	m	class:BinaryInputFeature
@@ -830,7 +830,7 @@ get_dataset	data/dataset.py	/^    def get_dataset(self):$/;"	m	class:Dataset
 get_default_optimizer_params	utils/defaults.py	/^def get_default_optimizer_params(optimizer_type):$/;"	f
 get_experiment_description	utils/misc.py	/^def get_experiment_description(model_definition,$/;"	f
 get_experiment_dir_name	train.py	/^def get_experiment_dir_name($/;"	f
-get_feature_meta	features/audio_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:ImageBaseFeature
+get_feature_meta	features/audio_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:AudioBaseFeature
 get_feature_meta	features/bag_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:BagBaseFeature
 get_feature_meta	features/binary_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:BinaryBaseFeature
 get_feature_meta	features/category_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:CategoryBaseFeature
@@ -842,20 +842,27 @@ get_feature_meta	features/text_feature.py	/^    def get_feature_meta(column, pre
 get_feature_meta	features/timeseries_feature.py	/^    def get_feature_meta(column, preprocessing_parameters):$/;"	m	class:TimeseriesBaseFeature
 get_file_names	train.py	/^def get_file_names(experiment_dir_name):$/;"	f
 get_from_registry	utils/misc.py	/^def get_from_registry(key, registry):$/;"	f
-get_image_encoder	features/audio_feature.py	/^    def get_image_encoder(self, encoder_parameters):$/;"	m	class:ImageInputFeature
+get_group_delay	utils/audio_utils.py	/^def get_group_delay(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type):$/;"	f
 get_image_encoder	features/image_feature.py	/^    def get_image_encoder(self, encoder_parameters):$/;"	m	class:ImageInputFeature
 get_improved_fun	models/modules/measure_modules.py	/^def get_improved_fun(measure):$/;"	f
 get_initial_validation_value	models/modules/measure_modules.py	/^def get_initial_validation_value(measure):$/;"	f
 get_initializer	models/modules/initializer_modules.py	/^def get_initializer(parameters):$/;"	f
+get_length_in_samp	utils/audio_utils.py	/^def get_length_in_samp(sampling_rate_in_hz, length_in_s):$/;"	f
+get_non_symmetric_data	utils/audio_utils.py	/^def get_non_symmetric_data(data):$/;"	f
+get_num_output_padded_to_fit_input	utils/audio_utils.py	/^def get_num_output_padded_to_fit_input(num_input, window_length_in_samp, window_shift_in_samp):$/;"	f
+get_num_output_padded_to_fit_input_from_s	utils/audio_utils.py	/^def get_num_output_padded_to_fit_input_from_s(num_input, window_length_in_s, window_shift_in_s, sampling_rate_in_hz):$/;"	f
 get_optimizer_fun	models/modules/optimization_modules.py	/^def get_optimizer_fun(optimizer_type):$/;"	f
 get_output_nodes	models/model.py	/^    def get_output_nodes(self, collect_predictions, only_predictions=False):$/;"	m	class:Model
 get_outputs_stats	models/model.py	/^    def get_outputs_stats(self):$/;"	m	class:Model
+get_phase_stft	utils/audio_utils.py	/^def get_phase_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type):  $/;"	f
 get_resnet_block_sizes	models/modules/convolutional_modules.py	/^def get_resnet_block_sizes(resnet_size):$/;"	f
 get_sequence_decoder	features/sequence_feature.py	/^    def get_sequence_decoder(self, decoder_parameters):$/;"	m	class:SequenceOutputFeature
 get_sequence_encoder	features/sequence_feature.py	/^    def get_sequence_encoder(self, encoder_parameters):$/;"	m	class:SequenceInputFeature
 get_sequence_vector	utils/strings_utils.py	/^def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):$/;"	f
 get_split	data/preprocessing.py	/^def get_split($/;"	f
 get_stat_names	models/model.py	/^    def get_stat_names(self, output_features):$/;"	m	class:Model
+get_stft	utils/audio_utils.py	/^def get_stft(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation=None): $/;"	f
+get_stft_magnitude	utils/audio_utils.py	/^def get_stft_magnitude(raw_data, window_length_in_s, window_shift_in_s, num_fft_points, window_type): $/;"	f
 get_tf_config	utils/tf_utils.py	/^def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,$/;"	f
 global_preprocessing_parameters	data/preprocessing.py	/^    global_preprocessing_parameters = merge_dict($/;"	v
 global_step	models/modules/optimization_modules.py	/^                                          global_step=global_step)$/;"	v
@@ -915,7 +922,6 @@ hits_at_k	visualize.py	/^        hits_at_k = 0$/;"	v
 hits_at_k	visualize.py	/^        hits_at_k = [0.0] * k$/;"	v
 hits_at_ks	visualize.py	/^    hits_at_ks = []$/;"	v
 idx_list	data/preprocessing.py	/^                idx_list = ($/;"	v
-image_encoder_registry	features/audio_feature.py	/^image_encoder_registry = {$/;"	v
 image_encoder_registry	features/image_feature.py	/^image_encoder_registry = {$/;"	v
 import_call	contribs/comet.py	/^    def import_call(argv, *args, **kwargs):$/;"	m	class:Comet
 increase_batch_size	models/model.py	/^    def increase_batch_size($/;"	m	class:Model
@@ -1143,7 +1149,7 @@ pie	utils/visualization_utils.py	/^def pie(ax, values, **kwargs):$/;"	f
 plot_distributions	utils/visualization_utils.py	/^def plot_distributions(distributions, labels=None, title=None):$/;"	f
 plot_distributions_difference	utils/visualization_utils.py	/^def plot_distributions_difference(distribution, labels=None, title=None):$/;"	f
 plot_matrix	utils/visualization_utils.py	/^def plot_matrix(matrix, cmap='hot'):$/;"	f
-populate_defaults	features/audio_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:ImageInputFeature
+populate_defaults	features/audio_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:AudioInputFeature
 populate_defaults	features/bag_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:BagInputFeature
 populate_defaults	features/base_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:InputFeature
 populate_defaults	features/base_feature.py	/^    def populate_defaults(input_feature):$/;"	m	class:OutputFeature
@@ -1179,6 +1185,7 @@ postprocess_results	features/timeseries_feature.py	/^    def postprocess_results
 postprocessed	data/postprocessing.py	/^    postprocessed = {}$/;"	v
 postprocessed_output	experiment.py	/^        postprocessed_output = postprocess($/;"	v
 postprocessed_output	predict.py	/^        postprocessed_output = postprocess($/;"	v
+pre_emphasize_data	utils/audio_utils.py	/^def pre_emphasize_data(data, emphasize_value=0.97):$/;"	f
 precision	utils/metrics_utils.py	/^    def precision(self, idx):$/;"	m	class:ConfusionMatrix
 precision_recall_curve	utils/metrics_utils.py	/^def precision_recall_curve(conditions, prediction_scores, pos_label=None,$/;"	f
 precisions	visualize.py	/^            precisions = []$/;"	v
@@ -1205,8 +1212,9 @@ preds	visualize.py	/^    preds = [load_from_file(preds_fn, dtype=str) for preds_
 preds	visualize.py	/^    preds = mapped_preds$/;"	v
 preprocess_for_prediction	data/preprocessing.py	/^def preprocess_for_prediction($/;"	f
 preprocess_for_training	data/preprocessing.py	/^def preprocess_for_training($/;"	f
+preprocess_to_padded_matrix	utils/audio_utils.py	/^def preprocess_to_padded_matrix(data, window_length_in_samp, window_shift_in_samp):$/;"	f
 preprocessed_data	train.py	/^    preprocessed_data = preprocess_for_training($/;"	v
-preprocessing_defaults	features/audio_feature.py	/^    preprocessing_defaults = {$/;"	v	class:ImageBaseFeature
+preprocessing_defaults	features/audio_feature.py	/^    preprocessing_defaults = {$/;"	v	class:AudioBaseFeature
 preprocessing_defaults	features/bag_feature.py	/^    preprocessing_defaults = {$/;"	v	class:BagBaseFeature
 preprocessing_defaults	features/binary_feature.py	/^    preprocessing_defaults = {$/;"	v	class:BinaryBaseFeature
 preprocessing_defaults	features/category_feature.py	/^    preprocessing_defaults = {$/;"	v	class:CategoryBaseFeature
@@ -1344,6 +1352,7 @@ set_epochs_to_1_or_quit	models/model.py	/^    def set_epochs_to_1_or_quit(self, 
 set_on_master	globals.py	/^def set_on_master(use_horovod):$/;"	f
 set_random_seed	utils/misc.py	/^def set_random_seed(random_seed):$/;"	f
 set_str_to_idx	features/feature_utils.py	/^def set_str_to_idx(set_string, feature_dict, format_func):$/;"	f
+short_time_fourier_transform	utils/audio_utils.py	/^def short_time_fourier_transform(data, sampling_rate_in_hz, window_length_in_s, window_shift_in_s, num_fft_points, window_type, data_transformation=None):$/;"	f
 should_close_session	experiment.py	/^        should_close_session=False,$/;"	v
 should_regularize	features/feature_utils.py	/^def should_regularize(regularize_layers):$/;"	f
 shuffle	utils/batcher.py	/^    def shuffle(self, buckets_idcs):$/;"	m	class:BucketedBatcher
@@ -1507,7 +1516,7 @@ unit_indices_vector	utils/strings_utils.py	/^        unit_indices_vector = _get_
 unit_indices_vector	utils/strings_utils.py	/^    unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)$/;"	v
 unit_sequence	utils/strings_utils.py	/^    unit_sequence = tokenizer($/;"	v
 unit_vectors	utils/strings_utils.py	/^    unit_vectors = []$/;"	v
-update_model_definition_with_metadata	features/audio_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:ImageInputFeature
+update_model_definition_with_metadata	features/audio_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:AudioInputFeature
 update_model_definition_with_metadata	features/bag_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:BagInputFeature
 update_model_definition_with_metadata	features/base_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:InputFeature
 update_model_definition_with_metadata	features/base_feature.py	/^    def update_model_definition_with_metadata($/;"	m	class:OutputFeature
@@ -1553,5 +1562,6 @@ vocab	utils/strings_utils.py	/^        vocab = [unit for unit, count in$/;"	v
 vocab	utils/strings_utils.py	/^        vocab = sorted(list(set(custom_vocabulary)))$/;"	v
 vocab_file	utils/strings_utils.py	/^        vocab_file=tokenizer_vocab_file$/;"	v
 wall	utils/time_utils.py	/^    def wall(self):$/;"	m	class:Timer
+weight_data_matrix	utils/audio_utils.py	/^def weight_data_matrix(data_matrix, window_type, data_transformation=None):$/;"	f
 weighted_softmax_cross_entropy	models/modules/loss_modules.py	/^def weighted_softmax_cross_entropy(logits, vector_labels, loss):$/;"	f
 y_label	visualize.py	/^        y_label='',$/;"	v

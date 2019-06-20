@@ -26,7 +26,13 @@ import ipdb
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
+
 from ludwig.utils.image_utils import get_abs_path
+from ludwig.utils.audio_utils import get_num_output_padded_to_fit_input_from_s
+from ludwig.utils.audio_utils import get_length_in_samp
+from ludwig.utils.audio_utils import get_group_delay
+from ludwig.utils.audio_utils import get_phase_stft_magnitude
+from ludwig.utils.audio_utils import get_stft_magnitude
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 
@@ -42,29 +48,66 @@ class AudioBaseFeature(BaseFeature):
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
+        'padding_value': None,
         'normalization': None,
         'audio_feature': {
-            'type': 'raw'
-            'dim': 1
+           'type': 'raw',
         }
     }
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         max_length = 0
+        audio_feature_dict = preprocessing_parameters['audio_feature']
+        feature_type = audio_feature_dict['type']
         for audio_file_path in column:
-            audio, _ = soundfile.read(audio_file_path)
-            max_length = max(max_length, audio.shape[-1])
+            audio, sampling_rate_in_hz = soundfile.read(audio_file_path)
+            audio_length = audio.shape[-1]
 
-        return { 'max_audio_length': max_length }
+            if(feature_type == 'raw'):
+                feature_length = audio_length
+            elif(feature_type in ['stft', 'group_delay', 'stft_phase']):
+                window_length_in_s = audio_feature_dict['window_length_in_s']
+                window_shift_in_s = audio_feature_dict['window_shift_in_s']
+                feature_length = get_num_output_padded_to_fit_input_from_s(audio_length, window_length_in_s, window_shift_in_s, sampling_rate_in_hz)
+            else:
+                raise ValueError('{} is not recognized.'.format(feature_type))
+            max_length = max(max_length, feature_length)
+        return { 'max_feature_length': max_length,
+                  'sampling_rate_in_hz': sampling_rate_in_hz 
+               }
 
     @staticmethod
-    def _read_audio(filepath):
+    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_feature_length, padding_value):
         """
         :param filepath: path to the audio
+        :param audio_feature_dict: dictionary describing audio feature see default
         """
+        feature_type = audio_feature_dict['type']
         audio, sampling_rate_in_hz = soundfile.read(filepath)
-        return audio, sampling_rate_in_hz
+        audio_feature_padded = np.full((feature_dim, max_feature_length), padding_value)
+        if(feature_type == 'raw'):
+            audio_feature = np.expand_dims(audio, axis=0)
+        elif(feature_type in ['stft', 'stft_phase', 'group_delay']):
+            audio_feature = AudioBaseFeature._get_2D_feature(feature_type, audio_feature_dict)
+        else:
+            raise ValueError('{} is not recognized.'.format(feature_type))
+        feature_length = audio_feature.shape[-1]
+        audio_feature_padded[:,:feature_length] = audio_feature
+        return audio_feature_padded
+
+    @staticmethod
+    def _get_2D_feature(feature_type, audio_feature_dict):
+        window_length_in_s = audio_feature_dict['window_length_in_s']
+        window_shift_in_s = audio_feature_dict['window_shift_in_s']
+        num_fft_point = audio_feature_dict['num_fft_points'] if 'num_fft_points' in audio_feature_dict else get_length_in_samp(window_length_in_s)
+        window_type = audio_feature_dict['window_type'] if 'window_type' in audio_feature_dict else 'hamming'
+        if(feature_type == 'stft_phase'):
+            return get_phase_stft_magnitude(audio, window_length_in_s, window_shift_in_s, num_fft_points, window_type)
+        if(feature_type == 'stft'):
+            return get_stft_magnitude(audio, window_length_in_s, window_shift_in_s, num_fft_points, window_type)
+        if(feature_type == 'group_delay'):
+            return get_group_delay(audio, window_length_in_s, window_shift_in_s, num_fft_points, window_type)
 
     @staticmethod
     def add_feature_data(
@@ -74,7 +117,6 @@ class AudioBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        ipdb.set_trace()
         set_default_value(
             feature['preprocessing'],
             'in_memory',
@@ -82,14 +124,21 @@ class AudioBaseFeature(BaseFeature):
         )
 
         feature_name = feature['name']
-        max_audio_length = metadata[feature_name]['max_audio_length']
-
+        max_feature_length = metadata[feature_name]['max_feature_length']
+        sampling_rate_in_hz = metadata[feature_name]['sampling_rate_in_hz']
         assert 'audio_feature' in preprocessing_parameters
-        audio_feature = preprocessing_parameters['audio_feature']
-        assert 'type' in audio_feature
-        feature_type = audio_feature['type']
-        assert 'dim' in audio_feature
-        feature_dim = audio_feature['dim']
+        audio_feature_dict = preprocessing_parameters['audio_feature']
+        assert 'type' in audio_feature_dict
+
+        feature_type = audio_feature_dict['type']
+        if(feature_type == 'raw'):
+            feature_dim = 1
+        elif(feature_type == 'stft_phase'):
+            feature_dim = 2 * get_length_in_samp(audio_feature_dict['window_length_in_s'], sampling_rate_in_hz)
+        elif(feature_type in ['stft', 'group_delay']):
+            feature_dim = get_length_in_samp(audio_feature_dict['window_length_in_s'], sampling_rate_in_hz)
+        else:
+            raise ValueError('{} is not recognized.'.format(feature_type))
 
         csv_path = None
         if hasattr(dataset_df, 'csv'):
@@ -104,10 +153,10 @@ class AudioBaseFeature(BaseFeature):
             raise ValueError(
                 'Audio file paths must be absolute'
             )
-
+        padding_value = preprocessing_parameters['padding_value']
         if feature['preprocessing']['in_memory']:
             data[feature['name']] = np.empty(
-                (num_audio_utterances, feature_dim, length),
+                (num_audio_utterances, feature_dim, max_feature_length),
                 dtype=np.float32
             )
             for i in range(len(dataset_df)):
@@ -115,9 +164,10 @@ class AudioBaseFeature(BaseFeature):
                     csv_path,
                     dataset_df[feature['name']][i]
                 )
-
-                audio = AudioBaseFeature._read_audio(filepath)
-                data[feature['name']][i, :, :] = audio
+                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_feature_length, padding_value)
+                # TODO: add optional normalization step here
+                ipdb.set_trace()
+                data[feature['name']][i, :, :] = audio_feature
 
 
 class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
