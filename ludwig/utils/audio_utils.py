@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import numpy as np
+import ipdb
 from scipy.signal.windows import get_window
 from scipy.signal import lfilter
 
@@ -97,3 +98,14 @@ def get_non_symmetric_data(data):
     num_fft_points = data.shape[-1]
     num_ess_fft_points = get_non_symmetric_length(num_fft_points)
     return data[:, :num_ess_fft_points]
+
+def get_max_length_stft_based(length_in_samp, window_length_in_s, window_shift_in_s, sampling_rate_in_hz):
+    window_length_in_samp = get_length_in_samp(window_length_in_s, sampling_rate_in_hz)
+    window_shift_in_samp = get_length_in_samp(window_shift_in_s, sampling_rate_in_hz)
+    return get_num_output_padded_to_fit_input(length_in_samp, window_length_in_samp, window_shift_in_samp)
+
+def calculate_incr_std(count, std_prev, mean_prev, mean, length):
+    return (count*(std_prev**2) + (length - mean_prev)*(length - mean)) / float(count)
+
+def calculate_incr_mean(count, mean, length):
+    return ((count - 1) * mean + length) / float(count)

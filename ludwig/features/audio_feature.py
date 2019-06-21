@@ -21,12 +21,14 @@ import numpy as np
 import tensorflow as tf
 import soundfile
 
-from ludwig.constants import AUDIO, BACKFILL
+from ludwig.constants import AUDIO, BACKFILL 
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 
 from ludwig.utils.image_utils import get_abs_path
-from ludwig.utils.audio_utils import get_num_output_padded_to_fit_input
+from ludwig.utils.audio_utils import get_max_length_stft_based
+from ludwig.utils.audio_utils import calculate_incr_std
+from ludwig.utils.audio_utils import calculate_incr_mean
 from ludwig.utils.audio_utils import get_length_in_samp
 from ludwig.utils.audio_utils import get_group_delay
 from ludwig.utils.audio_utils import get_phase_stft_magnitude
@@ -44,9 +46,10 @@ class AudioBaseFeature(BaseFeature):
         self.type = AUDIO
 
     preprocessing_defaults = {
+        'audio_file_length_limit_in_s': 5.75,
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
-        'padding_value': None,
+        'padding_value': 0,
         'normalization': None,
         'audio_feature': {
            'type': 'raw',
@@ -60,12 +63,12 @@ class AudioBaseFeature(BaseFeature):
         _, sampling_rate_in_hz = soundfile.read(first_audio_file_path)
 
         feature_dim = AudioBaseFeature._get_feature_dim(audio_feature_dict, sampling_rate_in_hz)
-        max_utterance_length = AudioBaseFeature._get_max_utterance_length(column, audio_feature_dict, sampling_rate_in_hz)
-
+        audio_file_length_limit_in_s = preprocessing_parameters['audio_file_length_limit_in_s']
+        max_length = AudioBaseFeature._get_max_length_feature(audio_feature_dict, sampling_rate_in_hz, audio_file_length_limit_in_s)
         return { 
                 'feature_dim': feature_dim,
-                'max_utterance_length': max_utterance_length,
-                'sampling_rate_in_hz': sampling_rate_in_hz 
+                'sampling_rate_in_hz': sampling_rate_in_hz,
+                'max_length': max_length
                }
 
     @staticmethod
@@ -86,53 +89,42 @@ class AudioBaseFeature(BaseFeature):
         return feature_dim
 
     @staticmethod
-    def _get_max_utterance_length(column, audio_feature_dict, sampling_rate_in_hz_check):
-        feature_type = audio_feature_dict['type']
-        max_length = 0
-        for audio_file_path in column:
-            audio, sampling_rate_in_hz = soundfile.read(audio_file_path)
-
-            if(sampling_rate_in_hz != sampling_rate_in_hz_check):
-                raise ValueError('Sampling rate of {} is {}, but should be {}'.format(audio_file_path, sampling_rate_in_hz, sampling_rate_in_hz_check))
-
-            audio_length = audio.shape[-1]
-
-            if(feature_type == 'raw'):
-                feature_length = audio_length
-            elif(feature_type in ['stft', 'group_delay', 'stft_phase']):
-                window_length_in_samp = get_length_in_samp(audio_feature_dict['window_length_in_s'], sampling_rate_in_hz)
-                window_shift_in_samp = get_length_in_samp(audio_feature_dict['window_shift_in_s'], sampling_rate_in_hz)
-                feature_length = get_num_output_padded_to_fit_input(audio_length, window_length_in_samp, window_shift_in_samp)
-            else:
-                raise ValueError('{} is not recognized.'.format(feature_type))
-
-            max_length = max(max_length, feature_length)
-        return max_length
-
-    @staticmethod
-    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_utterance_length, padding_value):
+    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, audio_stats):
         """
         :param filepath: path to the audio
         :param audio_feature_dict: dictionary describing audio feature see default
         :param feature_dim: dimension of each feature frame
-        :param max_utterance_length: max length of all utterances
+        :param max_length: max audio length defined by user in samples
         """
 
         feature_type = audio_feature_dict['type']
         audio, sampling_rate_in_hz = soundfile.read(filepath)
-        audio_feature_padded = np.full((feature_dim, max_utterance_length), padding_value)
+        AudioBaseFeature._update(audio_stats, audio, sampling_rate_in_hz)
 
         if(feature_type == 'raw'):
-            audio_feature = np.expand_dims(audio, axis=0)
+            audio_feature = np.expand_dims(audio, axis=-1)
         elif(feature_type in ['stft', 'stft_phase', 'group_delay']):
-            audio_feature = AudioBaseFeature._get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz)
+            audio_feature = np.transpose(AudioBaseFeature._get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz))
         else:
             raise ValueError('{} is not recognized.'.format(feature_type))
 
-        feature_length = audio_feature.shape[-1]
-        audio_feature_padded[:,:feature_length] = audio_feature
-
+        feature_length = audio_feature.shape[0]
+        broadcast_feature_length = min(feature_length, max_length)
+        audio_feature_padded = np.full((max_length, feature_dim), padding_value)
+        audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
         return audio_feature_padded
+
+    @staticmethod
+    def _update(audio_stats, audio, sampling_rate_in_hz):
+        audio_length_in_s = audio.shape[-1] / float(sampling_rate_in_hz)
+        audio_stats['count'] += 1
+        mean = (( audio_stats['count'] - 1) * audio_stats['mean'] + audio_length_in_s ) / float(audio_stats['count'])
+        mean = calculate_incr_mean(audio_stats['count'], audio_stats['mean'], audio_length_in_s)
+        std = calculate_incr_std(audio_stats['count'], audio_stats['std'], audio_stats['mean'], mean, audio_length_in_s)
+        audio_stats['mean'] = mean
+        audio_stats['std'] = std
+        audio_stats['max'] = max(audio_stats['max'], audio_length_in_s)
+        audio_stats['min'] = min(audio_stats['min'], audio_length_in_s)
 
     @staticmethod
     def _get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz):
@@ -179,16 +171,26 @@ class AudioBaseFeature(BaseFeature):
         num_audio_utterances = len(dataset_df)
         padding_value = preprocessing_parameters['padding_value']
         feature_name = feature['name']
-        max_utterance_length = metadata[feature_name]['max_utterance_length']
+
         feature_dim = metadata[feature_name]['feature_dim']
+        sampling_rate_in_hz = metadata[feature_name]['sampling_rate_in_hz']
+        max_length = metadata[feature_name]['max_length']
         audio_feature_dict = preprocessing_parameters['audio_feature']
+        audio_file_length_limit_in_s = preprocessing_parameters['audio_file_length_limit_in_s']
 
         if num_audio_utterances == 0:
             raise ValueError('There are no audio files in the dataset provided.')
+        audio_stats = {
+                'count': 0,
+                'mean': 0,
+                'std': 0,
+                'max': 0,
+                'min': float('inf')
+        }
 
         if feature['preprocessing']['in_memory']:
             data[feature['name']] = np.empty(
-                (num_audio_utterances, feature_dim, max_utterance_length),
+                (num_audio_utterances, max_length, feature_dim),
                 dtype=np.float32
             )
             for i in range(len(dataset_df)):
@@ -196,9 +198,40 @@ class AudioBaseFeature(BaseFeature):
                     csv_path,
                     dataset_df[feature['name']][i]
                 )
-                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_utterance_length, padding_value)
+                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, audio_stats)
                 # TODO: add optional normalization step here
                 data[feature['name']][i, :, :] = audio_feature
+
+            print_statistics = """
+            {} audio files loaded. 
+            Statistics of audio file lengths:
+            - mean: {:.4f}
+            - std: {:.4f}
+            - max: {:.4f}
+            - min: {:.4f}.
+            Max length was given as {}.
+            """.format(audio_stats['count'],audio_stats['mean'], 
+                audio_stats['std'], audio_stats['max'], 
+                audio_stats['min'], audio_file_length_limit_in_s)
+            print(print_statistics)
+    
+    @staticmethod
+    def _get_max_length_feature(audio_feature_dict, sampling_rate_in_hz, audio_file_length_limit_in_s):
+        feature_type = audio_feature_dict['type']
+        audio_file_length_limit_in_samp = audio_file_length_limit_in_s * sampling_rate_in_hz
+
+        if(not audio_file_length_limit_in_samp.is_integer()):
+            raise ValueError('Audio_file_length_limit has to be chosen so that {} (in s) * {} (sampling rate in Hz) is a integer.'.format(audio_file_length_limit_in_s, sampling_rate_in_hz))
+        audio_file_length_limit_in_samp = int(audio_file_length_limit_in_samp)
+
+        if(feature_type == 'raw'):
+            return audio_file_length_limit_in_samp
+        elif(feature_type in ['stft', 'stft_phase', 'group_delay']):
+            window_length_in_s = audio_feature_dict['window_length_in_s']
+            window_shift_in_s = audio_feature_dict['window_shift_in_s']
+            return get_max_length_stft_based(audio_file_length_limit_in_samp, window_length_in_s, window_shift_in_s, sampling_rate_in_hz)
+        else:
+            raise ValueError('{} is not recognized.'.format(feature_type))
 
 
 class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
@@ -215,7 +248,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
 
     def _get_input_placeholder(self):
         return tf.placeholder(
-            tf.float32, shape=[None, self.embedding_size, self.length],
+            tf.float32, shape=[None, self.length, self.embedding_size],
             name='{}_placeholder'.format(self.name)
         )
 
@@ -244,7 +277,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
             *args,
             **kwargs
     ):
-        input_feature['length'] = feature_metadata['max_utterance_length']
+        input_feature['length'] = feature_metadata['max_length']
         input_feature['embedding_size'] = feature_metadata['feature_dim']
         input_feature['should_embed'] = False
 
