@@ -221,7 +221,7 @@ class AudioBaseFeature(BaseFeature):
         audio_file_length_limit_in_samp = audio_file_length_limit_in_s * sampling_rate_in_hz
 
         if(not audio_file_length_limit_in_samp.is_integer()):
-            raise ValueError('Audio_file_length_limit has to be chosen so that {} (in s) * {} (sampling rate in Hz) is a integer.'.format(audio_file_length_limit_in_s, sampling_rate_in_hz))
+            raise ValueError('Audio_file_length_limit has to be chosen so that {} (in s) * {} (sampling rate in Hz) is an integer.'.format(audio_file_length_limit_in_s, sampling_rate_in_hz))
         audio_file_length_limit_in_samp = int(audio_file_length_limit_in_samp)
 
         if(feature_type == 'raw'):
@@ -242,9 +242,9 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
         self.embedding_size = None
         self.overwrite_defaults(feature)
         if(not self.embedding_size):
-            raise ValueError('embedding_size have to be defined - check "update_model_definition_with_metadata()"')
+            raise ValueError('embedding_size has to be defined - check "update_model_definition_with_metadata()"')
         if(not self.length):
-            raise ValueError('length have to be defined - check "update_model_definition_with_metadata()"')
+            raise ValueError('length has to be defined - check "update_model_definition_with_metadata()"')
 
     def _get_input_placeholder(self):
         return tf.placeholder(
