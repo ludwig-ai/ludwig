@@ -414,10 +414,10 @@ input_features:
         name: image_path_1
         type: image
         encoder: stacked_cnn
-        resize_image: true
         preprocessing:
           width: 28
           height: 28
+          resize_image: true
     -
         name: image_path_2
         type: image
