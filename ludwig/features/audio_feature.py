@@ -46,7 +46,7 @@ class AudioBaseFeature(BaseFeature):
         self.type = AUDIO
 
     preprocessing_defaults = {
-        'audio_file_length_limit_in_s': 5.75,
+        'audio_file_length_limit_in_s': 5.0,
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
         'padding_value': 0,
