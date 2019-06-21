@@ -1864,7 +1864,7 @@ Example sequence feature entry in the output features list using a parallel cnn 
 ```yaml
 name: sequence_csv_column_name
 type: sequence
-encoder: cnn_rnn
+encoder: cnnrnn
 tied_weights: null
 representation: dense
 embedding_size: 256
