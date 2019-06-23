@@ -201,7 +201,7 @@ class AudioBaseFeature(BaseFeature):
                 )
                 audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, normalization_type, audio_stats)
 
-            if(normalization_type == 'audio_file'):
+            if(normalization_type == 'per_file'):
                 mean = np.mean(audio_feature_padded, axis = 0)
                 std = np.std(audio_feature_padded, axis = 0)
                 data[feature['name']][i, :, :] = np.divide((audio_feature - mean), std)

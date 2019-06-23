@@ -664,7 +664,7 @@ def threshold_vs_metric_plot(thresholds, scores, algorithm_names=None,
     plt.show()
 
 
-def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False, save_plot=True):
+def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):
     sns.set_style('whitegrid')
 
     colors = plt.get_cmap('tab10').colors
@@ -705,8 +705,7 @@ def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False, s
     plt.tight_layout()
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
-    if(save_plot):
-        plt.savefig('_'.join(title.split(' ')) + '.png')
+    plt.savefig('_'.join(title.split(' ')) + '.png')
 
 
 def calibration_plot(fraction_positives, mean_predicted_values,
