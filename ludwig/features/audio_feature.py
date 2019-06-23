@@ -50,7 +50,7 @@ class AudioBaseFeature(BaseFeature):
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
         'padding_value': 0,
-        'normalization': None,
+        'norm': None,
         'audio_feature': {
            'type': 'raw',
         }
@@ -89,7 +89,7 @@ class AudioBaseFeature(BaseFeature):
         return feature_dim
 
     @staticmethod
-    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, audio_stats):
+    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, normalization_type, audio_stats):
         """
         :param filepath: path to the audio
         :param audio_feature_dict: dictionary describing audio feature see default
@@ -170,6 +170,7 @@ class AudioBaseFeature(BaseFeature):
 
         num_audio_utterances = len(dataset_df)
         padding_value = preprocessing_parameters['padding_value']
+        normalization_type = preprocessing_parameters['norm']
         feature_name = feature['name']
 
         feature_dim = metadata[feature_name]['feature_dim']
@@ -198,8 +199,15 @@ class AudioBaseFeature(BaseFeature):
                     csv_path,
                     dataset_df[feature['name']][i]
                 )
-                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, audio_stats)
-                # TODO: add optional normalization step here
+                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, normalization_type, audio_stats)
+
+            if(normalization_type == 'audio_file'):
+                mean = np.mean(audio_feature_padded, axis = 0)
+                std = np.std(audio_feature_padded, axis = 0)
+                data[feature['name']][i, :, :] = np.divide((audio_feature - mean), std)
+            elif(normalization_type == 'global'):
+                raise ValueError('not implemented yet')
+            else: 
                 data[feature['name']][i, :, :] = audio_feature
 
             print_statistics = """

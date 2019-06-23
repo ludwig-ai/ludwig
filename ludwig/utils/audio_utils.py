@@ -109,3 +109,6 @@ def calculate_incr_std(count, std_prev, mean_prev, mean, length):
 
 def calculate_incr_mean(count, mean, length):
     return ((count - 1) * mean + length) / float(count)
+
+def calculate_mean(data):
+    return np.
