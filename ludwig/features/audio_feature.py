@@ -110,7 +110,7 @@ class AudioBaseFeature(BaseFeature):
 
         feature_length = audio_feature.shape[0]
         broadcast_feature_length = min(feature_length, max_length)
-        audio_feature_padded = np.full((max_length, feature_dim), padding_value)
+        audio_feature_padded = np.full((max_length, feature_dim), padding_value, dtype=np.float32)
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[:max_length, :]
         return audio_feature_padded
 
@@ -201,14 +201,14 @@ class AudioBaseFeature(BaseFeature):
                 )
                 audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, normalization_type, audio_stats)
 
-            if(normalization_type == 'per_file'):
-                mean = np.mean(audio_feature_padded, axis = 0)
-                std = np.std(audio_feature_padded, axis = 0)
-                data[feature['name']][i, :, :] = np.divide((audio_feature - mean), std)
-            elif(normalization_type == 'global'):
-                raise ValueError('not implemented yet')
-            else: 
-                data[feature['name']][i, :, :] = audio_feature
+                if(normalization_type == 'per_file'):
+                    mean = np.mean(audio_feature, axis = 0)
+                    std = np.std(audio_feature, axis = 0)
+                    data[feature['name']][i, :, :] = np.divide((audio_feature - mean), std)
+                elif(normalization_type == 'global'):
+                    raise ValueError('not implemented yet')
+                else: 
+                    data[feature['name']][i, :, :] = audio_feature
 
             print_statistics = """
             {} audio files loaded. 
