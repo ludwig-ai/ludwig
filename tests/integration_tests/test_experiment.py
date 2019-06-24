@@ -32,6 +32,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
@@ -261,6 +262,25 @@ def test_experiment_image_inputs(csv_filename):
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
 
+def test_experiment_audio_inputs(csv_filename):
+    # Audio Inputs
+    audio_dest_folder = os.path.join(os.getcwd(), 'generated_audio')
+
+    input_features = [
+        audio_feature(
+            folder=audio_dest_folder
+        )
+    ]
+    output_features = [
+        binary_feature()
+    ]
+#    ipdb.set_trace()
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+    # Delete the temporary data created
+    shutil.rmtree(audio_dest_folder)
 
 def test_experiment_tied_weights(csv_filename):
     # Single sequence input, single category output
