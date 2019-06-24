@@ -89,7 +89,7 @@ class AudioBaseFeature(BaseFeature):
         return feature_dim
 
     @staticmethod
-    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, normalization_type, audio_stats):
+    def _read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, audio_stats):
         """
         :param filepath: path to the audio
         :param audio_feature_dict: dictionary describing audio feature see default
@@ -174,7 +174,6 @@ class AudioBaseFeature(BaseFeature):
         feature_name = feature['name']
 
         feature_dim = metadata[feature_name]['feature_dim']
-        sampling_rate_in_hz = metadata[feature_name]['sampling_rate_in_hz']
         max_length = metadata[feature_name]['max_length']
         audio_feature_dict = preprocessing_parameters['audio_feature']
         audio_file_length_limit_in_s = preprocessing_parameters['audio_file_length_limit_in_s']
@@ -199,7 +198,7 @@ class AudioBaseFeature(BaseFeature):
                     csv_path,
                     dataset_df[feature['name']][i]
                 )
-                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, normalization_type, audio_stats)
+                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(filepath, audio_feature_dict, feature_dim, max_length, padding_value, audio_stats)
 
                 if(normalization_type == 'per_file'):
                     mean = np.mean(audio_feature, axis = 0)
