@@ -19,7 +19,6 @@ import shutil
 
 import pytest
 import yaml
-import ipdb
 
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import experiment
@@ -275,7 +274,6 @@ def test_experiment_audio_inputs(csv_filename):
     output_features = [
         binary_feature()
     ]
-#    ipdb.set_trace()
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
