@@ -705,7 +705,6 @@ def roc_curves(fpr_tprs, algorithm_names=None, title=None, graded_color=False):
     plt.tight_layout()
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
     plt.show()
-    plt.savefig('_'.join(title.split(' ')) + '.png')
 
 
 def calibration_plot(fraction_positives, mean_predicted_values,
