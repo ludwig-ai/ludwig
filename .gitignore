@@ -134,3 +134,6 @@ ENV/
 !/mkdocs/docs/js/Ludwig_webgl1.json
 !/mkdocs/docs/js/Ludwig_webgl2.json
 !/mkdocs/docs/stylesheets/micon_nb/db.json
+
+# cTags
+tags
