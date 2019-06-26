@@ -27,7 +27,7 @@ from ludwig.features.sequence_feature import SequenceInputFeature
 
 from ludwig.utils.image_utils import get_abs_path
 from ludwig.utils.audio_utils import get_max_length_stft_based
-from ludwig.utils.audio_utils import calculate_incr_std
+from ludwig.utils.audio_utils import calculate_incr_var
 from ludwig.utils.audio_utils import calculate_incr_mean
 from ludwig.utils.audio_utils import get_length_in_samp
 from ludwig.utils.audio_utils import get_group_delay
@@ -46,7 +46,7 @@ class AudioBaseFeature(BaseFeature):
         self.type = AUDIO
 
     preprocessing_defaults = {
-        'audio_file_length_limit_in_s': 5.0,
+        'audio_file_length_limit_in_s': 7.5,
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
         'padding_value': 0,
@@ -120,11 +120,13 @@ class AudioBaseFeature(BaseFeature):
         audio_stats['count'] += 1
         mean = (( audio_stats['count'] - 1) * audio_stats['mean'] + audio_length_in_s ) / float(audio_stats['count'])
         mean = calculate_incr_mean(audio_stats['count'], audio_stats['mean'], audio_length_in_s)
-        std = calculate_incr_std(audio_stats['count'], audio_stats['std'], audio_stats['mean'], mean, audio_length_in_s)
+        var = calculate_incr_var(audio_stats['var'], audio_stats['mean'], mean, audio_length_in_s)
         audio_stats['mean'] = mean
-        audio_stats['std'] = std
+        audio_stats['var'] = var
         audio_stats['max'] = max(audio_stats['max'], audio_length_in_s)
         audio_stats['min'] = min(audio_stats['min'], audio_length_in_s)
+        if(audio_length_in_s > audio_stats['max_length_in_s']):
+            audio_stats['cropped'] += 1
 
     @staticmethod
     def _get_2D_feature(audio, feature_type, audio_feature_dict, sampling_rate_in_hz):
@@ -184,9 +186,12 @@ class AudioBaseFeature(BaseFeature):
         audio_stats = {
                 'count': 0,
                 'mean': 0,
+                'var': 0,
                 'std': 0,
                 'max': 0,
-                'min': float('inf')
+                'min': float('inf'),
+                'cropped': 0,
+                'max_length_in_s': audio_file_length_limit_in_s 
         }
 
         if feature['preprocessing']['in_memory']:
@@ -210,17 +215,19 @@ class AudioBaseFeature(BaseFeature):
                 else: 
                     data[feature['name']][i, :, :] = audio_feature
 
+            audio_stats['std'] = np.sqrt(audio_stats['var']/float(audio_stats['count']))
             print_statistics = """
             {} audio files loaded. 
             Statistics of audio file lengths:
             - mean: {:.4f}
             - std: {:.4f}
             - max: {:.4f}
-            - min: {:.4f}.
+            - min: {:.4f}
+            - cropped audio_files: {}
             Max length was given as {}.
             """.format(audio_stats['count'],audio_stats['mean'], 
                 audio_stats['std'], audio_stats['max'], 
-                audio_stats['min'], audio_file_length_limit_in_s)
+                audio_stats['min'], audio_stats['cropped'], audio_stats['max_length_in_s'])
             print(print_statistics)
     
     @staticmethod

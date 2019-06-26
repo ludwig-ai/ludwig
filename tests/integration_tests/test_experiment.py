@@ -274,7 +274,6 @@ def test_experiment_audio_inputs(csv_filename):
     output_features = [
         binary_feature()
     ]
-#    ipdb.set_trace()
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
@@ -531,4 +530,6 @@ if __name__ == '__main__':
     To run tests individually, run:
     ```python -m pytest tests/integration_tests/test_experiment.py::test_name```
     """
+    csv_filename='aoeusnth'
+    test_experiment_audio_inputs(csv_filename)
     pass
