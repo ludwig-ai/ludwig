@@ -530,6 +530,4 @@ if __name__ == '__main__':
     To run tests individually, run:
     ```python -m pytest tests/integration_tests/test_experiment.py::test_name```
     """
-    csv_filename='aoeusnth'
-    test_experiment_audio_inputs(csv_filename)
     pass
