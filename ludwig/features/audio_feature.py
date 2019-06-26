@@ -21,7 +21,7 @@ import numpy as np
 import tensorflow as tf
 import soundfile
 
-from ludwig.constants import AUDIO, BACKFILL 
+from ludwig.constants import AUDIO, BACKFILL
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 
@@ -176,7 +176,6 @@ class AudioBaseFeature(BaseFeature):
         feature_name = feature['name']
 
         feature_dim = metadata[feature_name]['feature_dim']
-        sampling_rate_in_hz = metadata[feature_name]['sampling_rate_in_hz']
         max_length = metadata[feature_name]['max_length']
         audio_feature_dict = preprocessing_parameters['audio_feature']
         audio_file_length_limit_in_s = preprocessing_parameters['audio_file_length_limit_in_s']
