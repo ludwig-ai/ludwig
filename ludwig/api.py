@@ -910,6 +910,7 @@ class LudwigModel:
 def test_train(
         data_csv,
         model_definition,
+        model_definition_file=None,
         batch_size=128,
         gpus=None,
         gpu_fraction=1,
@@ -919,6 +920,7 @@ def test_train(
 ):
     ludwig_model = LudwigModel(
         model_definition,
+        model_definition_file=model_definition_file,
         logging_level=logging_level
     )
 
@@ -1058,11 +1060,18 @@ def main(sys_argv):
     # Model parameters
     # ----------------
     parser.add_argument('-m', '--model_path', help='model to load')
+
     parser.add_argument(
         '-md',
         '--model_definition',
         type=yaml.safe_load,
         help='model definition'
+    )
+
+    parser.add_argument(
+        '-mdf', 
+        '--model_definition_file', 
+        help='YAML file describing the model. Ignores --model_hyperparameters'
     )
 
     # ------------------
