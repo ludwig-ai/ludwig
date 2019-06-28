@@ -1074,6 +1074,12 @@ def main(sys_argv):
         help='YAML file describing the model. Ignores --model_hyperparameters'
     )
 
+    parser.add_argument(
+        '-mp',
+        '--model_path',
+        help='path to the directory containing the model'
+    )
+
     # ------------------
     # Generic parameters
     # ------------------
