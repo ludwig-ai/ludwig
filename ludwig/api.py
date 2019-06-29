@@ -272,8 +272,8 @@ class LudwigModel:
             data_test_hdf5=None,
             data_dict=None,
             data_train_dict=None,
-            data_test_dict=None,
             data_validation_dict=None,
+            data_test_dict=None,
             train_set_metadata_json=None,
             experiment_name='api_experiment',
             model_name='run',
@@ -343,8 +343,8 @@ class LudwigModel:
                ``{'text_field_name': ['text of the first datapoint', text of the
                second datapoint'], 'class_filed_name': ['class_datapoints_1',
                'class_datapoints_2']}`.
-        :param data_test_dict: (dict) input test data dictionary. It is
-               expected to contain one key for each field and the values have
+        :param data_validation_dict: (dict) input validation data dictionary. It
+               is expected to contain one key for each field and the values have
                to be lists of the same length. Each index in the lists
                corresponds to one datapoint. For example a data set consisting
                of two datapoints with a text and a class may be provided as the
@@ -352,8 +352,8 @@ class LudwigModel:
                ``{'text_field_name': ['text of the first datapoint', text of the
                second datapoint'], 'class_filed_name': ['class_datapoints_1',
                'class_datapoints_2']}`.
-        :param data_validation_dict: (dict) input validation data dictionary. It
-               is expected to contain one key for each field and the values have
+        :param data_test_dict: (dict) input test data dictionary. It is
+               expected to contain one key for each field and the values have
                to be lists of the same length. Each index in the lists
                corresponds to one datapoint. For example a data set consisting
                of two datapoints with a text and a class may be provided as the
