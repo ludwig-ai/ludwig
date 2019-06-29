@@ -331,7 +331,7 @@ class LudwigModel:
                the same length. Each index in the lists corresponds to one
                datapoint. For example a data set consisting of two datapoints
                with a text and a class may be provided as the following dict
-               ``{'text_field_name': ['text of the first datapoint', text of the
+               `{'text_field_name': ['text of the first datapoint', text of the
                second datapoint'], 'class_filed_name': ['class_datapoints_1',
                'class_datapoints_2']}`.
         :param data_train_dict: (dict) input training data dictionary. It is
@@ -340,27 +340,27 @@ class LudwigModel:
                corresponds to one datapoint. For example a data set consisting
                of two datapoints with a text and a class may be provided as the
                following dict:
-               ``{'text_field_name': ['text of the first datapoint', text of the
-               second datapoint'], 'class_filed_name': ['class_datapoints_1',
-               'class_datapoints_2']}`.
+               `{'text_field_name': ['text of the first datapoint', 'text of the
+               second datapoint'], 'class_field_name': ['class_datapoint_1',
+               'class_datapoint_2']}`.
         :param data_validation_dict: (dict) input validation data dictionary. It
                is expected to contain one key for each field and the values have
                to be lists of the same length. Each index in the lists
                corresponds to one datapoint. For example a data set consisting
                of two datapoints with a text and a class may be provided as the
                following dict:
-               ``{'text_field_name': ['text of the first datapoint', text of the
-               second datapoint'], 'class_filed_name': ['class_datapoints_1',
-               'class_datapoints_2']}`.
+               `{'text_field_name': ['text of the first datapoint', 'text of the
+               second datapoint'], 'class_field_name': ['class_datapoint_1',
+               'class_datapoint_2']}`.
         :param data_test_dict: (dict) input test data dictionary. It is
                expected to contain one key for each field and the values have
                to be lists of the same length. Each index in the lists
                corresponds to one datapoint. For example a data set consisting
                of two datapoints with a text and a class may be provided as the
                following dict:
-               ``{'text_field_name': ['text of the first datapoint', text of the
-               second datapoint'], 'class_filed_name': ['class_datapoints_1',
-               'class_datapoints_2']}`.
+               `{'text_field_name': ['text of the first datapoint', 'text of the
+               second datapoint'], 'class_field_name': ['class_datapoint_1',
+               'class_datapoint_2']}`.
         :param train_set_metadata_json: (string) input metadata JSON file. It is an
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
