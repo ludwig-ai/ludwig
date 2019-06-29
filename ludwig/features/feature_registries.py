@@ -22,6 +22,7 @@ from ludwig.constants import SEQUENCE
 from ludwig.constants import SET
 from ludwig.constants import TEXT
 from ludwig.constants import TIMESERIES
+from ludwig.constants import BOUNDING_BOX
 from ludwig.features.bag_feature import BagBaseFeature
 from ludwig.features.bag_feature import BagInputFeature
 from ludwig.features.binary_feature import BinaryBaseFeature
@@ -46,6 +47,8 @@ from ludwig.features.text_feature import TextInputFeature
 from ludwig.features.text_feature import TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesBaseFeature
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
+from ludwig.features.boundingbox_feature import BoundingBoxBaseFeature
+from ludwig.features.boundingbox_feature import BoundingBoxOutputFeature
 
 base_type_registry = {
     TEXT: TextBaseFeature,
@@ -56,7 +59,8 @@ base_type_registry = {
     NUMERICAL: NumericalBaseFeature,
     SEQUENCE: SequenceBaseFeature,
     TIMESERIES: TimeseriesBaseFeature,
-    IMAGE: ImageBaseFeature
+    IMAGE: ImageBaseFeature,
+    BOUNDING_BOX: BoundingBoxBaseFeature
 }
 input_type_registry = {
     TEXT: TextInputFeature,
@@ -75,5 +79,6 @@ output_type_registry = {
     NUMERICAL: NumericalOutputFeature,
     SEQUENCE: SequenceOutputFeature,
     SET: SetOutputFeature,
-    TEXT: TextOutputFeature
+    TEXT: TextOutputFeature,
+    BOUNDING_BOX: BoundingBoxOutputFeature
 }
