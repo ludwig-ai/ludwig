@@ -1146,7 +1146,7 @@ h1.intro-header::before {
 
 .header-logo {
     position: absolute;
-    left: 20px;
+    left: 80px;
     top: 50%;
     -webkit-transform: translateY(-50%);
     -ms-transform: translateY(-50%);
@@ -1300,7 +1300,7 @@ h1.intro-header::before {
     font-size: 14px;
     position: absolute;
     top: 0;
-    right: 20px;
+    right: 80px;
 }
 
 #header-nav-wrap .header-main-nav {
