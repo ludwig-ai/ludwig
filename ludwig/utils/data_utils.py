@@ -289,13 +289,15 @@ def class_counts(dataset, labels_field):
 def text_feature_data_field(text_feature):
     return text_feature['name'] + '_' + text_feature['level']
 
-
+# @TODO Implement additional parameter e.g split_type (0,1,2)
+# where 0 is train 1 is validation and 2 is train split
 def load_from_file(file_name, field=None, dtype=int):
     if file_name.endswith('.hdf5') and field is not None:
         hdf5_data = h5py.File(file_name, 'r')
         split = hdf5_data['split'].value
         column = hdf5_data[field].value
         hdf5_data.close()
+        # @TODO: use the split type column[split == split_type]
         array = column[split == 2]  # ground truth
     elif file_name.endswith('.npy'):
         array = np.load(file_name)

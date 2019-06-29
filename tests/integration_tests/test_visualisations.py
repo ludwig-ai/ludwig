@@ -26,6 +26,8 @@ import subprocess
 import json
 import os
 
+from pytest import fail
+
 from ludwig.experiment import experiment
 
 from tests.integration_tests.utils import generate_data
@@ -172,11 +174,7 @@ def test_visualisation_confusion_matrix_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -301,11 +299,7 @@ def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -372,11 +366,7 @@ def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -442,11 +432,7 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -509,11 +495,7 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -576,11 +558,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -624,14 +602,11 @@ def test_visualisation_compare_classifiers_predictions_output_saved(
     prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_predictions',
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--ground_truth',
                     ground_truth,
                     '--field',
@@ -649,11 +624,7 @@ def test_visualisation_compare_classifiers_predictions_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -697,14 +668,11 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
     prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_predictions_distribution',
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--ground_truth',
                     ground_truth,
                     '--field',
@@ -722,11 +690,7 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -790,11 +754,7 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -860,11 +820,7 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -932,11 +888,7 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1007,11 +959,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1045,10 +993,8 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     ]
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature()
+        categorical_feature(vocab_size=2, reduce_input='sum')
     ]
-
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     encoder = 'cnnrnn'
@@ -1059,8 +1005,11 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
     treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(
+    probability1 = exp_dir_name + '/{}_probabilities.npy'.format(
         treshhold_field1
+    )
+    probability2 = exp_dir_name + '/{}_probabilities.npy'.format(
+        treshhold_field2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
@@ -1072,14 +1021,13 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
                     '--ground_truth',
                     ground_truth,
                     '--probabilities',
-                    probability,
-                    probability,
+                    probability1,
+                    probability2,
                     '--threshold_fields',
                     treshhold_field1,
                     treshhold_field2,
                     '--model_names',
                     'Model1',
-                    'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
@@ -1089,8 +1037,6 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     for command, viz_pattern in zip(commands, vis_patterns):
         result = subprocess.run(
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
         )
         figure_cnt = glob.glob(viz_pattern)
 
@@ -1121,10 +1067,8 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     ]
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature()
+        categorical_feature(vocab_size=2, reduce_input='sum')
     ]
-
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     encoder = 'cnnrnn'
@@ -1135,8 +1079,11 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
     treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(
+    probability1 = exp_dir_name + '/{}_probabilities.npy'.format(
         treshhold_field1
+    )
+    probability2 = exp_dir_name + '/{}_probabilities.npy'.format(
+        treshhold_field2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
@@ -1148,14 +1095,11 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
                     '--ground_truth',
                     ground_truth,
                     '--probabilities',
-                    probability,
-                    probability,
+                    probability1,
+                    probability2,
                     '--threshold_fields',
                     treshhold_field1,
                     treshhold_field2,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
@@ -1165,8 +1109,6 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     for command, viz_pattern in zip(commands, vis_patterns):
         result = subprocess.run(
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
         )
         figure_cnt = glob.glob(viz_pattern)
 
@@ -1213,7 +1155,6 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
     probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1225,8 +1166,6 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
                     'accuracy',
                     '--ground_truth',
                     ground_truth,
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--field',
                     field_name,
                     '--probabilities',
@@ -1242,11 +1181,7 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1317,11 +1252,7 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1375,11 +1306,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1426,8 +1353,6 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
                     'ludwig.visualize',
                     '--visualization',
                     'calibration_1_vs_all',
-                    '--positive_label',
-                    '2',
                     '--metrics',
                     'accuracy',
                     '--ground_truth',
@@ -1449,11 +1374,7 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1517,11 +1438,7 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1585,11 +1502,7 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
