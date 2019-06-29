@@ -683,7 +683,8 @@ def preprocess_for_prediction(
         default_preprocessing_parameters,
         model_definition['preprocessing']
     )
-    output_features = model_definition['output_features'] if evaluate_performance else []
+    output_features = model_definition[
+        'output_features'] if evaluate_performance else []
     features = model_definition['input_features'] + output_features
 
     # Check if hdf5 file already exists

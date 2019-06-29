@@ -36,9 +36,8 @@ from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 
+
 # The following imports are pytest fixtures, required for running the tests
-from tests.fixtures.filenames import csv_filename
-from tests.fixtures.filenames import yaml_filename
 
 
 logger = logging.getLogger(__name__)
@@ -292,8 +291,8 @@ def test_experiment_tied_weights(csv_filename):
 def test_experiment_attention(csv_filename):
     # Machine translation with attention
     input_features = [
-            sequence_feature(encoder='rnn', cell_type='lstm', max_len=10)
-        ]
+        sequence_feature(encoder='rnn', cell_type='lstm', max_len=10)
+    ]
     output_features = [
         sequence_feature(
             max_len=10,
