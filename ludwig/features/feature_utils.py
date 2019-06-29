@@ -20,7 +20,7 @@ from ludwig.constants import SEQUENCE
 from ludwig.constants import TEXT
 from ludwig.constants import TIMESERIES
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
-from ludwig.utils.strings_utils import format_registry
+from ludwig.utils.strings_utils import tokenizer_registry
 
 SEQUENCE_TYPES = {SEQUENCE, TEXT, TIMESERIES}
 
@@ -37,11 +37,11 @@ def should_regularize(regularize_layers):
 
 def set_str_to_idx(set_string, feature_dict, format_func):
     try:
-        format_function = format_registry[format_func]
+        tokenizer = tokenizer_registry[format_func]()
     except ValueError:
         raise Exception('Format {} not supported'.format(format_func))
 
     out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in
-           format_function(set_string)]
+           tokenizer(set_string)]
 
     return np.array(out, dtype=np.int32)

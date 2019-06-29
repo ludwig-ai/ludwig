@@ -14,13 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import json
 import logging
 import re
-import unicodedata
+from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
+import unicodedata
 
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc import get_from_registry
@@ -73,23 +73,28 @@ def match_replace(string_to_match, list_regex):
     return string_to_match, matched
 
 
-def create_vocabulary(data, format='space', custom_vocabulary=(),
-                      add_unknown=True, add_padding=True,
-                      lowercase=True,
-                      num_most_frequent=None):
+def create_vocabulary(
+    data,
+    tokenizer_type='space',
+    custom_vocabulary=(),
+    add_unknown=True,
+    add_padding=True,
+    lowercase=True,
+    num_most_frequent=None,
+    vocab_file=None
+):
     max_line_length = 0
     unit_counts = Counter()
 
-    if format == 'custom':
+    if tokenizer_type == 'custom':
         vocab = sorted(list(set(custom_vocabulary)))
     else:
-        format_function = get_from_registry(
-            format,
-            format_registry
-        )
+        tokenizer = get_from_registry(
+            tokenizer_type,
+            tokenizer_registry
+        )(vocab_file=vocab_file)
         for line in data:
-            processed_line = format_function(
-                line.lower() if lowercase else line)
+            processed_line = tokenizer(line.lower() if lowercase else line)
             unit_counts.update(processed_line)
             max_line_length = max(max_line_length, len(processed_line))
 
@@ -108,19 +113,28 @@ def create_vocabulary(data, format='space', custom_vocabulary=(),
     return vocab, str2idx, str2freq, max_line_length
 
 
-def get_sequence_vector(sequence, format, unit_to_id, lowercase=True):
-    format_function = get_from_registry(
-        format,
-        format_registry
-    )
+def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
+    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)()
     format_dtype = int_type(len(unit_to_id) - 1)
-    return _get_sequence_vector(sequence, format_function, format_dtype,
-                                unit_to_id, lowercase=lowercase)
+    return _get_sequence_vector(
+        sequence,
+        tokenizer,
+        format_dtype,
+        unit_to_id,
+        lowercase=lowercase
+    )
 
 
-def _get_sequence_vector(sequence, format_function, format_dtype, unit_to_id,
-                         lowercase=True):
-    unit_sequence = format_function(sequence.lower() if lowercase else sequence)
+def _get_sequence_vector(
+    sequence,
+    tokenizer,
+    format_dtype,
+    unit_to_id,
+    lowercase=True
+):
+    unit_sequence = tokenizer(
+        sequence.lower() if lowercase else sequence
+    )
     unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)
     for i in range(len(unit_sequence)):
         curr_unit = unit_sequence[i]
@@ -131,22 +145,31 @@ def _get_sequence_vector(sequence, format_function, format_dtype, unit_to_id,
     return unit_indices_vector
 
 
-def build_sequence_matrix(sequences, inverse_vocabulary, format, length_limit,
-                          padding_symbol, padding='right',
-                          lowercase=True):
-    format_function = get_from_registry(
-        format,
-        format_registry
+def build_sequence_matrix(
+    sequences,
+    inverse_vocabulary,
+    tokenizer_type,
+    length_limit,
+    padding_symbol,
+    padding='right',
+    lowercase=True,
+    tokenizer_vocab_file=None,
+):
+    tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
+        vocab_file=tokenizer_vocab_file
     )
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
     max_length = 0
     unit_vectors = []
     for sequence in sequences:
-        unit_indices_vector = _get_sequence_vector(sequence, format_function,
-                                                   format_dtype,
-                                                   inverse_vocabulary,
-                                                   lowercase=lowercase)
+        unit_indices_vector = _get_sequence_vector(
+            sequence,
+            tokenizer,
+            format_dtype,
+            inverse_vocabulary,
+            lowercase=lowercase
+        )
         unit_vectors.append(unit_indices_vector)
         if len(unit_indices_vector) > max_length:
             max_length = len(unit_indices_vector)
@@ -168,423 +191,612 @@ def build_sequence_matrix(sequences, inverse_vocabulary, format, length_limit,
     return sequence_matrix
 
 
-def ids_array_to_string(matrix, idx2str):
-    texts = []
-    for row in matrix:
-        texts.append(
-            ' '.join(map(lambda x: idx2str[x], [x for x in row if x > 0])))
-    return texts
+class BaseTokenizer:
+    @abstractmethod
+    def __init__(self, **kwargs):
+        pass
 
+    @abstractmethod
+    def __call__(self, text):
+        pass
 
-def json_string_to_list(s):
-    s = str.replace(s, '\'', '\'')
-    return json.loads(str.replace(s, '\'', '\''))
 
+class CharactersToListTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return text
 
-def characters_to_list(s):
-    return s
 
+class SpaceStringToListTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return SPLIT_REGEX.split(text.strip())
 
-def space_string_to_list(s):
-    return SPLIT_REGEX.split(s.strip())
 
+class SpacePunctuationStringToListTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return SPACE_PUNCTUATION_REGEX.findall(text.strip())
 
-def space_punctuation_string_to_list(s):
-    return SPACE_PUNCTUATION_REGEX.findall(s.strip())
 
+class UnderscoreStringToListTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return UNDERSCORE_REGEX.split(text.strip())
 
-def underscore_string_to_list(s):
-    return UNDERSCORE_REGEX.split(s.strip())
 
+class CommaStringToListTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return COMMA_REGEX.split(text.strip())
 
-def comma_string_to_list(s):
-    return COMMA_REGEX.split(s.strip())
 
+class UntokenizedStringToListTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return [text]
 
-def untokenized_string_to_list(s):
-    return [s]
 
+class StrippedStringToListTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return [text.strip()]
 
-def stripped_string_to_list(s):
-    return [s.strip()]
 
+class EnglishTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('en'))
 
-def english_tokenize(text):
-    return process_text(text, load_nlp_pipeline('en'))
 
+class EnglishFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('en'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
 
-def english_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('en'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
 
+class EnglishRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('en'),
+            filter_stopwords=True
+        )
 
-def english_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('en'),
-                        filter_stopwords=True)
 
+class EnglishLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        process_text(text, load_nlp_pipeline('en'), return_lemma=True)
 
-def english_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('en'),
-                        return_lemma=True)
 
+class EnglishLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('en'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
 
-def english_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('en'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
 
+class EnglishLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('en'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
 
-def english_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('en'),
-                        return_lemma=True,
-                        filter_stopwords=True)
 
+class ItalianTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('it'))
 
-def italian_tokenize(text):
-    return process_text(text, load_nlp_pipeline('it'))
 
-
-def italian_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('it'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def italian_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('it'),
-                        filter_stopwords=True)
-
-
-def italian_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('it'),
-                        return_lemma=True)
-
-
-def italian_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('it'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def italian_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('it'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-def spanish_tokenize(text):
-    return process_text(text, load_nlp_pipeline('es'))
-
-
-def spanish_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('es'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def spanish_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('es'),
-                        filter_stopwords=True)
-
-
-def spanish_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('es'),
-                        return_lemma=True)
-
-
-def spanish_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('es'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def spanish_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('es'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-def german_tokenize(text):
-    return process_text(text, load_nlp_pipeline('de'))
-
-
-def german_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('de'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def german_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('de'),
-                        filter_stopwords=True)
-
-
-def german_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('de'),
-                        return_lemma=True)
-
-
-def german_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('de'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def german_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('de'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-def french_tokenize(text):
-    return process_text(text, load_nlp_pipeline('fr'))
-
-
-def french_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('fr'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def french_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('fr'),
-                        filter_stopwords=True)
-
-
-def french_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('fr'),
-                        return_lemma=True)
-
-
-def french_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('fr'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def french_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('fr'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-def portuguese_tokenize(text):
-    return process_text(text, load_nlp_pipeline('pt'))
-
-
-def portuguese_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('pt'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def portuguese_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('pt'),
-                        filter_stopwords=True)
-
-
-def portuguese_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('pt'),
-                        return_lemma=True)
-
-
-def portuguese_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('pt'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def portuguese_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('pt'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-def dutch_tokenize(text):
-    return process_text(text, load_nlp_pipeline('nl'))
-
-
-def dutch_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('nl'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def dutch_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('nl'),
-                        filter_stopwords=True)
-
-
-def dutch_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('nl'),
-                        return_lemma=True)
-
-
-def dutch_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('nl'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def dutch_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('nl'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-def greek_tokenize(text):
-    return process_text(text, load_nlp_pipeline('el'))
-
-
-def greek_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('el'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def greek_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('el'),
-                        filter_stopwords=True)
-
-
-def greek_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('el'),
-                        return_lemma=True)
-
-
-def greek_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('el'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def greek_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('el'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-def multi_tokenize(text):
-    return process_text(text, load_nlp_pipeline('xx'))
-
-
-def multi_tokenize_filter(text):
-    return process_text(text, load_nlp_pipeline('xx'),
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def multi_tokenize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('xx'),
-                        filter_stopwords=True)
-
-
-def multi_lemmatize(text):
-    return process_text(text, load_nlp_pipeline('xx'),
-                        return_lemma=True)
-
-
-def multi_lemmatize_filter(text):
-    return process_text(text, load_nlp_pipeline('xx'),
-                        return_lemma=True,
-                        filter_numbers=True,
-                        filter_punctuation=True,
-                        filter_short_tokens=True)
-
-
-def multi_lemmatize_remove_stopwords(text):
-    return process_text(text, load_nlp_pipeline('xx'),
-                        return_lemma=True,
-                        filter_stopwords=True)
-
-
-format_registry = {
-    'characters': characters_to_list,
-    'json': json_string_to_list,
-    'space': space_string_to_list,
-    'space_punct': space_punctuation_string_to_list,
-    'underscore': underscore_string_to_list,
-    'comma': comma_string_to_list,
-    'untokenized': untokenized_string_to_list,
-    'stripped': stripped_string_to_list,
-    'english_tokenize': english_tokenize,
-    'english_tokenize_filter': english_tokenize_filter,
-    'english_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'english_lemmatize': english_lemmatize,
-    'english_lemmatize_filter': english_lemmatize_filter,
-    'english_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'italian_tokenize': english_tokenize,
-    'italian_tokenize_filter': english_tokenize_filter,
-    'italian_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'italian_lemmatize': english_lemmatize,
-    'italian_lemmatize_filter': english_lemmatize_filter,
-    'italian_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'spanish_tokenize': english_tokenize,
-    'spanish_tokenize_filter': english_tokenize_filter,
-    'spanish_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'spanish_lemmatize': english_lemmatize,
-    'spanish_lemmatize_filter': english_lemmatize_filter,
-    'spanish_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'german_tokenize': english_tokenize,
-    'german_tokenize_filter': english_tokenize_filter,
-    'german_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'german_lemmatize': english_lemmatize,
-    'german_lemmatize_filter': english_lemmatize_filter,
-    'german_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'french_tokenize': english_tokenize,
-    'french_tokenize_filter': english_tokenize_filter,
-    'french_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'french_lemmatize': english_lemmatize,
-    'french_lemmatize_filter': english_lemmatize_filter,
-    'french_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'portuguese_tokenize': english_tokenize,
-    'portuguese_tokenize_filter': english_tokenize_filter,
-    'portuguese_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'portuguese_lemmatize': english_lemmatize,
-    'portuguese_lemmatize_filter': english_lemmatize_filter,
-    'portuguese_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'dutch_tokenize': english_tokenize,
-    'dutch_tokenize_filter': english_tokenize_filter,
-    'dutch_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'dutch_lemmatize': english_lemmatize,
-    'dutch_lemmatize_filter': english_lemmatize_filter,
-    'dutch_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'greek_tokenize': english_tokenize,
-    'greek_tokenize_filter': english_tokenize_filter,
-    'greek_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'greek_lemmatize': english_lemmatize,
-    'greek_lemmatize_filter': english_lemmatize_filter,
-    'greek_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords,
-    'multi_tokenize': english_tokenize,
-    'multi_tokenize_filter': english_tokenize_filter,
-    'multi_tokenize_remove_stopwords': english_tokenize_remove_stopwords,
-    'multi_lemmatize': english_lemmatize,
-    'multi_lemmatize_filter': english_lemmatize_filter,
-    'multi_lemmatize_remove_stopwords': english_lemmatize_remove_stopwords
+class ItalianFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('it'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class ItalianRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('it'),
+            filter_stopwords=True
+        )
+
+
+class ItalianLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('it'),
+            return_lemma=True
+        )
+
+
+class ItalianLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('it'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class ItalianLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('it'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class SpanishTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('es'))
+
+
+class SpanishFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('es'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class SpanishRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('es'),
+            filter_stopwords=True
+        )
+
+
+class SpanishLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('es'),
+            return_lemma=True
+        )
+
+
+class SpanishLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('es'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class SpanishLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('es'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class GermanTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('de'))
+
+
+class GermanFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('de'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class GermanRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('de'),
+            filter_stopwords=True
+        )
+
+
+class GermanLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('de'),
+            return_lemma=True
+        )
+
+
+class GermanLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('de'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class GermanLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('de'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class FrenchTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('fr'))
+
+
+class FrenchFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('fr'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class FrenchRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('fr'),
+            filter_stopwords=True
+        )
+
+
+class FrenchLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('fr'),
+            return_lemma=True
+        )
+
+
+class FrenchLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('fr'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class FrenchLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('fr'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class PortugueseTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('pt'))
+
+
+class PortugueseFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pt'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class PortugueseRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pt'),
+            filter_stopwords=True
+        )
+
+
+class PortugueseLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('pt'), return_lemma=True)
+
+
+class PortugueseLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pt'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class PortugueseLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pt'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class DutchTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('nl'))
+
+
+class DutchFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nl'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class DutchRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nl'),
+            filter_stopwords=True
+        )
+
+
+class DutchLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('nl'), return_lemma=True)
+
+
+class DutchLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nl'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class DutchLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nl'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class GreekTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('el'))
+
+
+class GreekFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('el'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class GreekRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('el'),
+            filter_stopwords=True
+        )
+
+
+class GreekLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('el'), return_lemma=True)
+
+
+class GreekLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('el'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class GreekLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('el'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class MultiTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('xx'))
+
+
+class MultiFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('xx'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class MultiRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('xx'),
+            filter_stopwords=True
+        )
+
+
+class MultiLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('xx'), return_lemma=True)
+
+
+class MultiLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('xx'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('xx'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class BERTTokenizer(BaseTokenizer):
+    def __init__(self, vocab_file=None, **kwargs):
+
+        if vocab_file is None:
+            raise ValueError(
+                'Vocabulary file is required to initialize BERT tokenizer'
+            )
+
+        from bert.tokenization import FullTokenizer
+
+        self.tokenizer = FullTokenizer(vocab_file)
+
+    def __call__(self, text):
+        return self.tokenizer.tokenize(text)
+
+
+tokenizer_registry = {
+    'characters': CharactersToListTokenizer,
+    'space': SpaceStringToListTokenizer,
+    'space_punct': SpacePunctuationStringToListTokenizer,
+    'underscore': UnderscoreStringToListTokenizer,
+    'comma': CommaStringToListTokenizer,
+    'untokenized': UntokenizedStringToListTokenizer,
+    'stripped': StrippedStringToListTokenizer,
+    'english_tokenize': EnglishTokenizer,
+    'english_tokenize_filter': EnglishFilterTokenizer,
+    'english_tokenize_remove_stopwords': EnglishRemoveStopwordsTokenizer,
+    'english_lemmatize': EnglishLemmatizeTokenizer,
+    'english_lemmatize_filter': EnglishLemmatizeFilterTokenizer,
+    'english_lemmatize_remove_stopwords': EnglishLemmatizeRemoveStopwordsTokenizer,
+    'italian_tokenize': ItalianTokenizer,
+    'italian_tokenize_filter': ItalianFilterTokenizer,
+    'italian_tokenize_remove_stopwords': ItalianRemoveStopwordsTokenizer,
+    'italian_lemmatize': ItalianLemmatizeTokenizer,
+    'italian_lemmatize_filter': ItalianLemmatizeFilterTokenizer,
+    'italian_lemmatize_remove_stopwords': ItalianLemmatizeRemoveStopwordsTokenizer,
+    'spanish_tokenize': SpanishTokenizer,
+    'spanish_tokenize_filter': SpanishFilterTokenizer,
+    'spanish_tokenize_remove_stopwords': SpanishRemoveStopwordsTokenizer,
+    'spanish_lemmatize': SpanishLemmatizeTokenizer,
+    'spanish_lemmatize_filter': SpanishLemmatizeFilterTokenizer,
+    'spanish_lemmatize_remove_stopwords': SpanishLemmatizeRemoveStopwordsTokenizer,
+    'german_tokenize': GermanTokenizer,
+    'german_tokenize_filter': GermanFilterTokenizer,
+    'german_tokenize_remove_stopwords': GermanRemoveStopwordsTokenizer,
+    'german_lemmatize': GermanLemmatizeTokenizer,
+    'german_lemmatize_filter': GermanLemmatizeFilterTokenizer,
+    'german_lemmatize_remove_stopwords': GermanLemmatizeRemoveStopwordsTokenizer,
+    'french_tokenize': FrenchTokenizer,
+    'french_tokenize_filter': FrenchFilterTokenizer,
+    'french_tokenize_remove_stopwords': FrenchRemoveStopwordsTokenizer,
+    'french_lemmatize': FrenchLemmatizeTokenizer,
+    'french_lemmatize_filter': FrenchLemmatizeFilterTokenizer,
+    'french_lemmatize_remove_stopwords': FrenchLemmatizeRemoveStopwordsTokenizer,
+    'portuguese_tokenize': PortugueseTokenizer,
+    'portuguese_tokenize_filter': PortugueseFilterTokenizer,
+    'portuguese_tokenize_remove_stopwords': PortugueseRemoveStopwordsTokenizer,
+    'portuguese_lemmatize': PortugueseLemmatizeTokenizer,
+    'portuguese_lemmatize_filter': PortugueseLemmatizeFilterTokenizer,
+    'portuguese_lemmatize_remove_stopwords': PortugueseLemmatizeRemoveStopwordsTokenizer,
+    'dutch_tokenize': DutchTokenizer,
+    'dutch_tokenize_filter': DutchFilterTokenizer,
+    'dutch_tokenize_remove_stopwords': DutchRemoveStopwordsTokenizer,
+    'dutch_lemmatize': DutchLemmatizeTokenizer,
+    'dutch_lemmatize_filter': DutchLemmatizeFilterTokenizer,
+    'dutch_lemmatize_remove_stopwords': DutchLemmatizeRemoveStopwordsTokenizer,
+    'greek_tokenize': GreekTokenizer,
+    'greek_tokenize_filter': GreekFilterTokenizer,
+    'greek_tokenize_remove_stopwords': GreekRemoveStopwordsTokenizer,
+    'greek_lemmatize': GreekLemmatizeTokenizer,
+    'greek_lemmatize_filter': GreekLemmatizeFilterTokenizer,
+    'greek_lemmatize_remove_stopwords': GreekLemmatizeRemoveStopwordsFilterTokenizer,
+    'multi_tokenize': MultiTokenizer,
+    'multi_tokenize_filter': MultiFilterTokenizer,
+    'multi_tokenize_remove_stopwords': MultiRemoveStopwordsTokenizer,
+    'multi_lemmatize': MultiLemmatizeTokenizer,
+    'multi_lemmatize_filter': MultiLemmatizeFilterTokenizer,
+    'multi_lemmatize_remove_stopwords': MultiLemmatizeRemoveStopwordsTokenizer,
+    'bert': BERTTokenizer
 }

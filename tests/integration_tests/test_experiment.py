@@ -40,6 +40,10 @@ from tests.integration_tests.utils import timeseries_feature
 # The following imports are pytest fixtures, required for running the tests
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 def run_experiment(input_features, output_features, **kwargs):
     """
     Helper method to avoid code repetition in running an experiment. Deletes
@@ -87,7 +91,7 @@ def test_experiment_seq_seq(csv_filename):
 
     encoders2 = ['cnnrnn', 'stacked_cnn']
     for encoder in encoders2:
-        logging.info('seq to seq test, Encoder: {0}'.format(encoder))
+        logger.info('seq to seq test, Encoder: {0}'.format(encoder))
         input_features[0]['encoder'] = encoder
         run_experiment(input_features, output_features, data_csv=rel_path)
 
@@ -180,7 +184,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     # Multiple inputs, Multiple outputs
     input_features = [
         text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
-        numerical_feature(),
+        numerical_feature(normalization='zscore'),
         categorical_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
@@ -208,7 +212,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
         sequence_feature(max_len=5, decoder='generator', reduce_input=None),
-        numerical_feature()
+        numerical_feature(normalization='minmax')
     ]
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
@@ -233,7 +237,7 @@ def test_experiment_image_inputs(csv_filename):
             num_filters=8
         ),
         text_feature(encoder='embed', min_len=1),
-        numerical_feature()
+        numerical_feature(normalization='zscore')
     ]
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
@@ -348,7 +352,7 @@ def test_experiment_sequence_combiner(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     for encoder in ENCODERS[:-2]:
-        logging.error('sequence combiner. encoders: {0}, {1}'.format(
+        logger.error('sequence combiner. encoders: {0}, {1}'.format(
             encoder,
             encoder
         ))
@@ -383,7 +387,7 @@ def test_experiment_model_resume(csv_filename):
     }
 
     exp_dir_name = experiment(model_definition, data_csv=rel_path)
-    logging.info('Experiment Directory: {0}'.format(exp_dir_name))
+    logger.info('Experiment Directory: {0}'.format(exp_dir_name))
 
     experiment(
         model_definition,
@@ -470,7 +474,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
             num_filters=8
         ),
         text_feature(encoder='embed', min_len=1),
-        numerical_feature()
+        numerical_feature(normalization='minmax')
     ]
     output_features = [binary_feature(), numerical_feature()]
     rel_path = generate_data(

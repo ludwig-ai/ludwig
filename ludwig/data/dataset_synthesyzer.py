@@ -91,7 +91,7 @@ def build_synthetic_dataset(dataset_size, features):
 def generate_datapoint(features):
     datapoint = []
     for feature in features:
-        if ('cycle' in feature and feature['cycle'] == True and
+        if ('cycle' in feature and feature['cycle'] is True and
                 feature['type'] in cyclers_registry):
             cycler_function = cyclers_registry[feature['type']]
             feature_value = cycler_function(feature)

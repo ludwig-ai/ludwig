@@ -35,6 +35,7 @@ from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
 
+logger = logging.getLogger(__name__)
 
 def learning_curves(
         training_statistics,
@@ -45,7 +46,7 @@ def learning_curves(
         **kwargs
 ):
     if len(training_statistics) < 1:
-        logging.error('No training_statistics provided')
+        logger.error('No training_statistics provided')
         return
 
     filename_template = None
@@ -96,7 +97,7 @@ def compare_performance(
         **kwargs
 ):
     if len(test_statistics) < 1:
-        logging.error('No test_statistics provided')
+        logger.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -168,7 +169,7 @@ def compare_classifiers_performance_from_prob(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     k = top_n_classes[0]
@@ -238,7 +239,7 @@ def compare_classifiers_performance_from_pred(
         **kwargs
 ):
     if len(predictions) < 1:
-        logging.error('No predictions provided')
+        logger.error('No predictions provided')
         return
 
     metadata = load_json(ground_truth_metadata)
@@ -296,7 +297,7 @@ def compare_classifiers_performance_subset(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     k = top_n_classes[0]
@@ -310,7 +311,7 @@ def compare_classifiers_performance_subset(
     if subset == 'ground_truth':
         subset_indices = gt < k
         gt_subset = gt[subset_indices]
-        logging.info('Subset is {:.2f}% of the data'.format(
+        logger.info('Subset is {:.2f}% of the data'.format(
             len(gt_subset) / len(gt) * 100)
         )
 
@@ -330,7 +331,7 @@ def compare_classifiers_performance_subset(
         if subset == PREDICTIONS:
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = gt[subset_indices]
-            logging.info(
+            logger.info(
                 'Subset for model_name {} is {:.2f}% of the data'.format(
                     model_names[i] if model_names and i < len(
                         model_names) else i,
@@ -395,7 +396,7 @@ def compare_classifiers_performance_changing_k(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     k = top_k
@@ -452,7 +453,7 @@ def compare_classifiers_multiclass_multimetric(
         **kwargs
 ):
     if len(test_statistics) < 1:
-        logging.error('No test_statistics provided')
+        logger.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -613,7 +614,7 @@ def compare_classifiers_predictions(
         **kwargs
 ):
     if len(predictions) < 2:
-        logging.error('No predictions provided')
+        logger.error('No predictions provided')
         return
 
     ground_truth_fn = ground_truth
@@ -639,7 +640,7 @@ def compare_classifiers_predictions(
     # DOTO all shadows built in name - come up with a more descriptive name
     all = len(gt)
     if all == 0:
-        logging.error('No labels in the ground truth')
+        logger.error('No labels in the ground truth')
         return
 
     both_right = 0
@@ -664,12 +665,12 @@ def compare_classifiers_predictions(
     one_right = c1_right_c2_wrong + c1_wrong_c2_right
     both_wrong = both_wrong_same + both_wrong_different
 
-    logging.info('Test datapoints: {}'.format(all))
-    logging.info(
+    logger.info('Test datapoints: {}'.format(all))
+    logger.info(
         'Both right: {} {:.2f}%'.format(both_right, 100 * both_right / all))
-    logging.info(
+    logger.info(
         'One right: {} {:.2f}%'.format(one_right, 100 * one_right / all))
-    logging.info(
+    logger.info(
         '  {} right / {} wrong: {} {:.2f}% {:.2f}%'.format(
             name_c1,
             name_c2,
@@ -678,7 +679,7 @@ def compare_classifiers_predictions(
             100 * c1_right_c2_wrong / one_right if one_right > 0 else 0
         )
     )
-    logging.info(
+    logger.info(
         '  {} wrong / {} right: {} {:.2f}% {:.2f}%'.format(
             name_c1,
             name_c2,
@@ -687,16 +688,16 @@ def compare_classifiers_predictions(
             100 * c1_wrong_c2_right / one_right if one_right > 0 else 0
         )
     )
-    logging.info(
+    logger.info(
         'Both wrong: {} {:.2f}%'.format(both_wrong, 100 * both_wrong / all)
     )
-    logging.info('  same prediction: {} {:.2f}% {:.2f}%'.format(
+    logger.info('  same prediction: {} {:.2f}% {:.2f}%'.format(
         both_wrong_same,
         100 * both_wrong_same / all,
         100 * both_wrong_same / both_wrong if both_wrong > 0 else 0
     )
     )
-    logging.info('  different prediction: {} {:.2f}% {:.2f}%'.format(
+    logger.info('  different prediction: {} {:.2f}% {:.2f}%'.format(
         both_wrong_different,
         100 * both_wrong_different / all,
         100 * both_wrong_different / both_wrong if both_wrong > 0 else 0
@@ -739,7 +740,7 @@ def compare_classifiers_predictions_distribution(
         **kwargs
 ):
     if len(predictions) < 1:
-        logging.error('No predictions provided')
+        logger.error('No predictions provided')
         return
 
     ground_truth = load_from_file(ground_truth, field)
@@ -788,7 +789,7 @@ def confidence_thresholding(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     gt = load_from_file(ground_truth, field)
@@ -861,7 +862,7 @@ def confidence_thresholding_data_vs_acc(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     gt = load_from_file(ground_truth, field)
@@ -933,7 +934,7 @@ def confidence_thresholding_data_vs_acc_subset(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     k = top_n_classes[0]
@@ -954,7 +955,7 @@ def confidence_thresholding_data_vs_acc_subset(
     if subset == 'ground_truth':
         subset_indices = gt < k
         gt_subset = gt[subset_indices]
-        logging.info('Subset is {:.2f}% of the data'.format(
+        logger.info('Subset is {:.2f}% of the data'.format(
             len(gt_subset) / len(gt) * 100)
         )
 
@@ -968,7 +969,7 @@ def confidence_thresholding_data_vs_acc_subset(
         if subset == PREDICTIONS:
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = gt[subset_indices]
-            logging.info(
+            logger.info(
                 'Subset for model_name {} is {:.2f}% of the data'.format(
                     model_names[i] if model_names and i < len(
                         model_names) else i,
@@ -1029,7 +1030,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     filename_template = None
@@ -1059,7 +1060,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         if subset == 'ground_truth':
             subset_indices = gt == curr_k
             gt_subset = gt[subset_indices]
-            logging.info('Subset is {:.2f}% of the data'.format(
+            logger.info('Subset is {:.2f}% of the data'.format(
                 len(gt_subset) / len(gt) * 100)
             )
 
@@ -1073,7 +1074,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
             if subset == PREDICTIONS:
                 subset_indices = np.argmax(prob, axis=1) == curr_k
                 gt_subset = gt[subset_indices]
-                logging.info(
+                logger.info(
                     'Subset for model_name {} is {:.2f}% of the data'.format(
                         model_names[i] if model_names and i < len(
                             model_names) else i,
@@ -1130,16 +1131,16 @@ def confidence_thresholding_2thresholds_2d(
         **kwargs
 ):
     if len(probabilities) < 2:
-        logging.error('Not enough probabilities provided, two are needed')
+        logger.error('Not enough probabilities provided, two are needed')
         return
     if len(probabilities) > 2:
-        logging.error('Too many probabilities provided, only two are needed')
+        logger.error('Too many probabilities provided, only two are needed')
         return
     if len(threshold_fields) < 2:
-        logging.error('Not enough threshold fields provided, two are needed')
+        logger.error('Not enough threshold fields provided, two are needed')
         return
     if len(threshold_fields) > 2:
-        logging.error('Too many threshold fields provided, only two are needed')
+        logger.error('Too many threshold fields provided, only two are needed')
         return
 
     filename_template = None
@@ -1227,9 +1228,9 @@ def confidence_thresholding_2thresholds_2d(
             )
         )
 
-    logging.info('CSV table')
+    logger.info('CSV table')
     for row in table:
-        logging.info(','.join([str(e) for e in row]))
+        logger.info(','.join([str(e) for e in row]))
 
     # ===========#
     # Multiline #
@@ -1307,16 +1308,16 @@ def confidence_thresholding_2thresholds_3d(
         **kwargs
 ):
     if len(probabilities) < 2:
-        logging.error('Not enough probabilities provided, two are needed')
+        logger.error('Not enough probabilities provided, two are needed')
         return
     if len(probabilities) > 2:
-        logging.error('Too many probabilities provided, only two are needed')
+        logger.error('Too many probabilities provided, only two are needed')
         return
     if len(threshold_fields) < 2:
-        logging.error('Not enough threshold fields provided, two are needed')
+        logger.error('Not enough threshold fields provided, two are needed')
         return
     if len(threshold_fields) > 2:
-        logging.error('Too many threshold fields provided, only two are needed')
+        logger.error('Too many threshold fields provided, only two are needed')
         return
 
     gt_1 = load_from_file(ground_truth, threshold_fields[0])
@@ -1412,7 +1413,7 @@ def binary_threshold_vs_metric(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     filename_template = None
@@ -1434,7 +1435,7 @@ def binary_threshold_vs_metric(
     for metric in metrics:
 
         if metric not in supported_metrics:
-            logging.error("Metric {} not supported".format(metric))
+            logger.error("Metric {} not supported".format(metric))
             continue
 
         scores = []
@@ -1511,7 +1512,7 @@ def roc_curves(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     gt = load_from_file(ground_truth, field)
@@ -1554,7 +1555,7 @@ def roc_curves_from_test_statistics(
         **kwargs
 ):
     if len(test_statistics) < 1:
-        logging.error('No prediction_statistics provided')
+        logger.error('No test_statistics provided')
         return
 
     test_statistics_per_model_name = [load_json(test_statistics_f)
@@ -1596,7 +1597,7 @@ def calibration_1_vs_all(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     filename_template = None
@@ -1708,7 +1709,7 @@ def calibration_multiclass(
         **kwargs
 ):
     if len(probabilities) < 1:
-        logging.error('No probabilities provided')
+        logger.error('No probabilities provided')
         return
 
     filename_template = None
@@ -1791,7 +1792,7 @@ def calibration_multiclass(
             format_str += '{}'
         else:
             format_str = '{}'
-        logging.info(format_str.format(brier_score))
+        logger.info(format_str.format(brier_score))
 
 
 def confusion_matrix(
@@ -1806,7 +1807,7 @@ def confusion_matrix(
         **kwargs
 ):
     if len(test_statistics) < 1:
-        logging.error('No test_statistics provided')
+        logger.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -1910,7 +1911,7 @@ def frequency_vs_f1(
         **kwargs
 ):
     if len(test_statistics) < 1:
-        logging.error('No test_statistics provided')
+        logger.error('No test_statistics provided')
         return
 
     filename_template = None
@@ -2183,12 +2184,7 @@ def cli(sys_argv):
     )
 
     args = parser.parse_args(sys_argv)
-
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging_level_registry[args.logging_level],
-        format='%(message)s'
-    )
+    logger.setLevel(logging_level_registry[args.logging_level])
 
     if args.visualization == 'compare_performance':
         compare_performance(**vars(args))
@@ -2236,7 +2232,7 @@ def cli(sys_argv):
     elif args.visualization == 'learning_curves':
         learning_curves(**vars(args))
     else:
-        logging.info('Visualization argument not recognized')
+        logger.info('Visualization argument not recognized')
 
 
 if __name__ == '__main__':

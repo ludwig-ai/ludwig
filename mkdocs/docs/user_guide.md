@@ -1074,6 +1074,7 @@ Parameters available for preprocessing are
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The value should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
 - `fill_value` (default `0`): the value to replace the missing values with in case the `missing_value_strategy` is `fill-value`.
+- `normalization` (default `None`): technique to be used when normalizing the numerical feature types. The available options are `None`, `zscore` and `minmax`. If the value is `None` no normalization is performed. If the value is `zscore`, the mean and standard deviation are computed so that values are shifted to have zero mean and 1 standard deviation. If the value is `minmax`, minimun and maximum values are computed and the minimum is subtracted from values and the result is divided by difference between maximum and minimum.
 
 ### Numerical Input Features and Encoders
 
@@ -1863,7 +1864,7 @@ Example sequence feature entry in the output features list using a parallel cnn 
 ```yaml
 name: sequence_csv_column_name
 type: sequence
-encoder: cnn_rnn
+encoder: cnnrnn
 tied_weights: null
 representation: dense
 embedding_size: 256
@@ -2088,15 +2089,15 @@ The parameters available for preprocessing are:
 - `unknown_symbol` (default `<UNK>`): the string used as a unknown symbol. Is is mapped to the integer ID 1 in the vocabulary.
 - `lowercase` (default `false`): if the string has to be lowercased before being handled by the formatter.
 - `word_sequence_length_limit` (default `256`): the maximum length of the text in words. Texts that are longer than this value will be truncated, while texts that are shorter will be padded.
-- `word_format` (default `space_punct`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `space_punct` splits the string using a regular expression that separates also punctuation. Other options are: `space` (splits on space), `underscore` (splits on underscore), `comma`(splits on comma), `json` (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on [spaCy](https://spacy.io).
+- `word_tokenizer` (default `space_punct`): defines how to map from the raw string content of the CSV column to a sequence of words. The default value `space_punct` splits the string using a regular expression that separates also punctuation. Other options are: `space` (splits on space), `underscore` (splits on underscore), `comma`(splits on comma), `json` (decodes the string into a set or a list through a JSON parser), and a set of format functions that rely on [spaCy](https://spacy.io).
 - `word_most_common` (default `20000`): the maximum number of most common words to be considered. If the data contains more than this amount, the most infrequent words will be treated as unknown.
 - `char_sequence_length_limit` (default `1024`): the maximum length of the text in characters. Texts that are longer than this value will be truncated, while sequences that are shorter will be padded.
-- `char_format` (default `characters`): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is `characters` and the behavior is to split the string at each character.
+- `char_tokenizer` (default `characters`): defines how to map from the raw string content of the CSV column to a sequence of characters. The default value and only available option is `characters` and the behavior is to split the string at each character.
 - `char_most_common` (default `70`): the maximum number of most common characters to be considered. if the data contains more than this amount, the most infrequent characters will be treated as unknown.
 
 #### spaCy based word format options
 
-The spaCy based `word_format` options are functions that use the powerful tokenization and NLP preprocessing models provided the library.
+The spaCy based `tokenizer` options are functions that use the powerful tokenization and NLP preprocessing models provided the library.
 Several languages are available: English (code `en`), Italian (code `it`), Spanish (code `es`), German (code `de`), French (code `fr`), Portuguese (code `pt`), Dutch (code `nl`), Greek (code `el`) and Multi (code `xx`, useful in case you have a dataset of different languages).
 For each language different functions are available:
 - `tokenize`: uses spaCy tokenizer,
@@ -2110,7 +2111,7 @@ In order to use these options, you have to download the the spaCy model:
 ```
 python -m spacy download <language_code>
 ```
-and provide `<language>_<function>` as `word_format` like: `english_tokenizer`, `italian_lemmatize_filter`, `multi_tokenize_filter` and so on.
+and provide `<language>_<function>` as `tokenizer` like: `english_tokenizer`, `italian_lemmatize_filter`, `multi_tokenize_filter` and so on.
 More details on the models can be found in the [spaCy documentation](https://spacy.io/models).
 
 ### Text Input Features and Encoders
@@ -2376,7 +2377,7 @@ Horovod works by, in practice, increasing the batch size and distributing a part
 It also adjusts the learning rate to counter balance the increase in the batch size.
 The advantage is that training speed scales almost linearly with the number of nodes.
 
-`experiment`, `train` and `predict` commands accept a `--horovod` argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
+`experiment`, `train` and `predict` commands accept a `--use_horovod argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
 An MPI command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
 For instance, in order to train a Ludwig model on a local machine with four GPUs one you can run:
 
@@ -2386,7 +2387,7 @@ mpirun -np 4 \
     -bind-to none -map-by slot \
     -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
     -mca pml ob1 -mca btl ^openib \
-    ludwig train --horovod ...other Ludwig parameters...
+    ludwig train --use_horovod ...other Ludwig parameters...
 ```
 
 While for training on four remote machines with four GPUs each you can run:
@@ -2397,7 +2398,7 @@ mpirun -np 16 \
     -bind-to none -map-by slot \
     -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
     -mca pml ob1 -mca btl ^openib \
-    ludwig train --horovod ...other Ludwig parameters...
+    ludwig train --use_horovod ...other Ludwig parameters...
 ```
 
 The same applies to `experiment` and `predict`.

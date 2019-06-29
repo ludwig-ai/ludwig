@@ -55,8 +55,12 @@ def random_name(length=5):
     return uuid.uuid4().hex[:length].upper()
 
 
-def numerical_feature():
-    return {'name': 'num_' + random_name(), 'type': 'numerical'}
+def numerical_feature(normalization=None):
+    return {'name': 'num_' + random_name(), 'type': 'numerical',
+            'preprocessing': {
+                'normalization': normalization
+            }
+    }
 
 
 def categorical_feature(**kwargs):

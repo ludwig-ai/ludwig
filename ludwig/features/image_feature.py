@@ -20,7 +20,6 @@ import os
 import h5py
 import numpy as np
 import tensorflow as tf
-from skimage.color import rgb2gray
 from skimage.io import imread
 
 from ludwig.constants import *
@@ -28,11 +27,14 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
-from ludwig.utils.image_utils import get_abs_path
+from ludwig.utils.image_utils import get_abs_path, greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
+
+
+logger = logging.getLogger(__name__)
 
 
 class ImageBaseFeature(BaseFeature):
@@ -43,7 +45,7 @@ class ImageBaseFeature(BaseFeature):
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
-        'resize_method': 'crop_or_pad'
+        'resize_method': 'interpolate'
     }
 
     @staticmethod
@@ -91,9 +93,9 @@ class ImageBaseFeature(BaseFeature):
         if user_specified_num_channels is True:
 
             # convert to greyscale if needed
-            if user_specified_num_channels == 1 and (
+            if num_channels == 1 and (
                     img_num_channels == 3 or img_num_channels == 4):
-                img = np.expand_dims(rgb2gray(img), axis=2)
+                img = greyscale(img)
                 img_num_channels = 1
 
             # Number of channels is specified by the user
@@ -103,7 +105,7 @@ class ImageBaseFeature(BaseFeature):
             img = img_padded
 
             if img_num_channels != num_channels:
-                logging.warning(
+                logger.warning(
                     "Image {0} has {1} channels, where as {2}"
                     " channels are expected. Dropping/adding channels"
                     "with 0s as appropriate".format(
@@ -291,7 +293,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('  targets_placeholder: {0}'.format(placeholder))
+        logger.debug('  targets_placeholder: {0}'.format(placeholder))
 
         feature_representation, feature_representation_size = self.encoder_obj(
             placeholder,
@@ -299,7 +301,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
             dropout_rate,
             is_training,
         )
-        logging.debug(
+        logger.debug(
             '  feature_representation: {0}'.format(feature_representation)
         )
 

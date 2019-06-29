@@ -19,30 +19,6 @@ import math
 import numpy as np
 
 
-def jaccard(sorted_list_1, sorted_list_2):
-    max_jaccard_score = 0
-    for path1 in sorted_list_1:
-        for path2 in sorted_list_2:
-            size_set_1 = len(path1)
-            size_set_2 = len(path2)
-
-            intersection = 0
-            for i in range(min(size_set_1, size_set_2)):
-                last_p1 = path1[-(i + 1)]
-                last_p2 = path2[-(i + 1)]
-                if last_p1 == last_p2:
-                    intersection += 1
-                else:
-                    break
-
-            jaccard_score = intersection / (
-                    size_set_1 + size_set_2 - intersection)
-            if jaccard_score > max_jaccard_score:
-                max_jaccard_score = jaccard_score
-
-    return max_jaccard_score
-
-
 def softmax(x, temperature=1.0):
     e_x = np.exp((x - np.max(x)) / temperature)
     return e_x / e_x.sum()

@@ -60,6 +60,10 @@ from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
 
@@ -204,7 +208,7 @@ class LudwigModel:
         return ludwig_model
 
     def save(self, save_path):
-        """This function allows for loading pretrained models
+        """This function allows to save models on disk
 
         # Inputs
 
@@ -267,7 +271,11 @@ class LudwigModel:
             data_validation_hdf5=None,
             data_test_hdf5=None,
             data_dict=None,
+            data_train_dict=None,
+            data_validation_dict=None,
+            data_test_dict=None,
             train_set_metadata_json=None,
+            experiment_name='api_experiment',
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
@@ -323,14 +331,43 @@ class LudwigModel:
                the same length. Each index in the lists corresponds to one
                datapoint. For example a data set consisting of two datapoints
                with a text and a class may be provided as the following dict
-               ``{'text_field_name': ['text of the first datapoint', text of the
+               `{'text_field_name': ['text of the first datapoint', text of the
                second datapoint'], 'class_filed_name': ['class_datapoints_1',
                'class_datapoints_2']}`.
+        :param data_train_dict: (dict) input training data dictionary. It is
+               expected to contain one key for each field and the values have
+               to be lists of the same length. Each index in the lists
+               corresponds to one datapoint. For example a data set consisting
+               of two datapoints with a text and a class may be provided as the
+               following dict:
+               `{'text_field_name': ['text of the first datapoint', 'text of the
+               second datapoint'], 'class_field_name': ['class_datapoint_1',
+               'class_datapoint_2']}`.
+        :param data_validation_dict: (dict) input validation data dictionary. It
+               is expected to contain one key for each field and the values have
+               to be lists of the same length. Each index in the lists
+               corresponds to one datapoint. For example a data set consisting
+               of two datapoints with a text and a class may be provided as the
+               following dict:
+               `{'text_field_name': ['text of the first datapoint', 'text of the
+               second datapoint'], 'class_field_name': ['class_datapoint_1',
+               'class_datapoint_2']}`.
+        :param data_test_dict: (dict) input test data dictionary. It is
+               expected to contain one key for each field and the values have
+               to be lists of the same length. Each index in the lists
+               corresponds to one datapoint. For example a data set consisting
+               of two datapoints with a text and a class may be provided as the
+               following dict:
+               `{'text_field_name': ['text of the first datapoint', 'text of the
+               second datapoint'], 'class_field_name': ['class_datapoint_1',
+               'class_datapoint_2']}`.
         :param train_set_metadata_json: (string) input metadata JSON file. It is an
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
-        :param model_name: (string) a name for the model, user for the save
+        :param experiment_name: (string) a name for the experiment, used for the save
+               directory
+        :param model_name: (string) a name for the model, used for the save
                directory
         :param model_load_path: (string) path of a pretrained model to load as
                initialization
@@ -405,6 +442,15 @@ class LudwigModel:
         if data_df is None and data_dict is not None:
             data_df = pd.DataFrame(data_dict)
 
+        if data_train_df is None and data_train_dict is not None:
+            data_train_df = pd.DataFrame(data_train_dict)
+
+        if data_validation_df is None and data_validation_dict is not None:
+            data_validation_df = pd.DataFrame(data_validation_dict)
+
+        if data_test_df is None and data_test_dict is not None:
+            data_test_df = pd.DataFrame(data_test_dict)
+
         (
             self.model,
             preprocessed_data,
@@ -426,7 +472,7 @@ class LudwigModel:
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
             train_set_metadata_json=train_set_metadata_json,
-            experiment_name='api_experiment',
+            experiment_name=experiment_name,
             model_name=model_name,
             model_load_path=model_load_path,
             model_resume_path=model_resume_path,
@@ -435,6 +481,7 @@ class LudwigModel:
             skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
             output_directory=output_directory,
+            should_close_session=False,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             use_horovod=use_horovod,

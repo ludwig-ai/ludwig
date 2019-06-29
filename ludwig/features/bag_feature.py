@@ -29,6 +29,9 @@ from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary
 
 
+logger = logging.getLogger(__name__)
+
+
 class BagBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
@@ -136,7 +139,7 @@ class BagInputFeature(BagBaseFeature, InputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('placeholder: {0}'.format(placeholder))
+        logger.debug('placeholder: {0}'.format(placeholder))
 
         embedded, embedding_size = self.embed_weighted(
             placeholder,
@@ -144,7 +147,7 @@ class BagInputFeature(BagBaseFeature, InputFeature):
             dropout_rate,
             is_training=False
         )
-        logging.debug('feature_representation: {0}'.format(embedded))
+        logger.debug('feature_representation: {0}'.format(embedded))
 
         feature_representation = {
             'name': self.name,

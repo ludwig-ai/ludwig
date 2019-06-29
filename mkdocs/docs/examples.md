@@ -5,15 +5,20 @@ For each task we show an example dataset and a sample model definition that can 
 Text Classification
 ===
 
+This example shows how to build a text classifier with Ludwig.
+It can be performed using the [Reuters-21578](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip) dataset, in particular the version available on [CMU's Text Analitycs course website](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/).
+Other datasets available on the same webpage, like [OHSUMED](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/ohsumed-allcats-6.zip), is a well-known medical abstracts dataset, and [Epinions.com](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/epinions.zip), a dataset of product reviews, can be used too as the name of the columns is the same.
+
+
 | text                                                                                             | class       |
 |--------------------------------------------------------------------------------------------------|-------------|
-| Toronto  Feb 26 - Standard Trustco said it expects earnings in 1987 to increase at least 15..   | earnings    |
-| New York  Feb 26 - American Express Co remained silent on market rumors..                       | acquisition |
-| BANGKOK  March 25 - Vietnam will resettle 300000 people on state farms known as new economic.. | coffee      |
+| Toronto  Feb 26 - Standard Trustco said it expects earnings in 1987 to increase at least 15...   | earnings    |
+| New York  Feb 26 - American Express Co remained silent on market rumors...                       | acquisition |
+| BANGKOK  March 25 - Vietnam will resettle 300000 people on state farms known as new economic...  | coffee      |
 
 ```
 ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv text_classification.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -36,11 +41,11 @@ output_features:
 Named Entity Recognition Tagging
 ===
 
-| utterance                                         | tag                                            |
-|---------------------------------------------------|------------------------------------------------|
-| John Smith was born in New York on July 21st 1982 | Person Person O O O City City O Date Date Date |
-| Jane Smith was born in Boston on May 1st 1973     | Person Person O O O City City O Date Date Date |
-| My friend Carlos was born in San Jose             | O O Person O O O City City                     |
+| utterance                                                                        | tag                                                             |
+|----------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| Blade Runner is a 1982 neo-noir science fiction film directed by Ridley Scott    | Movie Movie O O Date O O O O O O Person Person                  |
+| Harrison Ford and Rutger Hauer starred in it                                     | Person Person O Person person O O O                             |
+| Philip Dick 's novel Do Androids Dream of Electric Sheep ? was published in 1968 | Person Person O O Book Book Book Book Book Book Book O O O Date |
 
 ```
 ludwig experiment \
@@ -216,7 +221,7 @@ Sentiment Analysis
 
 ```
 ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv sentiment.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -240,15 +245,15 @@ output_features:
 Image Classification
 ===
 
-| image_path                | class |
-|---------------------------|-------|
-| imagenet/image_000001.jpg | car   |
-| imagenet/image_000002.jpg | dog   |
-| imagenet/image_000003.jpg | boat  |
+| image_path              | class |
+|-------------------------|-------|
+| images/image_000001.jpg | car   |
+| images/image_000002.jpg | dog   |
+| images/image_000003.jpg | boat  |
 
 ```
 ludwig experiment \
-  --data_csv reuters-allcats.csv \
+  --data_csv image_classification.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -309,8 +314,8 @@ containing 60000 and 10000 examples correspondingly and having the following for
 From the directory where you have virtual environment with ludwig installed:
 ```
 ludwig train \
-  --data_train_csv <full_path_to_mnist_dataset_training_csv> \
-  --data_test_csv <full path to mnist_dataset_test.csv> \
+  --data_train_csv <PATH_TO_MNIST_DATASET_TRAINING_CSV> \
+  --data_test_csv <PATH_TO_MNIST_DATASET_TEST_CSV> \
   --model_definition_file model_definition.yaml
 ```
 
@@ -359,7 +364,7 @@ Image Captioning
 
 ```
 ludwig experiment \
---data_csv reuters-allcats.csv \
+--data_csv image captioning.csv \
   --model_definition_file model_definition.yaml
 ```
 
@@ -385,7 +390,8 @@ output_features:
 One-shot Learning with Siamese Networks
 ===
 
-This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset. The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
+This example can be considered a simple baseline for one-shot learning on the [Omniglot](https://github.com/brendenlake/omniglot) dataset.
+The task is, given two images of two handwritten characters, recognize if they are two instances of the same character or not.
 
 | image_path_1                     |   image_path_2                   | similarity |
 |----------------------------------|----------------------------------|------------|
@@ -408,9 +414,10 @@ input_features:
         name: image_path_1
         type: image
         encoder: stacked_cnn
-        resize_image: true
-        width: 28
-        height: 28
+        preprocessing:
+          width: 28
+          height: 28
+          resize_image: true
     -
         name: image_path_2
         type: image
@@ -440,6 +447,14 @@ Visual Question Answering
 | imdata/image_000002.jpg | What color are the wheels                 | blue   |
 | imdata/image_000003.jpg | What kind of utensil is in the glass bowl | knife  |
 
+
+```
+ludwig experiment \
+--data_csv vqa.csv \
+  --model_definition_file model_definition.yaml
+```
+
+With `model_definition.yaml`:
 
 ```yaml
 input_features:
@@ -485,7 +500,7 @@ The full data and the column descriptions can be found [here](https://www.kaggle
 After downloading the data, to train a model on this dataset using Ludwig,
 ```
 ludwig experiment \
-  --data_csv PATH_TO_TITANIC_TRAIN.CSV \
+  --data_csv <PATH_TO_TITANIC_CSV> \
   --model_definition_file model_definition.yaml
 ```
 
@@ -684,11 +699,11 @@ output_features:
 Multi-label classification
 ===
 
-| image_path                | tags          |
-|---------------------------|---------------|
-| imagenet/image_000001.jpg | car man       |
-| imagenet/image_000002.jpg | happy dog tie |
-| imagenet/image_000003.jpg | boat water    |
+| image_path              | tags          |
+|-------------------------|---------------|
+| images/image_000001.jpg | car man       |
+| images/image_000002.jpg | happy dog tie |
+| images/image_000003.jpg | boat water    |
 
 ```
 ludwig experiment \
