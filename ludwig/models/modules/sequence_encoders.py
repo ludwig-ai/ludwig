@@ -1655,3 +1655,77 @@ class CNNRNN:
         )
 
         return hidden, hidden_size
+
+
+class BERT:
+
+    def __init__(
+            self,
+            bert_config_path=None,
+            init_checkpoint_path=None,
+            do_lower_case=True,
+            **kwargs
+    ):
+
+        try:
+            from bert.modeling import BertConfig
+        except ImportError:
+            raise ValueError(
+                "Please install bert-tensorflow: pip install bert-tensorflow"
+            )
+
+        self.init_checkpoint_path = init_checkpoint_path
+        self.do_lower_case = do_lower_case
+
+        if bert_config_path is None or init_checkpoint_path is None:
+            raise ValueError(
+                'BERT config and model checkpoint paths are required'
+            )
+
+        self.bert_config = BertConfig.from_json_file(bert_config_path)
+
+    def __call__(
+            self,
+            input_sequence,
+            regularizer,
+            dropout_rate,
+            is_training=True
+    ):
+        try:
+            from bert.modeling import BertModel
+            from bert.modeling import get_assignment_map_from_checkpoint
+            from bert.tokenization import validate_case_matches_checkpoint
+        except ImportError:
+            raise ValueError(
+                "Please install bert-tensorflow: pip install bert-tensorflow"
+            )
+
+        model = BertModel(
+            config=self.bert_config,
+            is_training=False,
+            input_ids=input_sequence,
+        )
+
+        validate_case_matches_checkpoint(
+            self.do_lower_case,
+            self.init_checkpoint_path
+        )
+
+        tvars = tf.trainable_variables()
+
+        (
+            assignment_map,
+            initialized_variable_names
+        ) = get_assignment_map_from_checkpoint(
+            tvars,
+            self.init_checkpoint_path
+        )
+
+        tf.train.init_from_checkpoint(
+            self.init_checkpoint_path,
+            assignment_map
+        )
+
+        hidden = model.get_pooled_output()
+
+        return hidden, hidden.shape[-1].value

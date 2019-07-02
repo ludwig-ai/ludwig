@@ -728,7 +728,12 @@ class BERTTokenizer(BaseTokenizer):
                 'Vocabulary file is required to initialize BERT tokenizer'
             )
 
-        from bert.tokenization import FullTokenizer
+        try:
+            from bert.tokenization import FullTokenizer
+        except ImportError:
+            raise ValueError(
+                "Please install bert-tensorflow: pip install bert-tensorflow"
+            )
 
         self.tokenizer = FullTokenizer(vocab_file)
 
