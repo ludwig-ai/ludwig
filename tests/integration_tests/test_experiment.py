@@ -38,6 +38,8 @@ from tests.integration_tests.utils import timeseries_feature
 
 
 # The following imports are pytest fixtures, required for running the tests
+from tests.fixtures.filenames import csv_filename
+from tests.fixtures.filenames import yaml_filename
 
 
 logger = logging.getLogger(__name__)

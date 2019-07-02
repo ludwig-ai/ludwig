@@ -25,6 +25,7 @@ from tests.integration_tests.utils import sequence_feature
 
 
 # The following imports are pytest fixtures, required for running the tests
+from tests.fixtures.filenames import csv_filename
 
 
 def run_api_experiment(input_features, output_features, data_csv):
