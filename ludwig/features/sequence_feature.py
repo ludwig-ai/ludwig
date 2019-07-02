@@ -40,7 +40,6 @@ from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
-from ludwig.models.modules.sequence_encoders import BERT
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc import get_from_registry
@@ -124,8 +123,6 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         self.length = 0
 
         encoder_parameters = self.overwrite_defaults(feature)
-        print("ZZZZZZZZ")
-        print(encoder_parameters)
 
         self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
 
