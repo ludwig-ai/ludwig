@@ -37,6 +37,7 @@ from ludwig.utils.print_utils import logging_level_registry
 
 logger = logging.getLogger(__name__)
 
+
 def learning_curves(
         training_statistics,
         field,
@@ -2184,7 +2185,9 @@ def cli(sys_argv):
     )
 
     args = parser.parse_args(sys_argv)
-    logger.setLevel(logging_level_registry[args.logging_level])
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
 
     if args.visualization == 'compare_performance':
         compare_performance(**vars(args))

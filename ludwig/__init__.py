@@ -19,4 +19,16 @@ import logging
 from ludwig.globals import LUDWIG_VERSION as __version__
 
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(message)s')
+logger = logging.getLogger(__name__)
+# Default logging level for the project
+logger.setLevel(logging.INFO)
+
+# Configure stream handler
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+
+# Set formatter
+formatter = logging.Formatter('%(message)s')
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)

@@ -132,7 +132,7 @@ class LudwigModel:
             model_definition_file=None,
             logging_level=logging.ERROR
     ):
-        logging.getLogger().setLevel(logging_level)
+        logging.getLogger('ludwig').setLevel(logging_level)
         if model_definition_file is not None:
             with open(model_definition_file, 'r') as def_file:
                 self.model_definition = merge_with_defaults(
@@ -192,7 +192,7 @@ class LudwigModel:
 
         """
 
-        logging.getLogger().setLevel(logging_level)
+        logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
 
@@ -435,7 +435,7 @@ class LudwigModel:
         output feature containing loss and measures values for each epoch.
 
         """
-        logging.getLogger().setLevel(logging_level)
+        logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
 
@@ -531,7 +531,7 @@ class LudwigModel:
                be printed.
         :param debug: (bool, default: `False`) enables debugging mode
         """
-        logging.getLogger().setLevel(logging_level)
+        logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
 
@@ -626,7 +626,7 @@ class LudwigModel:
         text of the second datapoint'], 'class_filed_name':
         ['class_datapoints_1', 'class_datapoints_2']}`.
         """
-        logging.getLogger().setLevel(logging_level)
+        logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
 
@@ -697,7 +697,7 @@ class LudwigModel:
             evaluate_performance=False,
             logging_level=logging.ERROR,
     ):
-        logging.getLogger().setLevel(logging_level)
+        logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
 
