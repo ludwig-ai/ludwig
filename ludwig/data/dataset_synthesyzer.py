@@ -29,6 +29,13 @@ from ludwig.utils.misc import get_from_registry
 
 letters = string.ascii_letters
 
+DATETIME_FORMATS = {
+    '%m/%d/%y %H:%M:%S': '{m:02d}/{d:02d}/{y:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%m-%d-%Y': '{m:02d}-{d:02d}-{Y:04d}',
+    '%Y-%d-%m': '{Y:04d}-{d:02d}-{m:02d}',
+    '%d/%m/%Y %H:%M:%S': '{d:02d}/{m:02d}/{Y:04d} {H:02d}:{M:02d}:{S:02d}'
+}
+
 
 def generate_string(length):
     sequence = []
@@ -73,7 +80,8 @@ parameters_builders_registry = {
     'bag': assign_vocab,
     'sequence': assign_vocab,
     'timeseries': return_none,
-    'image': return_none
+    'image': return_none,
+    'date': return_none
 }
 
 
@@ -91,7 +99,7 @@ def build_synthetic_dataset(dataset_size, features):
 def generate_datapoint(features):
     datapoint = []
     for feature in features:
-        if ('cycle' in feature and feature['cycle'] == True and
+        if ('cycle' in feature and feature['cycle'] is True and
                 feature['type'] in cyclers_registry):
             cycler_function = cyclers_registry[feature['type']]
             feature_value = cycler_function(feature)
@@ -202,6 +210,29 @@ def generate_image(feature):
     return image_dest_path
 
 
+def generate_datetime(feature):
+    """picking a format among 4 different types:
+    1. 01/22/90 10:00:00
+    2. 02/22/1990
+    3. 1990-22-01
+    4. 22/02/1989 10:45:56
+    """
+
+    datetime_generation_format = DATETIME_FORMATS[
+        feature['preprocessing']['datetime_format']
+    ]
+
+    y = random.randint(1, 99)
+    Y = random.randint(1, 9999)
+    m = random.randint(1, 12)
+    d = random.randint(1, 28)
+    H = random.randint(1, 12)
+    M = random.randint(1, 59)
+    S = random.randint(1, 59)
+
+    return datetime_generation_format.format(y=y, Y=Y, m=m, d=d, H=H, M=M, S=S)
+
+
 generators_registry = {
     'category': generate_category,
     'text': generate_sequence,
@@ -211,7 +242,9 @@ generators_registry = {
     'bag': generate_bag,
     'sequence': generate_sequence,
     'timeseries': generate_timeseries,
-    'image': generate_image
+    'image': generate_image,
+    'date': generate_datetime
+
 }
 
 category_cycle = 0

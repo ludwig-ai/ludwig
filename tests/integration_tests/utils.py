@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import random
 import uuid
-
 import pandas as pd
 
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
+from ludwig.data.dataset_synthesyzer import DATETIME_FORMATS
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -159,6 +160,21 @@ def bag_feature(**kwargs):
         'vocab_size': 10,
         'embedding_size': 5
     }
+    feature.update(kwargs)
+
+    return feature
+
+
+def date_feature(**kwargs):
+
+    feature = {
+        'name': 'date_' + random_name(),
+        'type': 'date',
+        'preprocessing': {
+            'datetime_format': random.choice(list(DATETIME_FORMATS.keys()))
+        }
+    }
+
     feature.update(kwargs)
 
     return feature
