@@ -584,24 +584,24 @@ def compare_classifiers_multiclass_multimetric(
                     filename=filename
                 )
 
-                logging.info('\n')
-                logging.info(model_name_name)
+                logger.info('\n')
+                logger.info(model_name_name)
                 tmp_str = '{0} best 5 classes: '.format(field)
                 tmp_str += '{}'
-                logging.info(tmp_str.format(higher_f1s))
-                logging.info(f1_np[higher_f1s])
+                logger.info(tmp_str.format(higher_f1s))
+                logger.info(f1_np[higher_f1s])
                 tmp_str = '{0} worst 5 classes: '.format(field)
                 tmp_str += '{}'
-                logging.info(tmp_str.format(lower_f1s))
-                logging.info(f1_np[lower_f1s])
+                logger.info(tmp_str.format(lower_f1s))
+                logger.info(f1_np[lower_f1s])
                 tmp_str = '{0} number of classes with f1 score > 0: '.format(
                     field)
                 tmp_str += '{}'
-                logging.info(tmp_str.format(np.sum(f1_np > 0)))
+                logger.info(tmp_str.format(np.sum(f1_np > 0)))
                 tmp_str = '{0} number of classes with f1 score = 0: '.format(
                     field)
                 tmp_str += '{}'
-                logging.info(tmp_str.format(np.sum(f1_np == 0)))
+                logger.info(tmp_str.format(np.sum(f1_np == 0)))
 
 
 def compare_classifiers_predictions(

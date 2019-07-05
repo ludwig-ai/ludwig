@@ -61,7 +61,7 @@ from ludwig.utils.print_utils import logging_level_registry
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 
 class LudwigModel:
@@ -653,7 +653,7 @@ class LudwigModel:
                 'bucketing_field'
             ]
 
-        logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
         features_to_load = (self.model_definition['input_features'] +
                             self.model_definition['output_features'])
         preprocessed_data = build_data(
@@ -674,7 +674,7 @@ class LudwigModel:
             None
         )
 
-        logging.debug('Training batch')
+        logger.debug('Training batch')
         self.model.train_online(
             dataset,
             batch_size=batch_size,
@@ -708,7 +708,7 @@ class LudwigModel:
         if data_df is None:
             data_df = self._read_data(data_csv, data_dict)
 
-        logging.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
         features_to_load = self.model_definition['input_features']
         if evaluate_performance:
             output_features = self.model_definition['output_features']
@@ -733,7 +733,7 @@ class LudwigModel:
             None
         )
 
-        logging.debug('Predicting')
+        logger.debug('Predicting')
         predict_results = self.model.predict(
             dataset,
             batch_size,
@@ -750,7 +750,7 @@ class LudwigModel:
                 self.train_set_metadata
             )
 
-        logging.debug('Postprocessing')
+        logger.debug('Postprocessing')
         if (
                 return_type == 'dict' or
                 return_type == 'dictionary' or
@@ -772,7 +772,7 @@ class LudwigModel:
                 self.train_set_metadata
             )
         else:
-            logging.warning(
+            logger.warning(
                 'Unrecognized return_type: {}. '
                 'Returning DataFrame.'.format(return_type)
             )
@@ -969,7 +969,7 @@ def test_train(
         debug=debug
     )
 
-    logging.critical(train_stats)
+    logger.critical(train_stats)
 
     # predict
     predictions = ludwig_model.predict(
@@ -981,7 +981,7 @@ def test_train(
     )
 
     ludwig_model.close()
-    logging.critical(predictions)
+    logger.critical(predictions)
 
 
 def test_train_online(
@@ -1032,7 +1032,7 @@ def test_train_online(
         logging_level=logging_level
     )
     ludwig_model.close()
-    logging.critical(predictions)
+    logger.critical(predictions)
 
 
 def test_predict(
@@ -1058,7 +1058,7 @@ def test_predict(
     )
 
     ludwig_model.close()
-    logging.critical(predictions)
+    logger.critical(predictions)
 
     predictions = ludwig_model.predict(
         data_csv=data_csv,
@@ -1068,7 +1068,7 @@ def test_predict(
         logging_level=logging_level
     )
 
-    logging.critical(predictions)
+    logger.critical(predictions)
 
 
 def main(sys_argv):
@@ -1150,6 +1150,7 @@ def main(sys_argv):
     args = parser.parse_args(sys_argv)
     args.logging_level = logging_level_registry[args.logging_level]
 
+    """
     logging.basicConfig(
         stream=sys.stdout,
         # filename='log.log',
@@ -1157,6 +1158,7 @@ def main(sys_argv):
         level=args.logging_level,
         format='%(message)s'
     )
+    """
 
     if args.test == 'train':
         test_train(**vars(args))
@@ -1165,7 +1167,7 @@ def main(sys_argv):
     elif args.test == 'predict':
         test_predict(**vars(args))
     else:
-        logging.info('Unsupported test type')
+        logger.info('Unsupported test type')
 
 
 if __name__ == '__main__':
