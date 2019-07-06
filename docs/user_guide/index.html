@@ -4286,7 +4286,7 @@ The only difference is that time series features don't have an embedding layer a
 The number of channels is inferred, but make sure all your images have the same number of channels.
 During preprocessing, raw image files are transformed into numpy ndarrays and saved in the hdf5 format.
 All images in the dataset should have the same size.
-If they have different sizes, a <code>resize_method</code> together with a target <code>width</code> and <code>height</code> must be specified in the feature preprocessing parameters.</p>
+If they have different sizes, a <code>resize_method</code>, together with a target <code>width</code> and <code>height</code>, must be specified in the feature preprocessing parameters.</p>
 <ul>
 <li><code>in_memory</code> (default <code>true</code>): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.</li>
 <li><code>resize_method</code> (default <code>crop_or_pad</code>): available options: <code>crop_or_pad</code> - crops images larger than the specified <code>width</code> and <code>height</code> to the desired size or pads smalled images using edge padding; <code>interpolate</code> - uses interpolation to resize images to the specified <code>width</code> and <code>height</code>.</li>
@@ -4299,7 +4299,7 @@ If they have different sizes, a <code>resize_method</code> together with a targe
 <div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_feature_name</span>
 <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
 <span class="nt">preprocessing</span><span class="p">:</span>
-  <span class="nt">heights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
+  <span class="nt">height</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
   <span class="nt">width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
   <span class="nt">resize_method</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">interpolate</span>
 </pre></div>
