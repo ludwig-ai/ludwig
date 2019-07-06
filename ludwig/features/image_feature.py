@@ -224,7 +224,20 @@ class ImageBaseFeature(BaseFeature):
                     preprocessing_parameters['resize_method'],
                     user_specified_num_channels
                 )
-                data[feature['name']][i, :, :, :] = img
+                try:
+                    data[feature['name']][i, :, :, :] = img
+                except:
+                    logger.error(
+                        "Images are not of the same size. "
+                        "Expected size is {}, "
+                        "current image size is {}."
+                        "Images are expected to be all of the same size"
+                        "or explicit image width and height are expected"
+                        "to be provided. "
+                        "Additional information: https://uber.github.io/ludwig/user_guide/#image-features-preprocessing"
+                        .format(first_image.shape, img.shape)
+                    )
+                    raise
         else:
             data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
             mode = 'w'
