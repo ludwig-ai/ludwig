@@ -59,8 +59,9 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
 
-
 logger = logging.getLogger(__name__)
+
+
 # logger.setLevel(logging.INFO)
 
 
@@ -248,6 +249,28 @@ class LudwigModel:
             self.model.hyperparameters,
             model_hyperparameters_path
         )
+
+    def save_for_serving(self, save_path):
+        """This function allows to save models on disk
+
+        # Inputs
+
+        :param  save_path: (string) path to the directory where the SavedModel
+                is going to be saved.
+
+
+        # Example usage
+
+        ```python
+        ludwig_model.save_for_serving(save_path)
+        ```
+
+        """
+        if (self.model is None or self.model.session is None or
+                self.model_definition is None or self.train_set_metadata is None):
+            raise ValueError('Model has not been initialized or loaded')
+
+        self.model.save_savedmodel(save_path)
 
     def close(self):
         """Closes an open LudwigModel (closing the session running it).
