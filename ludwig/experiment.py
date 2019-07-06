@@ -37,7 +37,6 @@ from ludwig.utils.print_utils import print_ludwig
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def experiment(
@@ -461,7 +460,9 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
-    logger.setLevel(logging_level_registry[args.logging_level])
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
 
     set_on_master(args.use_horovod)
 
