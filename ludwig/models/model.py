@@ -412,6 +412,9 @@ class Model:
         # ====== Setup session =======
         session = self.initialize_session(gpus, gpu_fraction)
 
+        if self.weights_save_path:
+            self.restore(session, self.weights_save_path)
+
         train_writer = None
         if is_on_master():
             if not skip_save_log:
