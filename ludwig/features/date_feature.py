@@ -96,7 +96,7 @@ class DateBaseFeature(BaseFeature):
             np.array(DateBaseFeature.date_to_list(row, datetime_format))
             for row in dataset_df[feature['name']]
         ]
-        data[feature['name']] = np.array(dates_to_lists, dtype=np.int8)
+        data[feature['name']] = np.array(dates_to_lists, dtype=np.int16)
 
 
 class DateInputFeature(DateBaseFeature, InputFeature):

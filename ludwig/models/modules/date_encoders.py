@@ -197,68 +197,63 @@ class DateEmbed:
             :type is_training: Tensor
         """
         # ================ Embeddings ================
-        scaled_year, _ = self.year_fc(
-            tf.cast(input_vector[:, 0], tf.float32),
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-
-        embedded_month, _ = self.embed_month(
-            input_vector[:, 1],
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-        embedded_month = tf.expand_dims(embedded_month, axis=1)
-
-        embedded_day, _ = self.embed_day(
-            input_vector[:, 2],
-            regularizer,
-            dropout_rate,
-            is_training=True
-        )
-        embedded_day = tf.expand_dims(embedded_day, axis=1)
-
-        embedded_weekday, _ = self.embed_weekday(
-            input_vector[:, 3],
-            regularizer,
-            dropout_rate,
-            is_training=True
-        )
-        embedded_weekday = tf.expand_dims(embedded_weekday, axis=1)
-
-        embedded_yearday, _ = self.embed_yearday(
-            input_vector[:, 4],
-            regularizer,
-            dropout_rate,
-            is_training=True
-        )
-        embedded_yearday = tf.expand_dims(embedded_yearday, axis=1)
-
-        embedded_hour, _ = self.embed_hour(
-            input_vector[:, 5],
-            regularizer,
-            dropout_rate,
-            is_training=True
-        )
-        embedded_hour = tf.expand_dims(embedded_hour, axis=1)
-
-        embedded_minute, _ = self.embed_minute(
-            input_vector[:, 6],
-            regularizer,
-            dropout_rate,
-            is_training=True
-        )
-        embedded_minute = tf.expand_dims(embedded_minute, axis=1)
-
-        embedded_second, _ = self.embed_second(
-            input_vector[:, 7],
-            regularizer,
-            dropout_rate,
-            is_training=True
-        )
-        embedded_second = tf.expand_dims(embedded_second, axis=1)
+        with tf.variable_scope('year', reuse=tf.AUTO_REUSE):
+            scaled_year = self.year_fc(
+                tf.cast(input_vector[:, 0:1], tf.float32),
+                1,
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('month', reuse=tf.AUTO_REUSE):
+            embedded_month, _ = self.embed_month(
+                input_vector[:, 1] - 1,
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('day', reuse=tf.AUTO_REUSE):
+            embedded_day, _ = self.embed_day(
+                input_vector[:, 2] - 1,
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('weekday', reuse=tf.AUTO_REUSE):
+            embedded_weekday, _ = self.embed_weekday(
+                input_vector[:, 3],
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('yearday', reuse=tf.AUTO_REUSE):
+            embedded_yearday, _ = self.embed_yearday(
+                input_vector[:, 4] - 1,
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('hour', reuse=tf.AUTO_REUSE):
+            embedded_hour, _ = self.embed_hour(
+                input_vector[:, 5],
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('minute', reuse=tf.AUTO_REUSE):
+            embedded_minute, _ = self.embed_minute(
+                input_vector[:, 6],
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('second', reuse=tf.AUTO_REUSE):
+            embedded_second, _ = self.embed_second(
+                input_vector[:, 7],
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
 
         hidden = tf.concat(
             [scaled_year, embedded_month, embedded_day,
@@ -378,32 +373,19 @@ class DateWave:
         # ================ Embeddings ================
         input_vector = tf.cast(input_vector, tf.float32)
         scaled_year = self.year_fc(
-            input_vector[:, 0],
+            input_vector[:, 0:1],
+            1,
             regularizer,
             dropout_rate,
             is_training=is_training
         )
-        periodic_month = tf.expand_dims(
-            tf.sin(input_vector[:, 1] * (2 * math.pi / 12)), axis=1
-        )
-        periodic_day = tf.expand_dims(
-            tf.sin(input_vector[:, 2] * (2 * math.pi / 31)), axis=1
-        )
-        periodic_weekday = tf.expand_dims(
-            tf.sin(input_vector[:, 1] * (2 * math.pi / 7)), axis=1
-        )
-        periodic_yearday = tf.expand_dims(
-            tf.sin(input_vector[:, 3] * (2 * math.pi / 366)), axis=1
-        )
-        periodic_hour = tf.expand_dims(
-            tf.sin(input_vector[:, 4] * (2 * math.pi / 24)), axis=1
-        )
-        periodic_minute = tf.expand_dims(
-            tf.sin(input_vector[:, 5] * (2 * math.pi / 60)), axis=1
-        )
-        periodic_second = tf.expand_dims(
-            tf.sin(input_vector[:, 6] * (2 * math.pi / 60)), axis=1
-        )
+        periodic_month = tf.sin(input_vector[:, 1:2] * (2 * math.pi / 12))
+        periodic_day = tf.sin(input_vector[:, 2:3] * (2 * math.pi / 31))
+        periodic_weekday = tf.sin(input_vector[:, 3:4] * (2 * math.pi / 7))
+        periodic_yearday = tf.sin(input_vector[:, 4:5] * (2 * math.pi / 366))
+        periodic_hour = tf.sin(input_vector[:, 5:6] * (2 * math.pi / 24))
+        periodic_minute = tf.sin(input_vector[:, 6:7] * (2 * math.pi / 60))
+        periodic_second = tf.sin(input_vector[:, 7:8] * (2 * math.pi / 60))
 
         hidden = tf.concat(
             [scaled_year, periodic_month, periodic_day,
