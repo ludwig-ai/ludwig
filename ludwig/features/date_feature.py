@@ -20,6 +20,7 @@ from datetime import datetime
 
 import numpy as np
 import tensorflow as tf
+from dateutil.parser import parse
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -40,7 +41,7 @@ class DateBaseFeature(BaseFeature):
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': '',
-        'datetime_format': '%m/%d/%y %H:%M:%S'
+        'datetime_format': None
     }
 
     @staticmethod
@@ -51,12 +52,25 @@ class DateBaseFeature(BaseFeature):
 
     @staticmethod
     def date_to_list(date_str, datetime_format):
-
-        datetime_obj = datetime.strptime(date_str, datetime_format)
+        try:
+            if datetime_format is not None:
+                datetime_obj = datetime.strptime(date_str, datetime_format)
+            else:
+                datetime_obj = parse(date_str)
+        except:
+            logging.error(
+                'Error parsing date: {}. '
+                'Please provide a datetime format that parses it '
+                'in the preprocessing section of the date feature '
+                'in the model definition. '
+                'For more details: '
+                'https://ludwig.ai/user_guide/#date-features-preprocessing'
+                    .format(date_str)
+            )
 
         yearday = (
-            datetime_obj.toordinal() -
-            date(datetime_obj.year, 1, 1).toordinal() + 1
+                datetime_obj.toordinal() -
+                date(datetime_obj.year, 1, 1).toordinal() + 1
         )
         return [
             datetime_obj.year,
@@ -77,17 +91,11 @@ class DateBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        if 'datetime_format' in preprocessing_parameters:
-            feature['preprocessing']['datetime_format'] = (
-                preprocessing_parameters['datetime_format']
-            )
-
-        datetime_format = feature['preprocessing']['datetime_format']
+        datetime_format = preprocessing_parameters['datetime_format']
         dates_to_lists = [
             np.array(DateBaseFeature.date_to_list(row, datetime_format))
             for row in dataset_df[feature['name']]
         ]
-
         data[feature['name']] = np.array(dates_to_lists, dtype=np.int8)
 
 
@@ -116,11 +124,11 @@ class DateInputFeature(DateBaseFeature, InputFeature):
         )
 
     def build_input(
-        self,
-        regularizer,
-        dropout_rate,
-        is_training=False,
-        **kwargs
+            self,
+            regularizer,
+            dropout_rate,
+            is_training=False,
+            **kwargs
     ):
         placeholder = self._get_input_placeholder()
         logger.debug('placeholder: {0}'.format(placeholder))
@@ -145,10 +153,10 @@ class DateInputFeature(DateBaseFeature, InputFeature):
 
     @staticmethod
     def update_model_definition_with_metadata(
-        input_feature,
-        feature_metadata,
-        *args,
-        **kwargs
+            input_feature,
+            feature_metadata,
+            *args,
+            **kwargs
     ):
         pass
 
