@@ -78,8 +78,7 @@ def run_experiment(input_features, output_features, **kwargs):
         'skip_save_unprocessed_output': True,
     }
     args.update(kwargs)
-    import pdb
-    pdb.set_trace()
+
     exp_dir_name = experiment(**args)
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
