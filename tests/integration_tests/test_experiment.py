@@ -78,7 +78,8 @@ def run_experiment(input_features, output_features, **kwargs):
         'skip_save_unprocessed_output': True,
     }
     args.update(kwargs)
-
+    import pdb
+    pdb.set_trace()
     exp_dir_name = experiment(**args)
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
@@ -509,12 +510,15 @@ def test_image_resizing_num_channel_handling(csv_filename):
 
 
 def test_experiment_datetime_feature(csv_filename):
-    input_features = [date_feature(encoder='wave')]
+    input_features = [date_feature()]
     output_features = [categorical_feature(vocab_size=2)]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    encoders = ['wave', 'embed']
+    for encoder in encoders:
+        input_features[0]['encoder'] = encoder
+        run_experiment(input_features, output_features, data_csv=rel_path)
 
 
 if __name__ == '__main__':
