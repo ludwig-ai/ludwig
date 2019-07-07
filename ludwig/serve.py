@@ -24,7 +24,6 @@ import sys
 
 from ludwig.contrib import contrib_command
 from ludwig.utils.print_utils import logging_level_registry
-import pandas as pd
 import json
 
 from ludwig.api import LudwigModel
@@ -49,9 +48,9 @@ def start_server(
     model = LudwigModel.load(model_path)
 
     global input_features
-    input_features = set([
+    input_features = {
         f['name'] for f in model.model_definition['input_features']
-    ])
+    }
 
     @app.route('/predict', methods=["POST"])
     async def endpoint(request):
@@ -60,14 +59,16 @@ def start_server(
 
         for entry in entries:
             if (entry.keys() & input_features) != input_features:
-                return JSONResponse({"error": "entries must contain all input features"}, status_code=400)
+                return JSONResponse({"error": "entries must contain all input features"},
+                                    status_code=400)
 
         try:
             resp = model.predict(data_dict=entries).to_dict('records')
             return JSONResponse(resp)
         except Exception as e:
             logger.error("Error: {}".format(str(e)))
-            return JSONResponse({"error": "Unexpected Error: could not run inference on model"}, status_code=500)
+            return JSONResponse({"error": "Unexpected Error: could not run inference on model"},
+                                status_code=500)
 
     uvicorn.run(app, host=host, port=port)
 
