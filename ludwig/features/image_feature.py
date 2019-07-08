@@ -360,5 +360,6 @@ image_encoder_registry = {
 
 image_scaling_registry = {
     'pixel_normalization': lambda x: x * 1.0 / 255,
-    'pixel_standardization': lambda x: tf.image.per_image_standardization(x)
+    'pixel_standardization': lambda x: tf.map_fn(
+        lambda f: tf.image.per_image_standardization(f), x)
 }
