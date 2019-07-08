@@ -162,3 +162,15 @@ def bag_feature(**kwargs):
     feature.update(kwargs)
 
     return feature
+
+
+def h3_feature(**kwargs):
+    feature = {
+        'name': 'h3_' + random_name(),
+        'type': 'h3'
+    }
+    feature.update(kwargs)
+
+    return feature
+
+

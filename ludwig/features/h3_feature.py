@@ -71,8 +71,8 @@ class H3BaseFeature(BaseFeature):
             preprocessing_parameters=None
     ):
         data[feature['name']] = np.array(
-            data[feature['name']].map(H3BaseFeature.h3_to_list),
-            dtype=np.int8
+            [H3BaseFeature.h3_to_list(row)
+             for row in dataset_df[feature['name']]], dtype=np.int32
         )
 
 

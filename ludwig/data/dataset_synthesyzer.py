@@ -25,6 +25,7 @@ import yaml
 from skimage.io import imsave
 
 from ludwig.utils.data_utils import save_csv
+from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc import get_from_registry
 
 letters = string.ascii_letters
@@ -73,7 +74,8 @@ parameters_builders_registry = {
     'bag': assign_vocab,
     'sequence': assign_vocab,
     'timeseries': return_none,
-    'image': return_none
+    'image': return_none,
+    'h3': return_none
 }
 
 
@@ -202,6 +204,20 @@ def generate_image(feature):
     return image_dest_path
 
 
+def generate_h3(feature):
+    resolution = random.randint(0, 16)  # valid values [0, 15]
+    h3_components = {
+        'mode': 1,  # we can avoid testing other modes
+        'edge': 0,  # only used in other modes
+        'resolution': resolution,
+        'base_cell': random.randint(0, 122),  # valid values [0, 121]
+        # valid values [0, 7]
+        'cells': [random.randint(0, 8) for _ in range(resolution)]
+    }
+
+    return components_to_h3(h3_components)
+
+
 generators_registry = {
     'category': generate_category,
     'text': generate_sequence,
@@ -211,7 +227,8 @@ generators_registry = {
     'bag': generate_bag,
     'sequence': generate_sequence,
     'timeseries': generate_timeseries,
-    'image': generate_image
+    'image': generate_image,
+    'h3': generate_h3
 }
 
 category_cycle = 0
