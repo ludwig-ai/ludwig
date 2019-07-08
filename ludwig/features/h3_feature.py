@@ -72,7 +72,7 @@ class H3BaseFeature(BaseFeature):
     ):
         data[feature['name']] = np.array(
             [H3BaseFeature.h3_to_list(row)
-             for row in dataset_df[feature['name']]], dtype=np.int32
+             for row in dataset_df[feature['name']]], dtype=np.uint8
         )
 
 
@@ -80,7 +80,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-        self.encoder = 'parallel_cnn'
+        self.encoder = 'embed'
 
         encoder_parameters = self.overwrite_defaults(feature)
 
@@ -95,7 +95,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
         return tf.placeholder(
-            tf.int8,
+            tf.int32,
             shape=[None, H3_VECTOR_LENGTH],
             name=self.name
         )

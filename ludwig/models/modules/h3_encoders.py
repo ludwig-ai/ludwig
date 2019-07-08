@@ -85,6 +85,7 @@ class H3Embed:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             initializer=initializer,
@@ -96,6 +97,7 @@ class H3Embed:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             initializer=initializer,
@@ -107,6 +109,7 @@ class H3Embed:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             initializer=initializer,
@@ -118,6 +121,7 @@ class H3Embed:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             initializer=initializer,
@@ -129,6 +133,7 @@ class H3Embed:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             initializer=initializer,
@@ -156,43 +161,51 @@ class H3Embed:
             :type is_training: Tensor
         """
         # ================ Embeddings ================
-        embedded_mode, _ = self.embed_mode(
-            input_vector[:, 0],
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-        embedded_mode = tf.expand_dims(embedded_mode, axis=1)
-
-        embedded_edge, _ = self.embed_edge(
-            input_vector[:, 1],
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-        embedded_edge = tf.expand_dims(embedded_edge, axis=1)
-
-        embedded_base_cell, _ = self.embed_base_cell(
-            input_vector[:, 3],
-            regularizer,
-            dropout_rate,
-            is_training=True
-        )
-        embedded_base_cell = tf.expand_dims(embedded_base_cell, axis=1)
-
-        embedded_cells, _ = self.embed_cells(
-            input_vector[:, 4:],
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
+        with tf.variable_scope('mode', reuse=tf.AUTO_REUSE):
+            embedded_mode, _ = self.embed_mode(
+                input_vector[:, 0:1],
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('edge', reuse=tf.AUTO_REUSE):
+            embedded_edge, _ = self.embed_edge(
+                input_vector[:, 1:2],
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
+        with tf.variable_scope('resolution', reuse=tf.AUTO_REUSE):
+            embedded_resolution, _ = self.embed_resolution(
+                input_vector[:, 2:3],
+                regularizer,
+                dropout_rate,
+                is_training=True
+            )
+        with tf.variable_scope('base_cell', reuse=tf.AUTO_REUSE):
+            embedded_base_cell, _ = self.embed_base_cell(
+                input_vector[:, 3:4],
+                regularizer,
+                dropout_rate,
+                is_training=True
+            )
+        with tf.variable_scope('cells', reuse=tf.AUTO_REUSE):
+            embedded_cells, _ = self.embed_cells(
+                input_vector[:, 4:],
+                regularizer,
+                dropout_rate,
+                is_training=is_training
+            )
 
         resolution = input_vector[:, 2]
-        mask = tf.sequence_mask(resolution, 15)
+        mask = tf.cast(
+            tf.expand_dims(tf.sequence_mask(resolution, 15), -1),
+            dtype=tf.float32
+        )
         masked_embedded_cells = embedded_cells * mask
 
         concatenated = tf.concat(
-            [embedded_mode, embedded_edge,
+            [embedded_mode, embedded_edge, embedded_resolution,
              embedded_base_cell, masked_embedded_cells],
             axis=1)
 
@@ -269,7 +282,7 @@ class H3WeightedSum:
 
         self.weights = tf.get_variable(
             'weights',
-            [19],
+            [19, 1],
             initializer=initializer
         )
 
@@ -305,7 +318,7 @@ class H3WeightedSum:
             :type is_training: Tensor
         """
         # ================ Embeddings ================
-        embedded_h3, _ = self.h3_embed(
+        embedded_h3, embedding_size = self.h3_embed(
             input_vector,
             regularizer,
             dropout_rate,
