@@ -104,7 +104,7 @@ class H3Embed:
             regularize=regularize
         )
         self.embed_resolution = Embed(
-            [str(i) for i in range(15)],
+            [str(i) for i in range(16)],
             embedding_size,
             representation='dense',
             embeddings_trainable=True,
