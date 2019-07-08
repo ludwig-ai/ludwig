@@ -99,7 +99,7 @@ class ImageBaseFeature(BaseFeature):
                 img_num_channels = 1
 
             # Number of channels is specified by the user
-            img_padded = np.zeros((img_height, img_width, num_channels))
+            img_padded = np.zeros((img_height, img_width, num_channels), dtype=np.uint8)
             min_num_channels = min(num_channels, img_num_channels)
             img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
             img = img_padded
@@ -207,7 +207,7 @@ class ImageBaseFeature(BaseFeature):
         if feature['preprocessing']['in_memory']:
             data[feature['name']] = np.empty(
                 (num_images, height, width, num_channels),
-                dtype=np.int8
+                dtype=np.uint8
             )
             for i in range(len(dataset_df)):
                 filepath = get_abs_path(
