@@ -205,14 +205,14 @@ def generate_image(feature):
 
 
 def generate_h3(feature):
-    resolution = random.randint(0, 16)  # valid values [0, 15]
+    resolution = random.randint(0, 15)  # valid values [0, 15]
     h3_components = {
         'mode': 1,  # we can avoid testing other modes
         'edge': 0,  # only used in other modes
         'resolution': resolution,
-        'base_cell': random.randint(0, 122),  # valid values [0, 121]
+        'base_cell': random.randint(0, 121),  # valid values [0, 121]
         # valid values [0, 7]
-        'cells': [random.randint(0, 8) for _ in range(resolution)]
+        'cells': [random.randint(0, 7) for _ in range(resolution)]
     }
 
     return components_to_h3(h3_components)
