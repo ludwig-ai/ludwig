@@ -38,11 +38,13 @@ def start_server(
     host,
     port
 ):
-    from starlette.applications import Starlette
+
+    from fastapi import FastAPI
+    from starlette.requests import Request
     from starlette.responses import JSONResponse
     import uvicorn
 
-    app = Starlette(debug=True)
+    app = FastAPI()
 
     global model
     model = LudwigModel.load(model_path)
@@ -52,8 +54,8 @@ def start_server(
         f['name'] for f in model.model_definition['input_features']
     }
 
-    @app.route('/predict', methods=["POST"])
-    async def endpoint(request):
+    @app.post('/predict')
+    async def predict(request: Request):
         data_json = await request.body()
         entries = json.loads(data_json)
 
