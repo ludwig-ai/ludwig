@@ -25,11 +25,20 @@ import sys
 from ludwig.contrib import contrib_command
 from ludwig.utils.print_utils import logging_level_registry
 import json
+import os
+import tempfile
+from starlette.datastructures import UploadFile
 
 from ludwig.api import LudwigModel
 
 
 logger = logging.getLogger(__name__)
+
+FILE_TYPES = set([
+    'image',
+    'audio',
+    'video'
+])
 
 
 def start_server(
@@ -56,23 +65,46 @@ def start_server(
 
     @app.post('/predict')
     async def predict(request: Request):
-        data_json = await request.body()
-        entries = json.loads(data_json)
-
-        for entry in entries:
+        form = await request.form()
+        files, entry = convert_input(form)
+        try:
             if (entry.keys() & input_features) != input_features:
                 return JSONResponse({"error": "entries must contain all input features"},
                                     status_code=400)
-
-        try:
-            resp = model.predict(data_dict=entries).to_dict('records')
-            return JSONResponse(resp)
-        except Exception as e:
-            logger.error("Error: {}".format(str(e)))
-            return JSONResponse({"error": "Unexpected Error: could not run inference on model"},
-                                status_code=500)
+            try:
+                resp = model.predict(data_dict=[entry]).to_dict('records')[0]
+                return JSONResponse(resp)
+            except Exception as e:
+                logger.error("Error: {}".format(str(e)))
+                return JSONResponse({"error": "Unexpected Error: could not run inference on model"},
+                                    status_code=500)
+        finally:
+            for f in files:
+                os.remove(f.name)
 
     uvicorn.run(app, host=host, port=port)
+
+
+def convert_input(form):
+    '''
+    Returns a new input and a list of files to be cleaned up
+    '''
+    new_input = {}
+    files = []
+    for k, v in form.multi_items():
+        if type(v) == UploadFile:
+            # Convert UploadFile to a NamedTemporaryFile to ensure it's on the disk
+            suffix = os.path.splitext(v.filename)[1]
+            named_file = tempfile.NamedTemporaryFile(
+                delete=False, suffix=suffix)
+            files.append(named_file)
+            named_file.write(v.file.read())
+            named_file.close()
+            new_input[k] = named_file.name
+        else:
+            new_input[k] = v
+
+    return (files, new_input)
 
 
 def cli(sys_argv):
