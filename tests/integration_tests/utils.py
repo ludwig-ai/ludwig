@@ -56,10 +56,12 @@ def random_string(length=5):
 
 
 def numerical_feature(normalization=None):
-    return {'name': 'num_' + random_string(), 'type': 'numerical',
-            'preprocessing': {
-                'normalization': normalization
-    }
+    return {
+        'name': 'num_' + random_string(),
+        'type': 'numerical',
+        'preprocessing': {
+            'normalization': normalization
+        }
     }
 
 

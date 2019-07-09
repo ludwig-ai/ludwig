@@ -128,7 +128,7 @@ def cli(sys_argv):
     parser.add_argument(
         '-p',
         '--port',
-        help='port for server',
+        help='port for server (default: 8000)',
         default=8000,
         type=int,
     )
@@ -136,7 +136,7 @@ def cli(sys_argv):
     parser.add_argument(
         '-H',
         '--host',
-        help='host for server',
+        help='host for server (default: 0.0.0.0)',
         default='0.0.0.0'
     )
 
