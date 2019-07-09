@@ -27,38 +27,28 @@ from ludwig.utils.print_utils import logging_level_registry
 import json
 import os
 import tempfile
+from fastapi import FastAPI
 from starlette.datastructures import UploadFile
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+import uvicorn
 
 from ludwig.api import LudwigModel
 
 
 logger = logging.getLogger(__name__)
 
-FILE_TYPES = set([
-    'image',
-    'audio',
-    'video'
-])
+ALL_FEATURES_PRESENT_ERROR = {"error": "entry must contain all input features"}
+
+COULD_NOT_RUN_INFERENCE_ERROR = {
+    "error": "Unexpected Error: could not run inference on model"}
 
 
-def start_server(
-    model_path,
-    logging_level,
-    host,
-    port
+def server(
+    model,
 ):
-
-    from fastapi import FastAPI
-    from starlette.requests import Request
-    from starlette.responses import JSONResponse
-    import uvicorn
-
     app = FastAPI()
 
-    global model
-    model = LudwigModel.load(model_path)
-
-    global input_features
     input_features = {
         f['name'] for f in model.model_definition['input_features']
     }
@@ -69,20 +59,19 @@ def start_server(
         files, entry = convert_input(form)
         try:
             if (entry.keys() & input_features) != input_features:
-                return JSONResponse({"error": "entries must contain all input features"},
+                return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
                                     status_code=400)
             try:
                 resp = model.predict(data_dict=[entry]).to_dict('records')[0]
                 return JSONResponse(resp)
             except Exception as e:
                 logger.error("Error: {}".format(str(e)))
-                return JSONResponse({"error": "Unexpected Error: could not run inference on model"},
+                return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
                                     status_code=500)
         finally:
             for f in files:
                 os.remove(f.name)
-
-    uvicorn.run(app, host=host, port=port)
+    return app
 
 
 def convert_input(form):
@@ -156,7 +145,9 @@ def cli(sys_argv):
         logging_level_registry[args.logging_level]
     )
 
-    start_server(**vars(args))
+    model = LudwigModel.load(args.model_path)
+    app = server(model)
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == '__main__':
