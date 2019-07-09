@@ -57,6 +57,7 @@ def server(
     async def predict(request: Request):
         form = await request.form()
         files, entry = convert_input(form)
+
         try:
             if (entry.keys() & input_features) != input_features:
                 return JSONResponse(ALL_FEATURES_PRESENT_ERROR,

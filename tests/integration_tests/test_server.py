@@ -32,6 +32,7 @@ from tests.integration_tests.utils import random_string
 from tests.fixtures.filenames import csv_filename
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from starlette.testclient import TestClient
+from starlette.datastructures import UploadFile
 import os
 
 
@@ -107,6 +108,17 @@ def output_keys_for(output_features):
     return keys
 
 
+def convert_to_form(entry):
+    data = {}
+    files = []
+    for k, v in entry.items():
+        if type(v) == str and os.path.exists(v):
+            files.append((k, (v, open(v, 'rb'), 'image/jpeg')))
+        else:
+            data[k] = v
+    return data, files
+
+
 def test_server_integration(csv_filename):
      # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
@@ -142,7 +154,9 @@ def test_server_integration(csv_filename):
     assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
     data_df = read_csv(rel_path)
-    response = client.post('/predict', data=data_df.T.to_dict()[0])
+    data, files = convert_to_form(data_df.T.to_dict()[0])
+    response = client.post('/predict', data=data, files=files)
+
     response_keys = sorted(list(response.json().keys()))
     assert response_keys == sorted(output_keys_for(output_features))
 
