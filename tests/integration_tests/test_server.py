@@ -161,3 +161,4 @@ def test_server_integration(csv_filename):
     assert response_keys == sorted(output_keys_for(output_features))
 
     shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(image_dest_folder)
