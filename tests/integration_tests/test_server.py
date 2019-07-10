@@ -78,30 +78,19 @@ def train_model(input_features, output_features, data_csv):
     return model
 
 
-def example_input(input_features):
-    data = {}
-    for i in input_features:
-        name = i['name']
-        if i['type'] in ['image', 'video', 'audio']:
-            data[name] = random_string()
-        else:
-            data[name] = random_string()
-    return data
-
-
 def output_keys_for(output_features):
     keys = []
-    for f in output_features:
-        name = f['name']
-        if f['type'] == 'category':
+    for feature in output_features:
+        name = feature['name']
+        if feature['type'] == 'category':
             keys.append("{}_predictions".format(name))
             keys.append("{}_probability".format(name))
             keys.append("{}_probabilities_<UNK>".format(name))
-            for category in f['idx2str']:
+            for category in feature['idx2str']:
                 keys.append(
                     "{}_probabilities_{}".format(name, category))
 
-        elif f['type'] == 'numerical':
+        elif feature['type'] == 'numerical':
             keys.append("{}_predictions".format(name))
         else:
             raise NotImplementedError
@@ -113,7 +102,9 @@ def convert_to_form(entry):
     files = []
     for k, v in entry.items():
         if type(v) == str and os.path.exists(v):
-            files.append((k, (v, open(v, 'rb'), 'image/jpeg')))
+            file = open(v, 'rb')
+            files.append((k, (v, file.read(), 'image/jpeg')))
+            file.close()
         else:
             data[k] = v
     return data, files

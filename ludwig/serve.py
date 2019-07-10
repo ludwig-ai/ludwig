@@ -44,9 +44,7 @@ COULD_NOT_RUN_INFERENCE_ERROR = {
     "error": "Unexpected Error: could not run inference on model"}
 
 
-def server(
-    model,
-):
+def server(model):
     app = FastAPI()
 
     input_features = {
@@ -95,6 +93,12 @@ def convert_input(form):
             new_input[k] = v
 
     return (files, new_input)
+
+
+def run_server(model_path, host, port):
+    model = LudwigModel.load(model_path)
+    app = server(model)
+    uvicorn.run(app, host=host, port=port)
 
 
 def cli(sys_argv):
@@ -146,9 +150,7 @@ def cli(sys_argv):
         logging_level_registry[args.logging_level]
     )
 
-    model = LudwigModel.load(args.model_path)
-    app = server(model)
-    uvicorn.run(app, host=args.host, port=args.port)
+    run_server(args.model_path, args.host, args.port)
 
 
 if __name__ == '__main__':
