@@ -62,7 +62,7 @@ class BinaryBaseFeature(BaseFeature):
             preprocessing_parameters=None
     ):
         data[feature['name']] = dataset_df[feature['name']].astype(
-            np.bool_).as_matrix()
+            np.bool_).values
 
 
 class BinaryInputFeature(BinaryBaseFeature, InputFeature):

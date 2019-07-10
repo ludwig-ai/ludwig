@@ -14,11 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from math import floor, ceil
-
 import os
+
 import numpy as np
+from math import floor, ceil
 from skimage import img_as_ubyte
+from skimage.color import rgb2gray
 from skimage.transform import resize
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
@@ -67,6 +68,9 @@ def resize_image(img, new_size_typle, resize_method):
             'Invalid image resize method: {}'.format(resize_method))
     return img
 
+
+def greyscale(img):
+    return np.expand_dims(img_as_ubyte(rgb2gray(img)), axis=2)
 
 def get_abs_path(data_csv_path, image_path):
     if data_csv_path is not None:

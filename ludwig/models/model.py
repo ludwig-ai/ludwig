@@ -37,6 +37,7 @@ from tabulate import tabulate
 from tensorflow.python import debug as tf_debug
 from tqdm import tqdm
 
+from ludwig.contrib import contrib_command
 from ludwig.constants import *
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
@@ -662,6 +663,7 @@ class Model:
                         )
 
             if is_on_master():
+                contrib_command("train_epoch_end", progress_tracker)
                 logger.info('')
 
         if train_writer is not None:

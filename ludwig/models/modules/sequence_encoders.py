@@ -25,6 +25,8 @@ from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.recurrent_modules import RecurrentStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
 
+logger = logging.getLogger(__name__)
+
 
 logger = logging.getLogger(__name__)
 
@@ -489,7 +491,7 @@ class ParallelCNN(object):
             while len(embedded_input_sequence.shape) < 3:
                 embedded_input_sequence = tf.expand_dims(
                     embedded_input_sequence, -1)
-            embedding_size = 1
+            embedding_size = embedded_input_sequence.shape[-1]
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_input_sequence

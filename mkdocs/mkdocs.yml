@@ -7,6 +7,7 @@ site_url: 'https://uber.github.io/ludwig/'
 # Repository
 repo_name: 'uber/ludwig'
 repo_url: 'https://github.com/uber/ludwig'
+edit_uri: edit/master/mkdocs/docs/
 
 # Copyright
 copyright: 'Copyright &copy; 2018 - 2019 Uber Technologies Inc.'
@@ -27,7 +28,7 @@ theme:
   name: 'material'
   language: 'en'
   logo: 'images/ludwig_logo.svg'
-  favicon: 'images/ludwig_logo.png'
+  favicon: 'favicon.ico'
   custom_dir: 'custom/'
   palette:
     primary: 'grey'

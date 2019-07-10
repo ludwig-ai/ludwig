@@ -111,6 +111,29 @@ class Comet():
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(experiment_dir_name)
 
+    def train_epoch_end(self, progress_tracker):
+        """
+        Called from ludwig/models/model.py
+        """
+        logger.info("comet.train_epoch_end() called......")
+        if self.cometml_experiment:
+            for item_name in ["batch_size", "epoch", "steps", "last_improvement_epoch",
+                         "learning_rate", "best_valid_measure", "num_reductions_lr",
+                         "num_increases_bs", "train_stats", "vali_stats", "test_stats"]:
+                try:
+                    item = getattr(progress_tracker, item_name)
+                    if isinstance(item, dict):
+                        for key in item:
+                            if isinstance(item[key], dict):
+                                for key2 in item[key]:
+                                    self.cometml_experiment.log_metric(item_name + "." + key + "." + key2, item[key][key2][-1])
+                            else:
+                                self.cometml_experiment.log_metric(item_name + "." + key, item[key][-1])
+                    elif item is not None:
+                        self.cometml_experiment.log_metric(item_name, item)
+                except Exception:
+                    logger.info("comet.train_epoch_end() skip logging '%s'", item_name)
+
     def experiment_save(self, *args, **kwargs):
         logger.info("comet.experiment_save() called......")
         experiment_dir_name = args[0]

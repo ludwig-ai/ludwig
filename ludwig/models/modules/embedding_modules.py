@@ -21,8 +21,13 @@ import tensorflow as tf
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
 
+
 logger = logging.getLogger(__name__)
 
+
+def embedding_matrix(vocab, embedding_size, representation='dense',
+                     embeddings_trainable=True, pretrained_embeddings=None,
+                     initializer=None, regularizer=None):
 
 def embedding_matrix(
         vocab,
@@ -49,7 +54,7 @@ def embedding_matrix(
                     ))
             initializer_obj = tf.constant(embeddings_matrix, dtype=tf.float32)
         else:
-            if vocab_size < embedding_size and not force_embedding_size:
+            if vocab_size < embedding_size:
                 logger.info(
                     '  embedding_size ({}) is greater than vocab_size ({}). '
                     'Setting embedding size to be equal to vocab_size.'.format(

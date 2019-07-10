@@ -1146,7 +1146,7 @@ h1.intro-header::before {
 
 .header-logo {
     position: absolute;
-    left: 20px;
+    left: 80px;
     top: 50%;
     -webkit-transform: translateY(-50%);
     -ms-transform: translateY(-50%);
@@ -1300,7 +1300,7 @@ h1.intro-header::before {
     font-size: 14px;
     position: absolute;
     top: 0;
-    right: 20px;
+    right: 80px;
 }
 
 #header-nav-wrap .header-main-nav {
@@ -1511,9 +1511,9 @@ h1.intro-header::before {
 }
 
 .home-content-left .button.stroke {
-    color: #1e1f20 !important;
-    border-color: #1e1f20;
-    margin: 0 .6rem 1.2rem;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.8);
+    margin: 4rem 0rem 0rem;
     padding: 0 2.2rem;
     min-width: 188px;
 }
@@ -2656,8 +2656,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
  * ------------------------------------------------------------------- */
 
 footer {
-    padding-top: 9rem;
-    padding-bottom: 4.2rem;
+    padding:2.2rem 9rem 2.2rem 9rem;
     font-size: 1.5rem;
     line-height: 2.7rem;
     color: rgba(255, 255, 255, 0.25);
@@ -2988,5 +2987,61 @@ footer ul a:visited {
     }
 }
 
+.md-footer-nav-wrapper {
+  height: 7rem;
+}
+
+.md-footer-nav__link-wrapper {
+    width: 50%;
+    float:right;
+    display: inline-flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.md-flex__ellipsis-wrapper {
+  display: table;
+}
+
+.md-flex__cell-wrapper {
+  height: 7rem;
+  width: 20rem;
+  position: absolute;
+  right: 0;
+}
+
+.md-footer-nav-item-wrapper {
+  color: #666;
+  display: table-row;
+  text-align: right;
+}
+
+.md-footer-nav-item-title-wrapper {
+  color: #ececec;
+  font-size: 1.8rem;
+}
+
+.md-flex__cell-arrow {
+  font-size: 2rem;
+  width:3rem;
+  height: 5rem;
+  display: table;
+  position: absolute;
+  right: 0;
+}
+
+.arrow-wrapper {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.md-footer-copyright-wrapper {
+  font-family: "Roboto","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+.md-footer-copyright__highlight-wrapper {
+  color:#ececec;
+}
 
 /*# sourceMappingURL=landing_main.css.map */

@@ -22,6 +22,7 @@ import sys
 
 from .contribs import contrib_registry
 
+
 def contrib_import():
     """
     Checks for contrib flags, and calls static method:
@@ -40,7 +41,7 @@ def contrib_import():
             ## and return an instance, if appropriate
             contrib_class = contrib_registry["classes"][contrib_name]
             if contrib_class not in [
-                    obj.__class__ for obj in contrib_registry["instances"]]:
+                obj.__class__ for obj in contrib_registry["instances"]]:
                 try:
                     instance = contrib_class.import_call(argv_list)
                 except Exception:
