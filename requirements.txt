@@ -13,3 +13,7 @@ tabulate>=0.7
 tensorflow==1.13.1
 PyYAML>=3.12
 pytest
+fastapi
+pydantic
+uvicorn
+python-multipart
