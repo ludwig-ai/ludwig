@@ -28,6 +28,17 @@ logger = logging.getLogger(__name__)
 def embedding_matrix(vocab, embedding_size, representation='dense',
                      embeddings_trainable=True, pretrained_embeddings=None,
                      initializer=None, regularizer=None):
+
+def embedding_matrix(
+        vocab,
+        embedding_size,
+        representation='dense',
+        embeddings_trainable=True,
+        pretrained_embeddings=None,
+        force_embedding_size=False,
+        initializer=None,
+        regularizer=None
+):
     vocab_size = len(vocab)
     if representation == 'dense':
         if pretrained_embeddings is not None and pretrained_embeddings is not False:
@@ -85,6 +96,7 @@ class Embed:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=False,
             embeddings_on_cpu=False,
             dropout=False,
             initializer=None,
@@ -95,6 +107,7 @@ class Embed:
         self.representation = representation
         self.embeddings_trainable = embeddings_trainable
         self.pretrained_embeddings = pretrained_embeddings
+        self.force_embedding_size = force_embedding_size
         self.embeddings_on_cpu = embeddings_on_cpu
         self.dropout = dropout
         self.initializer = initializer
@@ -118,6 +131,7 @@ class Embed:
                     representation=self.representation,
                     embeddings_trainable=self.embeddings_trainable,
                     pretrained_embeddings=self.pretrained_embeddings,
+                    force_embedding_size=self.force_embedding_size,
                     initializer=self.initializer,
                     regularizer=regularizer
                 )
@@ -128,6 +142,7 @@ class Embed:
                 representation=self.representation,
                 embeddings_trainable=self.embeddings_trainable,
                 pretrained_embeddings=self.pretrained_embeddings,
+                force_embedding_size=self.force_embedding_size,
                 initializer=self.initializer,
                 regularizer=regularizer
             )
@@ -153,6 +168,7 @@ class EmbedWeighted:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=False,
             embeddings_on_cpu=False,
             dropout=False,
             initializer=None,
@@ -163,6 +179,7 @@ class EmbedWeighted:
         self.representation = representation
         self.embeddings_trainable = embeddings_trainable
         self.pretrained_embeddings = pretrained_embeddings
+        self.force_embedding_size = force_embedding_size
         self.embeddings_on_cpu = embeddings_on_cpu
         self.dropout = dropout
         self.initializer = initializer
@@ -186,6 +203,7 @@ class EmbedWeighted:
                     representation=self.representation,
                     embeddings_trainable=self.embeddings_trainable,
                     pretrained_embeddings=self.pretrained_embeddings,
+                    force_embedding_size=self.force_embedding_size,
                     initializer=self.initializer,
                     regularizer=regularizer
                 )
@@ -196,6 +214,7 @@ class EmbedWeighted:
                 representation=self.representation,
                 embeddings_trainable=self.embeddings_trainable,
                 pretrained_embeddings=self.pretrained_embeddings,
+                force_embedding_size=self.force_embedding_size,
                 initializer=self.initializer,
                 regularizer=regularizer
             )
@@ -237,6 +256,7 @@ class EmbedSparse:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=False,
             embeddings_on_cpu=False,
             reduce_output='sum',
             dropout=False,
@@ -248,6 +268,7 @@ class EmbedSparse:
         self.representation = representation
         self.embeddings_trainable = embeddings_trainable
         self.pretrained_embeddings = pretrained_embeddings
+        self.force_embedding_size = force_embedding_size
         self.embeddings_on_cpu = embeddings_on_cpu
         self.reduce_output = reduce_output
         self.dropout = dropout
@@ -272,6 +293,7 @@ class EmbedSparse:
                     representation=self.representation,
                     embeddings_trainable=self.embeddings_trainable,
                     pretrained_embeddings=self.pretrained_embeddings,
+                    force_embedding_size=self.force_embedding_size,
                     initializer=self.initializer,
                     regularizer=regularizer
                 )
@@ -282,6 +304,7 @@ class EmbedSparse:
                 representation=self.representation,
                 embeddings_trainable=self.embeddings_trainable,
                 pretrained_embeddings=self.pretrained_embeddings,
+                force_embedding_size=self.force_embedding_size,
                 initializer=self.initializer,
                 regularizer=regularizer
             )
@@ -336,6 +359,7 @@ class EmbedSequence:
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
+            force_embedding_size=False,
             embeddings_on_cpu=False,
             mask=True,
             dropout=False,
@@ -348,6 +372,7 @@ class EmbedSequence:
             representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout=dropout,
             initializer=initializer,
