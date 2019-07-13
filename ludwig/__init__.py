@@ -13,4 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import sys
+import logging
+
 from ludwig.globals import LUDWIG_VERSION as __version__
+
+
+logger = logging.getLogger(__name__)
+# Default logging level for the project
+logger.setLevel(logging.INFO)
+
+# Configure stream handler
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+
+# Set formatter
+formatter = logging.Formatter('%(message)s')
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)

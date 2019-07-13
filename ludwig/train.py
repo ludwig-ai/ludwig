@@ -45,6 +45,9 @@ from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 
 
+logger = logging.getLogger(__name__)
+
+
 def full_train(
         model_definition,
         model_definition_file=None,
@@ -187,7 +190,7 @@ def full_train(
             experiment_dir_name = model_resume_path
         else:
             if is_on_master():
-                logging.info(
+                logger.info(
                     'Model resume path does not exists, '
                     'starting training from scratch'
                 )
@@ -224,13 +227,13 @@ def full_train(
     if is_on_master():
         save_json(description_fn, description)
         # print description
-        logging.info('Experiment name: {}'.format(experiment_name))
-        logging.info('Model name: {}'.format(model_name))
-        logging.info('Output path: {}'.format(experiment_dir_name))
-        logging.info('\n')
+        logger.info('Experiment name: {}'.format(experiment_name))
+        logger.info('Model name: {}'.format(model_name))
+        logger.info('Output path: {}'.format(experiment_dir_name))
+        logger.info('\n')
         for key, value in description.items():
-            logging.info('{}: {}'.format(key, pformat(value, indent=4)))
-        logging.info('\n')
+            logger.info('{}: {}'.format(key, pformat(value, indent=4)))
+        logger.info('\n')
 
     # preprocess
     preprocessed_data = preprocess_for_training(
@@ -259,11 +262,11 @@ def full_train(
      train_set_metadata) = preprocessed_data
 
     if is_on_master():
-        logging.info('Training set: {0}'.format(training_set.size))
+        logger.info('Training set: {0}'.format(training_set.size))
         if validation_set is not None:
-            logging.info('Validation set: {0}'.format(validation_set.size))
+            logger.info('Validation set: {0}'.format(validation_set.size))
         if test_set is not None:
-            logging.info('Test set: {0}'.format(test_set.size))
+            logger.info('Test set: {0}'.format(test_set.size))
 
     # update model definition with metadata properties
     update_model_definition_with_metadata(
@@ -328,10 +331,10 @@ def full_train(
             enumerate(validation_field_result[validation_measure]),
             key=lambda pair: pair[1]
         )
-        logging.info(
+        logger.info(
             'Best validation model epoch:'.format(epoch_best_vali_measure+1)
         )
-        logging.info(
+        logger.info(
            'Best validation model {0} on validation set {1}: {2}'.format(
                validation_measure, validation_field, best_vali_measure
            ))
@@ -339,13 +342,13 @@ def full_train(
             best_vali_measure_epoch_test_measure = train_testset_stats[
                 validation_field][validation_measure][epoch_best_vali_measure]
 
-            logging.info('Best validation model {0} on test set {1}: '
+            logger.info('Best validation model {0} on test set {1}: '
                          '{2}'.format(validation_measure,
                                       validation_field,
                                       best_vali_measure_epoch_test_measure
             ))
-        logging.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
-        logging.info('Saved to: {0}'.format(experiment_dir_name))
+        logger.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
+        logger.info('Saved to: {0}'.format(experiment_dir_name))
 
     contrib_command("train_save", experiment_dir_name)
 
@@ -426,12 +429,12 @@ def train(
         # Load model
         if is_on_master():
             print_boxed('LOADING MODEL')
-            logging.info('Loading model: {}\n'.format(model_load_path))
+            logger.info('Loading model: {}\n'.format(model_load_path))
         model, _ = load_model_and_definition(model_load_path)
     else:
         # Build model
         if is_on_master():
-            print_boxed('BUILDING MODEL', print_fun=logging.debug)
+            print_boxed('BUILDING MODEL', print_fun=logger.debug)
 
         model = Model(
             model_definition['input_features'],
@@ -752,12 +755,9 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging_level_registry[args.logging_level],
-        format='%(message)s'
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
     )
-
     set_on_master(args.use_horovod)
 
     if is_on_master():

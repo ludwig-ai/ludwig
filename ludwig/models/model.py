@@ -37,6 +37,7 @@ from tabulate import tabulate
 from tensorflow.python import debug as tf_debug
 from tqdm import tqdm
 
+from ludwig.contrib import contrib_command
 from ludwig.constants import *
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
@@ -64,6 +65,9 @@ from ludwig.utils.math_utils import learning_rate_warmup
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 from ludwig.utils.tf_utils import get_tf_config
+
+
+logger = logging.getLogger(__name__)
 
 
 class Model:
@@ -162,7 +166,7 @@ class Model:
                 setattr(self, fe_name, fe_properties['placeholder'])
 
             # ================ Model ================
-            logging.debug('- Combiner {}'.format(combiner['type']))
+            logger.debug('- Combiner {}'.format(combiner['type']))
             build_combiner = get_build_combiner(combiner['type'])(**combiner)
             hidden, hidden_size = build_combiner(
                 feature_encodings,
@@ -475,7 +479,7 @@ class Model:
             # epoch init
             start_time = time.time()
             if is_on_master():
-                logging.info(
+                logger.info(
                     '\nEpoch {epoch:{digits}d}'.format(
                         epoch=progress_tracker.epoch + 1,
                         digits=digits_per_epochs
@@ -592,7 +596,7 @@ class Model:
             elapsed_time = (time.time() - start_time) * 1000.0
 
             if is_on_master():
-                logging.info('Took {time}'.format(
+                logger.info('Took {time}'.format(
                     time=time_utils.strdelta(elapsed_time)))
 
             # stat prints
@@ -603,7 +607,7 @@ class Model:
                          len(output_features) > 1)
                 ):
                     if is_on_master():
-                        logging.info(
+                        logger.info(
                             tabulate(
                                 table,
                                 headers='firstrow',
@@ -659,7 +663,8 @@ class Model:
                         )
 
             if is_on_master():
-                logging.info('')
+                contrib_command("train_epoch_end", progress_tracker)
+                logger.info('')
 
         if train_writer is not None:
             train_writer.close()
@@ -772,7 +777,7 @@ class Model:
         set_size = dataset.size
         if set_size == 0:
             if is_on_master():
-                logging.warning('No datapoints to evaluate on.')
+                logger.warning('No datapoints to evaluate on.')
             return output_stats
         seq_set_size = {output_feature['name']: {} for output_feature in
                         self.hyperparameters['output_features'] if
@@ -1147,7 +1152,7 @@ class Model:
                         self.hyperparameters,
                         model_hyperparameters_path
                     )
-                    logging.info(
+                    logger.info(
                         'Validation {} on {} improved, model saved'.format(
                             validation_measure,
                             validation_field
@@ -1159,7 +1164,7 @@ class Model:
         )
         if progress_tracker.last_improvement != 0:
             if is_on_master():
-                logging.info(
+                logger.info(
                     'Last improvement of {} on {} happened '
                     '{} epoch{} ago'.format(
                         validation_measure,
@@ -1192,7 +1197,7 @@ class Model:
         if early_stop > 0:
             if progress_tracker.last_improvement >= early_stop:
                 if is_on_master():
-                    logging.info(
+                    logger.info(
                         "\nEARLY STOPPING due to lack of validation improvement"
                         ", it has been {0} epochs since last validation "
                         "accuracy improvement\n".format(
@@ -1342,24 +1347,24 @@ class Model:
         if not self.received_sigint:
             self.epochs = 1
             self.received_sigint = True
-            logging.critical(
+            logger.critical(
                 '\nReceived SIGINT, will finish this epoch and then conclude '
                 'the training'
             )
-            logging.critical(
+            logger.critical(
                 'Send another SIGINT to immediately interrupt the process'
             )
         else:
-            logging.critical('\nReceived a second SIGINT, will now quit')
+            logger.critical('\nReceived a second SIGINT, will now quit')
             sys.exit(1)
 
     def quit_training(self, signum, frame):
-        logging.critical('Received SIGQUIT, will kill training')
+        logger.critical('Received SIGQUIT, will kill training')
         sys.exit(1)
 
     def resume_training(self, save_path, model_weights_path):
         if is_on_master():
-            logging.info('Resuming training of model: {0}'.format(save_path))
+            logger.info('Resuming training of model: {0}'.format(save_path))
         self.weights_save_path = model_weights_path
         progress_tracker = ProgressTracker.load(
             os.path.join(
@@ -1499,7 +1504,7 @@ class Model:
             if (progress_tracker.num_reductions_lr >=
                     reduce_learning_rate_on_plateau):
                 if is_on_master():
-                    logging.info(
+                    logger.info(
                         'It has been ' +
                         str(progress_tracker.last_improvement) +
                         ' epochs since last validation accuracy improvement '
@@ -1509,7 +1514,7 @@ class Model:
                     )
             else:
                 if is_on_master():
-                    logging.info(
+                    logger.info(
                         'PLATEAU REACHED, reducing learning rate '
                         'due to lack of validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
@@ -1539,7 +1544,7 @@ class Model:
             if (progress_tracker.num_increases_bs >=
                     increase_batch_size_on_plateau):
                 if is_on_master():
-                    logging.info(
+                    logger.info(
                         'It has been ' +
                         str(progress_tracker.last_improvement) +
                         ' epochs since last validation accuracy improvement '
@@ -1551,7 +1556,7 @@ class Model:
             elif (progress_tracker.batch_size ==
                   increase_batch_size_on_plateau_max):
                 if is_on_master():
-                    logging.info(
+                    logger.info(
                         'It has been' +
                         str(progress_tracker.last_improvement) +
                         ' epochs since last validation accuracy improvement '
@@ -1563,7 +1568,7 @@ class Model:
                     )
             else:
                 if is_on_master():
-                    logging.info(
+                    logger.info(
                         'PLATEAU REACHED '
                         'increasing batch size due to lack of '
                         'validation improvement, it has been ' +

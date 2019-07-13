@@ -28,6 +28,9 @@ from ludwig.predict import full_predict
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 
+logger = logging.getLogger(__name__)
+
+
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
@@ -150,12 +153,9 @@ def cli(sys_argv):
     args = parser.parse_args(sys_argv)
     args.evaluate_performance = True
 
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging_level_registry[args.logging_level],
-        format='%(message)s'
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
     )
-
     set_on_master(args.use_horovod)
 
     if is_on_master():

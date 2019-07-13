@@ -23,6 +23,9 @@ from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.misc import get_from_registry
 
 
+logger = logging.getLogger(__name__)
+
+
 def build_inputs(input_features,
                  regularizer,
                  dropout_rate,
@@ -47,7 +50,7 @@ def build_single_input(input_feature,
                        is_training=True,
                        **kwargs):
     scope_name = input_feature['name']
-    logging.debug('- Input {} feature {}'.format(
+    logger.debug('- Input {} feature {}'.format(
         input_feature['type'],
         input_feature['name']
     ))

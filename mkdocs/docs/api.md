@@ -1,4 +1,4 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L63)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L67)</span>
 # LudwigModel class
 
 ```python
@@ -373,7 +373,11 @@ train(
   data_validation_hdf5=None,
   data_test_hdf5=None,
   data_dict=None,
+  data_train_dict=None,
+  data_validation_dict=None,
+  data_test_dict=None,
   train_set_metadata_json=None,
+  experiment_name='api_experiment',
   model_name='run',
   model_load_path=None,
   model_resume_path=None,
@@ -432,14 +436,43 @@ __Inputs__
    the same length. Each index in the lists corresponds to one
    datapoint. For example a data set consisting of two datapoints
    with a text and a class may be provided as the following dict
-   ``{'text_field_name': ['text of the first datapoint', text of the
+   `{'text_field_name': ['text of the first datapoint', text of the
    second datapoint'], 'class_filed_name': ['class_datapoints_1',
    'class_datapoints_2']}`.
+- __data_train_dict__ (dict): input training data dictionary. It is
+   expected to contain one key for each field and the values have
+   to be lists of the same length. Each index in the lists
+   corresponds to one datapoint. For example a data set consisting
+   of two datapoints with a text and a class may be provided as the
+   following dict:
+   `{'text_field_name': ['text of the first datapoint', 'text of the
+   second datapoint'], 'class_field_name': ['class_datapoint_1',
+   'class_datapoint_2']}`.
+- __data_validation_dict__ (dict): input validation data dictionary. It
+   is expected to contain one key for each field and the values have
+   to be lists of the same length. Each index in the lists
+   corresponds to one datapoint. For example a data set consisting
+   of two datapoints with a text and a class may be provided as the
+   following dict:
+   `{'text_field_name': ['text of the first datapoint', 'text of the
+   second datapoint'], 'class_field_name': ['class_datapoint_1',
+   'class_datapoint_2']}`.
+- __data_test_dict__ (dict): input test data dictionary. It is
+   expected to contain one key for each field and the values have
+   to be lists of the same length. Each index in the lists
+   corresponds to one datapoint. For example a data set consisting
+   of two datapoints with a text and a class may be provided as the
+   following dict:
+   `{'text_field_name': ['text of the first datapoint', 'text of the
+   second datapoint'], 'class_field_name': ['class_datapoint_1',
+   'class_datapoint_2']}`.
 - __train_set_metadata_json__ (string): input metadata JSON file. It is an
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
    directory with the same name and a json extension
-- __model_name__ (string): a name for the model, user for the save
+- __experiment_name__ (string): a name for the experiment, used for the save
+   directory
+- __model_name__ (string): a name for the model, used for the save
    directory
 - __model_load_path__ (string): path of a pretrained model to load as
    initialization

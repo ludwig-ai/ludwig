@@ -50,6 +50,9 @@ from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 
 
+logger = logging.getLogger(__name__)
+
+
 class SequenceBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
@@ -144,7 +147,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('  placeholder: {0}'.format(placeholder))
+        logger.debug('  placeholder: {0}'.format(placeholder))
 
         return self.build_sequence_input(
             placeholder,
@@ -168,7 +171,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
             dropout_rate=dropout_rate,
             is_training=is_training
         )
-        logging.debug('  feature_representation: {0}'.format(
+        logger.debug('  feature_representation: {0}'.format(
             feature_representation))
 
         feature_representation = {

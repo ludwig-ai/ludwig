@@ -25,6 +25,7 @@ import yaml
 from skimage.io import imsave
 
 from ludwig.utils.data_utils import save_csv
+from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc import get_from_registry
 
 letters = string.ascii_letters
@@ -109,7 +110,8 @@ parameters_builders_registry = {
     'sequence': assign_vocab,
     'timeseries': return_none,
     'image': return_none,
-    'date': return_none
+    'date': return_none,
+    'h3': return_none
 }
 
 
@@ -247,7 +249,7 @@ def generate_datetime(feature):
             feature['datetime_format']
         ]
     elif ('preprocessing' in feature and
-            'datetime_format' in feature['preprocessing']):
+          'datetime_format' in feature['preprocessing']):
         datetime_generation_format = DATETIME_FORMATS[
             feature['preprocessing']['datetime_format']
         ]
@@ -265,6 +267,20 @@ def generate_datetime(feature):
     return datetime_generation_format.format(y=y, Y=Y, m=m, d=d, H=H, M=M, S=S)
 
 
+def generate_h3(feature):
+    resolution = random.randint(0, 15)  # valid values [0, 15]
+    h3_components = {
+        'mode': 1,  # we can avoid testing other modes
+        'edge': 0,  # only used in other modes
+        'resolution': resolution,
+        'base_cell': random.randint(0, 121),  # valid values [0, 121]
+        # valid values [0, 7]
+        'cells': [random.randint(0, 7) for _ in range(resolution)]
+    }
+
+    return components_to_h3(h3_components)
+
+
 generators_registry = {
     'category': generate_category,
     'text': generate_sequence,
@@ -275,8 +291,8 @@ generators_registry = {
     'sequence': generate_sequence,
     'timeseries': generate_timeseries,
     'image': generate_image,
-    'date': generate_datetime
-
+    'h3': generate_h3,
+    'date': generate_datetime,
 }
 
 category_cycle = 0
