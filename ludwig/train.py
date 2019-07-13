@@ -206,6 +206,13 @@ def full_train(
         else:
             experiment_dir_name = '/'
 
+    # if model_load_path is not None, load its train_set_metadata
+    if model_load_path is not None:
+        train_set_metadata_json = os.path.join(
+            model_load_path,
+            TRAIN_SET_METADATA_FILE_NAME
+        )
+
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
     )
