@@ -35,10 +35,11 @@ import numpy as np
 import tensorflow as tf
 from tabulate import tabulate
 from tensorflow.python import debug as tf_debug
+from tensorflow.python.saved_model import builder as saved_model_builder
 from tqdm import tqdm
 
-from ludwig.contrib import contrib_command
 from ludwig.constants import *
+from ludwig.contrib import contrib_command
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
@@ -65,7 +66,6 @@ from ludwig.utils.math_utils import learning_rate_warmup
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 from ludwig.utils.tf_utils import get_tf_config
-
 
 logger = logging.getLogger(__name__)
 
@@ -1328,6 +1328,36 @@ class Model:
             if 'pretrained_embeddings' in feature:
                 feature['pretrained_embeddings'] = None
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
+
+    def save_savedmodel(self, save_path):
+
+        input_tensors = {}
+        for input_feature in self.hyperparameters['input_features']:
+            input_tensors[input_feature['name']] = getattr(
+                self, input_feature['name']
+            )
+
+        output_tensors = {}
+        for output_feature in self.hyperparameters['output_features']:
+            output_tensors[output_feature['name']] = getattr(
+                self,
+                output_feature['name']
+            )
+
+        session = self.initialize_session()
+
+        builder = saved_model_builder.SavedModelBuilder(save_path)
+        builder.add_meta_graph_and_variables(
+            session,
+            [tf.saved_model.tag_constants.SERVING],
+            signature_def_map={
+                'predict': tf.saved_model.predict_signature_def(
+                    input_tensors, output_tensors)
+            },
+            strip_default_attrs=True,
+            saver=self.model.saver,
+        )
+        builder.save()
 
     def restore(self, session, weights_path):
         self.saver.restore(session, weights_path)
