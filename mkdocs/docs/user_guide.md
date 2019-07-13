@@ -560,6 +560,58 @@ In order to figure out the names fo the tensors containing the weights you want 
 tensorboard --logdir /path/to/model/log
 ```
 
+
+
+serve
+---------------
+
+This command lets you load a pre-trained model and serve it on an http server.
+
+You can call it with:
+
+```
+ludwig serve [options]
+```
+
+or with
+
+```
+python -m ludwig.serve [options]
+```
+
+from within Ludwig's main directory.
+
+These are the available arguments:
+```
+usage: ludwig serve [options]
+
+This script serves a pretrained model
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m MODEL_PATH, --model_path MODEL_PATH
+                        model to load
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+  -p PORT, --port PORT  port for server (default: 8000)
+  -H HOST, --host HOST  host for server (default: 0.0.0.0)
+```
+
+The most important argument is `--model_path` where you have to specify the path of the model to load. 
+
+Once running, you can make a POST request on the `/predict` endpoint to run inference on the form data submitted. 
+
+#### Example curl
+##### File
+`curl http://0.0.0.0:8000/predict -X POST -F 'image_path=@path_to_image/example.png'`
+
+##### Text
+`curl http://0.0.0.0:8000/predict -X POST -F 'english_text=words to be translated'`
+
+##### Both Text and File
+`curl http://0.0.0.0:8000/predict -X POST -F 'text=mixed together with' -F 'image=@path_to_image/example.png'`
+
+
 collect_activations
 -------------------
 

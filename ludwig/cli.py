@@ -46,6 +46,7 @@ Available sub-commands:
    experiment            Runs a full experiment training a model and testing it
    train                 Trains a model
    predict               Predicts using a pretrained model
+   serve                 Serves a pretrained model
    test                  Tests a pretrained model
    visualize             Visualizes experimental results
    collect_weights       Collects tensors containing a pretrained model weights
@@ -76,6 +77,11 @@ Available sub-commands:
         from ludwig import predict
         ludwig.contrib.contrib_command("predict", *sys.argv)
         predict.cli(sys.argv[2:])
+
+    def serve(self):
+        from ludwig import serve
+        ludwig.contrib.contrib_command("serve", *sys.argv)
+        serve.cli(sys.argv[2:])
 
     def test(self):
         from ludwig import test_performance
