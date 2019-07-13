@@ -560,6 +560,58 @@ In order to figure out the names fo the tensors containing the weights you want 
 tensorboard --logdir /path/to/model/log
 ```
 
+
+
+serve
+---------------
+
+This command lets you load a pre-trained model and serve it on an http server.
+
+You can call it with:
+
+```
+ludwig serve [options]
+```
+
+or with
+
+```
+python -m ludwig.serve [options]
+```
+
+from within Ludwig's main directory.
+
+These are the available arguments:
+```
+usage: ludwig serve [options]
+
+This script serves a pretrained model
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m MODEL_PATH, --model_path MODEL_PATH
+                        model to load
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+  -p PORT, --port PORT  port for server (default: 8000)
+  -H HOST, --host HOST  host for server (default: 0.0.0.0)
+```
+
+The most important argument is `--model_path` where you have to specify the path of the model to load. 
+
+Once running, you can make a POST request on the `/predict` endpoint to run inference on the form data submitted. 
+
+#### Example curl
+##### File
+`curl http://0.0.0.0:8000/predict -X POST -F 'image_path=@path_to_image/example.png'`
+
+##### Text
+`curl http://0.0.0.0:8000/predict -X POST -F 'english_text=words to be translated'`
+
+##### Both Text and File
+`curl http://0.0.0.0:8000/predict -X POST -F 'text=mixed together with' -F 'image=@path_to_image/example.png'`
+
+
 collect_activations
 -------------------
 
@@ -2166,6 +2218,7 @@ If they have different sizes, a `resize_method`, together with a target `width` 
 - `height` (default `null`): image height in pixels, must be set if resizing is required
 - `width` (default `null`): image width in pixels, must be set if resizing is required
 - `num_channels` (default `null`): number of channels in the images. By default, if the value is `null`, the number of channels of the first image of the dataset will be used and if there is an image in the dataset with a different number of channels, an error will be reported. If the value specified is not `null`, images in the dataset will be adapted to the specified size. If the value is `1`, all images with more then one channel will be greyscaled and reduced to one channel (trasparecy will be lost). If the value is `3` all images with 1 channel will be repeated 3 times to obtain 3 channels, while images with 4 channels will lose the transparecy channel. If the value is `4`, all the images with less than 4 channels will have the remaining channels filled with zeros.
+- `scaling` (default `pixel_normalization`): what scaling to perform on images. By default `pixel_normalization` is performed, which consists in dividing each pixel values by 255, but `pixel_standardization` is also available, whic uses [TensorFlow's per image standardization](https://www.tensorflow.org/api_docs/python/tf/image/per_image_standardization).
 
 Depending on the application, it is preferrable not to exceed a size of `256 x 256`, as bigger sizes will, in most cases, not provide much advantage in terms of performance, while they will considerably slow down training and inference and also make both forward and backward passes consume considerably more memory, leading to memory overflows on machines with limited amounts of RAM or on GPUs with limited amounts of VRAM.
 
@@ -2178,6 +2231,7 @@ preprocessing:
   height: 128
   width: 128
   resize_method: interpolate
+  scaling: pixel_normalization
 ```
 
 

@@ -33,7 +33,6 @@ from ludwig.utils.image_utils import resize_image
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +44,8 @@ class ImageBaseFeature(BaseFeature):
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
-        'resize_method': 'interpolate'
+        'resize_method': 'interpolate',
+        'scaling': 'pixel_normalization'
     }
 
     @staticmethod
@@ -55,13 +55,15 @@ class ImageBaseFeature(BaseFeature):
         }
 
     @staticmethod
-    def _read_image_and_resize(filepath,
-                               img_width,
-                               img_height,
-                               should_resize,
-                               num_channels,
-                               resize_method,
-                               user_specified_num_channels):
+    def _read_image_and_resize(
+            filepath,
+            img_width,
+            img_height,
+            should_resize,
+            num_channels,
+            resize_method,
+            user_specified_num_channels
+    ):
         """
         :param filepath: path to the image
         :param img_width: expected width of the image
@@ -99,7 +101,8 @@ class ImageBaseFeature(BaseFeature):
                 img_num_channels = 1
 
             # Number of channels is specified by the user
-            img_padded = np.zeros((img_height, img_width, num_channels))
+            img_padded = np.zeros((img_height, img_width, num_channels),
+                                  dtype=np.uint8)
             min_num_channels = min(num_channels, img_num_channels)
             img_padded[:, :, :min_num_channels] = img[:, :, :min_num_channels]
             img = img_padded
@@ -207,7 +210,7 @@ class ImageBaseFeature(BaseFeature):
         if feature['preprocessing']['in_memory']:
             data[feature['name']] = np.empty(
                 (num_images, height, width, num_channels),
-                dtype=np.int8
+                dtype=np.uint8
             )
             for i in range(len(dataset_df)):
                 filepath = get_abs_path(
@@ -235,7 +238,7 @@ class ImageBaseFeature(BaseFeature):
                         "or explicit image width and height are expected"
                         "to be provided. "
                         "Additional information: https://uber.github.io/ludwig/user_guide/#image-features-preprocessing"
-                        .format(first_image.shape, img.shape)
+                            .format(first_image.shape, img.shape)
                     )
                     raise
         else:
@@ -277,6 +280,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         self.height = 0
         self.width = 0
         self.num_channels = 0
+        self.scaling = 'pixel_normalization'
 
         self.encoder = 'stacked_cnn'
 
@@ -306,7 +310,13 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logger.debug('  targets_placeholder: {0}'.format(placeholder))
+        logger.debug('  placeholder: {0}'.format(placeholder))
+
+        scaled = get_from_registry(
+            self.scaling,
+            image_scaling_registry
+        )(placeholder)
+        logger.debug('  scaled: {0}'.format(scaled))
 
         feature_representation, feature_representation_size = self.encoder_obj(
             placeholder,
@@ -334,8 +344,8 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
             *args,
             **kwargs
     ):
-        for dim in ['height', 'width', 'num_channels']:
-            input_feature[dim] = feature_metadata['preprocessing'][dim]
+        for key in ['height', 'width', 'num_channels', 'scaling']:
+            input_feature[key] = feature_metadata['preprocessing'][key]
 
     @staticmethod
     def populate_defaults(input_feature):
@@ -346,4 +356,10 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
 image_encoder_registry = {
     'stacked_cnn': Stacked2DCNN,
     'resnet': ResNetEncoder
+}
+
+image_scaling_registry = {
+    'pixel_normalization': lambda x: x * 1.0 / 255,
+    'pixel_standardization': lambda x: tf.map_fn(
+        lambda f: tf.image.per_image_standardization(f), x)
 }
