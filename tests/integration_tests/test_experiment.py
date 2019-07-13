@@ -24,6 +24,7 @@ from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import experiment
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
+
 from ludwig.features.h3_feature import h3_encoder_registry
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import bag_feature
@@ -38,6 +39,7 @@ from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import h3_feature
 
+from tests.integration_tests.utils import date_feature
 
 # The following imports are pytest fixtures, required for running the tests
 from tests.fixtures.filenames import csv_filename
@@ -507,6 +509,18 @@ def test_image_resizing_num_channel_handling(csv_filename):
 
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
+
+
+def test_experiment_datetime_feature(csv_filename):
+    input_features = [date_feature()]
+    output_features = [categorical_feature(vocab_size=2)]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoders = ['wave', 'embed']
+    for encoder in encoders:
+        input_features[0]['encoder'] = encoder
+        run_experiment(input_features, output_features, data_csv=rel_path)
 
 
 def test_h3_features(csv_filename):
