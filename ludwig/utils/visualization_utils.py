@@ -48,9 +48,7 @@ logger = logging.getLogger(__name__)
 # plt.rc('ytick', labelsize='x-large')
 # plt.rc('axes', labelsize='x-large')
 
-def learning_curves_ploload_
-
-
+def learning_curves_ploload(
         train_values,
         vali_values,
         metric,
