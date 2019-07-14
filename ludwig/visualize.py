@@ -225,9 +225,10 @@ def compare_classifiers_performance_from_pred_cli(
     """
     gt = load_from_file(ground_truth, field, ground_truth_split)
     metadata = load_json(ground_truth_metadata)
-    preds_per_model = load_data_for_viz(
+    preds_per_model_raw = load_data_for_viz(
         'load_from_file', predictions, dtype=str
     )
+    preds_per_model = [np.ndarray.flatten(pred) for pred in preds_per_model_raw]
     compare_classifiers_performance_from_pred(
         preds_per_model, gt, metadata, field, **kwargs
     )
@@ -904,7 +905,7 @@ def compare_classifiers_performance_from_pred(
     try:
         for pred in preds:
             mapped_preds.append([metadata[field]['str2idx'][val] for val in
-                                 np.ndarray.flatten(pred)])
+                                 pred])
         preds = mapped_preds
     # If predictions are coming from npy file there is no need to convert to
     # numeric labels using metadata
