@@ -475,6 +475,8 @@ optional arguments:
                         raw data file
   -g GROUND_TRUTH, --ground_truth GROUND_TRUTH
                         ground truth file
+  -gts GROUND_TRUTH_SPLIT, --ground_truth_split GROUND_TRUTH_SPLIT
+                       ground truth split - 0:train, 1:validation, 2:test split
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
   -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}
@@ -2608,7 +2610,7 @@ If the values of `subset` is `predictions`, then only datapoints where the the m
 
 ### compare_classifiers_performance_changing_k
 
-This visualization uses the `top_k`, `ground_truth_metadata`, `field`, `probabilities` and `model_names` parameters.
+This visualization uses the `top_k`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` needs to be a category.
 For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k` for the specified `field`.
 
@@ -2643,7 +2645,7 @@ Compare Classifier Predictions
 
 ### compare_classifiers_predictions
 
-This visualization uses the `ground_truth`, `ground_truth_metadata`, `field`, `predictions` and `model_names` parameters.
+This visualization uses the `ground_truth`, `ground_truth`, `field`, `predictions` and `model_names` parameters.
 `field` needs to be a category and there must be two and only two models (in the aligned lists of `predictions` and `model_names`).
 This visualization produces a pie chart comparing the predictions of the two models for the specified `field`.
 
@@ -2652,7 +2654,7 @@ This visualization produces a pie chart comparing the predictions of the two mod
 
 ### compare_classifiers_predictions_distribution
 
-This visualization uses the `ground_truth`, `ground_truth_metadata`, `field`, `predictions` and `model_names` parameters.
+This visualization uses the `ground_truth`, `ground_truth`, `field`, `predictions` and `model_names` parameters.
 `field` needs to be a category.
 This visualization produces a radar plot comparing the distributions of predictions of the models for the first 10 classes of the specified `field`.
 
@@ -2738,10 +2740,9 @@ The third plot shows the max line and the values of the thresholds that obtained
 
 ### confidence_thresholding_2thresholds_3d
 
-This visualization uses the `ground_truth`, `threshold_fields`, `probabilities` and `model_names` parameters.
+This visualization uses the `ground_truth`, `threshold_fields` and `probabilities` parameters.
 `threshold_fields` need to be exactly two, either category or binary.
 `probabilities` need to be exactly two, aligned with `threshold_fields`.
-`model_names` has to be exactly one.
 The plot shows the 3d surfaces displayed by `confidence_thresholding_2thresholds_3d` that have thresholds on the confidence of the predictions of the two `threshold_fields` as x and y axes and either the data coverage percentage or the accuracy as z axis.
 
 ![Confidence_Thresholding two thresholds 3D](images/confidence_thresholding_2thresholds_3d.png "Confidence_Thresholding two thresholds 3D")
@@ -2752,7 +2753,7 @@ Binary Threshold vs. Metric
 
 ### binary_threshold_vs_metric
 
-This visualization uses the `positive_label`, `metrics`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilities` and `model_names` parameters.
+This visualization uses the `positive_label`, `metrics`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` can be a category or binary feature.
 For each metric specified in `metrics` (options are `f1`, `precision`, `recall`, `accuracy`), this visualization produces a line chart plotting a threshold on the confidence of the model against the metric for the specified `field`.
 If `field` is a category feature, `positive_label` indicates which is the class to be considered positive class and all the others will be considered negative.
@@ -2766,7 +2767,7 @@ ROC Curves
 
 ### roc_curves
 
-This visualization uses the `positive_label`, `ground_truth`, `ground_truth_metadata`, `field`, `probabilities` and `model_names` parameters.
+This visualization uses the `positive_label`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` can be a category or binary feature.
 This visualization produces a line chart plotting the roc curves for the specified `field`.
 If `field` is a category feature, `positive_label` indicates which is the class to be considered positive class and all the others will be considered negative.
