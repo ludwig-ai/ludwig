@@ -27,8 +27,6 @@ import json
 import os
 import numpy as np
 
-from pytest import fail
-
 from ludwig.experiment import experiment
 from ludwig.utils.data_utils import load_from_file, load_json, read_csv
 
