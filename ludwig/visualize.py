@@ -73,7 +73,7 @@ def load_data_for_viz(load_type, model_file_statistics, **kwargs):
                                     dtype=kwargs.get('dtype', int),
                                     ground_truth_split=kwargs.get(
                                         'ground_truth_split', 2)
-                                    )
+                                )
                                 )
     loader = supported_load_types[load_type]
     try:
@@ -158,352 +158,504 @@ def generate_filename_template_path(output_dir, filename_template):
     return None
 
 
-def compare_performance_cli(**kwargs):
+def compare_performance_cli(test_statistics, **kwargs):
     """Load model data from files to be shown by compare_performance.
 
+    :param test_statistics: Path to experiment test statistics file
     :param kwargs: model configuration arguments
     :return None:
     """
-    test_stats_per_model = load_data_for_viz(
-        'load_json', kwargs['test_statistics']
-    )
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
     compare_performance(test_stats_per_model, **kwargs)
 
 
-def learning_curves_cli(**kwargs):
+def learning_curves_cli(training_statistics, **kwargs):
     """Load model data from files to be shown by learning_curves.
 
+    :param training_statistics: Path to experiment training statistics file
     :param kwargs: model configuration arguments
     :return None:
     """
-    train_stats_per_model = load_data_for_viz(
-        'load_json', kwargs['training_statistics']
-    )
+    train_stats_per_model = load_data_for_viz('load_json', training_statistics)
     learning_curves(train_stats_per_model, **kwargs)
 
 
-def compare_classifiers_performance_from_prob_cli(**kwargs):
+def compare_classifiers_performance_from_prob_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by compare_classifiers_from_prob.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_from_prob(
         probabilities_per_model, gt, **kwargs
     )
 
 
-def compare_classifiers_performance_from_pred_cli(**kwargs):
-    """Load model data from files to be shown by compare_classifiers_from_pred.
+def compare_classifiers_performance_from_pred_cli(
+        predictions,
+        ground_truth,
+        ground_truth_metadata,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by compare_classifiers_from_pred
 
+    :param predictions: Path to experiment predictions file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_metadata: Path to ground truth metadata file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
-    metadata = load_json(kwargs['ground_truth_metadata'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    metadata = load_json(ground_truth_metadata)
     preds_per_model = load_data_for_viz(
-        'load_from_file', kwargs['predictions'], dtype=str
+        'load_from_file', predictions, dtype=str
     )
     compare_classifiers_performance_from_pred(
-        preds_per_model, gt, metadata, **kwargs
+        preds_per_model, gt, metadata, field, **kwargs
     )
 
 
-def compare_classifiers_performance_subset_cli(**kwargs):
+def compare_classifiers_performance_subset_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by compare_classifiers_subset.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_subset(
         probabilities_per_model, gt, **kwargs
     )
 
 
-def compare_classifiers_performance_changing_k_cli(**kwargs):
+def compare_classifiers_performance_changing_k_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by compare_classifiers_changing_k.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     compare_classifiers_performance_changing_k(
         probabilities_per_model, gt, **kwargs
     )
 
 
-def compare_classifiers_multiclass_multimetric_cli(**kwargs):
+def compare_classifiers_multiclass_multimetric_cli(
+        test_statistics,
+        ground_truth_metadata,
+        **kwargs):
     """Load model data from files to be shown by compare_classifiers_multiclass
 
+    :param test_statistics: Path to experiment test statistics file
+    :param ground_truth_metadata: Path to ground truth metadata file
     :param kwargs: model configuration arguments
     :return None:
     """
-    test_stats_per_model = load_data_for_viz(
-        'load_json', kwargs['test_statistics']
-    )
-    metadata = load_json(kwargs['ground_truth_metadata'])
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    metadata = load_json(ground_truth_metadata)
     compare_classifiers_multiclass_multimetric(
         test_stats_per_model, metadata=metadata, **kwargs
     )
 
 
-def compare_classifiers_predictions_cli(**kwargs):
+def compare_classifiers_predictions_cli(
+        predictions,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by compare_classifiers_predictions
 
+    :param predictions: Path to experiment predictions file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     preds_per_model = load_data_for_viz(
-        'load_from_file', kwargs['predictions'], dtype=str
+        'load_from_file', predictions, dtype=str
     )
     compare_classifiers_predictions(preds_per_model, gt, **kwargs)
 
 
-def compare_classifiers_predictions_distribution_cli(**kwargs):
+def compare_classifiers_predictions_distribution_cli(
+        predictions,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by
     compare_predictions_distribution
 
+    :param predictions: Path to experiment predictions file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     preds_per_model = load_data_for_viz(
-        'load_from_file', kwargs['predictions'], dtype=str
+        'load_from_file', predictions, dtype=str
     )
     compare_classifiers_predictions_distribution(
         preds_per_model, gt, **kwargs
     )
 
 
-def confidence_thresholding_cli(**kwargs):
+def confidence_thresholding_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by confidence_thresholding.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding(
         probabilities_per_model, gt, **kwargs
     )
 
 
-def confidence_thresholding_data_vs_acc_cli(**kwargs):
+def confidence_thresholding_data_vs_acc_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_cli.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_data_vs_acc(
         probabilities_per_model, gt, **kwargs
     )
 
 
-def confidence_thresholding_data_vs_acc_subset_cli(**kwargs):
+def confidence_thresholding_data_vs_acc_subset_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by
     confidence_thresholding_data_vs_acc_subset.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_data_vs_acc_subset(
         probabilities_per_model, gt, **kwargs
     )
 
 
-def confidence_thresholding_data_vs_acc_subset_per_class_cli(**kwargs):
+def confidence_thresholding_data_vs_acc_subset_per_class_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_metadata,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by compare_classifiers_multiclass
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_metadata: Path to ground truth metadata file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
-    metadata = load_json(kwargs['ground_truth_metadata'])
+    metadata = load_json(ground_truth_metadata)
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_data_vs_acc_subset_per_class(
-        probabilities_per_model, gt, metadata, **kwargs
+        probabilities_per_model, gt, metadata, field, **kwargs
     )
 
 
-def confidence_thresholding_2thresholds_2d_cli(**kwargs):
+def confidence_thresholding_2thresholds_2d_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        threshold_fields,
+        **kwargs
+):
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_2d_cli
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param threshold_fields: Target prediction fields
     :param kwargs: model configuration arguments
     :return None:
     """
     gt1 = load_from_file(
-        kwargs['ground_truth'],
-        kwargs['threshold_fields'][0],
-        kwargs['ground_truth_split']
+        ground_truth,
+        threshold_fields[0],
+        ground_truth_split
     )
     gt2 = load_from_file(
-        kwargs['ground_truth'],
-        kwargs['threshold_fields'][1],
-        kwargs['ground_truth_split']
+        ground_truth,
+        threshold_fields[1],
+        ground_truth_split
     )
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_2d(
-        probabilities_per_model, [gt1, gt2], **kwargs
+        probabilities_per_model, [gt1, gt2], threshold_fields, **kwargs
     )
 
 
-def confidence_thresholding_2thresholds_3d_cli(**kwargs):
+def confidence_thresholding_2thresholds_3d_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        threshold_fields,
+        **kwargs
+):
     """Load model data from files to be shown by
     confidence_thresholding_2thresholds_3d_cli
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param threshold_fields: Target prediction fields
     :param kwargs: model configuration arguments
     :return None:
     """
     gt1 = load_from_file(
-        kwargs['ground_truth'],
-        kwargs['threshold_fields'][0]
+        ground_truth,
+        threshold_fields[0],
+        ground_truth_split
     )
     gt2 = load_from_file(
-        kwargs['ground_truth'],
-        kwargs['threshold_fields'][1]
+        ground_truth,
+        threshold_fields[1],
+        ground_truth_split
     )
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_3d(
-        probabilities_per_model, [gt1, gt2], **kwargs
+        probabilities_per_model, [gt1, gt2], threshold_fields, **kwargs
     )
 
 
-def binary_threshold_vs_metric_cli(**kwargs):
+def binary_threshold_vs_metric_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by binary_threshold_vs_metric_cli.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     binary_threshold_vs_metric(
         probabilities_per_model, gt, **kwargs
     )
 
 
-def roc_curves_cli(**kwargs):
+def roc_curves_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by roc_curves_cli.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     roc_curves(probabilities_per_model, gt, **kwargs)
 
 
-def roc_curves_from_test_statistics_cli(**kwargs):
+def roc_curves_from_test_statistics_cli(test_statistics, **kwargs):
     """Load model data from files to be shown by
     roc_curves_from_test_statistics_cli.
 
+    :param test_statistics: Path to experiment test statistics file
     :param kwargs: model configuration arguments
     :return None:
     """
-    test_stats_per_model = load_data_for_viz(
-        'load_json', kwargs['test_statistics']
-    )
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
     roc_curves_from_test_statistics(
         test_stats_per_model, **kwargs
     )
 
 
-def calibration_1_vs_all_cli(**kwargs):
+def calibration_1_vs_all_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by calibration_1_vs_all_cli.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     calibration_1_vs_all(probabilities_per_model, gt, **kwargs)
 
 
-def calibration_multiclass_cli(**kwargs):
+def calibration_multiclass_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
     """Load model data from files to be shown by calibration_multiclass_cli.
 
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
-                        kwargs['ground_truth_split'])
+    gt = load_from_file(ground_truth, field, ground_truth_split)
     probabilities_per_model = load_data_for_viz(
-        'load_from_file', kwargs['probabilities'], dtype=float
+        'load_from_file', probabilities, dtype=float
     )
     calibration_multiclass(probabilities_per_model, gt, **kwargs)
 
 
-def confusion_matrix_cli(**kwargs):
+def confusion_matrix_cli(test_statistics, ground_truth_metadata, **kwargs):
     """Load model data from files to be shown by confusion_matrix.
 
+    :param test_statistics: Path to experiment test statistics file
+    :param ground_truth_metadata: Path to ground truth metadata file
     :param kwargs: model configuration arguments
     :return None:
     """
-    test_stats_per_model = load_data_for_viz(
-        'load_json', kwargs['test_statistics']
-    )
-    metadata = load_json(kwargs['ground_truth_metadata'])
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    metadata = load_json(ground_truth_metadata)
     confusion_matrix(test_stats_per_model, metadata, **kwargs)
 
 
-def frequency_vs_f1_cli(**kwargs):
+def frequency_vs_f1_cli(test_statistics, ground_truth_metadata, **kwargs):
     """Load model data from files to be shown by frequency_vs_f1.
 
+    :param test_statistics: Path to experiment test statistics file
+    :param ground_truth_metadata: Path to ground truth metadata file
     :param kwargs: model configuration arguments
     :return None:
     """
-    test_stats_per_model = load_data_for_viz(
-        'load_json', kwargs['test_statistics']
-    )
-    metadata = load_json(kwargs['ground_truth_metadata'])
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    metadata = load_json(ground_truth_metadata)
     frequency_vs_f1(test_stats_per_model, metadata, **kwargs)
 
 
@@ -1758,8 +1910,9 @@ def confidence_thresholding_2thresholds_2d(
     the accuracy as z axis. Each line represents a slice of the data
     coverage  surface projected onto the accuracy surface.
     :param probs_per_model: List of model probabilities
-    :param gt: List of NumPy Arrays containing computed model ground truth
-               data for target prediction fields based on the model metadata
+    :param ground_truths: List of NumPy Arrays containing computed model ground
+               truth data for target prediction fields based on the model
+               metadata
     :param threshold_fields: List of fields for 2d threshold
     :param labels_limit: Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
@@ -1944,8 +2097,9 @@ def confidence_thresholding_2thresholds_3d(
     confidence of the predictions of the two threshold_fields as x and y axes
     and either the data coverage percentage or the accuracy as z axis.
     :param probs_per_model: List of model probabilities
-    :param gt: List of NumPy Arrays containing computed model ground truth
-               data for target prediction fields based on the model metadata
+    :param ground_truths: List of NumPy Arrays containing computed model ground
+               truth data for target prediction fields based on the model
+               metadata
     :param threshold_fields: List of fields for 2d threshold
     :param labels_limit: Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
