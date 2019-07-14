@@ -25,11 +25,14 @@ import shutil
 import subprocess
 import json
 import os
+import numpy as np
 
 from pytest import fail
 
 from ludwig.experiment import experiment
+from ludwig.utils.data_utils import load_from_file, load_json
 
+from tests.integration_tests.test_visualisations_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature, categorical_feature, \
     numerical_feature, set_feature, sequence_feature, binary_feature, \
@@ -1515,3 +1518,57 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
             os.remove(file)
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
+
+def test_load_ground_truth_split_from_file(csv_filename):
+    """Ensure correct ground truth split is loaded when ground_truth_split is given.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    field_name = get_output_field_name(exp_dir_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+
+    ground_truth_train_split = load_from_file(ground_truth, field_name,
+                                              ground_truth_split=0)
+    ground_truth_val_split = load_from_file(ground_truth, field_name,
+                                              ground_truth_split=1)
+    ground_truth_test_split = load_from_file(ground_truth, field_name)
+
+    test_df, train_df, val_df = obtain_df_splits(csv_filename)
+    target_predictions_from_train = train_df[field_name]
+    target_predictions_from_val = val_df[field_name]
+    target_predictions_from_test = test_df[field_name]
+    gtm_name = experiment_source_data_name + '.json'
+    ground_truth_metadata = load_json(gtm_name)
+    ground_truth_loaded_train_split = np.asarray([
+        ground_truth_metadata[field_name]['str2idx'][train_row]
+        for train_row in target_predictions_from_train
+    ])
+    ground_truth_loaded_val_split = np.asarray([
+        ground_truth_metadata[field_name]['str2idx'][val_row]
+        for val_row in target_predictions_from_val
+    ])
+    ground_truth_loaded_test_split = np.asarray([
+        ground_truth_metadata[field_name]['str2idx'][test_row]
+        for test_row in target_predictions_from_test
+    ])
+
+    assert str(ground_truth_train_split) == str(ground_truth_loaded_train_split)
+    assert str(ground_truth_val_split) == str(ground_truth_loaded_val_split)
+    assert str(ground_truth_test_split) == str(ground_truth_loaded_test_split)

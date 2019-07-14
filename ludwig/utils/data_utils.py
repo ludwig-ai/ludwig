@@ -289,16 +289,26 @@ def class_counts(dataset, labels_field):
 def text_feature_data_field(text_feature):
     return text_feature['name'] + '_' + text_feature['level']
 
-# @TODO Implement additional parameter e.g split_type (0,1,2)
-# where 0 is train 1 is validation and 2 is train split
-def load_from_file(file_name, field=None, dtype=int):
+
+def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
+    """Load experiment data from supported file formats.
+
+    Experiment data can be test/train statistics, model predictions,
+    probability, ground truth,  ground truth metadata.
+    :param file_name: Path to file to be loaded
+    :param field: Target Prediction field.
+    :param dtype:
+    :param ground_truth_split: Ground truth split filter where 0 is train 1 is
+    validation and 2 is test split. By default test split is used when loading
+    ground truth form hdf5.
+    :return: Experiment data as array
+    """
     if file_name.endswith('.hdf5') and field is not None:
         hdf5_data = h5py.File(file_name, 'r')
         split = hdf5_data['split'].value
         column = hdf5_data[field].value
         hdf5_data.close()
-        # @TODO: use the split type column[split == split_type]
-        array = column[split == 2]  # ground truth
+        array = column[split == ground_truth_split]  # ground truth
     elif file_name.endswith('.npy'):
         array = np.load(file_name)
     elif file_name.endswith('.csv'):

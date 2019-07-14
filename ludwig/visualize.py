@@ -68,9 +68,13 @@ def load_data_for_viz(load_type, model_file_statistics, **kwargs):
     :return List of training statistics loaded as json objects.
     """
     supported_load_types = dict(load_json=load_json,
-                                load_from_file=partial(load_from_file,
-                                                       dtype=kwargs.get('dtype',
-                                                                        int)))
+                                load_from_file=partial(
+                                    load_from_file,
+                                    dtype=kwargs.get('dtype', int),
+                                    ground_truth_split=kwargs.get(
+                                        'ground_truth_split', 2)
+                                    )
+                                )
     loader = supported_load_types[load_type]
     try:
         stats_per_model = [loader(stats_f)
@@ -184,7 +188,8 @@ def compare_classifiers_performance_from_prob_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -199,7 +204,8 @@ def compare_classifiers_performance_from_pred_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     metadata = load_json(kwargs['ground_truth_metadata'])
     preds_per_model = load_data_for_viz(
         'load_from_file', kwargs['predictions'], dtype=str
@@ -215,7 +221,8 @@ def compare_classifiers_performance_subset_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -230,7 +237,8 @@ def compare_classifiers_performance_changing_k_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -260,7 +268,8 @@ def compare_classifiers_predictions_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     preds_per_model = load_data_for_viz(
         'load_from_file', kwargs['predictions'], dtype=str
     )
@@ -274,7 +283,8 @@ def compare_classifiers_predictions_distribution_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     preds_per_model = load_data_for_viz(
         'load_from_file', kwargs['predictions'], dtype=str
     )
@@ -289,7 +299,8 @@ def confidence_thresholding_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -305,7 +316,8 @@ def confidence_thresholding_data_vs_acc_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -321,7 +333,8 @@ def confidence_thresholding_data_vs_acc_subset_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -336,7 +349,8 @@ def confidence_thresholding_data_vs_acc_subset_per_class_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     metadata = load_json(kwargs['ground_truth_metadata'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
@@ -355,11 +369,13 @@ def confidence_thresholding_2thresholds_2d_cli(**kwargs):
     """
     gt1 = load_from_file(
         kwargs['ground_truth'],
-        kwargs['threshold_fields'][0]
+        kwargs['threshold_fields'][0],
+        kwargs['ground_truth_split']
     )
     gt2 = load_from_file(
         kwargs['ground_truth'],
-        kwargs['threshold_fields'][1]
+        kwargs['threshold_fields'][1],
+        kwargs['ground_truth_split']
     )
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
@@ -398,7 +414,8 @@ def binary_threshold_vs_metric_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -413,7 +430,8 @@ def roc_curves_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -441,7 +459,8 @@ def calibration_1_vs_all_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -454,7 +473,8 @@ def calibration_multiclass_cli(**kwargs):
     :param kwargs: model configuration arguments
     :return None:
     """
-    gt = load_from_file(kwargs['ground_truth'], kwargs['field'])
+    gt = load_from_file(kwargs['ground_truth'], kwargs['field'],
+                        kwargs['ground_truth_split'])
     probabilities_per_model = load_data_for_viz(
         'load_from_file', kwargs['probabilities'], dtype=float
     )
@@ -2765,6 +2785,12 @@ def cli(sys_argv):
         '--field',
         default=[],
         help='field containing ground truth'
+    )
+    parser.add_argument(
+        '-gts',
+        '--ground_truth_split',
+        default=[2],
+        help='ground truth split - 0:train, 1:validation, 2:test split'
     )
     parser.add_argument(
         '-tf',
