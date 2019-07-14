@@ -2,37 +2,37 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
      <loc>https://uber.github.io/ludwig/</loc>
-        <lastmod>2019-05-15</lastmod>
+     <lastmod>2019-06-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>https://uber.github.io/ludwig/getting_started/</loc>
-        <lastmod>2019-05-15</lastmod>
+     <lastmod>2019-06-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>https://uber.github.io/ludwig/examples/</loc>
-        <lastmod>2019-05-15</lastmod>
+     <lastmod>2019-06-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>https://uber.github.io/ludwig/user_guide/</loc>
-        <lastmod>2019-05-15</lastmod>
+     <lastmod>2019-06-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>https://uber.github.io/ludwig/developer_guide/</loc>
-        <lastmod>2019-05-15</lastmod>
+     <lastmod>2019-06-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>https://uber.github.io/ludwig/api/</loc>
-        <lastmod>2019-05-15</lastmod>
+     <lastmod>2019-06-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>https://uber.github.io/ludwig/faq/</loc>
-        <lastmod>2019-05-15</lastmod>
+     <lastmod>2019-06-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>

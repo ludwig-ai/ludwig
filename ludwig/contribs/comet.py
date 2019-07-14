@@ -19,6 +19,9 @@ import os
 from datetime import datetime
 
 
+logger = logging.getLogger(__name__)
+
+
 class Comet():
     """
     Class that defines the methods necessary to hook into process.
@@ -34,7 +37,7 @@ class Comet():
         try:
             import comet_ml
         except ImportError:
-            logging.error(
+            logger.error(
                 "Ignored --comet: Please install comet_ml; see www.comet.ml")
             return None
 
@@ -45,18 +48,18 @@ class Comet():
         if version is not None and version >= [1, 0, 51]:
             return Comet()
         else:
-            logging.error("Ignored --comet: Need version 1.0.51 or greater")
+            logger.error("Ignored --comet: Need version 1.0.51 or greater")
 
     def experiment(self, *args, **kwargs):
         import comet_ml
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
-            logging.error(
+            logger.error(
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
-        logging.info("comet.experiment() called......")
+        logger.info("comet.experiment() called......")
         cli = self._make_command_line(args)
         self.cometml_experiment.set_code(cli)
         self.cometml_experiment.set_filename("Ludwig CLI")
@@ -69,11 +72,11 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
-            logging.error(
+            logger.error(
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
-        logging.info("comet.train() called......")
+        logger.info("comet.train() called......")
         cli = self._make_command_line(args)
         self.cometml_experiment.set_code(cli)
         self.cometml_experiment.set_filename("Ludwig CLI")
@@ -82,7 +85,7 @@ class Comet():
         self._save_config(config)
 
     def train_model(self, *args, **kwargs):
-        logging.info("comet.train_model() called......")
+        logger.info("comet.train_model() called......")
         if self.cometml_experiment:
             model = args[0]
             model_definition = args[1]
@@ -103,13 +106,36 @@ class Comet():
                                                        base_name)
 
     def train_save(self, *args, **kwargs):
-        logging.info("comet.train_save() called......")
+        logger.info("comet.train_save() called......")
         experiment_dir_name = args[0]
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(experiment_dir_name)
 
+    def train_epoch_end(self, progress_tracker):
+        """
+        Called from ludwig/models/model.py
+        """
+        logger.info("comet.train_epoch_end() called......")
+        if self.cometml_experiment:
+            for item_name in ["batch_size", "epoch", "steps", "last_improvement_epoch",
+                         "learning_rate", "best_valid_measure", "num_reductions_lr",
+                         "num_increases_bs", "train_stats", "vali_stats", "test_stats"]:
+                try:
+                    item = getattr(progress_tracker, item_name)
+                    if isinstance(item, dict):
+                        for key in item:
+                            if isinstance(item[key], dict):
+                                for key2 in item[key]:
+                                    self.cometml_experiment.log_metric(item_name + "." + key + "." + key2, item[key][key2][-1])
+                            else:
+                                self.cometml_experiment.log_metric(item_name + "." + key, item[key][-1])
+                    elif item is not None:
+                        self.cometml_experiment.log_metric(item_name, item)
+                except Exception:
+                    logger.info("comet.train_epoch_end() skip logging '%s'", item_name)
+
     def experiment_save(self, *args, **kwargs):
-        logging.info("comet.experiment_save() called......")
+        logger.info("comet.experiment_save() called......")
         experiment_dir_name = args[0]
         if self.cometml_experiment:
             self.cometml_experiment.log_asset_folder(experiment_dir_name)
@@ -119,15 +145,15 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
         except Exception:
-            logging.error("Ignored --comet. No '.comet.config' file")
+            logger.error("Ignored --comet. No '.comet.config' file")
             return
 
-        logging.info("comet.visualize() called......")
+        logger.info("comet.visualize() called......")
         cli = self._make_command_line(args)
         self._log_html(cli)
 
     def visualize_figure(self, fig):
-        logging.info("comet.visualize_figure() called......")
+        logger.info("comet.visualize_figure() called......")
         if self.cometml_experiment:
             self.cometml_experiment.log_figure(fig)
 
@@ -136,10 +162,10 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
         except Exception:
-            logging.error("Ignored --comet. No '.comet.config' file")
+            logger.error("Ignored --comet. No '.comet.config' file")
             return
 
-        logging.info("comet.predict() called......")
+        logger.info("comet.predict() called......")
         cli = self._make_command_line(args)
         self._log_html(cli)
 
@@ -148,10 +174,10 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
         except Exception:
-            logging.error("Ignored --comet. No '.comet.config' file")
+            logger.error("Ignored --comet. No '.comet.config' file")
             return
 
-        logging.info("comet.test() called......")
+        logger.info("comet.test() called......")
         cli = self._make_command_line(args)
         self._log_html(cli)
 

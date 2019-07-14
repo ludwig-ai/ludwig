@@ -40,6 +40,9 @@ from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import create_vocabulary
 
 
+logger = logging.getLogger(__name__)
+
+
 class CategoryBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
@@ -72,7 +75,8 @@ class CategoryBaseFeature(BaseFeature):
         return np.array(
             column.map(
                 lambda x: (
-                    metadata['str2idx'][x] if x in metadata['str2idx']
+                    metadata['str2idx'][x.strip()]
+                    if x.strip() in metadata['str2idx']
                     else metadata['str2idx'][UNKNOWN_SYMBOL]
                 )
             ),
@@ -146,7 +150,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('  placeholder: {0}'.format(placeholder))
+        logger.debug('  placeholder: {0}'.format(placeholder))
 
         # ================ Embeddings ================
         embedded, embedding_size = self.embed(
@@ -155,7 +159,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
             dropout_rate,
             is_training=is_training
         )
-        logging.debug('  feature_representation: {0}'.format(
+        logger.debug('  feature_representation: {0}'.format(
             embedded))
 
         feature_representation = {
@@ -242,16 +246,16 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                 initializer=initializer_obj([hidden_size, self.num_classes]),
                 regularizer=regularizer
             )
-            logging.debug('  class_weights: {0}'.format(weights))
+            logger.debug('  class_weights: {0}'.format(weights))
 
             biases = tf.get_variable(
                 'biases',
                 [self.num_classes]
             )
-            logging.debug('  class_biases: {0}'.format(biases))
+            logger.debug('  class_biases: {0}'.format(biases))
 
             logits = tf.matmul(hidden, weights) + biases
-            logging.debug('  logits: {0}'.format(logits))
+            logger.debug('  logits: {0}'.format(logits))
 
             probabilities = tf.nn.softmax(
                 logits,
@@ -297,7 +301,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
                 if (class_similarities.shape[0] != self.num_classes or
                         class_similarities.shape[1] != self.num_classes):
-                    logging.info(
+                    logger.info(
                         'Class similarities is {} while num classes is {}'.format(
                             class_similarities.shape,
                             self.num_classes
@@ -307,8 +311,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                             class_similarities.shape[1] > self.num_classes):
                         # keep only the first num_classes rows and columns
                         class_similarities = class_similarities[
-                                          :self.num_classes,
-                                          :self.num_classes
+                                             :self.num_classes,
+                                             :self.num_classes
                                              ]
                     elif (class_similarities.shape[0] < self.num_classes and
                           class_similarities.shape[1] < self.num_classes):
@@ -411,7 +415,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         # ================ Placeholder ================
         targets = self._get_output_placeholder()
         output_tensors[self.name] = targets
-        logging.debug('  targets_placeholder: {0}'.format(targets))
+        logger.debug('  targets_placeholder: {0}'.format(targets))
 
         # ================ Predictions ================
         outs = self._get_predictions(

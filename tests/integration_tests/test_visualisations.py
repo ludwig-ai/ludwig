@@ -251,7 +251,6 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-
 def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
         csv_filename
 ):
@@ -455,7 +454,6 @@ def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
             os.remove(file)
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
-
 
 def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
         csv_filename

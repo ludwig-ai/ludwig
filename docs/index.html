@@ -22,8 +22,6 @@
 
     <!-- CSS
    ================================================== -->
-    <link href="assets/stylesheets/application.750b69bd.css" rel="stylesheet">
-    <link href="assets/stylesheets/application-palette.224b79ff.css" rel="stylesheet">
     <link href="assets/fonts/material-icons.css" rel="stylesheet">
     <link href="stylesheets/extra.css" rel="stylesheet">
     <link href="stylesheets/monokai.css" rel="stylesheet">
@@ -52,7 +50,7 @@
 	================================================== -->
     <meta content="446" property="og:image:height">
     <meta content="852" property="og:image:width">
-    <meta content="Ludwig is a toolbox that allows to train and test deep learning models without the need to write code"
+    <meta content="Ludwig is a toolbox for training and testing deep learning models without writing code"
           property="og:description">
     <meta content="Ludwig - code-free deep learning toolbox" property="og:title">
     <meta content="http://uber.github.io/ludwig" property="og:url">
@@ -66,7 +64,7 @@
 
 <!-- header
 ================================================== -->
-<header class="row" id="header">
+<header id="header">
 
     <div class="header-logo">
         <a href="index.html">Ludwig</a>
@@ -119,14 +117,14 @@
                     has never been easier
                 </h3>
                 --->
-                <!--
+
                 <div class="buttons" data-aos="fade-up">
-                    <a href="http://player.vimeo.com/video/14592941?title=0&amp;byline=0&amp;portrait=0&amp;color=39b54a" data-lity class="button stroke">
-                        <span class="icon-play" aria-hidden="true"></span>
-                    Start the tutorial
+                    <a class="button stroke" data-lity href="https://youtu.be/OGweVw57kus">
+                        <i aria-hidden="true" class="fa fa-play"></i>
+                        Play intro video
                     </a>
                 </div>
-                -->
+
             </div>
 
 
@@ -384,25 +382,25 @@ predictions = model.predict(test_dataframe)</code></pre>
 
     <!-- Link to previous and/or next page -->
 
-    <div class="md-footer-nav">
+
+    <div class="md-footer-nav md-footer-nav-wrapper">
         <nav class="md-footer-nav__inner md-grid">
 
             <!-- Link to next page -->
 
-            <a class="md-flex md-footer-nav__link md-footer-nav__link--next" href="getting_started/" rel="next"
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--next md-footer-nav__link-wrapper" href="getting_started/" rel="next"
                title="Examples">
                 <div class="md-flex__cell md-flex__cell--stretch
-                  md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
+                  md-footer-nav__title md-flex__cell-wrapper">
+              <span class="md-flex__ellipsis md-flex__ellipsis-wrapper">
+                <span class="md-footer-nav__direction md-footer-nav-item md-footer-nav-item-wrapper">
                   Next
                 </span>
-                Getting Started
+                <span class="md-footer-nav-item-wrapper md-footer-nav-item-title-wrapper">Getting Started</span>
               </span>
                 </div>
-                <div class="md-flex__cell md-flex__cell--shrink">
-                    <i class="md-icon md-icon--arrow-forward
-                    md-footer-nav__button"></i>
+                <div class="md-flex__cell md-flex__cell--shrink md-flex__cell-arrow">
+                    <i class="fa fa-arrow-right arrow-wrapper"></i>
                 </div>
             </a>
 
@@ -415,10 +413,10 @@ predictions = model.predict(test_dataframe)</code></pre>
         <div class="md-footer-meta__inner md-grid">
 
             <!-- Copyright and theme information -->
-            <div class="md-footer-copyright">
+            <div class="md-footer-copyright md-footer-copyright-wrapper">
                 <div class="footer-logo-smallpad"></div>
 
-                <div class="md-footer-copyright__highlight">
+                <div class="md-footer-copyright__highlight md-footer-copyright__highlight-wrapper">
                     Copyright © 2018 - 2019 Uber Technologies Inc.
                 </div>
 

@@ -39,11 +39,18 @@ from mpl_toolkits.mplot3d import Axes3D
 import ludwig.contrib
 
 
+
+logger = logging.getLogger(__name__)
+
+
+
 # plt.rc('xtick', labelsize='x-large')
 # plt.rc('ytick', labelsize='x-large')
 # plt.rc('axes', labelsize='x-large')
 
-def learning_curves_plot(
+def learning_curves_ploload_
+
+
         train_values,
         vali_values,
         metric,
@@ -264,7 +271,7 @@ def radar_chart(
     predictions = [pred[0:10] for pred in predictions]
 
     gt_argsort = np.argsort(-ground_truth)  # sort deacreasing
-    logging.info(gt_argsort)
+    logger.info(gt_argsort)
     ground_truth = ground_truth[gt_argsort]
     predictions = [pred[gt_argsort] for pred in predictions]
 

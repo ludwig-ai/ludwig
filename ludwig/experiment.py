@@ -21,7 +21,6 @@ from __future__ import print_function
 import argparse
 import logging
 import sys
-
 import yaml
 
 from ludwig.contrib import contrib_command
@@ -35,6 +34,9 @@ from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
+
+
+logger = logging.getLogger(__name__)
 
 
 def experiment(
@@ -192,6 +194,7 @@ def experiment(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
+        should_close_session=False,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
         use_horovod=use_horovod,
@@ -240,9 +243,9 @@ def experiment(
     model.close_session()
 
     if is_on_master():
-        logging.info('\nFinished: {0}_{1}'.format(
+        logger.info('\nFinished: {0}_{1}'.format(
             experiment_name, model_name))
-        logging.info('Saved to: {}'.format(experiment_dir_name))
+        logger.info('Saved to: {}'.format(experiment_dir_name))
 
     contrib_command("experiment_save", experiment_dir_name)
     return experiment_dir_name
@@ -457,10 +460,8 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging_level_registry[args.logging_level],
-        format='%(message)s'
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
     )
 
     set_on_master(args.use_horovod)

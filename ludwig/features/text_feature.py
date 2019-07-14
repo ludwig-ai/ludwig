@@ -34,16 +34,21 @@ from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 
 
+logger = logging.getLogger(__name__)
+
+
 class TextBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
         self.type = TEXT
 
     preprocessing_defaults = {
-        'char_format': 'characters',
+        'char_tokenizer': 'characters',
+        'char_tokenizer_vocab_file': None,
         'char_sequence_length_limit': 1024,
         'char_most_common': 70,
-        'word_format': 'space_punct',
+        'word_tokenizer': 'space_punct',
+        'word_tokenizer_vocab_file': None,
         'word_sequence_length_limit': 256,
         'word_most_common': 20000,
         'padding_symbol': PADDING_SYMBOL,
@@ -63,7 +68,7 @@ class TextBaseFeature(BaseFeature):
             char_max_len
         ) = create_vocabulary(
             column,
-            'characters',
+            tokenizer_type='characters',
             num_most_frequent=preprocessing_parameters['char_most_common'],
             lowercase=preprocessing_parameters['lowercase']
         )
@@ -74,9 +79,10 @@ class TextBaseFeature(BaseFeature):
             word_max_len
         ) = create_vocabulary(
             column,
-            preprocessing_parameters['word_format'],
+            tokenizer_type=preprocessing_parameters['word_tokenizer'],
             num_most_frequent=preprocessing_parameters['word_most_common'],
-            lowercase=preprocessing_parameters['lowercase']
+            lowercase=preprocessing_parameters['lowercase'],
+            vocab_file=preprocessing_parameters['word_tokenizer_vocab_file']
         )
         return (
             char_idx2str,
@@ -130,20 +136,26 @@ class TextBaseFeature(BaseFeature):
         char_data = build_sequence_matrix(
             column,
             metadata['char_str2idx'],
-            preprocessing_parameters['char_format'],
+            preprocessing_parameters['char_tokenizer'],
             metadata['char_max_sequence_length'],
             preprocessing_parameters['padding_symbol'],
             preprocessing_parameters['padding'],
-            preprocessing_parameters['lowercase']
+            preprocessing_parameters['lowercase'],
+            tokenizer_vocab_file=preprocessing_parameters[
+                'char_tokenizer_vocab_file'
+            ],
         )
         word_data = build_sequence_matrix(
             column,
             metadata['word_str2idx'],
-            preprocessing_parameters['word_format'],
+            preprocessing_parameters['word_tokenizer'],
             metadata['word_max_sequence_length'],
             preprocessing_parameters['padding_symbol'],
             preprocessing_parameters['padding'],
-            preprocessing_parameters['lowercase']
+            preprocessing_parameters['lowercase'],
+            tokenizer_vocab_file=preprocessing_parameters[
+                'word_tokenizer_vocab_file'
+            ],
         )
 
         return char_data, word_data
@@ -192,7 +204,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
             **kwargs
     ):
         placeholder = self._get_input_placeholder()
-        logging.debug('  targets_placeholder: {0}'.format(placeholder))
+        logger.debug('  targets_placeholder: {0}'.format(placeholder))
 
         return self.build_sequence_input(
             placeholder,

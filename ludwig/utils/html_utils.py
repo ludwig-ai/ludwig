@@ -21,6 +21,9 @@ from html.parser import HTMLParser
 from ludwig.utils import strings_utils
 
 
+logger = logging.getLogger(__name__)
+
+
 class HTMLStripper(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -36,7 +39,7 @@ class HTMLStripper(HTMLParser):
         return ''.join(self.fed)
 
     def error(self, message):
-        logging.error(message)
+        logger.error(message)
         pass
 
 

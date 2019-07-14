@@ -36,6 +36,7 @@ from ludwig.utils import visualization_utils
 from ludwig.utils.data_utils import load_json, load_from_file
 from ludwig.utils.print_utils import logging_level_registry
 
+logger = logging.getLogger(__name__)
 
 def validate_conf_treshholds_and_probabilities_2d_3d(
         probabilities, treshhold_fields
@@ -88,7 +89,6 @@ def load_data_for_viz(load_type, model_file_statistics, **kwargs):
         )
         raise
     return stats_per_model
-
 
 def convert_to_list(item):
     """If item is not list class instance or None put inside a list.
@@ -701,6 +701,7 @@ def learning_curves(
                 if filename_template_path:
                     filename = filename_template_path.format(field, metric)
 
+
                 visualization_utils.learning_curves_plot(
                     [learning_stats['train'][field][metric]
                      for learning_stats in train_stats_per_model_list],
@@ -774,6 +775,7 @@ def compare_performance(
             measures_names.append(EDIT_DISTANCE)
 
         filename = None
+
         if filename_template_path:
             filename = filename_template_path.format(field)
             os.makedirs(output_directory, exist_ok=True)
@@ -896,6 +898,7 @@ def compare_classifiers_performance_from_pred(
     :param file_format: File format of output plots - pdf or png
     :return None:
     """
+=======
     if labels_limit > 0:
         gt[gt > labels_limit] = labels_limit
 
@@ -981,7 +984,7 @@ def compare_classifiers_performance_subset(
     if subset == 'ground_truth':
         subset_indices = gt < k
         gt_subset = gt[subset_indices]
-        logging.info('Subset is {:.2f}% of the data'.format(
+        logger.info('Subset is {:.2f}% of the data'.format(
             len(gt_subset) / len(gt) * 100)
         )
 
@@ -999,7 +1002,7 @@ def compare_classifiers_performance_subset(
         if subset == PREDICTIONS:
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = gt[subset_indices]
-            logging.info(
+            logger.info(
                 'Subset for model_name {} is {:.2f}% of the data'.format(
                     model_names[i] if model_names and i < len(
                         model_names) else i,
@@ -1328,7 +1331,7 @@ def compare_classifiers_predictions(
     # DOTO all shadows built in name - come up with a more descriptive name
     all = len(gt)
     if all == 0:
-        logging.error('No labels in the ground truth')
+        logger.error('No labels in the ground truth')
         return
 
     both_right = 0
@@ -1353,12 +1356,12 @@ def compare_classifiers_predictions(
     one_right = c1_right_c2_wrong + c1_wrong_c2_right
     both_wrong = both_wrong_same + both_wrong_different
 
-    logging.info('Test datapoints: {}'.format(all))
-    logging.info(
+    logger.info('Test datapoints: {}'.format(all))
+    logger.info(
         'Both right: {} {:.2f}%'.format(both_right, 100 * both_right / all))
-    logging.info(
+    logger.info(
         'One right: {} {:.2f}%'.format(one_right, 100 * one_right / all))
-    logging.info(
+    logger.info(
         '  {} right / {} wrong: {} {:.2f}% {:.2f}%'.format(
             name_c1,
             name_c2,
@@ -1367,7 +1370,7 @@ def compare_classifiers_predictions(
             100 * c1_right_c2_wrong / one_right if one_right > 0 else 0
         )
     )
-    logging.info(
+    logger.info(
         '  {} wrong / {} right: {} {:.2f}% {:.2f}%'.format(
             name_c1,
             name_c2,
@@ -1376,16 +1379,16 @@ def compare_classifiers_predictions(
             100 * c1_wrong_c2_right / one_right if one_right > 0 else 0
         )
     )
-    logging.info(
+    logger.info(
         'Both wrong: {} {:.2f}%'.format(both_wrong, 100 * both_wrong / all)
     )
-    logging.info('  same prediction: {} {:.2f}% {:.2f}%'.format(
+    logger.info('  same prediction: {} {:.2f}% {:.2f}%'.format(
         both_wrong_same,
         100 * both_wrong_same / all,
         100 * both_wrong_same / both_wrong if both_wrong > 0 else 0
     )
     )
-    logging.info('  different prediction: {} {:.2f}% {:.2f}%'.format(
+    logger.info('  different prediction: {} {:.2f}% {:.2f}%'.format(
         both_wrong_different,
         100 * both_wrong_different / all,
         100 * both_wrong_different / both_wrong if both_wrong > 0 else 0
@@ -1698,7 +1701,7 @@ def confidence_thresholding_data_vs_acc_subset(
     if subset == 'ground_truth':
         subset_indices = gt < k
         gt_subset = gt[subset_indices]
-        logging.info('Subset is {:.2f}% of the data'.format(
+        logger.info('Subset is {:.2f}% of the data'.format(
             len(gt_subset) / len(gt) * 100)
         )
 
@@ -1712,7 +1715,7 @@ def confidence_thresholding_data_vs_acc_subset(
         if subset == PREDICTIONS:
             subset_indices = np.argmax(prob, axis=1) < k
             gt_subset = gt[subset_indices]
-            logging.info(
+            logger.info(
                 'Subset for model_name {} is {:.2f}% of the data'.format(
                     model_names[i] if model_names and i < len(
                         model_names) else i,
@@ -1832,7 +1835,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         if subset == 'ground_truth':
             subset_indices = gt == curr_k
             gt_subset = gt[subset_indices]
-            logging.info('Subset is {:.2f}% of the data'.format(
+            logger.info('Subset is {:.2f}% of the data'.format(
                 len(gt_subset) / len(gt) * 100)
             )
 
@@ -1846,7 +1849,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
             if subset == PREDICTIONS:
                 subset_indices = np.argmax(prob, axis=1) == curr_k
                 gt_subset = gt[subset_indices]
-                logging.info(
+                logger.info(
                     'Subset for model_name {} is {:.2f}% of the data'.format(
                         model_names_list[i] if model_names_list and i < len(
                             model_names_list) else i,
@@ -2012,9 +2015,9 @@ def confidence_thresholding_2thresholds_2d(
             )
         )
 
-    logging.info('CSV table')
+    logger.info('CSV table')
     for row in table:
-        logging.info(','.join([str(e) for e in row]))
+        logger.info(','.join([str(e) for e in row]))
 
     # ===========#
     # Multiline #
@@ -2243,7 +2246,7 @@ def binary_threshold_vs_metric(
     for metric in metrics_list:
 
         if metric not in supported_metrics:
-            logging.error("Metric {} not supported".format(metric))
+            logger.error("Metric {} not supported".format(metric))
             continue
 
         scores = []
@@ -2639,7 +2642,7 @@ def calibration_multiclass(
             format_str += '{}'
         else:
             format_str = '{}'
-        logging.info(format_str.format(brier_score))
+        logger.info(format_str.format(brier_score))
 
 
 def confusion_matrix(
@@ -3061,11 +3064,8 @@ def cli(sys_argv):
     )
 
     args = parser.parse_args(sys_argv)
-
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging_level_registry[args.logging_level],
-        format='%(message)s'
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
     )
     VISUALISATIONS_CONFIG = {
         'compare_performance':

@@ -17,6 +17,10 @@
 import logging
 import sys
 
+
+logger = logging.getLogger(__name__)
+
+
 nlp_pipelines = {
     'en': None,
     'it': None,
@@ -53,7 +57,7 @@ punctuation = {'.', ',', '@', '$', '%', '/', ':', ';', '+', '='}
 
 def load_nlp_pipeline(language='xx'):
     if language not in language_module_registry:
-        logging.error(
+        logger.error(
             'Language {} is not supported.'
             'Suported languages are: {}'.format(
                 language,
@@ -64,7 +68,7 @@ def load_nlp_pipeline(language='xx'):
         spacy_module_name = language_module_registry[language]
     global nlp_pipelines
     if nlp_pipelines[language] is None:
-        logging.info('Loading NLP pipeline')
+        logger.info('Loading NLP pipeline')
         import spacy
         try:
             nlp_pipelines[language] = spacy.load(
@@ -72,7 +76,7 @@ def load_nlp_pipeline(language='xx'):
                 disable=['parser', 'tagger', 'ner']
             )
         except OSError:
-            logging.error(
+            logger.error(
                 ' Unable to load spacy model {}. '
                 'Make sure to download it with: '
                 'python -m spacy download {}'.format(

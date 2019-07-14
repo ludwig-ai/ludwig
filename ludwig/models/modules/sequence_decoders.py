@@ -24,6 +24,9 @@ from ludwig.models.modules.recurrent_modules import recurrent_decoder
 from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 
+logger = logging.getLogger(__name__)
+
+
 class Generator:
     def __init__(
             self,
@@ -150,7 +153,7 @@ class Tagger:
             regularizer,
             is_timeseries=False
     ):
-        logging.info('  hidden shape: {0}'.format(hidden.shape))
+        logger.debug('  hidden shape: {0}'.format(hidden.shape))
         if len(hidden.shape) != 3:
             raise ValueError(
                 'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
@@ -181,13 +184,13 @@ class Tagger:
                 [hidden_size, output_feature['num_classes']]),
             regularizer=regularizer
         )
-        logging.debug('  weights: {0}'.format(class_weights))
+        logger.debug('  weights: {0}'.format(class_weights))
 
         class_biases = tf.get_variable(
             'biases',
             [output_feature['num_classes']]
         )
-        logging.debug('  biases: {0}'.format(class_biases))
+        logger.debug('  biases: {0}'.format(class_biases))
 
         hidden_reshape = tf.reshape(hidden, [-1, hidden_size])
         logits_to_reshape = tf.matmul(hidden_reshape,
@@ -196,7 +199,7 @@ class Tagger:
             logits_to_reshape,
             [-1, sequence_length, output_feature['num_classes']]
         )
-        logging.debug('  logits: {0}'.format(logits))
+        logger.debug('  logits: {0}'.format(logits))
 
         if is_timeseries:
             probabilities_sequence = tf.zeros_like(logits)

@@ -40,6 +40,9 @@ from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 
 
+logger = logging.getLogger(__name__)
+
+
 def full_predict(
         model_path,
         data_csv=None,
@@ -63,11 +66,11 @@ def full_predict(
         suffix += 1
 
     if is_on_master():
-        logging.info('Dataset path: {}'.format(
+        logger.info('Dataset path: {}'.format(
             data_csv if data_csv is not None else data_hdf5))
-        logging.info('Model path: {}'.format(model_path))
-        logging.info('Output path: {}'.format(experiment_dir_name))
-        logging.info('')
+        logger.info('Model path: {}'.format(model_path))
+        logger.info('Output path: {}'.format(experiment_dir_name))
+        logger.info('')
 
     train_set_metadata_json_fp = os.path.join(
         model_path,
@@ -121,7 +124,7 @@ def full_predict(
             print_test_results(prediction_results)
             save_test_statistics(prediction_results, experiment_dir_name)
 
-        logging.info('Saved to: {0}'.format(experiment_dir_name))
+        logger.info('Saved to: {0}'.format(experiment_dir_name))
 
 
 def predict(
@@ -220,7 +223,7 @@ def print_test_results(test_stats):
     for output_field, result in test_stats.items():
         if (output_field != 'combined' or
                 (output_field == 'combined' and len(test_stats) > 2)):
-            logging.info('\n===== {} ====='.format(output_field))
+            logger.info('\n===== {} ====='.format(output_field))
             for measure in sorted(list(result)):
                 if measure != 'confusion_matrix' and measure != 'roc_curve':
                     value = result[measure]
@@ -228,7 +231,7 @@ def print_test_results(test_stats):
                         value_repr = repr_ordered_dict(value)
                     else:
                         value_repr = pformat(result[measure], indent=2)
-                    logging.info(
+                    logger.info(
                         '{0}: {1}'.format(
                             measure,
                             value_repr
@@ -355,13 +358,11 @@ def cli(sys_argv):
     )
 
     args = parser.parse_args(sys_argv)
+    args.evaluate_performance = False
 
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=logging_level_registry[args.logging_level],
-        format='%(message)s'
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
     )
-
     set_on_master(args.use_horovod)
 
     if is_on_master():
