@@ -1268,10 +1268,15 @@ def compare_classifiers_predictions_distribution(
         for i in range(len(preds_per_model)):
             preds_per_model[i][preds_per_model[i] > labels_limit] = labels_limit
 
-    counts_gt = np.bincount(gt)
+    max_gt = max(gt)
+    max_pred = max([max(alg_predictions)
+                    for alg_predictions in preds_per_model])
+    max_val = max(max_gt, max_pred) + 1
+
+    counts_gt = np.bincount(gt, minlength=max_val)
     prob_gt = counts_gt / counts_gt.sum()
 
-    counts_predictions = [np.bincount(alg_predictions)
+    counts_predictions = [np.bincount(alg_predictions, minlength=max_val)
                           for alg_predictions in preds_per_model]
 
     prob_predictions = [alg_count_prediction / alg_count_prediction.sum()
