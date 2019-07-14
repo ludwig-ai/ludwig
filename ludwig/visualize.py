@@ -898,7 +898,6 @@ def compare_classifiers_performance_from_pred(
     :param file_format: File format of output plots - pdf or png
     :return None:
     """
-=======
     if labels_limit > 0:
         gt[gt > labels_limit] = labels_limit
 
