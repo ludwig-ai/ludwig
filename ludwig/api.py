@@ -60,6 +60,10 @@ from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
 
@@ -267,6 +271,9 @@ class LudwigModel:
             data_validation_hdf5=None,
             data_test_hdf5=None,
             data_dict=None,
+            data_train_dict=None,
+            data_test_dict=None,
+            data_validation_dict=None,
             train_set_metadata_json=None,
             model_name='run',
             model_load_path=None,
@@ -323,6 +330,33 @@ class LudwigModel:
                the same length. Each index in the lists corresponds to one
                datapoint. For example a data set consisting of two datapoints
                with a text and a class may be provided as the following dict
+               ``{'text_field_name': ['text of the first datapoint', text of the
+               second datapoint'], 'class_filed_name': ['class_datapoints_1',
+               'class_datapoints_2']}`.
+        :param data_train_dict: (dict) input training data dictionary. It is
+               expected to contain one key for each field and the values have
+               to be lists of the same length. Each index in the lists
+               corresponds to one datapoint. For example a data set consisting
+               of two datapoints with a text and a class may be provided as the
+               following dict:
+               ``{'text_field_name': ['text of the first datapoint', text of the
+               second datapoint'], 'class_filed_name': ['class_datapoints_1',
+               'class_datapoints_2']}`.
+        :param data_test_dict: (dict) input test data dictionary. It is
+               expected to contain one key for each field and the values have
+               to be lists of the same length. Each index in the lists
+               corresponds to one datapoint. For example a data set consisting
+               of two datapoints with a text and a class may be provided as the
+               following dict:
+               ``{'text_field_name': ['text of the first datapoint', text of the
+               second datapoint'], 'class_filed_name': ['class_datapoints_1',
+               'class_datapoints_2']}`.
+        :param data_validation_dict: (dict) input validation data dictionary. It
+               is expected to contain one key for each field and the values have
+               to be lists of the same length. Each index in the lists
+               corresponds to one datapoint. For example a data set consisting
+               of two datapoints with a text and a class may be provided as the
+               following dict:
                ``{'text_field_name': ['text of the first datapoint', text of the
                second datapoint'], 'class_filed_name': ['class_datapoints_1',
                'class_datapoints_2']}`.
