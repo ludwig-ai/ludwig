@@ -2950,7 +2950,7 @@ def cli(sys_argv):
     parser.add_argument(
         '-gts',
         '--ground_truth_split',
-        default=[2],
+        default=2,
         help='ground truth split - 0:train, 1:validation, 2:test split'
     )
     parser.add_argument(
