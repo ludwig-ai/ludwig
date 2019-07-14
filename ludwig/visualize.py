@@ -749,9 +749,15 @@ def compare_classifiers_performance_from_pred(
     preds = preds_per_model
     model_names_list = convert_to_list(model_names)
     mapped_preds = []
-    for pred in preds:
-        mapped_preds.append([metadata[field]['str2idx'][val] for val in pred])
-    preds = mapped_preds
+    try:
+        for pred in preds:
+            mapped_preds.append([metadata[field]['str2idx'][val] for val in
+                                 np.ndarray.flatten(pred)])
+        preds = mapped_preds
+    # If predictions are coming from npy file there is no need to convert to
+    # numeric labels using metadata
+    except (TypeError, KeyError):
+        pass
     accuracies = []
     precisions = []
     recalls = []

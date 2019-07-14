@@ -312,11 +312,10 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     elif file_name.endswith('.npy'):
         array = np.load(file_name)
     elif file_name.endswith('.csv'):
-        array = read_csv(file_name, header=None)[0].tolist()
+        array = read_csv(file_name, header=None).values
     else:
         array = load_matrix(file_name, dtype)
     return array
-
 
 def replace_file_extension(file_path, desired_format):
     """

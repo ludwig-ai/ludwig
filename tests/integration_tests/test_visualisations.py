@@ -30,7 +30,7 @@ import numpy as np
 from pytest import fail
 
 from ludwig.experiment import experiment
-from ludwig.utils.data_utils import load_from_file, load_json
+from ludwig.utils.data_utils import load_from_file, load_json, read_csv
 
 from tests.integration_tests.test_visualisations_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
@@ -252,9 +252,80 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
+def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
+        csv_filename
+):
     """Ensure pdf and png figures from the experiments can be saved.
 
+    Probabilities are loaded from csv file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.csv'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_performance_from_prob',
+                    '--ground_truth',
+                    ground_truth,
+                    '--field',
+                    field_name,
+                    '--probabilities',
+                    probability,
+                    probability,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name]
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    Probabilities are loaded from npy file.
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
@@ -316,10 +387,82 @@ def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-
-def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
+def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
+        csv_filename
+):
     """Ensure pdf and png figures from the experiments can be saved.
 
+    Predictions are loaded from npy file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth_metadata = experiment_source_data_name + '.json'
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_performance_from_pred',
+                    '--ground_truth_metadata',
+                    ground_truth_metadata,
+                    '--ground_truth',
+                    ground_truth,
+                    '--field',
+                    field_name,
+                    '--predictions',
+                    prediction,
+                    prediction,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name]
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    Predictions are loaded from csv file.
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
@@ -576,11 +719,12 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_predictions_output_saved(
+def test_visualisation_compare_classifiers_predictions_npy_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
+    Predictions are loaded form npy file.
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
@@ -641,6 +785,72 @@ def test_visualisation_compare_classifiers_predictions_output_saved(
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
+def test_visualisation_compare_classifiers_predictions_csv_output_saved(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    Predictions are loaded form csv file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    encoder = 'cnnrnn'
+    input_features[0]['encoder'] = encoder
+    exp_dir_name = run_experiment(input_features, output_features,
+                                  data_csv=rel_path)
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.csv'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_predictions',
+                    '--ground_truth',
+                    ground_truth,
+                    '--field',
+                    field_name,
+                    '--predictions',
+                    prediction,
+                    prediction,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name]
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
 
 def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
         csv_filename
