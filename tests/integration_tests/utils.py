@@ -188,7 +188,7 @@ def date_feature(**kwargs):
 
 def h3_feature(**kwargs):
     feature = {
-        'name': 'h3_' + random_name(),
+        'name': 'h3_' + random_string(),
         'type': 'h3'
     }
     feature.update(kwargs)
