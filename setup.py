@@ -49,8 +49,13 @@ setup(
                       'spacy>=2.1',
                       'tqdm',
                       'tabulate>=0.7',
-                      'tensorflow==1.13.1',
-                      'PyYAML>=3.12'
+                      'tensorflow==1.14.0',
+                      'PyYAML>=3.12',
+                      'gmpy',
+                      'fastapi',
+                      'pydantic',
+                      'uvicorn',
+                      'python-multipart',
                       ],
 
     entry_points={

@@ -43,6 +43,11 @@ Ludwig's requirements are the following:
 - tqdm
 - tabulate
 - PyYAML
+- gmpy
+- fastapi
+- pydantic
+- uvicorn
+- python-multipart
 
 Ludwig has been developed and tested with Python 3 in mind.
 If you don’t have Python 3 installed, install it by running:
