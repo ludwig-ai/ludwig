@@ -28,6 +28,9 @@ from ludwig.models.modules.reduction_modules import reduce_sequence
 logger = logging.getLogger(__name__)
 
 
+logger = logging.getLogger(__name__)
+
+
 class PassthroughEncoder:
 
     def __init__(

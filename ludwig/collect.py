@@ -37,7 +37,6 @@ from ludwig.utils.strings_utils import make_safe_filename
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def collect_activations(
@@ -277,7 +276,9 @@ def cli_collect_activations(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
-    logger.setLevel(logging_level_registry[args.logging_level])
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
 
     print_ludwig('Collect Activations', LUDWIG_VERSION)
 
@@ -348,7 +349,9 @@ def cli_collect_weights(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
-    logger.setLevel(logging_level_registry[args.logging_level])
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
     print_ludwig('Collect Weights', LUDWIG_VERSION)
     collect_weights(**vars(args))
 

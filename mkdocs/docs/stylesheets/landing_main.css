@@ -1511,9 +1511,9 @@ h1.intro-header::before {
 }
 
 .home-content-left .button.stroke {
-    color: #1e1f20 !important;
-    border-color: #1e1f20;
-    margin: 0 .6rem 1.2rem;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.8);
+    margin: 4rem 0rem 0rem;
     padding: 0 2.2rem;
     min-width: 188px;
 }

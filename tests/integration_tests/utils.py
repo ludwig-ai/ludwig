@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import random
 import uuid
-
 import pandas as pd
 
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
+from ludwig.data.dataset_synthesyzer import DATETIME_FORMATS
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -51,22 +52,24 @@ def generate_data(
     return filename
 
 
-def random_name(length=5):
+def random_string(length=5):
     return uuid.uuid4().hex[:length].upper()
 
 
 def numerical_feature(normalization=None):
-    return {'name': 'num_' + random_name(), 'type': 'numerical',
-            'preprocessing': {
-                'normalization': normalization
-            }
+    return {
+        'name': 'num_' + random_string(),
+        'type': 'numerical',
+        'preprocessing': {
+            'normalization': normalization
+        }
     }
 
 
 def categorical_feature(**kwargs):
     cat_feature = {
         'type': 'category',
-        'name': 'category_' + random_name(),
+        'name': 'category_' + random_string(),
         'vocab_size': 10,
         'embedding_size': 5
     }
@@ -77,7 +80,7 @@ def categorical_feature(**kwargs):
 
 def text_feature(**kwargs):
     feature = {
-        'name': 'text_' + random_name(),
+        'name': 'text_' + random_string(),
         'type': 'text',
         'reduce_input': 'null',
         'vocab_size': 5,
@@ -93,7 +96,7 @@ def text_feature(**kwargs):
 def set_feature(**kwargs):
     feature = {
         'type': 'set',
-        'name': 'set_' + random_name(),
+        'name': 'set_' + random_string(),
         'vocab_size': 10,
         'max_len': 5,
         'embedding_size': 5
@@ -105,7 +108,7 @@ def set_feature(**kwargs):
 def sequence_feature(**kwargs):
     seq_feature = {
         'type': 'sequence',
-        'name': 'sequence_' + random_name(),
+        'name': 'sequence_' + random_string(),
         'vocab_size': 10,
         'max_len': 7,
         'encoder': 'embed',
@@ -121,7 +124,7 @@ def sequence_feature(**kwargs):
 def image_feature(folder, **kwargs):
     img_feature = {
         'type': 'image',
-        'name': 'image_' + random_name(),
+        'name': 'image_' + random_string(),
         'encoder': 'resnet',
         'preprocessing': {
             'in_memory': True,
@@ -140,7 +143,7 @@ def image_feature(folder, **kwargs):
 
 def timeseries_feature(**kwargs):
     ts_feature = {
-        'name': 'timeseries_' + random_name(),
+        'name': 'timeseries_' + random_string(),
         'type': 'timeseries',
         'max_len': 7
     }
@@ -150,14 +153,14 @@ def timeseries_feature(**kwargs):
 
 def binary_feature():
     return {
-        'name': 'binary_' + random_name(),
+        'name': 'binary_' + random_string(),
         'type': 'binary'
     }
 
 
 def bag_feature(**kwargs):
     feature = {
-        'name': 'bag_' + random_name(),
+        'name': 'bag_' + random_string(),
         'type': 'bag',
         'max_len': 5,
         'vocab_size': 10,
@@ -166,3 +169,30 @@ def bag_feature(**kwargs):
     feature.update(kwargs)
 
     return feature
+
+
+def date_feature(**kwargs):
+
+    feature = {
+        'name': 'date_' + random_name(),
+        'type': 'date',
+        'preprocessing': {
+            'datetime_format': random.choice(list(DATETIME_FORMATS.keys()))
+        }
+    }
+
+    feature.update(kwargs)
+
+    return feature
+
+
+def h3_feature(**kwargs):
+    feature = {
+        'name': 'h3_' + random_name(),
+        'type': 'h3'
+    }
+    feature.update(kwargs)
+
+    return feature
+
+

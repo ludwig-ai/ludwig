@@ -401,6 +401,7 @@ def preprocess_for_training(
             data_train_csv,
             data_validation_csv,
             data_test_csv,
+            train_set_metadata_json,
             skip_save_processed_input,
             preprocessing_params,
             random_seed
@@ -496,6 +497,7 @@ def _preprocess_csv_for_training(
         data_train_csv=None,
         data_validation_csv=None,
         data_test_csv=None,
+        train_set_metadata_json=None,
         skip_save_processed_input=False,
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
@@ -507,12 +509,17 @@ def _preprocess_csv_for_training(
     :param data_train_csv:  training csv data
     :param data_validation_csv: validation csv data
     :param data_test_csv: test csv data
+    :param train_set_metadata_json: train set metadata json
     :param skip_save_processed_input: if False, the pre-processed data is saved
     as .hdf5 files in the same location as the csvs with the same names.
     :param preprocessing_params: preprocessing parameters
     :param random_seed: random seed
     :return: training, test, validation datasets, training metadata
     """
+    train_set_metadata = None
+    if train_set_metadata_json is not None:
+        train_set_metadata = load_metadata(train_set_metadata_json)
+
     if data_csv is not None:
         # Use data and ignore _train, _validation and _test.
         # Also ignore data and train set metadata needs preprocessing
@@ -525,6 +532,7 @@ def _preprocess_csv_for_training(
             data_csv,
             features,
             preprocessing_params,
+            train_set_metadata=train_set_metadata,
             random_seed=random_seed
         )
         if not skip_save_processed_input:
@@ -564,6 +572,7 @@ def _preprocess_csv_for_training(
             concatenated_df,
             features,
             preprocessing_params,
+            train_set_metadata=train_set_metadata,
             random_seed=random_seed
         )
         training_set, test_set, validation_set = split_dataset_tvt(
@@ -610,6 +619,7 @@ def _preprocess_df_for_training(
         data_train_df=None,
         data_validation_df=None,
         data_test_df=None,
+        train_set_metadata_json=None,
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
 ):
@@ -617,6 +627,9 @@ def _preprocess_df_for_training(
     processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
+    train_set_metadata = None
+    if train_set_metadata_json is not None:
+        train_set_metadata = load_metadata(train_set_metadata_json)
 
     if data_df is not None:
         # needs preprocessing
@@ -637,6 +650,7 @@ def _preprocess_df_for_training(
         data_df,
         features,
         preprocessing_params,
+        train_set_metadata=train_set_metadata,
         random_seed=random_seed
     )
     training_set, test_set, validation_set = split_dataset_tvt(
@@ -683,7 +697,8 @@ def preprocess_for_prediction(
         default_preprocessing_parameters,
         model_definition['preprocessing']
     )
-    output_features = model_definition['output_features'] if evaluate_performance else []
+    output_features = model_definition[
+        'output_features'] if evaluate_performance else []
     features = model_definition['input_features'] + output_features
 
     # Check if hdf5 file already exists

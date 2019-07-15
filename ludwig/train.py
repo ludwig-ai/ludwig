@@ -206,6 +206,13 @@ def full_train(
         else:
             experiment_dir_name = '/'
 
+    # if model_load_path is not None, load its train_set_metadata
+    if model_load_path is not None:
+        train_set_metadata_json = os.path.join(
+            model_load_path,
+            TRAIN_SET_METADATA_FILE_NAME
+        )
+
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
     )
@@ -755,7 +762,9 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
-    logger.setLevel(logging_level_registry[args.logging_level])
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
     set_on_master(args.use_horovod)
 
     if is_on_master():

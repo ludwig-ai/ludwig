@@ -37,6 +37,9 @@ from ludwig.utils.strings_utils import tokenizer_registry
 logger = logging.getLogger(__name__)
 
 
+logger = logging.getLogger(__name__)
+
+
 class TimeseriesBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)

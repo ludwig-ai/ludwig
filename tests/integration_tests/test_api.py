@@ -23,6 +23,7 @@ from tests.integration_tests.utils import categorical_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
+
 # The following imports are pytest fixtures, required for running the tests
 from tests.fixtures.filenames import csv_filename
 
