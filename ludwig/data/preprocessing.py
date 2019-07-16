@@ -42,7 +42,6 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import merge_dict
 from ludwig.utils.misc import set_random_seed
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -385,8 +384,9 @@ def preprocess_for_training(
             data_train_df,
             data_validation_df,
             data_test_df,
-            preprocessing_params,
-            random_seed
+            train_set_metadata_json=train_set_metadata_json,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
         )
     elif data_csv is not None or data_train_csv is not None:
         # Preprocess csv data
