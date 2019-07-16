@@ -384,7 +384,6 @@ def preprocess_for_training(
             data_train_df,
             data_validation_df,
             data_test_df,
-            train_set_metadata_json=train_set_metadata_json,
             preprocessing_params=preprocessing_params,
             random_seed=random_seed
         )
