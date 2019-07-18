@@ -81,6 +81,17 @@ To install the GPU enabled one replace it with `tensorflow-gpu`.
 If you want to train Ludwig models in a distributed way, you need to also install the `horovod` and the `mpi4py` packages.
 Please follow the instructions on [Horovod's repository](https://github.com/uber/horovod) to install it.
 
+#### Supported Name Handlers
+
+Ludwig supports the following name handlers for input paths during execution:
+
+ * Google Cloud: [Google Cloud Storage](https://cloud.google.com/storage/) `gs://`
+ 
+In order to install Ludwig just run:
+
+```
+pip install ludwig[gcs]
+```
 
 Basic Principles
 ----------------
