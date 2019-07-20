@@ -46,7 +46,7 @@ html {
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     html {
         font-size: 10px;
     }
@@ -167,7 +167,7 @@ p.lead {
     margin-bottom: 3.6rem;
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     p.lead {
         font-size: 2rem;
     }
@@ -422,7 +422,7 @@ img.pull-left {
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     .bgrid {
         padding: 0 15px;
     }
@@ -1109,7 +1109,7 @@ h1.intro-header::before {
  * common styles
  * ------------------------------------------------------------------- */
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     h1.intro-header {
         font-size: 3.1rem;
     }
@@ -1146,7 +1146,7 @@ h1.intro-header::before {
 
 .header-logo {
     position: absolute;
-    left: 80px;
+    left: 3em;
     top: 50%;
     -webkit-transform: translateY(-50%);
     -ms-transform: translateY(-50%);
@@ -1300,7 +1300,7 @@ h1.intro-header::before {
     font-size: 14px;
     position: absolute;
     top: 0;
-    right: 80px;
+    right: 3em;
 }
 
 #header-nav-wrap .header-main-nav {
@@ -1347,7 +1347,7 @@ h1.intro-header::before {
 }
 
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * responsive:
  * header
  * ------------------------------------------------------------------- */
@@ -1358,11 +1358,9 @@ h1.intro-header::before {
     }
 }
 
-@media only screen and (max-width: 768px) {
-    .header-logo a {
-        width: 88px;
-        height: 20px;
-        background-size: 88px 20px;
+@media only screen and (max-width: 840px) {
+    .header-logo {
+        left: 32px;
     }
 
     #header-nav-wrap {
@@ -1413,6 +1411,10 @@ h1.intro-header::before {
 }
 
 @media only screen and (max-width: 400px) {
+    .header-logo {
+        left: 24px;
+    }
+
     .header-menu-toggle {
         right: 24px;
     }
@@ -1423,7 +1425,7 @@ h1.intro-header::before {
  * make sure the menu is visible on larger screens
  * ------------------------------------------------------------------- */
 
-@media only screen and (min-width: 769px) {
+@media only screen and (min-width: 840px) {
     #header-nav-wrap {
         display: block !important;
     }
@@ -1702,9 +1704,9 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
 }
 
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * responsive:
- * home section 
+ * home section
  * ------------------------------------------------------------------- */
 
 @media only screen and (max-width: 1300px) {
@@ -1816,7 +1818,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     #home {
         min-height: auto;
     }
@@ -2018,9 +2020,9 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
     margin-right: auto;
 }
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * responsive:
- * about 
+ * about
  * ------------------------------------------------------------------- */
 
 @media only screen and (max-width: 1200px) {
@@ -2076,7 +2078,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     .about-features .feature .icon i {
         font-size: 4.4rem;
     }
@@ -2270,9 +2272,9 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
 }
 
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * responsive:
- * pricing 
+ * pricing
  * ------------------------------------------------------------------- */
 
 @media only screen and (max-width: 1024px) {
@@ -2306,7 +2308,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     .pricing-table .plan-wrap {
         width: 100% !important;
         float: none !important;
@@ -2512,7 +2514,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
 }
 
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * responsive:
  * testimonials
  * ------------------------------------------------------------------- */
@@ -2523,7 +2525,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     #testimonial-slider p {
         font-size: 2.6rem;
     }
@@ -2641,7 +2643,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
  * download
  * ------------------------------------------------------------------- */
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
     #download .download-badges li a {
         width: 194px;
         height: 60px;
@@ -2656,7 +2658,7 @@ html[data-useragent*='MSIE 10.0'] .home-scrolldown,
  * ------------------------------------------------------------------- */
 
 footer {
-    padding:2.2rem 9rem 2.2rem 9rem;
+    padding: 2.2rem 3em 2.2rem 3em;
     font-size: 1.5rem;
     line-height: 2.7rem;
     color: rgba(255, 255, 255, 0.25);
@@ -2849,7 +2851,7 @@ footer ul a:visited {
 }
 
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * go to top
  * ------------------------------------------------------------------- */
 
@@ -2890,10 +2892,9 @@ footer ul a:visited {
     color: #1e1f20;
 }
 
-
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * responsive:
- * footer 
+ * footer
  * ------------------------------------------------------------------- */
 
 @media only screen and (max-width: 1024px) {
@@ -2912,7 +2913,11 @@ footer ul a:visited {
     }
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 840px) {
+    footer {
+        padding: 2.2rem 32px 2.2rem 32px;
+    }
+
     .footer-main > .row {
         max-width: 600px;
     }
@@ -2984,6 +2989,12 @@ footer ul a:visited {
 
     .footer-bottom .copyright span::after {
         display: none;
+    }
+}
+
+@media only screen and (max-width: 400px) {
+    footer {
+        padding: 2.2rem 24px 2.2rem 24px;
     }
 }
 
