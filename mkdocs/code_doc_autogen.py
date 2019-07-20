@@ -248,7 +248,7 @@ def process_list_block(docstring, starting_point, section_end,
             line = line[8:]
             inside_brackets = ''
             pos_open_bracket = line.find('(')
-            pos_close_bracket = line.find(')')
+            pos_close_bracket = line.rfind(')')
             if pos_open_bracket and pos_close_bracket:
                 inside_brackets = ' ({})'.format(
                     line[pos_open_bracket + 1:pos_close_bracket])

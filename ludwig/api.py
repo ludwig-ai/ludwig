@@ -120,6 +120,18 @@ class LudwigModel:
     predictions = ludwig_model.predict(data_df=dataframe)
     ```
 
+    Test:
+
+    ```python
+    predictions, test_stats = ludwig_model.test(data_csv=csv_file_path)
+    ```
+
+    or
+
+    ```python
+    predictions, test_stats = ludwig_model.predict(data_df=dataframe)
+    ```
+
     Finally in order to release resources:
 
     ```python
