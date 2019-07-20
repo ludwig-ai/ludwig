@@ -53,7 +53,7 @@ setup(
                       'PyYAML>=3.12',
                       'gmpy',
                       'fastapi',
-                      'pydantic',
+                      'pydantic==0.30.0',
                       'uvicorn',
                       'python-multipart',
                       ],
