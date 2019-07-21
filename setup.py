@@ -1,6 +1,5 @@
 # coding=utf-8
 """Ludwig: a deep learning experimentation toolbox"""
-
 from codecs import open
 from os import path
 
@@ -11,6 +10,7 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the README.md file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+
 
 def read(fname):
     with open(fname, 'r') as fhandle:
