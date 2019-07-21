@@ -1818,7 +1818,9 @@ def confusion_matrix(
             'confusion_matrix_{}_{}_{}.' + file_format
         )
 
-    metadata = load_json(ground_truth_metadata)
+    metadata = None
+    if ground_truth_metadata is not None:
+        metadata = load_json(ground_truth_metadata)
     test_statistics_per_model_name = [load_json(test_statistics_f)
                                       for test_statistics_f in
                                       test_statistics]
@@ -1840,7 +1842,8 @@ def confusion_matrix(
                         model_names is not None and i < len(model_names)
                 ) else ''
 
-                if field in metadata and 'idx2str' in metadata[field]:
+                if metadata is not None and field in metadata and 'idx2str' in \
+                        metadata[field]:
                     labels = metadata[field]['idx2str']
                 else:
                     labels = list(range(len(confusion_matrix)))
