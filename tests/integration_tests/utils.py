@@ -143,7 +143,7 @@ def image_feature(folder, **kwargs):
 
 def audio_feature(folder, **kwargs):
     audio_feature = {
-        'name': 'audio_' + random_name(),
+        'name': 'audio_' + random_string(),
         'type': 'audio',
         'preprocessing': {
             'audio_feature': {
