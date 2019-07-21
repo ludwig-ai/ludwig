@@ -134,7 +134,7 @@ def build_data(
         train_set_metadata,
         global_preprocessing_parameters
 ):
-    data = {}
+    data_dict = {}
     for feature in features:
         add_feature_data = get_from_registry(
             feature['type'],
@@ -162,11 +162,11 @@ def build_data(
         add_feature_data(
             feature,
             dataset_df,
-            data,
+            data_dict,
             train_set_metadata,
             preprocessing_parameters
         )
-    return data
+    return data_dict
 
 
 def handle_missing_values(dataset_df, feature, preprocessing_parameters):
