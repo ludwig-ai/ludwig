@@ -26,9 +26,45 @@ import soundfile as sf
 from skimage.io import imsave
 
 from ludwig.utils.data_utils import save_csv
+from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc import get_from_registry
 
 letters = string.ascii_letters
+
+DATETIME_FORMATS = {
+    '%m-%d-%Y': '{m:02d}-{d:02d}-{Y:04d}',
+    '%m-%d-%Y %H:%M:%S': '{m:02d}-{d:02d}-{Y:04d} {H:02d}:{M:02d}:{S:02d}',
+    '%m/%d/%Y': '{m:02d}/{d:02d}/{Y:04d}',
+    '%m/%d/%Y %H:%M:%S': '{m:02d}/{d:02d}/{Y:04d} {H:02d}:{M:02d}:{S:02d}',
+    '%m-%d-%y': '{m:02d}-{d:02d}-{y:02d}',
+    '%m-%d-%y %H:%M:%S': '{m:02d}-{d:02d}-{y:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%m/%d/%y': '{m:02d}/{d:02d}/{y:02d}',
+    '%m/%d/%y %H:%M:%S': '{m:02d}/{d:02d}/{y:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%d-%m-%Y': '{d:02d}-{m:02d}-{Y:04d}',
+    '%d-%m-%Y %H:%M:%S': '{d:02d}-{m:02d}-{Y:04d} {H:02d}:{M:02d}:{S:02d}',
+    '%d/%m/%Y': '{d:02d}/{m:02d}/{Y:04d}',
+    '%d/%m/%Y %H:%M:%S': '{d:02d}/{m:02d}/{Y:04d} {H:02d}:{M:02d}:{S:02d}',
+    '%d-%m-%y': '{d:02d}-{m:02d}-{y:02d}',
+    '%d-%m-%y %H:%M:%S': '{d:02d}-{m:02d}-{y:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%d/%m/%y': '{d:02d}/{m:02d}/{y:02d}',
+    '%d/%m/%y %H:%M:%S': '{d:02d}/{m:02d}/{y:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%y-%m-%d': '{y:02d}-{m:02d}-{d:02d}',
+    '%y-%m-%d %H:%M:%S': '{y:02d}-{m:02d}-{d:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%y/%m/%d': '{y:02d}/{m:02d}/{d:02d}',
+    '%y/%m/%d %H:%M:%S': '{y:02d}/{m:02d}/{d:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%Y-%m-%d': '{Y:04d}-{m:02d}-{d:02d}',
+    '%Y-%m-%d %H:%M:%S': '{Y:04d}-{m:02d}-{d:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%Y/%m/%d': '{Y:04d}/{m:02d}/{d:02d}',
+    '%Y/%m/%d %H:%M:%S': '{Y:04d}/{m:02d}/{d:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%y-%d-%m': '{y:02d}-{d:02d}-{m:02d}',
+    '%y-%d-%m %H:%M:%S': '{y:02d}-{d:02d}-{m:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%y/%d/%m': '{y:02d}/{d:02d}/{m:02d}',
+    '%y/%d/%m %H:%M:%S': '{y:02d}/{d:02d}/{m:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%Y-%d-%m': '{Y:04d}-{d:02d}-{m:02d}',
+    '%Y-%d-%m %H:%M:%S': '{Y:04d}-{d:02d}-{m:02d} {H:02d}:{M:02d}:{S:02d}',
+    '%Y/%d/%m': '{Y:04d}/{d:02d}/{m:02d}',
+    '%Y/%d/%m %H:%M:%S': '{Y:04d}/{d:02d}/{m:02d} {H:02d}:{M:02d}:{S:02d}'
+}
 
 
 def generate_string(length):
@@ -75,7 +111,9 @@ parameters_builders_registry = {
     'sequence': assign_vocab,
     'timeseries': return_none,
     'image': return_none,
-    'audio': return_none
+    'audio': return_none,
+    'date': return_none,
+    'h3': return_none
 }
 
 
@@ -224,6 +262,47 @@ def generate_image(feature):
     return image_dest_path
 
 
+def generate_datetime(feature):
+    """picking a format among different types.
+    If no format is specified, the first one is used.
+    """
+    if 'datetime_format' in feature:
+        datetime_generation_format = DATETIME_FORMATS[
+            feature['datetime_format']
+        ]
+    elif ('preprocessing' in feature and
+          'datetime_format' in feature['preprocessing']):
+        datetime_generation_format = DATETIME_FORMATS[
+            feature['preprocessing']['datetime_format']
+        ]
+    else:
+        datetime_generation_format = DATETIME_FORMATS[0]
+
+    y = random.randint(1, 99)
+    Y = random.randint(1, 9999)
+    m = random.randint(1, 12)
+    d = random.randint(1, 28)
+    H = random.randint(1, 12)
+    M = random.randint(1, 59)
+    S = random.randint(1, 59)
+
+    return datetime_generation_format.format(y=y, Y=Y, m=m, d=d, H=H, M=M, S=S)
+
+
+def generate_h3(feature):
+    resolution = random.randint(0, 15)  # valid values [0, 15]
+    h3_components = {
+        'mode': 1,  # we can avoid testing other modes
+        'edge': 0,  # only used in other modes
+        'resolution': resolution,
+        'base_cell': random.randint(0, 121),  # valid values [0, 121]
+        # valid values [0, 7]
+        'cells': [random.randint(0, 7) for _ in range(resolution)]
+    }
+
+    return components_to_h3(h3_components)
+
+
 generators_registry = {
     'category': generate_category,
     'text': generate_sequence,
@@ -234,7 +313,9 @@ generators_registry = {
     'sequence': generate_sequence,
     'timeseries': generate_timeseries,
     'image': generate_image,
-    'audio': generate_audio
+    'audio': generate_audio,
+    'h3': generate_h3,
+    'date': generate_datetime,
 }
 
 category_cycle = 0

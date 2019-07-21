@@ -1,3 +1,9 @@
+## I'm experiencing problems installing `gmpy`, how do I solve them?
+
+If you encounter problems installing `gmpy` please install `libgmp`.
+On Debian based Linus distributions: `sudo apt-get install libgmp3-dev`.
+On MacOS there should not be any problem.
+
 ## Do you support \[feature | encoder | decoder\] in Ludwig?
 
 The list of encoders for each feature type is specified in the [User Guide](user_guide.md).

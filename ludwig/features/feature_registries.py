@@ -16,6 +16,8 @@
 from ludwig.constants import BAG
 from ludwig.constants import BINARY
 from ludwig.constants import CATEGORY
+from ludwig.constants import DATE
+from ludwig.constants import H3
 from ludwig.constants import IMAGE
 from ludwig.constants import NUMERICAL
 from ludwig.constants import SEQUENCE
@@ -31,6 +33,8 @@ from ludwig.features.binary_feature import BinaryOutputFeature
 from ludwig.features.category_feature import CategoryBaseFeature
 from ludwig.features.category_feature import CategoryInputFeature
 from ludwig.features.category_feature import CategoryOutputFeature
+from ludwig.features.date_feature import DateBaseFeature, DateInputFeature
+from ludwig.features.h3_feature import H3BaseFeature, H3InputFeature
 from ludwig.features.image_feature import ImageBaseFeature
 from ludwig.features.image_feature import ImageInputFeature
 from ludwig.features.numerical_feature import NumericalBaseFeature
@@ -60,7 +64,9 @@ base_type_registry = {
     SEQUENCE: SequenceBaseFeature,
     TIMESERIES: TimeseriesBaseFeature,
     IMAGE: ImageBaseFeature,
-    AUDIO: AudioBaseFeature
+    AUDIO: AudioBaseFeature,
+    H3: H3BaseFeature,
+    DATE: DateBaseFeature,
 }
 input_type_registry = {
     TEXT: TextInputFeature,
@@ -72,7 +78,9 @@ input_type_registry = {
     IMAGE: ImageInputFeature,
     AUDIO: AudioInputFeature,
     TIMESERIES: TimeseriesInputFeature,
-    BAG: BagInputFeature
+    BAG: BagInputFeature,
+    H3: H3InputFeature,
+    DATE: DateInputFeature,
 }
 output_type_registry = {
     CATEGORY: CategoryOutputFeature,
@@ -80,5 +88,5 @@ output_type_registry = {
     NUMERICAL: NumericalOutputFeature,
     SEQUENCE: SequenceOutputFeature,
     SET: SetOutputFeature,
-    TEXT: TextOutputFeature
+    TEXT: TextOutputFeature,
 }

@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
 import os
 import uuid
 
 import pytest
-from ludwig.utils.data_utils import replace_file_extension
 
+from ludwig.utils.data_utils import replace_file_extension
 
 @pytest.fixture()
 def csv_filename():
@@ -31,7 +32,6 @@ def csv_filename():
     yield csv_filename
 
     delete_temporary_data(csv_filename)
-
 
 @pytest.fixture()
 def yaml_filename():

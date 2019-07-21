@@ -19,7 +19,6 @@ import tensorflow as tf
 
 from ludwig.models.modules.initializer_modules import get_initializer
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -33,8 +32,10 @@ def conv_1d(inputs, weights, biases,
 
     if norm is not None:
         if norm == 'batch':
-            hidden = tf.contrib.layers.batch_norm(hidden,
-                                                  is_training=is_training)
+            hidden = tf.layers.batch_normalization(
+                hidden,
+                training=is_training
+            )
         elif norm == 'layer':
             hidden = tf.contrib.layers.layer_norm(hidden)
 
@@ -58,8 +59,10 @@ def conv_2d(inputs, weights, biases,
 
     if norm is not None:
         if norm == 'batch':
-            hidden = tf.contrib.layers.batch_norm(hidden,
-                                                  is_training=is_training)
+            hidden = tf.layers.batch_normalization(
+                hidden,
+                training=is_training
+            )
         elif norm == 'layer':
             hidden = tf.contrib.layers.layer_norm(hidden)
 

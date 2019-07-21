@@ -43,6 +43,11 @@ Ludwig's requirements are the following:
 - tqdm
 - tabulate
 - PyYAML
+- gmpy
+- fastapi
+- pydantic
+- uvicorn
+- python-multipart
 
 Ludwig has been developed and tested with Python 3 in mind.
 If you don’t have Python 3 installed, install it by running:
@@ -76,6 +81,10 @@ If you intend to use text features and want to use [spaCy](http://spacy.io) base
 python -m spacy download <language_code>
 ```
 More details in the [User Guide](user_guide.md#spacy-based-word-format-options).
+
+If you encounter problems installing `gmpy` please install `libgmp`.
+On Debian based Linus distributions: `sudo apt-get install libgmp3-dev`.
+On MacOS there should not be any problem.
 
 Beware that in the `requirements.txt` file the `tensorflow` package is the regular one, not the GPU enabled one.
 To install the GPU enabled one replace it with `tensorflow-gpu`.

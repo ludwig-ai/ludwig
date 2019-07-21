@@ -1,4 +1,4 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L67)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L68)</span>
 # LudwigModel class
 
 ```python
@@ -63,6 +63,18 @@ or
 
 ```python
 predictions = ludwig_model.predict(data_df=dataframe)
+```
+
+Test:
+
+```python
+predictions, test_stats = ludwig_model.test(data_csv=csv_file_path)
+```
+
+or
+
+```python
+predictions, test_stats = ludwig_model.predict(data_df=dataframe)
 ```
 
 Finally in order to release resources:
@@ -275,6 +287,34 @@ ludwig_model.save(save_path)
 
 
 ---
+## save_for_serving
+
+
+```python
+save_for_serving(
+  save_path
+)
+```
+
+
+This function allows to save models on disk
+
+__Inputs__
+
+
+- __ save_path__ (string): path to the directory where the SavedModel
+    is going to be saved.
+
+
+__Example usage__
+
+
+```python
+ludwig_model.save_for_serving(save_path)
+```
+
+
+---
 ## test
 
 
@@ -333,7 +373,7 @@ __Inputs__
 __Return__
 
 
-- __return__ (tuple((DataFrame or dict):, dict)) a tuple of a dataframe and a
+- __return__ (tuple((DataFrame or dict), dict)): a tuple of a dataframe and a
      dictionary. The dataframe contains the predictions for each
      output feature and their probabilities (for types that return
      them) will be returned. For instance in a 3 way multiclass
@@ -373,6 +413,9 @@ train(
   data_validation_hdf5=None,
   data_test_hdf5=None,
   data_dict=None,
+  data_train_dict=None,
+  data_validation_dict=None,
+  data_test_dict=None,
   train_set_metadata_json=None,
   experiment_name='api_experiment',
   model_name='run',
@@ -433,9 +476,36 @@ __Inputs__
    the same length. Each index in the lists corresponds to one
    datapoint. For example a data set consisting of two datapoints
    with a text and a class may be provided as the following dict
-   ``{'text_field_name': ['text of the first datapoint', text of the
+   `{'text_field_name': ['text of the first datapoint', text of the
    second datapoint'], 'class_filed_name': ['class_datapoints_1',
    'class_datapoints_2']}`.
+- __data_train_dict__ (dict): input training data dictionary. It is
+   expected to contain one key for each field and the values have
+   to be lists of the same length. Each index in the lists
+   corresponds to one datapoint. For example a data set consisting
+   of two datapoints with a text and a class may be provided as the
+   following dict:
+   `{'text_field_name': ['text of the first datapoint', 'text of the
+   second datapoint'], 'class_field_name': ['class_datapoint_1',
+   'class_datapoint_2']}`.
+- __data_validation_dict__ (dict): input validation data dictionary. It
+   is expected to contain one key for each field and the values have
+   to be lists of the same length. Each index in the lists
+   corresponds to one datapoint. For example a data set consisting
+   of two datapoints with a text and a class may be provided as the
+   following dict:
+   `{'text_field_name': ['text of the first datapoint', 'text of the
+   second datapoint'], 'class_field_name': ['class_datapoint_1',
+   'class_datapoint_2']}`.
+- __data_test_dict__ (dict): input test data dictionary. It is
+   expected to contain one key for each field and the values have
+   to be lists of the same length. Each index in the lists
+   corresponds to one datapoint. For example a data set consisting
+   of two datapoints with a text and a class may be provided as the
+   following dict:
+   `{'text_field_name': ['text of the first datapoint', 'text of the
+   second datapoint'], 'class_field_name': ['class_datapoint_1',
+   'class_datapoint_2']}`.
 - __train_set_metadata_json__ (string): input metadata JSON file. It is an
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same

@@ -35,7 +35,6 @@ from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
 from ludwig.utils.misc import set_default_value
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -397,7 +396,6 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             output_feature,
             LOSS,
             {
-                'threshold': 0.5,
                 'robust_lambda': 0,
                 'confidence_penalty': 0,
                 'weight': 1
@@ -405,6 +403,5 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         )
         set_default_value(output_feature, 'threshold', 0.5)
         set_default_value(output_feature, 'dependencies', [])
-        set_default_value(output_feature, 'weight', 1)
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
