@@ -22,6 +22,7 @@ import uuid
 
 import numpy as np
 import yaml
+import soundfile as sf
 from skimage.io import imsave
 
 from ludwig.utils.data_utils import save_csv
@@ -110,6 +111,7 @@ parameters_builders_registry = {
     'sequence': assign_vocab,
     'timeseries': return_none,
     'image': return_none,
+    'audio': return_none,
     'date': return_none,
     'h3': return_none
 }
@@ -205,6 +207,26 @@ def generate_timeseries(feature):
         )
     return ' '.join(series)
 
+def generate_audio(feature):
+    audio_length = feature['preprocessing']['audio_file_length_limit_in_s']
+    audio_dest_folder = feature['audio_dest_folder']
+    sampling_rate = 16000
+    num_samples = int(audio_length * sampling_rate)
+    audio = np.sin(np.arange(num_samples)/100 * 2 * np.pi) * 2 * (np.random.random(num_samples) - 0.5)
+    audio_filename = uuid.uuid4().hex[:10].upper() + '.wav'
+
+    try:
+        if not os.path.exists(audio_dest_folder):
+            os.mkdir(audio_dest_folder)
+
+        audio_dest_path = os.path.join(audio_dest_folder, audio_filename)
+        sf.write(audio_dest_path, audio, sampling_rate)
+
+    except IOError as e:
+        raise IOError('Unable to create a folder for audio or save audio to disk.'
+                      '{0}'.format(e))
+
+    return audio_dest_path
 
 def generate_image(feature):
     # Read num_channels, width, height
@@ -291,6 +313,7 @@ generators_registry = {
     'sequence': generate_sequence,
     'timeseries': generate_timeseries,
     'image': generate_image,
+    'audio': generate_audio,
     'h3': generate_h3,
     'date': generate_datetime,
 }

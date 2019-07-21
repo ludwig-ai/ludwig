@@ -141,6 +141,37 @@ def image_feature(folder, **kwargs):
     img_feature.update(kwargs)
     return img_feature
 
+def audio_feature(folder, **kwargs):
+    audio_feature = {
+        'name': 'audio_' + random_name(),
+        'type': 'audio',
+        'preprocessing': {
+            'audio_feature': {
+                'type': 'raw',
+            },
+            'audio_file_length_limit_in_s': 3.0
+        },
+        'encoder': 'stacked_cnn',
+        'should_embed': False,
+        'conv_layers': [
+            {
+                'filter_size': 400,
+                'pool_size': 16,
+                'num_filters': 32,
+                'regularize': 'false'
+            },
+            { 
+                'filter_size': 40,
+                'pool_size': 10,
+                'num_filters': 64,
+                'regularize': 'false'
+            }
+        ],
+        'fc_size': 256,
+        'audio_dest_folder': folder
+    }
+    audio_feature.update(kwargs)
+    return audio_feature
 
 def timeseries_feature(**kwargs):
     ts_feature = {
