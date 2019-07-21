@@ -128,7 +128,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         self.loss = {
             'robust_lambda': 0,
             'confidence_penalty': 0,
-            'pos_weight': 1
+            'positive_class_weight': 1
         }
 
         _ = self.overwrite_defaults(feature)
@@ -179,12 +179,19 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     def _get_loss(self, targets, logits, probabilities):
         with tf.variable_scope('loss_{}'.format(self.name)):
-            pos_ce_weight = self.loss['pos_ce_weight']
-            if(not pos_ce_weight > 0):
-                raise ValueError('{} has to be > 0 to ensure that loss for positive labels p_label=1 * log(sigmoid(p_predict)) is > 0'.format(pos_ce_weight))
+            positive_class_weight = self.loss['positive_class_weight']
+            if not positive_class_weight > 0:
+                raise ValueError(
+                    'positive_class_weight is {}, but has to be > 0 to ensure '
+                    'that loss for positive labels '
+                    'p_label=1 * log(sigmoid(p_predict)) is > 0'.format(
+                        positive_class_weight))
 
             train_loss = tf.nn.weighted_cross_entropy_with_logits(
-                targets=tf.cast(targets, tf.float32), logits=logits, pos_weight=pos_ce_weight)
+                targets=tf.cast(targets, tf.float32),
+                logits=logits,
+                pos_weight=positive_class_weight
+            )
 
             if self.loss['robust_lambda'] > 0:
                 train_loss = ((1 - self.loss['robust_lambda']) * train_loss +
@@ -403,10 +410,11 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             {
                 'robust_lambda': 0,
                 'confidence_penalty': 0,
-                'pos_ce_weight': 1,
+                'positive_class_weight': 1,
                 'weight': 1
             }
         )
+        set_default_value(output_feature, 'threshold', 0.5)
         set_default_value(output_feature, 'dependencies', [])
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
