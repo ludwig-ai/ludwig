@@ -27,7 +27,8 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
-from ludwig.utils.image_utils import get_abs_path, greyscale
+from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
 from ludwig.utils.misc import get_from_registry

@@ -27,6 +27,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import copy
 import logging
 import os
 import sys
@@ -121,6 +122,18 @@ class LudwigModel:
     predictions = ludwig_model.predict(data_df=dataframe)
     ```
 
+    Test:
+
+    ```python
+    predictions, test_stats = ludwig_model.test(data_csv=csv_file_path)
+    ```
+
+    or
+
+    ```python
+    predictions, test_stats = ludwig_model.predict(data_df=dataframe)
+    ```
+
     Finally in order to release resources:
 
     ```python
@@ -141,7 +154,8 @@ class LudwigModel:
                     yaml.safe_load(def_file)
                 )
         else:
-            self.model_definition = merge_with_defaults(model_definition)
+            model_definition_copy = copy.deepcopy(model_definition)
+            self.model_definition = merge_with_defaults(model_definition_copy)
         self.train_set_metadata = None
         self.model = None
         self.exp_dir_name = None
@@ -733,7 +747,11 @@ class LudwigModel:
             data_df = self._read_data(data_csv, data_dict)
 
         logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
-        features_to_load = self.model_definition['input_features']
+        # Added [:] to next line, before I was just assigning,
+        # this way I'm copying the list. If you don't do it, you are actually
+        # modifying the input feature list when you add output features,
+        # which you definitely don't want to do
+        features_to_load = self.model_definition['input_features'][:]
         if evaluate_performance:
             output_features = self.model_definition['output_features']
         else:

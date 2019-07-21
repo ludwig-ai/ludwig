@@ -37,10 +37,6 @@ from tests.integration_tests.utils import text_feature, categorical_feature, \
     bag_feature
 
 
-# The following imports are pytest fixtures, required for running the tests
-from tests.fixtures.filenames import csv_filename
-
-
 def run_experiment(input_features, output_features, **kwargs):
     """
     Helper method to avoid code repetition in running an experiment. Deletes
@@ -97,7 +93,7 @@ def get_output_field_name(experiment_dir, output_feature=0):
 def test_visualisation_learning_curves_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
@@ -145,7 +141,7 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
 def test_visualisation_confusion_matrix_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
@@ -200,7 +196,7 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
     Compare performance between two models. To reduce test complexity
     one model is compared to it self.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [text_feature(reduce_output=None, encoder='rnn')]
@@ -540,7 +536,7 @@ def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
 def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -675,7 +671,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -877,7 +873,7 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -943,7 +939,7 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
 def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1011,7 +1007,7 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1079,7 +1075,7 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1149,7 +1145,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1224,7 +1220,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1300,7 +1296,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
 def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1374,7 +1370,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
 def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1448,7 +1444,7 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
 def test_visualisation_roc_curves_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1523,7 +1519,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [binary_feature(), bag_feature()]
@@ -1577,7 +1573,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
 def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1647,7 +1643,7 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
 def test_visualisation_calibration_multiclass_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [
@@ -1713,7 +1709,7 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
 def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
     input_features = [

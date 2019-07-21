@@ -16,10 +16,11 @@
 
 import random
 import uuid
+
 import pandas as pd
 
-from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
 from ludwig.data.dataset_synthesyzer import DATETIME_FORMATS
+from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -140,6 +141,37 @@ def image_feature(folder, **kwargs):
     img_feature.update(kwargs)
     return img_feature
 
+def audio_feature(folder, **kwargs):
+    audio_feature = {
+        'name': 'audio_' + random_string(),
+        'type': 'audio',
+        'preprocessing': {
+            'audio_feature': {
+                'type': 'raw',
+            },
+            'audio_file_length_limit_in_s': 3.0
+        },
+        'encoder': 'stacked_cnn',
+        'should_embed': False,
+        'conv_layers': [
+            {
+                'filter_size': 400,
+                'pool_size': 16,
+                'num_filters': 32,
+                'regularize': 'false'
+            },
+            { 
+                'filter_size': 40,
+                'pool_size': 10,
+                'num_filters': 64,
+                'regularize': 'false'
+            }
+        ],
+        'fc_size': 256,
+        'audio_dest_folder': folder
+    }
+    audio_feature.update(kwargs)
+    return audio_feature
 
 def timeseries_feature(**kwargs):
     ts_feature = {
@@ -174,7 +206,7 @@ def bag_feature(**kwargs):
 def date_feature(**kwargs):
 
     feature = {
-        'name': 'date_' + random_name(),
+        'name': 'date_' + random_string(),
         'type': 'date',
         'preprocessing': {
             'datetime_format': random.choice(list(DATETIME_FORMATS.keys()))
@@ -188,7 +220,7 @@ def date_feature(**kwargs):
 
 def h3_feature(**kwargs):
     feature = {
-        'name': 'h3_' + random_name(),
+        'name': 'h3_' + random_string(),
         'type': 'h3'
     }
     feature.update(kwargs)

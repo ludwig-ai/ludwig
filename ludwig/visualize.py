@@ -2714,7 +2714,8 @@ def confusion_matrix(
                     model_names_list)
                 ) else ''
 
-                if field in metadata and 'idx2str' in metadata[field]:
+                if metadata is not None and field in metadata and 'idx2str' in \
+                        metadata[field]:
                     labels = metadata[field]['idx2str']
                 else:
                     labels = list(range(len(confusion_matrix)))

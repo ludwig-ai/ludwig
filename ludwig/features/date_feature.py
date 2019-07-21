@@ -51,7 +51,7 @@ class DateBaseFeature(BaseFeature):
         }
 
     @staticmethod
-    def date_to_list(date_str, datetime_format):
+    def date_to_list(date_str, datetime_format, preprocessing_parameters):
         try:
             if datetime_format is not None:
                 datetime_obj = datetime.strptime(date_str, datetime_format)
@@ -63,10 +63,16 @@ class DateBaseFeature(BaseFeature):
                 'Please provide a datetime format that parses it '
                 'in the preprocessing section of the date feature '
                 'in the model definition. '
+                'The preprocessing fill in value will be used.'
                 'For more details: '
                 'https://ludwig.ai/user_guide/#date-features-preprocessing'
                     .format(date_str)
             )
+            fill_value = preprocessing_parameters['fill_value']
+            if fill_value != '':
+                datetime_obj = parse(fill_value)
+            else:
+                datetime_obj = datetime.now()
 
         yearday = (
                 datetime_obj.toordinal() -
@@ -93,7 +99,9 @@ class DateBaseFeature(BaseFeature):
     ):
         datetime_format = preprocessing_parameters['datetime_format']
         dates_to_lists = [
-            np.array(DateBaseFeature.date_to_list(row, datetime_format))
+            np.array(DateBaseFeature.date_to_list(
+                row, datetime_format, preprocessing_parameters
+            ))
             for row in dataset_df[feature['name']]
         ]
         data[feature['name']] = np.array(dates_to_lists, dtype=np.int16)

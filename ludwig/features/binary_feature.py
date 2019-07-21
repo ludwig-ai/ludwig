@@ -35,7 +35,6 @@ from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
 from ludwig.utils.misc import set_default_value
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -128,7 +127,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
         self.loss = {
             'robust_lambda': 0,
-            'confidence_penalty': 0
+            'confidence_penalty': 0,
+            'positive_class_weight': 1
         }
 
         _ = self.overwrite_defaults(feature)
@@ -179,8 +179,19 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     def _get_loss(self, targets, logits, probabilities):
         with tf.variable_scope('loss_{}'.format(self.name)):
-            train_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-                labels=tf.cast(targets, tf.float32), logits=logits)
+            positive_class_weight = self.loss['positive_class_weight']
+            if not positive_class_weight > 0:
+                raise ValueError(
+                    'positive_class_weight is {}, but has to be > 0 to ensure '
+                    'that loss for positive labels '
+                    'p_label=1 * log(sigmoid(p_predict)) is > 0'.format(
+                        positive_class_weight))
+
+            train_loss = tf.nn.weighted_cross_entropy_with_logits(
+                targets=tf.cast(targets, tf.float32),
+                logits=logits,
+                pos_weight=positive_class_weight
+            )
 
             if self.loss['robust_lambda'] > 0:
                 train_loss = ((1 - self.loss['robust_lambda']) * train_loss +
@@ -397,14 +408,13 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             output_feature,
             LOSS,
             {
-                'threshold': 0.5,
                 'robust_lambda': 0,
                 'confidence_penalty': 0,
+                'positive_class_weight': 1,
                 'weight': 1
             }
         )
         set_default_value(output_feature, 'threshold', 0.5)
         set_default_value(output_feature, 'dependencies', [])
-        set_default_value(output_feature, 'weight', 1)
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)

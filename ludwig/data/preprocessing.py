@@ -42,7 +42,6 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import merge_dict
 from ludwig.utils.misc import set_random_seed
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -135,7 +134,7 @@ def build_data(
         train_set_metadata,
         global_preprocessing_parameters
 ):
-    data = {}
+    data_dict = {}
     for feature in features:
         add_feature_data = get_from_registry(
             feature['type'],
@@ -163,11 +162,11 @@ def build_data(
         add_feature_data(
             feature,
             dataset_df,
-            data,
+            data_dict,
             train_set_metadata,
             preprocessing_parameters
         )
-    return data
+    return data_dict
 
 
 def handle_missing_values(dataset_df, feature, preprocessing_parameters):
@@ -385,8 +384,8 @@ def preprocess_for_training(
             data_train_df,
             data_validation_df,
             data_test_df,
-            preprocessing_params,
-            random_seed
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
         )
     elif data_csv is not None or data_train_csv is not None:
         # Preprocess csv data

@@ -28,8 +28,6 @@ from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import random_string
 
 
-# The following imports are pytest fixtures, required for running the tests
-from tests.fixtures.filenames import csv_filename
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from starlette.testclient import TestClient
 from starlette.datastructures import UploadFile

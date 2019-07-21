@@ -27,9 +27,14 @@ import numpy as np
 import pandas as pd
 from pandas.errors import ParserError
 
-
 logger = logging.getLogger(__name__)
 
+
+def get_abs_path(data_csv_path, file_path):
+    if data_csv_path is not None:
+        return os.path.join(data_csv_path, file_path)
+    else:
+        return file_path
 
 def load_csv(data_fp):
     data = []

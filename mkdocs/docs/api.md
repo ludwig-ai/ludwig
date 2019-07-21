@@ -1,4 +1,4 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L67)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig.py#L68)</span>
 # LudwigModel class
 
 ```python
@@ -63,6 +63,18 @@ or
 
 ```python
 predictions = ludwig_model.predict(data_df=dataframe)
+```
+
+Test:
+
+```python
+predictions, test_stats = ludwig_model.test(data_csv=csv_file_path)
+```
+
+or
+
+```python
+predictions, test_stats = ludwig_model.predict(data_df=dataframe)
 ```
 
 Finally in order to release resources:
@@ -275,6 +287,34 @@ ludwig_model.save(save_path)
 
 
 ---
+## save_for_serving
+
+
+```python
+save_for_serving(
+  save_path
+)
+```
+
+
+This function allows to save models on disk
+
+__Inputs__
+
+
+- __ save_path__ (string): path to the directory where the SavedModel
+    is going to be saved.
+
+
+__Example usage__
+
+
+```python
+ludwig_model.save_for_serving(save_path)
+```
+
+
+---
 ## test
 
 
@@ -333,7 +373,7 @@ __Inputs__
 __Return__
 
 
-- __return__ (tuple((DataFrame or dict):, dict)) a tuple of a dataframe and a
+- __return__ (tuple((DataFrame or dict), dict)): a tuple of a dataframe and a
      dictionary. The dataframe contains the predictions for each
      output feature and their probabilities (for types that return
      them) will be returned. For instance in a 3 way multiclass

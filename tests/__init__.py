@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,3 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import sys
+import logging
+
+from ludwig.globals import LUDWIG_VERSION as __version__
+
+
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(message)s')
