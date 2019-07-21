@@ -398,10 +398,10 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             {
                 'robust_lambda': 0,
                 'confidence_penalty': 0,
+                'weight': 1
             }
         )
         set_default_value(output_feature, 'threshold', 0.5)
         set_default_value(output_feature, 'dependencies', [])
-        set_default_value(output_feature, 'weight', 1)
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
