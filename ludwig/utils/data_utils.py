@@ -304,7 +304,7 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     :param dtype:
     :param ground_truth_split: Ground truth split filter where 0 is train 1 is
     validation and 2 is test split. By default test split is used when loading
-    ground truth form hdf5.
+    ground truth from hdf5.
     :return: Experiment data as array
     """
     if file_name.endswith('.hdf5') and field is not None:

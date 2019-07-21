@@ -2701,7 +2701,7 @@ Compare Classifier Predictions
 
 ### compare_classifiers_predictions
 
-This visualization uses the `ground_truth`, `ground_truth`, `field`, `predictions` and `model_names` parameters.
+This visualization uses the `ground_truth`, `field`, `predictions` and `model_names` parameters.
 `field` needs to be a category and there must be two and only two models (in the aligned lists of `predictions` and `model_names`).
 This visualization produces a pie chart comparing the predictions of the two models for the specified `field`.
 
@@ -2710,7 +2710,7 @@ This visualization produces a pie chart comparing the predictions of the two mod
 
 ### compare_classifiers_predictions_distribution
 
-This visualization uses the `ground_truth`, `ground_truth`, `field`, `predictions` and `model_names` parameters.
+This visualization uses the `ground_truth`, `field`, `predictions` and `model_names` parameters.
 `field` needs to be a category.
 This visualization produces a radar plot comparing the distributions of predictions of the models for the first 10 classes of the specified `field`.
 

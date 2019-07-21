@@ -105,10 +105,12 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -151,10 +153,12 @@ def test_visualisation_confusion_matrix_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     experiment_source_data_name = csv_filename.split('.')[0]
@@ -204,10 +208,12 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     experiment_source_data_name = csv_filename.split('.')[0]
@@ -269,10 +275,12 @@ def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -337,10 +345,12 @@ def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -404,10 +414,12 @@ def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -473,10 +485,12 @@ def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -540,10 +554,12 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -604,10 +620,12 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -671,10 +689,12 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -735,10 +755,12 @@ def test_visualisation_compare_classifiers_predictions_npy_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -802,10 +824,12 @@ def test_visualisation_compare_classifiers_predictions_csv_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -867,10 +891,12 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -931,10 +957,12 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -997,10 +1025,12 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1063,10 +1093,12 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1131,10 +1163,12 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1206,10 +1240,12 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
@@ -1280,10 +1316,12 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
@@ -1354,10 +1392,12 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1422,10 +1462,12 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1488,10 +1530,12 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     output_features = [binary_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1547,10 +1591,12 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1615,10 +1661,12 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1679,10 +1727,12 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1742,10 +1792,12 @@ def test_load_ground_truth_split_from_file(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     field_name = get_output_field_name(exp_dir_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'

@@ -38,17 +38,14 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import ludwig.contrib
 
-
-
 logger = logging.getLogger(__name__)
-
 
 
 # plt.rc('xtick', labelsize='x-large')
 # plt.rc('ytick', labelsize='x-large')
 # plt.rc('axes', labelsize='x-large')
 
-def learning_curves_ploload(
+def learning_curves_plot(
         train_values,
         vali_values,
         metric,
