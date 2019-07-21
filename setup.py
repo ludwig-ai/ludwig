@@ -56,6 +56,7 @@ setup(
                       'pydantic==0.30.0',
                       'uvicorn',
                       'python-multipart',
+                      'soundfile',
                       ],
 
     entry_points={

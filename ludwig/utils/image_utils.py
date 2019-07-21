@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
 
 import numpy as np
 from math import floor, ceil
@@ -71,12 +70,6 @@ def resize_image(img, new_size_typle, resize_method):
 
 def greyscale(img):
     return np.expand_dims(img_as_ubyte(rgb2gray(img)), axis=2)
-
-def get_abs_path(data_csv_path, image_path):
-    if data_csv_path is not None:
-        return os.path.join(data_csv_path, image_path)
-    else:
-        return image_path
 
 
 def num_channels_in_image(img):
