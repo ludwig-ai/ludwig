@@ -34,13 +34,13 @@ from ludwig.models.modules.measure_modules import masked_accuracy
 from ludwig.models.modules.measure_modules import perplexity
 from ludwig.models.modules.sequence_decoders import Generator
 from ludwig.models.modules.sequence_decoders import Tagger
+from ludwig.models.modules.sequence_encoders import BERT
 from ludwig.models.modules.sequence_encoders import CNNRNN, PassthroughEncoder
 from ludwig.models.modules.sequence_encoders import EmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
-from ludwig.models.modules.sequence_encoders import BERT
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc import get_from_registry
@@ -49,7 +49,6 @@ from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
-
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +66,7 @@ class SequenceBaseFeature(BaseFeature):
         'padding': 'right',
         'format': 'space',
         'lowercase': False,
+        'vocab_file': None,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }
@@ -93,13 +93,17 @@ class SequenceBaseFeature(BaseFeature):
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters):
         sequence_data = build_sequence_matrix(
-            column, 
-            metadata['str2idx'],
-            preprocessing_parameters['format'],
-            metadata['max_sequence_length'],
-            preprocessing_parameters['padding_symbol'],
-            preprocessing_parameters['padding'],
-            preprocessing_parameters['lowercase']
+            sequences=column,
+            inverse_vocabulary=metadata['str2idx'],
+            tokenizer_type=preprocessing_parameters['format'],
+            length_limit=metadata['max_sequence_length'],
+            padding_symbol=preprocessing_parameters['padding_symbol'],
+            padding=preprocessing_parameters['padding'],
+            unknown_symbol=preprocessing_parameters['unknown_symbol'],
+            lowercase=preprocessing_parameters['lowercase'],
+            tokenizer_vocab_file=preprocessing_parameters[
+                'vocab_file'
+            ],
         )
         return sequence_data
 

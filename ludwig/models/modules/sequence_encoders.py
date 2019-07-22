@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import collections
 import logging
+import re
 
 import tensorflow as tf
 
@@ -1702,8 +1704,9 @@ class BERT:
 
         model = BertModel(
             config=self.bert_config,
-            is_training=False,
+            is_training=True,
             input_ids=input_sequence,
+            input_mask=tf.sign(tf.abs(input_sequence)),
         )
 
         validate_case_matches_checkpoint(
@@ -1712,13 +1715,14 @@ class BERT:
         )
 
         tvars = tf.trainable_variables()
-
+        prefix = tvars[0].name.split('/')[0] + '/'
         (
             assignment_map,
             initialized_variable_names
-        ) = get_assignment_map_from_checkpoint(
+        ) = BERT.get_assignment_map_from_checkpoint(
             tvars,
-            self.init_checkpoint_path
+            self.init_checkpoint_path,
+            prefix=prefix
         )
 
         tf.train.init_from_checkpoint(
@@ -1729,3 +1733,30 @@ class BERT:
         hidden = model.get_pooled_output()
 
         return hidden, hidden.shape[-1].value
+
+    @staticmethod
+    def get_assignment_map_from_checkpoint(tvars, init_checkpoint, prefix=''):
+        """Compute the union of the current variables and checkpoint variables."""
+        initialized_variable_names = {}
+
+        name_to_variable = collections.OrderedDict()
+        for var in tvars:
+            name = var.name
+            m = re.match("^(.*):\\d+$", name)
+            if m is not None:
+                name = m.group(1)
+            name_to_variable[name] = var
+
+        init_vars = tf.train.list_variables(init_checkpoint)
+
+        assignment_map = collections.OrderedDict()
+        for x in init_vars:
+            (name, var) = (x[0], x[1])
+            prefixed_name = prefix + name
+            if prefixed_name not in name_to_variable:
+                continue
+            assignment_map[name] = prefixed_name
+            initialized_variable_names[name] = 1
+            initialized_variable_names[name + ":0"] = 1
+
+        return (assignment_map, initialized_variable_names)

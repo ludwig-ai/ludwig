@@ -73,38 +73,48 @@ def match_replace(string_to_match, list_regex):
     return string_to_match, matched
 
 
+def load_vocabulary(vocab_file):
+    with open(vocab_file, 'r') as f:
+        return [line.strip() for line in f]
+
+
 def create_vocabulary(
-    data,
-    tokenizer_type='space',
-    custom_vocabulary=(),
-    add_unknown=True,
-    add_padding=True,
-    lowercase=True,
-    num_most_frequent=None,
-    vocab_file=None
+        data,
+        tokenizer_type='space',
+        add_unknown=True,
+        add_padding=True,
+        lowercase=True,
+        num_most_frequent=None,
+        vocab_file=None,
+        unknown_symbol=UNKNOWN_SYMBOL,
+        padding_symbol=PADDING_SYMBOL
 ):
+    vocab = None
     max_line_length = 0
     unit_counts = Counter()
 
-    if tokenizer_type == 'custom':
-        vocab = sorted(list(set(custom_vocabulary)))
-    else:
-        tokenizer = get_from_registry(
-            tokenizer_type,
-            tokenizer_registry
-        )(vocab_file=vocab_file)
-        for line in data:
-            processed_line = tokenizer(line.lower() if lowercase else line)
-            unit_counts.update(processed_line)
-            max_line_length = max(max_line_length, len(processed_line))
+    if tokenizer_type == 'bert':
+        vocab = load_vocabulary(vocab_file)
+        add_unknown = False
+        add_padding = False
 
+    tokenizer = get_from_registry(
+        tokenizer_type,
+        tokenizer_registry
+    )(vocab_file=vocab_file)
+    for line in data:
+        processed_line = tokenizer(line.lower() if lowercase else line)
+        unit_counts.update(processed_line)
+        max_line_length = max(max_line_length, len(processed_line))
+
+    if vocab is None:
         vocab = [unit for unit, count in
                  unit_counts.most_common(num_most_frequent)]
 
     if add_unknown:
-        vocab = [UNKNOWN_SYMBOL] + vocab
+        vocab = [unknown_symbol] + vocab
     if add_padding:
-        vocab = [PADDING_SYMBOL] + vocab
+        vocab = [padding_symbol] + vocab
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
@@ -126,11 +136,12 @@ def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
 
 
 def _get_sequence_vector(
-    sequence,
-    tokenizer,
-    format_dtype,
-    unit_to_id,
-    lowercase=True
+        sequence,
+        tokenizer,
+        format_dtype,
+        unit_to_id,
+        lowercase=True,
+        unknown_symbol=UNKNOWN_SYMBOL
 ):
     unit_sequence = tokenizer(
         sequence.lower() if lowercase else sequence
@@ -141,19 +152,20 @@ def _get_sequence_vector(
         if curr_unit in unit_to_id:
             unit_indices_vector[i] = unit_to_id[curr_unit]
         else:
-            unit_indices_vector[i] = unit_to_id[UNKNOWN_SYMBOL]
+            unit_indices_vector[i] = unit_to_id[unknown_symbol]
     return unit_indices_vector
 
 
 def build_sequence_matrix(
-    sequences,
-    inverse_vocabulary,
-    tokenizer_type,
-    length_limit,
-    padding_symbol,
-    padding='right',
-    lowercase=True,
-    tokenizer_vocab_file=None,
+        sequences,
+        inverse_vocabulary,
+        tokenizer_type,
+        length_limit,
+        padding_symbol,
+        padding='right',
+        unknown_symbol=UNKNOWN_SYMBOL,
+        lowercase=True,
+        tokenizer_vocab_file=None,
 ):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file
@@ -168,7 +180,8 @@ def build_sequence_matrix(
             tokenizer,
             format_dtype,
             inverse_vocabulary,
-            lowercase=lowercase
+            lowercase=lowercase,
+            unknown_symbol=unknown_symbol
         )
         unit_vectors.append(unit_indices_vector)
         if len(unit_indices_vector) > max_length:

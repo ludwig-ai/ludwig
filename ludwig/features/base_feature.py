@@ -308,8 +308,8 @@ class OutputFeature(ABC, BaseFeature):
 
         # ================ Outputs ================
         train_mean_loss, eval_loss, output_tensors = self.build_output(
-            combiner_hidden,
-            combiner_hidden_size,
+            feature_hidden,
+            feature_hidden_size,
             regularizer=regularizer,
             **kwargs
         )
