@@ -29,7 +29,7 @@ from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
-from tests.integration_tests.utils import categorical_feature
+from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import h3_feature
@@ -39,15 +39,6 @@ from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
-from tests.integration_tests.utils import h3_feature
-
-from tests.integration_tests.utils import date_feature
-
-
-# The following imports are pytest fixtures, required for running the tests
-from tests.fixtures.filenames import csv_filename
-from tests.fixtures.filenames import yaml_filename
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -174,12 +165,12 @@ def test_experiment_multi_input_intent_classification(csv_filename):
     # Multiple inputs, Single category output
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
+        category_feature(
             vocab_size=10,
             loss='sampled_softmax_cross_entropy'
         )
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -194,12 +185,12 @@ def test_experiment_multiple_seq_seq(csv_filename):
     input_features = [
         text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
         numerical_feature(normalization='zscore'),
-        categorical_feature(vocab_size=10, embedding_size=5),
+        category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum'),
         sequence_feature(vocab_size=10, max_len=5),
         numerical_feature()
     ]
@@ -209,7 +200,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
 
     # Use generator as decoder
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum'),
         sequence_feature(vocab_size=10, max_len=5, decoder='generator'),
         numerical_feature()
     ]
@@ -219,7 +210,7 @@ def test_experiment_multiple_seq_seq(csv_filename):
 
     # Generator decoder and reduce_input = None
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum'),
         sequence_feature(max_len=5, decoder='generator', reduce_input=None),
         numerical_feature(normalization='minmax')
     ]
@@ -249,7 +240,7 @@ def test_experiment_image_inputs(csv_filename):
         numerical_feature(normalization='zscore')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum'),
         numerical_feature()
     ]
 
@@ -307,7 +298,7 @@ def test_experiment_tied_weights(csv_filename):
             tied_weights='text_feature1'
         )
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
@@ -358,10 +349,10 @@ def test_experiment_sequence_combiner(csv_filename):
             cell_type='lstm',
             reduce_output=None
         ),
-        categorical_feature(vocab_size=5)
+        category_feature(vocab_size=5)
     ]
     output_features = [
-        categorical_feature(reduce_input='sum', vocab_size=5)
+        category_feature(reduce_input='sum', vocab_size=5)
     ]
 
     model_definition = {
@@ -404,7 +395,7 @@ def test_experiment_model_resume(csv_filename):
     # Single sequence input, single category output
     # Tests saving a model file, loading it to rerun training and predict
     input_features = [sequence_feature(encoder='rnn', reduce_output='sum')]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
@@ -536,7 +527,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
 
 def test_experiment_datetime_feature(csv_filename):
     input_features = [date_feature()]
-    output_features = [categorical_feature(vocab_size=2)]
+    output_features = [category_feature(vocab_size=2)]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)

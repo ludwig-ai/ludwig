@@ -67,7 +67,7 @@ def numerical_feature(normalization=None):
     }
 
 
-def categorical_feature(**kwargs):
+def category_feature(**kwargs):
     cat_feature = {
         'type': 'category',
         'name': 'category_' + random_string(),

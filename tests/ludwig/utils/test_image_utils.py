@@ -16,7 +16,8 @@
 import numpy as np
 import pytest
 
-from ludwig.utils.image_utils import num_channels_in_image, get_abs_path
+from ludwig.utils.data_utils import get_abs_path
+from ludwig.utils.image_utils import num_channels_in_image
 
 image_2d = np.random.randint(0, 1, (10, 10))
 image_3d = np.random.randint(0, 1, (10, 10, 3))

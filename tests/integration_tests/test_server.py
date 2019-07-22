@@ -14,24 +14,19 @@
 # limitations under the License.
 # ==============================================================================
 
+import os
 import shutil
 
-from ludwig.api import LudwigModel
-from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import ENCODERS
-from tests.integration_tests.utils import image_feature
-from tests.integration_tests.utils import text_feature
-from tests.integration_tests.utils import categorical_feature
-from tests.integration_tests.utils import numerical_feature
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import sequence_feature
-from tests.integration_tests.utils import random_string
-
-
-from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from starlette.testclient import TestClient
-from starlette.datastructures import UploadFile
-import os
+
+from ludwig.api import LudwigModel
+from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
+from ludwig.utils.data_utils import read_csv
+from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import image_feature
+from tests.integration_tests.utils import numerical_feature
+from tests.integration_tests.utils import text_feature
 
 
 def train_model(input_features, output_features, data_csv):
@@ -130,7 +125,7 @@ def test_server_integration(csv_filename):
         numerical_feature(normalization='zscore')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum'),
         numerical_feature()
     ]
 

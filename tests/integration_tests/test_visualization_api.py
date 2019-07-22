@@ -24,12 +24,9 @@ from ludwig import visualize
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import get_split
 from ludwig.utils.data_utils import read_csv, split_dataset_tvt
-from tests.integration_tests.utils import categorical_feature, \
+from tests.integration_tests.utils import category_feature, \
     numerical_feature, set_feature, generate_data, sequence_feature, \
     text_feature, binary_feature, bag_feature
-
-# The following imports are pytest fixtures, required for running the tests
-from tests.fixtures.filenames import csv_filename
 
 
 def run_api_experiment(input_features, output_features):
@@ -61,14 +58,11 @@ class Experiment:
         self.model = None
         self.input_features = [
             text_feature(vocab_size=10, min_len=1, representation='sparse'),
-            categorical_feature(
-                vocab_size=10,
-                loss='sampled_softmax_cross_entropy'
-            )
+            category_feature(vocab_size=10)
         ]
         self.output_features = [
-            categorical_feature(vocab_size=2, reduce_input='sum')]
-        encoder = 'cnnrnn'
+            category_feature(vocab_size=2, reduce_input='sum')]
+        encoder = 'parallel_cnn'
         data_csv = generate_data(
             self.input_features,
             self.output_features,
@@ -484,17 +478,17 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
+        text_feature(vocab_size=10, min_len=1, encoder='stacked_cnn'),
         numerical_feature(),
-        categorical_feature(vocab_size=10, embedding_size=5),
+        category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
-        categorical_feature(vocab_size=2, reduce_input='sum')
+        category_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum')
     ]
-    encoder = 'cnnrnn'
+    encoder = 'parallel_cnn'
     # Generate test data
     data_csv = generate_data(input_features, output_features, csv_filename)
     input_features[0]['encoder'] = encoder
@@ -550,17 +544,17 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
+        text_feature(vocab_size=10, min_len=1, encoder='stacked_cnn'),
         numerical_feature(),
-        categorical_feature(vocab_size=10, embedding_size=5),
+        category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
-        categorical_feature(vocab_size=2, reduce_input='sum')
+        category_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum')
     ]
-    encoder = 'cnnrnn'
+    encoder = 'parallel_cnn'
     # Generate test data
     data_csv = generate_data(input_features, output_features, csv_filename)
     input_features[0]['encoder'] = encoder
@@ -672,7 +666,7 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
     """
     input_features = [binary_feature(), bag_feature()]
     output_features = [binary_feature()]
-    encoder = 'cnnrnn'
+    encoder = 'parallel_cnn'
 
     # Generate test data
     data_csv = generate_data(input_features, output_features, csv_filename)

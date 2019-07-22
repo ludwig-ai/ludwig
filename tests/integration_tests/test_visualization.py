@@ -21,18 +21,18 @@
 # ==============================================================================
 
 import glob
-import shutil
-import subprocess
 import json
 import os
+import shutil
+import subprocess
+
 import numpy as np
 
 from ludwig.experiment import experiment
-from ludwig.utils.data_utils import load_from_file, load_json, read_csv
-
-from tests.integration_tests.test_visualisations_api import obtain_df_splits
+from ludwig.utils.data_utils import load_from_file, load_json
+from tests.integration_tests.test_visualization_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import text_feature, categorical_feature, \
+from tests.integration_tests.utils import text_feature, category_feature, \
     numerical_feature, set_feature, sequence_feature, binary_feature, \
     bag_feature
 
@@ -96,12 +96,12 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [text_feature(reduce_output=None, encoder='rnn')]
-    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+    input_features = [text_feature(encoder='parallel_cnn')]
+    output_features = [category_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -144,12 +144,12 @@ def test_visualisation_confusion_matrix_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [text_feature(reduce_output=None, encoder='rnn')]
-    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+    input_features = [text_feature(encoder='parallel_cnn')]
+    output_features = [category_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -199,12 +199,12 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
     :param csv_filename: csv fixture from tests.conftest.csv_filename
     :return: None
     """
-    input_features = [text_feature(reduce_output=None, encoder='rnn')]
-    output_features = [text_feature(reduce_input=None, decoder='tagger')]
+    input_features = [text_feature(encoder='parallel_cnn')]
+    output_features = [category_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -262,16 +262,13 @@ def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -332,16 +329,13 @@ def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -401,16 +395,13 @@ def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -472,16 +463,13 @@ def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -541,16 +529,13 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -607,16 +592,13 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -676,16 +658,13 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -742,16 +721,13 @@ def test_visualisation_compare_classifiers_predictions_npy_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -811,16 +787,13 @@ def test_visualisation_compare_classifiers_predictions_csv_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -878,16 +851,13 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -944,16 +914,13 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1012,16 +979,13 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1080,16 +1044,13 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1150,16 +1111,13 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=5, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=5, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1224,19 +1182,19 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
+        text_feature(vocab_size=10, min_len=1, encoder='stacked_cnn'),
         numerical_feature(),
-        categorical_feature(vocab_size=10, embedding_size=5),
+        category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
-        categorical_feature(vocab_size=2, reduce_input='sum')
+        category_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum')
     ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1300,19 +1258,19 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
+        text_feature(vocab_size=10, min_len=1, encoder='stacked_cnn'),
         numerical_feature(),
-        categorical_feature(vocab_size=10, embedding_size=5),
+        category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
-        categorical_feature(vocab_size=2, reduce_input='sum')
+        category_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2, reduce_input='sum')
     ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1374,21 +1332,19 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
+        text_feature(vocab_size=10, min_len=1, encoder='stacked_cnn'),
         numerical_feature(),
-        categorical_feature(vocab_size=10, embedding_size=5),
+        category_feature(vocab_size=10, embedding_size=5),
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
     ]
     output_features = [
-        categorical_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature()
+        category_feature(vocab_size=4, reduce_input='sum')
     ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1449,16 +1405,13 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1526,7 +1479,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     output_features = [binary_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1577,17 +1530,14 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=50, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1647,17 +1597,14 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=50, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1713,17 +1660,14 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
     :return: None
     """
     input_features = [
-        text_feature(vocab_size=50, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
@@ -1779,16 +1723,13 @@ def test_load_ground_truth_split_from_file(csv_filename):
     """
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        categorical_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
-    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'cnnrnn'
+    input_features[0]['encoder'] = 'parallel_cnn'
     exp_dir_name = run_experiment(
         input_features,
         output_features,
