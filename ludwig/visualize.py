@@ -22,6 +22,7 @@ import argparse
 import logging
 import os
 import sys
+from functools import partial
 
 import numpy as np
 import sklearn
@@ -38,99 +39,732 @@ from ludwig.utils.print_utils import logging_level_registry
 logger = logging.getLogger(__name__)
 
 
+def validate_conf_treshholds_and_probabilities_2d_3d(
+        probabilities, treshhold_fields
+):
+    """Ensure probabilities and treshhold fields arrays have two members each.
+
+    :param probabilities: List of probabilities per model
+    :param threshhold_fields: List of threshhold fields per model
+    :raise: RuntimeError
+    """
+    validation_mapping = {
+        'probabilities': probabilities,
+        'treshhold_fields': treshhold_fields
+    }
+    for item, value in validation_mapping.items():
+        item_len = len(value)
+        if item_len != 2:
+            exception_message = 'Two {} should be provided - {} was given.'. \
+                format(item, item_len)
+            logging.error(exception_message)
+            raise RuntimeError(exception_message)
+
+
+def load_data_for_viz(load_type, model_file_statistics, **kwargs):
+    """Load model file data in to list of .
+
+    :param load_type: type of the data loader to be used.
+    :param model_file_statistics: JSON file or list of json files containing any
+           model experiment stats.
+    :return List of training statistics loaded as json objects.
+    """
+    supported_load_types = dict(load_json=load_json,
+                                load_from_file=partial(
+                                    load_from_file,
+                                    dtype=kwargs.get('dtype', int),
+                                    ground_truth_split=kwargs.get(
+                                        'ground_truth_split', 2)
+                                )
+                                )
+    loader = supported_load_types[load_type]
+    try:
+        stats_per_model = [loader(stats_f)
+                           for stats_f in
+                           model_file_statistics]
+    except (TypeError, AttributeError):
+        logging.exception(
+            'Unable to open model statistics file {}!'.format(
+                model_file_statistics
+            )
+        )
+        raise
+    return stats_per_model
+
+
+def convert_to_list(item):
+    """If item is not list class instance or None put inside a list.
+
+    :param item: object to be checked and converted
+    :return: original item if it is a list instance or list containing the item.
+    """
+    return item if item is None or isinstance(item, list) else [item]
+
+
+def validate_visualization_prediction_field_from_train_stats(
+        field,
+        train_stats_per_model
+):
+    """Validate prediction field from model train stats and return it as list.
+
+    :param field: field containing ground truth
+    :param train_stats_per_model: list of per model train stats
+    :return fields: list of field(s) containing ground truth
+    """
+    fields_set = set()
+    for ls in train_stats_per_model:
+        for _, values in ls.items():
+            for key in values:
+                fields_set.add(key)
+    try:
+        return [field] if field in fields_set else fields_set
+    # raised if field is emtpy iterable (e.g. [] in set())
+    except TypeError:
+        return fields_set
+
+
+def validate_visualization_prediction_field_from_test_stats(
+        field,
+        test_stats_per_model
+):
+    """Validate prediction field from model test stats and return it as list.
+
+    :param field: field containing ground truth
+    :param test_stats_per_model: list of per model test stats
+    :return fields: list of field(s) containing ground truth
+    """
+    fields_set = set()
+    for ls in test_stats_per_model:
+        for key in ls:
+            fields_set.add(key)
+    try:
+        return [field] if field in fields_set else fields_set
+    # raised if field is emtpy iterable (e.g. [] in set())
+    except TypeError:
+        return fields_set
+
+
+def generate_filename_template_path(output_dir, filename_template):
+    """Ensure path to template file can be constructed given an output dir.
+
+    Create output directory if yet does exist.
+    :param output_dir: Directory that will contain the filename_template file
+    :param filename_template: name of the file template to be appended to the
+            filename template path
+    :return: path to filename template inside the output dir or None if the
+             output dir is None
+    """
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        return os.path.join(output_dir, filename_template)
+    return None
+
+
+def compare_performance_cli(test_statistics, **kwargs):
+    """Load model data from files to be shown by compare_performance.
+
+    :param test_statistics: Path to experiment test statistics file
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    compare_performance(test_stats_per_model, **kwargs)
+
+
+def learning_curves_cli(training_statistics, **kwargs):
+    """Load model data from files to be shown by learning_curves.
+
+    :param training_statistics: Path to experiment training statistics file
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    train_stats_per_model = load_data_for_viz('load_json', training_statistics)
+    learning_curves(train_stats_per_model, **kwargs)
+
+
+def compare_classifiers_performance_from_prob_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by compare_classifiers_from_prob.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    compare_classifiers_performance_from_prob(
+        probabilities_per_model, gt, **kwargs
+    )
+
+
+def compare_classifiers_performance_from_pred_cli(
+        predictions,
+        ground_truth,
+        ground_truth_metadata,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by compare_classifiers_from_pred
+
+    :param predictions: Path to experiment predictions file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_metadata: Path to ground truth metadata file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    metadata = load_json(ground_truth_metadata)
+    predictions_per_model_raw = load_data_for_viz(
+        'load_from_file', predictions, dtype=str
+    )
+    predictions_per_model = [
+        np.ndarray.flatten(pred) for pred in predictions_per_model_raw
+    ]
+    compare_classifiers_performance_from_pred(
+        predictions_per_model, gt, metadata, field, **kwargs
+    )
+
+
+def compare_classifiers_performance_subset_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by compare_classifiers_subset.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    compare_classifiers_performance_subset(
+        probabilities_per_model, gt, **kwargs
+    )
+
+
+def compare_classifiers_performance_changing_k_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by compare_classifiers_changing_k.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    compare_classifiers_performance_changing_k(
+        probabilities_per_model, gt, **kwargs
+    )
+
+
+def compare_classifiers_multiclass_multimetric_cli(
+        test_statistics,
+        ground_truth_metadata,
+        **kwargs):
+    """Load model data from files to be shown by compare_classifiers_multiclass
+
+    :param test_statistics: Path to experiment test statistics file
+    :param ground_truth_metadata: Path to ground truth metadata file
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    metadata = load_json(ground_truth_metadata)
+    compare_classifiers_multiclass_multimetric(
+        test_stats_per_model, metadata=metadata, **kwargs
+    )
+
+
+def compare_classifiers_predictions_cli(
+        predictions,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by compare_classifiers_predictions
+
+    :param predictions: Path to experiment predictions file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    predictions_per_model = load_data_for_viz(
+        'load_from_file', predictions, dtype=str
+    )
+    compare_classifiers_predictions(predictions_per_model, gt, **kwargs)
+
+
+def compare_classifiers_predictions_distribution_cli(
+        predictions,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by
+    compare_predictions_distribution
+
+    :param predictions: Path to experiment predictions file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    predictions_per_model = load_data_for_viz(
+        'load_from_file', predictions, dtype=str
+    )
+    compare_classifiers_predictions_distribution(
+        predictions_per_model, gt, **kwargs
+    )
+
+
+def confidence_thresholding_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by confidence_thresholding.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    confidence_thresholding(
+        probabilities_per_model, gt, **kwargs
+    )
+
+
+def confidence_thresholding_data_vs_acc_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by
+    confidence_thresholding_data_vs_acc_cli.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    confidence_thresholding_data_vs_acc(
+        probabilities_per_model, gt, **kwargs
+    )
+
+
+def confidence_thresholding_data_vs_acc_subset_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by
+    confidence_thresholding_data_vs_acc_subset.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    confidence_thresholding_data_vs_acc_subset(
+        probabilities_per_model, gt, **kwargs
+    )
+
+
+def confidence_thresholding_data_vs_acc_subset_per_class_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_metadata,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by compare_classifiers_multiclass
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_metadata: Path to ground truth metadata file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    metadata = load_json(ground_truth_metadata)
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    confidence_thresholding_data_vs_acc_subset_per_class(
+        probabilities_per_model, gt, metadata, field, **kwargs
+    )
+
+
+def confidence_thresholding_2thresholds_2d_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        threshold_fields,
+        **kwargs
+):
+    """Load model data from files to be shown by
+    confidence_thresholding_2thresholds_2d_cli
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param threshold_fields: Target prediction fields
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt1 = load_from_file(
+        ground_truth,
+        threshold_fields[0],
+        ground_truth_split
+    )
+    gt2 = load_from_file(
+        ground_truth,
+        threshold_fields[1],
+        ground_truth_split
+    )
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    confidence_thresholding_2thresholds_2d(
+        probabilities_per_model, [gt1, gt2], threshold_fields, **kwargs
+    )
+
+
+def confidence_thresholding_2thresholds_3d_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        threshold_fields,
+        **kwargs
+):
+    """Load model data from files to be shown by
+    confidence_thresholding_2thresholds_3d_cli
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param threshold_fields: Target prediction fields
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt1 = load_from_file(
+        ground_truth,
+        threshold_fields[0],
+        ground_truth_split
+    )
+    gt2 = load_from_file(
+        ground_truth,
+        threshold_fields[1],
+        ground_truth_split
+    )
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    confidence_thresholding_2thresholds_3d(
+        probabilities_per_model, [gt1, gt2], threshold_fields, **kwargs
+    )
+
+
+def binary_threshold_vs_metric_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by binary_threshold_vs_metric_cli.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    binary_threshold_vs_metric(
+        probabilities_per_model, gt, **kwargs
+    )
+
+
+def roc_curves_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by roc_curves_cli.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    roc_curves(probabilities_per_model, gt, **kwargs)
+
+
+def roc_curves_from_test_statistics_cli(test_statistics, **kwargs):
+    """Load model data from files to be shown by
+    roc_curves_from_test_statistics_cli.
+
+    :param test_statistics: Path to experiment test statistics file
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    roc_curves_from_test_statistics(
+        test_stats_per_model, **kwargs
+    )
+
+
+def calibration_1_vs_all_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by calibration_1_vs_all_cli.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    calibration_1_vs_all(probabilities_per_model, gt, **kwargs)
+
+
+def calibration_multiclass_cli(
+        probabilities,
+        ground_truth,
+        ground_truth_split,
+        field,
+        **kwargs
+):
+    """Load model data from files to be shown by calibration_multiclass_cli.
+
+    :param probabilities: Path to experiment probabilities file
+    :param ground_truth: Path to ground truth file
+    :param ground_truth_split: Type of ground truth split - train, val, test
+    :param field: Target prediction field
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    gt = load_from_file(ground_truth, field, ground_truth_split)
+    probabilities_per_model = load_data_for_viz(
+        'load_from_file', probabilities, dtype=float
+    )
+    calibration_multiclass(probabilities_per_model, gt, **kwargs)
+
+
+def confusion_matrix_cli(test_statistics, ground_truth_metadata, **kwargs):
+    """Load model data from files to be shown by confusion_matrix.
+
+    :param test_statistics: Path to experiment test statistics file
+    :param ground_truth_metadata: Path to ground truth metadata file
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    metadata = load_json(ground_truth_metadata)
+    confusion_matrix(test_stats_per_model, metadata, **kwargs)
+
+
+def frequency_vs_f1_cli(test_statistics, ground_truth_metadata, **kwargs):
+    """Load model data from files to be shown by frequency_vs_f1.
+
+    :param test_statistics: Path to experiment test statistics file
+    :param ground_truth_metadata: Path to ground truth metadata file
+    :param kwargs: model configuration arguments
+    :return None:
+    """
+    test_stats_per_model = load_data_for_viz('load_json', test_statistics)
+    metadata = load_json(ground_truth_metadata)
+    frequency_vs_f1(test_stats_per_model, metadata, **kwargs)
+
+
 def learning_curves(
-        training_statistics,
+        train_stats_per_model,
         field,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(training_statistics) < 1:
-        logger.error('No training_statistics provided')
-        return
+    """Show how model measures change over training and validation data epochs.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'learning_curves_{}_{}.' + file_format
-        )
-
-    training_statistics_per_model_name = [load_json(learning_stats_f)
-                                          for learning_stats_f in
-                                          training_statistics]
-
-    fields_set = set()
-    for ls in training_statistics_per_model_name:
-        for _, values in ls.items():
-            for key in values:
-                fields_set.add(key)
-    fields = [field] if field is not None and len(field) > 0 else fields_set
+     For each model and for each output feature and measure of the model,
+     it produces a line plot showing how that measure changed over the course
+     of the epochs of training on the training and validation sets.
+    :param train_stats_per_model: List containing train statistics per model
+    :param field: Prediction field containing ground truth.
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    filename_template = 'learning_curves_{}_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
+    train_stats_per_model_list = convert_to_list(train_stats_per_model)
+    model_names_list = convert_to_list(model_names)
+    fields = validate_visualization_prediction_field_from_train_stats(
+        field,
+        train_stats_per_model_list
+    )
 
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for field in fields:
         for metric in metrics:
-            if metric in training_statistics_per_model_name[0]['train'][field]:
-
+            if metric in train_stats_per_model_list[0]['train'][field]:
                 filename = None
-                if filename_template:
-                    filename = filename_template.format(field, metric)
-                    os.makedirs(output_directory, exist_ok=True)
+                if filename_template_path:
+                    filename = filename_template_path.format(field, metric)
+
 
                 visualization_utils.learning_curves_plot(
                     [learning_stats['train'][field][metric]
-                     for learning_stats in training_statistics_per_model_name],
+                     for learning_stats in train_stats_per_model_list],
                     [learning_stats['validation'][field][metric]
-                     for learning_stats in training_statistics_per_model_name],
+                     for learning_stats in train_stats_per_model_list],
                     metric,
-                    model_names,
+                    model_names_list,
                     title='Learning Curves {}'.format(field),
                     filename=filename
                 )
 
 
 def compare_performance(
-        test_statistics,
+        test_stats_per_model,
         field, model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(test_statistics) < 1:
-        logger.error('No test_statistics provided')
-        return
+    """Produces model comparision barplot visualization for each overall metric
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'compare_performance_{}.' + file_format
-        )
 
-    test_statistics_per_model_name = [load_json(prediction_statistics_f)
-                                      for prediction_statistics_f in
-                                      test_statistics]
+    For each model (in the aligned lists of test_statistics and model_names)
+    it produces bars in a bar plot, one for each overall metric available
+    in the test_statistics file for the specified field.
+    :param test_stats_per_model: List containing train statistics per model
+    :param field: Prediction field containing ground truth.
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    filename_template = 'compare_performance_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
 
-    fields_set = set()
-    for ls in test_statistics_per_model_name:
-        for key in ls:
-            fields_set.add(key)
-    fields = [field] if field is not None and len(field) > 0 else fields_set
+    test_stats_per_model_list = convert_to_list(test_stats_per_model)
+    model_names_list = convert_to_list(model_names)
+    fields = validate_visualization_prediction_field_from_test_stats(
+        field,
+        test_stats_per_model_list
+    )
 
     for field in fields:
         accuracies = []
         hits_at_ks = []
         edit_distances = []
 
-        for test_statistics in test_statistics_per_model_name:
-            if ACCURACY in test_statistics[field]:
-                accuracies.append(test_statistics[field][ACCURACY])
-            if HITS_AT_K in test_statistics[field]:
-                hits_at_ks.append(test_statistics[field][HITS_AT_K])
-            if EDIT_DISTANCE in test_statistics[field]:
+        for test_stats_per_model in test_stats_per_model_list:
+            if ACCURACY in test_stats_per_model[field]:
+                accuracies.append(test_stats_per_model[field][ACCURACY])
+            if HITS_AT_K in test_stats_per_model[field]:
+                hits_at_ks.append(test_stats_per_model[field][HITS_AT_K])
+            if EDIT_DISTANCE in test_stats_per_model[field]:
                 edit_distances.append(
-                    test_statistics[field][EDIT_DISTANCE])
+                    test_stats_per_model[field][EDIT_DISTANCE])
 
         measures = []
         measures_names = []
@@ -145,23 +779,23 @@ def compare_performance(
             measures_names.append(EDIT_DISTANCE)
 
         filename = None
-        if filename_template:
-            filename = filename_template.format(field)
+
+        if filename_template_path:
+            filename = filename_template_path.format(field)
             os.makedirs(output_directory, exist_ok=True)
 
         visualization_utils.compare_classifiers_plot(
             measures,
             measures_names,
-            model_names,
+            model_names_list,
             title='Performance comparison on {}'.format(field),
             filename=filename
         )
 
 
 def compare_classifiers_performance_from_prob(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         top_n_classes,
         labels_limit,
         model_names=None,
@@ -169,19 +803,30 @@ def compare_classifiers_performance_from_prob(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Produces model comparision barplot visualization from probabilities.
 
-    k = top_n_classes[0]
-
-    gt = load_from_file(ground_truth, field)
+    For each model it produces bars in a bar plot, one for each overall metric
+    computed on the fly from the probabilities of predictions for the specified
+    field.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param top_n_classes: List containing the number of classes to plot
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    top_n_classes_list = convert_to_list(top_n_classes)
+    k = top_n_classes_list[0]
+    model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        ground_truth[ground_truth > labels_limit] = labels_limit
 
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
+    probs = probabilities_per_model
     accuracies = []
     hits_at_ks = []
     mrrs = []
@@ -197,20 +842,20 @@ def compare_classifiers_performance_from_prob(
         top1 = prob[:, -1]
         topk = prob[:, -k:]
 
-        accuracies.append((gt == top1).sum() / len(gt))
+        accuracies.append((ground_truth == top1).sum() / len(ground_truth))
 
         hits_at_k = 0
-        for j in range(len(gt)):
-            hits_at_k += np.in1d(gt[j], topk[i, :])
-        hits_at_ks.append(np.asscalar(hits_at_k) / len(gt))
+        for j in range(len(ground_truth)):
+            hits_at_k += np.in1d(ground_truth[j], topk[i, :])
+        hits_at_ks.append(np.asscalar(hits_at_k) / len(ground_truth))
 
         mrr = 0
-        for j in range(len(gt)):
-            gt_pos_in_probs = prob[i, :] == gt[j]
+        for j in range(len(ground_truth)):
+            gt_pos_in_probs = prob[i, :] == ground_truth[j]
             if np.any(gt_pos_in_probs):
                 mrr += (1 / -(np.asscalar(np.argwhere(gt_pos_in_probs)) -
                               prob.shape[1]))
-        mrrs.append(mrr / len(gt))
+        mrrs.append(mrr / len(ground_truth))
 
     filename = None
     if output_directory:
@@ -223,15 +868,15 @@ def compare_classifiers_performance_from_prob(
     visualization_utils.compare_classifiers_plot(
         [accuracies, hits_at_ks, mrrs],
         [ACCURACY, HITS_AT_K, 'mrr'],
-        model_names,
+        model_names_list,
         filename=filename
     )
 
 
 def compare_classifiers_performance_from_pred(
-        predictions,
+        predictions_per_model,
         ground_truth,
-        ground_truth_metadata,
+        metadata,
         field,
         labels_limit,
         model_names=None,
@@ -239,35 +884,59 @@ def compare_classifiers_performance_from_pred(
         file_format='pdf',
         **kwargs
 ):
-    if len(predictions) < 1:
-        logger.error('No predictions provided')
-        return
+    """Produces model comparision barplot visualization from predictions.
 
-    metadata = load_json(ground_truth_metadata)
-
-    gt = load_from_file(ground_truth, field)
+    For each model it produces bars in a bar plot, one for each overall metric
+    computed on the fly from the predictions for the specified field.
+    :param predictions_per_model: List containing the model predictions
+           for the specified field
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param metadata: Model's input metadata
+    :param field: field containing ground truth
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        ground_truth[ground_truth > labels_limit] = labels_limit
 
-    preds = [load_from_file(preds_fn, dtype=str) for preds_fn in predictions]
-
+    preds = predictions_per_model
+    model_names_list = convert_to_list(model_names)
     mapped_preds = []
-    for pred in preds:
-        mapped_preds.append([metadata[field]['str2idx'][val] for val in pred])
-    preds = mapped_preds
-
+    try:
+        for pred in preds:
+            mapped_preds.append([metadata[field]['str2idx'][val] for val in
+                                 pred])
+        preds = mapped_preds
+    # If predictions are coming from npy file there is no need to convert to
+    # numeric labels using metadata
+    except (TypeError, KeyError):
+        pass
     accuracies = []
     precisions = []
     recalls = []
     f1s = []
 
     for i, pred in enumerate(preds):
-        accuracies.append(sklearn.metrics.accuracy_score(gt, pred))
+        accuracies.append(sklearn.metrics.accuracy_score(ground_truth, pred))
         precisions.append(
-            sklearn.metrics.precision_score(gt, pred, average='macro')
+            sklearn.metrics.precision_score(ground_truth, pred, average='macro')
         )
-        recalls.append(sklearn.metrics.recall_score(gt, pred, average='macro'))
-        f1s.append(sklearn.metrics.f1_score(gt, pred, average='macro'))
+        recalls.append(sklearn.metrics.recall_score(
+            ground_truth,
+            pred,
+            average='macro')
+        )
+        f1s.append(sklearn.metrics.f1_score(
+            ground_truth,
+            pred,
+            average='macro')
+        )
 
     filename = None
     if output_directory:
@@ -280,15 +949,14 @@ def compare_classifiers_performance_from_pred(
     visualization_utils.compare_classifiers_plot(
         [accuracies, precisions, recalls, f1s],
         [ACCURACY, 'precision', 'recall', 'f1'],
-        model_names,
+        model_names_list,
         filename=filename
     )
 
 
 def compare_classifiers_performance_subset(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         top_n_classes,
         labels_limit,
         subset,
@@ -297,28 +965,41 @@ def compare_classifiers_performance_subset(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Produces model comparision barplot visualization from train subset.
 
-    k = top_n_classes[0]
-
-    gt = load_from_file(ground_truth, field)
+    For each model  it produces bars in a bar plot, one for each overall metric
+     computed on the fly from the probabilities predictions for the
+     specified field, considering only a subset of the full training set.
+     The way the subset is obtained is using the top_n_classes and
+     subset parameters.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param top_n_classes: List containing the number of classes to plot
+    :param labels_limit: Maximum numbers of labels.
+    :param subset: Type of the subset filtering
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    top_n_classes_list = convert_to_list(top_n_classes)
+    k = top_n_classes_list[0]
+    model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        ground_truth[ground_truth > labels_limit] = labels_limit
 
-    subset_indices = gt > 0
-    gt_subset = gt
+    subset_indices = ground_truth > 0
+    gt_subset = ground_truth
     if subset == 'ground_truth':
-        subset_indices = gt < k
-        gt_subset = gt[subset_indices]
+        subset_indices = ground_truth < k
+        gt_subset = ground_truth[subset_indices]
         logger.info('Subset is {:.2f}% of the data'.format(
-            len(gt_subset) / len(gt) * 100)
+            len(gt_subset) / len(ground_truth) * 100)
         )
 
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
+    probs = probabilities_per_model
     accuracies = []
     hits_at_ks = []
 
@@ -331,17 +1012,17 @@ def compare_classifiers_performance_subset(
 
         if subset == PREDICTIONS:
             subset_indices = np.argmax(prob, axis=1) < k
-            gt_subset = gt[subset_indices]
+            gt_subset = ground_truth[subset_indices]
             logger.info(
                 'Subset for model_name {} is {:.2f}% of the data'.format(
                     model_names[i] if model_names and i < len(
                         model_names) else i,
-                    len(gt_subset) / len(gt) * 100
+                    len(gt_subset) / len(ground_truth) * 100
                 )
             )
             model_names[i] = '{} ({:.2f}%)'.format(
                 model_names[i] if model_names and i < len(model_names) else i,
-                len(gt_subset) / len(gt) * 100
+                len(gt_subset) / len(ground_truth) * 100
             )
 
         prob_subset = prob[subset_indices]
@@ -360,7 +1041,7 @@ def compare_classifiers_performance_subset(
     title = None
     if subset == 'ground_truth':
         title = 'Classifier performance on first {} class{} ({:.2f}%)'.format(
-            k, 'es' if k > 1 else '', len(gt_subset) / len(gt) * 100
+            k, 'es' if k > 1 else '', len(gt_subset) / len(ground_truth) * 100
         )
     elif subset == PREDICTIONS:
         title = 'Classifier performance on first {} class{}'.format(
@@ -379,16 +1060,15 @@ def compare_classifiers_performance_subset(
     visualization_utils.compare_classifiers_plot(
         [accuracies, hits_at_ks],
         [ACCURACY, HITS_AT_K],
-        model_names,
+        model_names_list,
         title=title,
         filename=filename
     )
 
 
 def compare_classifiers_performance_changing_k(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         top_k,
         labels_limit,
         model_names=None,
@@ -396,21 +1076,31 @@ def compare_classifiers_performance_changing_k(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Produce lineplot that show Hits@K measure while k goes from 1 to top_k.
 
+
+    For each model it produces a line plot that shows the Hits@K measure
+    (that counts a prediction as correct if the model produces it among the
+    first k) while changing k from 1 to top_k for the specified field.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    param top_k: Number of elements in the ranklist to consider
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
     k = top_k
-
-    gt = load_from_file(ground_truth, field)
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
+        ground_truth[ground_truth > labels_limit] = labels_limit
+    probs = probabilities_per_model
 
     hits_at_ks = []
-
+    model_names_list = convert_to_list(model_names)
     for i, prob in enumerate(probs):
 
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
@@ -421,10 +1111,10 @@ def compare_classifiers_performance_changing_k(
         prob = np.argsort(prob, axis=1)
 
         hits_at_k = [0.0] * k
-        for g in range(len(gt)):
+        for g in range(len(ground_truth)):
             for j in range(k):
-                hits_at_k[j] += np.in1d(gt[g], prob[g, -j - 1:])
-        hits_at_ks.append(np.array(hits_at_k) / len(gt))
+                hits_at_k[j] += np.in1d(ground_truth[g], prob[g, -j - 1:])
+        hits_at_ks.append(np.array(hits_at_k) / len(ground_truth))
 
     filename = None
     if output_directory:
@@ -437,50 +1127,57 @@ def compare_classifiers_performance_changing_k(
     visualization_utils.compare_classifiers_line_plot(
         np.arange(1, k + 1),
         hits_at_ks, 'hits@k',
-        model_names,
+        model_names_list,
         title='Classifier comparison (hits@k)',
         filename=filename
     )
 
 
 def compare_classifiers_multiclass_multimetric(
-        test_statistics,
+        test_stats_per_model,
+        metadata,
         field,
-        ground_truth_metadata,
         top_n_classes,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(test_statistics) < 1:
-        logger.error('No test_statistics provided')
-        return
+    """Show the precision, recall and F1 of the model for the specified field.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'compare_classifiers_multiclass_multimetric_{}_{}_{}.' + file_format
-        )
+    For each model it produces four plots that show the precision,
+    recall and F1 of the model on several classes for the specified field.
+    :param test_stats_per_model: List containing train statistics per model
+    :param metadata: Model's input metadata
+    :param field: Prediction field containing ground truth.
+    :param top_n_classes: List containing the number of classes to plot
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    :return:
+    """
+    filename_template = 'compare_classifiers_multiclass_multimetric_{}_{}_{}.' \
+                        + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
 
-    metadata = load_json(ground_truth_metadata)
-    test_statistics_per_model_name = [load_json(test_statistics_f)
-                                      for test_statistics_f in
-                                      test_statistics]
-
-    fields_set = set()
-    for ls in test_statistics_per_model_name:
-        for key in ls:
-            fields_set.add(key)
-    fields = [field] if field is not None and len(field) > 0 else fields_set
+    test_stats_per_model_list = convert_to_list(test_stats_per_model)
+    model_names_list = convert_to_list(model_names)
+    fields = validate_visualization_prediction_field_from_test_stats(
+        field,
+        test_stats_per_model_list
+    )
 
     for i, test_statistics in enumerate(
-            test_statistics_per_model_name):
+            test_stats_per_model_list):
         for field in fields:
             model_name_name = (
-                model_names[i]
-                if model_names is not None and i < len(model_names)
+                model_names_list[i]
+                if model_names_list is not None and i < len(model_names_list)
                 else ''
             )
             if 'per_class_stats' not in test_statistics[field]:
@@ -511,9 +1208,9 @@ def compare_classifiers_multiclass_multimetric(
                 ls = labels[0:k]
 
                 filename = None
-                if filename_template:
+                if filename_template_path:
                     os.makedirs(output_directory, exist_ok=True)
-                    filename = filename_template.format(
+                    filename = filename_template_path.format(
                         model_name_name, field, 'top{}'.format(k)
                     )
 
@@ -535,9 +1232,9 @@ def compare_classifiers_multiclass_multimetric(
                 sorted_indices = f1_np.argsort()
                 higher_f1s = sorted_indices[-k:][::-1]
                 filename = None
-                if filename_template:
+                if filename_template_path:
                     os.makedirs(output_directory, exist_ok=True)
-                    filename = filename_template.format(
+                    filename = filename_template_path.format(
                         model_name_name, field, 'best{}'.format(k)
                     )
                 visualization_utils.compare_classifiers_multiclass_multimetric_plot(
@@ -553,8 +1250,8 @@ def compare_classifiers_multiclass_multimetric(
                 )
                 lower_f1s = sorted_indices[:k]
                 filename = None
-                if filename_template:
-                    filename = filename_template.format(
+                if filename_template_path:
+                    filename = filename_template_path.format(
                         model_name_name, field, 'worst{}'.format(k)
                     )
                 visualization_utils.compare_classifiers_multiclass_multimetric_plot(
@@ -569,8 +1266,8 @@ def compare_classifiers_multiclass_multimetric(
                 )
 
                 filename = None
-                if filename_template:
-                    filename = filename_template.format(
+                if filename_template_path:
+                    filename = filename_template_path.format(
                         model_name_name, field, 'sorted'
                     )
                 visualization_utils.compare_classifiers_multiclass_multimetric_plot(
@@ -584,62 +1281,66 @@ def compare_classifiers_multiclass_multimetric(
                     filename=filename
                 )
 
-                logger.info('\n')
-                logger.info(model_name_name)
+                logging.info('\n')
+                logging.info(model_name_name)
                 tmp_str = '{0} best 5 classes: '.format(field)
                 tmp_str += '{}'
-                logger.info(tmp_str.format(higher_f1s))
-                logger.info(f1_np[higher_f1s])
+                logging.info(tmp_str.format(higher_f1s))
+                logging.info(f1_np[higher_f1s])
                 tmp_str = '{0} worst 5 classes: '.format(field)
                 tmp_str += '{}'
-                logger.info(tmp_str.format(lower_f1s))
-                logger.info(f1_np[lower_f1s])
+                logging.info(tmp_str.format(lower_f1s))
+                logging.info(f1_np[lower_f1s])
                 tmp_str = '{0} number of classes with f1 score > 0: '.format(
                     field)
                 tmp_str += '{}'
-                logger.info(tmp_str.format(np.sum(f1_np > 0)))
+                logging.info(tmp_str.format(np.sum(f1_np > 0)))
                 tmp_str = '{0} number of classes with f1 score = 0: '.format(
                     field)
                 tmp_str += '{}'
-                logger.info(tmp_str.format(np.sum(f1_np == 0)))
+                logging.info(tmp_str.format(np.sum(f1_np == 0)))
 
 
 def compare_classifiers_predictions(
-        predictions,
+        predictions_per_model,
         ground_truth,
-        field,
         labels_limit,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(predictions) < 2:
-        logger.error('No predictions provided')
-        return
+    """Show two models comparision of their field predictions.
 
-    ground_truth_fn = ground_truth
-    ground_truth_field = field
-    predictions_1_fn = predictions[0]
-    predictions_2_fn = predictions[1]
+    :param predictions_per_model: List containing the model predictions
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    model_names_list = convert_to_list(model_names)
     name_c1 = (
-        model_names[0] if model_names is not None and len(model_names) > 0
+        model_names_list[0] if model_names is not None and len(model_names) > 0
         else 'c1')
     name_c2 = (
-        model_names[1] if model_names is not None and len(model_names) > 1
+        model_names_list[1] if model_names is not None and len(model_names) > 1
         else 'c2')
 
-    gt = load_from_file(ground_truth_fn, ground_truth_field)
-    pred_c1 = load_from_file(predictions_1_fn, dtype=int)
-    pred_c2 = load_from_file(predictions_2_fn, dtype=int)
+    pred_c1 = predictions_per_model[0]
+    pred_c2 = predictions_per_model[1]
 
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        ground_truth[ground_truth > labels_limit] = labels_limit
         pred_c1[pred_c1 > labels_limit] = labels_limit
         pred_c2[pred_c2 > labels_limit] = labels_limit
 
     # DOTO all shadows built in name - come up with a more descriptive name
-    all = len(gt)
+    all = len(ground_truth)
     if all == 0:
         logger.error('No labels in the ground truth')
         return
@@ -651,16 +1352,16 @@ def compare_classifiers_predictions(
     c1_wrong_c2_right = 0
 
     for i in range(all):
-        if gt[i] == pred_c1[i] and gt[i] == pred_c2[i]:
+        if ground_truth[i] == pred_c1[i] and ground_truth[i] == pred_c2[i]:
             both_right += 1
-        elif gt[i] != pred_c1[i] and gt[i] != pred_c2[i]:
+        elif ground_truth[i] != pred_c1[i] and ground_truth[i] != pred_c2[i]:
             if pred_c1[i] == pred_c2[i]:
                 both_wrong_same += 1
             else:
                 both_wrong_different += 1
-        elif gt[i] == pred_c1[i] and gt[i] != pred_c2[i]:
+        elif ground_truth[i] == pred_c1[i] and ground_truth[i] != pred_c2[i]:
             c1_right_c2_wrong += 1
-        elif gt[i] != pred_c1[i] and gt[i] == pred_c2[i]:
+        elif ground_truth[i] != pred_c1[i] and ground_truth[i] == pred_c2[i]:
             c1_wrong_c2_right += 1
 
     one_right = c1_right_c2_wrong + c1_wrong_c2_right
@@ -731,34 +1432,46 @@ def compare_classifiers_predictions(
 
 
 def compare_classifiers_predictions_distribution(
-        predictions,
+        predictions_per_model,
         ground_truth,
-        field,
         labels_limit,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(predictions) < 1:
-        logger.error('No predictions provided')
-        return
+    """Show comparision of models predictions distribution for 10 field classes
 
-    ground_truth = load_from_file(ground_truth, field)
+    This visualization produces a radar plot comparing the distributions of
+    predictions of the models for the first 10 classes of the specified field.
+    :param predictions_per_model: List containing the model predictions
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    model_names_list = convert_to_list(model_names)
     if labels_limit > 0:
         ground_truth[ground_truth > labels_limit] = labels_limit
+        for i in range(len(predictions_per_model)):
+            predictions_per_model[i][predictions_per_model[i] > labels_limit] \
+                = labels_limit
 
-    predictions = [load_from_file(predictions_fn, dtype=int)
-                   for predictions_fn in predictions]
-    if labels_limit > 0:
-        for i in range(len(predictions)):
-            predictions[i][predictions[i] > labels_limit] = labels_limit
+    max_gt = max(ground_truth)
+    max_pred = max([max(alg_predictions)
+                    for alg_predictions in predictions_per_model])
+    max_val = max(max_gt, max_pred) + 1
 
-    counts_gt = np.bincount(ground_truth)
+    counts_gt = np.bincount(ground_truth, minlength=max_val)
     prob_gt = counts_gt / counts_gt.sum()
 
-    counts_predictions = [np.bincount(alg_predictions)
-                          for alg_predictions in predictions]
+    counts_predictions = [np.bincount(alg_predictions, minlength=max_val)
+                          for alg_predictions in predictions_per_model]
 
     prob_predictions = [alg_count_prediction / alg_count_prediction.sum()
                         for alg_count_prediction in counts_predictions]
@@ -774,32 +1487,40 @@ def compare_classifiers_predictions_distribution(
     visualization_utils.radar_chart(
         prob_gt,
         prob_predictions,
-        model_names,
+        model_names_list,
         filename=filename
     )
 
 
 def confidence_thresholding(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         labels_limit,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show models accuracy and data coverage while increasing treshold
 
-    gt = load_from_file(ground_truth, field)
+    For each model it produces a pair of lines indicating the accuracy of
+    the model and the data coverage while increasing a threshold (x axis) on
+    the probabilities of predictions for the specified field.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
+        ground_truth[ground_truth > labels_limit] = labels_limit
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
     thresholds = [t / 100 for t in range(0, 101, 5)]
 
     accuracies = []
@@ -821,7 +1542,7 @@ def confidence_thresholding(
         for threshold in thresholds:
             threshold = threshold if threshold < 1 else 0.999
             filtered_indices = max_prob >= threshold
-            filtered_gt = gt[filtered_indices]
+            filtered_gt = ground_truth[filtered_indices]
             filtered_predictions = predictions[filtered_indices]
             accuracy = (
                     (filtered_gt == filtered_predictions).sum() /
@@ -829,7 +1550,7 @@ def confidence_thresholding(
             )
 
             accuracies_alg.append(accuracy)
-            dataset_kept_alg.append(len(filtered_gt) / len(gt))
+            dataset_kept_alg.append(len(filtered_gt) / len(ground_truth))
 
         accuracies.append(accuracies_alg)
         dataset_kept.append(dataset_kept_alg)
@@ -846,33 +1567,44 @@ def confidence_thresholding(
         thresholds,
         accuracies,
         dataset_kept,
-        model_names,
+        model_names_list,
         title='Confidence_Thresholding',
         filename=filename
     )
 
 
 def confidence_thresholding_data_vs_acc(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         labels_limit,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show models comparision of confidence treshold data vs accuracy.
 
-    gt = load_from_file(ground_truth, field)
+    For each model it produces a line indicating the accuracy of the model
+    and the data coverage while increasing a threshold on the probabilities
+    of predictions for the specified field. The difference with
+    confidence_thresholding is that it uses two axes instead of three,
+    not visualizing the threshold and having coverage as x axis instead of
+    the threshold.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
+        ground_truth[ground_truth > labels_limit] = labels_limit
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
     thresholds = [t / 100 for t in range(0, 101, 5)]
 
     accuracies = []
@@ -894,13 +1626,13 @@ def confidence_thresholding_data_vs_acc(
         for threshold in thresholds:
             threshold = threshold if threshold < 1 else 0.999
             filtered_indices = max_prob >= threshold
-            filtered_gt = gt[filtered_indices]
+            filtered_gt = ground_truth[filtered_indices]
             filtered_predictions = predictions[filtered_indices]
             accuracy = ((filtered_gt == filtered_predictions).sum() /
                         len(filtered_gt))
 
             accuracies_alg.append(accuracy)
-            dataset_kept_alg.append(len(filtered_gt) / len(gt))
+            dataset_kept_alg.append(len(filtered_gt) / len(ground_truth))
 
         accuracies.append(accuracies_alg)
         dataset_kept.append(dataset_kept_alg)
@@ -916,16 +1648,15 @@ def confidence_thresholding_data_vs_acc(
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
-        model_names,
+        model_names_list,
         title='Confidence_Thresholding (Data vs Accuracy)',
         filename=filename
     )
 
 
 def confidence_thresholding_data_vs_acc_subset(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         top_n_classes,
         labels_limit,
         subset,
@@ -934,30 +1665,56 @@ def confidence_thresholding_data_vs_acc_subset(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show models comparision of confidence treshold data vs accuracy on a
+    subset of data.
 
-    k = top_n_classes[0]
-    gt = load_from_file(ground_truth, field)
+    For each model it produces a line indicating the accuracy of the model
+    and the data coverage while increasing a threshold on the probabilities
+    of predictions for the specified field, considering only a subset of the
+    full training set. The way the subset is obtained is using the top_n_classes
+    and subset parameters.
+     The difference with confidence_thresholding is that it uses two axes
+     instead of three, not visualizing the threshold and having coverage as
+     x axis instead of the threshold.
+
+    If the values of subset is ground_truth, then only datapoints where the
+    ground truth class is within the top n most frequent ones will be
+    considered  as test set, and the percentage of datapoints that have been
+    kept  from the original set will be displayed. If the values of subset is
+     predictions, then only datapoints where the the model predicts a class
+     that is within the top n most frequent ones will be considered as test set,
+     and the percentage of datapoints that have been kept from the original set
+     will be displayed for each model.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param top_n_classes: List containing the number of classes to plot
+    :param labels_limit: Maximum numbers of labels.
+    :param subset: Type of the subset filtering
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    top_n_classes_list = convert_to_list(top_n_classes)
+    k = top_n_classes_list[0]
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
+        ground_truth[ground_truth > labels_limit] = labels_limit
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
     thresholds = [t / 100 for t in range(0, 101, 5)]
 
     accuracies = []
     dataset_kept = []
 
-    subset_indices = gt > 0
-    gt_subset = gt
+    subset_indices = ground_truth > 0
+    gt_subset = ground_truth
     if subset == 'ground_truth':
-        subset_indices = gt < k
-        gt_subset = gt[subset_indices]
+        subset_indices = ground_truth < k
+        gt_subset = ground_truth[subset_indices]
         logger.info('Subset is {:.2f}% of the data'.format(
-            len(gt_subset) / len(gt) * 100)
+            len(gt_subset) / len(ground_truth) * 100)
         )
 
     for i, prob in enumerate(probs):
@@ -969,12 +1726,12 @@ def confidence_thresholding_data_vs_acc_subset(
 
         if subset == PREDICTIONS:
             subset_indices = np.argmax(prob, axis=1) < k
-            gt_subset = gt[subset_indices]
+            gt_subset = ground_truth[subset_indices]
             logger.info(
                 'Subset for model_name {} is {:.2f}% of the data'.format(
                     model_names[i] if model_names and i < len(
                         model_names) else i,
-                    len(gt_subset) / len(gt) * 100
+                    len(gt_subset) / len(ground_truth) * 100
                 )
             )
 
@@ -995,7 +1752,7 @@ def confidence_thresholding_data_vs_acc_subset(
                         len(filtered_gt))
 
             accuracies_alg.append(accuracy)
-            dataset_kept_alg.append(len(filtered_gt) / len(gt))
+            dataset_kept_alg.append(len(filtered_gt) / len(ground_truth))
 
         accuracies.append(accuracies_alg)
         dataset_kept.append(dataset_kept_alg)
@@ -1011,16 +1768,16 @@ def confidence_thresholding_data_vs_acc_subset(
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         accuracies,
         dataset_kept,
-        model_names,
+        model_names_list,
         title='Confidence_Thresholding (Data vs Accuracy)',
         filename=filename
     )
 
 
 def confidence_thresholding_data_vs_acc_subset_per_class(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        ground_truth_metadata,
+        metadata,
         field,
         top_n_classes,
         labels_limit,
@@ -1030,25 +1787,55 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show models comparision of confidence treshold data vs accuracy on a
+    subset of data per class in top n classes.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'confidence_thresholding_data_vs_acc_subset_per_class_{}.' + file_format
-        )
+    For each model (in the aligned lists of probabilities and model_names)
+    it produces a line indicating the accuracy of the model and the data
+    coverage while increasing a threshold on the probabilities of
+    predictions for the specified field, considering only a subset of the
+    full training set. The way the subset is obtained is using the
+    top_n_classes  and subset parameters.  The difference with
+    confidence_thresholding is that it uses two axes instead of three,
+    not visualizing the threshold and having coverage as x axis instead of
+    the  threshold.
 
-    metadata = load_json(ground_truth_metadata)
-    k = top_n_classes[0]
-    gt = load_from_file(ground_truth, field)
+    If the values of subset is ground_truth, then only datapoints where the
+    ground truth class is within the top n most frequent ones will be
+    considered  as test set, and the percentage of datapoints that have been
+    kept from the original set will be displayed. If the values of subset is
+    predictions, then only datapoints where the the model predicts a class that
+    is within the top n most frequent ones will be considered as test set, and
+    the percentage of datapoints that have been kept from the original set will
+    be displayed for each model.
+
+    The difference with confidence_thresholding_data_vs_acc_subset is that it
+    produces one plot per class within the top_n_classes.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param metadata: Model's input metadata
+    :param top_n_classes: List containing the number of classes to plot
+    :param labels_limit: Maximum numbers of labels.
+    :param subset: Type of the subset filtering
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    filename_template = \
+        'confidence_thresholding_data_vs_acc_subset_per_class_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
+    top_n_classes_list = convert_to_list(top_n_classes)
+    k = top_n_classes_list[0]
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
+        ground_truth[ground_truth > labels_limit] = labels_limit
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
 
     thresholds = [t / 100 for t in range(0, 101, 5)]
 
@@ -1056,13 +1843,13 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         accuracies = []
         dataset_kept = []
 
-        subset_indices = gt > 0
-        gt_subset = gt
+        subset_indices = ground_truth > 0
+        gt_subset = ground_truth
         if subset == 'ground_truth':
-            subset_indices = gt == curr_k
-            gt_subset = gt[subset_indices]
+            subset_indices = ground_truth == curr_k
+            gt_subset = ground_truth[subset_indices]
             logger.info('Subset is {:.2f}% of the data'.format(
-                len(gt_subset) / len(gt) * 100)
+                len(gt_subset) / len(ground_truth) * 100)
             )
 
         for i, prob in enumerate(probs):
@@ -1074,12 +1861,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
             if subset == PREDICTIONS:
                 subset_indices = np.argmax(prob, axis=1) == curr_k
-                gt_subset = gt[subset_indices]
+                gt_subset = ground_truth[subset_indices]
                 logger.info(
                     'Subset for model_name {} is {:.2f}% of the data'.format(
-                        model_names[i] if model_names and i < len(
-                            model_names) else i,
-                        len(gt_subset) / len(gt) * 100
+                        model_names_list[i] if model_names_list and i < len(
+                            model_names_list) else i,
+                        len(gt_subset) / len(ground_truth) * 100
                     )
                 )
 
@@ -1100,7 +1887,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
                             len(filtered_gt) if len(filtered_gt) > 0 else 0)
 
                 accuracies_alg.append(accuracy)
-                dataset_kept_alg.append(len(filtered_gt) / len(gt))
+                dataset_kept_alg.append(len(filtered_gt) / len(ground_truth))
 
             accuracies.append(accuracies_alg)
             dataset_kept.append(dataset_kept_alg)
@@ -1108,12 +1895,12 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
         field_name = metadata[field]['idx2str'][curr_k]
 
         filename = None
-        if filename_template:
+        if filename_template_path:
             os.makedirs(output_directory, exist_ok=True)
-            filename = filename_template.format(field_name)
+            filename = filename_template_path.format(field_name)
 
         visualization_utils.confidence_fitlering_data_vs_acc_plot(
-            accuracies, dataset_kept, model_names,
+            accuracies, dataset_kept, model_names_list,
             decimal_digits=2,
             title='Confidence_Thresholding (Data vs Accuracy) '
                   'for class {}'.format(field_name),
@@ -1122,8 +1909,8 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
 
 def confidence_thresholding_2thresholds_2d(
-        probabilities,
-        ground_truth,
+        probabilities_per_model,
+        ground_truths,
         threshold_fields,
         labels_limit,
         model_names=None,
@@ -1131,35 +1918,48 @@ def confidence_thresholding_2thresholds_2d(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 2:
-        logger.error('Not enough probabilities provided, two are needed')
-        return
-    if len(probabilities) > 2:
-        logger.error('Too many probabilities provided, only two are needed')
-        return
-    if len(threshold_fields) < 2:
-        logger.error('Not enough threshold fields provided, two are needed')
-        return
-    if len(threshold_fields) > 2:
-        logger.error('Too many threshold fields provided, only two are needed')
-        return
+    """Show confidence trethreshold data vs accuracy for two field thresholds
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'confidence_thresholding_2thresholds_2d_{}.' + file_format
+    The first plot shows several semi transparent lines. They summarize the
+    3d surfaces displayed by confidence_thresholding_2thresholds_3d that have
+    thresholds on the confidence of the predictions of the two
+    threshold_fields  as x and y axes and either the data coverage percentage or
+    the accuracy as z axis. Each line represents a slice of the data
+    coverage  surface projected onto the accuracy surface.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truths: List of NumPy Arrays containing computed model ground
+               truth data for target prediction fields based on the model
+               metadata
+    :param threshold_fields: List of fields for 2d threshold
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: Name of the model to use as label.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    try:
+        validate_conf_treshholds_and_probabilities_2d_3d(
+            probabilities_per_model,
+            threshold_fields
         )
-
-    gt_1 = load_from_file(ground_truth, threshold_fields[0])
-    gt_2 = load_from_file(ground_truth, threshold_fields[1])
+    except RuntimeError:
+        return
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
+    filename_template = \
+        'confidence_thresholding_2thresholds_2d_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
+    gt_1 = ground_truths[0]
+    gt_2 = ground_truths[1]
 
     if labels_limit > 0:
         gt_1[gt_1 > labels_limit] = labels_limit
         gt_2[gt_2 > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
 
     thresholds = [t / 100 for t in range(0, 101, 5)]
     fixed_step_coverage = thresholds
@@ -1237,13 +2037,13 @@ def confidence_thresholding_2thresholds_2d(
     # Multiline #
     # ===========#
     filename = None
-    if filename_template:
+    if filename_template_path:
         os.makedirs(output_directory, exist_ok=True)
-        filename = filename_template.format('multiline')
+        filename = filename_template_path.format('multiline')
     visualization_utils.confidence_fitlering_data_vs_acc_multiline_plot(
         accuracies,
         dataset_kept,
-        model_names,
+        model_names_list,
         title='Coverage vs Accuracy, two thresholds',
         filename=filename
     )
@@ -1252,13 +2052,13 @@ def confidence_thresholding_2thresholds_2d(
     # Max line #
     # ==========#
     filename = None
-    if filename_template:
-        filename = filename_template.format('maxline')
+    if filename_template_path:
+        filename = filename_template_path.format('maxline')
     max_accuracies = np.amax(np.array(interps), 0)
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         [max_accuracies],
         [thresholds],
-        model_names,
+        model_names_list,
         title='Coverage vs Accuracy, two thresholds',
         filename=filename
     )
@@ -1280,13 +2080,13 @@ def confidence_thresholding_2thresholds_2d(
                                              selected_acc.shape)
         t1_maxes.append(thresholds[threshold_indices[0]])
         t2_maxes.append(thresholds[threshold_indices[1]])
-    model_name = model_names[0] if model_names is not None and len(
-        model_names) > 0 else ''
+    model_name = model_names_list[0] if model_names_list is not None and len(
+        model_names_list) > 0 else ''
 
     filename = None
-    if filename_template:
+    if filename_template_path:
         os.makedirs(output_directory, exist_ok=True)
-        filename = filename_template.format('maxline_with_thresholds')
+        filename = filename_template_path.format('maxline_with_thresholds')
 
     visualization_utils.confidence_fitlering_data_vs_acc_plot(
         [max_accuracies, t1_maxes, t2_maxes],
@@ -1300,36 +2100,46 @@ def confidence_thresholding_2thresholds_2d(
 
 
 def confidence_thresholding_2thresholds_3d(
-        probabilities,
-        ground_truth,
+        probabilities_per_model,
+        ground_truths,
         threshold_fields,
         labels_limit,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 2:
-        logger.error('Not enough probabilities provided, two are needed')
-        return
-    if len(probabilities) > 2:
-        logger.error('Too many probabilities provided, only two are needed')
-        return
-    if len(threshold_fields) < 2:
-        logger.error('Not enough threshold fields provided, two are needed')
-        return
-    if len(threshold_fields) > 2:
-        logger.error('Too many threshold fields provided, only two are needed')
-        return
+    """Show 3d confidence trethreshold data vs accuracy for two field thresholds
 
-    gt_1 = load_from_file(ground_truth, threshold_fields[0])
-    gt_2 = load_from_file(ground_truth, threshold_fields[1])
+    The plot shows the 3d surfaces displayed by
+    confidence_thresholding_2thresholds_3d that have thresholds on the
+    confidence of the predictions of the two threshold_fields as x and y axes
+    and either the data coverage percentage or the accuracy as z axis.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truths: List of NumPy Arrays containing computed model ground
+               truth data for target prediction fields based on the model
+               metadata
+    :param threshold_fields: List of fields for 2d threshold
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    try:
+        validate_conf_treshholds_and_probabilities_2d_3d(
+            probabilities_per_model,
+            threshold_fields
+        )
+    except RuntimeError:
+        return
+    probs = probabilities_per_model
+    gt_1 = ground_truths[0]
+    gt_2 = ground_truths[1]
 
     if labels_limit > 0:
         gt_1[gt_1 > labels_limit] = labels_limit
         gt_2[gt_2 > labels_limit] = labels_limit
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
 
     thresholds = [t / 100 for t in range(0, 101, 5)]
 
@@ -1403,9 +2213,8 @@ def confidence_thresholding_2thresholds_3d(
 
 
 def binary_threshold_vs_metric(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         metrics,
         positive_label=1,
         model_names=None,
@@ -1413,27 +2222,43 @@ def binary_threshold_vs_metric(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show confidence of the model against metric for the specified field.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'binary_threshold_vs_metric_{}.' + file_format
-        )
-
-    gt = load_from_file(ground_truth, field)
-
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
+    For each metric specified in metrics (options are f1, precision, recall,
+    accuracy), this visualization produces a line chart plotting a threshold
+    on  the confidence of the model against the metric for the specified
+    field.  If field is a category feature, positive_label indicates which is
+    the class to be considered positive class and all the others will be
+    considered negative. It needs to be an integer, to figure out the
+    association between classes and integers check the ground_truth_metadata
+    JSON file.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: List of NumPy Arrays containing computed model
+           ground truth data for target prediction fields based on the model
+           metadata
+    :param metrics: metrics to dispay (f1, precision, recall,
+                    accuracy)
+    :param positive_label: Label of the positive class
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
+    metrics_list = convert_to_list(metrics)
+    filename_template = 'binary_threshold_vs_metric_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
 
     thresholds = [t / 100 for t in range(0, 101, 5)]
 
     supported_metrics = {'f1', 'precision', 'recall', 'accuracy'}
 
-    for metric in metrics:
+    for metric in metrics_list:
 
         if metric not in supported_metrics:
             logger.error("Metric {} not supported".format(metric))
@@ -1459,7 +2284,7 @@ def binary_threshold_vs_metric(
             for threshold in thresholds:
                 threshold = threshold if threshold < 1 else 0.99
 
-                t_gt = gt[prob >= threshold]
+                t_gt = ground_truth[prob >= threshold]
                 predictions = prob >= threshold
                 t_predictions = predictions[prob >= threshold]
 
@@ -1491,42 +2316,54 @@ def binary_threshold_vs_metric(
         filename = None
         if output_directory:
             os.makedirs(output_directory, exist_ok=True)
-            filename = filename_template.format(metric)
+            filename = filename_template_path.format(metric)
 
         visualization_utils.threshold_vs_metric_plot(
             thresholds,
             scores,
-            model_names,
+            model_names_list,
             title='Binary threshold vs {}'.format(metric),
             filename=filename
         )
 
 
 def roc_curves(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         positive_label=1,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show the roc curves for the specified models output field.
 
-    gt = load_from_file(ground_truth, field)
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
+    This visualization produces a line chart plotting the roc curves for the
+    specified field. If field is a category feature, positive_label indicates
+    which is the class to be considered positive class and all the others will
+    be considered negative. It needs to be an integer, to figure out the
+    association between classes and integers check the ground_truth_metadata
+    JSON file.
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: List of NumPy Arrays containing computed model
+           ground truth data for target prediction fields based on the model
+           metadata
+    :param positive_label: Label of the positive class
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
     fpr_tprs = []
 
     for i, prob in enumerate(probs):
         if len(prob.shape) > 1:
             prob = prob[:, positive_label]
         fpr, tpr, _ = sklearn.metrics.roc_curve(
-            gt, prob,
+            ground_truth, prob,
             pos_label=positive_label
         )
         fpr_tprs.append((fpr, tpr))
@@ -1541,55 +2378,58 @@ def roc_curves(
 
     visualization_utils.roc_curves(
         fpr_tprs,
-        model_names,
+        model_names_list,
         title='ROC curves',
         filename=filename
     )
 
 
 def roc_curves_from_test_statistics(
-        test_statistics,
+        test_stats_per_model,
         field,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(test_statistics) < 1:
-        logger.error('No test_statistics provided')
-        return
+    """Show the roc curves for the specified models output binary field.
 
-    test_statistics_per_model_name = [load_json(test_statistics_f)
-                                      for test_statistics_f in
-                                      test_statistics]
+    This visualization uses the field, test_statistics and model_names
+    parameters. field needs to be binary feature. This visualization produces a
+    line chart plotting the roc curves for the specified field.
+    :param test_stats_per_model: List containing train statistics per model
+    :param field: Prediction field containing ground truth.
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    model_names_list = convert_to_list(model_names)
+    filename_template = 'roc_curves_from_prediction_statistics.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
     fpr_tprs = []
-    for curr_test_statistics in test_statistics_per_model_name:
+    for curr_test_statistics in test_stats_per_model:
         fpr = curr_test_statistics[field]['roc_curve'][
             'false_positive_rate']
         tpr = curr_test_statistics[field]['roc_curve'][
             'true_positive_rate']
         fpr_tprs.append((fpr, tpr))
 
-    filename = None
-    if output_directory:
-        os.makedirs(output_directory, exist_ok=True)
-        filename = os.path.join(
-            output_directory,
-            'roc_curves_from_prediction_statistics.' + file_format
-        )
-
     visualization_utils.roc_curves(
         fpr_tprs,
-        model_names,
+        model_names_list,
         title='ROC curves',
-        filename=filename
+        filename=filename_template_path
     )
 
 
 def calibration_1_vs_all(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         top_n_classes,
         labels_limit,
         model_names=None,
@@ -1597,29 +2437,49 @@ def calibration_1_vs_all(
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show models probability of predictions for the specified field.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'calibration_1_vs_all_{}.' + file_format
-        )
+    For each class or each of the k most frequent classes if top_k is
+    specified,  it produces two plots computed on the fly from the
+    probabilities  of predictions for the specified field.
 
-    gt = load_from_file(ground_truth, field)
+    The first plot is a calibration curve that shows the calibration of the
+    predictions considering the current class to be the true one and all
+    others  to be a false one, drawing one line for each model (in the
+    aligned  lists of probabilities and model_names).
+
+    The second plot shows the distributions of the predictions considering
+    the  current class to be the true one and all others to be a false one,
+    drawing the distribution for each model (in the aligned lists of
+    probabilities and model_names).
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param top_n_classes: List containing the number of classes to plot
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
+    filename_template = 'calibration_1_vs_all_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
+        ground_truth[ground_truth > labels_limit] = labels_limit
     for i, prob in enumerate(probs):
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, :labels_limit + 1]
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
             probs[i] = prob_limit
 
-    num_classes = max(gt)
+    num_classes = max(ground_truth)
 
     brier_scores = []
 
@@ -1642,7 +2502,7 @@ def calibration_1_vs_all(
             # we need to take only the column of predictions that is about the
             # class we are interested in, the input class index
 
-            gt_class = (gt == class_idx).astype(int)
+            gt_class = (ground_truth == class_idx).astype(int)
             prob_class = prob[:, class_idx]
 
             (
@@ -1665,69 +2525,74 @@ def calibration_1_vs_all(
         filename = None
         if output_directory:
             os.makedirs(output_directory, exist_ok=True)
-            filename = filename_template.format(class_idx)
+            filename = filename_template_path.format(class_idx)
 
         visualization_utils.calibration_plot(
             fraction_positives_class,
             mean_predicted_vals_class,
-            model_names,
+            model_names_list,
             filename=filename
         )
 
         filename = None
         if output_directory:
             os.makedirs(output_directory, exist_ok=True)
-            filename = filename_template.format(
+            filename = filename_template_path.format(
                 'prediction_distribution_' + str(class_idx)
             )
 
         visualization_utils.predictions_distribution_plot(
             probs_class,
-            model_names,
+            model_names_list,
             filename=filename
         )
 
     filename = None
     if output_directory:
         os.makedirs(output_directory, exist_ok=True)
-        filename = filename_template.format('brier')
+        filename = filename_template_path.format('brier')
 
     visualization_utils.brier_plot(
         np.array(brier_scores),
-        model_names,
+        model_names_list,
         filename=filename
     )
 
 
 def calibration_multiclass(
-        probabilities,
+        probabilities_per_model,
         ground_truth,
-        field,
         labels_limit,
         model_names=None,
         output_directory=None,
         file_format='pdf',
         **kwargs
 ):
-    if len(probabilities) < 1:
-        logger.error('No probabilities provided')
-        return
+    """Show models probability of predictions for each class of the the
+    specified field.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'calibration_multiclass{}.' + file_format
-        )
-
-    gt = load_from_file(ground_truth, field)
+    :param probabilities_per_model: List of model probabilities
+    :param ground_truth: NumPy Array containing computed model ground truth
+           data for target prediction field based on the model metadata
+    :param labels_limit: Maximum numbers of labels.
+             If labels in dataset are higher than this number, "rare" label
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    """
+    probs = probabilities_per_model
+    model_names_list = convert_to_list(model_names)
+    filename_template = 'calibration_multiclass{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
     if labels_limit > 0:
-        gt[gt > labels_limit] = labels_limit
+        ground_truth[ground_truth > labels_limit] = labels_limit
 
     prob_classes = 0
-    probs = [load_from_file(probs_fn, dtype=float)
-             for probs_fn in probabilities]
-
     for i, prob in enumerate(probs):
         if labels_limit > 0 and prob.shape[1] > labels_limit + 1:
             prob_limit = prob[:, :labels_limit + 1]
@@ -1736,9 +2601,9 @@ def calibration_multiclass(
         if probs[i].shape[1] > prob_classes:
             prob_classes = probs[i].shape[1]
 
-    gt_one_hot_dim_2 = max(prob_classes, max(gt) + 1)
-    gt_one_hot = np.zeros((len(gt), gt_one_hot_dim_2))
-    gt_one_hot[np.arange(len(gt)), gt] = 1
+    gt_one_hot_dim_2 = max(prob_classes, max(ground_truth) + 1)
+    gt_one_hot = np.zeros((len(ground_truth), gt_one_hot_dim_2))
+    gt_one_hot[np.arange(len(ground_truth)), ground_truth] = 1
     gt_one_hot_flat = gt_one_hot.flatten()
 
     fraction_positives = []
@@ -1765,18 +2630,18 @@ def calibration_multiclass(
     filename = None
     if output_directory:
         os.makedirs(output_directory, exist_ok=True)
-        filename = filename_template.format('')
+        filename = filename_template_path.format('')
 
     visualization_utils.calibration_plot(
         fraction_positives,
         mean_predicted_vals,
-        model_names,
+        model_names_list,
         filename=filename
     )
 
     filename = None
     if output_directory:
-        filename = filename_template.format('_brier')
+        filename = filename_template_path.format('_brier')
 
     visualization_utils.compare_classifiers_plot(
         [brier_scores],
@@ -1797,8 +2662,8 @@ def calibration_multiclass(
 
 
 def confusion_matrix(
-        test_statistics,
-        ground_truth_metadata,
+        test_stats_per_model,
+        metadata,
         field,
         top_n_classes,
         normalize,
@@ -1807,39 +2672,46 @@ def confusion_matrix(
         file_format='pdf',
         **kwargs
 ):
-    if len(test_statistics) < 1:
-        logger.error('No test_statistics provided')
-        return
+    """Show confision matrix in the models predictions for each field.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'confusion_matrix_{}_{}_{}.' + file_format
-        )
-
-    metadata = None
-    if ground_truth_metadata is not None:
-        metadata = load_json(ground_truth_metadata)
-    test_statistics_per_model_name = [load_json(test_statistics_f)
-                                      for test_statistics_f in
-                                      test_statistics]
-
-    fields_set = set()
-    for ls in test_statistics_per_model_name:
-        for key in ls:
-            fields_set.add(key)
-    fields = [field] if field is not None and len(field) > 0 else fields_set
+    For each model (in the aligned lists of test_statistics and model_names)
+    it  produces a heatmap of the confusion matrix in the predictions for
+    each  field that has a confusion matrix in test_statistics. The value of
+    top_n_classes limits the heatmap to the n most frequent classes.
+    :param test_stats_per_model: List containing train statistics per model
+    :param metadata: Model's input metadata
+    :param field: Prediction field containing ground truth.
+    :param top_n_classes: List containing the number of classes to plot
+    :param normalize: Flag to normalize rows in confusion matrix
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    :return:
+    """
+    test_stats_per_model_list = test_stats_per_model
+    model_names_list = convert_to_list(model_names)
+    filename_template = 'confusion_matrix_{}_{}_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
+    fields = validate_visualization_prediction_field_from_test_stats(
+        field,
+        test_stats_per_model_list
+    )
 
     for i, test_statistics in enumerate(
-            test_statistics_per_model_name):
+            test_stats_per_model_list):
         for field in fields:
             if 'confusion_matrix' in test_statistics[field]:
                 confusion_matrix = np.array(
                     test_statistics[field]['confusion_matrix']
                 )
-                model_name_name = model_names[i] if (
-                        model_names is not None and i < len(model_names)
+                model_name_name = model_names_list[i] if (
+                        model_names_list is not None and i < len(
+                    model_names_list)
                 ) else ''
 
                 if metadata is not None and field in metadata and 'idx2str' in \
@@ -1863,7 +2735,7 @@ def confusion_matrix(
                     filename = None
                     if output_directory:
                         os.makedirs(output_directory, exist_ok=True)
-                        filename = filename_template.format(
+                        filename = filename_template_path.format(
                             model_name_name,
                             field,
                             'top' + str(k)
@@ -1888,7 +2760,7 @@ def confusion_matrix(
 
                     filename = None
                     if output_directory:
-                        filename = filename_template.format(
+                        filename = filename_template_path.format(
                             'entropy_' + model_name_name,
                             field,
                             'top' + str(k)
@@ -1905,8 +2777,8 @@ def confusion_matrix(
 
 
 def frequency_vs_f1(
-        test_statistics,
-        ground_truth_metadata,
+        test_stats_per_model,
+        metadata,
         field,
         top_n_classes,
         model_names=None,
@@ -1914,35 +2786,50 @@ def frequency_vs_f1(
         file_format='pdf',
         **kwargs
 ):
-    if len(test_statistics) < 1:
-        logger.error('No test_statistics provided')
-        return
+    """Show prediction statistics for the specified field for each model.
 
-    filename_template = None
-    if output_directory:
-        filename_template = os.path.join(
-            output_directory,
-            'frequency_vs_f1_{}_{}.' + file_format
-        )
+    For each model (in the aligned lists of test_statistics and model_names),
+    produces two plots statistics of predictions for the specified field.
 
-    metadata = load_json(ground_truth_metadata)
-    test_statistics_per_model_name = [load_json(test_statistics_f)
-                                      for test_statistics_f in
-                                      test_statistics]
+    The first plot is a line plot with one x axis representing the different
+    classes and two vertical axes colored in orange and blue respectively.
+    The orange one is the frequency of the class and an orange line is plotted
+    to show the trend. The blue one is the F1 score for that class and a blue
+    line is plotted to show the trend. The classes on the x axis are sorted by
+    f1 score.
+    The second plot has the same structure of the first one,
+     but the axes are flipped and the classes on the x axis are sorted by
+     frequency.
+    :param test_stats_per_model: List containing train statistics per model
+    :param metadata: Model's input metadata
+    :param field: Prediction field containing ground truth.
+    :param top_n_classes: List containing the number of classes to plot
+    :param model_names: List of the names of the models to use as labels.
+    :param output_directory: Directory where to save plots.
+             If not specified, plots will be displayed in a window
+    :param file_format: File format of output plots - pdf or png
+    :return None:
+    :return:
+    """
+    test_stats_per_model_list = test_stats_per_model
+    model_names_list = convert_to_list(model_names)
+    filename_template = 'frequency_vs_f1_{}_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
+    fields = validate_visualization_prediction_field_from_test_stats(
+        field,
+        test_stats_per_model_list
+    )
     k = top_n_classes[0]
 
-    fields_set = set()
-    for ls in test_statistics_per_model_name:
-        for key in ls:
-            fields_set.add(key)
-    fields = [field] if field is not None and len(field) > 0 else fields_set
-
     for i, test_statistics in enumerate(
-            test_statistics_per_model_name):
+            test_stats_per_model_list):
         for field in fields:
-            model_name_name = (model_names[i]
-                               if model_names is not None and i < len(
-                model_names)
+            model_name_name = (model_names_list[i]
+                               if model_names_list is not None and i < len(
+                model_names_list)
                                else '')
             per_class_stats = test_statistics[field]['per_class_stats']
             f1_scores = []
@@ -1977,7 +2864,7 @@ def frequency_vs_f1(
             filename = None
             if output_directory:
                 os.makedirs(output_directory, exist_ok=True)
-                filename = filename_template.format(model_name_name, field)
+                filename = filename_template_path.format(model_name_name, field)
 
             visualization_utils.double_axis_line_plot(
                 f1_reordered,
@@ -2079,6 +2966,12 @@ def cli(sys_argv):
         '--field',
         default=[],
         help='field containing ground truth'
+    )
+    parser.add_argument(
+        '-gts',
+        '--ground_truth_split',
+        default=2,
+        help='ground truth split - 0:train, 1:validation, 2:test split'
     )
     parser.add_argument(
         '-tf',
@@ -2191,54 +3084,58 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
-
-    if args.visualization == 'compare_performance':
-        compare_performance(**vars(args))
-    elif args.visualization == 'compare_classifiers_performance_from_prob':
-        compare_classifiers_performance_from_prob(**vars(args))
-    elif args.visualization == 'compare_classifiers_performance_from_pred':
-        compare_classifiers_performance_from_pred(**vars(args))
-    elif args.visualization == 'compare_classifiers_performance_subset':
-        compare_classifiers_performance_subset(**vars(args))
-    elif args.visualization == 'compare_classifiers_performance_changing_k':
-        compare_classifiers_performance_changing_k(**vars(args))
-    elif args.visualization == 'compare_classifiers_multiclass_multimetric':
-        compare_classifiers_multiclass_multimetric(**vars(args))
-    elif args.visualization == 'compare_classifiers_predictions':
-        compare_classifiers_predictions(**vars(args))
-    elif args.visualization == 'compare_classifiers_predictions_distribution':
-        compare_classifiers_predictions_distribution(**vars(args))
-    elif args.visualization == 'confidence_thresholding':
-        confidence_thresholding(**vars(args))
-    elif args.visualization == 'confidence_thresholding_data_vs_acc':
-        confidence_thresholding_data_vs_acc(**vars(args))
-    elif args.visualization == 'confidence_thresholding_data_vs_acc_subset':
-        confidence_thresholding_data_vs_acc_subset(**vars(args))
-    elif (args.visualization ==
-          'confidence_thresholding_data_vs_acc_subset_per_class'):
-        confidence_thresholding_data_vs_acc_subset_per_class(**vars(args))
-    elif args.visualization == 'confidence_thresholding_2thresholds_2d':
-        confidence_thresholding_2thresholds_2d(**vars(args))
-    elif args.visualization == 'confidence_thresholding_2thresholds_3d':
-        confidence_thresholding_2thresholds_3d(**vars(args))
-    elif args.visualization == 'binary_threshold_vs_metric':
-        binary_threshold_vs_metric(**vars(args))
-    elif args.visualization == 'roc_curves':
-        roc_curves(**vars(args))
-    elif args.visualization == 'roc_curves_from_test_statistics':
-        roc_curves_from_test_statistics(**vars(args))
-    elif args.visualization == 'calibration_1_vs_all':
-        calibration_1_vs_all(**vars(args))
-    elif args.visualization == 'calibration_multiclass':
-        calibration_multiclass(**vars(args))
-    elif args.visualization == 'confusion_matrix':
-        confusion_matrix(**vars(args))
-    elif args.visualization == 'frequency_vs_f1':
-        frequency_vs_f1(**vars(args))
-    elif args.visualization == 'learning_curves':
-        learning_curves(**vars(args))
-    else:
-        logger.info('Visualization argument not recognized')
+    visualizationS_CONFIG = {
+        'compare_performance':
+            compare_performance_cli,
+        'compare_classifiers_performance_from_prob':
+            compare_classifiers_performance_from_prob_cli,
+        'compare_classifiers_performance_from_pred':
+            compare_classifiers_performance_from_pred_cli,
+        'compare_classifiers_performance_subset':
+            compare_classifiers_performance_subset_cli,
+        'compare_classifiers_performance_changing_k':
+            compare_classifiers_performance_changing_k_cli,
+        'compare_classifiers_multiclass_multimetric':
+            compare_classifiers_multiclass_multimetric_cli,
+        'compare_classifiers_predictions':
+            compare_classifiers_predictions_cli,
+        'compare_classifiers_predictions_distribution':
+            compare_classifiers_predictions_distribution_cli,
+        'confidence_thresholding':
+            confidence_thresholding_cli,
+        'confidence_thresholding_data_vs_acc':
+            confidence_thresholding_data_vs_acc_cli,
+        'confidence_thresholding_data_vs_acc_subset':
+            confidence_thresholding_data_vs_acc_subset_cli,
+        'confidence_thresholding_data_vs_acc_subset_per_class':
+            confidence_thresholding_data_vs_acc_subset_per_class_cli,
+        'confidence_thresholding_2thresholds_2d':
+            confidence_thresholding_2thresholds_2d_cli,
+        'confidence_thresholding_2thresholds_3d':
+            confidence_thresholding_2thresholds_3d_cli,
+        'binary_threshold_vs_metric':
+            binary_threshold_vs_metric_cli,
+        'roc_curves':
+            roc_curves_cli,
+        'roc_curves_from_test_statistics':
+            roc_curves_from_test_statistics_cli,
+        'calibration_1_vs_all':
+            calibration_1_vs_all_cli,
+        'calibration_multiclass':
+            calibration_multiclass_cli,
+        'confusion_matrix':
+            confusion_matrix_cli,
+        'frequency_vs_f1':
+            frequency_vs_f1_cli,
+        'learning_curves':
+            learning_curves_cli
+    }
+    try:
+        vis_func = visualizationS_CONFIG[args.visualization]
+    except KeyError:
+        logging.info('Visualization argument not recognized')
+        raise
+    vis_func(**vars(args))
 
 
 if __name__ == '__main__':

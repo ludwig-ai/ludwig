@@ -25,9 +25,12 @@ import shutil
 import subprocess
 import json
 import os
+import numpy as np
 
 from ludwig.experiment import experiment
+from ludwig.utils.data_utils import load_from_file, load_json, read_csv
 
+from tests.integration_tests.test_visualisations_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature, categorical_feature, \
     numerical_feature, set_feature, sequence_feature, binary_feature, \
@@ -98,10 +101,12 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -144,10 +149,12 @@ def test_visualisation_confusion_matrix_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     experiment_source_data_name = csv_filename.split('.')[0]
@@ -168,11 +175,7 @@ def test_visualisation_confusion_matrix_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -201,10 +204,12 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     experiment_source_data_name = csv_filename.split('.')[0]
@@ -246,11 +251,13 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-
-def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
+def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
+        csv_filename
+):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.conftest.csv_filename
+    Probabilities are loaded from csv file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
     input_features = [
@@ -264,10 +271,82 @@ def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
+
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.csv'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_performance_from_prob',
+                    '--ground_truth',
+                    ground_truth,
+                    '--field',
+                    field_name,
+                    '--probabilities',
+                    probability,
+                    probability,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name]
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+
+def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    Probabilities are loaded from npy file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -297,11 +376,7 @@ def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -315,11 +390,13 @@ def test_visualisation_compare_classifiers_from_prob_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-
-def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
+def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
+        csv_filename
+):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.conftest.csv_filename
+    Predictions are loaded from npy file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
     input_features = [
@@ -333,10 +410,83 @@ def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    ground_truth_metadata = experiment_source_data_name + '.json'
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_performance_from_pred',
+                    '--ground_truth_metadata',
+                    ground_truth_metadata,
+                    '--ground_truth',
+                    ground_truth,
+                    '--field',
+                    field_name,
+                    '--predictions',
+                    prediction,
+                    prediction,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name]
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
+
+def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    Predictions are loaded from csv file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -368,11 +518,7 @@ def test_visualisation_compare_classifiers_from_pred_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -404,10 +550,12 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -438,11 +586,7 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -472,10 +616,12 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -505,11 +651,7 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
     commands = [test_cmd_pdf, test_cmd_png]
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -543,10 +685,12 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -572,11 +716,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -591,12 +731,13 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_predictions_output_saved(
+def test_visualisation_compare_classifiers_predictions_npy_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
 
-    :param csv_filename: csv fixture from tests.conftest.csv_filename
+    Predictions are loaded form npy file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
     """
     input_features = [
@@ -610,24 +751,23 @@ def test_visualisation_compare_classifiers_predictions_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
     prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_predictions',
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--ground_truth',
                     ground_truth,
                     '--field',
@@ -645,11 +785,7 @@ def test_visualisation_compare_classifiers_predictions_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -663,6 +799,74 @@ def test_visualisation_compare_classifiers_predictions_output_saved(
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
+def test_visualisation_compare_classifiers_predictions_csv_output_saved(
+        csv_filename
+):
+    """Ensure pdf and png figures from the experiments can be saved.
+
+    Predictions are loaded form csv file.
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
+    vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
+    vis_output_pattern_png = exp_dir_name + '/*.png'
+    field_name = get_output_field_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.csv'.format(field_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+    test_cmd_pdf = ['python',
+                    '-m',
+                    'ludwig.visualize',
+                    '--visualization',
+                    'compare_classifiers_predictions',
+                    '--ground_truth',
+                    ground_truth,
+                    '--field',
+                    field_name,
+                    '--predictions',
+                    prediction,
+                    prediction,
+                    '--model_names',
+                    'Model1',
+                    'Model2',
+                    '-od', exp_dir_name]
+    test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
+
+    commands = [test_cmd_pdf, test_cmd_png]
+    vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
+
+    for command, viz_pattern in zip(commands, vis_patterns):
+        result = subprocess.run(command)
+        figure_cnt = glob.glob(viz_pattern)
+
+        assert 0 == result.returncode
+        assert 1 == len(figure_cnt)
+
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree('results', ignore_errors=True)
+    for file in glob.glob(experiment_source_data_name + '.*'):
+        try:
+            os.remove(file)
+        except OSError as e:  # if failed, report it back to the user
+            print("Error: %s - %s." % (e.filename, e.strerror))
 
 def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
         csv_filename
@@ -683,24 +887,23 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
     prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_predictions_distribution',
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--ground_truth',
                     ground_truth,
                     '--field',
@@ -718,11 +921,7 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -754,10 +953,12 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -786,11 +987,7 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -824,10 +1021,12 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -856,11 +1055,7 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -894,10 +1089,12 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -928,11 +1125,7 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -966,10 +1159,12 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1003,11 +1198,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1041,22 +1232,25 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     ]
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature()
+        categorical_feature(vocab_size=2, reduce_input='sum')
     ]
-
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
     treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(
+    probability1 = exp_dir_name + '/{}_probabilities.npy'.format(
         treshhold_field1
+    )
+    probability2 = exp_dir_name + '/{}_probabilities.npy'.format(
+        treshhold_field2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
@@ -1068,14 +1262,13 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
                     '--ground_truth',
                     ground_truth,
                     '--probabilities',
-                    probability,
-                    probability,
+                    probability1,
+                    probability2,
                     '--threshold_fields',
                     treshhold_field1,
                     treshhold_field2,
                     '--model_names',
                     'Model1',
-                    'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
@@ -1085,8 +1278,6 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     for command, viz_pattern in zip(commands, vis_patterns):
         result = subprocess.run(
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
         )
         figure_cnt = glob.glob(viz_pattern)
 
@@ -1117,22 +1308,25 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     ]
     output_features = [
         categorical_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature()
+        categorical_feature(vocab_size=2, reduce_input='sum')
     ]
-
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     treshhold_field1 = get_output_field_name(exp_dir_name)
     treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(
+    probability1 = exp_dir_name + '/{}_probabilities.npy'.format(
         treshhold_field1
+    )
+    probability2 = exp_dir_name + '/{}_probabilities.npy'.format(
+        treshhold_field2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
@@ -1144,14 +1338,11 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
                     '--ground_truth',
                     ground_truth,
                     '--probabilities',
-                    probability,
-                    probability,
+                    probability1,
+                    probability2,
                     '--threshold_fields',
                     treshhold_field1,
                     treshhold_field2,
-                    '--model_names',
-                    'Model1',
-                    'Model2',
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
@@ -1161,8 +1352,6 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     for command, viz_pattern in zip(commands, vis_patterns):
         result = subprocess.run(
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
         )
         figure_cnt = glob.glob(viz_pattern)
 
@@ -1199,17 +1388,18 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
     probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1221,8 +1411,6 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
                     'accuracy',
                     '--ground_truth',
                     ground_truth,
-                    '--ground_truth_metadata',
-                    ground_truth_metadata,
                     '--field',
                     field_name,
                     '--probabilities',
@@ -1238,11 +1426,7 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1274,10 +1458,12 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1313,11 +1499,7 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1344,10 +1526,12 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     output_features = [binary_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1371,11 +1555,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1407,10 +1587,12 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1422,8 +1604,6 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
                     'ludwig.visualize',
                     '--visualization',
                     'calibration_1_vs_all',
-                    '--positive_label',
-                    '2',
                     '--metrics',
                     'accuracy',
                     '--ground_truth',
@@ -1445,11 +1625,7 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1481,10 +1657,12 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1513,11 +1691,7 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1549,10 +1723,12 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoder = 'cnnrnn'
-    input_features[0]['encoder'] = encoder
-    exp_dir_name = run_experiment(input_features, output_features,
-                                  data_csv=rel_path)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
     field_name = get_output_field_name(exp_dir_name)
@@ -1581,11 +1757,7 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
     vis_patterns = [vis_output_pattern_pdf, vis_output_pattern_png]
 
     for command, viz_pattern in zip(commands, vis_patterns):
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        result = subprocess.run(command)
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
@@ -1598,3 +1770,59 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
             os.remove(file)
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
+
+def test_load_ground_truth_split_from_file(csv_filename):
+    """Ensure correct ground truth split is loaded when ground_truth_split is given.
+
+    :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
+    :return: None
+    """
+    input_features = [
+        text_feature(vocab_size=10, min_len=1, representation='sparse'),
+        categorical_feature(
+            vocab_size=10,
+            loss='sampled_softmax_cross_entropy'
+        )
+    ]
+    output_features = [categorical_feature(vocab_size=2, reduce_input='sum')]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    input_features[0]['encoder'] = 'cnnrnn'
+    exp_dir_name = run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path
+    )
+    field_name = get_output_field_name(exp_dir_name)
+    experiment_source_data_name = csv_filename.split('.')[0]
+    ground_truth = experiment_source_data_name + '.hdf5'
+
+    ground_truth_train_split = load_from_file(ground_truth, field_name,
+                                              ground_truth_split=0)
+    ground_truth_val_split = load_from_file(ground_truth, field_name,
+                                              ground_truth_split=1)
+    ground_truth_test_split = load_from_file(ground_truth, field_name)
+
+    test_df, train_df, val_df = obtain_df_splits(csv_filename)
+    target_predictions_from_train = train_df[field_name]
+    target_predictions_from_val = val_df[field_name]
+    target_predictions_from_test = test_df[field_name]
+    gtm_name = experiment_source_data_name + '.json'
+    ground_truth_metadata = load_json(gtm_name)
+    ground_truth_loaded_train_split = np.asarray([
+        ground_truth_metadata[field_name]['str2idx'][train_row]
+        for train_row in target_predictions_from_train
+    ])
+    ground_truth_loaded_val_split = np.asarray([
+        ground_truth_metadata[field_name]['str2idx'][val_row]
+        for val_row in target_predictions_from_val
+    ])
+    ground_truth_loaded_test_split = np.asarray([
+        ground_truth_metadata[field_name]['str2idx'][test_row]
+        for test_row in target_predictions_from_test
+    ])
+
+    assert str(ground_truth_train_split) == str(ground_truth_loaded_train_split)
+    assert str(ground_truth_val_split) == str(ground_truth_loaded_val_split)
+    assert str(ground_truth_test_split) == str(ground_truth_loaded_test_split)
