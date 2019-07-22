@@ -30,7 +30,7 @@ from ludwig.utils.misc import set_default_value, get_from_registry
 
 logger = logging.getLogger(__name__)
 
-DATE_VECTOR_LENGTH = 8
+DATE_VECTOR_LENGTH = 9
 
 
 class DateBaseFeature(BaseFeature):
@@ -78,6 +78,12 @@ class DateBaseFeature(BaseFeature):
                 datetime_obj.toordinal() -
                 date(datetime_obj.year, 1, 1).toordinal() + 1
         )
+
+        midnight = datetime_obj.replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        second_of_day = (datetime_obj - midnight).seconds
+
         return [
             datetime_obj.year,
             datetime_obj.month,
@@ -86,7 +92,8 @@ class DateBaseFeature(BaseFeature):
             yearday,
             datetime_obj.hour,
             datetime_obj.minute,
-            datetime_obj.second
+            datetime_obj.second,
+            second_of_day
         ]
 
     @staticmethod

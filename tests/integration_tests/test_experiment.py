@@ -525,7 +525,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     shutil.rmtree(image_dest_folder)
 
 
-def test_experiment_datetime_feature(csv_filename):
+def test_experiment_date(csv_filename):
     input_features = [date_feature()]
     output_features = [category_feature(vocab_size=2)]
 
@@ -537,7 +537,7 @@ def test_experiment_datetime_feature(csv_filename):
         run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def test_h3_features(csv_filename):
+def test_experiment_h3(csv_filename):
     input_features = [h3_feature()]
     output_features = [binary_feature()]
 

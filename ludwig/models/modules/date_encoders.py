@@ -15,8 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import math
 
+import math
 import tensorflow as tf
 
 from ludwig.models.modules.embedding_modules import Embed
@@ -255,10 +255,16 @@ class DateEmbed:
                 is_training=is_training
             )
 
+        periodic_second_of_day = tf.sin(
+            tf.cast(input_vector[:, 8:9], dtype=tf.float32)
+            * (2 * math.pi / 86400)
+        )
+
         hidden = tf.concat(
             [scaled_year, embedded_month, embedded_day,
              embedded_weekday, embedded_yearday,
-             embedded_hour, embedded_minute, embedded_second],
+             embedded_hour, embedded_minute, embedded_second,
+             periodic_second_of_day],
             axis=1
         )
 
@@ -386,11 +392,15 @@ class DateWave:
         periodic_hour = tf.sin(input_vector[:, 5:6] * (2 * math.pi / 24))
         periodic_minute = tf.sin(input_vector[:, 6:7] * (2 * math.pi / 60))
         periodic_second = tf.sin(input_vector[:, 7:8] * (2 * math.pi / 60))
+        periodic_second_of_day = tf.sin(
+            input_vector[:, 8:9] * (2 * math.pi / 86400)
+        )
 
         hidden = tf.concat(
             [scaled_year, periodic_month, periodic_day,
              periodic_weekday, periodic_yearday,
-             periodic_hour, periodic_minute, periodic_second],
+             periodic_hour, periodic_minute, periodic_second,
+             periodic_second_of_day],
             axis=1)
 
         # ================ FC Stack ================
