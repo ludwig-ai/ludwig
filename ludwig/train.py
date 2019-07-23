@@ -339,7 +339,7 @@ def full_train(
             key=lambda pair: pair[1]
         )
         logger.info(
-            'Best validation model epoch:'.format(epoch_best_vali_measure+1)
+            'Best validation model epoch: {0}'.format(epoch_best_vali_measure+1)
         )
         logger.info(
            'Best validation model {0} on validation set {1}: {2}'.format(
