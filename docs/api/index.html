@@ -386,13 +386,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#learning_curves" title="learning_curves" class="md-nav__link">
-    learning_curves
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -525,13 +518,6 @@
           <li class="md-nav__item">
   <a href="#train_online" title="train_online" class="md-nav__link">
     train_online
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#learning_curves" title="learning_curves" class="md-nav__link">
-    learning_curves
   </a>
   
 </li>
@@ -1129,35 +1115,6 @@ consisting of two datapoints with a text and a class may be provided as
 the following dict <code>`{'text_field_name}: ['text of the first datapoint',
 text of the second datapoint'], 'class_filed_name':
 ['class_datapoints_1', 'class_datapoints_2']}</code>.</p>
-<hr />
-<h3 id="learning_curves">learning_curves<a class="headerlink" href="#learning_curves" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">learning_curves</span><span class="p">(</span>
-  <span class="n">train_stats_per_model</span><span class="p">,</span>
-  <span class="n">field</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-  <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
-<span class="p">)</span>
-</pre></div>
-
-
-<p>Show how model measures change over training and validation data epochs.</p>
-<p>For each model and for each output feature and measure of the model,
-it produces a line plot showing how that measure changed over the course
-of the epochs of training on the training and validation sets.</p>
-<p><strong>Inputs</strong></p>
-<ul>
-<li><strong>train_stats_per_model</strong> (train_stats_per_model: List containing train statistics per mode):train_stats_per_model: List containing train statistics per model</li>
-<li><strong>field</strong> (field: Prediction field containing ground truth):field: Prediction field containing ground truth.</li>
-<li><strong>model_names</strong> (model_names: List of the names of the models to use as labels):model_names: List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (output_directory: Directory where to save plots):output_directory: Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (file_format: File format of output plots - pdf or p):file_format: File format of output plots - pdf or png</li>
-</ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> ( Non): None</li>
-</ul>
                 
                   
                 

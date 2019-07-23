@@ -99,9 +99,6 @@ PAGES = [
         'classes': [
             (LudwigModel, "*")
         ],
-        'functions': [
-            learning_curves,
-        ],
     },
     {
         'page': 'api/visualization.md',
