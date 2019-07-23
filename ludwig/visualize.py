@@ -2982,30 +2982,9 @@ def cli(sys_argv):
     parser.add_argument(
         '-v',
         '--visualization',
-        default='confidence_thresholding',
-        choices=['learning_curves',
-                 'compare_performance',
-                 'compare_classifiers_performance_from_prob',
-                 'compare_classifiers_performance_from_pred',
-                 'compare_classifiers_performance_subset',
-                 'compare_classifiers_performance_changing_k',
-                 'compare_classifiers_multiclass_multimetric',
-                 'compare_classifiers_predictions',
-                 'compare_classifiers_predictions_distribution',
-                 'confidence_thresholding',
-                 'confidence_thresholding_data_vs_acc',
-                 'confidence_thresholding_data_vs_acc_subset',
-                 'confidence_thresholding_data_vs_acc_subset_per_class',
-                 'confidence_thresholding_2thresholds_2d',
-                 'confidence_thresholding_2thresholds_3d',
-                 'binary_threshold_vs_metric',
-                 'roc_curves',
-                 'roc_curves_from_test_statistics',
-                 'calibration_1_vs_all',
-                 'calibration_multiclass',
-                 'confusion_matrix',
-                 'frequency_vs_f1'],
-        help='type of visualization'
+        choices=sorted(list(visualizations_registry.keys())),
+        help='type of visualization',
+        required=True
     )
 
     parser.add_argument(
