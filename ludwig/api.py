@@ -63,10 +63,6 @@ from ludwig.utils.print_utils import logging_level_registry
 logger = logging.getLogger(__name__)
 
 
-# logger.setLevel(logging.INFO)
-
-
-
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
 
@@ -81,8 +77,8 @@ class LudwigModel:
     :param logging_level: (int, default: `logging.ERROR`) logging level to use
            for logging. Use logging constants like `logging.DEBUG`,
            `logging.INFO` and `logging.ERROR`. By default only errors will be
-           printed.
-
+           printed. It is possible to change the logging_level later by using
+           the set_logging_level method.
 
     # Example usage:
 
@@ -147,7 +143,9 @@ class LudwigModel:
             model_definition_file=None,
             logging_level=logging.ERROR
     ):
-        logging.getLogger('ludwig').setLevel(logging_level)
+
+        self.set_logging_level(logging_level)
+
         if model_definition_file is not None:
             with open(model_definition_file, 'r') as def_file:
                 self.model_definition = merge_with_defaults(
@@ -159,6 +157,18 @@ class LudwigModel:
         self.train_set_metadata = None
         self.model = None
         self.exp_dir_name = None
+
+    @staticmethod
+    def set_logging_level(logging_level):
+        """
+        :param logging_level: Set/Update the logging level. Use logging
+        constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
+
+        :return: None
+        """
+        logging.getLogger('ludwig').setLevel(logging_level)
+        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
+            set_disable_progressbar(True)
 
     @staticmethod
     def _read_data(data_csv, data_dict):
@@ -180,7 +190,7 @@ class LudwigModel:
         return data_df
 
     @staticmethod
-    def load(model_dir, logging_level=logging.ERROR):
+    def load(model_dir):
         """This function allows for loading pretrained models
 
 
@@ -189,10 +199,6 @@ class LudwigModel:
         :param model_dir: (string) path to the directory containing the model.
                If the model was trained by the `train` or `experiment` command,
                the model is in `results_dir/experiment_dir/model`.
-        :param logging_level: (int, default: `logging.ERROR`) logging level to
-               use for logging. Use logging constants like `logging.DEBUG`,
-               `logging.INFO` and `logging.ERROR`. By default only errors will
-               be printed.
 
 
         # Return
@@ -207,10 +213,6 @@ class LudwigModel:
         ```
 
         """
-
-        logging.getLogger('ludwig').setLevel(logging_level)
-        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
-            set_disable_progressbar(True)
 
         model, model_definition = load_model_and_definition(model_dir)
         ludwig_model = LudwigModel(model_definition)
@@ -326,7 +328,6 @@ class LudwigModel:
             gpu_fraction=1.0,
             use_horovod=False,
             random_seed=42,
-            logging_level=logging.ERROR,
             debug=False,
             **kwargs
     ):
@@ -441,10 +442,6 @@ class LudwigModel:
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
         :param debug: (bool, default: `False`) enables debugging mode
-        :param logging_level: (int, default: `logging.ERROR`) logging level to
-               use for logging. Use logging constants like `logging.DEBUG`,
-               `logging.INFO` and `logging.ERROR`. By default only errors will
-               be printed.
 
         There are three ways to provide data: by dataframes using the `_df`
         parameters, by CSV using the `_csv` parameters and by HDF5 and JSON,
@@ -473,9 +470,6 @@ class LudwigModel:
         output feature containing loss and measures values for each epoch.
 
         """
-        logging.getLogger('ludwig').setLevel(logging_level)
-        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
-            set_disable_progressbar(True)
 
         if data_df is None and data_dict is not None:
             data_df = pd.DataFrame(data_dict)
@@ -538,7 +532,6 @@ class LudwigModel:
             gpus=None,
             gpu_fraction=1,
             random_seed=default_random_seed,
-            logging_level=logging.ERROR,
             debug=False,
             **kwargs
     ):
@@ -563,15 +556,8 @@ class LudwigModel:
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
-        :param logging_level: (int, default: `logging.ERROR`) logging level to
-               use for logging. Use logging constants like `logging.DEBUG`,
-               `logging.INFO` and `logging.ERROR`. By default only errors will
-               be printed.
         :param debug: (bool, default: `False`) enables debugging mode
         """
-        logging.getLogger('ludwig').setLevel(logging_level)
-        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
-            set_disable_progressbar(True)
 
         if train_set_metadata is None and train_set_metadata_json is None:
             raise ValueError(
@@ -613,7 +599,6 @@ class LudwigModel:
             bucketing_field=None,
             gpus=None,
             gpu_fraction=1,
-            logging_level=logging.ERROR,
     ):
         """This function is used to perform one epoch of training of the model 
         on the specified dataset.
@@ -646,10 +631,6 @@ class LudwigModel:
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of GPU memory to
                initialize the process with
-        :param logging_level: (int, default: `logging.ERROR`) logging level to
-               use for logging. Use logging constants like `logging.DEBUG`,
-               `logging.INFO` and `logging.ERROR`. By default only errors will
-               be printed.
 
         There are three ways to provide data: by dataframes using the `data_df`
         parameter, by CSV using the `data_csv` parameter and by dictionary,
@@ -664,9 +645,6 @@ class LudwigModel:
         text of the second datapoint'], 'class_filed_name':
         ['class_datapoints_1', 'class_datapoints_2']}`.
         """
-        logging.getLogger('ludwig').setLevel(logging_level)
-        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
-            set_disable_progressbar(True)
 
         if (self.model is None or self.model_definition is None
                 or self.train_set_metadata is None):
@@ -733,11 +711,7 @@ class LudwigModel:
             gpus=None,
             gpu_fraction=1,
             evaluate_performance=False,
-            logging_level=logging.ERROR,
     ):
-        logging.getLogger('ludwig').setLevel(logging_level)
-        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
-            set_disable_progressbar(True)
 
         if (self.model is None or self.model_definition is None or
                 self.train_set_metadata is None):
@@ -835,7 +809,6 @@ class LudwigModel:
             batch_size=128,
             gpus=None,
             gpu_fraction=1,
-            logging_level=logging.ERROR,
     ):
         """This function is used to predict the output variables given the input
            variables using the trained model.
@@ -865,11 +838,6 @@ class LudwigModel:
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of gpu memory to
                initialize the process with
-        :param logging_level: (int, default: `logging.ERROR`) logging level to
-               use for logging. Use logging constants like `logging.DEBUG`,
-               `logging.INFO` and `logging.ERROR`. By default only errors will
-               be printed.
-
 
         # Return
 
@@ -897,7 +865,6 @@ class LudwigModel:
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             evaluate_performance=False,
-            logging_level=logging_level,
         )
 
         return predictions
@@ -911,7 +878,6 @@ class LudwigModel:
             batch_size=128,
             gpus=None,
             gpu_fraction=1,
-            logging_level=logging.ERROR,
     ):
         """This function is used to predict the output variables given the input
         variables using the trained model and compute test statistics like
@@ -944,11 +910,6 @@ class LudwigModel:
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of GPU memory to
                initialize the process with
-        :param logging_level: (int, default: `logging.ERROR`) logging level to
-               use for logging. Use logging constants like `logging.DEBUG`,
-               `logging.INFO` and `logging.ERROR`. By default only errors will
-               be printed.
-
 
         # Return
 
@@ -982,7 +943,6 @@ class LudwigModel:
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             evaluate_performance=True,
-            logging_level=logging_level,
         )
 
         return predictions, test_stats
@@ -998,16 +958,12 @@ def test_train(
         logging_level=logging.ERROR,
         **kwargs
 ):
-    ludwig_model = LudwigModel(
-        model_definition,
-        logging_level=logging_level
-    )
+    ludwig_model = LudwigModel(model_definition, logging_level=logging_level)
 
     train_stats = ludwig_model.train(
         data_csv=data_csv,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        logging_level=logging_level,
         debug=debug
     )
 
@@ -1019,7 +975,6 @@ def test_train(
         batch_size=batch_size,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        logging_level=logging_level
     )
 
     ludwig_model.close()
@@ -1045,24 +1000,19 @@ def test_train_online(
     )
 
     ludwig_model = LudwigModel(model_definition, logging_level=logging_level)
-    ludwig_model.initialize_model(
-        train_set_metadata=train_set_metadata,
-        logging_level=logging_level
-    )
+    ludwig_model.initialize_model(train_set_metadata=train_set_metadata)
 
     ludwig_model.train_online(
         data_csv=data_csv,
         batch_size=128,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        logging_level=logging_level
     )
     ludwig_model.train_online(
         data_csv=data_csv,
         batch_size=128,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        logging_level=logging_level
     )
 
     # predict
@@ -1071,7 +1021,6 @@ def test_train_online(
         batch_size=batch_size,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        logging_level=logging_level
     )
     ludwig_model.close()
     logger.critical(predictions)
@@ -1086,17 +1035,13 @@ def test_predict(
         logging_level=logging.ERROR,
         **kwargs
 ):
-    ludwig_model = LudwigModel.load(
-        model_path,
-        logging_level=logging_level
-    )
+    ludwig_model = LudwigModel.load(model_path)
 
     predictions = ludwig_model.predict(
         data_csv=data_csv,
         batch_size=batch_size,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        logging_level=logging_level
     )
 
     ludwig_model.close()
@@ -1107,7 +1052,6 @@ def test_predict(
         batch_size=batch_size,
         gpus=gpus,
         gpu_fraction=gpu_fraction,
-        logging_level=logging_level
     )
 
     logger.critical(predictions)
@@ -1191,16 +1135,6 @@ def main(sys_argv):
 
     args = parser.parse_args(sys_argv)
     args.logging_level = logging_level_registry[args.logging_level]
-
-    """
-    logging.basicConfig(
-        stream=sys.stdout,
-        # filename='log.log',
-        # filemode='w',
-        level=args.logging_level,
-        format='%(message)s'
-    )
-    """
 
     if args.test == 'train':
         test_train(**vars(args))
