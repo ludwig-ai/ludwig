@@ -44,7 +44,6 @@ from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -339,21 +338,24 @@ def full_train(
             key=lambda pair: pair[1]
         )
         logger.info(
-            'Best validation model epoch: {0}'.format(epoch_best_vali_measure+1)
+            'Best validation model epoch: {0}'.format(
+                epoch_best_vali_measure + 1)
         )
         logger.info(
-           'Best validation model {0} on validation set {1}: {2}'.format(
-               validation_measure, validation_field, best_vali_measure
-           ))
+            'Best validation model {0} on validation set {1}: {2}'.format(
+                validation_measure, validation_field, best_vali_measure
+            ))
         if test_set is not None:
             best_vali_measure_epoch_test_measure = train_testset_stats[
                 validation_field][validation_measure][epoch_best_vali_measure]
 
-            logger.info('Best validation model {0} on test set {1}: '
-                         '{2}'.format(validation_measure,
-                                      validation_field,
-                                      best_vali_measure_epoch_test_measure
-            ))
+            logger.info(
+                'Best validation model {0} on test set {1}: {2}'.format(
+                    validation_measure,
+                    validation_field,
+                    best_vali_measure_epoch_test_measure
+                )
+            )
         logger.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
         logger.info('Saved to: {0}'.format(experiment_dir_name))
 
