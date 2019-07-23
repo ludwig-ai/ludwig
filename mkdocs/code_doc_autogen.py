@@ -27,6 +27,19 @@ import os
 import re
 import sys
 
+from ludwig.visualize import learning_curves, compare_performance, \
+    compare_classifiers_performance_from_prob, \
+    compare_classifiers_performance_from_pred, \
+    compare_classifiers_performance_subset, \
+    compare_classifiers_performance_changing_k, \
+    compare_classifiers_multiclass_multimetric, compare_classifiers_predictions, \
+    confidence_thresholding_2thresholds_2d, \
+    confidence_thresholding_2thresholds_3d, confidence_thresholding, \
+    confidence_thresholding_data_vs_acc, \
+    confidence_thresholding_data_vs_acc_subset, binary_threshold_vs_metric, \
+    roc_curves, roc_curves_from_test_statistics, calibration_1_vs_all, \
+    calibration_multiclass, confusion_matrix, frequency_vs_f1
+
 sys.path.append("../")
 
 import ludwig
@@ -72,11 +85,36 @@ EXCLUDE = {}
 
 PAGES = [
     {
-        'page': 'api.md',
+        'page': 'api/LudwigModel.md',
         'classes': [
             (LudwigModel, "*")
-        ]
+        ],
     },
+    {
+        'page': 'api/visualization.md',
+        'functions': [
+            learning_curves,
+            compare_performance,
+            compare_classifiers_performance_from_prob,
+            compare_classifiers_performance_from_pred,
+            compare_classifiers_performance_subset,
+            compare_classifiers_performance_changing_k,
+            compare_classifiers_multiclass_multimetric,
+            compare_classifiers_predictions,
+            confidence_thresholding_2thresholds_2d,
+            confidence_thresholding_2thresholds_3d,
+            confidence_thresholding,
+            confidence_thresholding_data_vs_acc,
+            confidence_thresholding_data_vs_acc_subset,
+            binary_threshold_vs_metric,
+            roc_curves,
+            roc_curves_from_test_statistics,
+            calibration_1_vs_all,
+            calibration_multiclass,
+            confusion_matrix,
+            frequency_vs_f1,
+        ]
+    }
     # {
     #     'page': 'api/sequential_encoders.md',
     #     'classes': [
@@ -149,8 +187,8 @@ def post_process_signature(signature):
 
 
 def clean_module_name(name):
-    if name.startswith('ludwig.api'):
-        name = name.replace('ludwig.api', 'ludwig')
+    # if name.startswith('ludwig.api'):
+    #    name = name.replace('ludwig.api', 'ludwig')
     return name
 
 
