@@ -31,6 +31,29 @@ sys.path.append("../")
 
 import ludwig
 from ludwig.api import LudwigModel
+from ludwig.visualize import learning_curves
+from ludwig.visualize import compare_performance
+from ludwig.visualize import compare_classifiers_performance_from_prob
+from ludwig.visualize import compare_classifiers_performance_from_pred
+from ludwig.visualize import compare_classifiers_performance_subset
+from ludwig.visualize import compare_classifiers_performance_changing_k
+from ludwig.visualize import compare_classifiers_multiclass_multimetric
+from ludwig.visualize import compare_classifiers_predictions
+from ludwig.visualize import confidence_thresholding_2thresholds_2d
+from ludwig.visualize import confidence_thresholding_2thresholds_3d
+
+from ludwig.visualize import compare_classifiers_predictions_distribution
+from ludwig.visualize import confidence_thresholding
+from ludwig.visualize import confidence_thresholding_data_vs_acc
+from ludwig.visualize import confidence_thresholding_data_vs_acc_subset
+
+from ludwig.visualize import binary_threshold_vs_metric
+from ludwig.visualize import roc_curves
+from ludwig.visualize import roc_curves_from_test_statistics
+from ludwig.visualize import calibration_1_vs_all
+from ludwig.visualize import calibration_multiclass
+from ludwig.visualize import confusion_matrix
+from ludwig.visualize import frequency_vs_f1
 
 EXCLUDE = {}
 
@@ -75,7 +98,35 @@ PAGES = [
         'page': 'api.md',
         'classes': [
             (LudwigModel, "*")
-        ]
+        ],
+        'functions': [
+            learning_curves,
+        ],
+    },
+    {
+        'page': 'api/visualization.md',
+        'functions': [
+            learning_curves,
+            compare_performance,
+            compare_classifiers_performance_from_prob,
+            compare_classifiers_performance_from_pred,
+            compare_classifiers_performance_subset,
+            compare_classifiers_performance_changing_k,
+            compare_classifiers_multiclass_multimetric,
+            compare_classifiers_predictions,
+            confidence_thresholding_2thresholds_2d,
+            confidence_thresholding_2thresholds_3d,
+            confidence_thresholding,
+            confidence_thresholding_data_vs_acc,
+            confidence_thresholding_data_vs_acc_subset,
+            binary_threshold_vs_metric,
+            roc_curves,
+            roc_curves_from_test_statistics,
+            calibration_1_vs_all,
+            calibration_multiclass,
+            confusion_matrix,
+            frequency_vs_f1,
+        ],
     },
     # {
     #     'page': 'api/sequential_encoders.md',

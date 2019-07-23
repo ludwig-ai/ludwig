@@ -20,6 +20,7 @@ nav:
   - User Guide: 'user_guide.md'
   - Developer Guide: 'developer_guide.md'
   - API: 'api.md'
+  - API - Visualization: 'api/visualization.md'
   - FAQ: 'faq.md'
 
 # Configuration
