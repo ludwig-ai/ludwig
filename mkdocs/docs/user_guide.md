@@ -2324,19 +2324,33 @@ name: image_csv_column_name
 type: image
 encoder: stacked_cnn
 tied_weights: null
-conv_layers: null
-num_conv_layers: null
-filter_size: 3
-num_filters: 256
-pool_size: null
-fc_layers: null
-num_fc_layers: 1
-fc_size: 256
-activation: relu
-norm: null
-dropout: false
-initializer: null
-regularize: true
+conv_layers:
+    -
+        num_filters: 32
+        filter_size: 3
+        pool_size: 2
+        pool_stride: 2
+    -
+        num_filters: 64
+        filter_size: 3
+        pool_size: 2
+        pool_stride: 2
+        dropout: true
+
+fc_layers:
+    -
+        fc_size: 256
+        activation: relu
+        norm: null
+        dropout: false
+        initializer: null
+        regularize: true
+preprocessing:
+    -
+        width: 224
+        height: 224
+        num_channels: 3
+        resize: True
 ```
 
 
@@ -2374,14 +2388,20 @@ conv_stride: 1
 first_pool_size: null
 batch_norm_momentum: 0.9
 batch_norm_epsilon: 0.001
-fc_layers: null
-num_fc_layers: 1
-fc_size: 256
-activation: relu
-norm: null
-dropout: false
-initializer: null
-regularize: true
+fc_layers:
+    -
+        fc_size: 256
+        activation: relu
+        norm: null
+        dropout: false
+        initializer: null
+        regularize: true
+preprocessing:
+    -
+        height: 224
+        width: 224
+        num_channels: 3
+        resize: false
 ```
 
 ### Image Output Features and Decoders
