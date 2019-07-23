@@ -2904,6 +2904,53 @@ def frequency_vs_f1(
             )
 
 
+visualizations_registry = {
+    'compare_performance':
+        compare_performance_cli,
+    'compare_classifiers_performance_from_prob':
+        compare_classifiers_performance_from_prob_cli,
+    'compare_classifiers_performance_from_pred':
+        compare_classifiers_performance_from_pred_cli,
+    'compare_classifiers_performance_subset':
+        compare_classifiers_performance_subset_cli,
+    'compare_classifiers_performance_changing_k':
+        compare_classifiers_performance_changing_k_cli,
+    'compare_classifiers_multiclass_multimetric':
+        compare_classifiers_multiclass_multimetric_cli,
+    'compare_classifiers_predictions':
+        compare_classifiers_predictions_cli,
+    'compare_classifiers_predictions_distribution':
+        compare_classifiers_predictions_distribution_cli,
+    'confidence_thresholding':
+        confidence_thresholding_cli,
+    'confidence_thresholding_data_vs_acc':
+        confidence_thresholding_data_vs_acc_cli,
+    'confidence_thresholding_data_vs_acc_subset':
+        confidence_thresholding_data_vs_acc_subset_cli,
+    'confidence_thresholding_data_vs_acc_subset_per_class':
+        confidence_thresholding_data_vs_acc_subset_per_class_cli,
+    'confidence_thresholding_2thresholds_2d':
+        confidence_thresholding_2thresholds_2d_cli,
+    'confidence_thresholding_2thresholds_3d':
+        confidence_thresholding_2thresholds_3d_cli,
+    'binary_threshold_vs_metric':
+        binary_threshold_vs_metric_cli,
+    'roc_curves':
+        roc_curves_cli,
+    'roc_curves_from_test_statistics':
+        roc_curves_from_test_statistics_cli,
+    'calibration_1_vs_all':
+        calibration_1_vs_all_cli,
+    'calibration_multiclass':
+        calibration_multiclass_cli,
+    'confusion_matrix':
+        confusion_matrix_cli,
+    'frequency_vs_f1':
+        frequency_vs_f1_cli,
+    'learning_curves':
+        learning_curves_cli
+}
+
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script analyzes results and shows some nice plots.',
@@ -3084,54 +3131,9 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
-    visualizationS_CONFIG = {
-        'compare_performance':
-            compare_performance_cli,
-        'compare_classifiers_performance_from_prob':
-            compare_classifiers_performance_from_prob_cli,
-        'compare_classifiers_performance_from_pred':
-            compare_classifiers_performance_from_pred_cli,
-        'compare_classifiers_performance_subset':
-            compare_classifiers_performance_subset_cli,
-        'compare_classifiers_performance_changing_k':
-            compare_classifiers_performance_changing_k_cli,
-        'compare_classifiers_multiclass_multimetric':
-            compare_classifiers_multiclass_multimetric_cli,
-        'compare_classifiers_predictions':
-            compare_classifiers_predictions_cli,
-        'compare_classifiers_predictions_distribution':
-            compare_classifiers_predictions_distribution_cli,
-        'confidence_thresholding':
-            confidence_thresholding_cli,
-        'confidence_thresholding_data_vs_acc':
-            confidence_thresholding_data_vs_acc_cli,
-        'confidence_thresholding_data_vs_acc_subset':
-            confidence_thresholding_data_vs_acc_subset_cli,
-        'confidence_thresholding_data_vs_acc_subset_per_class':
-            confidence_thresholding_data_vs_acc_subset_per_class_cli,
-        'confidence_thresholding_2thresholds_2d':
-            confidence_thresholding_2thresholds_2d_cli,
-        'confidence_thresholding_2thresholds_3d':
-            confidence_thresholding_2thresholds_3d_cli,
-        'binary_threshold_vs_metric':
-            binary_threshold_vs_metric_cli,
-        'roc_curves':
-            roc_curves_cli,
-        'roc_curves_from_test_statistics':
-            roc_curves_from_test_statistics_cli,
-        'calibration_1_vs_all':
-            calibration_1_vs_all_cli,
-        'calibration_multiclass':
-            calibration_multiclass_cli,
-        'confusion_matrix':
-            confusion_matrix_cli,
-        'frequency_vs_f1':
-            frequency_vs_f1_cli,
-        'learning_curves':
-            learning_curves_cli
-    }
+
     try:
-        vis_func = visualizationS_CONFIG[args.visualization]
+        vis_func = visualizations_registry[args.visualization]
     except KeyError:
         logging.info('Visualization argument not recognized')
         raise
