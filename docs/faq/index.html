@@ -37,20 +37,16 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-
       <link rel="shortcut icon" href="../favicon.ico">
       <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
-
     
     
       
         <title>FAQ - Ludwig</title>
-
       
     
     
       <link rel="stylesheet" href="../assets/stylesheets/application.0284f74d.css">
-
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.01803549.css">
       
@@ -58,8 +54,9 @@
         
         
         <meta name="theme-color" content="#757575">
-
-
+      
+    
+    
       <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
@@ -98,7 +95,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#do-you-support-91feature-encoder-decoder93-in-ludwig" tabindex="1" class="md-skip">
+      <a href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -299,6 +296,18 @@
         
         
 
+
+  <li class="md-nav__item">
+    <a href="../api/visualization/" title="API - Visualization" class="md-nav__link">
+      API - Visualization
+    </a>
+  </li>
+
+        
+        
+        
+        
+
   
 
 
@@ -324,6 +333,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" title="I'm experiencing problems installing gmpy, how do I solve them?" class="md-nav__link">
+    I'm experiencing problems installing gmpy, how do I solve them?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#do-you-support-91feature-encoder-decoder93-in-ludwig" title="Do you support [feature | encoder | decoder] in Ludwig?" class="md-nav__link">
     Do you support [feature | encoder | decoder] in Ludwig?
   </a>
@@ -333,6 +349,13 @@
         <li class="md-nav__item">
   <a href="#do-all-datasets-need-to-be-loaded-in-memory" title="Do all datasets need to be loaded in memory?" class="md-nav__link">
     Do all datasets need to be loaded in memory?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#my-data-is-on-91-gcs-s3-azure-93-how-can-i-load-it" title="My data is on [ GCS | S3 | Azure ], how can I load it?" class="md-nav__link">
+    My data is on [ GCS | S3 | Azure ], how can I load it?
   </a>
   
 </li>
@@ -388,6 +411,13 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" title="I'm experiencing problems installing gmpy, how do I solve them?" class="md-nav__link">
+    I'm experiencing problems installing gmpy, how do I solve them?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#do-you-support-91feature-encoder-decoder93-in-ludwig" title="Do you support [feature | encoder | decoder] in Ludwig?" class="md-nav__link">
     Do you support [feature | encoder | decoder] in Ludwig?
   </a>
@@ -397,6 +427,13 @@
         <li class="md-nav__item">
   <a href="#do-all-datasets-need-to-be-loaded-in-memory" title="Do all datasets need to be loaded in memory?" class="md-nav__link">
     Do all datasets need to be loaded in memory?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#my-data-is-on-91-gcs-s3-azure-93-how-can-i-load-it" title="My data is on [ GCS | S3 | Azure ], how can I load it?" class="md-nav__link">
+    My data is on [ GCS | S3 | Azure ], how can I load it?
   </a>
   
 </li>
@@ -443,13 +480,23 @@
                 
                   <h1>FAQ</h1>
                 
-                <h3 id="do-you-support-91feature-encoder-decoder93-in-ludwig">Do you support [feature | encoder | decoder] in Ludwig?<a class="headerlink" href="#do-you-support-91feature-encoder-decoder93-in-ludwig" title="Permanent link">&para;</a></h3>
+                <h3 id="im-experiencing-problems-installing-gmpy-how-do-i-solve-them">I'm experiencing problems installing <code>gmpy</code>, how do I solve them?<a class="headerlink" href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" title="Permanent link">&para;</a></h3>
+<p>If you encounter problems installing <code>gmpy</code> please install <code>libgmp</code>.
+On Debian based Linus distributions: <code>sudo apt-get install libgmp3-dev</code>.
+On MacOS there should not be any problem.</p>
+<h3 id="do-you-support-91feature-encoder-decoder93-in-ludwig">Do you support [feature | encoder | decoder] in Ludwig?<a class="headerlink" href="#do-you-support-91feature-encoder-decoder93-in-ludwig" title="Permanent link">&para;</a></h3>
 <p>The list of encoders for each feature type is specified in the <a href="../user_guide/">User Guide</a>.
 We plan to add additional feature types and additional encoders and decoders for all feature types.
 Refer to <a href="#what-additional-features-are-you-working-on">this question</a> for more details.
 If you want to help us implementing your favourite feature or model please take a look at the <a href="../developer_guide/">Developer Guide</a> to see how to contribute.</p>
 <h3 id="do-all-datasets-need-to-be-loaded-in-memory">Do all datasets need to be loaded in memory?<a class="headerlink" href="#do-all-datasets-need-to-be-loaded-in-memory" title="Permanent link">&para;</a></h3>
 <p>At the moment it depends on the type of feature: image features can be dynamically loaded from disk from an opened hdf5 file, while other types of features (that usually take need less memory than image ones) are loaded entirely in memory for speed. We plan to add an option to load also other features from disk in future releases and to also support more input file types and more scalable solutions like <a href="https://github.com/uber/Petastorm">Petastorm</a>.</p>
+<h3 id="my-data-is-on-91-gcs-s3-azure-93-how-can-i-load-it">My data is on [ GCS | S3 | Azure ], how can I load it?<a class="headerlink" href="#my-data-is-on-91-gcs-s3-azure-93-how-can-i-load-it" title="Permanent link">&para;</a></h3>
+<p>Ludwig uses Pandas for loading data at the moment (this may change when we move to Petastorm).
+This means that if your service provides a mechanism for loading data with a name handler, you can load it.</p>
+<p>These name handlers already work:
+- <a href="https://cloud.google.com/storage/">Google Cloud Storage</a>: <code>gs://</code>. You just have to install <code>gcsfs</code> with <code>pip install gcsfs&gt;=0.2.1</code> and you will be able to prive paths to Ludwig with the <code>gs://</code> name handler.
+- <a href="https://aws.amazon.com/s3/">Amazon S3</a>: <code>s3://</code>. You just have to install <code>boto</code> with <code>pip install boto</code> and you will be able to prive paths to Ludwig with the <code>s3://</code> name handler.</p>
 <h3 id="what-additional-features-are-you-working-on">What additional features are you working on?<a class="headerlink" href="#what-additional-features-are-you-working-on" title="Permanent link">&para;</a></h3>
 <p>We will prioritize new features depending on the feedback of the community, but we are already planning to add:</p>
 <ul>
@@ -457,7 +504,7 @@ If you want to help us implementing your favourite feature or model please take 
 <li>additional image encoders (<a href="https://arxiv.org/abs/1608.06993">DenseNet</a> and <a href="https://arxiv.org/abs/1605.07648">FractalNet</a>).</li>
 <li>image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).</li>
 <li>time series decoding.</li>
-<li>additional features types (audio / speech, geolocation, vectors, dates, point clouds, lists of lists, multi-sentence documents, graphs).</li>
+<li>additional features types (vectors, point clouds, nested lists, multi-sentence documents, graphs).</li>
 <li>additional measures and losses.</li>
 <li>additional data formatters and dataset-specific preprocessing scripts.</li>
 </ul>
@@ -469,11 +516,13 @@ If you want to help us implementing your favourite feature or model please take 
 <li>optimize the data I/O to TensorFlow.</li>
 <li>increase the number of supported data formats beyond just CSV and integrating with <a href="https://github.com/uber/Petastorm">Petastorm</a>.</li>
 </ul>
+<p>All these are opportunities to get involved in the community and contribute.
+Feel free to reach out to us and ask as there are tasks for all levels of experience.</p>
 <h3 id="who-are-the-authors-of-ludwig">Who are the authors of Ludwig?<a class="headerlink" href="#who-are-the-authors-of-ludwig" title="Permanent link">&para;</a></h3>
 <ul>
-    <li><a href="http://w4nderlu.st">Piero Molino</a> is the main architect and maintainer</li>
+<li><a href="http://w4nderlu.st">Piero Molino</a> is the main architect and maintainer</li>
 <li>Yaroslav Dudin is a key contributor</li>
-<li>Sai Sumanth Miryala contributed all the testing and polishing.</li>
+<li>Sai Sumanth Miryala contributed all the testing, logging and helped polishing.</li>
 </ul>
 <h3 id="who-else-helped-developing-ludwig">Who else helped developing Ludwig?<a class="headerlink" href="#who-else-helped-developing-ludwig" title="Permanent link">&para;</a></h3>
 <ul>
@@ -510,9 +559,9 @@ If you want to help us implementing your favourite feature or model please take 
             <!-- Link to previous page -->
             
             <a class="md-flex md-footer-nav__link md-footer-nav__link--prev"
-               href="../api/"
+               href="../api/visualization/"
                rel="prev"
-               title="API">
+               title="API - Visualization">
                 <div class="md-flex__cell md-flex__cell--shrink">
                     <i class="md-icon md-icon--arrow-back
                     md-footer-nav__button"></i>
@@ -523,7 +572,7 @@ If you want to help us implementing your favourite feature or model please take 
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                API
+                API - Visualization
               </span>
                 </div>
             </a>
@@ -563,10 +612,8 @@ If you want to help us implementing your favourite feature or model please take 
 </footer>
       
     </div>
-
     
       <script src="../assets/javascripts/application.245445c6.js"></script>
-
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

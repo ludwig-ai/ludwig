@@ -37,15 +37,12 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-
       <link rel="shortcut icon" href="../favicon.ico">
       <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
-
     
     
       
         <title>API - Ludwig</title>
-
       
     
     
@@ -57,8 +54,9 @@
         
         
         <meta name="theme-color" content="#757575">
-
-
+      
+    
+    
       <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
@@ -361,6 +359,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#save_for_serving" title="save_for_serving" class="md-nav__link">
+    save_for_serving
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#test" title="test" class="md-nav__link">
     test
   </a>
@@ -381,6 +386,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#learning_curves" title="learning_curves" class="md-nav__link">
+    learning_curves
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -394,6 +406,18 @@
   
 </nav>
     
+  </li>
+
+        
+        
+        
+        
+
+
+  <li class="md-nav__item">
+    <a href="visualization/" title="API - Visualization" class="md-nav__link">
+      API - Visualization
+    </a>
   </li>
 
         
@@ -478,6 +502,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#save_for_serving" title="save_for_serving" class="md-nav__link">
+    save_for_serving
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#test" title="test" class="md-nav__link">
     test
   </a>
@@ -494,6 +525,13 @@
           <li class="md-nav__item">
   <a href="#train_online" title="train_online" class="md-nav__link">
     train_online
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#learning_curves" title="learning_curves" class="md-nav__link">
+    learning_curves
   </a>
   
 </li>
@@ -523,10 +561,8 @@
                 
                 
                   <h1>API</h1>
-
                 
-                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L67">[source]</a></span></p>
-
+                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig.py#L70">[source]</a></span></p>
 <h2 id="ludwigmodel-class">LudwigModel class<a class="headerlink" href="#ludwigmodel-class" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">LudwigModel</span><span class="p">(</span>
   <span class="n">model_definition</span><span class="p">,</span>
@@ -551,8 +587,7 @@
    printed.</li>
 </ul>
 <p><strong>Example usage:</strong></p>
-                <div class="codehilite"><pre><span></span><span class="kn">from</span> <span
-                        class="nn">ludwig.api</span> <span class="kn">import</span> <span class="n">LudwigModel</span>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">ludwig.api</span> <span class="kn">import</span> <span class="n">LudwigModel</span>
 </pre></div>
 
 
@@ -580,6 +615,16 @@
 
 <p>or</p>
 <div class="codehilite"><pre><span></span><span class="n">predictions</span> <span class="o">=</span> <span class="n">ludwig_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_df</span><span class="o">=</span><span class="n">dataframe</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Test:</p>
+<div class="codehilite"><pre><span></span><span class="n">predictions</span><span class="p">,</span> <span class="n">test_stats</span> <span class="o">=</span> <span class="n">ludwig_model</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">data_csv</span><span class="o">=</span><span class="n">csv_file_path</span><span class="p">)</span>
+</pre></div>
+
+
+<p>or</p>
+<div class="codehilite"><pre><span></span><span class="n">predictions</span><span class="p">,</span> <span class="n">test_stats</span> <span class="o">=</span> <span class="n">ludwig_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data_df</span><span class="o">=</span><span class="n">dataframe</span><span class="p">)</span>
 </pre></div>
 
 
@@ -753,6 +798,25 @@ variables using the trained model.</p>
 
 
 <hr />
+<h3 id="save_for_serving">save_for_serving<a class="headerlink" href="#save_for_serving" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><span class="n">save_for_serving</span><span class="p">(</span>
+  <span class="n">save_path</span>
+<span class="p">)</span>
+</pre></div>
+
+
+<p>This function allows to save models on disk</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong> save_path</strong> (string): path to the directory where the SavedModel
+    is going to be saved.</li>
+</ul>
+<p><strong>Example usage</strong></p>
+<div class="codehilite"><pre><span></span><span class="n">ludwig_model</span><span class="o">.</span><span class="n">save_for_serving</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
+</pre></div>
+
+
+<hr />
 <h3 id="test">test<a class="headerlink" href="#test" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">test</span><span class="p">(</span>
   <span class="n">data_df</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -803,7 +867,7 @@ performance measures, confusion matrices and the like.</p>
 </ul>
 <p><strong>Return</strong></p>
 <ul>
-<li><strong>return</strong> (tuple((DataFrame or dict):, dict)) a tuple of a dataframe and a
+<li><strong>return</strong> (tuple((DataFrame or dict), dict)): a tuple of a dataframe and a
      dictionary. The dataframe contains the predictions for each
      output feature and their probabilities (for types that return
      them) will be returned. For instance in a 3 way multiclass
@@ -896,7 +960,6 @@ specified dataset.</p>
    intermediate preprocess  version of the input CSV created the
    first time a CSV file is used in the same directory with the same
    name and a hdf5 extension</li>
-
 <li><strong>data_dict</strong> (dict): input data dictionary. It is expected to
    contain one key for each field and the values have to be lists of
    the same length. Each index in the lists corresponds to one
@@ -932,7 +995,6 @@ specified dataset.</p>
    <code>{'text_field_name': ['text of the first datapoint', 'text of the
    second datapoint'], 'class_field_name': ['class_datapoint_1',
    'class_datapoint_2']}</code>.</li>
-
 <li><strong>train_set_metadata_json</strong> (string): input metadata JSON file. It is an
    intermediate preprocess file containing the mappings of the input
    CSV created the first time a CSV file is used in the same
@@ -1067,6 +1129,35 @@ consisting of two datapoints with a text and a class may be provided as
 the following dict <code>`{'text_field_name}: ['text of the first datapoint',
 text of the second datapoint'], 'class_filed_name':
 ['class_datapoints_1', 'class_datapoints_2']}</code>.</p>
+<hr />
+<h3 id="learning_curves">learning_curves<a class="headerlink" href="#learning_curves" title="Permanent link">&para;</a></h3>
+<div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">learning_curves</span><span class="p">(</span>
+  <span class="n">train_stats_per_model</span><span class="p">,</span>
+  <span class="n">field</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
+<span class="p">)</span>
+</pre></div>
+
+
+<p>Show how model measures change over training and validation data epochs.</p>
+<p>For each model and for each output feature and measure of the model,
+it produces a line plot showing how that measure changed over the course
+of the epochs of training on the training and validation sets.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>train_stats_per_model</strong> (train_stats_per_model: List containing train statistics per mode):train_stats_per_model: List containing train statistics per model</li>
+<li><strong>field</strong> (field: Prediction field containing ground truth):field: Prediction field containing ground truth.</li>
+<li><strong>model_names</strong> (model_names: List of the names of the models to use as labels):model_names: List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (output_directory: Directory where to save plots):output_directory: Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (file_format: File format of output plots - pdf or p):file_format: File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> ( Non): None</li>
+</ul>
                 
                   
                 
@@ -1116,16 +1207,16 @@ text of the second datapoint'], 'class_filed_name':
             <!-- Link to next page -->
             
             <a class="md-flex md-footer-nav__link md-footer-nav__link--next"
-               href="../faq/"
+               href="visualization/"
                rel="next"
-               title="FAQ">
+               title="API - Visualization">
                 <div class="md-flex__cell md-flex__cell--stretch
                   md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                FAQ
+                API - Visualization
               </span>
                 </div>
                 <div class="md-flex__cell md-flex__cell--shrink">
@@ -1166,10 +1257,8 @@ text of the second datapoint'], 'class_filed_name':
 </footer>
       
     </div>
-
     
       <script src="../assets/javascripts/application.245445c6.js"></script>
-
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
