@@ -63,10 +63,6 @@ from ludwig.utils.print_utils import logging_level_registry
 logger = logging.getLogger(__name__)
 
 
-# logger.setLevel(logging.INFO)
-
-
-
 class LudwigModel:
     """Class that allows access to high level Ludwig functionalities.
 
