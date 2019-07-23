@@ -657,9 +657,9 @@ optional arguments:
   -H HOST, --host HOST  host for server (default: 0.0.0.0)
 ```
 
-The most important argument is `--model_path` where you have to specify the path of the model to load. 
+The most important argument is `--model_path` where you have to specify the path of the model to load.
 
-Once running, you can make a POST request on the `/predict` endpoint to run inference on the form data submitted. 
+Once running, you can make a POST request on the `/predict` endpoint to run inference on the form data submitted.
 
 #### Example curl
 
@@ -1950,16 +1950,16 @@ The tensor is reduced along the `s` dimension to obtain a single vector of size 
 If you want to output the full `b x s x h` tensor, you can specify `reduce_output: null`.
 This encoder is not really useful for `sequence` or `text` features, but may be useful for `timeseries` features, as it allows for using them without any processing in later stages of the model, like in a sequence combiner for instance.
 
-```  
-+--+   
-|12|   
+```
++--+
+|12|
 |7 |                    +-----------+
 |43|   +------------+   |Aggregation|
 |65+--->Cast float32+--->Reduce     +->
 |23|   +------------+   |Operation  |
 |4 |                    +-----------+
-|1 |   
-+--+   
+|1 |
++--+
 ```
 
 These are the parameters available for the passthrough encoder
@@ -2214,7 +2214,7 @@ Ludwig supports reads in audio files using Python's library [SoundFile](https://
 
 -  `in_memory` (default `true`): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration. At the moment only `in_memory` = true is supported.
 - `audio_file_length_limit_in_s`:  (default 5.0) float value that defines the maximum limit of the audio file in seconds. All files longer than this limit are cut off. All files shorter than this limit are padded with `padding_value`
-- `padding_value`: (default 0): float value that is used for padding. 
+- `padding_value`: (default 0): float value that is used for padding.
 - `norm`: (default `null`) the normalization method that can be used for the input data. Supported methods: `null` (data is not normalized), `per_file` (z-norm is applied on a “per file” level)
 - `audio_feature`: (default `{ type: raw }`) dictionary that takes as input the audio feature `type` as well as additional parameters if `type != raw`. The following parameters can/should be defined in the dictionary:
 	- `type` (default `raw`): defines the type of audio features to be used. Supported types at the moment are `raw`, `stft`, `stft_phase`, `group_delay`. For more detail, check [Audio Input Features and Encoders](#audio-input-features-and-encoders).
@@ -2222,7 +2222,7 @@ Ludwig supports reads in audio files using Python's library [SoundFile](https://
 	- `window_shift_in_s`: defines the window shift used for the short time Fourier transformation (also called hop_length) (only needed if `type != raw`).
 	- `num_fft_points`: (default `window_length_in_s * sample_rate` of audio file) defines the number of fft points used for the short time Fourier transformation. If `num_fft_points > window_length_in_s * sample_rate`, then the signal is zero-padded at the end. `num_fft_points` has to be `>= window_length_in_s * sample_rate` (only needed if `type != raw`).
 	- `window_type`: (default `hamming`): defines the type window the signal is weighted before the short time Fourier transformation. All windows provided by [scipy’s window function](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.get_window.html) can be used (only needed if `type != raw`).
-  
+
 Example of a preprocessing specification (assuming the audio files have a sample rate of 16000):
 ```yaml
 name: audio_path
@@ -2316,6 +2316,40 @@ Convolutional Stack Encoder takes the following optional parameters:
 - `dropout` (default `false`): determines if there should be a dropout layer after each layer.
 - `initializer` (default `null`): the initializer to use. If `null`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
 - `regularize` (default `true`): if `true` the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
+
+Example image feature entry using a convolutional stack encoder:
+
+```yaml
+input_features:
+    -
+        name: image_path
+        type: image
+        encoder: stacked_cnn
+        conv_layers:
+            -
+                num_filters: 32
+                filter_size: 3
+                pool_size: 2
+                pool_stride: 2
+            -
+                num_filters: 64
+                filter_size: 3
+                pool_size: 2
+                pool_stride: 2
+                dropout: true
+        fc_layers:
+            -
+                fc_size: 128
+                dropout: true
+
+output_features:
+    -
+        name: label
+        type: category
+
+training:
+    dropout_rate: 0.4
+```
 
 #### ResNet Encoder
 
@@ -2437,7 +2471,7 @@ Date Features
 
 ### Date Features Preprocessing
 
-Ludwig will try to infer the date format automatically, but a specific fomrat can be provided. 
+Ludwig will try to infer the date format automatically, but a specific fomrat can be provided.
 The format is the same one described in the [datetime package documentation](https://docs.python.org/2/library/time.html#time.strptime).
 
 - `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The value should be one of `fill_with_const`  (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
@@ -3131,7 +3165,7 @@ For each model (in the aligned lists of `test_statistics` and `model_names`), pr
 
 The first plot is a line plot with one x axis representing the different classes and two vertical axes colored in orange and blue respectively.
 The orange one is the frequency of the class and an orange line is plotted to show the trend.
-The blue one is the F1 score for that class and a blue line is plotted to show the trend. 
+The blue one is the F1 score for that class and a blue line is plotted to show the trend.
 The classes on the x axis are sorted by f1 score.
 
 ![Frequency vs F1 sorted by F1](images/freq_vs_f1_sorted_f1.png "Frequency vs F1 sorted by F1")
