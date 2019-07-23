@@ -2337,6 +2337,12 @@ norm: null
 dropout: false
 initializer: null
 regularize: true
+preprocessing:  # example pre-processing
+  -
+    eight: 28
+    width: 28
+    num_channels: 1
+
 ```
 
 
@@ -2382,6 +2388,11 @@ norm: null
 dropout: false
 initializer: null
 regularize: true
+preprocessing:  # example pre-processing
+  -
+    eight: 224
+    width: 224
+    num_channels: 3
 ```
 
 ### Image Output Features and Decoders
