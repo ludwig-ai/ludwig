@@ -2339,7 +2339,7 @@ initializer: null
 regularize: true
 preprocessing:  # example pre-processing
   -
-    eight: 28
+    height: 28
     width: 28
     num_channels: 1
 
@@ -2390,7 +2390,7 @@ initializer: null
 regularize: true
 preprocessing:  # example pre-processing
   -
-    eight: 224
+    height: 224
     width: 224
     num_channels: 3
 ```
