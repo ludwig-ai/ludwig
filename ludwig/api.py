@@ -1029,7 +1029,7 @@ def test_predict(
         logging_level=logging.ERROR,
         **kwargs
 ):
-    ludwig_model = LudwigModel.load(model_path, logging_level=logging_level)
+    ludwig_model = LudwigModel.load(model_path)
 
     predictions = ludwig_model.predict(
         data_csv=data_csv,
