@@ -77,8 +77,8 @@ class LudwigModel:
     :param logging_level: (int, default: `logging.ERROR`) logging level to use
            for logging. Use logging constants like `logging.DEBUG`,
            `logging.INFO` and `logging.ERROR`. By default only errors will be
-           printed.
-
+           printed. It is possible to change the logging_level later by using
+           the set_logging_level method.
 
     # Example usage:
 
@@ -160,6 +160,12 @@ class LudwigModel:
 
     @staticmethod
     def set_logging_level(logging_level):
+        """
+        :param logging_level: Set/Update the logging level. Use logging
+        constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
+
+        :return: None
+        """
         logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
