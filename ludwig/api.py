@@ -1192,16 +1192,6 @@ def main(sys_argv):
     args = parser.parse_args(sys_argv)
     args.logging_level = logging_level_registry[args.logging_level]
 
-    """
-    logging.basicConfig(
-        stream=sys.stdout,
-        # filename='log.log',
-        # filemode='w',
-        level=args.logging_level,
-        format='%(message)s'
-    )
-    """
-
     if args.test == 'train':
         test_train(**vars(args))
     elif args.test == 'train_online':
