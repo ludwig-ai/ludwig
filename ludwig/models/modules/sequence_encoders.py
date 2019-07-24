@@ -1697,7 +1697,6 @@ class BERT:
     ):
         try:
             from bert.modeling import BertModel
-            from bert.modeling import get_assignment_map_from_checkpoint
             from bert.tokenization import validate_case_matches_checkpoint
         except ImportError:
             raise ValueError(
