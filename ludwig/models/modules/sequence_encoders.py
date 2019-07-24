@@ -1667,7 +1667,7 @@ class BERT:
     def __init__(
             self,
             config_path,
-            init_checkpoint_path=None,
+            checkpoint_path=None,
             do_lower_case=True,
             reduce_output=True,
             **kwargs
@@ -1680,10 +1680,10 @@ class BERT:
                 "Please install bert-tensorflow: pip install bert-tensorflow"
             )
 
-        self.init_checkpoint_path = init_checkpoint_path
+        self.checkpoint_path = checkpoint_path
         self.do_lower_case = do_lower_case
 
-        if config_path is None or init_checkpoint_path is None:
+        if config_path is None or checkpoint_path is None:
             raise ValueError(
                 'BERT config and model checkpoint paths are required'
             )
@@ -1715,10 +1715,10 @@ class BERT:
         )
 
         # initialize weights from the checkpoint file
-        if self.init_checkpoint_path is not None:
+        if self.checkpoint_path is not None:
             validate_case_matches_checkpoint(
                 self.do_lower_case,
-                self.init_checkpoint_path
+                self.checkpoint_path
             )
 
             tvars = tf.trainable_variables()
@@ -1728,12 +1728,12 @@ class BERT:
                 initialized_variable_names
             ) = BERT.get_assignment_map_from_checkpoint(
                 tvars,
-                self.init_checkpoint_path,
+                self.checkpoint_path,
                 prefix=prefix
             )
 
             tf.train.init_from_checkpoint(
-                self.init_checkpoint_path,
+                self.checkpoint_path,
                 assignment_map
             )
 
