@@ -1,4 +1,4 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig/api.py#L70)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig/api.py#L66)</span>
 # LudwigModel class
 
 ```python
@@ -23,8 +23,8 @@ __Inputs__
 - __logging_level__ (int, default: `logging.ERROR`): logging level to use
    for logging. Use logging constants like `logging.DEBUG`,
    `logging.INFO` and `logging.ERROR`. By default only errors will be
-   printed.
-
+   printed. It is possible to change the logging_level later by using
+   the set_logging_level method.
 
 __Example usage:__
 
@@ -110,7 +110,6 @@ initialize_model(
   gpus=None,
   gpu_fraction=1,
   random_seed=42,
-  logging_level=40,
   debug=False
 )
 ```
@@ -138,10 +137,6 @@ __Inputs__
 - __random_seed__ (int, default`42`): a random seed that is going to be
    used anywhere there is a call to a random number generator: data
    splitting, parameter initialization and training set shuffling
-- __logging_level__ (int, default: `logging.ERROR`): logging level to
-   use for logging. Use logging constants like `logging.DEBUG`,
-   `logging.INFO` and `logging.ERROR`. By default only errors will
-   be printed.
 - __debug__ (bool, default: `False`): enables debugging mode
  
 ---
@@ -150,8 +145,7 @@ __Inputs__
 
 ```python
 load(
-  model_dir,
-  logging_level=40
+  model_dir
 )
 ```
 
@@ -165,10 +159,6 @@ __Inputs__
 - __model_dir__ (string): path to the directory containing the model.
    If the model was trained by the `train` or `experiment` command,
    the model is in `results_dir/experiment_dir/model`.
-- __logging_level__ (int, default: `logging.ERROR`): logging level to
-   use for logging. Use logging constants like `logging.DEBUG`,
-   `logging.INFO` and `logging.ERROR`. By default only errors will
-   be printed.
 
 
 __Return__
@@ -197,8 +187,7 @@ ludwig.predict(
   return_type=<class 'pandas.core.frame.DataFrame'>,
   batch_size=128,
   gpus=None,
-  gpu_fraction=1,
-  logging_level=40
+  gpu_fraction=1
 )
 ```
 
@@ -232,11 +221,6 @@ __Inputs__
    same syntax of CUDA_VISIBLE_DEVICES)
 - __gpu_fraction__ (float, default `1.0`): fraction of gpu memory to
    initialize the process with
-- __logging_level__ (int, default: `logging.ERROR`): logging level to
-   use for logging. Use logging constants like `logging.DEBUG`,
-   `logging.INFO` and `logging.ERROR`. By default only errors will
-   be printed.
-
 
 __Return__
 
@@ -315,6 +299,23 @@ ludwig_model.save_for_serving(save_path)
 
 
 ---
+## set_logging_level
+
+
+```python
+set_logging_level(
+  logging_level
+)
+```
+
+
+
+:param logging_level: Set/Update the logging level. Use logging
+constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
+
+:return: None
+
+---
 ## test
 
 
@@ -326,8 +327,7 @@ ludwig.test(
   return_type=<class 'pandas.core.frame.DataFrame'>,
   batch_size=128,
   gpus=None,
-  gpu_fraction=1,
-  logging_level=40
+  gpu_fraction=1
 )
 ```
 
@@ -364,11 +364,6 @@ __Inputs__
    same syntax of CUDA_VISIBLE_DEVICES)
 - __gpu_fraction__ (float, default `1.0`): fraction of GPU memory to
    initialize the process with
-- __logging_level__ (int, default: `logging.ERROR`): logging level to
-   use for logging. Use logging constants like `logging.DEBUG`,
-   `logging.INFO` and `logging.ERROR`. By default only errors will
-   be printed.
-
 
 __Return__
 
@@ -430,7 +425,6 @@ train(
   gpu_fraction=1.0,
   use_horovod=False,
   random_seed=42,
-  logging_level=40,
   debug=False
 )
 ```
@@ -548,10 +542,6 @@ __Inputs__
    used anywhere there is a call to a random number generator: data
    splitting, parameter initialization and training set shuffling
 - __debug__ (bool, default: `False`): enables debugging mode
-- __logging_level__ (int, default: `logging.ERROR`): logging level to
-   use for logging. Use logging constants like `logging.DEBUG`,
-   `logging.INFO` and `logging.ERROR`. By default only errors will
-   be printed.
 
 There are three ways to provide data: by dataframes using the `_df`
 parameters, by CSV using the `_csv` parameters and by HDF5 and JSON,
@@ -596,8 +586,7 @@ train_online(
   dropout_rate=None,
   bucketing_field=None,
   gpus=None,
-  gpu_fraction=1,
-  logging_level=40
+  gpu_fraction=1
 )
 ```
 
@@ -634,10 +623,6 @@ __Inputs__
    same syntax of CUDA_VISIBLE_DEVICES)
 - __gpu_fraction__ (float, default `1.0`): fraction of GPU memory to
    initialize the process with
-- __logging_level__ (int, default: `logging.ERROR`): logging level to
-   use for logging. Use logging constants like `logging.DEBUG`,
-   `logging.INFO` and `logging.ERROR`. By default only errors will
-   be printed.
 
 There are three ways to provide data: by dataframes using the `data_df`
 parameter, by CSV using the `data_csv` parameter and by dictionary,
