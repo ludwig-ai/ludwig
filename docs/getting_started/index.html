@@ -594,9 +594,9 @@ python setup.py install
 
 
 <p>More details in the <a href="../user_guide/#spacy-based-word-format-options">User Guide</a>.</p>
-                <p>If you encounter problems installing <code>gmpy</code> please install <code>libgmp</code>.
+                <p>If you encounter problems installing <code>gmpy</code> please install <code>libgmp</code> or <code>gmp</code>.
                     On Debian based Linus distributions: <code>sudo apt-get install libgmp3-dev</code>.
-                    On MacOS there should not be any problem.</p>
+                    On MacOS : <code>brew install gmp</code>.</p>
 <p>Beware that in the <code>requirements.txt</code> file the <code>tensorflow</code> package is the regular one, not the GPU enabled one.
 To install the GPU enabled one replace it with <code>tensorflow-gpu</code>.</p>
 <p>If you want to train Ludwig models in a distributed way, you need to also install the <code>horovod</code> and the <code>mpi4py</code> packages.

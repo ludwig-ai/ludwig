@@ -4816,6 +4816,8 @@ If you want to output the full <code>b x s x h</code> where <code>h</code> is th
                 </div>
 
 
+                <p>When using a BERT encoder and finetuning it we suggest using small learning rates around <code>0.00002</code>
+                    and turning on learning rate warm up for the best results.</p>
                 <h5 id="passthrough-encoder">Passthrough Encoder<a class="headerlink" href="#passthrough-encoder"
                                                                    title="Permanent link">&para;</a></h5>
                 <p>The passthrough decoder simply transforms each input value into a fleat value and adds a dimension to
@@ -5275,7 +5277,8 @@ The column name is added to the JSON file, with an associated dictionary contain
                 </div>
 
 
-                <h5 id="resnet-encoder">ResNet Encoder<a class="headerlink" href="#resnet-encoder" title="Permanent link">&para;</a></h5>
+                <h5 id="resnet-encoder">ResNet Encoder<a class="headerlink" href="#resnet-encoder"
+                                                         title="Permanent link">&para;</a></h5>
                 <p><a href="https://arxiv.org/abs/1603.05027">ResNet</a> Encoder takes the following optional
                     parameters:</p>
 <ul>
