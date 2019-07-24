@@ -751,7 +751,7 @@ class BERTTokenizer(BaseTokenizer):
         self.tokenizer = FullTokenizer(vocab_file)
 
     def __call__(self, text):
-        return self.tokenizer.tokenize(text)
+        return ['[CLS]'] + self.tokenizer.tokenize(text) + ['[SEP]']
 
 
 tokenizer_registry = {

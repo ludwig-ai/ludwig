@@ -65,7 +65,7 @@ default_training_params = {
     'validation_field': 'combined',
     'validation_measure': LOSS,
     'bucketing_field': None,
-    'learning_rate_warmup_epochs': 5
+    'learning_rate_warmup_epochs': 1
 }
 
 default_optimizer_params_registry = {

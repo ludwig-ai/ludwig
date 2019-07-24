@@ -1663,9 +1663,10 @@ class BERT:
 
     def __init__(
             self,
-            bert_config_path=None,
+            bert_config_path,
             init_checkpoint_path=None,
             do_lower_case=True,
+            reduce_output=True,
             **kwargs
     ):
 
@@ -1685,6 +1686,7 @@ class BERT:
             )
 
         self.bert_config = BertConfig.from_json_file(bert_config_path)
+        self.reduce_output = reduce_output
 
     def __call__(
             self,
@@ -1707,30 +1709,41 @@ class BERT:
             is_training=True,
             input_ids=input_sequence,
             input_mask=tf.sign(tf.abs(input_sequence)),
+            token_type_ids=tf.zeros_like(input_sequence),
         )
 
-        validate_case_matches_checkpoint(
-            self.do_lower_case,
-            self.init_checkpoint_path
-        )
+        # initialize weights from the checkpoint file
+        if self.init_checkpoint_path is not None:
+            validate_case_matches_checkpoint(
+                self.do_lower_case,
+                self.init_checkpoint_path
+            )
 
-        tvars = tf.trainable_variables()
-        prefix = tvars[0].name.split('/')[0] + '/'
-        (
-            assignment_map,
-            initialized_variable_names
-        ) = BERT.get_assignment_map_from_checkpoint(
-            tvars,
-            self.init_checkpoint_path,
-            prefix=prefix
-        )
+            tvars = tf.trainable_variables()
+            prefix = tvars[0].name.split('/')[0] + '/'
+            (
+                assignment_map,
+                initialized_variable_names
+            ) = BERT.get_assignment_map_from_checkpoint(
+                tvars,
+                self.init_checkpoint_path,
+                prefix=prefix
+            )
 
-        tf.train.init_from_checkpoint(
-            self.init_checkpoint_path,
-            assignment_map
-        )
+            tf.train.init_from_checkpoint(
+                self.init_checkpoint_path,
+                assignment_map
+            )
 
-        hidden = model.get_pooled_output()
+        if self.reduce_output:
+            hidden = model.get_pooled_output()
+            hidden = tf.layers.dropout(hidden, rate=0.1, training=is_training)
+        else:
+            # this assumes the BERT tokenizer is used which adds [CLS] and [SEP]
+            # an it removes first and last token, returning a [b, s, h] where
+            # s is the lenght of the original sequence without
+            # the 2 additional special tokens
+            hidden = model.get_sequence_output()[:, 1:-1, :]
 
         return hidden, hidden.shape[-1].value
 

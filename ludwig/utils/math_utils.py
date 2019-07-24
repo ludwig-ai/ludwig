@@ -45,8 +45,14 @@ def convert_size(size_bytes):
     return '{} {}'.format(s, size_name[i])
 
 
-def learning_rate_warmup(learning_rate, epoch, warmup_epochs, num_workers,
-                         curr_step, steps_per_epoch):
+def learning_rate_warmup_distributed(
+        learning_rate,
+        epoch,
+        warmup_epochs,
+        num_workers,
+        curr_step,
+        steps_per_epoch
+):
     """Implements gradual learning rate warmup:
     `lr = initial_lr / hvd.size()` ---> `lr = initial_lr`
      `initial_lr` is the learning rate of the model optimizer at the start
@@ -74,3 +80,24 @@ def learning_rate_warmup(learning_rate, epoch, warmup_epochs, num_workers,
         epoch_adjusted = float(epoch) + (curr_step / steps_per_epoch)
         return learning_rate / num_workers * \
                (epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
+
+
+def learning_rate_warmup(
+        learning_rate,
+        epoch,
+        warmup_epochs,
+        curr_step,
+        steps_per_epoch
+):
+    global_curr_step = 1 + curr_step + epoch * steps_per_epoch
+    warmup_steps = warmup_epochs * steps_per_epoch
+
+    warmup_percent_done = global_curr_step / warmup_steps
+    warmup_learning_rate = learning_rate * warmup_percent_done
+
+    is_warmup = int(global_curr_step < warmup_steps)
+    interpolated_learning_rate = (
+            (
+                    1.0 - is_warmup) * learning_rate + is_warmup * warmup_learning_rate)
+
+    return interpolated_learning_rate
