@@ -33,7 +33,6 @@ from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import tokenizer_registry
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -49,7 +48,7 @@ class TimeseriesBaseFeature(BaseFeature):
         'timeseries_length_limit': 256,
         'padding_value': 0,
         'padding': 'right',
-        'format': 'space',
+        'tokenizer': 'space',
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }
@@ -57,7 +56,7 @@ class TimeseriesBaseFeature(BaseFeature):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         tokenizer = get_from_registry(
-            preprocessing_parameters['format'],
+            preprocessing_parameters['tokenizer'],
             tokenizer_registry
         )()
         max_length = 0
@@ -74,13 +73,13 @@ class TimeseriesBaseFeature(BaseFeature):
     @staticmethod
     def build_matrix(
             timeseries,
-            format_str,
+            tokenizer_name,
             length_limit,
             padding_value,
             padding='right'
     ):
         tokenizer = get_from_registry(
-            format_str,
+            tokenizer_name,
             tokenizer_registry
         )()
         max_length = 0
@@ -94,7 +93,7 @@ class TimeseriesBaseFeature(BaseFeature):
         if max_length < length_limit:
             logger.debug(
                 'max length of {0}: {1} < limit: {2}'.format(
-                    format_str,
+                    tokenizer_name,
                     max_length,
                     length_limit
                 )
@@ -117,7 +116,7 @@ class TimeseriesBaseFeature(BaseFeature):
     def feature_data(column, metadata, preprocessing_parameters):
         timeseries_data = TimeseriesBaseFeature.build_matrix(
             column,
-            preprocessing_parameters['format'],
+            preprocessing_parameters['tokenizer'],
             metadata['max_timeseries_length'],
             preprocessing_parameters['padding_value'],
             preprocessing_parameters['padding'])

@@ -1666,7 +1666,7 @@ class BERT:
 
     def __init__(
             self,
-            bert_config_path,
+            config_path,
             init_checkpoint_path=None,
             do_lower_case=True,
             reduce_output=True,
@@ -1683,12 +1683,12 @@ class BERT:
         self.init_checkpoint_path = init_checkpoint_path
         self.do_lower_case = do_lower_case
 
-        if bert_config_path is None or init_checkpoint_path is None:
+        if config_path is None or init_checkpoint_path is None:
             raise ValueError(
                 'BERT config and model checkpoint paths are required'
             )
 
-        self.bert_config = BertConfig.from_json_file(bert_config_path)
+        self.bert_config = BertConfig.from_json_file(config_path)
         self.reduce_output = reduce_output
 
     def __call__(

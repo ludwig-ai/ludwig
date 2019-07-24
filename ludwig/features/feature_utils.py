@@ -35,11 +35,11 @@ def should_regularize(regularize_layers):
     return regularize
 
 
-def set_str_to_idx(set_string, feature_dict, format_func):
+def set_str_to_idx(set_string, feature_dict, tokenizer_name):
     try:
-        tokenizer = tokenizer_registry[format_func]()
+        tokenizer = tokenizer_registry[tokenizer_name]()
     except ValueError:
-        raise Exception('Format {} not supported'.format(format_func))
+        raise Exception('Tokenizer {} not supported'.format(tokenizer_name))
 
     out = [feature_dict.get(item, feature_dict[UNKNOWN_SYMBOL]) for item in
            tokenizer(set_string)]

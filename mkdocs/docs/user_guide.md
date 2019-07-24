@@ -1983,16 +1983,16 @@ In this case the first and last element of the tesnor along the `s` dimension wi
 
 These are the parameters available for the embed encoder
 
-- `bert_config_path`: is the path to the BERT configuration JSON file.
+- `config_path`: is the path to the BERT configuration JSON file.
 - `init_checkpoint_path` (default `null`): is the path to the BERT checkpoint file. `bert_model.ckpt` should be specified, without `.index`, `.meta` or `.data*`.
 - `do_lower_case` (default `True`): this parameter should be set according to the pretrained model to use.
 - `reduce_output` (default `True`): The tensor is reduced by selecting the first output vector, the one in correspondence to the `[CLS]` token, to obtain a single vector of size `h` for each element of the batch.
 If you want to output the full `b x s x h` tensor, you can specify `null`. In this case the first and last element of the tesnor along the `s` dimension will be removed, as the correspond to the special tokens and not to the word pieces in the input.
 
-A BERT tokenizer should be specified as formt / tokenizer in preprocessing the input feature.
+A BERT tokenizer should be specified as tokenizer in preprocessing the input feature.
 Its parameters should include:
-- `format: bert` (`word_tokenizer: bert` in case of text features)
-- `vocab_file: <path_to_bert_vocab.txt>` (`word_tokenizer_vocab_file: <path_to_bert_vocab.txt>` in case of text features)
+- `tokenizer: bert` (`word_tokenizer: bert` in case of text features)
+- `vocab_file: <path_to_bert_vocab.txt>` (`word_vocab_file: <path_to_bert_vocab.txt>` in case of text features)
 - `padding_symbol: '[PAD]'`
 - `unknown_symbol: '[UNK]'`
 
@@ -2002,12 +2002,12 @@ Example sequence feature entry in the output features list using a BERT encoder:
 name: sequence_csv_column_name
 type: sequence
 encoder: bert
-bert_config_path: <path_to_bert_config.json>
-init_checkpoint_path: <path_to_bert_model.ckpt>
+config_path: <path_to_bert_config.json>
+checkpoint_path: <path_to_bert_model.ckpt>
 do_lower_case: True
 preprocessing:
-	word_tokenizer: bert
-	word_tokenizer_vocab_file: <path_to_bert_vocab.txt>
+	tokenizer: bert
+	vocab_file: <path_to_bert_vocab.txt>
 	padding_symbol: '[PAD]'
 	unknown_symbol: '[UNK]'
 reduce_output: True

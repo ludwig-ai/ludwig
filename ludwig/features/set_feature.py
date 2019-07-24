@@ -31,7 +31,6 @@ from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -41,7 +40,7 @@ class SetBaseFeature(BaseFeature):
         self.type = IMAGE
 
     preprocessing_defaults = {
-        'format': 'space',
+        'tokenizer': 'space',
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
@@ -52,7 +51,7 @@ class SetBaseFeature(BaseFeature):
     def get_feature_meta(column, preprocessing_parameters):
         idx2str, str2idx, str2freq, max_size = create_vocabulary(
             column,
-            preprocessing_parameters['format'],
+            preprocessing_parameters['tokenizer'],
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase']
         )
@@ -71,7 +70,7 @@ class SetBaseFeature(BaseFeature):
                 lambda x: set_str_to_idx(
                     x,
                     metadata['str2idx'],
-                    preprocessing_parameters['format']
+                    preprocessing_parameters['tokenizer']
                 )
             )
         )

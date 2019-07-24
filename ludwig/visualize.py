@@ -55,8 +55,8 @@ def validate_conf_treshholds_and_probabilities_2d_3d(
     for item, value in validation_mapping.items():
         item_len = len(value)
         if item_len != 2:
-            exception_message = 'Two {} should be provided - {} was given.'. \
-                format(item, item_len)
+            exception_message = 'Two {} should be provided - ' \
+                                '{} was given.'.format(item, item_len)
             logging.error(exception_message)
             raise RuntimeError(exception_message)
 
@@ -2654,11 +2654,11 @@ def calibration_multiclass(
 
     for i, brier_score in enumerate(brier_scores):
         if i < len(model_names):
-            format_str = '{}: '.format(model_names[i])
-            format_str += '{}'
+            tokenizer_name = '{}: '.format(model_names[i])
+            tokenizer_name += '{}'
         else:
-            format_str = '{}'
-        logger.info(format_str.format(brier_score))
+            tokenizer_name = '{}'
+        logger.info(tokenizer_name.format(brier_score))
 
 
 def confusion_matrix(

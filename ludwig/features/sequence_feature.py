@@ -64,7 +64,7 @@ class SequenceBaseFeature(BaseFeature):
         'padding_symbol': PADDING_SYMBOL,
         'unknown_symbol': UNKNOWN_SYMBOL,
         'padding': 'right',
-        'format': 'space',
+        'tokenizer': 'space',
         'lowercase': False,
         'vocab_file': None,
         'missing_value_strategy': FILL_WITH_CONST,
@@ -74,7 +74,7 @@ class SequenceBaseFeature(BaseFeature):
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         idx2str, str2idx, str2freq, max_length = create_vocabulary(
-            column, preprocessing_parameters['format'],
+            column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
             num_most_frequent=preprocessing_parameters['most_common']
         )
@@ -95,7 +95,7 @@ class SequenceBaseFeature(BaseFeature):
         sequence_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['str2idx'],
-            tokenizer_type=preprocessing_parameters['format'],
+            tokenizer_type=preprocessing_parameters['tokenizer'],
             length_limit=metadata['max_sequence_length'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             padding=preprocessing_parameters['padding'],

@@ -43,11 +43,11 @@ class TextBaseFeature(BaseFeature):
 
     preprocessing_defaults = {
         'char_tokenizer': 'characters',
-        'char_tokenizer_vocab_file': None,
+        'char_vocab_file': None,
         'char_sequence_length_limit': 1024,
         'char_most_common': 70,
         'word_tokenizer': 'space_punct',
-        'word_tokenizer_vocab_file': None,
+        'word_vocab_file': None,
         'word_sequence_length_limit': 256,
         'word_most_common': 20000,
         'padding_symbol': PADDING_SYMBOL,
@@ -83,7 +83,7 @@ class TextBaseFeature(BaseFeature):
             tokenizer_type=preprocessing_parameters['word_tokenizer'],
             num_most_frequent=preprocessing_parameters['word_most_common'],
             lowercase=preprocessing_parameters['lowercase'],
-            vocab_file=preprocessing_parameters['word_tokenizer_vocab_file'],
+            vocab_file=preprocessing_parameters['word_vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
         )
@@ -146,7 +146,7 @@ class TextBaseFeature(BaseFeature):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
-                'char_tokenizer_vocab_file'
+                'char_vocab_file'
             ],
         )
         word_data = build_sequence_matrix(
@@ -159,7 +159,7 @@ class TextBaseFeature(BaseFeature):
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
-                'word_tokenizer_vocab_file'
+                'word_vocab_file'
             ],
         )
 
