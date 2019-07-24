@@ -2013,6 +2013,8 @@ preprocessing:
 reduce_output: True
 ```
 
+When using a BERT encoder and finetuning it we suggest using small learning rates around `0.00002` and turning on learning rate warm up for the best results.
+
 
 #### Passthrough Encoder
 
