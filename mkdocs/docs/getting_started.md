@@ -83,7 +83,7 @@ python -m spacy download <language_code>
 More details in the [User Guide](user_guide.md#spacy-based-word-format-options).
 
 If you encounter problems installing `gmpy` please install `libgmp` or `gmp`.
-On Debian based Linus distributions: `sudo apt-get install libgmp3-dev`.
+On Debian based Linux distributions: `sudo apt-get install libgmp3-dev`.
 On MacOS : `brew install gmp`.
 
 Beware that in the `requirements.txt` file the `tensorflow` package is the regular one, not the GPU enabled one.
