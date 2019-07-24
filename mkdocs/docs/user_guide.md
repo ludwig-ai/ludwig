@@ -1984,7 +1984,7 @@ In this case the first and last element of the tesnor along the `s` dimension wi
 These are the parameters available for the embed encoder
 
 - `config_path`: is the path to the BERT configuration JSON file.
-- `init_checkpoint_path` (default `null`): is the path to the BERT checkpoint file. `bert_model.ckpt` should be specified, without `.index`, `.meta` or `.data*`.
+- `checkpoint_path` (default `null`): is the path to the BERT checkpoint file. `bert_model.ckpt` should be specified, without `.index`, `.meta` or `.data*`.
 - `do_lower_case` (default `True`): this parameter should be set according to the pretrained model to use.
 - `reduce_output` (default `True`): The tensor is reduced by selecting the first output vector, the one in correspondence to the `[CLS]` token, to obtain a single vector of size `h` for each element of the batch.
 If you want to output the full `b x s x h` tensor, you can specify `null`. In this case the first and last element of the tesnor along the `s` dimension will be removed, as the correspond to the special tokens and not to the word pieces in the input.
