@@ -62,7 +62,8 @@ from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import default_training_params
-from ludwig.utils.math_utils import learning_rate_warmup
+from ludwig.utils.math_utils import learning_rate_warmup_distributed, \
+    learning_rate_warmup
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 from ludwig.utils.tf_utils import get_tf_config
@@ -286,7 +287,7 @@ class Model:
             increase_batch_size_on_plateau_patience=5,
             increase_batch_size_on_plateau_rate=2,
             increase_batch_size_on_plateau_max=512,
-            learning_rate_warmup_epochs=5,  # used when training with Horovod
+            learning_rate_warmup_epochs=1,
             resume=False,
             skip_save_model=False,
             skip_save_progress=False,
@@ -505,7 +506,7 @@ class Model:
                 batch = batcher.next_batch()
 
                 if self.horovod:
-                    current_learning_rate = learning_rate_warmup(
+                    current_learning_rate = learning_rate_warmup_distributed(
                         progress_tracker.learning_rate,
                         progress_tracker.epoch,
                         learning_rate_warmup_epochs,
@@ -514,7 +515,13 @@ class Model:
                         batcher.steps_per_epoch
                     ) * self.horovod.size()
                 else:
-                    current_learning_rate = progress_tracker.learning_rate
+                    current_learning_rate = learning_rate_warmup(
+                        progress_tracker.learning_rate,
+                        progress_tracker.epoch,
+                        learning_rate_warmup_epochs,
+                        batcher.step,
+                        batcher.steps_per_epoch
+                    )
 
                 readout_nodes = {'optimize': self.optimize}
                 if not skip_save_log:

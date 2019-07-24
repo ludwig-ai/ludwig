@@ -981,6 +981,7 @@ These are the available training parameters:
 - `validation_field` (default `combined`): when there is more than one output feature, which one to use for computing if there was an improvement on validation. The measure to use to determine if there was an improvement can be set with the `validation_measure` parameter. Different datatypes have different available measures, refer to the datatype-specific section for more details. `combined` indicates the use the combination of all features. For instance the combination of `combined` and `loss` as measure uses a decrease in the combined loss of all output features to check for improvement on validation, while `combined` and `accuracy` considers on how many datapoints the predictions for all output features were correct (but consider that for some features, for instance `numeric` there is no accuracy measure, so you should use `accuracy` only if all your output features have an accuracy measure).
 - `validation_measure:` (default `accuracy`): the measure to use to determine if there was an improvement. The measure is considered for the output feature specified in `validation_field`. Different datatypes have different available measures, refer to the datatype-specific section for more details.
 - `bucketing_field` (default `null`): when not `null`, when creating batches, instead of shuffling randomly, the length along the last dimension of the matrix of the specified input feature is used for bucketing datapoints and then randomly shuffled datapoints from the same bin are sampled. Padding is trimmed to the longest datapoint in the batch. The specified feature should be either a `sequence` or `text` feature and the encoder encoding it has to be `rnn`. When used, bucketing improves speed of `rnn` encoding up to 1.5x, depending on the length distribution of the inputs.
+- `learning_rate_warmup_epochs` (default `1`): It's the number or training epochs where learning rate warmup will be used. It is calculated as ``described in [Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour](https://arxiv.org/abs/1706.02677). In the paper the authors suggest `6` epochs of warmup, that parameter is suggested for large datasets and big batches.
 
 ### Optimizers details
 
@@ -1526,7 +1527,7 @@ Sequence input feature parameters are
 
 #### Embed Encoder
 
-The embed decoder simply maps each integer in the sequence to an embedding, creating a `b x s x h` tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding size.
+The embed encoder simply maps each integer in the sequence to an embedding, creating a `b x s x h` tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding size.
 The tensor is reduced along the `s` dimension to obtain a single vector of size `h` for each element of the batch.
 If you want to output the full `b x s x h` tensor, you can specify `reduce_output: null`.
 
@@ -1942,6 +1943,76 @@ initializer: null
 regularize: true
 reduce_output: last
 ```
+
+#### BERT Encoder
+
+The [BERT](https://arxiv.org/abs/1810.04805) encoder allows for loading a pre-trained bert model.
+Models are available on [GitHube](https://github.com/google-research/bert) for download.
+The downloaded pretrained model directory contains:
+- `bert_config.json` which holds the hyperparameters of the bert architecture,
+- `vocab.txt` which contains the vocabulary of BPE word pieces the model was trained on,
+- `bert_model.ckpt` files (`.meta`, `.index` and `.data-00000-of-00001`) which contain the names of the tensors and the weights.
+
+In order to use this encder, the BERT Tokenizer need to be used at the same time, as if the tokenization is performed differently, the integers associated with each word piece will be wrong.
+The BERT Tokenizer also adds `[CLS]` and `[SEP]` special tokens at the beginning and at the end of each tokenized sentence respectively.
+
+The bert encoder simply maps each integer in the sequence to an embedding (made of a token embedding, a positional embedding and a segment embedding), creating a `b x s x h` tensor where `b` is the batch size, `s` is the length of the sequence and `h` is the embedding size.
+Tose embeddings are passed through several [transformer](https://arxiv.org/abs/1706.03762) layers.
+The tensor is reduced by selecting the first output vector, the one in correspondence to the `[CLS]` token, to obtain a single vector of size `h` for each element of the batch.
+If you want to output the full `b x s x h` tensor, you can specify `reduce_output: null`.
+In this case the first and last element of the tesnor along the `s` dimension will be removed, as the correspond to the special tokens and not to the word pieces in the input.
+
+```
+       +------+                     +------+
+       |Emb 12|                     |Emb 12+-->
+       +------+                     +------+
++--+   |Emb 7 |                     |Emb 7 |
+|12|   +------+                     +------+
+|7 |   |Emb 43|   +-------------+   |Emb 43|
+|43|   +------+   |             |   +------+
+|65+---+Emb 65+---> Transformer +--->Emb 65|
+|23|   +------+   | Layers      |   +------+
+|4 |   |Emb 23|   +-------------+   |Emb 23|
+|1 |   +------+                     +------+
++--+   |Emb 4 |                     |Emb 4 |
+       +------+                     +------+
+       |Emb 1 |                     |Emb 1 |
+       +------+                     +------+
+
+```
+
+These are the parameters available for the embed encoder
+
+- `bert_config_path`: is the path to the BERT configuration JSON file.
+- `init_checkpoint_path` (default `null`): is the path to the BERT checkpoint file. `bert_model.ckpt` should be specified, without `.index`, `.meta` or `.data*`.
+- `do_lower_case` (default `True`): this parameter should be set according to the pretrained model to use.
+- `reduce_output` (default `True`): The tensor is reduced by selecting the first output vector, the one in correspondence to the `[CLS]` token, to obtain a single vector of size `h` for each element of the batch.
+If you want to output the full `b x s x h` tensor, you can specify `null`. In this case the first and last element of the tesnor along the `s` dimension will be removed, as the correspond to the special tokens and not to the word pieces in the input.
+
+A BERT tokenizer should be specified as formt / tokenizer in preprocessing the input feature.
+Its parameters should include:
+- `format: bert` (`word_tokenizer: bert` in case of text features)
+- `vocab_file: <path_to_bert_vocab.txt>` (`word_tokenizer_vocab_file: <path_to_bert_vocab.txt>` in case of text features)
+- `padding_symbol: '[PAD]'`
+- `unknown_symbol: '[UNK]'`
+
+Example sequence feature entry in the output features list using a BERT encoder:
+
+```yaml
+name: sequence_csv_column_name
+type: sequence
+encoder: bert
+bert_config_path: <path_to_bert_config.json>
+init_checkpoint_path: <path_to_bert_model.ckpt>
+do_lower_case: True
+preprocessing:
+	word_tokenizer: bert
+	word_tokenizer_vocab_file: <path_to_bert_vocab.txt>
+	padding_symbol: '[PAD]'
+	unknown_symbol: '[UNK]'
+reduce_output: True
+```
+
 
 #### Passthrough Encoder
 

@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import collections
 import logging
+import re
 
 import tensorflow as tf
 
@@ -1658,3 +1660,118 @@ class CNNRNN:
         )
 
         return hidden, hidden_size
+
+
+class BERT:
+
+    def __init__(
+            self,
+            bert_config_path,
+            init_checkpoint_path=None,
+            do_lower_case=True,
+            reduce_output=True,
+            **kwargs
+    ):
+
+        try:
+            from bert.modeling import BertConfig
+        except ImportError:
+            raise ValueError(
+                "Please install bert-tensorflow: pip install bert-tensorflow"
+            )
+
+        self.init_checkpoint_path = init_checkpoint_path
+        self.do_lower_case = do_lower_case
+
+        if bert_config_path is None or init_checkpoint_path is None:
+            raise ValueError(
+                'BERT config and model checkpoint paths are required'
+            )
+
+        self.bert_config = BertConfig.from_json_file(bert_config_path)
+        self.reduce_output = reduce_output
+
+    def __call__(
+            self,
+            input_sequence,
+            regularizer,
+            dropout_rate,
+            is_training=True
+    ):
+        try:
+            from bert.modeling import BertModel
+            from bert.tokenization import validate_case_matches_checkpoint
+        except ImportError:
+            raise ValueError(
+                "Please install bert-tensorflow: pip install bert-tensorflow"
+            )
+
+        model = BertModel(
+            config=self.bert_config,
+            is_training=True,
+            input_ids=input_sequence,
+            input_mask=tf.sign(tf.abs(input_sequence)),
+            token_type_ids=tf.zeros_like(input_sequence),
+        )
+
+        # initialize weights from the checkpoint file
+        if self.init_checkpoint_path is not None:
+            validate_case_matches_checkpoint(
+                self.do_lower_case,
+                self.init_checkpoint_path
+            )
+
+            tvars = tf.trainable_variables()
+            prefix = tvars[0].name.split('/')[0] + '/'
+            (
+                assignment_map,
+                initialized_variable_names
+            ) = BERT.get_assignment_map_from_checkpoint(
+                tvars,
+                self.init_checkpoint_path,
+                prefix=prefix
+            )
+
+            tf.train.init_from_checkpoint(
+                self.init_checkpoint_path,
+                assignment_map
+            )
+
+        if self.reduce_output:
+            hidden = model.get_pooled_output()
+            hidden = tf.layers.dropout(hidden, rate=0.1, training=is_training)
+        else:
+            # this assumes the BERT tokenizer is used which adds [CLS] and [SEP]
+            # an it removes first and last token, returning a [b, s, h] where
+            # s is the lenght of the original sequence without
+            # the 2 additional special tokens
+            hidden = model.get_sequence_output()[:, 1:-1, :]
+
+        return hidden, hidden.shape[-1].value
+
+    @staticmethod
+    def get_assignment_map_from_checkpoint(tvars, init_checkpoint, prefix=''):
+        """Compute the union of the current variables and checkpoint variables."""
+        initialized_variable_names = {}
+
+        name_to_variable = collections.OrderedDict()
+        for var in tvars:
+            name = var.name
+            m = re.match("^(.*):\\d+$", name)
+            if m is not None:
+                name = m.group(1)
+            name_to_variable[name] = var
+
+        init_vars = tf.train.list_variables(init_checkpoint)
+
+        assignment_map = collections.OrderedDict()
+        for x in init_vars:
+            (name, var) = (x[0], x[1])
+            prefixed_name = prefix + name
+            if prefixed_name not in name_to_variable:
+                continue
+            assignment_map[name] = prefixed_name
+            initialized_variable_names[name] = 1
+            initialized_variable_names[name + ":0"] = 1
+
+        return (assignment_map, initialized_variable_names)
