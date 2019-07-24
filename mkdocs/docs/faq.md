@@ -1,7 +1,7 @@
 ## I'm experiencing problems installing `gmpy`, how do I solve them?
 
 If you encounter problems installing `gmpy` please install `libgmp` or `gmp`.
-On Debian based Linus distributions: `sudo apt-get install libgmp3-dev`.
+On Debian based Linux distributions: `sudo apt-get install libgmp3-dev`.
 On MacOS : `brew install gmp`.
 
 ## Do you support \[feature | encoder | decoder\] in Ludwig?
