@@ -97,7 +97,8 @@ def learning_rate_warmup(
 
     is_warmup = int(global_curr_step < warmup_steps)
     interpolated_learning_rate = (
-            (
-                    1.0 - is_warmup) * learning_rate + is_warmup * warmup_learning_rate)
+            (1.0 - is_warmup) * learning_rate +
+            is_warmup * warmup_learning_rate
+    )
 
     return interpolated_learning_rate
