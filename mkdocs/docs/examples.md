@@ -274,7 +274,7 @@ output_features:
 
 Image Classification (MNIST)
 ===
-This is a complete example of training an image classification model on the MNIST 
+This is a complete example of training an image classification model on the MNIST
 dataset.
 
 ## Download the MNIST dataset.
@@ -482,10 +482,10 @@ output_features:
 Speaker Verification
 ===
 
-This example describes how to use Ludwig for a simple speaker verification task. 
-We assume to have the following data with label 0 corresponding to an audio file of an unauthorized voice and 
-label 1 corresponding to an audio file of an authorized voice. 
-The sample data looks as follows: 
+This example describes how to use Ludwig for a simple speaker verification task.
+We assume to have the following data with label 0 corresponding to an audio file of an unauthorized voice and
+label 1 corresponding to an audio file of an authorized voice.
+The sample data looks as follows:
 
 | audio_path                 |   label                                   |
 |----------------------------|-------------------------------------------|
@@ -525,7 +525,7 @@ output_features:
 Kaggle's Titanic: Predicting survivors
 ===
 
-This example describes how to use Ludwig to train a model for the 
+This example describes how to use Ludwig to train a model for the
 [kaggle competition](https://www.kaggle.com/c/titanic/), on predicting a passenger's probability of surviving the Titanic
 disaster. Here's a sample of the data:
 
@@ -536,7 +536,7 @@ disaster. Here's a sample of the data:
 | 3      | female | 26  | 0     | 0     |  7.9250 | 0        | S        |
 | 3      | male   | 35  | 0     | 0     |  8.0500 | 0        | S        |
 
-The full data and the column descriptions can be found [here](https://www.kaggle.com/c/titanic/data). 
+The full data and the column descriptions can be found [here](https://www.kaggle.com/c/titanic/data).
 
 After downloading the data, to train a model on this dataset using Ludwig,
 ```
@@ -688,10 +688,10 @@ input_features:
     -
         name: temperature_feature
         type: timeseries
-        encoder: rnn  
+        encoder: rnn
         embedding_size: 32
         state_size: 32
- output_features:
+output_features:
     -
         name: temperature
         type: numerical
@@ -729,7 +729,7 @@ input_features:
     -
         name: categories
         type: set
-        
+
 output_features:
     -
         name: rating
