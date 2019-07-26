@@ -691,6 +691,7 @@ input_features:
         encoder: rnn
         embedding_size: 32
         state_size: 32
+
 output_features:
     -
         name: temperature
