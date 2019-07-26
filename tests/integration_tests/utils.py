@@ -141,13 +141,17 @@ def image_feature(folder, **kwargs):
     img_feature.update(kwargs)
     return img_feature
 
+
 def audio_feature(folder, **kwargs):
     audio_feature = {
         'name': 'audio_' + random_string(),
         'type': 'audio',
         'preprocessing': {
             'audio_feature': {
-                'type': 'raw',
+                'type': 'fbank',
+                'window_length_in_s': 0.04,
+                'window_shift_in_s': 0.02,
+                'num_filter_bands': 80
             },
             'audio_file_length_limit_in_s': 3.0
         },
@@ -160,7 +164,7 @@ def audio_feature(folder, **kwargs):
                 'num_filters': 32,
                 'regularize': 'false'
             },
-            { 
+            {
                 'filter_size': 40,
                 'pool_size': 10,
                 'num_filters': 64,
@@ -172,6 +176,7 @@ def audio_feature(folder, **kwargs):
     }
     audio_feature.update(kwargs)
     return audio_feature
+
 
 def timeseries_feature(**kwargs):
     ts_feature = {
@@ -226,5 +231,3 @@ def h3_feature(**kwargs):
     feature.update(kwargs)
 
     return feature
-
-
