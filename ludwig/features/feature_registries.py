@@ -55,6 +55,8 @@ from ludwig.features.text_feature import TextOutputFeature
 from ludwig.features.timeseries_feature import TimeseriesBaseFeature
 from ludwig.features.timeseries_feature import TimeseriesInputFeature
 from ludwig.features.vector_feature import VectorBaseFeature
+from ludwig.features.vector_feature import VectorInputFeature
+from ludwig.features.vector_feature import VectorOutputFeature
 
 base_type_registry = {
     TEXT: TextBaseFeature,
@@ -84,6 +86,7 @@ input_type_registry = {
     BAG: BagInputFeature,
     H3: H3InputFeature,
     DATE: DateInputFeature,
+    VECTOR: VectorInputFeature
 }
 output_type_registry = {
     CATEGORY: CategoryOutputFeature,
@@ -92,4 +95,5 @@ output_type_registry = {
     SEQUENCE: SequenceOutputFeature,
     SET: SetOutputFeature,
     TEXT: TextOutputFeature,
+    VECTOR: VectorOutputFeature
 }

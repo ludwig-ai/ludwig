@@ -45,6 +45,7 @@ class VectorBaseFeature(BaseFeature):
 
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
+        'fill_value': 0.0
     }
 
     @staticmethod
@@ -59,7 +60,7 @@ class VectorBaseFeature(BaseFeature):
 
     @staticmethod
     def feature_data(column, metadata):
-        vectors = column.map(VectorBaseFeature.read_single_vector)
+        vectors = [VectorBaseFeature.read_single_vector(x) for x in column]
         for v in vectors:
             if len(v) != metadata['vector_size']:
                 raise ValueError(
@@ -87,7 +88,7 @@ class VectorBaseFeature(BaseFeature):
         else:
             vector_size = preprocessing_parameters['vector_size']
 
-        metadata[feature['name']]['preprocessing']['vector_size'] = vector_size
+        metadata[feature['name']]['vector_size'] = vector_size
 
         data[feature['name']] = VectorBaseFeature.feature_data(
             dataset_df[feature['name']].astype(str),
@@ -131,9 +132,10 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
 
         feature_representation, feature_representation_size = self.encoder_obj(
             placeholder,
+            self.vector_size,
             regularizer,
             dropout_rate,
-            is_training,
+            is_training=is_training
         )
         logger.debug(
             '  feature_representation: {0}'.format(feature_representation)
@@ -156,7 +158,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
             **kwargs
     ):
         for key in ['vector_size']:
-            input_feature[key] = feature_metadata['preprocessing'][key]
+            input_feature[key] = feature_metadata[key]
 
     @staticmethod
     def populate_defaults(input_feature):
@@ -164,7 +166,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
         set_default_value(input_feature, 'preprocessing', {})
 
 
- class VectorOutputFeature(VectorBaseFeature, OutputFeature):
+class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
         self.type = VECTOR
@@ -265,7 +267,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
         output_tensors['{}'.format(feature_name)] = targets
 
         # ================ Predictions ================
-        predictions , predictions_size = self.vector_predictions(
+        predictions, predictions_size = self.vector_predictions(
             targets,
             decoder,
             hidden,
@@ -331,7 +333,6 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
                 regularizer,
                 is_timeseries=is_timeseries
             )
-
 
         return output, output_size
 
