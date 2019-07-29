@@ -549,9 +549,18 @@ def test_experiment_h3(csv_filename):
         run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def test_experiment_vector_feature(csv_filename):
+def test_experiment_vector_feature_1(csv_filename):
     input_features = [vector_feature()]
     output_features = [binary_feature()]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+def test_experiment_vector_feature_2(csv_filename):
+    input_features = [vector_feature()]
+    output_features = [vector_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 

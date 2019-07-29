@@ -176,6 +176,8 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
+        self.decoder = 'fc_stack'
+        feature['fc_size'] = self.vector_size
         self.decoder_obj = self.get_vector_decoder(feature)
 
     def get_vector_decoder(self, decoder_parameters):
@@ -194,6 +196,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     def _get_measures(self, targets, predictions):
 
         with tf.variable_scope('measures_{}'.format(self.name)):
+            import pdb; pdb.set_trace()
             error_val = get_error(
                 targets,
                 predictions,
@@ -208,18 +211,17 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
                 get_squared_error(targets, predictions, self.name), axis=1
             )
 
-            r2_val = tf.reduce_sum(
-                get_r2(targets, predictions, self.name), axis=1
-            )
+            # TODO - not sure if this is correct
+            r2_val = tf.reduce_sum(get_r2(targets, predictions, self.name))
 
         return error_val, squared_error_val, absolute_error_val, r2_val
 
     def vector_loss(self, error_val, squared_error_val):
         with tf.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == MEAN_SQUARED_ERROR:
-                train_loss = tf.reduce_sum(squared_error_val, axis=1)
+                train_loss = tf.reduce_sum(squared_error_val)
             elif self.loss['type'] == MEAN_ABSOLUTE_ERROR:
-                train_loss = tf.reduce_sum(error_val, axis=1)
+                train_loss = tf.reduce_sum(error_val)
             else:
                 train_mean_loss = None
                 train_loss = None
@@ -246,8 +248,9 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             self.decoder_obj,
             hidden,
             hidden_size,
+            kwargs['is_training'],
+            kwargs['dropout_rate'],
             regularizer=regularizer,
-            kwarg=kwargs
         )
         return train_mean_loss, eval_loss, output_tensors
 
@@ -257,8 +260,9 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             decoder,
             hidden,
             hidden_size,
+            is_training,
+            dropout_rate,
             regularizer=None,
-            **kwargs
     ):
         feature_name = self.name
         output_tensors = {}
@@ -268,11 +272,12 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         # ================ Predictions ================
         predictions, predictions_size = self.vector_predictions(
-            targets,
             decoder,
             hidden,
             hidden_size,
-            regularizer=regularizer
+            is_training,
+            dropout_rate,
+            regularizer=regularizer,
         )
 
         output_tensors[PREDICTIONS + '_' + feature_name] = predictions
@@ -317,21 +322,22 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
     def vector_predictions(
             self,
-            targets,
             decoder,
             hidden,
             hidden_size,
+            is_training,
+            dropout_rate,
             regularizer=None,
-            is_timeseries=False
     ):
         with tf.variable_scope('predictions_{}'.format(self.name)):
             output, output_size = decoder(
-                dict(self.__dict__),
-                targets,
+                # dict(self.__dict__),
+                # targets,
                 hidden,
                 hidden_size,
                 regularizer,
-                is_timeseries=is_timeseries
+                dropout_rate,
+                is_training
             )
 
         return output, output_size
@@ -424,8 +430,9 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         set_default_value(output_feature, LOSS, {})
         set_default_value(output_feature[LOSS], 'type', MEAN_SQUARED_ERROR)
-        set_default_value(output_feature, 'reduce_input', SUM)
-        set_default_value(output_feature, 'reduce_dependencies', SUM)
+        set_default_value(output_feature[LOSS], 'weight', 1)
+        set_default_value(output_feature, 'reduce_input', None)
+        set_default_value(output_feature, 'reduce_dependencies', None)
         set_default_value(output_feature, 'decoder', 'fc_stack')
         set_default_value(output_feature, 'dependencies', [])
 

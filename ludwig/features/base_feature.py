@@ -307,6 +307,8 @@ class OutputFeature(ABC, BaseFeature):
         final_hidden[self.name] = (feature_hidden, feature_hidden_size)
 
         # ================ Outputs ================
+        kwargs['is_training'] = is_training
+        kwargs['dropout_rate'] = dropout_rate
         train_mean_loss, eval_loss, output_tensors = self.build_output(
             feature_hidden,
             feature_hidden_size,
