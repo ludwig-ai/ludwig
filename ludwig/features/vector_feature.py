@@ -196,7 +196,6 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     def _get_measures(self, targets, predictions):
 
         with tf.variable_scope('measures_{}'.format(self.name)):
-            import pdb; pdb.set_trace()
             error_val = get_error(
                 targets,
                 predictions,
