@@ -125,7 +125,7 @@ class AudioBaseFeature(BaseFeature):
             mean = np.mean(audio_feature, axis=0)
             std = np.std(audio_feature, axis=0)
             audio_feature = np.divide((audio_feature - mean),
-                                             std)
+                                             std + 1.0e-10)
         elif normalization_type == 'global':
             raise ValueError('not implemented yet')
 

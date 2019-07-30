@@ -83,7 +83,7 @@ def get_fbank(raw_data, sampling_rate_in_hz, window_length_in_s,
     mel_fbank_matrix = _get_mel_fbank_matrix(list_mel_points, num_filter_bands,
                                                 num_fft_points, sampling_rate_in_hz)
     mel_fbank_feature = np.dot(stft_power, np.transpose(mel_fbank_matrix))
-    log_mel_fbank_feature = np.log(mel_fbank_feature)
+    log_mel_fbank_feature = np.log(mel_fbank_feature + 1.0e-10)
     return np.transpose(log_mel_fbank_feature)
 
 
