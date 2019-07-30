@@ -442,6 +442,11 @@ def preprocess_for_tr(
                 )
 
     elif data_type == 'csv':
+        data_hdf5_fp = replace_file_extension(
+            all_data_fp, 'hdf5'
+        )
+        model_definition['data_hdf5_fp'] = data_hdf5_fp
+
         if all_data_fp is not None:
             if (file_exists_in_diff_format(all_data_fp, 'hdf5') and
                     file_exists_in_diff_format(all_data_fp, 'json')):
@@ -517,6 +522,7 @@ def preprocess_for_tr(
                 )
     else:
         raise RuntimeError('Insufficient input parameters')
+
 
     replace_text_feature_level(
         model_definition['input_features'] +
