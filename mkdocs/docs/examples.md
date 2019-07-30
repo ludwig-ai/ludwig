@@ -479,25 +479,52 @@ output_features:
             type: sampled_softmax_cross_entropy
 ```
 
-Speaker Verification
+Spoken Digit Speech Recognition
 ===
 
-This example describes how to use Ludwig for a simple speaker verification task.
-We assume to have the following data with label 0 corresponding to an audio file of an unauthorized voice and
-label 1 corresponding to an audio file of an authorized voice.
-The sample data looks as follows:
+This is a complete example of training an spoken digit speech recognition model on the "MNIST dataset of speech recognition". 
 
-| audio_path                 |   label                                   |
-|----------------------------|-------------------------------------------|
-| audiodata/audio_000001.wav | 0                                         |
-| audiodata/audio_000002.wav | 0                                         |
-| audiodata/audio_000003.wav | 1                                         |
-| audiodata/audio_000004.wav | 1                                         |
+## Download the free spoken digit dataset.
+
+```
+git clone https://github.com/Jakobovski/free-spoken-digit-dataset.git
+mkdir speech_recog_digit_data
+cp -r free-spoken-digit-dataset/recordings speech_recog_digit_data
+cd speech_recog_digit_data
+```
+
+## Create an experiment CSV.
+
+```
+echo "audio_path","label" >> "spoken_digit.csv"
+cd "recordings"
+ls | while read -r file_name; do
+   audio_path=$(readlink -m "${file_name}")
+   label=$(echo ${file_name} | cut -c1)
+   echo "${audio_path},${label}" >> "../spoken_digit.csv"
+done
+cd "../"
+```
+
+Now you should have `spoken_digit.csv` containing 2000 examples having the following format
+
+| audio_path                                              |   label                                   |
+|---------------------------------------------------------|-------------------------------------------|
+| .../speech_recog_digit_data/recordings/0_jackson_0.wav  | 0                                         |
+| .../speech_recog_digit_data/recordings/0_jackson_10.wav | 0                                         |
+| .../speech_recog_digit_data/recordings/0_jackson_11.wav | 0                                         |
+| ...                                                     | ...                                       |
+| .../speech_recog_digit_data/recordings/1_jackson_0.wav  | 1                                         |
+
+
+## Train a model. 
+
+From the directory where you have virtual environment with ludwig installed: 
 
 ```
 ludwig experiment \
---data_csv speaker_verification.csv \
-  --model_definition_file model_definition.yaml
+  --data_csv <PATH_TO_SPOKEN_DIGIT_CSV> \
+  --model_definition_file model_definition_file.yaml
 ```
 
 With `model_definition.yaml`:
@@ -507,18 +534,42 @@ input_features:
     -
         name: audio_path
         type: audio
+        encoder: stacked_cnn
         preprocessing:
-            audio_file_length_limit_in_s: 7.0
             audio_feature:
-                type: stft
-                window_length_in_s: 0.04
-                window_shift_in_s: 0.02
-        encoder: cnnrnn
+                type: fbank
+                window_length_in_s: 0.025
+                window_shift_in_s: 0.01
+                num_filter_bands: 80
+            audio_file_length_limit_in_s: 1.0
+            norm: per_file
+        reduce_output: concat
+        conv_layers:
+            -
+                num_filters: 16
+                filter_size: 6
+                pool_size: 4
+                pool_stride: 4
+                dropout: true
+            -
+                num_filters: 32
+                filter_size: 3
+                pool_size: 2
+                pool_stride: 2
+                dropout: true
+        fc_layers:
+            -
+                fc_size: 64
+                dropout: true
 
 output_features:
     -
         name: label
-        type: binary
+        type: category
+
+training:
+    dropout_rate: 0.4
+    early_stop: 10
 ```
 
 
