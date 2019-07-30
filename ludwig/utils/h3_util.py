@@ -16,7 +16,7 @@
 # ==============================================================================
 import json
 
-#from gmpy import mpz
+from gmpy import mpz
 
 
 def extract_bits(number, position, num_bits, start_from='left'):
