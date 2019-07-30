@@ -283,6 +283,76 @@ def load_metadata(metadata_file_path):
     return data_utils.load_json(metadata_file_path)
 
 
+def preprocess_for_training(
+        model_definition,
+        data_df=None,
+        data_train_df=None,
+        data_validation_df=None,
+        data_test_df=None,
+        data_csv=None,
+        data_train_csv=None,
+        data_validation_csv=None,
+        data_test_csv=None,
+        data_hdf5=None,
+        data_train_hdf5=None,
+        data_validation_hdf5=None,
+        data_test_hdf5=None,
+        train_set_metadata_json=None,
+        skip_save_processed_input=False,
+        preprocessing_params=default_preprocessing_parameters,
+        random_seed=default_random_seed
+):
+    # Sanity Check to make sure some data source is provided
+    data_sources_provided = [data_df, data_train_df, data_csv, data_train_csv,
+                             data_hdf5, data_train_hdf5]
+    data_sources_not_none = [x is not None for x in data_sources_provided]
+    if not any(data_sources_not_none):
+        raise ValueError('No training data is provided!')
+
+    if data_df is not None or data_train_df is not None:
+        return preprocess_for_tr(
+            model_definition,
+            'pandas',
+            all_data_df=data_df,
+            train_df=data_train_df,
+            validation_df=data_validation_df,
+            test_df=data_test_df,
+            train_set_metadata_json=train_set_metadata_json,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+    elif data_csv is not None or data_train_csv is not None:
+        return preprocess_for_tr(
+            model_definition,
+            'csv',
+            all_data_fp=data_csv,
+            train_fp=data_train_csv,
+            validation_fp=data_validation_csv,
+            test_fp=data_test_csv,
+            train_set_metadata_json=train_set_metadata_json,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+    elif data_hdf5 is not None or data_train_hdf5 is not None:
+        return preprocess_for_tr(
+            model_definition,
+            'hdf5',
+            all_data_fp=data_hdf5,
+            train_fp=data_train_hdf5,
+            validation_fp=data_validation_hdf5,
+            test_fp=data_test_hdf5,
+            train_set_metadata_json=train_set_metadata_json,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+    else:
+        raise ValueError('Invalid type of data provided or Invalid usage of '
+                         'datasets. Please review your command')
+
+
 def preprocess_for_tr(
     model_definition,
     data_type,
@@ -290,6 +360,7 @@ def preprocess_for_tr(
     train_fp=None,
     validation_fp=None,
     test_fp=None,
+    all_data_df=None,
     train_df=None,
     validation_df=None,
     test_df=None,
@@ -298,9 +369,8 @@ def preprocess_for_tr(
     preprocessing_params=default_preprocessing_parameters,
     random_seed=default_random_seed
 ):
-    if all_data_fp is None and train_fp is None:
-        raise ValueError('No training data is provided!')
-    elif all_data_fp is not None and train_fp is not None:
+
+    if all_data_fp is not None and train_fp is not None:
         raise ValueError('Use either one file for all data or 3 files for '
                          'train, test or validation')
 
@@ -321,7 +391,7 @@ def preprocess_for_tr(
             train_set_metadata
         ) = _preprocess_df_for_training(
             features,
-            all_data_fp,
+            all_data_df,
             train_df,
             validation_df,
             test_df,
