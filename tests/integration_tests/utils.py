@@ -25,7 +25,7 @@ from ludwig.constants import VECTOR
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
-    'stacked_cnn', 'dense'
+    'stacked_cnn'
 ]
 
 

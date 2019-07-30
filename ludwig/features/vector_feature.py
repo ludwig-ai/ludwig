@@ -61,11 +61,15 @@ class VectorBaseFeature(BaseFeature):
     @staticmethod
     def feature_data(column, metadata):
         vectors = [VectorBaseFeature.read_single_vector(x) for x in column]
-        for v in vectors:
+        # Make sure all vectors are of the same size
+        for i, v in enumerate(vectors):
             if len(v) != metadata['vector_size']:
                 raise ValueError(
-                    'All the vectors need to be of the same size. Expected size:'
-                    '{}. Actual Size: {}'.format(metadata['vector_size'], len(v))
+                    'All the vectors need to be of the same size.'
+                    ' Expected size: {}. Actual Size of vector number '
+                    '{}: {}'.format(
+                        metadata['vector_size'], i, len(v)
+                    )
                 )
         return np.array(vectors)
 
@@ -215,12 +219,20 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         return error_val, squared_error_val, absolute_error_val, r2_val
 
-    def vector_loss(self, error_val, squared_error_val):
+    def vector_loss(self, targets, predictions):
         with tf.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == MEAN_SQUARED_ERROR:
+                squared_error_val = tf.reduce_sum(
+                    get_squared_error(targets, predictions, self.name), axis=1
+                )
                 train_loss = tf.reduce_sum(squared_error_val)
+
             elif self.loss['type'] == MEAN_ABSOLUTE_ERROR:
-                train_loss = tf.reduce_sum(error_val)
+                absolute_error_val = tf.reduce_sum(
+                    get_absolute_error(targets, predictions, self.name), axis=1
+                )
+                train_loss = tf.reduce_sum(absolute_error_val)
+
             else:
                 train_mean_loss = None
                 train_loss = None
@@ -307,7 +319,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             )
 
         # ================ Loss ================
-        train_mean_loss, eval_loss = self.vector_loss(error, squared_error)
+        train_mean_loss, eval_loss = self.vector_loss(targets, predictions)
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[
             TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
