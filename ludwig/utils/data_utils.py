@@ -326,6 +326,7 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
         array = load_matrix(file_name, dtype)
     return array
 
+
 def replace_file_extension(file_path, desired_format):
     """
     Return a file path for a file with same name but different format.
@@ -335,11 +336,17 @@ def replace_file_extension(file_path, desired_format):
     :param desired_format: desired file format
     :return: file path with same name but different format
     """
+    if file_path is None:
+        return None
     if '.' in desired_format:
         # Handle the case if the user calls with '.hdf5' instead of 'hdf5'
         desired_format = desired_format.replace('.', '').strip()
 
     return os.path.splitext(file_path)[0] + '.' + desired_format
+
+
+def file_exists_in_diff_format(file_path, desired_format):
+    return os.path.isfile(replace_file_extension(file_path, desired_format))
 
 
 def add_sequence_feature_column(df, col_name, seq_length):
