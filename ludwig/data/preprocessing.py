@@ -472,15 +472,15 @@ def preprocess_for_training_strategy_pattern(
                     validation_set,
                     train_set_metadata
                 ) = _preprocess_csv_for_training(
-                    features,
-                    all_data_fp,
-                    None,
-                    None,
-                    None,
-                    train_set_metadata_json,
-                    skip_save_processed_input,
-                    preprocessing_params,
-                    random_seed
+                    features=features,
+                    data_csv=all_data_fp,
+                    data_train_csv=None,
+                    data_validation_csv=None,
+                    data_test_csv=None,
+                    train_set_metadata_json=train_set_metadata_json,
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    random_seed=random_seed
                 )
         else:
             if (file_exists_in_diff_format(train_fp, 'hdf5') and
@@ -510,19 +510,18 @@ def preprocess_for_training_strategy_pattern(
                    validation_set,
                    train_set_metadata
                 ) = _preprocess_csv_for_training(
-                    features,
-                    None,
-                    train_fp,
-                    validation_fp,
-                    test_fp,
-                    train_set_metadata_json,
-                    skip_save_processed_input,
-                    preprocessing_params,
-                    random_seed
+                    features=features,
+                    data_csv=None,
+                    data_train_csv=train_fp,
+                    data_validation_csv=validation_fp,
+                    data_test_csv=test_fp,
+                    train_set_metadata_json=train_set_metadata_json,
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    random_seed=random_seed
                 )
     else:
         raise RuntimeError('Insufficient input parameters')
-
 
     replace_text_feature_level(
         model_definition['input_features'] +
