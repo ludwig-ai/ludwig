@@ -36,6 +36,7 @@ def get_abs_path(data_csv_path, file_path):
     else:
         return file_path
 
+
 def load_csv(data_fp):
     data = []
     with open(data_fp, 'rb') as f:
@@ -346,7 +347,8 @@ def replace_file_extension(file_path, desired_format):
 
 
 def file_exists_in_diff_format(file_path, desired_format):
-    return os.path.isfile(replace_file_extension(file_path, desired_format))
+    return file_path is None or \
+           os.path.isfile(replace_file_extension(file_path, desired_format))
 
 
 def add_sequence_feature_column(df, col_name, seq_length):
