@@ -35,6 +35,7 @@ from ludwig.models.modules.measure_modules import r2 as get_r2
 from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
 from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc import set_default_values
 
 
 logger = logging.getLogger(__name__)
@@ -436,7 +437,13 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         )
         set_default_value(output_feature[LOSS], 'type', 'mean_squared_error')
         set_default_value(output_feature[LOSS], 'weight', 1)
-        set_default_value(output_feature, 'clip', None)
-        set_default_value(output_feature, 'dependencies', [])
-        set_default_value(output_feature, 'reduce_input', SUM)
-        set_default_value(output_feature, 'reduce_dependencies', SUM)
+
+        set_default_values(
+            output_feature,
+            {
+                'clip': None,
+                'dependencies': [],
+                'reduce_input': SUM,
+                'reduce_dependencies': SUM
+            }
+        )

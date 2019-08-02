@@ -137,3 +137,9 @@ def get_from_registry(key, registry):
 def set_default_value(dictionary, key, value):
     if key not in dictionary:
         dictionary[key] = value
+
+
+def set_default_values(dictionary, default_value_dictionary):
+    # Set multiple default values
+    for key, value in default_value_dictionary.items():
+        set_default_value(dictionary, key, value)
