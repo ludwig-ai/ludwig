@@ -127,6 +127,68 @@ class ImageBaseFeature(BaseFeature):
         return img
 
     @staticmethod
+    def _finalize_preprocessing_parameters(
+        preprocessing_parameters,
+        first_image_path
+    ):
+        """
+        Helper method to determine the height, width and number of channels for
+        preprocessing the image data. This is achieved by looking at the
+        parameters provided by the user. When there are some missing parameters,
+        we fall back on to the first image in the dataset. The assumption being
+        that all the images in the data are expected be of the same size with
+        the same number of channels
+        """
+        # Read the first image in the dataset
+        first_image = imread(first_image_path)
+        first_img_height = first_image.shape[0]
+        first_img_width = first_image.shape[1]
+        first_img_num_channels = num_channels_in_image(first_image)
+
+        should_resize = False
+        if (HEIGHT in preprocessing_parameters or
+                WIDTH in preprocessing_parameters):
+            should_resize = True
+            try:
+                height = int(preprocessing_parameters[HEIGHT])
+                width = int(preprocessing_parameters[WIDTH])
+            except ValueError as e:
+                raise ValueError(
+                    'Image height and width must be set and have '
+                    'positive integer values: ' + str(e)
+                )
+            if height <= 0 or width <= 0:
+                raise ValueError(
+                    'Image height and width must be positive integers'
+                )
+        else:
+            # User hasn't specified height and width.
+            # So we assume that all images have the same width and height.
+            # Thus the width and height of the first one are the same
+            # as all the other ones
+            height = first_img_height
+            width = first_img_width
+
+        if NUM_CHANNELS in preprocessing_parameters:
+            # User specified num_channels in the model/feature definition
+            user_specified_num_channels = True
+            num_channels = preprocessing_parameters[NUM_CHANNELS]
+        else:
+            user_specified_num_channels = False
+            num_channels = first_img_num_channels
+
+        assert isinstance(num_channels, int), ValueError(
+            'Number of image channels needs to be an integer'
+        )
+
+        return (should_resize,
+                width,
+                height,
+                num_channels,
+                user_specified_num_channels,
+                first_image)
+
+    @staticmethod
     def add_feature_data(
             feature,
             dataset_df,
@@ -148,60 +210,21 @@ class ImageBaseFeature(BaseFeature):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        height = 0
-        width = 0
-        should_resize = False
-        if ('height' in preprocessing_parameters or
-                'width' in preprocessing_parameters):
-            should_resize = True
-            try:
-                height = int(preprocessing_parameters[HEIGHT])
-                width = int(preprocessing_parameters[WIDTH])
-            except ValueError as e:
-                raise ValueError(
-                    'Image height and width must be set and have '
-                    'positive integer values: ' + str(e)
-                )
-            if height <= 0 or width <= 0:
-                raise ValueError(
-                    'Image height and width must be positive integers'
-                )
+        first_image_path = dataset_df[feature['name']][0]
+        if csv_path is None and not os.path.isabs(first_image_path):
+            raise ValueError('Image file paths must be absolute')
 
-        # here if a width and height have not been specified
-        # we assume that all images have the same width and height
-        # thus the width and height of the first one are the same
-        # of all the other ones
-        if (csv_path is None and
-                not os.path.isabs(dataset_df[feature['name']][0])):
-            raise ValueError(
-                'Image file paths must be absolute'
+        first_image_path = get_abs_path(csv_path, first_image_path)
+
+        (should_resize,
+         width,
+         height,
+         num_channels,
+         user_specified_num_channels,
+         first_image) = \
+            ImageBaseFeature._finalize_preprocessing_parameters(
+                preprocessing_parameters, first_image_path
             )
-
-        first_image = imread(
-            get_abs_path(
-                csv_path,
-                dataset_df[feature['name']][0]
-            )
-        )
-
-        first_img_height = first_image.shape[0]
-        first_img_width = first_image.shape[1]
-        first_img_num_channels = num_channels_in_image(first_image)
-
-        if height == 0 or width == 0:
-            # User hasn't specified height and width
-            height = first_img_height
-            width = first_img_width
-
-        # User specified num_channels in the model/feature definition
-        user_specified_num_channels = False
-        num_channels = first_img_num_channels
-        if NUM_CHANNELS in preprocessing_parameters:
-            user_specified_num_channels = True
-            num_channels = preprocessing_parameters[NUM_CHANNELS]
-
-        assert isinstance(num_channels, int), ValueError(
-            'Number of image channels needs to be an integer')
 
         metadata[feature['name']]['preprocessing']['height'] = height
         metadata[feature['name']]['preprocessing']['width'] = width
