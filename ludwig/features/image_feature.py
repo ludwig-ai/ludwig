@@ -20,8 +20,10 @@ import os
 import h5py
 import numpy as np
 import tensorflow as tf
-from skimage.io import imread
 
+from functools import partial
+from multiprocessing import Pool
+from skimage.io import imread
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
@@ -124,6 +126,20 @@ class ImageBaseFeature(BaseFeature):
                     'image preprocessing'.format(filepath,
                                                  img_num_channels,
                                                  num_channels))
+
+        if img.shape[0] != img_height or img.shape[1] != img_width:
+            raise ValueError(
+                "Images are not of the same size. "
+                "Expected size is {0}, "
+                "current image size is {1}."
+                "Images are expected to be all of the same size"
+                "or explicit image width and height are expected"
+                "to be provided. "
+                "Additional information: "
+                "https://uber.github.io/ludwig/user_guide/#image-features-preprocessing"
+                    .format([img_height, img_width, num_channels], img.shape)
+            )
+
         return img
 
     @staticmethod
@@ -231,68 +247,43 @@ class ImageBaseFeature(BaseFeature):
         metadata[feature['name']]['preprocessing'][
             'num_channels'] = num_channels
 
+        read_image_and_resize = partial(
+            ImageBaseFeature._read_image_and_resize,
+            img_width=width,
+            img_height=height,
+            should_resize=should_resize,
+            num_channels=num_channels,
+            resize_method=preprocessing_parameters['resize_method'],
+            user_specified_num_channels=user_specified_num_channels
+        )
+        all_file_paths = [get_abs_path(csv_path, file_path)
+                          for file_path in dataset_df[feature['name']]]
+
         if feature['preprocessing']['in_memory']:
             data[feature['name']] = np.empty(
                 (num_images, height, width, num_channels),
                 dtype=np.uint8
             )
-            for i in range(len(dataset_df)):
-                filepath = get_abs_path(
-                    csv_path,
-                    dataset_df[feature['name']][i]
+            with Pool(5) as pool:
+                logger.info('Using 5 processes for preprocessing images')
+                data[feature['name']] = np.array(
+                    pool.map(read_image_and_resize, all_file_paths)
                 )
-
-                img = ImageBaseFeature._read_image_and_resize(
-                    filepath,
-                    width,
-                    height,
-                    should_resize,
-                    num_channels,
-                    preprocessing_parameters['resize_method'],
-                    user_specified_num_channels
-                )
-                try:
-                    data[feature['name']][i, :, :, :] = img
-                except:
-                    logger.error(
-                        "Images are not of the same size. "
-                        "Expected size is {}, "
-                        "current image size is {}."
-                        "Images are expected to be all of the same size"
-                        "or explicit image width and height are expected"
-                        "to be provided. "
-                        "Additional information: https://uber.github.io/ludwig/user_guide/#image-features-preprocessing"
-                            .format(first_image.shape, img.shape)
-                    )
-                    raise
         else:
             data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
             mode = 'w'
             if os.path.isfile(data_fp):
                 mode = 'r+'
+
             with h5py.File(data_fp, mode) as h5_file:
                 image_dataset = h5_file.create_dataset(
                     feature['name'] + '_data',
                     (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
-                for i in range(len(dataset_df)):
-                    filepath = get_abs_path(
-                        csv_path,
-                        dataset_df[feature['name']][i]
-                    )
-
-                    img = ImageBaseFeature._read_image_and_resize(
-                        filepath,
-                        width,
-                        height,
-                        should_resize,
-                        num_channels,
-                        preprocessing_parameters['resize_method'],
-                        user_specified_num_channels
-                    )
-
-                    image_dataset[i, :height, :width, :] = img
+                for i, filepath in enumerate(all_file_paths):
+                    image_dataset[i, :height, :width, :] = \
+                        read_image_and_resize(filepath)
 
             data[feature['name']] = np.arange(num_images)
 
