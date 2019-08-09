@@ -42,6 +42,8 @@ from tests.integration_tests.utils import timeseries_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+logging.getLogger("ludwig").setLevel(logging.INFO)
+logger.info('hello')
 
 
 def run_experiment(input_features, output_features, **kwargs):
@@ -231,7 +233,8 @@ def test_experiment_image_inputs(csv_filename):
                 'in_memory': True,
                 'height': 8,
                 'width': 8,
-                'num_channels': 3
+                'num_channels': 3,
+                'num_processes': 5
             },
             fc_size=16,
             num_filters=8
@@ -452,7 +455,8 @@ def test_visual_question_answering(csv_filename):
                 'in_memory': True,
                 'height': 8,
                 'width': 8,
-                'num_channels': 3
+                'num_channels': 3,
+                'num_processes': 5
             },
             fc_size=8,
             num_filters=8
@@ -488,7 +492,8 @@ def test_image_resizing_num_channel_handling(csv_filename):
                 'in_memory': True,
                 'height': 8,
                 'width': 8,
-                'num_channels': 3
+                'num_channels': 3,
+                'num_processes': 5
             },
             fc_size=8,
             num_filters=8

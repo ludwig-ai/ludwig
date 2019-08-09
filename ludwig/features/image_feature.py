@@ -48,7 +48,8 @@ class ImageBaseFeature(BaseFeature):
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
         'resize_method': 'interpolate',
-        'scaling': 'pixel_normalization'
+        'scaling': 'pixel_normalization',
+        'num_processes': 1
     }
 
     @staticmethod
@@ -217,7 +218,11 @@ class ImageBaseFeature(BaseFeature):
             'in_memory',
             preprocessing_parameters['in_memory']
         )
-
+        set_default_value(
+            feature['preprocessing'],
+            'num_processes',
+            preprocessing_parameters['num_processes']
+        )
         csv_path = None
         if hasattr(dataset_df, 'csv'):
             csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
@@ -260,12 +265,18 @@ class ImageBaseFeature(BaseFeature):
                           for file_path in dataset_df[feature['name']]]
 
         if feature['preprocessing']['in_memory']:
+            # Number of processes to run in parallel for preprocessing
+            num_processes = feature['preprocessing']['num_processes']
+            metadata[feature['name']]['preprocessing'][
+                'num_processes'] = num_processes
+
             data[feature['name']] = np.empty(
                 (num_images, height, width, num_channels),
                 dtype=np.uint8
             )
-            with Pool(5) as pool:
-                logger.info('Using 5 processes for preprocessing images')
+            with Pool(num_processes) as pool:
+                logger.warning('Using {} processes for preprocessing '
+                               'images'.format(num_processes))
                 data[feature['name']] = np.array(
                     pool.map(read_image_and_resize, all_file_paths)
                 )
