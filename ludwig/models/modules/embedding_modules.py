@@ -64,14 +64,14 @@ def embedding_matrix(
                     {'type': 'uniform', 'minval': -1.0, 'maxval': 1.0})
             initializer_obj = initializer_obj_ref([vocab_size, embedding_size])
 
-        embeddings = tf.get_variable('embeddings',
+        embeddings = tf.compat.v1.get_variable('embeddings',
                                      initializer=initializer_obj,
                                      trainable=embeddings_trainable,
                                      regularizer=regularizer)
 
     elif representation == 'sparse':
         embedding_size = vocab_size
-        embeddings = tf.get_variable('embeddings',
+        embeddings = tf.compat.v1.get_variable('embeddings',
                                      initializer=get_initializer('identity')(
                                          [vocab_size, embedding_size]),
                                      trainable=False)

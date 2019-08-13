@@ -136,7 +136,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
         input_feature['vocab'] = feature_metadata['idx2str']
 
     def _get_input_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.int32,
             shape=[None],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
@@ -224,7 +224,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     ])
 
     def _get_output_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.int64,
             [None],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
@@ -239,16 +239,16 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         if not self.regularize:
             regularizer = None
 
-        with tf.variable_scope('predictions_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('predictions_{}'.format(self.name)):
             initializer_obj = get_initializer(self.initializer)
-            weights = tf.get_variable(
+            weights = tf.compat.v1.get_variable(
                 'weights',
                 initializer=initializer_obj([hidden_size, self.num_classes]),
                 regularizer=regularizer
             )
             logger.debug('  class_weights: {0}'.format(weights))
 
-            biases = tf.get_variable(
+            biases = tf.compat.v1.get_variable(
                 'biases',
                 [self.num_classes]
             )
@@ -293,7 +293,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             class_weights,
             class_biases
     ):
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
             if ('class_similarities' in self.loss and
                     self.loss['class_similarities'] is not None):
 
@@ -388,7 +388,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         return train_mean_loss, eval_loss
 
     def _get_measures(self, targets, predictions, logits):
-        with tf.variable_scope('measures_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('measures_{}'.format(self.name)):
             accuracy_val, correct_predictions = get_accuracy(
                 targets,
                 predictions,
@@ -448,11 +448,11 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         output_tensors[MEAN_HITS_AT_K + '_' + self.name] = mean_hits_at_k
 
         if 'sampled' not in self.loss['type']:
-            tf.summary.scalar(
+            tf.compat.v1.summary.scalar(
                 'train_batch_accuracy_{}'.format(self.name),
                 accuracy
             )
-            tf.summary.scalar(
+            tf.compat.v1.summary.scalar(
                 'train_batch_mean_hits_at_k_{}'.format(self.name),
                 mean_hits_at_k
             )
@@ -470,7 +470,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
-        tf.summary.scalar(
+        tf.compat.v1.summary.scalar(
             'train_mean_loss_{}'.format(self.name),
             train_mean_loss
         )

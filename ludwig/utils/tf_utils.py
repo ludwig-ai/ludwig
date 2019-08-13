@@ -68,7 +68,7 @@ def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,
                                    inter_op_parallelism_threads=inter_op_parallelism_threads,
                                    gpu_options=gpu_options)
     else:
-        tf_config = tf.ConfigProto(allow_soft_placement=True,
+        tf_config = tf.compat.v1.ConfigProto(allow_soft_placement=True,
                                    log_device_placement=False,
                                    intra_op_parallelism_threads=intra_op_parallelism_threads,
                                    inter_op_parallelism_threads=inter_op_parallelism_threads)

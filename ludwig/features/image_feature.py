@@ -297,7 +297,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32,
             shape=[None, self.height, self.width, self.num_channels],
             name=self.name,

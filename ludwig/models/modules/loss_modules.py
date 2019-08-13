@@ -288,7 +288,7 @@ def weighted_softmax_cross_entropy(logits, vector_labels, loss):
             loss['labels_smoothing']
         )
     else:
-        train_loss = tf.losses.softmax_cross_entropy(
+        train_loss = tf.compat.v1.losses.softmax_cross_entropy(
             onehot_labels=vector_labels,
             logits=logits,
             label_smoothing=loss[

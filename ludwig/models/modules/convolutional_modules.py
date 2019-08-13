@@ -920,7 +920,7 @@ class ResNet(object):
         """
         inputs = input_image
 
-        with tf.variable_scope('resnet'):
+        with tf.compat.v1.variable_scope('resnet'):
             inputs = conv2d_fixed_padding(
                 inputs=inputs, filters=self.num_filters,
                 kernel_size=self.kernel_size,

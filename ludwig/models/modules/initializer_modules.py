@@ -31,10 +31,10 @@ initializers_registry = {
     'glorot_uniform': tf.initializers.glorot_uniform,
     'xavier_normal': tf.initializers.glorot_normal,
     'xavier_uniform': tf.initializers.glorot_uniform,
-    'he_normal': tf.initializers.he_normal,
-    'he_uniform': tf.initializers.he_uniform,
-    'lecun_normal': tf.initializers.lecun_normal,
-    'lecun_uniform': tf.initializers.lecun_uniform,
+    'he_normal': tf.compat.v1.initializers.he_normal,
+    'he_uniform': tf.compat.v1.initializers.he_uniform,
+    'lecun_normal': tf.compat.v1.initializers.lecun_normal,
+    'lecun_uniform': tf.compat.v1.initializers.lecun_uniform,
     None: tf.initializers.glorot_uniform
 }
 

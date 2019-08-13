@@ -57,7 +57,7 @@ def build_single_input(input_feature,
     if input_feature.get('tied_weights', None) is not None:
         scope_name = input_feature['tied_weights']
 
-    with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
+    with tf.compat.v1.variable_scope(scope_name, reuse=tf.compat.v1.AUTO_REUSE):
         input_feature_class = get_from_registry(
             input_feature['type'],
             input_type_registry

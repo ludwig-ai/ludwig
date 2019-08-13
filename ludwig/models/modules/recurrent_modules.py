@@ -57,7 +57,7 @@ def get_cell_fun(cell_type):
     return cell_fn
 
 
-class Projection(tf.layers.Layer):
+class Projection(tf.compat.v1.layers.Layer):
     def __init__(self, projection_weights, projection_biases, name=None,
                  **kwargs):
         super(Projection, self).__init__(name=name, **kwargs)
