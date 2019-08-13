@@ -134,6 +134,9 @@ def test_server_integration(csv_filename):
 
     app = server(model)
     client = TestClient(app)
+    response = client.get('/')
+    assert response.status_code == 200
+
     response = client.post('/predict')
     assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
