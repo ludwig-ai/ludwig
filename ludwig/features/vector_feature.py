@@ -353,8 +353,6 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     ):
         with tf.variable_scope('predictions_{}'.format(self.name)):
             logits, logits_size = decoder(
-                # dict(self.__dict__),
-                # targets,
                 hidden,
                 hidden_size,
                 regularizer,

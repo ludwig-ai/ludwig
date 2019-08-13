@@ -274,9 +274,7 @@ class OutputFeature(ABC, BaseFeature):
             combiner_hidden,
             combiner_hidden_size,
             final_hidden,
-            dropout_rate,
             regularizer=None,
-            is_training=None,
             **kwargs
     ):
         # ================ Reduce Inputs ================
@@ -300,15 +298,13 @@ class OutputFeature(ABC, BaseFeature):
         ) = self.output_specific_fully_connected(
             feature_hidden,
             feature_hidden_size,
-            dropout_rate,
+            dropout_rate=kwargs['dropout_rate'],
             regularizer=regularizer,
-            is_training=is_training
+            is_training=kwargs['is_training']
         )
         final_hidden[self.name] = (feature_hidden, feature_hidden_size)
 
         # ================ Outputs ================
-        kwargs['is_training'] = is_training
-        kwargs['dropout_rate'] = dropout_rate
         train_mean_loss, eval_loss, output_tensors = self.build_output(
             feature_hidden,
             feature_hidden_size,
