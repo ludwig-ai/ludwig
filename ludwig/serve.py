@@ -51,6 +51,10 @@ def server(model):
         f['name'] for f in model.model_definition['input_features']
     }
 
+    @app.get('/')
+    def root():
+        return JSONResponse({"message": "ludwig is up!"})
+
     @app.post('/predict')
     async def predict(request: Request):
         form = await request.form()
