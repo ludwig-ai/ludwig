@@ -26,6 +26,7 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.dense_encoders import Dense
+from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 from ludwig.models.modules.measure_modules import error as get_error
@@ -177,6 +178,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         self.vector_size = 0
 
         self.loss = {'type': MEAN_SQUARED_ERROR}
+        self.softmax = False
 
         _ = self.overwrite_defaults(feature)
 
@@ -219,7 +221,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         return error_val, squared_error_val, absolute_error_val, r2_val
 
-    def vector_loss(self, targets, predictions):
+    def vector_loss(self, targets, predictions, logits):
         with tf.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == MEAN_SQUARED_ERROR:
                 squared_error_val = tf.reduce_sum(
@@ -232,6 +234,13 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
                     get_absolute_error(targets, predictions, self.name), axis=1
                 )
                 train_loss = tf.reduce_sum(absolute_error_val)
+
+            elif self.loss['type'] == SOFTMAX_CROSS_ENTROPY:
+                train_loss = weighted_softmax_cross_entropy(
+                    logits,
+                    targets,
+                    self.loss
+                )
 
             else:
                 train_mean_loss = None
@@ -282,7 +291,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         output_tensors['{}'.format(feature_name)] = targets
 
         # ================ Predictions ================
-        predictions, predictions_size = self.vector_predictions(
+        logits, logits_size, predictions = self.vector_predictions(
             decoder,
             hidden,
             hidden_size,
@@ -319,7 +328,9 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             )
 
         # ================ Loss ================
-        train_mean_loss, eval_loss = self.vector_loss(targets, predictions)
+        train_mean_loss, eval_loss = self.vector_loss(
+            targets, predictions, logits
+        )
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[
             TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
@@ -341,7 +352,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             regularizer=None,
     ):
         with tf.variable_scope('predictions_{}'.format(self.name)):
-            output, output_size = decoder(
+            logits, logits_size = decoder(
                 # dict(self.__dict__),
                 # targets,
                 hidden,
@@ -351,7 +362,12 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
                 is_training
             )
 
-        return output, output_size
+            if self.softmax:
+                predictions = tf.nn.softmax(logits)
+            else:
+                predictions = logits
+
+        return logits, logits_size, predictions
 
     default_validation_measure = LOSS
 
@@ -444,6 +460,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         set_default_value(output_feature[LOSS], 'weight', 1)
         set_default_value(output_feature, 'reduce_input', None)
         set_default_value(output_feature, 'reduce_dependencies', None)
+        set_default_value(output_feature, 'softmax', False)
         set_default_value(output_feature, 'decoder', 'fc_stack')
         set_default_value(output_feature, 'dependencies', [])
 

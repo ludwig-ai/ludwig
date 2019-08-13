@@ -342,7 +342,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     name='vector_labels_{}'.format(self.name)
                 )
 
-            if self.loss['type'] == 'sampled_softmax_cross_entropy':
+            if self.loss['type'] == SAMPLED_SOFTMAX_CROSS_ENTROPY:
                 train_loss, eval_loss = sampled_softmax_cross_entropy(
                     targets,
                     hidden,
@@ -353,7 +353,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     self.loss,
                     self.num_classes
                 )
-            elif self.loss['type'] == 'softmax_cross_entropy':
+            elif self.loss['type'] == SOFTMAX_CROSS_ENTROPY:
                 train_loss = weighted_softmax_cross_entropy(
                     logits,
                     vector_labels,
