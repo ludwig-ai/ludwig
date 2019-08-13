@@ -169,7 +169,7 @@ ludwig visualize --visualization learning_curves --training_statistics path/to/t
 
 The commands will display a graph that looks like the following, where you can see loss and accuracy as functions of train iteration number:
 
-![Learning Curves](images/getting_started_learning_curves.png "Learning Curves")
+![Learning Curves](docs/images/getting_started_learning_curves.png "Learning Curves")
 
 Several visualizations are available, please refer to [Visualizations](user_guide.md#visualizations) for more details.
 
@@ -199,7 +199,7 @@ ludwig visualize --visualization compare_performance --test_statistics path/to/t
 
 will return a bar plot comparing the models on different measures:
 
-![Performance Comparison](images/compare_performance.png "Performance Comparison")
+![Performance Comparison](docs/images/compare_performance.png "Performance Comparison")
 
 A handy `ludwig experiment` command that performs training and prediction one after the other is also available.
 
