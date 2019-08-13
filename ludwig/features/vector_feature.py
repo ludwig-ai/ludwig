@@ -261,6 +261,8 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            is_training=None,
+            dropout_rate=None,
             **kwargs
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_vector_output(
@@ -268,8 +270,8 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             self.decoder_obj,
             hidden,
             hidden_size,
-            kwargs['is_training'],
-            kwargs['dropout_rate'],
+            is_training,
+            dropout_rate,
             regularizer=regularizer,
         )
         return train_mean_loss, eval_loss, output_tensors
