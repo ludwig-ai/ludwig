@@ -14,27 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
 import logging
+import os
+from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
 
-from collections import OrderedDict
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.dense_encoders import Dense
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
-from ludwig.utils.misc import get_from_registry
-from ludwig.utils.misc import set_default_value
-from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.models.modules.measure_modules import \
     absolute_error as get_absolute_error
+from ludwig.models.modules.measure_modules import error as get_error
+from ludwig.models.modules.measure_modules import r2 as get_r2
 from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
-from ludwig.models.modules.measure_modules import r2 as get_r2
+from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc import set_default_value
 
 logger = logging.getLogger(__name__)
 
@@ -261,18 +261,18 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
-            is_training=None,
             dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_vector_output(
-            targets=self._get_output_placeholder(),
-            decoder=self.decoder_obj,
-            hidden=hidden,
-            hidden_size=hidden_size,
-            is_training=is_training,
-            dropout_rate=dropout_rate,
+            self._get_output_placeholder(),
+            self.decoder_obj,
+            hidden,
+            hidden_size,
             regularizer=regularizer,
+            dropout_rate=dropout_rate,
+            is_training=is_training
         )
         return train_mean_loss, eval_loss, output_tensors
 
@@ -282,9 +282,9 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             decoder,
             hidden,
             hidden_size,
-            is_training,
-            dropout_rate,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None
     ):
         feature_name = self.name
         output_tensors = {}
@@ -294,12 +294,12 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         # ================ Predictions ================
         logits, logits_size, predictions = self.vector_predictions(
-            decoder=decoder,
-            hidden=hidden,
-            hidden_size=hidden_size,
-            is_training=is_training,
-            dropout_rate=dropout_rate,
+            decoder,
+            hidden,
+            hidden_size,
             regularizer=regularizer,
+            dropout_rate=dropout_rate,
+            is_training=is_training
         )
 
         output_tensors[PREDICTIONS + '_' + feature_name] = predictions
@@ -349,17 +349,17 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             decoder,
             hidden,
             hidden_size,
-            is_training,
-            dropout_rate,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None
     ):
         with tf.variable_scope('predictions_{}'.format(self.name)):
             logits, logits_size = decoder(
                 hidden,
                 hidden_size,
-                regularizer,
-                dropout_rate,
-                is_training
+                regularizer=regularizer,
+                dropout_rate=dropout_rate,
+                is_training=is_training
             )
 
             if self.softmax:

@@ -111,7 +111,8 @@ class SequenceBaseFeature(BaseFeature):
     def add_feature_data(
             feature,
             dataset_df,
-            data, metadata,
+            data,
+            metadata,
             preprocessing_parameters
     ):
         sequence_data = SequenceInputFeature.feature_data(
@@ -248,8 +249,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
-            is_training=None,
             dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_sequence_output(

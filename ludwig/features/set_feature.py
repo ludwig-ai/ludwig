@@ -276,8 +276,8 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
-            is_training=None,
             dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         output_tensors = {}

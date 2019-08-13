@@ -39,7 +39,6 @@ from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import create_vocabulary
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -408,8 +407,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
-            is_training=None,
             dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         output_tensors = {}
