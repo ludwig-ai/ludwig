@@ -39,7 +39,6 @@ from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import create_vocabulary
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -342,7 +341,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     name='vector_labels_{}'.format(self.name)
                 )
 
-            if self.loss['type'] == 'sampled_softmax_cross_entropy':
+            if self.loss['type'] == SAMPLED_SOFTMAX_CROSS_ENTROPY:
                 train_loss, eval_loss = sampled_softmax_cross_entropy(
                     targets,
                     hidden,
@@ -353,7 +352,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     self.loss,
                     self.num_classes
                 )
-            elif self.loss['type'] == 'softmax_cross_entropy':
+            elif self.loss['type'] == SOFTMAX_CROSS_ENTROPY:
                 train_loss = weighted_softmax_cross_entropy(
                     logits,
                     vector_labels,
@@ -408,6 +407,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         output_tensors = {}

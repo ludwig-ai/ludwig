@@ -225,6 +225,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         output_tensors = {}

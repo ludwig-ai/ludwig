@@ -39,6 +39,7 @@ from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
+from tests.integration_tests.utils import vector_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -546,6 +547,24 @@ def test_experiment_h3(csv_filename):
     for encoder in h3_encoder_registry:
         input_features[0]['encoder'] = encoder
         run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+def test_experiment_vector_feature_1(csv_filename):
+    input_features = [vector_feature()]
+    output_features = [binary_feature()]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+def test_experiment_vector_feature_2(csv_filename):
+    input_features = [vector_feature()]
+    output_features = [vector_feature()]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 
 if __name__ == '__main__':

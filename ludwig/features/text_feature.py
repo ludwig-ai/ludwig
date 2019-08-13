@@ -272,6 +272,8 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_sequence_output(

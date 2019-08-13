@@ -26,6 +26,7 @@ import soundfile as sf
 from skimage.io import imsave
 
 from ludwig.utils.data_utils import save_csv
+from ludwig.constants import VECTOR
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc import get_from_registry
 
@@ -113,7 +114,8 @@ parameters_builders_registry = {
     'image': return_none,
     'audio': return_none,
     'date': return_none,
-    'h3': return_none
+    'h3': return_none,
+    VECTOR: return_none
 }
 
 
@@ -207,6 +209,7 @@ def generate_timeseries(feature):
         )
     return ' '.join(series)
 
+
 def generate_audio(feature):
     audio_length = feature['preprocessing']['audio_file_length_limit_in_s']
     audio_dest_folder = feature['audio_dest_folder']
@@ -227,6 +230,7 @@ def generate_audio(feature):
                       '{0}'.format(e))
 
     return audio_dest_path
+
 
 def generate_image(feature):
     # Read num_channels, width, height
@@ -303,6 +307,13 @@ def generate_h3(feature):
     return components_to_h3(h3_components)
 
 
+def generate_vector(feature):
+    # Space delimited string with floating point numbers
+    return ' '.join(
+        [str(100 * random.random()) for _ in range(feature['vector_size'])]
+    )
+
+
 generators_registry = {
     'category': generate_category,
     'text': generate_sequence,
@@ -316,6 +327,8 @@ generators_registry = {
     'audio': generate_audio,
     'h3': generate_h3,
     'date': generate_datetime,
+    VECTOR: generate_vector
+
 }
 
 category_cycle = 0

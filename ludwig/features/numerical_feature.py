@@ -36,7 +36,6 @@ from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
 from ludwig.utils.misc import set_default_value
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -280,6 +279,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         output_tensors = {}

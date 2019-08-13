@@ -143,6 +143,8 @@ class OutputFeature(ABC, BaseFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         pass
@@ -274,9 +276,7 @@ class OutputFeature(ABC, BaseFeature):
             combiner_hidden,
             combiner_hidden_size,
             final_hidden,
-            dropout_rate,
             regularizer=None,
-            is_training=None,
             **kwargs
     ):
         # ================ Reduce Inputs ================
@@ -300,9 +300,9 @@ class OutputFeature(ABC, BaseFeature):
         ) = self.output_specific_fully_connected(
             feature_hidden,
             feature_hidden_size,
-            dropout_rate,
+            dropout_rate=kwargs['dropout_rate'],
             regularizer=regularizer,
-            is_training=is_training
+            is_training=kwargs['is_training']
         )
         final_hidden[self.name] = (feature_hidden, feature_hidden_size)
 
