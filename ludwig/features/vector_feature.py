@@ -266,12 +266,12 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             **kwargs
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_vector_output(
-            self._get_output_placeholder(),
-            self.decoder_obj,
-            hidden,
-            hidden_size,
-            is_training,
-            dropout_rate,
+            targets=self._get_output_placeholder(),
+            decoder=self.decoder_obj,
+            hidden=hidden,
+            hidden_size=hidden_size,
+            is_training=is_training,
+            dropout_rate=dropout_rate,
             regularizer=regularizer,
         )
         return train_mean_loss, eval_loss, output_tensors
@@ -294,11 +294,11 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         # ================ Predictions ================
         logits, logits_size, predictions = self.vector_predictions(
-            decoder,
-            hidden,
-            hidden_size,
-            is_training,
-            dropout_rate,
+            decoder=decoder,
+            hidden=hidden,
+            hidden_size=hidden_size,
+            is_training=is_training,
+            dropout_rate=dropout_rate,
             regularizer=regularizer,
         )
 
