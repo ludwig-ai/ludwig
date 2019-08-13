@@ -280,6 +280,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            is_training=None,
+            dropout_rate=None,
             **kwargs
     ):
         output_tensors = {}

@@ -248,6 +248,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            is_training=None,
+            dropout_rate=None,
             **kwargs
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_sequence_output(
