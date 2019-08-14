@@ -52,7 +52,7 @@ def server(model):
     }
 
     @app.get('/')
-    def root():
+    def _unused_root():
         return JSONResponse({"message": "ludwig is up!"})
 
     @app.post('/predict')
