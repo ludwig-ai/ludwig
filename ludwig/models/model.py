@@ -419,7 +419,7 @@ class Model:
         train_writer = None
         if is_on_master():
             if not skip_save_log:
-                train_writer = tf.summary.FileWriter(
+                train_writer = tf.compat.v1.summary.FileWriter(
                     os.path.join(save_path, 'log', 'train'),
                     session.graph
                 )
