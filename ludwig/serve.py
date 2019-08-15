@@ -52,8 +52,8 @@ def server(model):
     }
 
     @app.get('/')
-    def _unused_root():
-        return JSONResponse({"message": "ludwig is up!"})
+    def check_health():
+        return JSONResponse({"message": "Ludwig server is up"})
 
     @app.post('/predict')
     async def predict(request: Request):
