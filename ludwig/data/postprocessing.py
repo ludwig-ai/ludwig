@@ -59,12 +59,19 @@ def postprocess(
     return postprocessed
 
 
-def postprocess_df(model_output, output_features, metadata):
+def postprocess_df(
+    model_output,
+    output_features,
+    metadata,
+    experiment_dir_name='',
+    skip_save_unprocessed_output=True
+):
     postprocessed_output = postprocess(
         model_output,
         output_features,
         metadata,
-        skip_save_unprocessed_output=True
+        experiment_dir_name=experiment_dir_name,
+        skip_save_unprocessed_output=skip_save_unprocessed_output
     )
     data_for_df = {}
     for output_feature in output_features:

@@ -156,7 +156,7 @@ class LudwigModel:
             self.model_definition = merge_with_defaults(model_definition_copy)
         self.train_set_metadata = None
         self.model = None
-        self.exp_dir_name = None
+        self.exp_dir_name = ''
 
     @staticmethod
     def set_logging_level(logging_level):
@@ -711,6 +711,7 @@ class LudwigModel:
             gpus=None,
             gpu_fraction=1,
             evaluate_performance=False,
+            skip_save_unprocessed_output=False
     ):
 
         if (self.model is None or self.model_definition is None or
@@ -775,7 +776,9 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 predict_results,
                 self.model_definition['output_features'],
-                self.train_set_metadata
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
             )
         elif (
                 return_type == 'dataframe' or
@@ -785,7 +788,9 @@ class LudwigModel:
             postprocessed_predictions = postprocess_df(
                 predict_results,
                 self.model_definition['output_features'],
-                self.train_set_metadata
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
             )
         else:
             logger.warning(
@@ -795,7 +800,9 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 predict_results,
                 self.model_definition['output_features'],
-                self.train_set_metadata
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
             )
 
         return postprocessed_predictions, predict_results
@@ -809,6 +816,7 @@ class LudwigModel:
             batch_size=128,
             gpus=None,
             gpu_fraction=1,
+            skip_save_unprocessed_output=False
     ):
         """This function is used to predict the output variables given the input
            variables using the trained model.
@@ -838,6 +846,11 @@ class LudwigModel:
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of gpu memory to
                initialize the process with
+        :param skip_save_unprocessed_output: By default predictions and
+           their probabilities are saved in both raw unprocessed numpy files
+           contaning tensors and as postprocessed CSV files
+           (one for each output feature). If this parameter is True,
+           only the CSV ones are saved and the numpy ones are skipped.
 
         # Return
 
@@ -865,6 +878,7 @@ class LudwigModel:
             gpus=gpus,
             gpu_fraction=gpu_fraction,
             evaluate_performance=False,
+            skip_save_unprocessed_output=skip_save_unprocessed_output
         )
 
         return predictions

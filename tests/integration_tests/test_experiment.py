@@ -74,6 +74,8 @@ def run_experiment(input_features, output_features, **kwargs):
         'skip_save_processed_input': True,
         'skip_save_progress': True,
         'skip_save_unprocessed_output': True,
+        'skip_save_model': True,
+        'skip_save_log': True
     }
     args.update(kwargs)
 
