@@ -816,7 +816,7 @@ class LudwigModel:
             batch_size=128,
             gpus=None,
             gpu_fraction=1,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=True
     ):
         """This function is used to predict the output variables given the input
            variables using the trained model.
@@ -846,11 +846,11 @@ class LudwigModel:
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of gpu memory to
                initialize the process with
-        :param skip_save_unprocessed_output: By default predictions and
-           their probabilities are saved in both raw unprocessed numpy files
-           contaning tensors and as postprocessed CSV files
-           (one for each output feature). If this parameter is True,
-           only the CSV ones are saved and the numpy ones are skipped.
+        :param skip_save_unprocessed_output: If this parameter is False,
+               predictions and their probabilities are saved in both raw
+               unprocessed numpy files contaning tensors and as postprocessed
+               CSV files (one for each output feature). If this parameter is
+               True, only the CSV ones are saved and the numpy ones are skipped.
 
         # Return
 
