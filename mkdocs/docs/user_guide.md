@@ -688,7 +688,7 @@ Different datatypes may have different formatters that format the values of a ce
 For instance the value of a cell of a sequence feature column by default is managed by a `space` formatter, that splits the content of the value into a list of strings using space.
 
 | before formatter       | after formatter          |
-|------------------------|--------------------------|
+| ---------------------- | ------------------------ |
 | "token3 token4 token2" | [token3, token4, token2] |
 | "token3 token1"        | [token3, token1]         |
 
@@ -729,7 +729,7 @@ Finally a numpy matrix is created with sizes `n x l` where `n` is the number of 
 All sequences shorter than `l` are padded on the right (but this behavior may also be modified through a parameter).
 
 | after formatter          | numpy matrix |
-|--------------------------|--------------|
+| ------------------------ | ------------ |
 | [token3, token4, token2] | 2 4 3        |
 | [token3, token1]         | 2 5 0        |
 
@@ -2881,6 +2881,75 @@ Some additional information on the parameters:
 
 Other parameters will be detailed for each visualization as different ones use them differently.
 
+Example codes to generate the visualizations are based on running two experiments and comparing them. The experiments themselves are run with the following snippet:
+
+```
+ludwig experiment --experiment_name titanic --model_name Model1 --data_csv train.csv -mdf titanic_model1.yaml
+ludwig experiment --experiment_name titanic --model_name Model2 --data_csv train.csv -mdf titanic_model2.yaml
+```
+
+For this, you need to download the Kaggle Titanic dataset to get `train.csv`. Note that the images associated with each visualization below are not from the Titanic dataset. The two models are defined with `titanic_model1.yaml`
+
+```yaml
+input_features:
+    -
+        name: Pclass
+        type: category
+    -
+        name: Sex
+        type: category
+    -
+        name: Age
+        type: numerical
+        preprocessing:
+          missing_value_strategy: fill_with_mean
+    -
+        name: SibSp
+        type: numerical
+    -
+        name: Parch
+        type: numerical
+    -
+        name: Fare
+        type: numerical
+        preprocessing:
+          missing_value_strategy: fill_with_mean
+    -
+        name: Embarked
+        type: category
+
+output_features:
+    -
+        name: Survived
+        type: binary
+```
+
+and with `titanic_model2.yaml`:
+
+```yaml
+input_features:
+    -
+        name: Pclass
+        type: category
+    -
+        name: Sex
+        type: category
+    -
+        name: SibSp
+        type: numerical
+    -
+        name: Parch
+        type: numerical
+    -
+        name: Embarked
+        type: category
+
+output_features:
+    -
+        name: Survived
+        type: binary
+```
+
 Learning Curves
 ---------------
 
@@ -2888,6 +2957,12 @@ Learning Curves
 
 This visualization uses the `training_statistics` and `model_names` parameters.
 For each model (in the aligned lists of `training_statistics` and `model_names`) and for each output feature and measure of the model, it produces a line plot showing how that measure changed over the course of the epochs of training on the training and validation sets.
+
+Example code:
+
+```
+ludwig visualize -v learning_curves -mn Model1 Model2 --training_statistics results\titanic_Model1_0\training_statistics.json results\titanic_Model2_0\training_statistics.json
+```
 
 ![Learning Curves Loss](images/learning_curves_loss.png "Learning Curves Loss")
 
@@ -2902,6 +2977,11 @@ Confusion Matrix
 This visualization uses the `top_n_classes`, `normalize`, `ground_truth_metadata`, `test_statistics` and `model_names` parameters.
 For each model (in the aligned lists of `test_statistics` and `model_names`) it produces a heatmap of the confusion matrix in the predictions for each field that has a confusion matrix in `test_statistics`.
 The value of `top_n_classes` limits the heatmap to the `n` most frequent classes.
+
+Example code:
+```
+ludwig visualize -v confusion_matrix --top_n_classes 2 --test_statistics results\titanic_Model1_0\test_statistics.json --ground_truth_metadata results\titanic_Model1_0\model\train_set_metadata.json
+```
 
 ![Confusion Matrix](images/confusion_matrix.png "Confusion Matrix")
 
@@ -2918,6 +2998,11 @@ Compare Performance
 This visualization uses the `field`, `test_statistics` and `model_names` parameters.
 For each model (in the aligned lists of `test_statistics` and `model_names`) it produces bars in a bar plot, one for each overall metric available in the `test_statistics` file for the specified `field`.
 
+Example code:
+```
+ludwig visualize -v compare_performance -mn Model1 Model2 --test_statistics results\titanic_Model1_0\test_statistics.json results\titanic_Model2_0\test_statistics.json --field Survived
+```
+
 ![Compare Classifiers Performance](images/compare_performance.png "Compare Classifiers Performance")
 
 
@@ -2927,6 +3012,11 @@ This visualization uses the `ground_truth`, `field`, `probabilities` and `model_
 `field` needs to be a category.
 For each model (in the aligned lists of `probabilities` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilities of predictions for the specified `field`.
 
+Example code:
+```
+ludwig visualize -v compare_classifiers_performance_from_prob --ground_truth train.hdf5 --field Survived --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv -mn Model1 Model2
+```
+
 ![Compare Classifiers Performance from Probabilities](images/compare_classifiers_performance_from_prob.png "Compare Classifiers Performance from probabilities")
 
 
@@ -2935,6 +3025,11 @@ For each model (in the aligned lists of `probabilities` and `model_names`) it pr
 This visualization uses the `ground_truth`, `ground_truth_metadata`, `field`, `predictions` and `model_names` parameters.
 `field` needs to be a category.
 For each model (in the aligned lists of `predictions` and `model_names`) it produces bars in a bar plot, one for each overall metric computed on the fly from the predictions for the specified `field`.
+
+Example code:
+```
+ludwig visualize -v compare_classifiers_performance_from_pred --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --predictions results\titanic_Model1_0\Survived_predictions.csv results\titanic_Model2_0\Survived_predictions.csv -mn Model1 Model2
+```
 
 ![Compare Classifiers Performance from Predictions](images/compare_classifiers_performance_from_pred.png "Compare Classifiers Performance from Predictions")
 
@@ -2948,6 +3043,11 @@ The way the subset is obtained is using the `top_n_classes` and `subset` paramet
 
 If the values of `subset` is `ground_truth`, then only datapoints where the ground truth class is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed.
 
+Example code:
+```
+ludwig visualize -v compare_classifiers_performance_subset --top_n_classes 2 --subset ground_truth --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv -mn Model1 Model2
+```
+
 ![Compare Classifiers Performance Subset Ground Truth](images/compare_classifiers_performance_subset_gt.png "Compare Classifiers Performance Subset Ground Truth")
 
 If the values of `subset` is `predictions`, then only datapoints where the the model predicts a class that is within the top `n` most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed for each model.
@@ -2960,6 +3060,11 @@ If the values of `subset` is `predictions`, then only datapoints where the the m
 This visualization uses the `top_k`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` needs to be a category.
 For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k` for the specified `field`.
+
+Example code:
+```
+ludwig visualize -v compare_classifiers_performance_changing_k --top_k 5 --ground_truth train.hdf5 --field Survived --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv -mn Model1 Model2
+```
 
 ![Compare Classifiers Performance Changing K](images/compare_classifiers_performance_changing_k.png "Compare Classifiers Performance  Changing K")
 
@@ -2996,6 +3101,10 @@ This visualization uses the `ground_truth`, `field`, `predictions` and `model_na
 `field` needs to be a category and there must be two and only two models (in the aligned lists of `predictions` and `model_names`).
 This visualization produces a pie chart comparing the predictions of the two models for the specified `field`.
 
+Example code:
+```
+ludwig visualize -v compare_classifiers_predictions --ground_truth train.hdf5 --field Survived --predictions results\titanic_Model1_0\Survived_predictions.csv results\titanic_Model2_0\Survived_predictions.csv -mn Model1 Model2
+```
 ![Compare Classifiers Predictions](images/compare_classifiers_predictions.png "Compare Classifiers Predictions")
 
 

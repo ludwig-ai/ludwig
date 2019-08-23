@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.1">
     
     
       
@@ -46,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.0284f74d.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
       
-        <link rel="stylesheet" href="../assets/stylesheets/application-palette.01803549.css">
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
       
         
@@ -1007,7 +1007,6 @@
     </nav>
   
 </li>
-
         
           <li class="md-nav__item">
   <a href="#date-features" title="Date Features" class="md-nav__link">
@@ -2792,7 +2791,7 @@ optional arguments:
   -ssm, --skip_save_model
                         disables saving weights each time the model imrpoves. By
                         default Ludwig saves weights after each epoch the
-                        validation measure imrpvoes, but if the model is
+                        validation measure improves, but if the model is
                         really big that can be time consuming if you do not
                         want to keep the weights and just find out what
                         performance can a model get with a set of
@@ -3577,7 +3576,7 @@ In the decoder of <code>fine_class</code>, the 64 dimensional vector of <code>co
 <li><code>increase_batch_size_on_plateau_rate</code> (default <code>2</code>): if there's a validation set, the increase rate of the batch size.</li>
 <li><code>increase_batch_size_on_plateau_max</code> (default <code>512</code>):  if there's a validation set, the maximum value of batch size.</li>
 <li><code>validation_field</code> (default <code>combined</code>): when there is more than one output feature, which one to use for computing if there was an improvement on validation. The measure to use to determine if there was an improvement can be set with the <code>validation_measure</code> parameter. Different datatypes have different available measures, refer to the datatype-specific section for more details. <code>combined</code> indicates the use the combination of all features. For instance the combination of <code>combined</code> and <code>loss</code> as measure uses a decrease in the combined loss of all output features to check for improvement on validation, while <code>combined</code> and <code>accuracy</code> considers on how many datapoints the predictions for all output features were correct (but consider that for some features, for instance <code>numeric</code> there is no accuracy measure, so you should use <code>accuracy</code> only if all your output features have an accuracy measure).</li>
-<li><code>validation_measure:</code> (default <code>accuracy</code>): the measure to use to determine if there was an improvement. The measure is considered for the output feature specified in <code>validation_field</code>. Different datatypes have different available measures, refer to the datatype-specific section for more details.</li>
+<li><code>validation_measure:</code> (default <code>loss</code>): the measure to use to determine if there was an improvement. The measure is considered for the output feature specified in <code>validation_field</code>. Different datatypes have different available measures, refer to the datatype-specific section for more details.</li>
 <li><code>bucketing_field</code> (default <code>null</code>): when not <code>null</code>, when creating batches, instead of shuffling randomly, the length along the last dimension of the matrix of the specified input feature is used for bucketing datapoints and then randomly shuffled datapoints from the same bin are sampled. Padding is trimmed to the longest datapoint in the batch. The specified feature should be either a <code>sequence</code> or <code>text</code> feature and the encoder encoding it has to be <code>rnn</code>. When used, bucketing improves speed of <code>rnn</code> encoding up to 1.5x, depending on the length distribution of the inputs.</li>
 <li><code>learning_rate_warmup_epochs</code> (default <code>1</code>): It's the number or training epochs where learning rate warmup will be used. It is calculated as <code>`described in [Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour](https://arxiv.org/abs/1706.02677). In the paper the authors suggest</code>6` epochs of warmup, that parameter is suggested for large datasets and big batches.</li>
 </ul>
@@ -3633,7 +3632,7 @@ No additional information about them is available in the JSON metadata file.</p>
 <p>The parameters available for preprocessing are</p>
 <ul>
 <li><code>missing_value_strategy</code> (default <code>fill_with_const</code>): what strategy to follow when there's a missing value in a binary column. The value should be one of <code>fill_with_const</code>  (replaces the missing value with a specific value specified with the <code>fill_value</code> parameter), <code>fill_with_mode</code> (replaces the missing values with the most frequent value in the column), <code>fill_with_mean</code> (replaces the missing values with the mean of the values in the column), <code>backfill</code> (replaces the missing values with the next valid value).</li>
-<li><code>fill_value</code> (default <code>0</code>): the value to replace the missing values with in case the <code>missing_value_strategy</code> is <code>fill-value</code>.</li>
+<li><code>fill_value</code> (default <code>0</code>): the value to replace the missing values with in case the <code>missing_value_strategy</code> is <code>fill_with_const</code>.</li>
 </ul>
 <h4 id="binary-input-features-and-encoders">Binary Input Features and Encoders<a class="headerlink" href="#binary-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Binary features have no encoder, the raw binary values coming from the input placeholders are just returned as outputs.
@@ -4904,77 +4903,6 @@ The column name is added to the JSON file, with an associated dictionary contain
 <p>There are no image decoders at the moment (WIP), so image cannot be used as output features.</p>
 <h4 id="image-features-measures">Image Features Measures<a class="headerlink" href="#image-features-measures" title="Permanent link">&para;</a></h4>
 <p>As no image decoders are available at the moment, there are also no image measures.</p>
-<h3 id="image-features_1">Image Features<a class="headerlink" href="#image-features_1" title="Permanent link">&para;</a></h3>
-<h4 id="image-features-preprocessing_1">Image Features Preprocessing<a class="headerlink" href="#image-features-preprocessing_1" title="Permanent link">&para;</a></h4>
-<p>Ludwig supports both grayscale and color images.
-The number of channels is inferred, but make sure all your images have the same number of channels.
-During preprocessing, raw image files are transformed into numpy ndarrays and saved in the hdf5 format.
-All images in the dataset should have the same size.
-If they have different sizes, a <code>resize_method</code>, together with a target <code>width</code> and <code>height</code>, must be specified in the feature preprocessing parameters.</p>
-<ul>
-<li><code>in_memory</code> (default <code>true</code>): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.</li>
-<li><code>resize_method</code> (default <code>crop_or_pad</code>): available options: <code>crop_or_pad</code> - crops images larger than the specified <code>width</code> and <code>height</code> to the desired size or pads smalled images using edge padding; <code>interpolate</code> - uses interpolation to resize images to the specified <code>width</code> and <code>height</code>.</li>
-<li><code>height</code> (default <code>null</code>): image height in pixels, must be set if resizing is required</li>
-<li><code>width</code> (default <code>null</code>): image width in pixels, must be set if resizing is required</li>
-<li><code>num_channels</code> (default <code>null</code>): number of channels in the images. By default, if the value is <code>null</code>, the number of channels of the first image of the dataset will be used and if there is an image in the dataset with a different number of channels, an error will be reported. If the value specified is not <code>null</code>, images in the dataset will be adapted to the specified size. If the value is <code>1</code>, all images with more then one channel will be greyscaled and reduced to one channel (trasparecy will be lost). If the value is <code>3</code> all images with 1 channel will be repeated 3 times to obtain 3 channels, while images with 4 channels will lose the transparecy channel. If the value is <code>4</code>, all the images with less than 4 channels will have the remaining channels filled with zeros.</li>
-<li><code>scaling</code> (default <code>pixel_normalization</code>): what scaling to perform on images. By default <code>pixel_normalization</code> is performed, which consists in dividing each pixel values by 255, but <code>pixel_standardization</code> is also available, whic uses <a href="https://www.tensorflow.org/api_docs/python/tf/image/per_image_standardization">TensorFlow's per image standardization</a>.</li>
-</ul>
-<p>Depending on the application, it is preferrable not to exceed a size of <code>256 x 256</code>, as bigger sizes will, in most cases, not provide much advantage in terms of performance, while they will considerably slow down training and inference and also make both forward and backward passes consume considerably more memory, leading to memory overflows on machines with limited amounts of RAM or on GPUs with limited amounts of VRAM.</p>
-<p>Example of a preprocessing specification:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_feature_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-<span class="nt">preprocessing</span><span class="p">:</span>
-  <span class="nt">height</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
-  <span class="nt">width</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">128</span>
-  <span class="nt">resize_method</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">interpolate</span>
-  <span class="nt">scaling</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">pixel_normalization</span>
-</pre></div>
-
-
-<h4 id="image-input-features-and-encoders_1">Image Input Features and Encoders<a class="headerlink" href="#image-input-features-and-encoders_1" title="Permanent link">&para;</a></h4>
-<p>Input image features are transformed into a float valued tensors of size <code>N x H x W x C</code> (where <code>N</code> is the size of the dataset and <code>H x W</code> is a specific resizing of the image that can be set, and <code>C</code> is the number of channels) and added to HDF5 with a key that reflects the name of column in the CSV.
-The column name is added to the JSON file, with an associated dictionary containing preprocessing information about the sizes of the resizing.</p>
-<p>Currently there are two encoders supported for images: Convolutional Stack Encoder and ResNet encoder which can be set by setting <code>encoder</code> parameter to <code>stacked_cnn</code> or <code>resnet</code> in the input feature dictionary in the model definition (<code>stacked_cnn</code> is the default one).</p>
-<h5 id="convolutional-stack-encoder_1">Convolutional Stack Encoder<a class="headerlink" href="#convolutional-stack-encoder_1" title="Permanent link">&para;</a></h5>
-<p>Convolutional Stack Encoder takes the following optional parameters:</p>
-<ul>
-<li><code>conv_layers</code> (default <code>null</code>): it is a list of dictionaries containing the parameters of all the convolutional layers. The length of the list determines the number of stacked convolutional layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: <code>filter_size</code>, <code>num_filters</code>, <code>pool_size</code>, <code>norm</code>, <code>activation</code> and <code>regularize</code>. If any of those values is missing from the dictionary, the default one specified as a parameter of the encoder will be used instead. If both <code>conv_layers</code> and <code>num_conv_layers</code> are <code>null</code>, a default list will be assigned to <code>conv_layers</code> with the value <code>[{filter_size: 7, pool_size: 3, regularize: false}, {filter_size: 7, pool_size: 3, regularize: false}, {filter_size: 3, pool_size: null, regularize: false}, {filter_size: 3, pool_size: null, regularize: false}, {filter_size: 3, pool_size: null, regularize: true}, {filter_size: 3, pool_size: 3, regularize: true}]</code>.</li>
-<li><code>num_conv_layers</code> (default <code>null</code>): if <code>conv_layers</code> is <code>null</code>, this is the number of stacked convolutional layers.</li>
-<li><code>filter_size</code> (default <code>3</code>): if a <code>filter_size</code> is not already specified in <code>conv_layers</code> this is the default <code>filter_size</code> that will be used for each layer. It indicates how wide is the 1d convolutional filter.</li>
-<li><code>num_filters</code> (default <code>256</code>): if a <code>num_filters</code> is not already specified in <code>conv_layers</code> this is the default <code>num_filters</code> that will be used for each layer. It indicates the number of filters, and by consequence the output channels of the 2d convolution.</li>
-<li><code>pool_stride</code> (default <code>1</code>): if a <code>pool_stride</code> is not already specified in <code>conv_layers</code> this is the default <code>pool_stride</code> that will be used for each layer.</li>
-<li><code>fc_layers</code> (default <code>null</code>): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: <code>fc_size</code>, <code>norm</code>, <code>activation</code> and <code>regularize</code>. If any of those values is missing from the dictionary, the default one specified as a parameter of the encoder will be used instead. If both <code>fc_layers</code> and <code>num_fc_layers</code> are <code>null</code>, a default list will be assigned to <code>fc_layers</code> with the value <code>[{fc_size: 512}, {fc_size: 256}]</code>. (only applies if <code>reduce_output</code> is not <code>null</code>).</li>
-<li><code>num_fc_layers</code> (default <code>1</code>): This is the number of stacked fully connected layers.</li>
-<li><code>fc_size</code> (default <code>256</code>): if a <code>fc_size</code> is not already specified in <code>fc_layers</code> this is the default <code>fc_size</code> that will be used for each layer. It indicates the size of the output of a fully connected layer.</li>
-<li><code>norm</code> (default <code>null</code>): if a <code>norm</code> is not already specified in <code>fc_layers</code> or <code>conv_layers</code> this is the default <code>norm</code> that will be used for each layer. It indicates the norm of the output and it can be <code>null</code>, <code>batch</code> or <code>layer</code>.</li>
-<li><code>activation</code> (default <code>relu</code>): if an <code>activation</code> is not already specified in <code>fc_layers</code> or <code>conv_layers</code> this is the default <code>activation</code> that will be used for each layer. It indicates the activation function applied to the output.</li>
-<li><code>dropout</code> (default <code>false</code>): determines if there should be a dropout layer after each layer.</li>
-<li><code>initializer</code> (default <code>null</code>): the initializer to use. If <code>null</code>, the default initialized of each variable is used (<code>glorot_uniform</code> in most cases). Options are: <code>constant</code>, <code>identity</code>, <code>zeros</code>, <code>ones</code>, <code>orthogonal</code>, <code>normal</code>, <code>uniform</code>, <code>truncated_normal</code>, <code>variance_scaling</code>, <code>glorot_normal</code>, <code>glorot_uniform</code>, <code>xavier_normal</code>, <code>xavier_uniform</code>, <code>he_normal</code>, <code>he_uniform</code>, <code>lecun_normal</code>, <code>lecun_uniform</code>. Alternatively it is possible to specify a dictionary with a key <code>type</code> that identifies the type of initializer and other keys for its parameters, e.g. <code>{type: normal, mean: 0, stddev: 0}</code>. To know the parameters of each initializer, please refer to <a href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's documentation</a>.</li>
-<li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
-</ul>
-<h5 id="resnet-encoder_1">ResNet Encoder<a class="headerlink" href="#resnet-encoder_1" title="Permanent link">&para;</a></h5>
-<p><a href="https://arxiv.org/abs/1603.05027">ResNet</a> Encoder takes the following optional parameters:</p>
-<ul>
-<li><code>resnet_size</code> (default <code>50</code>): A single integer for the size of the ResNet model. If has to be one of the following values: <code>8</code>, <code>14</code>, <code>18</code>, <code>34</code>, <code>50</code>, <code>101</code>, <code>152</code>, <code>200</code>.</li>
-<li><code>num_filters</code> (default <code>16</code>): It indicates the number of filters, and by consequence the output channels of the 2d convolution.</li>
-<li><code>kernel_size</code> (default <code>3</code>): The kernel size to use for convolution.</li>
-<li><code>conv_stride</code> (default <code>1</code>): Stride size for the initial convolutional layer.</li>
-<li><code>first_pool_size</code> (default <code>null</code>): Pool size to be used for the first pooling layer. If none, the first pooling layer is skipped.</li>
-<li><code>batch_norm_momentum</code> (default <code>0.9</code>): Momentum of the batch norm running statistics. The suggested parameter in <a href="https://github.com/tensorflow/models/blob/master/official/resnet/resnet_model.py#L36">TensorFlow's implementation</a> is <code>0.997</code>, but that leads to a big discrepancy between the normalization at training time and test time, so the default value is a more conservative <code>0.9</code>.</li>
-<li><code>batch_norm_epsilon</code> (default <code>0.001</code>): Epsilon of the batch norm. The suggested parameter in <a href="https://github.com/tensorflow/models/blob/master/official/resnet/resnet_model.py#L37">TensorFlow's implementation</a> is <code>1e-5</code>, but that leads to a big discrepancy between the normalization at training time and test time, so the default value is a more conservative <code>0.001</code>.</li>
-<li><code>fc_layers</code> (default <code>null</code>): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: <code>fc_size</code>, <code>norm</code>, <code>activation</code> and <code>regularize</code>. If any of those values is missing from the dictionary, the default one specified as a parameter of the encoder will be used instead. If both <code>fc_layers</code> and <code>num_fc_layers</code> are <code>null</code>, a default list will be assigned to <code>fc_layers</code> with the value <code>[{fc_size: 512}, {fc_size: 256}]</code>. (only applies if <code>reduce_output</code> is not <code>null</code>).</li>
-<li><code>num_fc_layers</code> (default <code>1</code>): This is the number of stacked fully connected layers.</li>
-<li><code>fc_size</code> (default <code>256</code>): if a <code>fc_size</code> is not already specified in <code>fc_layers</code> this is the default <code>fc_size</code> that will be used for each layer. It indicates the size of the output of a fully connected layer.</li>
-<li><code>norm</code> (default <code>null</code>): if a <code>norm</code> is not already specified in <code>fc_layers</code> or <code>conv_layers</code> this is the default <code>norm</code> that will be used for each layer. It indicates the norm of the output and it can be <code>null</code>, <code>batch</code> or <code>layer</code>.</li>
-<li><code>activation</code> (default <code>relu</code>): if an <code>activation</code> is not already specified in <code>fc_layers</code> or <code>conv_layers</code> this is the default <code>activation</code> that will be used for each layer. It indicates the activation function applied to the output.</li>
-<li><code>dropout</code> (default <code>false</code>): determines if there should be a dropout layer after each layer.</li>
-<li><code>initializer</code> (default <code>null</code>): the initializer to use. If <code>null</code>, the default initialized of each variable is used (<code>glorot_uniform</code> in most cases). Options are: <code>constant</code>, <code>identity</code>, <code>zeros</code>, <code>ones</code>, <code>orthogonal</code>, <code>normal</code>, <code>uniform</code>, <code>truncated_normal</code>, <code>variance_scaling</code>, <code>glorot_normal</code>, <code>glorot_uniform</code>, <code>xavier_normal</code>, <code>xavier_uniform</code>, <code>he_normal</code>, <code>he_uniform</code>, <code>lecun_normal</code>, <code>lecun_uniform</code>. Alternatively it is possible to specify a dictionary with a key <code>type</code> that identifies the type of initializer and other keys for its parameters, e.g. <code>{type: normal, mean: 0, stddev: 0}</code>. To know the parameters of each initializer, please refer to <a href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's documentation</a>.</li>
-<li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
-</ul>
-<h4 id="image-output-features-and-decoders_1">Image Output Features and Decoders<a class="headerlink" href="#image-output-features-and-decoders_1" title="Permanent link">&para;</a></h4>
-<p>There are no image decoders at the moment (WIP), so image cannot be used as output features.</p>
-<h4 id="image-features-measures_1">Image Features Measures<a class="headerlink" href="#image-features-measures_1" title="Permanent link">&para;</a></h4>
-<p>As no image decoders are available at the moment, there are also no image measures.</p>
 <h3 id="date-features">Date Features<a class="headerlink" href="#date-features" title="Permanent link">&para;</a></h3>
 <h4 id="date-features-preprocessing">Date Features Preprocessing<a class="headerlink" href="#date-features-preprocessing" title="Permanent link">&para;</a></h4>
 <p>Ludwig will try to infer the date format automatically, but a specific fomrat can be provided. 
@@ -4995,8 +4923,8 @@ The format is the same one described in the <a href="https://docs.python.org/2/l
 
 
 <h4 id="date-input-features-and-encoders">Date Input Features and Encoders<a class="headerlink" href="#date-input-features-and-encoders" title="Permanent link">&para;</a></h4>
-<p>Input image features are transformed into a int valued tensors of size <code>N x 8</code> (where <code>N</code> is the size of the dataset and the 8 dimensions contain year, month, day, weekday, yearday, hour, minute and second) and added to HDF5 with a key that reflects the name of column in the CSV.</p>
-<p>Currently there are two encoders supported for images: Convolutional Stack Encoder and ResNet encoder which can be set by setting <code>encoder</code> parameter to <code>stacked_cnn</code> or <code>resnet</code> in the input feature dictionary in the model definition (<code>stacked_cnn</code> is the default one).</p>
+<p>Input date features are transformed into a int valued tensors of size <code>N x 8</code> (where <code>N</code> is the size of the dataset and the 8 dimensions contain year, month, day, weekday, yearday, hour, minute and second) and added to HDF5 with a key that reflects the name of column in the CSV.</p>
+<p>Currently there are two encoders supported for dates: Embed Encoder and Wave encoder which can be set by setting <code>encoder</code> parameter to <code>embed</code> or <code>wave</code> in the input feature dictionary in the model definition (<code>embed</code> is the default one).</p>
 <h5 id="embed-encoder_1">Embed Encoder<a class="headerlink" href="#embed-encoder_1" title="Permanent link">&para;</a></h5>
 <p>This encoder passes the year through a fully connected layer of one neuron and embeds all other elements for the date, concatenates them and passes the concatenated representation through fully connected layers.
 It takes the following optional parameters:</p>
@@ -5316,10 +5244,81 @@ optional arguments:
 <li><code>field</code> is the output feature to use for creating the visualization.</li>
 </ul>
 <p>Other parameters will be detailed for each visualization as different ones use them differently.</p>
+<p>Example codes to generate the visualizations are based on running two experiments and comparing them. The experiments themselves are run with the following snippet:</p>
+<div class="codehilite"><pre><span></span>ludwig experiment --experiment_name titanic --model_name Model1 --data_csv train.csv -mdf titanic_model1.yaml
+ludwig experiment --experiment_name titanic --model_name Model2 --data_csv train.csv -mdf titanic_model2.yaml
+</pre></div>
+
+
+<p>For this, you need to download the Kaggle Titanic dataset to get <code>train.csv</code>. Note that the images associated with each visualization below are not from the Titanic dataset. The two models are defined with <code>titanic_model1.yaml</code></p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Pclass</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Sex</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Age</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SibSp</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Parch</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Fare</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+        <span class="nt">preprocessing</span><span class="p">:</span>
+          <span class="nt">missing_value_strategy</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fill_with_mean</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Embarked</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Survived</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
+</pre></div>
+
+
+<p>and with <code>titanic_model2.yaml</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nt">input_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Pclass</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Sex</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">SibSp</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Parch</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Embarked</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+
+<span class="nt">output_features</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Survived</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
+</pre></div>
+
+
 <h3 id="learning-curves">Learning Curves<a class="headerlink" href="#learning-curves" title="Permanent link">&para;</a></h3>
 <h4 id="learning_curves">learning_curves<a class="headerlink" href="#learning_curves" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>training_statistics</code> and <code>model_names</code> parameters.
 For each model (in the aligned lists of <code>training_statistics</code> and <code>model_names</code>) and for each output feature and measure of the model, it produces a line plot showing how that measure changed over the course of the epochs of training on the training and validation sets.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v learning_curves -mn Model1 Model2 --training_statistics results\titanic_Model1_0\training_statistics.json results\titanic_Model2_0\training_statistics.json
+</pre></div>
+
+
 <p><img alt="Learning Curves Loss" src="../images/learning_curves_loss.png" title="Learning Curves Loss" /></p>
 <p><img alt="Learning Curves Accuracy" src="../images/learning_curves_accuracy.png" title="Learning Curves Accuracy" /></p>
 <h3 id="confusion-matrix">Confusion Matrix<a class="headerlink" href="#confusion-matrix" title="Permanent link">&para;</a></h3>
@@ -5327,6 +5326,11 @@ For each model (in the aligned lists of <code>training_statistics</code> and <co
 <p>This visualization uses the <code>top_n_classes</code>, <code>normalize</code>, <code>ground_truth_metadata</code>, <code>test_statistics</code> and <code>model_names</code> parameters.
 For each model (in the aligned lists of <code>test_statistics</code> and <code>model_names</code>) it produces a heatmap of the confusion matrix in the predictions for each field that has a confusion matrix in <code>test_statistics</code>.
 The value of <code>top_n_classes</code> limits the heatmap to the <code>n</code> most frequent classes.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v confusion_matrix --top_n_classes 2 --test_statistics results\titanic_Model1_0\test_statistics.json --ground_truth_metadata results\titanic_Model1_0\model\train_set_metadata.json
+</pre></div>
+
+
 <p><img alt="Confusion Matrix" src="../images/confusion_matrix.png" title="Confusion Matrix" /></p>
 <p>The second plot produced, is a barplot showing the entropy of each class, ranked from most entropic to least entropic.</p>
 <p><img alt="Confusion Matrix Entropy" src="../images/confusion_matrix_entropy.png" title="Confusion Matrix Entropy" /></p>
@@ -5334,16 +5338,31 @@ The value of <code>top_n_classes</code> limits the heatmap to the <code>n</code>
 <h4 id="compare_performance">compare_performance<a class="headerlink" href="#compare_performance" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>field</code>, <code>test_statistics</code> and <code>model_names</code> parameters.
 For each model (in the aligned lists of <code>test_statistics</code> and <code>model_names</code>) it produces bars in a bar plot, one for each overall metric available in the <code>test_statistics</code> file for the specified <code>field</code>.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v compare_performance -mn Model1 Model2 --test_statistics results\titanic_Model1_0\test_statistics.json results\titanic_Model2_0\test_statistics.json --field Survived
+</pre></div>
+
+
 <p><img alt="Compare Classifiers Performance" src="../images/compare_performance.png" title="Compare Classifiers Performance" /></p>
 <h4 id="compare_classifiers_performance_from_prob">compare_classifiers_performance_from_prob<a class="headerlink" href="#compare_classifiers_performance_from_prob" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>ground_truth</code>, <code>field</code>, <code>probabilities</code> and <code>model_names</code> parameters.
 <code>field</code> needs to be a category.
 For each model (in the aligned lists of <code>probabilities</code> and <code>model_names</code>) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilities of predictions for the specified <code>field</code>.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v compare_classifiers_performance_from_prob --ground_truth train.hdf5 --field Survived --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv -mn Model1 Model2
+</pre></div>
+
+
 <p><img alt="Compare Classifiers Performance from Probabilities" src="../images/compare_classifiers_performance_from_prob.png" title="Compare Classifiers Performance from probabilities" /></p>
 <h4 id="compare_classifiers_performance_from_pred">compare_classifiers_performance_from_pred<a class="headerlink" href="#compare_classifiers_performance_from_pred" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>ground_truth</code>, <code>ground_truth_metadata</code>, <code>field</code>, <code>predictions</code> and <code>model_names</code> parameters.
 <code>field</code> needs to be a category.
 For each model (in the aligned lists of <code>predictions</code> and <code>model_names</code>) it produces bars in a bar plot, one for each overall metric computed on the fly from the predictions for the specified <code>field</code>.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v compare_classifiers_performance_from_pred --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --predictions results\titanic_Model1_0\Survived_predictions.csv results\titanic_Model2_0\Survived_predictions.csv -mn Model1 Model2
+</pre></div>
+
+
 <p><img alt="Compare Classifiers Performance from Predictions" src="../images/compare_classifiers_performance_from_pred.png" title="Compare Classifiers Performance from Predictions" /></p>
 <h4 id="compare_classifiers_performance_subset">compare_classifiers_performance_subset<a class="headerlink" href="#compare_classifiers_performance_subset" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>top_n_classes</code>, <code>subset</code>, <code>ground_truth</code>, <code>ground_truth_metadata</code>, <code>field</code>, <code>probabilities</code> and <code>model_names</code> parameters.
@@ -5351,6 +5370,11 @@ For each model (in the aligned lists of <code>predictions</code> and <code>model
 For each model (in the aligned lists of <code>predictions</code> and <code>model_names</code>) it produces bars in a bar plot, one for each overall metric computed on the fly from the probabilities predictions for the specified <code>field</code>, considering only a subset of the full training set.
 The way the subset is obtained is using the <code>top_n_classes</code> and <code>subset</code> parameters.</p>
 <p>If the values of <code>subset</code> is <code>ground_truth</code>, then only datapoints where the ground truth class is within the top <code>n</code> most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v compare_classifiers_performance_subset --top_n_classes 2 --subset ground_truth --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv -mn Model1 Model2
+</pre></div>
+
+
 <p><img alt="Compare Classifiers Performance Subset Ground Truth" src="../images/compare_classifiers_performance_subset_gt.png" title="Compare Classifiers Performance Subset Ground Truth" /></p>
 <p>If the values of <code>subset</code> is <code>predictions</code>, then only datapoints where the the model predicts a class that is within the top <code>n</code> most frequent ones will be considered as test set, and the percentage of datapoints that have been kept from the original set will be displayed for each model.</p>
 <p><img alt="Compare Classifiers Performance Subset Ground Predictions" src="../images/compare_classifiers_performance_subset_pred.png" title="Compare Classifiers Performance Subset Ground Predictions" /></p>
@@ -5358,6 +5382,11 @@ The way the subset is obtained is using the <code>top_n_classes</code> and <code
 <p>This visualization uses the <code>top_k</code>, <code>ground_truth</code>, <code>field</code>, <code>probabilities</code> and <code>model_names</code> parameters.
 <code>field</code> needs to be a category.
 For each model (in the aligned lists of <code>probabilities</code> and <code>model_names</code>) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first <code>k</code>) while changing <code>k</code> from 1 to <code>top_k</code> for the specified <code>field</code>.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v compare_classifiers_performance_changing_k --top_k 5 --ground_truth train.hdf5 --field Survived --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv -mn Model1 Model2
+</pre></div>
+
+
 <p><img alt="Compare Classifiers Performance Changing K" src="../images/compare_classifiers_performance_changing_k.png" title="Compare Classifiers Performance  Changing K" /></p>
 <h4 id="compare_classifiers_multiclass_multimetric">compare_classifiers_multiclass_multimetric<a class="headerlink" href="#compare_classifiers_multiclass_multimetric" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>top_n_classes</code>, <code>ground_truth_metadata</code>, <code>field</code>, <code>test_statistics</code> and <code>model_names</code> parameters.
@@ -5376,6 +5405,11 @@ For each model (in the aligned lists of <code>test_statistics</code> and <code>m
 <p>This visualization uses the <code>ground_truth</code>, <code>field</code>, <code>predictions</code> and <code>model_names</code> parameters.
 <code>field</code> needs to be a category and there must be two and only two models (in the aligned lists of <code>predictions</code> and <code>model_names</code>).
 This visualization produces a pie chart comparing the predictions of the two models for the specified <code>field</code>.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span>ludwig visualize -v compare_classifiers_predictions --ground_truth train.hdf5 --field Survived --predictions results\titanic_Model1_0\Survived_predictions.csv results\titanic_Model2_0\Survived_predictions.csv -mn Model1 Model2
+</pre></div>
+
+
 <p><img alt="Compare Classifiers Predictions" src="../images/compare_classifiers_predictions.png" title="Compare Classifiers Predictions" /></p>
 <h4 id="compare_classifiers_predictions_distribution">compare_classifiers_predictions_distribution<a class="headerlink" href="#compare_classifiers_predictions_distribution" title="Permanent link">&para;</a></h4>
 <p>This visualization uses the <code>ground_truth</code>, <code>field</code>, <code>predictions</code> and <code>model_names</code> parameters.
@@ -5584,7 +5618,7 @@ The classes on the x axis are sorted by f1 score.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.245445c6.js"></script>
+      <script src="../assets/javascripts/application.c648116f.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
