@@ -82,7 +82,7 @@ def learning_curves_plot(
             algorithm_names) else ''
         ax.plot(xs, train_values[i], label=name_prefix + 'training',
                 color=colors[i * 2], linewidth=3)
-        if i < len(vali_values):
+        if i < len(vali_values) and vali_values[i] is not None:
             ax.plot(xs, vali_values[i], label=name_prefix + 'validation',
                     color=colors[i * 2 + 1], linewidth=3)
 

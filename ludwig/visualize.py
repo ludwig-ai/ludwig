@@ -705,12 +705,22 @@ def learning_curves(
                 if filename_template_path:
                     filename = filename_template_path.format(field, metric)
 
+                training_stats = [learning_stats['train'][field][metric]
+                                  for learning_stats in
+                                  train_stats_per_model_list]
+
+                validation_stats = []
+                for learning_stats in train_stats_per_model_list:
+                    if 'validation' in learning_stats:
+                        validation_stats.append(
+                            learning_stats['validation'][field][metric]
+                        )
+                    else:
+                        validation_stats.append(None)
 
                 visualization_utils.learning_curves_plot(
-                    [learning_stats['train'][field][metric]
-                     for learning_stats in train_stats_per_model_list],
-                    [learning_stats['validation'][field][metric]
-                     for learning_stats in train_stats_per_model_list],
+                    training_stats,
+                    validation_stats,
                     metric,
                     model_names_list,
                     title='Learning Curves {}'.format(field),
