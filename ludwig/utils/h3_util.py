@@ -14,219 +14,93 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import json
-
-from gmpy import mpz
-
-
-def extract_bits(number, position, num_bits, start_from='left'):
-    '''
-    Function to extract num_bits bits from a given
-    position in a number
-    '''
-    # convert number into binary first
-    if not isinstance(number, str):  # it is str if called bin on it before
-        binary = bin(number)
-    else:
-        binary = number
-    # print('extract_bits before:', binary)
-
-    # remove first two characters
-    binary = binary[2:]
-
-    if start_from == 'left':
-        start = position
-        end = position + num_bits
-    else:  # if == 'right'
-        end = len(binary) - position
-        start = end - num_bits
-
-    # extract k  bit sub-string
-    bit_substring = binary[start:end]
-
-    # print('extract_bits after:', bit_substring)
-
-    # convert extracted sub-string into decimal again
-    return int(bit_substring, 2)
+def set_bit(v, index, x):
+    """Set the index:th bit of v to 1 if x is truthy, else to 0, and return the new value."""
+    mask = 1 << index  # Compute mask, an integer with just bit 'index' set.
+    v &= ~mask  # Clear the bit indicated by the mask (if x is False)
+    if x:
+        v |= mask  # If x was True, set the bit indicated by the mask.
+    return v  # Return the result, we're done.
 
 
-def set_bits(number, position, num_bits, value, start_from='left', bits=64):
-    '''
-    Function to extract num_bits bits from a given
-    position in a number
-    '''
-    # convert number into binary first
-    if not isinstance(number, str):  # is str if previously binarized
-        number = mpz(number).setbit(bits)
-    binary = '0b' + bin(number)[-64:]
-
-    # this is needed because mpz adds a 1 at the beginning
-    # print('set_bits before:', binary)
-
-    # remove first two characters
-    binary = binary[2:]
-
-    if start_from == 'left':
-        start = position
-        end = position + num_bits
-    else:  # if == 'right'
-        end = len(binary) - position
-        start = end - num_bits
-
-    # extract k  bit sub-string
-    bin_value = bin(value)[2:]
-    replacement = bin_value[max(0, len(bin_value) - (end - start)):]
-    if len(replacement) < num_bits:
-        pad = ''.join(['0' for _ in range(num_bits - len(replacement))])
-        replacement = pad + replacement
-    # print(replacement)
-    binary = '0b' + binary[0:start] + replacement + binary[end:]
-
-    # print('set_bits after:', binary)
-
-    # convert into decimal again
-    return int(binary, 2)
+def set_bits(v, start_bit, slice_length, x):
+    bin_x = bin(x)
+    for i, index in enumerate(range(start_bit, start_bit + slice_length)):
+        val = int(bin_x[-(i + 1)]) if 2 + i < len(bin_x) else 0
+        v = set_bit(v, index, val)
+    return v
 
 
-def h3_to_components(h3_value, mode='int'):
+def components_to_h3(components):
+    h3 = 18446744073709551615
+    h3 = set_bits(h3, 64 - 5, 4, components['mode'])
+    h3 = set_bits(h3, 64 - 8, 3, components['edge'])
+    h3 = set_bits(h3, 64 - 12, 4, components['resolution'])
+    h3 = set_bits(h3, 64 - 19, 7, components['base_cell'])
+    for i, cell in enumerate(components['cells']):
+        h3 = set_bits(h3, 64 - 19 - (i + 1) * 3, 3, cell)
+    h3 = set_bits(h3, 64 - 1, 4, 0)
+    return h3
+
+
+def bitslice(x, start_bit, slice_length):
+    ones_mask = 2 ** slice_length - 1
+    return (x & (ones_mask << start_bit)) >> start_bit
+
+
+def h3_index_mode(h3_long):
+    return bitslice(h3_long, 64 - 5, 4)
+
+
+def h3_edge(h3_long):
+    return bitslice(h3_long, 64 - 8, 3)
+
+
+def h3_resolution(h3_long):
+    return bitslice(h3_long, 64 - 12, 4)
+
+
+def h3_base_cell(h3_long):
+    return bitslice(h3_long, 64 - 19, 7)
+
+
+def h3_octal_components(h3_long):
+    res = h3_resolution(h3_long)
+    return "{0:0{w}o}".format(
+        bitslice(h3_long + 2 ** 63, 64 - 19 - 3 * res, 3 * res), w=res)
+
+
+def h3_component(h3_long, i):
+    return bitslice(h3_long, 64 - 19 - 3 * i, 3)
+
+
+def h3_components(h3_long):
+    return [h3_component(h3_long, i) for i in
+            range(1, h3_resolution(h3_long) + 1)]
+
+
+def h3_to_components(h3_value):
     '''
     Extract the values from an H3 hexadecimal value
     Refer to this for the bit layout:
     https://uber.github.io/h3/#/documentation/core-library/h3-index-representations
     '''
     # lat_long = (0, 0)  # h3ToGeo(h3_value)
+    return {
+        'mode': h3_index_mode(h3_value),
+        'edge': h3_edge(h3_value),
+        'resolution': h3_resolution(h3_value),
+        'base_cell': h3_base_cell(h3_value),
+        'cells': h3_components(h3_value)
+    }
 
-    # from hex to integer
-    if mode == 'hex':
-        h3_value = int(h3_value, 16)
-    # else assumes h3_value is a 64bit integer
-
-    number = mpz(h3_value).setbit(64)
-    binary = '0b' + bin(number)[-64:]
-
-    mode = extract_bits(binary, 1, 4, start_from='left')
-    edge = extract_bits(binary, 5, 3, start_from='left')
-    resolution = extract_bits(binary, 8, 4, start_from='left')
-    base_cell = extract_bits(binary, 12, 7, start_from='left')
-    cells = []
-    start = 19
-    for _ in range(resolution):
-        cells.append(extract_bits(binary, start, 3, start_from='left'))
-        start += 3
-
-    return {'mode': mode, 'edge': edge, 'resolution': resolution,
-            'base_cell': base_cell, 'cells': cells}
-    # 'lat_long': lat_long}
-
-
-def components_to_h3(h3_components, output_mode='int'):
-    number = mpz(0).setbit(64)
-
-    number = set_bits(number, 1, 4, h3_components['mode'], start_from='left')
-    number = set_bits(number, 5, 3, h3_components['edge'], start_from='left')
-    number = set_bits(number, 8, 4, h3_components['resolution'],
-                      start_from='left')
-    number = set_bits(number, 12, 7, h3_components['base_cell'],
-                      start_from='left')
-    start = 19
-    for cell in h3_components['cells']:
-        number = set_bits(number, start, 3, cell, start_from='left')
-        start += 3
-    for _ in range(15 - len(h3_components['cells'])):
-        number = set_bits(number, start, 3, 7, start_from='left')
-        start += 3
-
-    if output_mode == 'hex':
-        number = hex(number)
-    else:
-        number = int(number)
-
-    return number
-
-
-if __name__ == "__main__":
-    value = 171
-    print(bin(value))
-
-    print()
-    print('Extract')
-    position = 2
-    num_bits = 5
-    print('position right:', position)
-    print('num_bits:', num_bits)
-    print(extract_bits(value, position, num_bits, 'right'))
-    print()
-    position = 3
-    num_bits = 5
-    print('position left:', position)
-    print('num_bits:', num_bits)
-    print(extract_bits(value, position, num_bits, 'left'))
-
-    print()
-    print('Set')
-    position = 2
-    num_bits = 5
-    replacement = 7
-    print('position right:', position)
-    print('num_bits:', num_bits)
-    print('replacement:', replacement, bin(replacement))
-    print(set_bits(value, position, num_bits, replacement))
-    print()
-    position = 3
-    num_bits = 5
-    print('position left:', position)
-    print('num_bits:', num_bits)
-    print('replacement:', replacement, bin(replacement))
-    print(set_bits(value, position, num_bits, replacement, start_from='left'))
-
-    print()
-    print()
-    print('H3 to component')
+if __name__ == '__main__':
     value = 622236723497533439
-    print(h3_to_components(value, mode='int'))
-    print(h3_to_components(hex(value), mode='hex'))
-
-    print()
-    print()
-    print('Component to H3')
-    components = h3_to_components(value, mode='int')
+    components = h3_to_components(value)
+    h3 = components_to_h3(components)
+    components2 = h3_to_components(h3)
+    print(value)
     print(components)
-    print(components_to_h3(components, output_mode='int'))
-    print(components_to_h3(components, output_mode='hex'))
+    print(h3)
+    print(components2)
 
-    print()
-    print()
-    print('Test')
-    gt_value = 622236723497533439
-    gt_components = {'mode': 1, 'edge': 0, 'resolution': 10, 'base_cell': 21,
-                     'cells': [0, 2, 0, 0, 3, 2, 6, 2, 1, 3]}
-    print('value:', gt_value, bin(gt_value))
-    components = h3_to_components(gt_value, mode='int')
-    gt_components_dump = json.dumps(gt_components, sort_keys=True, indent=2)
-    components_dump = json.dumps(components, sort_keys=True, indent=2)
-    print('components matches gt_components:',
-          components_dump == gt_components_dump)
-    value = components_to_h3(components, output_mode='int')
-    print('values matches gt_value:', value == gt_value)
-
-    print()
-    print()
-    print('Test 2')
-    gt_value = 622580942897840127
-    gt_components = {'mode': 1, 'edge': 0, 'resolution': 10, 'base_cell': 30,
-                     'cells': [6, 4, 1, 0, 6, 5, 1, 2, 6, 4]}
-    print('value:', gt_value, bin(gt_value))
-    components = h3_to_components(gt_value, mode='int')
-    gt_components_dump = json.dumps(gt_components, sort_keys=True, indent=2)
-    components_dump = json.dumps(components, sort_keys=True, indent=2)
-    print('components matches gt_components:',
-          components_dump == gt_components_dump)
-    value = components_to_h3(components, output_mode='int')
-    print('values matches gt_value:', value == gt_value)
-
-    print()
-    print()
-    print('Default value')
-    components = {'mode': 1, 'edge': 0, 'resolution': 0, 'base_cell': 0,
-                  'cells': []}
-    print(components_to_h3(components, output_mode='int'))

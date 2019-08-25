@@ -10,6 +10,6 @@ Please provide the following:
 
 Note that the documentation HTML files are in `docs/` while the Markdown sources are in `mkdocs/docs`.
 
-If you are proposing a modification to the documentation you should change only the Markdown files, then recreate the documentation as explained in the `mkdocs/README.md` file with `mkdocs build`, which will create the HTML files automatically, and only after this create a commit.
+If you are proposing a modification to the documentation you should change only the Markdown files.
 
-`api.md` is automatically generated from the docstrings in the code, so if you want to change something in that file, first modify `ludwig/api.py` docstring, then run `mkdocs/code_docs_autogen.py`, which will create `mkdocs/docs/api.md` and then finally run `mkdocs build` which will generate the HTML in `docs/`.
+`api.md` is automatically generated from the docstrings in the code, so if you want to change something in that file, first modify `ludwig/api.py` docstring, then run `mkdocs/code_docs_autogen.py`, which will create `mkdocs/docs/api.md` .

@@ -111,7 +111,8 @@ class SequenceBaseFeature(BaseFeature):
     def add_feature_data(
             feature,
             dataset_df,
-            data, metadata,
+            data,
+            metadata,
             preprocessing_parameters
     ):
         sequence_data = SequenceInputFeature.feature_data(
@@ -225,7 +226,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         }
         self.num_classes = 0
 
-        a = self.overwrite_defaults(feature)
+        _ = self.overwrite_defaults(feature)
 
         self.decoder_obj = self.get_sequence_decoder(feature)
 
@@ -248,6 +249,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             hidden,
             hidden_size,
             regularizer=None,
+            dropout_rate=None,
+            is_training=None,
             **kwargs
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_sequence_output(
@@ -820,7 +823,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         set_default_value(output_feature[LOSS],
                           'class_similarities_temperature', 0)
         set_default_value(output_feature[LOSS], 'weight', 1)
-        set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
 
         if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
             set_default_value(output_feature[LOSS], 'sampler', 'log_uniform')

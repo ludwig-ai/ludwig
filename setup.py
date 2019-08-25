@@ -15,7 +15,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='ludwig',
 
-    version='0.2',
+    version='0.2.1',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
@@ -51,7 +51,6 @@ setup(
                       'tabulate>=0.7',
                       'tensorflow==1.14.0',
                       'PyYAML>=3.12',
-                      'gmpy',
                       'fastapi',
                       'pydantic==0.30.0',
                       'uvicorn',

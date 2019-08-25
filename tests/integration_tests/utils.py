@@ -21,6 +21,7 @@ import pandas as pd
 
 from ludwig.data.dataset_synthesyzer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
+from ludwig.constants import VECTOR
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -143,7 +144,7 @@ def image_feature(folder, **kwargs):
 
 
 def audio_feature(folder, **kwargs):
-    audio_feature = {
+    feature = {
         'name': 'audio_' + random_string(),
         'type': 'audio',
         'preprocessing': {
@@ -174,8 +175,9 @@ def audio_feature(folder, **kwargs):
         'fc_size': 256,
         'audio_dest_folder': folder
     }
-    audio_feature.update(kwargs)
-    return audio_feature
+    feature.update(kwargs)
+    return feature
+
 
 
 def timeseries_feature(**kwargs):
@@ -227,6 +229,17 @@ def h3_feature(**kwargs):
     feature = {
         'name': 'h3_' + random_string(),
         'type': 'h3'
+    }
+    feature.update(kwargs)
+
+    return feature
+
+
+def vector_feature(**kwargs):
+    feature = {
+        'type': VECTOR,
+        'vector_size': 5,
+        'name': 'vector_' + random_string()
     }
     feature.update(kwargs)
 

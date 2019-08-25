@@ -1362,7 +1362,7 @@ class Model:
                     input_tensors, output_tensors)
             },
             strip_default_attrs=True,
-            saver=self.model.saver,
+            saver=self.saver,
         )
         builder.save()
 
