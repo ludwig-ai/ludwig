@@ -69,7 +69,11 @@ def get_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s,
     stft_magnitude = np.abs(stft)
     return np.transpose(stft_magnitude)
 
-
+################################################################################
+# The following code for FBank is adapted from jameslyons/python_speech_features
+# MIT licensed implementation
+# https://github.com/jameslyons/python_speech_features/blob/40c590269b57c64a8c1f1ddaaff2162008d1850c/python_speech_features/base.py#L84################################################################################
+################################################################################
 def get_fbank(raw_data, sampling_rate_in_hz, window_length_in_s,
                 window_shift_in_s, num_fft_points, window_type, num_filter_bands):
     stft = _get_stft(raw_data, sampling_rate_in_hz, window_length_in_s,
