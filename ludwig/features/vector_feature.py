@@ -80,6 +80,7 @@ class VectorBaseFeature(BaseFeature):
                 'Unable to read the vector data. Make sure that all the vectors'
                 ' are of the same size and do not have missing/null values.'
             )
+            raise
 
         # Determine vector size
         vector_size = len(data[feature['name']][0])
