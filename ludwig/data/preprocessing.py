@@ -310,7 +310,7 @@ def preprocess_for_training(
         raise ValueError('No training data is provided!')
 
     if data_df is not None or data_train_df is not None:
-        return preprocess_for_training_strategy_pattern(
+        return preprocess_for_training_by_type(
             model_definition,
             'pandas',
             all_data_df=data_df,
@@ -323,7 +323,7 @@ def preprocess_for_training(
             random_seed=random_seed
         )
     elif data_csv is not None or data_train_csv is not None:
-        return preprocess_for_training_strategy_pattern(
+        return preprocess_for_training_by_type(
             model_definition,
             'csv',
             all_data_fp=data_csv,
@@ -336,7 +336,7 @@ def preprocess_for_training(
             random_seed=random_seed
         )
     elif data_hdf5 is not None or data_train_hdf5 is not None:
-        return preprocess_for_training_strategy_pattern(
+        return preprocess_for_training_by_type(
             model_definition,
             'hdf5',
             all_data_fp=data_hdf5,
@@ -353,7 +353,7 @@ def preprocess_for_training(
                          'datasets. Please review your command')
 
 
-def preprocess_for_training_strategy_pattern(
+def preprocess_for_training_by_type(
     model_definition,
     data_type,
     all_data_fp=None,
@@ -455,7 +455,7 @@ def preprocess_for_training_strategy_pattern(
                     'Found hdf5 and json with the same filename '
                     'of the csv, using them instead'
                 )
-                return preprocess_for_training_strategy_pattern(
+                return preprocess_for_training_by_type(
                     model_definition,
                     'hdf5',
                     all_data_fp=replace_file_extension(all_data_fp, 'hdf5'),
@@ -491,7 +491,7 @@ def preprocess_for_training_strategy_pattern(
                     'Found hdf5 and json with the same filename '
                     'of the csvs, using them instead.'
                 )
-                return preprocess_for_training_strategy_pattern(
+                return preprocess_for_training_by_type(
                     model_definition,
                     'hdf5',
                     train_fp=replace_file_extension(train_fp, 'hdf5'),
