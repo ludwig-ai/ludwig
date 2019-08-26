@@ -31,10 +31,10 @@ from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels
+from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
-from ludwig.utils.data_utils import file_exists_in_diff_format
 from ludwig.utils.data_utils import split_dataset_tvt
 from ludwig.utils.data_utils import text_feature_data_field
 from ludwig.utils.defaults import default_preprocessing_parameters
@@ -448,8 +448,8 @@ def preprocess_for_training_strategy_pattern(
         model_definition['data_hdf5_fp'] = data_hdf5_fp
 
         if all_data_fp is not None:
-            if (file_exists_in_diff_format(all_data_fp, 'hdf5') and
-                    file_exists_in_diff_format(all_data_fp, 'json')):
+            if (file_exists_with_diff_extension(all_data_fp, 'hdf5') and
+                    file_exists_with_diff_extension(all_data_fp, 'json')):
                 # use hdf5 data instead
                 logger.info(
                     'Found hdf5 and json with the same filename '
@@ -483,10 +483,10 @@ def preprocess_for_training_strategy_pattern(
                     random_seed=random_seed
                 )
         else:
-            if (file_exists_in_diff_format(train_fp, 'hdf5') and
-                    file_exists_in_diff_format(train_fp, 'json') and
-                    file_exists_in_diff_format(validation_fp, 'hdf5') and
-                    file_exists_in_diff_format(test_fp, 'hdf5')):
+            if (file_exists_with_diff_extension(train_fp, 'hdf5') and
+                    file_exists_with_diff_extension(train_fp, 'json') and
+                    file_exists_with_diff_extension(validation_fp, 'hdf5') and
+                    file_exists_with_diff_extension(test_fp, 'hdf5')):
                 logger.info(
                     'Found hdf5 and json with the same filename '
                     'of the csvs, using them instead.'

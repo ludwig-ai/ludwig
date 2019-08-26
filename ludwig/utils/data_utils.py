@@ -328,27 +328,27 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     return array
 
 
-def replace_file_extension(file_path, desired_format):
+def replace_file_extension(file_path, extension):
     """
     Return a file path for a file with same name but different format.
     a.csv, json -> a.json
     a.csv, hdf5 -> a.hdf5
     :param file_path: original file path
-    :param desired_format: desired file format
+    :param extension: file extension
     :return: file path with same name but different format
     """
     if file_path is None:
         return None
-    if '.' in desired_format:
+    if '.' in extension:
         # Handle the case if the user calls with '.hdf5' instead of 'hdf5'
-        desired_format = desired_format.replace('.', '').strip()
+        extension = extension.replace('.', '').strip()
 
-    return os.path.splitext(file_path)[0] + '.' + desired_format
+    return os.path.splitext(file_path)[0] + '.' + extension
 
 
-def file_exists_in_diff_format(file_path, desired_format):
+def file_exists_with_diff_extension(file_path, extension):
     return file_path is None or \
-           os.path.isfile(replace_file_extension(file_path, desired_format))
+           os.path.isfile(replace_file_extension(file_path, extension))
 
 
 def add_sequence_feature_column(df, col_name, seq_length):
