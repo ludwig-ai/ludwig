@@ -198,12 +198,14 @@ class ImageBaseFeature(BaseFeature):
             'Number of image channels needs to be an integer'
         )
 
-        return (should_resize,
-                width,
-                height,
-                num_channels,
-                user_specified_num_channels,
-                first_image)
+        return (
+            should_resize,
+            width,
+            height,
+            num_channels,
+            user_specified_num_channels,
+            first_image
+        )
 
     @staticmethod
     def add_feature_data(
@@ -237,15 +239,16 @@ class ImageBaseFeature(BaseFeature):
 
         first_image_path = get_abs_path(csv_path, first_image_path)
 
-        (should_resize,
-         width,
-         height,
-         num_channels,
-         user_specified_num_channels,
-         first_image) = \
-            ImageBaseFeature._finalize_preprocessing_parameters(
-                preprocessing_parameters, first_image_path
-            )
+        (
+            should_resize,
+            width,
+            height,
+            num_channels,
+            user_specified_num_channels,
+            first_image
+        ) = ImageBaseFeature._finalize_preprocessing_parameters(
+            preprocessing_parameters, first_image_path
+        )
 
         metadata[feature['name']]['preprocessing']['height'] = height
         metadata[feature['name']]['preprocessing']['width'] = width
@@ -275,8 +278,11 @@ class ImageBaseFeature(BaseFeature):
                 dtype=np.uint8
             )
             with Pool(num_processes) as pool:
-                logger.warning('Using {} processes for preprocessing '
-                               'images'.format(num_processes))
+                logger.warning(
+                    'Using {} processes for preprocessing images'.format(
+                        num_processes
+                    )
+                )
                 data[feature['name']] = np.array(
                     pool.map(read_image_and_resize, all_file_paths)
                 )
@@ -287,14 +293,16 @@ class ImageBaseFeature(BaseFeature):
                 mode = 'r+'
 
             with h5py.File(data_fp, mode) as h5_file:
+                # TODO add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
                     feature['name'] + '_data',
                     (num_images, height, width, num_channels),
                     dtype=np.uint8
                 )
                 for i, filepath in enumerate(all_file_paths):
-                    image_dataset[i, :height, :width, :] = \
+                    image_dataset[i, :height, :width, :] = (
                         read_image_and_resize(filepath)
+                    )
 
             data[feature['name']] = np.arange(num_images)
 

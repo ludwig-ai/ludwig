@@ -44,7 +44,6 @@ from tests.integration_tests.utils import vector_feature
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
-logger.info('hello')
 
 
 def run_experiment(input_features, output_features, **kwargs):
