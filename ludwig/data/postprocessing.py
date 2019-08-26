@@ -26,7 +26,7 @@ def postprocess_results(
         output_feature,
         metadata,
         experiment_dir_name='',
-        skip_save_unprocessed_output=False
+        skip_save_unprocessed_output=False,
 ):
     feature = get_from_registry(
         output_feature['type'], output_type_registry
@@ -36,7 +36,7 @@ def postprocess_results(
         result,
         metadata,
         experiment_dir_name,
-        skip_save_unprocessed_output=skip_save_unprocessed_output
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
     )
 
 
@@ -45,7 +45,7 @@ def postprocess(
         output_features,
         metadata,
         experiment_dir_name='',
-        skip_save_unprocessed_output=False
+        skip_save_unprocessed_output=False,
 ):
     postprocessed = {}
     for output_feature in output_features:
@@ -54,7 +54,7 @@ def postprocess(
             output_feature,
             metadata.get(output_feature['name'], {}),
             experiment_dir_name=experiment_dir_name,
-            skip_save_unprocessed_output=skip_save_unprocessed_output
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
         )
     return postprocessed
 
@@ -64,14 +64,14 @@ def postprocess_df(
     output_features,
     metadata,
     experiment_dir_name='',
-    skip_save_unprocessed_output=True
+        skip_save_unprocessed_output=True,
 ):
     postprocessed_output = postprocess(
         model_output,
         output_features,
         metadata,
         experiment_dir_name=experiment_dir_name,
-        skip_save_unprocessed_output=skip_save_unprocessed_output
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
     )
     data_for_df = {}
     for output_feature in output_features:

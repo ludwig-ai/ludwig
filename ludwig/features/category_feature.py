@@ -607,7 +607,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
         npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
