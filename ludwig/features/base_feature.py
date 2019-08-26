@@ -133,7 +133,7 @@ class OutputFeature(ABC, BaseFeature):
             result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         pass
 

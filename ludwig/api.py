@@ -156,7 +156,7 @@ class LudwigModel:
             self.model_definition = merge_with_defaults(model_definition_copy)
         self.train_set_metadata = None
         self.model = None
-        self.exp_dir_name = None
+        self.exp_dir_name = ''
 
     @staticmethod
     def set_logging_level(logging_level):
@@ -708,9 +708,10 @@ class LudwigModel:
             data_dict=None,
             return_type=pd.DataFrame,
             batch_size=128,
+            evaluate_performance=False,
+            skip_save_unprocessed_output=False,
             gpus=None,
             gpu_fraction=1,
-            evaluate_performance=False,
     ):
 
         if (self.model is None or self.model_definition is None or
@@ -754,7 +755,8 @@ class LudwigModel:
             dataset,
             batch_size,
             evaluate_performance=evaluate_performance,
-            gpus=gpus, gpu_fraction=gpu_fraction,
+            gpus=gpus,
+            gpu_fraction=gpu_fraction,
             session=getattr(self.model, 'session', None)
         )
 
@@ -775,7 +777,9 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 predict_results,
                 self.model_definition['output_features'],
-                self.train_set_metadata
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output,
             )
         elif (
                 return_type == 'dataframe' or
@@ -785,7 +789,9 @@ class LudwigModel:
             postprocessed_predictions = postprocess_df(
                 predict_results,
                 self.model_definition['output_features'],
-                self.train_set_metadata
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output,
             )
         else:
             logger.warning(
@@ -795,7 +801,9 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 predict_results,
                 self.model_definition['output_features'],
-                self.train_set_metadata
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output,
             )
 
         return postprocessed_predictions, predict_results
@@ -809,6 +817,7 @@ class LudwigModel:
             batch_size=128,
             gpus=None,
             gpu_fraction=1,
+            skip_save_unprocessed_output=True
     ):
         """This function is used to predict the output variables given the input
            variables using the trained model.
@@ -834,6 +843,11 @@ class LudwigModel:
                DataFrame , while `'dict'`, ''dictionary'` and `dict` will
                return a dictionary.
         :param batch_size: (int, default: `128`) batch size
+        :param skip_save_unprocessed_output: If this parameter is False,
+               predictions and their probabilities are saved in both raw
+               unprocessed numpy files contaning tensors and as postprocessed
+               CSV files (one for each output feature). If this parameter is
+               True, only the CSV ones are saved and the numpy ones are skipped.
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of gpu memory to
@@ -862,9 +876,10 @@ class LudwigModel:
             data_dict=data_dict,
             return_type=return_type,
             batch_size=batch_size,
+            evaluate_performance=False,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
-            evaluate_performance=False,
         )
 
         return predictions
@@ -876,6 +891,7 @@ class LudwigModel:
             data_dict=None,
             return_type=pd.DataFrame,
             batch_size=128,
+            skip_save_unprocessed_output=False,
             gpus=None,
             gpu_fraction=1,
     ):
@@ -906,6 +922,11 @@ class LudwigModel:
                DataFrame , while `'dict'`, ''dictionary'` and `dict` will
                return a dictionary.
         :param batch_size: (int, default: `128`) batch size
+        :param skip_save_unprocessed_output: If this parameter is False,
+               predictions and their probabilities are saved in both raw
+               unprocessed numpy files contaning tensors and as postprocessed
+               CSV files (one for each output feature). If this parameter is
+               True, only the CSV ones are saved and the numpy ones are skipped.
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_fraction: (float, default `1.0`) fraction of GPU memory to
@@ -940,9 +961,10 @@ class LudwigModel:
             data_dict=data_dict,
             return_type=return_type,
             batch_size=batch_size,
+            evaluate_performance=True,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
             gpus=gpus,
             gpu_fraction=gpu_fraction,
-            evaluate_performance=True,
         )
 
         return predictions, test_stats
