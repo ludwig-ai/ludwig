@@ -76,7 +76,10 @@ class SequenceBaseFeature(BaseFeature):
         idx2str, str2idx, str2freq, max_length = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
-            num_most_frequent=preprocessing_parameters['most_common']
+            num_most_frequent=preprocessing_parameters['most_common'],
+            vocab_file=preprocessing_parameters['vocab_file'],
+            unknown_symbol=preprocessing_parameters['unknown_symbol'],
+            padding_symbol=preprocessing_parameters['padding_symbol'],
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
