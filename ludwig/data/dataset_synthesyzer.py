@@ -310,7 +310,8 @@ def generate_h3(feature):
 def generate_vector(feature):
     # Space delimited string with floating point numbers
     return ' '.join(
-        [str(100 * random.random()) for _ in range(feature['vector_size'])]
+        [str(100 * random.random()) for _ in
+         range(feature['preprocessing']['vector_size'])]
     )
 
 
