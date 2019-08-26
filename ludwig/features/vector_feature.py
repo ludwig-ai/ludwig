@@ -46,7 +46,7 @@ class VectorBaseFeature(BaseFeature):
 
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': 0.0
+        'fill_value': ""
     }
 
     @staticmethod
@@ -56,25 +56,6 @@ class VectorBaseFeature(BaseFeature):
         }
 
     @staticmethod
-    def read_single_vector(row):
-        return [float(x) for x in row.split()]
-
-    @staticmethod
-    def feature_data(column, metadata):
-        vectors = [VectorBaseFeature.read_single_vector(x) for x in column]
-        # Make sure all vectors are of the same size
-        for i, v in enumerate(vectors):
-            if len(v) != metadata['vector_size']:
-                raise ValueError(
-                    'All the vectors need to be of the same size.'
-                    ' Expected size: {}. Actual Size of vector number '
-                    '{}: {}'.format(
-                        metadata['vector_size'], i, len(v)
-                    )
-                )
-        return np.array(vectors)
-
-    @staticmethod
     def add_feature_data(
             feature,
             dataset_df,
@@ -82,23 +63,38 @@ class VectorBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        num_vectors = len(dataset_df)
-        if num_vectors == 0:
+        """
+        Expects all the vectors to be of the same size. The vectors need to be
+        whitespace delimited strings. Missing values are not handled.
+        """
+        if len(dataset_df) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
-        if 'vector_size' not in preprocessing_parameters:
-            vector_size = len(VectorBaseFeature.read_single_vector(
-                dataset_df[feature['name']][0]
-            ))
+        # Convert the string of features into a numpy array
+        try:
+            data[feature['name']] = np.array(
+                [x.split() for x in dataset_df[feature['name']]], dtype=np.double
+            )
+        except ValueError:
+            logger.error(
+                'Unable to read the vector data. Make sure that all the vectors'
+                ' are of the same size and do not have missing/null values.'
+            )
+
+        # Determine vector size
+        vector_size = len(data[feature['name']][0])
+        if 'vector_size' in preprocessing_parameters:
+            if vector_size != preprocessing_parameters['vector_size']:
+                raise ValueError(
+                    'The user provided value for vector size ({}) does not '
+                    'match the value observed in the data: {}'.format(
+                        preprocessing_parameters, vector_size
+                    )
+                )
         else:
-            vector_size = preprocessing_parameters['vector_size']
+            logger.warning('Observed vector size: {}'.format(vector_size))
 
         metadata[feature['name']]['vector_size'] = vector_size
-
-        data[feature['name']] = VectorBaseFeature.feature_data(
-            dataset_df[feature['name']].astype(str),
-            metadata[feature['name']]
-        )
 
 
 class VectorInputFeature(VectorBaseFeature, InputFeature):
