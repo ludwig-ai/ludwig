@@ -43,7 +43,7 @@ def fc_layer(inputs, in_count, out_count,
                 initializer = get_initializer('glorot_uniform')
             # if initializer is None, tensorFlow seems to be using
             # a glorot uniform initializer
-            weights = tf.get_variable(
+            weights = tf.compat.v1.get_variable(
                 'weights',
                 [in_count, out_count],
                 regularizer=regularizer,
@@ -53,7 +53,7 @@ def fc_layer(inputs, in_count, out_count,
     logger.debug('  fc_weights: {}'.format(weights))
 
     if biases is None:
-        biases = tf.get_variable('biases', [out_count],
+        biases = tf.compat.v1.get_variable('biases', [out_count],
                                  initializer=tf.constant_initializer(0.01))
     logger.debug('  fc_biases: {}'.format(biases))
 
@@ -121,7 +121,7 @@ class FCStack:
     ):
         hidden = inputs
         for i, layer in enumerate(self.layers):
-            with tf.variable_scope('fc_' + str(i)):
+            with tf.compat.v1.variable_scope('fc_' + str(i)):
                 hidden = fc_layer(
                     hidden,
                     inputs_size,

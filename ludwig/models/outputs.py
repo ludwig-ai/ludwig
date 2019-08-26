@@ -52,8 +52,8 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
     train_combined_mean_loss = tf.reduce_sum(tf.stack(output_train_losses),
                                              name='train_combined_mean_loss')
     if regularizer is not None:
-        regularization_losses = tf.get_collection(
-            tf.GraphKeys.REGULARIZATION_LOSSES)
+        regularization_losses = tf.compat.v1.get_collection(
+            tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
         if regularization_losses:
             regularization_loss = tf.add_n(regularization_losses)
             logger.debug('- Regularization losses: {0}'.format(
@@ -80,7 +80,7 @@ def build_single_output(output_feature, feature_hidden, feature_hidden_size,
         output_feature['type'],
         output_feature['name']
     ))
-    with tf.variable_scope(output_feature['name']):
+    with tf.compat.v1.variable_scope(output_feature['name']):
         feature_class = get_from_registry(
             output_feature['type'],
             output_type_registry

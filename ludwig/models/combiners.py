@@ -81,7 +81,7 @@ class ConcatCombiner:
             representations_size += fe_properties['size']
 
         scope_name = 'concat_combiner'
-        with tf.variable_scope(scope_name):
+        with tf.compat.v1.variable_scope(scope_name):
             # ================ Concat ================
             hidden = tf.concat(representations, 1)
             hidden_size = representations_size
