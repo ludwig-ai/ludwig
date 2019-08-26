@@ -31,6 +31,7 @@ from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels
+from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
@@ -308,70 +309,80 @@ def preprocess_for_training(
     if not any(data_sources_not_none):
         raise ValueError('No training data is provided!')
 
-    # Check if hdf5 and json already exist. If they do, use the hdf5 data,
-    # instead of the csvs
-    data_hdf5_fp = None
-
-    if data_csv is not None:
-        data_hdf5_fp = replace_file_extension(data_csv, 'hdf5')
-        train_set_metadata_json_fp = replace_file_extension(data_csv, 'json')
-        if os.path.isfile(data_hdf5_fp) and os.path.isfile(
-                train_set_metadata_json_fp):
-            logger.info(
-                'Found hdf5 and json with the same filename '
-                'of the csv, using them instead'
-            )
-            data_csv = None
-            data_hdf5 = data_hdf5_fp
-            train_set_metadata_json = train_set_metadata_json_fp
-
-    if data_train_csv is not None:
-        data_train_hdf5_fp = replace_file_extension(data_train_csv, 'hdf5')
-        train_set_metadata_json_fp = replace_file_extension(
-            data_train_csv,
-            'json',
+    if data_df is not None or data_train_df is not None:
+        return preprocess_for_training_by_type(
+            model_definition,
+            'pandas',
+            all_data_df=data_df,
+            train_df=data_train_df,
+            validation_df=data_validation_df,
+            test_df=data_test_df,
+            train_set_metadata_json=train_set_metadata_json,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
         )
-
-        if os.path.isfile(data_train_hdf5_fp) and os.path.isfile(
-                train_set_metadata_json_fp):
-            logger.info(
-                'Found hdf5 and json with the same filename of '
-                'the train csv, using them instead'
-            )
-            data_train_csv = None
-            data_train_hdf5 = data_train_hdf5_fp
-            train_set_metadata_json = train_set_metadata_json_fp
-
-    if data_validation_csv is not None:
-        data_validation_hdf5_fp = replace_file_extension(
-            data_validation_csv,
-            'hdf5'
+    elif data_csv is not None or data_train_csv is not None:
+        return preprocess_for_training_by_type(
+            model_definition,
+            'csv',
+            all_data_fp=data_csv,
+            train_fp=data_train_csv,
+            validation_fp=data_validation_csv,
+            test_fp=data_test_csv,
+            train_set_metadata_json=train_set_metadata_json,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
         )
-        if os.path.isfile(data_validation_hdf5_fp):
-            logger.info(
-                'Found hdf5 with the same filename of '
-                'the validation csv, using it instead'
-            )
-            data_validation_csv = None
-            data_validation_hdf5 = data_validation_hdf5_fp
+    elif data_hdf5 is not None or data_train_hdf5 is not None:
+        return preprocess_for_training_by_type(
+            model_definition,
+            'hdf5',
+            all_data_fp=data_hdf5,
+            train_fp=data_train_hdf5,
+            validation_fp=data_validation_hdf5,
+            test_fp=data_test_hdf5,
+            train_set_metadata_json=train_set_metadata_json,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+    else:
+        raise ValueError('Invalid type of data provided or Invalid usage of '
+                         'datasets. Please review your command')
 
-    if data_test_csv is not None:
-        data_test_hdf5_fp = replace_file_extension(data_test_csv, 'hdf5')
-        if os.path.isfile(data_test_hdf5_fp):
-            logger.info(
-                'Found hdf5 with the same filename of '
-                'the test csv, using it instead'
-            )
-            data_test_csv = None
-            data_test_hdf5 = data_test_hdf5_fp
 
-    model_definition['data_hdf5_fp'] = data_hdf5_fp
+def preprocess_for_training_by_type(
+    model_definition,
+    data_type,
+    all_data_fp=None,
+    train_fp=None,
+    validation_fp=None,
+    test_fp=None,
+    all_data_df=None,
+    train_df=None,
+    validation_df=None,
+    test_df=None,
+    train_set_metadata_json=None,
+    skip_save_processed_input=False,
+    preprocessing_params=default_preprocessing_parameters,
+    random_seed=default_random_seed
+):
 
-    # Decide if to preprocess or just load
+    if all_data_fp is not None and train_fp is not None:
+        raise ValueError('Use either one file for all data or 3 files for '
+                         'train, test and validation')
+
+    if data_type not in ['hdf5', 'csv', 'pandas']:
+        raise ValueError('Invalid type of data provided')
+
     features = (model_definition['input_features'] +
                 model_definition['output_features'])
 
-    if data_df is not None or data_train_df is not None:
+    data_hdf5_fp = None
+
+    if data_type == 'pandas':
         # Preprocess data frames
         (
             training_set,
@@ -380,75 +391,135 @@ def preprocess_for_training(
             train_set_metadata
         ) = _preprocess_df_for_training(
             features,
-            data_df,
-            data_train_df,
-            data_validation_df,
-            data_test_df,
+            all_data_df,
+            train_df,
+            validation_df,
+            test_df,
             train_set_metadata_json=train_set_metadata_json,
             preprocessing_params=preprocessing_params,
             random_seed=random_seed
         )
-    elif data_csv is not None or data_train_csv is not None:
-        # Preprocess csv data
-        (
-            training_set,
-            test_set,
-            validation_set,
-            train_set_metadata
-        ) = _preprocess_csv_for_training(
-            features,
-            data_csv,
-            data_train_csv,
-            data_validation_csv,
-            data_test_csv,
-            train_set_metadata_json,
-            skip_save_processed_input,
-            preprocessing_params,
-            random_seed
-        )
-
-    elif data_hdf5 is not None and train_set_metadata_json is not None:
-        # use data and train set metadata
-        # does not need preprocessing, just load
-        logger.info('Using full hdf5 and json')
-        training_set, test_set, validation_set = load_data(
-            data_hdf5,
-            model_definition['input_features'],
-            model_definition['output_features'],
-            shuffle_training=True
-        )
-        train_set_metadata = load_metadata(train_set_metadata_json)
-
-    elif data_train_hdf5 is not None and train_set_metadata_json is not None:
-        # use data and train set metadata
-        # does not need preprocessing, just load
-        logger.info('Using hdf5 and json')
-        training_set = load_data(
-            data_train_hdf5,
-            model_definition['input_features'],
-            model_definition['output_features'],
-            split_data=False
-        )
-        train_set_metadata = load_metadata(train_set_metadata_json)
-        if data_validation_hdf5 is not None:
-            validation_set = load_data(
-                data_validation_hdf5,
+    elif data_type == 'hdf5' and train_set_metadata_json is None:
+        raise ValueError('train set metadata file is not found along with hdf5 '
+                         'data')
+    elif data_type == 'hdf5':
+        if all_data_fp is not None:
+            data_hdf5_fp = replace_file_extension(all_data_fp, 'hdf5')
+            logger.info('Using full hdf5 and json')
+            training_set, test_set, validation_set = load_data(
+                all_data_fp,
+                model_definition['input_features'],
+                model_definition['output_features'],
+                shuffle_training=True
+            )
+            train_set_metadata = load_metadata(train_set_metadata_json)
+        elif train_fp is not None:
+            logger.info('Using hdf5 and json')
+            training_set = load_data(
+                train_fp,
                 model_definition['input_features'],
                 model_definition['output_features'],
                 split_data=False
             )
-        else:
+            train_set_metadata = load_metadata(train_set_metadata_json)
+
             validation_set = None
-        if data_test_hdf5 is not None:
-            test_set = load_data(
-                data_test_hdf5,
-                model_definition['input_features'],
-                model_definition['output_features'],
-                split_data=False
-            )
-        else:
-            test_set = None
+            if validation_fp is not None:
+                validation_set = load_data(
+                    validation_fp,
+                    model_definition['input_features'],
+                    model_definition['output_features'],
+                    split_data=False
+                )
 
+            test_set = None
+            if test_fp is not None:
+                test_set = load_data(
+                    test_fp,
+                    model_definition['input_features'],
+                    model_definition['output_features'],
+                    split_data=False
+                )
+
+    elif data_type == 'csv':
+        data_hdf5_fp = replace_file_extension(
+            all_data_fp, 'hdf5'
+        )
+        model_definition['data_hdf5_fp'] = data_hdf5_fp
+
+        if all_data_fp is not None:
+            if (file_exists_with_diff_extension(all_data_fp, 'hdf5') and
+                    file_exists_with_diff_extension(all_data_fp, 'json')):
+                # use hdf5 data instead
+                logger.info(
+                    'Found hdf5 and json with the same filename '
+                    'of the csv, using them instead'
+                )
+                return preprocess_for_training_by_type(
+                    model_definition,
+                    'hdf5',
+                    all_data_fp=replace_file_extension(all_data_fp, 'hdf5'),
+                    train_set_metadata_json=replace_file_extension(all_data_fp,
+                                                                   'json'),
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    random_seed=random_seed
+                )
+            else:
+                (
+                    training_set,
+                    test_set,
+                    validation_set,
+                    train_set_metadata
+                ) = _preprocess_csv_for_training(
+                    features=features,
+                    data_csv=all_data_fp,
+                    data_train_csv=None,
+                    data_validation_csv=None,
+                    data_test_csv=None,
+                    train_set_metadata_json=train_set_metadata_json,
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    random_seed=random_seed
+                )
+        else:
+            if (file_exists_with_diff_extension(train_fp, 'hdf5') and
+                    file_exists_with_diff_extension(train_fp, 'json') and
+                    file_exists_with_diff_extension(validation_fp, 'hdf5') and
+                    file_exists_with_diff_extension(test_fp, 'hdf5')):
+                logger.info(
+                    'Found hdf5 and json with the same filename '
+                    'of the csvs, using them instead.'
+                )
+                return preprocess_for_training_by_type(
+                    model_definition,
+                    'hdf5',
+                    train_fp=replace_file_extension(train_fp, 'hdf5'),
+                    validation_fp=replace_file_extension(validation_fp, 'hdf5'),
+                    test_fp=replace_file_extension(test_fp, 'hdf5'),
+                    train_set_metadata_json=replace_file_extension(all_data_fp,
+                                                                   'json'),
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    random_seed=random_seed
+                )
+            else:
+                (
+                   training_set,
+                   test_set,
+                   validation_set,
+                   train_set_metadata
+                ) = _preprocess_csv_for_training(
+                    features=features,
+                    data_csv=None,
+                    data_train_csv=train_fp,
+                    data_validation_csv=validation_fp,
+                    data_test_csv=test_fp,
+                    train_set_metadata_json=train_set_metadata_json,
+                    skip_save_processed_input=skip_save_processed_input,
+                    preprocessing_params=preprocessing_params,
+                    random_seed=random_seed
+                )
     else:
         raise RuntimeError('Insufficient input parameters')
 
