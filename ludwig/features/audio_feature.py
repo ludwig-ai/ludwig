@@ -35,6 +35,7 @@ from ludwig.utils.audio_utils import get_phase_stft_magnitude
 from ludwig.utils.audio_utils import get_stft_magnitude
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
 
@@ -373,5 +374,10 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
-        set_default_value(input_feature, 'preprocessing', {})
+        set_default_values(
+            input_feature,
+            {
+                'tied_weights': None,
+                'preprocessing': {}
+            }
+        )

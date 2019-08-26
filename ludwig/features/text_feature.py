@@ -28,6 +28,7 @@ from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc import set_default_values
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
@@ -235,9 +236,14 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
-        set_default_value(input_feature, 'encoder', 'parallel_cnn')
-        set_default_value(input_feature, 'level', 'word')
+        set_default_values(
+            input_feature,
+            {
+                'tied_weights': None,
+                'encoder': 'parallel_cnn',
+                'level': 'word'
+            }
+        )
 
 
 class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
@@ -496,9 +502,12 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
     def populate_defaults(output_feature):
         set_default_value(output_feature, 'level', 'word')
 
-        set_default_value(
-            output_feature,
-            LOSS,
+        # If Loss is not defined, set an empty dictionary
+        set_default_value(output_feature, LOSS, {})
+
+        # Populate the default values for LOSS if they aren't defined already
+        set_default_values(
+            output_feature[LOSS],
             {
                 'type': 'softmax_cross_entropy',
                 'sampler': None,
@@ -512,32 +521,37 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
                 'weight': 1
             }
         )
-        set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
-        set_default_value(output_feature[LOSS], 'labels_smoothing', 0)
-        set_default_value(output_feature[LOSS], 'class_weights', 1)
-        set_default_value(output_feature[LOSS], 'robust_lambda', 0)
-        set_default_value(output_feature[LOSS], 'confidence_penalty', 0)
-        set_default_value(output_feature[LOSS],
-                          'class_similarities_temperature', 0)
-        set_default_value(output_feature[LOSS], 'weight', 1)
-        set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
 
         if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
-            set_default_value(output_feature[LOSS], 'sampler', 'log_uniform')
-            set_default_value(output_feature[LOSS], 'negative_samples', 25)
-            set_default_value(output_feature[LOSS], 'distortion', 0.75)
+            set_default_values(
+                output_feature[LOSS],
+                {
+                    'sampler': 'log_uniform',
+                    'negative_samples': 25,
+                    'distortion': 0.75
+                }
+            )
         else:
-            set_default_value(output_feature[LOSS], 'sampler', None)
-            set_default_value(output_feature[LOSS], 'negative_samples', 0)
-            set_default_value(output_feature[LOSS], 'distortion', 1)
+            set_default_values(
+                output_feature[LOSS],
+                {
+                    'sampler': None,
+                    'negative_samples': 0,
+                    'distortion': 1
+                }
+            )
 
         set_default_value(output_feature[LOSS], 'unique', False)
-
         set_default_value(output_feature, 'decoder', 'generator')
 
         if output_feature['decoder'] == 'tagger':
             set_default_value(output_feature, 'reduce_input', None)
 
-        set_default_value(output_feature, 'dependencies', [])
-        set_default_value(output_feature, 'reduce_input', SUM)
-        set_default_value(output_feature, 'reduce_dependencies', SUM)
+        set_default_values(
+            output_feature,
+            {
+                'dependencies': [],
+                'reduce_input': SUM,
+                'reduce_dependencies': SUM
+            }
+        )
