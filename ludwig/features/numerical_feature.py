@@ -229,7 +229,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                 train_loss = tf.compat.v1.losses.mean_squared_error(
                     labels=targets,
                     predictions=predictions,
-                    reduction=Reduction.NONE)
+                    reduction=Reduction.NONE
+                )
             elif self.loss['type'] == 'mean_absolute_error':
                 train_loss = tf.losses.absolute_difference(
                     labels=targets,
