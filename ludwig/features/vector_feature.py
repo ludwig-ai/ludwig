@@ -20,6 +20,7 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
+from ludwig.models.modules.initializer_modules import get_initializer
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -179,16 +180,6 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
-        self.decoder = 'fc_stack'
-        feature['fc_size'] = self.vector_size
-        self.decoder_obj = self.get_vector_decoder(feature)
-
-    def get_vector_decoder(self, decoder_parameters):
-        return get_from_registry(
-            self.decoder, vector_decoder_registry)(
-            **decoder_parameters
-        )
-
     def _get_output_placeholder(self):
         return tf.placeholder(
             tf.float32,
@@ -264,24 +255,18 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     ):
         train_mean_loss, eval_loss, output_tensors = self.build_vector_output(
             self._get_output_placeholder(),
-            self.decoder_obj,
             hidden,
             hidden_size,
             regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
         )
         return train_mean_loss, eval_loss, output_tensors
 
     def build_vector_output(
             self,
             targets,
-            decoder,
             hidden,
             hidden_size,
             regularizer=None,
-            dropout_rate=None,
-            is_training=None
     ):
         feature_name = self.name
         output_tensors = {}
@@ -291,12 +276,9 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         # ================ Predictions ================
         logits, logits_size, predictions = self.vector_predictions(
-            decoder,
             hidden,
             hidden_size,
             regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
         )
 
         output_tensors[PREDICTIONS + '_' + feature_name] = predictions
@@ -343,28 +325,34 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
     def vector_predictions(
             self,
-            decoder,
             hidden,
             hidden_size,
             regularizer=None,
-            dropout_rate=None,
-            is_training=None
     ):
         with tf.variable_scope('predictions_{}'.format(self.name)):
-            logits, logits_size = decoder(
-                hidden,
-                hidden_size,
-                regularizer=regularizer,
-                dropout_rate=dropout_rate,
-                is_training=is_training
+            initializer_obj = get_initializer(self.initializer)
+            weights = tf.compat.v1.get_variable(
+                'weights',
+                initializer=initializer_obj([hidden_size, self.vector_size]),
+                regularizer=regularizer
             )
+            logger.debug('  projection_weights: {0}'.format(weights))
+
+            biases = tf.compat.v1.get_variable(
+                'biases',
+                [self.vector_size]
+            )
+            logger.debug('  projection_biases: {0}'.format(biases))
+
+            logits = tf.matmul(hidden, weights) + biases
+            logger.debug('  logits: {0}'.format(logits))
 
             if self.softmax:
                 predictions = tf.nn.softmax(logits)
             else:
                 predictions = logits
 
-        return logits, logits_size, predictions
+        return logits, self.vector_size, predictions
 
     default_validation_measure = LOSS
 
@@ -463,9 +451,5 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
 
 vector_encoder_registry = {
-    'fc_stack': Dense
-}
-
-vector_decoder_registry = {
     'fc_stack': Dense
 }
