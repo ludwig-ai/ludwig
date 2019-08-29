@@ -37,7 +37,8 @@ from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
 from ludwig.utils.data_utils import split_dataset_tvt
 from ludwig.utils.data_utils import text_feature_data_field
-from ludwig.utils.defaults import default_preprocessing_parameters
+from ludwig.utils.defaults import default_preprocessing_parameters, \
+    merge_with_defaults
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import merge_dict
@@ -354,22 +355,21 @@ def preprocess_for_training(
 
 
 def preprocess_for_training_by_type(
-    model_definition,
-    data_type,
-    all_data_fp=None,
-    train_fp=None,
-    validation_fp=None,
-    test_fp=None,
-    all_data_df=None,
-    train_df=None,
-    validation_df=None,
-    test_df=None,
-    train_set_metadata_json=None,
-    skip_save_processed_input=False,
-    preprocessing_params=default_preprocessing_parameters,
-    random_seed=default_random_seed
+        model_definition,
+        data_type,
+        all_data_fp=None,
+        train_fp=None,
+        validation_fp=None,
+        test_fp=None,
+        all_data_df=None,
+        train_df=None,
+        validation_df=None,
+        test_df=None,
+        train_set_metadata_json=None,
+        skip_save_processed_input=False,
+        preprocessing_params=default_preprocessing_parameters,
+        random_seed=default_random_seed
 ):
-
     if all_data_fp is not None and train_fp is not None:
         raise ValueError('Use either one file for all data or 3 files for '
                          'train, test and validation')
@@ -505,10 +505,10 @@ def preprocess_for_training_by_type(
                 )
             else:
                 (
-                   training_set,
-                   test_set,
-                   validation_set,
-                   train_set_metadata
+                    training_set,
+                    test_set,
+                    validation_set,
+                    train_set_metadata
                 ) = _preprocess_csv_for_training(
                     features=features,
                     data_csv=None,
@@ -855,6 +855,38 @@ def replace_text_feature_level(features, datasets):
                             level)
                         if name_level in dataset:
                             del dataset[name_level]
+
+
+def get_preprocessing_params(model_definition):
+    model_definition = merge_with_defaults(model_definition)
+
+    global_preprocessing_parameters = model_definition['preprocessing']
+    features = (
+            model_definition['input_features'] +
+            model_definition['output_features']
+    )
+
+    global_preprocessing_parameters = merge_dict(
+        default_preprocessing_parameters,
+        global_preprocessing_parameters
+    )
+
+    merged_preprocessing_params = []
+    for feature in features:
+        if 'preprocessing' in feature:
+            local_preprocessing_parameters = merge_dict(
+                global_preprocessing_parameters[feature['type']],
+                feature['preprocessing']
+            )
+        else:
+            local_preprocessing_parameters = global_preprocessing_parameters[
+                feature['type']
+            ]
+        merged_preprocessing_params.append(
+            (feature['name'], feature['type'], local_preprocessing_parameters)
+        )
+
+    return merged_preprocessing_params
 
 
 if __name__ == '__main__':
