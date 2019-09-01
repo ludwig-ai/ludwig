@@ -10,7 +10,6 @@ seaborn>=0.7
 spacy>=2.1
 tqdm
 tabulate>=0.7
-tensorflow-gpu==1.14.0
 PyYAML>=3.12
 pytest
 fastapi
@@ -19,3 +18,4 @@ uvicorn
 python-multipart
 soundfile
 absl-py
+
