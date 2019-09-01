@@ -12,7 +12,7 @@ tqdm
 tabulate>=0.7
 PyYAML>=3.12
 pytest
-pydantic==0.30.0
+pydantic==0.32.2
 fastapi
 uvicorn
 python-multipart
