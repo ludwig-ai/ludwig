@@ -2319,7 +2319,7 @@ Audio files are transformed into one of the following types according to `type` 
 - `stft`: audio is transformed to the `stft` magnitude. Audio file is transformed into a float valued tensor of size `N x L x W` (where `N` is the size of the dataset, `L` corresponds to `ceil(audio_file_length_limit_in_s * sample_rate - window_length_in_s * sample_rate + 1/ window_shift_in_s * sample_rate) + 1` and `W` corresponds to `num_fft_points / 2`).
 - `fbank`: audio file is transformed to FBANK features (also called log Mel-filter bank values). FBANK features are implemented according to their definition in the [HTK Book](http://www.inf.u-szeged.hu/~tothl/speech/htkbook.pdf): Raw Signal -> Preemphasis -> DC mean removal -> `stft` magnitude -> Power spectrum: `stft^2` -> mel-filter bank values: triangular filters equally spaced on a Mel-scale are applied -> log-compression: `log()`. Overall the audio file is transformed into a float valued tensor of size `N x L x W` with `N,L` being equal to the ones in `stft` and `W` being equal to `num_filter_bands`.
 - `stft_phase`: the phase information for each stft bin is appended to the `stft` magnitude so that the audio file is transformed into a float valued tensor of size `N x L x 2W` with `N,L,W` being equal to the ones in `stft`.
-- `group_delay`: audio is transformed to group delay features according to Equation (23) in this [paper](https://www.ias.ac.in/article/fulltext/sadh/036/05/0745-0782). Group_delay features has the same tensor size as `stft`.
+- `group_delay`: audio is transformed to group delay features according to Equation (23) in this [paper](https://www.ias.ac.in/article/fullyext/sadh/036/05/0745-0782). Group_delay features has the same tensor size as `stft`.
 
 The encoders are the same used for the [Sequence Features](#sequence-input-features-and-encoders).
 The only difference is that time series features don't have an embedding layer at the beginning, so the `b x s` placeholders (where `b` is the batch size and `s` is the sequence length) are directly mapped to a `b x s x w` (where `w` is `W` as described above) tensor and then passed to the different sequential encoders.
@@ -2581,6 +2581,154 @@ There are no date decoders at the moment (WIP), so date cannot be used as output
 
 As no date decoders are available at the moment, there are also no date measures.
 
+
+H3 Features
+-------------
+
+H3 is a indexing system ofr representing geospatial data.
+For more details about it refer to: .
+
+### H3 Features Preprocessing
+
+Ludwig will parse the H3 64bit encoded format automatically. 
+The parameters for preprocessing are:
+
+- `missing_value_strategy` (default `fill_with_const`): what strategy to follow when there's a missing value in a binary column. The value should be one of `fill_with_const` (replaces the missing value with a specific value specified with the `fill_value` parameter), `fill_with_mode` (replaces the missing values with the most frequent value in the column), `fill_with_mean` (replaces the missing values with the mean of the values in the column), `backfill` (replaces the missing values with the next valid value).
+- `fill_value` (default `576495936675512319`): the value to replace the missing values with in case the `missing_value_strategy` is `fill_value`. This is a 64bit integer comaptible with the H3 bit layout. The default value encodes mode 1, edge 0, resolution 0, base_cell 0.
+
+Example of a preprocessing specification:
+
+```yaml
+name: h3_feature_name
+type: h3
+preprocessing:
+  missing_value_strategy: fill_with_const
+  fill_value: 576495936675512319
+```
+
+
+### H3 Input Features and Encoders
+
+Input date features are transformed into a int valued tensors of size `N x 8` (where `N` is the size of the dataset and the 8 dimensions contain year, month, day, weekday, yearday, hour, minute and second) and added to HDF5 with a key that reflects the name of column in the CSV.
+
+Currently there are two encoders supported for dates: Embed Encoder and Wave encoder which can be set by setting `encoder` parameter to `embed` or `wave` in the input feature dictionary in the model definition (`embed` is the default one).
+
+#### Embed Encoder
+
+This encoder encodes each components of the H3 representation (mode, edge, resolution, base cell and childern cells) with embeddings.
+Chidren cells with value `0` will be masked out.
+After the embedding, all embeddings are summed and optionally passed through a stack of fully connected layers.
+It takes the following optional parameters:
+
+- `embedding_size` (default `10`): it is the maximum embedding size adopted..
+- `embeddings_on_cpu` (default `false`): by default embeddings matrices are stored on GPU memory if a GPU is used, as it allows for faster access, but in some cases the embedding matrix may be really big and this parameter forces the placement of the embedding matrix in regular memory and the CPU is used to resolve them, slightly slowing down the process as a result of data transfer between CPU and GPU memory.
+- `dropout` (default `false`): determines if there should be a dropout layer before returning the encoder output.
+- `fc_layers` (default `null`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the encoder will be used instead.
+- `num_fc_layers` (default `0`): This is the number of stacked fully connected layers.
+- `fc_size` (default `10`): if a `fc_size` is not already specified in `fc_layers` this is the default `fc_size` that will be used for each layer. It indicates the size of the output of a fully connected layer.
+- `norm` (default `null`): if a `norm` is not already specified in `fc_layers` or `conv_layers` this is the default `norm` that will be used for each layer. It indicates the norm of the output and it can be `null`, `batch` or `layer`.
+- `activation` (default `relu`): if an `activation` is not already specified in `fc_layers` or `conv_layers` this is the default `activation` that will be used for each layer. It indicates the activation function applied to the output.
+- `initializer` (default `null`): the initializer to use. If `null`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
+- `regularize` (default `true`): if `true` the embedding weights are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
+
+Example date feature entry in the input features list using an embed encoder:
+
+```yaml
+name: h3_csv_column_name
+type: h3
+encoder: embed
+embedding_size: 10
+embeddings_on_cpu: false
+dropout: false
+fc_layers: null
+num_fc_layers: 0
+fc_size: 10
+norm: null
+activation: relu
+initializer: null
+regularize: true
+```
+
+#### Weighted Sum Embed Encoder
+
+This encoder encodes each components of the H3 representation (mode, edge, resolution, base cell and childern cells) with embeddings.
+Chidren cells with value `0` will be masked out.
+After the embedding, all embeddings are summed with a weighted sum (with learned weights) and optionally passed through a stack of fully connected layers.
+It takes the following optional parameters:
+
+- `embedding_size` (default `10`): it is the maximum embedding size adopted..
+- `embeddings_on_cpu` (default `false`): by default embeddings matrices are stored on GPU memory if a GPU is used, as it allows for faster access, but in some cases the embedding matrix may be really big and this parameter forces the placement of the embedding matrix in regular memory and the CPU is used to resolve them, slightly slowing down the process as a result of data transfer between CPU and GPU memory.
+- `should_softmax` (default `false`): determines if the weights of the weighted sum should be passed though a softmax layer before being used.
+- `dropout` (default `false`): determines if there should be a dropout layer before returning the encoder output.
+- `fc_layers` (default `null`): it is a list of dictionaries containing the parameters of all the fully connected layers. The length of the list determines the number of stacked fully connected layers and the content of each dictionary determines the parameters for a specific layer. The available parameters for each layer are: `fc_size`, `norm`, `activation` and `regularize`. If any of those values is missing from the dictionary, the default one specified as a parameter of the encoder will be used instead.
+- `num_fc_layers` (default `0`): This is the number of stacked fully connected layers.
+- `fc_size` (default `10`): if a `fc_size` is not already specified in `fc_layers` this is the default `fc_size` that will be used for each layer. It indicates the size of the output of a fully connected layer.
+- `norm` (default `null`): if a `norm` is not already specified in `fc_layers` or `conv_layers` this is the default `norm` that will be used for each layer. It indicates the norm of the output and it can be `null`, `batch` or `layer`.
+- `activation` (default `relu`): if an `activation` is not already specified in `fc_layers` or `conv_layers` this is the default `activation` that will be used for each layer. It indicates the activation function applied to the output.
+- `initializer` (default `null`): the initializer to use. If `null`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
+- `regularize` (default `true`): if `true` the embedding weights are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
+
+Example date feature entry in the input features list using an embed encoder:
+
+```yaml
+name: h3_csv_column_name
+type: h3
+encoder: weighted_sum
+embedding_size: 10
+embeddings_on_cpu: false
+should_softmax: false
+dropout: false
+fc_layers: null
+num_fc_layers: 0
+fc_size: 10
+norm: null
+activation: relu
+initializer: null
+regularize: true
+```
+
+#### RNN Encoder
+
+This encoder encodes each components of the H3 representation (mode, edge, resolution, base cell and childern cells) with embeddings.
+Chidren cells with value `0` will be masked out.
+After the embedding, all embeddings are passed through an RNN encoder.
+The intuition behind this is that, starting from the base cell, the sequence of children cells can be seen as a sequence encoding the path in the tree of all H3 hexes, thus the encoding with  recurrent model.
+It takes the following optional parameters:
+
+- `embedding_size` (default `10`): it is the maximum embedding size adopted..
+- `embeddings_on_cpu` (default `false`): by default embeddings matrices are stored on GPU memory if a GPU is used, as it allows for faster access, but in some cases the embedding matrix may be really big and this parameter forces the placement of the embedding matrix in regular memory and the CPU is used to resolve them, slightly slowing down the process as a result of data transfer between CPU and GPU memory.
+- `dropout` (default `false`): determines if there should be a dropout layer before returning the encoder output.
+- `num_layers` (default `1`): the number of stacked recurrent layers.
+- `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
+- `state_size` (default `256`): the size of the state of the rnn.
+- `bidirectional` (default `false`): if `true` two recurrent networks will perform encoding in the forward and backward direction and their outputs will be concatenated.
+- `initializer` (default `null`): the initializer to use. If `null`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
+- `regularize` (default `true`): if `true` the embedding weights are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
+
+Example date feature entry in the input features list using an embed encoder:
+
+```yaml
+name: h3_csv_column_name
+type: h3
+encoder: rnn
+embedding_size: 10
+embeddings_on_cpu: false
+num_layers: 1
+cell_type: rnn
+state_size: 10
+bidirectional: false
+dropout: false
+initializer: null
+regularize: true
+```
+
+### H3 Output Features and Decoders
+
+There are no date decoders at the moment (WIP), so H3 cannot be used as output features.
+
+### H3 Features Measures
+
+As no H3 decoders are available at the moment, there are also no date measures.
 
 Vector Features
 ---------------
