@@ -32,6 +32,11 @@ class H3Embed:
             self,
             embedding_size=10,
             embeddings_on_cpu=False,
+            fc_layers=None,
+            num_fc_layers=0,
+            fc_size=10,
+            norm=None,
+            activation='relu',
             dropout=False,
             initializer=None,
             regularize=True,
@@ -140,6 +145,17 @@ class H3Embed:
             regularize=regularize
         )
 
+        self.fc_stack = FCStack(
+            layers=fc_layers,
+            num_layers=num_fc_layers,
+            default_fc_size=fc_size,
+            default_activation=activation,
+            default_norm=norm,
+            default_dropout=dropout,
+            default_regularize=regularize,
+            default_initializer=initializer
+        )
+
     def __call__(
             self,
             input_vector,
@@ -197,6 +213,7 @@ class H3Embed:
                 is_training=is_training
             )
 
+        # ================ Masking ================
         resolution = input_vector[:, 2]
         mask = tf.cast(
             tf.expand_dims(tf.sequence_mask(resolution, 15), -1),
@@ -204,6 +221,7 @@ class H3Embed:
         )
         masked_embedded_cells = embedded_cells * mask
 
+        # ================ Reduce ================
         concatenated = tf.concat(
             [embedded_mode, embedded_edge, embedded_resolution,
              embedded_base_cell, masked_embedded_cells],
@@ -211,7 +229,20 @@ class H3Embed:
 
         hidden = reduce_sequence(concatenated, self.reduce_output)
 
-        return hidden, self.embedding_size
+        # ================ FC Stack ================
+        hidden_size = hidden.shape.as_list()[-1]
+        logger.debug('  flatten hidden: {0}'.format(hidden))
+
+        hidden = self.fc_stack(
+            hidden,
+            hidden_size,
+            regularizer=regularizer,
+            dropout_rate=dropout_rate,
+            is_training=is_training
+        )
+        hidden_size = hidden.shape.as_list()[-1]
+
+        return hidden, hidden_size
 
 
 class H3WeightedSum:
@@ -277,7 +308,7 @@ class H3WeightedSum:
             dropout=dropout,
             initializer=initializer,
             regularize=regularize,
-            reduce_output=None
+            reduce_output=None,
         )
 
         self.weights = tf.get_variable(
