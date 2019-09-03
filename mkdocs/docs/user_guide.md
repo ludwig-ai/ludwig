@@ -2446,7 +2446,7 @@ Example image feature entry using a ResNet encoder (with default parameters) in 
 ```yaml
 name: image_csv_column_name
 type: image
-encoder: stacked_cnn
+encoder: resnet
 tied_weights: null
 resnet_size: 50
 num_filters: 16
