@@ -171,7 +171,7 @@ Another available option is to load a previously trained model as an initializat
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
 It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the `--model_load_path` argument.
 
-You can specify a random sed to be used by the python environment, python random package, numpy and TensorFlow with the `--random_seed` argument.
+You can specify a random seed to be used by the python environment, python random package, numpy and TensorFlow with the `--random_seed` argument.
 This is useful for reproducibility.
 Be aware that due to asynchronicity in the TensorFlow GPU execution, when training on GPU results may not be reproducible.
 
