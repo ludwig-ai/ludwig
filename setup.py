@@ -52,7 +52,7 @@ setup(
                       'tensorflow==1.14.0',
                       'PyYAML>=3.12',
                       'fastapi',
-                      'pydantic==0.30.0',
+                      'pydantic',
                       'uvicorn',
                       'python-multipart',
                       'soundfile',
