@@ -2981,15 +2981,11 @@ It also adjusts the learning rate to counter balance the increase in the batch s
 The advantage is that training speed scales almost linearly with the number of nodes.
 
 `experiment`, `train` and `predict` commands accept a `--use_horovod` argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
-An `horovodrun` command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
+A `horovodrun` command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
 For instance, in order to train a Ludwig model on a local machine with four GPUs one you can run:
 
 ```
 horovodrun -np 4 \
-    -H localhost:4 \
-    -bind-to none -map-by slot \
-    -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
-    -mca pml ob1 -mca btl ^openib \
     ludwig train --use_horovod ...other Ludwig parameters...
 ```
 
@@ -2998,9 +2994,6 @@ While for training on four remote machines with four GPUs each you can run:
 ```
 horovodrun -np 16 \
     -H server1:4,server2:4,server3:4,server4:4 \
-    -bind-to none -map-by slot \
-    -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
-    -mca pml ob1 -mca btl ^openib \
     ludwig train --use_horovod ...other Ludwig parameters...
 ```
 
