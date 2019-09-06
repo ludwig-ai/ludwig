@@ -182,6 +182,8 @@ def predict(
             train_set_metadata
         )
 
+    contrib_command("predict_end", test_stats)
+
     return test_stats
 
 
@@ -208,7 +210,8 @@ def save_prediction_outputs(
     for output_field, outputs in postprocessed_output.items():
         for output_type, values in outputs.items():
             if output_type not in skip_output_types:
-                save_csv(csv_filename.format(output_field, output_type), values)
+                save_csv(csv_filename.format(
+                    output_field, output_type), values)
 
 
 def save_test_statistics(test_stats, experiment_dir_name):
