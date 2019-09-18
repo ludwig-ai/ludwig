@@ -3109,7 +3109,7 @@ You can avoid saving the latest weights and the overall progress so far by using
 Another available option is to load a previously trained model as an initialization for a new training process.
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
 It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the <code>--model_load_path</code> argument.</p>
-<p>You can specify a random sed to be used by the python environment, python random package, numpy and TensorFlow with the <code>--random_seed</code> argument.
+<p>You can specify a random seed to be used by the python environment, python random package, numpy and TensorFlow with the <code>--random_seed</code> argument.
 This is useful for reproducibility.
 Be aware that due to asynchronicity in the TensorFlow GPU execution, when training on GPU results may not be reproducible.</p>
 <p>You can manage which GPUs on your machine are used with the <code>--gpus</code> argument, which accepts a string identical to the format of <code>CUDA_VISIBLE_DEVICES</code> environment variable, namely a list of integers separated by comma.
@@ -5120,7 +5120,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 <p>Example image feature entry using a ResNet encoder (with default parameters) in the input features list:</p>
 <div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image_csv_column_name</span>
 <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">image</span>
-<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">stacked_cnn</span>
+<span class="nt">encoder</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">resnet</span>
 <span class="nt">tied_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">resnet_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">50</span>
 <span class="nt">num_filters</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">16</span>
@@ -5584,13 +5584,9 @@ Output       |  +-----------------+
 It also adjusts the learning rate to counter balance the increase in the batch size.
 The advantage is that training speed scales almost linearly with the number of nodes.</p>
 <p><code>experiment</code>, <code>train</code> and <code>predict</code> commands accept a <code>--use_horovod</code> argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
-An <code>horovodrun</code> command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
+A <code>horovodrun</code> command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
 For instance, in order to train a Ludwig model on a local machine with four GPUs one you can run:</p>
 <div class="codehilite"><pre><span></span>horovodrun -np 4 \
-    -H localhost:4 \
-    -bind-to none -map-by slot \
-    -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
-    -mca pml ob1 -mca btl ^openib \
     ludwig train --use_horovod ...other Ludwig parameters...
 </pre></div>
 
@@ -5598,9 +5594,6 @@ For instance, in order to train a Ludwig model on a local machine with four GPUs
 <p>While for training on four remote machines with four GPUs each you can run:</p>
 <div class="codehilite"><pre><span></span>horovodrun -np 16 \
     -H server1:4,server2:4,server3:4,server4:4 \
-    -bind-to none -map-by slot \
-    -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
-    -mca pml ob1 -mca btl ^openib \
     ludwig train --use_horovod ...other Ludwig parameters...
 </pre></div>
 

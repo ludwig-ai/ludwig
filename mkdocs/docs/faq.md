@@ -65,3 +65,15 @@ Feel free to reach out to us and ask as there are tasks for all levels of experi
 - Pranav Subramani who contributed documentation
 - Alex Sergeev and Felipe Petroski Such who helped with distributed training
 - Emidio Torre helped with the initial design of the landing page
+
+## How can I cite Ludwig?
+
+Please use this Bibtex:
+```
+@misc{Molino2019,
+  author = {Piero Molino and Yaroslav Dudin and Sai Sumanth Miryala},
+  title = {Ludwig: a type-based declarative deep learning toolbox},
+  year = {2019},
+  eprint = {arXiv:1909.07930},
+}
+```
