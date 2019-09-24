@@ -81,7 +81,7 @@ def run_experiment(input_features, output_features, **kwargs):
     args.update(kwargs)
 
     exp_dir_name = experiment(**args)
-    # shutil.rmtree(exp_dir_name, ignore_errors=True)
+    shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
 def test_experiment_seq_seq(csv_filename):
@@ -252,7 +252,7 @@ def test_experiment_image_inputs(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
 
-    # # Stacked CNN encoder
+    # Stacked CNN encoder
     input_features[0]['encoder'] = 'stacked_cnn'
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)

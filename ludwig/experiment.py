@@ -239,7 +239,6 @@ def experiment(
             print_test_results(test_results)
             save_prediction_outputs(postprocessed_output, experiment_dir_name)
             save_test_statistics(test_results, experiment_dir_name)
-
     model.close_session()
 
     if is_on_master():
