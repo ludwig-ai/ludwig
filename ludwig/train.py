@@ -203,7 +203,7 @@ def full_train(
                 model_name
             )
         else:
-            experiment_dir_name = '/'
+            experiment_dir_name = '.'
 
     # if model_load_path is not None, load its train_set_metadata
     if model_load_path is not None:
