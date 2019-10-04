@@ -57,7 +57,9 @@ setup(
                       'python-multipart',
                       'soundfile',
                       ],
-
+    extras_require={
+        "gpu": ["tensorflow-gpu==1.14.0"],
+    } ,
     entry_points={
         'console_scripts': [
             'ludwig=ludwig.cli:main'
