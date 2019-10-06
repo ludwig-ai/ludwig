@@ -7,7 +7,7 @@ scipy>=0.18
 scikit-image==0.14.2
 scikit-learn
 seaborn>=0.7
-spacy>=2.1
+spacy>=2.2
 tqdm
 tabulate>=0.7
 tensorflow==1.14.0
