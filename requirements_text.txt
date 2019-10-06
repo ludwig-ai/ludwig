@@ -1,1 +1,2 @@
 spacy>=2.1
+bert-tensorflow
