@@ -97,6 +97,6 @@ def get_optimizer_fun(optimizer_type):
     elif optimizer_type == 'proximaladagrad':
         return tf.train.ProximalAdagradOptimizer
     elif optimizer_type == 'rmsprop':
-        return tf.train.RMSPropOptimizer
+        return tf.compat.v1.train.RMSPropOptimizer
     else:
         raise ValueError('Invalid optimizer_type: ' + optimizer_type)

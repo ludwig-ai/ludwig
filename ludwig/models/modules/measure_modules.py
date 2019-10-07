@@ -134,19 +134,19 @@ def perplexity(cross_entropy_loss):
 
 
 def error(targets, predictions, output_feature_name):
-    # return tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
+    # return tf.compat.v1.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     return tf.subtract(targets, predictions,
                        name='error_{}'.format(output_feature_name))
 
 
 def absolute_error(targets, predictions, output_feature_name):
-    # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
+    # error = tf.compat.v1.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
     return tf.abs(error, name='absolute_error_{}'.format(output_feature_name))
 
 
 def squared_error(targets, predictions, output_feature_name):
-    # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
+    # error = tf.compat.v1.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
     return tf.pow(error, 2, name='squared_error_{}'.format(output_feature_name))
 

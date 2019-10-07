@@ -106,7 +106,7 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
         _ = self.overwrite_defaults(feature)
 
     def _get_input_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32,
             shape=[None],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)

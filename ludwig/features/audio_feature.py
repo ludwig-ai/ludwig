@@ -338,7 +338,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
                 'check "update_model_definition_with_metadata()"')
 
     def _get_input_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32, shape=[None, self.length, self.embedding_size],
             name='{}_placeholder'.format(self.name)
         )

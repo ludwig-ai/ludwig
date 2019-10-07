@@ -31,7 +31,7 @@ def fc_layer(inputs, in_count, out_count,
     if weights is None:
         if initializer is not None:
             initializer_obj = get_initializer(initializer)
-            weights = tf.get_variable(
+            weights = tf.compat.v1.get_variable(
                 'weights',
                 initializer=initializer_obj([in_count, out_count]),
                 regularizer=regularizer

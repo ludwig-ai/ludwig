@@ -178,7 +178,7 @@ class Tagger:
         targets_sequence_length = sequence_length_2D(targets)
 
         initializer_obj = get_initializer(self.initializer)
-        class_weights = tf.get_variable(
+        class_weights = tf.compat.v1.get_variable(
             'weights',
             initializer=initializer_obj(
                 [hidden_size, output_feature['num_classes']]),
@@ -186,7 +186,7 @@ class Tagger:
         )
         logger.debug('  weights: {0}'.format(class_weights))
 
-        class_biases = tf.get_variable(
+        class_biases = tf.compat.v1.get_variable(
             'biases',
             [output_feature['num_classes']]
         )

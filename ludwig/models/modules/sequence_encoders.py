@@ -838,7 +838,7 @@ class StackedCNN:
         logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Conv Layers ================
-        with tf.variable_scope('stack_conv'):
+        with tf.compat.v1.variable_scope('stack_conv'):
             hidden = self.conv_stack_1d(
                 hidden,
                 self.embedding_size,
@@ -1176,7 +1176,7 @@ class StackedParallelCNN:
         logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Conv Layers ================
-        with tf.variable_scope('stack_parallel_conv'):
+        with tf.compat.v1.variable_scope('stack_parallel_conv'):
             hidden = self.stack_parallel_conv_1d(
                 hidden,
                 self.embedding_size,

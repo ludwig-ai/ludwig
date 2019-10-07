@@ -67,7 +67,7 @@ def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
     padded_logits = tf.pad(logits, [[0, 0], [0, difference], [0, 0]])
     padded_logits = padded_logits[:, :batch_max_targets_sequence_length, :]
 
-    with tf.variable_scope('sequence_loss'):
+    with tf.compat.v1.variable_scope('sequence_loss'):
         sequence_loss = tf.contrib.seq2seq.sequence_loss(
             padded_logits,
             targets,
@@ -81,7 +81,7 @@ def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
 
     # batch_max_seq_length = tf.shape(logits)[1]
     # unpadded_targets = targets[:, :tf.shape(logits)[1]]
-    # with tf.variable_scope('sequence_loss'):
+    # with tf.compat.v1.variable_scope('sequence_loss'):
     #     sequence_loss = tf.contrib.seq2seq.sequence_loss(
     #         logits,
     #         unpadded_targets,
@@ -106,7 +106,7 @@ def cross_entropy_sequence_loss(logits, targets, sequence_length):
     Returns:
       A tensor of shape [T, B] that contains the loss per example, per time step.
     """
-    with tf.variable_scope('sequence_loss'):
+    with tf.compat.v1.variable_scope('sequence_loss'):
         losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits, labels=targets)
         # Mask out the losses we don't care about

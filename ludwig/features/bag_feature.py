@@ -124,7 +124,7 @@ class BagInputFeature(BagBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32,
             shape=[None, len(self.vocab)],
             name=self.name

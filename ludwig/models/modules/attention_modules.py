@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 def reduce_feed_forward_attention(current_inputs, hidden_size=256):
-    with tf.variable_scope('reduce_ff_attention'):
-        weights_1 = tf.get_variable('weights_1',
+    with tf.compat.v1.variable_scope('reduce_ff_attention'):
+        weights_1 = tf.compat.v1.get_variable('weights_1',
                                     [current_inputs.shape[-1], hidden_size])
         logger.debug('  att_weights_1: {}'.format(weights_1))
-        biases_1 = tf.get_variable('biases_1', [hidden_size])
+        biases_1 = tf.compat.v1.get_variable('biases_1', [hidden_size])
         logger.debug('  att_biases_1: {}'.format(biases_1))
-        weights_2 = tf.get_variable('weights_2', [hidden_size, 1])
+        weights_2 = tf.compat.v1.get_variable('weights_2', [hidden_size, 1])
         logger.debug('  att_weights_2: {}'.format(weights_2))
 
         current_inputs_reshape = tf.reshape(current_inputs,
@@ -48,7 +48,7 @@ def reduce_feed_forward_attention(current_inputs, hidden_size=256):
 
 def feed_forward_attention(current_inputs, feature_hidden_size,
                            hidden_size=256):
-    with tf.variable_scope('ff_attention'):
+    with tf.compat.v1.variable_scope('ff_attention'):
         geated_inputs = reduce_feed_forward_attention(current_inputs,
                                                       hidden_size=hidden_size)
 
@@ -101,13 +101,13 @@ def feed_forward_memory_attention(current_inputs, memory, hidden_size=256):
                             axis=-1)  # [bs, seq, seq, seq_w + ctx_w]
     logger.debug('  att_input_context_concat: {}'.format(concat_tile))
 
-    with tf.variable_scope('reduce_contextual_ff_attention'):
-        weights_1 = tf.get_variable('weights_1',
+    with tf.compat.v1.variable_scope('reduce_contextual_ff_attention'):
+        weights_1 = tf.compat.v1.get_variable('weights_1',
                                     [concat_tile.shape[-1], hidden_size])
         logger.debug('  att_weights_1: {}'.format(weights_1))
-        biases_1 = tf.get_variable('biases_1', [hidden_size])
+        biases_1 = tf.compat.v1.get_variable('biases_1', [hidden_size])
         logger.debug('  att_biases_1: {}'.format(biases_1))
-        weights_2 = tf.get_variable('weights_2', [hidden_size, 1])
+        weights_2 = tf.compat.v1.get_variable('weights_2', [hidden_size, 1])
         logger.debug('  att_weights_2: {}'.format(weights_2))
 
         current_inputs_reshape = tf.reshape(concat_tile,

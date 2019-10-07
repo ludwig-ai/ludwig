@@ -94,7 +94,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.int32,
             shape=[None, H3_VECTOR_LENGTH],
             name=self.name
