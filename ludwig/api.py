@@ -418,7 +418,6 @@ class LudwigModel:
                saving the description JSON file.
         :param skip_save_training_statistics: (bool, default: `False`) disables
                saving training statistics JSON file.
-               but the model will not be loadable later on.
         :param skip_save_model: (bool, default: `False`) disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch

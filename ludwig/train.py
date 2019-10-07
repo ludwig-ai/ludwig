@@ -590,7 +590,7 @@ def get_file_names(experiment_dir_name):
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script trains a model.',
+        description='This script trains a model',
         prog='ludwig train',
         usage='%(prog)s [options]'
     )
@@ -709,14 +709,14 @@ def cli(sys_argv):
         '--skip_save_training_description',
         action='store_true',
         default=False,
-        help='disables saving the description JSON file.'
+        help='disables saving the description JSON file'
     )
     parser.add_argument(
         '-ssts',
         '--skip_save_training_statistics',
         action='store_true',
         default=False,
-        help='disables saving training statistics JSON file.'
+        help='disables saving training statistics JSON file'
     )
     parser.add_argument(
         '-ssm',
@@ -728,7 +728,7 @@ def cli(sys_argv):
              'the validation measure imrpvoes, but  if the model is really big '
              'that can be time consuming if you do not want to keep '
              'the weights and just find out what performance can a model get '
-             'with a set of hyperparameters, use this parameter to skip it.'
+             'with a set of hyperparameters, use this parameter to skip it'
     )
     parser.add_argument(
         '-ssp',
@@ -738,7 +738,7 @@ def cli(sys_argv):
         help='disables saving weights after each epoch. By default ludwig saves '
              'weights after each epoch for enabling resuming of training, but '
              'if the model is really big that can be time consuming and will '
-             'save twice as much space, use this parameter to skip it.'
+             'save twice as much space, use this parameter to skip it'
     )
     parser.add_argument(
         '-ssl',
@@ -747,7 +747,7 @@ def cli(sys_argv):
         default=False,
         help='disables saving TensorBoard logs. By default Ludwig saves '
              'logs for the TensorBoard, but if it is not needed turning it off '
-             'can slightly increase the overall speed.'
+             'can slightly increase the overall speed'
     )
 
     # ------------------

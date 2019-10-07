@@ -50,6 +50,8 @@ def full_predict(
         split='test',
         batch_size=128,
         skip_save_unprocessed_output=False,
+        skip_save_test_predictions=False,
+        skip_save_test_statistics=False,
         output_directory='results',
         evaluate_performance=True,
         gpus=None,
@@ -58,18 +60,10 @@ def full_predict(
         debug=False,
         **kwargs
 ):
-    # setup directories and file names
-    experiment_dir_name = output_directory
-    suffix = 0
-    while os.path.exists(experiment_dir_name):
-        experiment_dir_name = output_directory + '_' + str(suffix)
-        suffix += 1
-
     if is_on_master():
         logger.info('Dataset path: {}'.format(
             data_csv if data_csv is not None else data_hdf5))
         logger.info('Model path: {}'.format(model_path))
-        logger.info('Output path: {}'.format(experiment_dir_name))
         logger.info('')
 
     train_set_metadata_json_fp = os.path.join(
@@ -107,7 +101,22 @@ def full_predict(
     model.close_session()
 
     if is_on_master():
-        os.mkdir(experiment_dir_name)
+        # setup directories and file names
+        experiment_dir_name = output_directory
+        suffix = 0
+        while os.path.exists(experiment_dir_name):
+            experiment_dir_name = output_directory + '_' + str(suffix)
+            suffix += 1
+
+        # if we are skipping all saving,
+        # there is no need to create a directory that will remain empty
+        should_create_exp_dir = not (
+                skip_save_unprocessed_output and
+                skip_save_test_predictions and
+                skip_save_test_statistics
+        )
+        if should_create_exp_dir:
+                os.mkdir(experiment_dir_name)
 
         # postprocess
         postprocessed_output = postprocess(
@@ -118,11 +127,13 @@ def full_predict(
             skip_save_unprocessed_output or not is_on_master()
         )
 
-        save_prediction_outputs(postprocessed_output, experiment_dir_name)
+        if not skip_save_test_predictions:
+            save_prediction_outputs(postprocessed_output, experiment_dir_name)
 
         if evaluate_performance:
             print_test_results(prediction_results)
-            save_test_statistics(prediction_results, experiment_dir_name)
+            if not skip_save_test_statistics:
+                save_test_statistics(prediction_results, experiment_dir_name)
 
         logger.info('Saved to: {0}'.format(experiment_dir_name))
 
@@ -242,7 +253,7 @@ def print_test_results(test_stats):
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
-                    'and uses it to predict.',
+                    'and uses it to predict',
         prog='ludwig predict',
         usage='%(prog)s [options]'
     )
@@ -306,6 +317,19 @@ def cli(sys_argv):
         help='skips saving intermediate NPY output files',
         action='store_true', default=False
     )
+    parser.add_argument(
+        '-sstp',
+        '--skip_save_test_predictions',
+        help='skips saving test predictions CSV files',
+        action='store_true', default=False
+    )
+    parser.add_argument(
+        '-sstes',
+        '--skip_save_test_statistics',
+        help='skips saving test statistics JSON file',
+        action='store_true', default=False
+    )
+
 
     # ------------------
     # Generic parameters
