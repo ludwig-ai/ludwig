@@ -260,7 +260,12 @@ def test_experiment_image_inputs(csv_filename):
     # Stacked CNN encoder, in_memory = False
     input_features[0]['preprocessing']['in_memory'] = False
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path,
+        skip_save_processed_input=False,
+    )
 
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
