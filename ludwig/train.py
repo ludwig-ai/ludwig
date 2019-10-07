@@ -67,6 +67,8 @@ def full_train(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
         skip_save_model=False,
         skip_save_progress=False,
         skip_save_log=False,
@@ -134,8 +136,14 @@ def full_train(
            far are also resumed effectively cotinuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
-    :param skip_save_model: Disables
-               saving model weights and hyperparameters each time the model
+    :param skip_save_training_description: Disables saving
+           the description JSON file.
+    :type skip_save_training_description: Boolean
+    :param skip_save_training_statistics: Disables saving
+           training statistics JSON file.
+    :type skip_save_training_statistics: Boolean
+    :param skip_save_model: Disables saving model weights
+           and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
            the validation measure imrpvoes, but if the model is really big
            that can be time consuming if you do not want to keep
@@ -175,7 +183,7 @@ def full_train(
     :type debug: Boolean
     :returns: None
     """
-    # set input features defaults
+    # merge with default model definition to set defaults
     if model_definition_file is not None:
         with open(model_definition_file, 'r') as def_file:
             model_definition = merge_with_defaults(yaml.safe_load(def_file))
@@ -212,6 +220,21 @@ def full_train(
             TRAIN_SET_METADATA_FILE_NAME
         )
 
+    # if we are skipping all saving,
+    # there is no need to create a directory that will remain empty
+    should_create_exp_dir = not (
+            skip_save_training_description and
+            skip_save_training_statistics and
+            skip_save_model and
+            skip_save_progress and
+            skip_save_log and
+            skip_save_processed_input
+    )
+    if is_on_master():
+        if should_create_exp_dir:
+            if not os.path.exists(experiment_dir_name):
+                os.mkdir(experiment_dir_name)
+
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
     )
@@ -231,7 +254,8 @@ def full_train(
         random_seed=random_seed
     )
     if is_on_master():
-        save_json(description_fn, description)
+        if not skip_save_training_description:
+            save_json(description_fn, description)
         # print description
         logger.info('Experiment name: {}'.format(experiment_name))
         logger.info('Model name: {}'.format(model_name))
@@ -321,9 +345,10 @@ def full_train(
     if should_close_session:
         model.close_session()
 
+    # save training statistics
     if is_on_master():
-        # save training and test statistics
-        save_json(training_stats_fn, train_stats)
+        if not skip_save_training_statistics:
+            save_json(training_stats_fn, train_stats)
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -361,12 +386,13 @@ def full_train(
 
     contrib_command("train_save", experiment_dir_name)
 
-    return (model,
-            preprocessed_data,
-            experiment_dir_name,
-            train_stats,
-            model_definition
-            )
+    return (
+        model,
+        preprocessed_data,
+        experiment_dir_name,
+        train_stats,
+        model_definition
+    )
 
 
 def train(
@@ -553,10 +579,6 @@ def get_experiment_dir_name(
 
 
 def get_file_names(experiment_dir_name):
-    if is_on_master():
-        if not os.path.exists(experiment_dir_name):
-            os.mkdir(experiment_dir_name)
-
     description_fn = os.path.join(experiment_dir_name, 'description.json')
     training_stats_fn = os.path.join(
         experiment_dir_name, 'training_statistics.json')
@@ -681,6 +703,20 @@ def cli(sys_argv):
         '-mrp',
         '--model_resume_path',
         help='path of a the model directory to resume training of'
+    )
+    parser.add_argument(
+        '-sstd',
+        '--skip_save_training_description',
+        action='store_true',
+        default=False,
+        help='disables saving the description JSON file.'
+    )
+    parser.add_argument(
+        '-ssts',
+        '--skip_save_training_statistics',
+        action='store_true',
+        default=False,
+        help='disables saving training statistics JSON file.'
     )
     parser.add_argument(
         '-ssm',

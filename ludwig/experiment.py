@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import argparse
 import logging
+import os
 import sys
 import yaml
 
@@ -55,6 +56,8 @@ def experiment(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
         skip_save_model=False,
         skip_save_progress=False,
         skip_save_log=False,
@@ -118,6 +121,12 @@ def experiment(
            far are also resumed effectively cotinuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
+    :param skip_save_training_description: Disables saving
+           the description JSON file.
+    :type skip_save_training_description: Boolean
+    :param skip_save_training_statistics: Disables saving
+           training statistics JSON file.
+    :type skip_save_training_statistics: Boolean
     :param skip_save_model: Disables
                saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
@@ -166,7 +175,6 @@ def experiment(
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     """
-
     (
         model,
         preprocessed_data,
@@ -189,6 +197,8 @@ def experiment(
         model_name=model_name,
         model_load_path=model_load_path,
         model_resume_path=model_resume_path,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
@@ -226,6 +236,13 @@ def experiment(
             gpu_fraction=gpu_fraction,
             debug=debug
         )
+
+        # check if we need to create the output dir
+        if is_on_master():
+            if not skip_save_unprocessed_output:
+                if not os.path.exists(experiment_dir_name):
+                    os.mkdir(experiment_dir_name)
+
         # postprocess
         postprocessed_output = postprocess(
             test_results,
@@ -371,6 +388,20 @@ def cli(sys_argv):
         '-mrp',
         '--model_resume_path',
         help='path of a the model directory to resume training of'
+    )
+    parser.add_argument(
+        '-sstd',
+        '--skip_save_training_description',
+        action='store_true',
+        default=False,
+        help='disables saving the description JSON file.'
+    )
+    parser.add_argument(
+        '-ssts',
+        '--skip_save_training_statistics',
+        action='store_true',
+        default=False,
+        help='disables saving training statistics JSON file.'
     )
     parser.add_argument(
         '-ssm',
