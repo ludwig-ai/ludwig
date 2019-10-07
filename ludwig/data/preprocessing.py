@@ -502,8 +502,10 @@ def preprocess_for_training_by_type(
                         'hdf5'
                     ),
                     test_fp=replace_file_extension(test_fp, 'hdf5'),
-                    train_set_metadata_json=replace_file_extension(all_data_fp,
-                                                                   'json'),
+                    train_set_metadata_json=replace_file_extension(
+                        train_fp,
+                        'json'
+                    ),
                     skip_save_processed_input=skip_save_processed_input,
                     preprocessing_params=preprocessing_params,
                     random_seed=random_seed
