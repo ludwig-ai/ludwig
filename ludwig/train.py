@@ -38,7 +38,8 @@ from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.misc import get_experiment_description
+from ludwig.utils.misc import get_experiment_description, \
+    find_non_existing_dir_by_adding_suffix
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -233,7 +234,7 @@ def full_train(
     if is_on_master():
         if should_create_exp_dir:
             if not os.path.exists(experiment_dir_name):
-                os.mkdir(experiment_dir_name)
+                os.makedirs(experiment_dir_name)
 
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
@@ -542,40 +543,13 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
 def get_experiment_dir_name(
         output_directory,
         experiment_name,
-        model_name='run',
-        append_suffix=True
+        model_name='run'
 ):
-    results_dir = output_directory
-    # create results dir if it does not exist
-    if is_on_master():
-        if not os.path.isdir(results_dir):
-            os.mkdir(results_dir)
-
-    # create a base dir name
     base_dir_name = os.path.join(
-        results_dir,
+        output_directory,
         experiment_name + ('_' if model_name else '') + model_name
     )
-
-    if append_suffix:
-        # look for an unused suffix
-        suffix = 0
-        found_previous_results = os.path.isdir(
-            '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
-        )
-
-        while found_previous_results:
-            suffix += 1
-            found_previous_results = os.path.isdir(
-                '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
-            )
-
-        # found an unused suffix, build the basic dir name
-        dir_name = '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
-    else:
-        dir_name = base_dir_name
-
-    return dir_name
+    return find_non_existing_dir_by_adding_suffix(base_dir_name)
 
 
 def get_file_names(experiment_dir_name):

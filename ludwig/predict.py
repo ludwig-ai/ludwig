@@ -34,7 +34,8 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import load_model_and_definition
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.data_utils import save_json
-from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc import get_from_registry, \
+    find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry, repr_ordered_dict
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
@@ -102,11 +103,7 @@ def full_predict(
 
     if is_on_master():
         # setup directories and file names
-        experiment_dir_name = output_directory
-        suffix = 0
-        while os.path.exists(experiment_dir_name):
-            experiment_dir_name = output_directory + '_' + str(suffix)
-            suffix += 1
+        experiment_dir_name = find_non_existing_dir_by_adding_suffix(output_directory)
 
         # if we are skipping all saving,
         # there is no need to create a directory that will remain empty
@@ -116,7 +113,7 @@ def full_predict(
                 skip_save_test_statistics
         )
         if should_create_exp_dir:
-                os.mkdir(experiment_dir_name)
+                os.makedirs(experiment_dir_name)
 
         # postprocess
         postprocessed_output = postprocess(

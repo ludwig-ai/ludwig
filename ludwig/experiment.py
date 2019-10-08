@@ -251,7 +251,7 @@ def experiment(
                     skip_save_test_statistics
             ):
                 if not os.path.exists(experiment_dir_name):
-                    os.mkdir(experiment_dir_name)
+                    os.makedirs(experiment_dir_name)
 
         # postprocess
         postprocessed_output = postprocess(
