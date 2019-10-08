@@ -220,7 +220,7 @@ def generate_audio(feature):
 
     try:
         if not os.path.exists(audio_dest_folder):
-            os.mkdir(audio_dest_folder)
+            os.makedirs(audio_dest_folder)
 
         audio_dest_path = os.path.join(audio_dest_folder, audio_filename)
         sf.write(audio_dest_path, audio, sampling_rate)
@@ -254,7 +254,7 @@ def generate_image(feature):
     # Save the image to disk either in a specified location/new folder
     try:
         if not os.path.exists(image_dest_folder):
-            os.mkdir(image_dest_folder)
+            os.makedirs(image_dest_folder)
 
         image_dest_path = os.path.join(image_dest_folder, image_filename)
         imsave(image_dest_path, img.astype('uint8'))

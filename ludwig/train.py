@@ -38,7 +38,8 @@ from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.misc import get_experiment_description
+from ludwig.utils.misc import get_experiment_description, \
+    find_non_existing_dir_by_adding_suffix
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -67,6 +68,8 @@ def full_train(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
         skip_save_model=False,
         skip_save_progress=False,
         skip_save_log=False,
@@ -134,8 +137,14 @@ def full_train(
            far are also resumed effectively cotinuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
-    :param skip_save_model: Disables
-               saving model weights and hyperparameters each time the model
+    :param skip_save_training_description: Disables saving
+           the description JSON file.
+    :type skip_save_training_description: Boolean
+    :param skip_save_training_statistics: Disables saving
+           training statistics JSON file.
+    :type skip_save_training_statistics: Boolean
+    :param skip_save_model: Disables saving model weights
+           and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
            the validation measure imrpvoes, but if the model is really big
            that can be time consuming if you do not want to keep
@@ -175,7 +184,7 @@ def full_train(
     :type debug: Boolean
     :returns: None
     """
-    # set input features defaults
+    # merge with default model definition to set defaults
     if model_definition_file is not None:
         with open(model_definition_file, 'r') as def_file:
             model_definition = merge_with_defaults(yaml.safe_load(def_file))
@@ -212,6 +221,21 @@ def full_train(
             TRAIN_SET_METADATA_FILE_NAME
         )
 
+    # if we are skipping all saving,
+    # there is no need to create a directory that will remain empty
+    should_create_exp_dir = not (
+            skip_save_training_description and
+            skip_save_training_statistics and
+            skip_save_model and
+            skip_save_progress and
+            skip_save_log and
+            skip_save_processed_input
+    )
+    if is_on_master():
+        if should_create_exp_dir:
+            if not os.path.exists(experiment_dir_name):
+                os.makedirs(experiment_dir_name)
+
     description_fn, training_stats_fn, model_dir = get_file_names(
         experiment_dir_name
     )
@@ -231,7 +255,8 @@ def full_train(
         random_seed=random_seed
     )
     if is_on_master():
-        save_json(description_fn, description)
+        if not skip_save_training_description:
+            save_json(description_fn, description)
         # print description
         logger.info('Experiment name: {}'.format(experiment_name))
         logger.info('Model name: {}'.format(model_name))
@@ -321,9 +346,10 @@ def full_train(
     if should_close_session:
         model.close_session()
 
+    # save training statistics
     if is_on_master():
-        # save training and test statistics
-        save_json(training_stats_fn, train_stats)
+        if not skip_save_training_statistics:
+            save_json(training_stats_fn, train_stats)
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
@@ -361,12 +387,13 @@ def full_train(
 
     contrib_command("train_save", experiment_dir_name)
 
-    return (model,
-            preprocessed_data,
-            experiment_dir_name,
-            train_stats,
-            model_definition
-            )
+    return (
+        model,
+        preprocessed_data,
+        experiment_dir_name,
+        train_stats,
+        model_definition
+    )
 
 
 def train(
@@ -516,47 +543,16 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
 def get_experiment_dir_name(
         output_directory,
         experiment_name,
-        model_name='run',
-        append_suffix=True
+        model_name='run'
 ):
-    results_dir = output_directory
-    # create results dir if it does not exist
-    if is_on_master():
-        if not os.path.isdir(results_dir):
-            os.mkdir(results_dir)
-
-    # create a base dir name
     base_dir_name = os.path.join(
-        results_dir,
+        output_directory,
         experiment_name + ('_' if model_name else '') + model_name
     )
-
-    if append_suffix:
-        # look for an unused suffix
-        suffix = 0
-        found_previous_results = os.path.isdir(
-            '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
-        )
-
-        while found_previous_results:
-            suffix += 1
-            found_previous_results = os.path.isdir(
-                '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
-            )
-
-        # found an unused suffix, build the basic dir name
-        dir_name = '{base}_{suffix}'.format(base=base_dir_name, suffix=suffix)
-    else:
-        dir_name = base_dir_name
-
-    return dir_name
+    return find_non_existing_dir_by_adding_suffix(base_dir_name)
 
 
 def get_file_names(experiment_dir_name):
-    if is_on_master():
-        if not os.path.exists(experiment_dir_name):
-            os.mkdir(experiment_dir_name)
-
     description_fn = os.path.join(experiment_dir_name, 'description.json')
     training_stats_fn = os.path.join(
         experiment_dir_name, 'training_statistics.json')
@@ -568,7 +564,7 @@ def get_file_names(experiment_dir_name):
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script trains a model.',
+        description='This script trains a model',
         prog='ludwig train',
         usage='%(prog)s [options]'
     )
@@ -683,6 +679,20 @@ def cli(sys_argv):
         help='path of a the model directory to resume training of'
     )
     parser.add_argument(
+        '-sstd',
+        '--skip_save_training_description',
+        action='store_true',
+        default=False,
+        help='disables saving the description JSON file'
+    )
+    parser.add_argument(
+        '-ssts',
+        '--skip_save_training_statistics',
+        action='store_true',
+        default=False,
+        help='disables saving training statistics JSON file'
+    )
+    parser.add_argument(
         '-ssm',
         '--skip_save_model',
         action='store_true',
@@ -692,7 +702,7 @@ def cli(sys_argv):
              'the validation measure imrpvoes, but  if the model is really big '
              'that can be time consuming if you do not want to keep '
              'the weights and just find out what performance can a model get '
-             'with a set of hyperparameters, use this parameter to skip it.'
+             'with a set of hyperparameters, use this parameter to skip it'
     )
     parser.add_argument(
         '-ssp',
@@ -702,7 +712,7 @@ def cli(sys_argv):
         help='disables saving weights after each epoch. By default ludwig saves '
              'weights after each epoch for enabling resuming of training, but '
              'if the model is really big that can be time consuming and will '
-             'save twice as much space, use this parameter to skip it.'
+             'save twice as much space, use this parameter to skip it'
     )
     parser.add_argument(
         '-ssl',
@@ -711,7 +721,7 @@ def cli(sys_argv):
         default=False,
         help='disables saving TensorBoard logs. By default Ludwig saves '
              'logs for the TensorBoard, but if it is not needed turning it off '
-             'can slightly increase the overall speed.'
+             'can slightly increase the overall speed'
     )
 
     # ------------------
