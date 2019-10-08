@@ -52,10 +52,11 @@ class Wandb():
         del config["output_features"]
         wandb.config.update(config)
 
-    def train_init(self, experiment_directory, experiment_name, model_name, resume, output_directory):
+    def train_init(self, experiment_directory, experiment_name, model_name,
+                   resume, output_directory):
         logger.info("wandb.train_init() called...")
-        wandb.init(project=os.getenv("WANDB_PROJECT", experiment_name), sync_tensorboard=True,
-                   dir=output_directory)
+        wandb.init(project=os.getenv("WANDB_PROJECT", experiment_name),
+                   sync_tensorboard=True, dir=output_directory)
         wandb.save(os.path.join(experiment_directory, "*"))
 
     def visualize_figure(self, fig):
