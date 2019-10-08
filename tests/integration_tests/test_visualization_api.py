@@ -78,20 +78,20 @@ class Experiment:
         self.test_stats_full = self.model.test(
             data_df=test_df
         )
-        self.field = self.output_features[0]['name']
+        self.output_feature_name = self.output_features[0]['name']
         # probabilities need to be list of lists containing each row data
         # from the probability columns
         # ref: https://uber.github.io/ludwig/api/#test - Return
         self.probability = self.test_stats_full[0].iloc[:, 2:].values
         self.ground_truth_metadata = self.model.train_set_metadata
-        target_predictions = test_df[self.field]
+        target_predictions = test_df[self.output_feature_name]
         self.ground_truth = np.asarray([
-            self.ground_truth_metadata[self.field]['str2idx'][test_row]
+            self.ground_truth_metadata[self.output_feature_name]['str2idx'][test_row]
             for test_row in target_predictions
         ])
         self.prediction_raw = self.test_stats_full[0].iloc[:, 0].tolist()
         self.prediction = np.asarray([
-            self.ground_truth_metadata[self.field]['str2idx'][pred_row]
+            self.ground_truth_metadata[self.output_feature_name]['str2idx'][pred_row]
             for pred_row in self.prediction_raw])
 
     def setup_model(self):
@@ -137,7 +137,7 @@ def test_learning_curves_vis_api(csv_filename):
             viz_output)
         visualize.learning_curves(
             experiment.train_stats,
-            field=None,
+            output_feature_name=None,
             output_directory=experiment.model.exp_dir_name,
             file_format=viz_output
         )
@@ -161,7 +161,7 @@ def test_compare_performance_vis_api(csv_filename):
         )
         visualize.compare_performance(
             [test_stats, test_stats],
-            field=None,
+            output_feature_name=None,
             model_namess=['Model1', 'Model2'],
             output_directory=experiment.model.exp_dir_name,
             file_format=viz_output
@@ -213,7 +213,7 @@ def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
             [prediction, prediction],
             experiment.ground_truth,
             experiment.ground_truth_metadata,
-            experiment.field,
+            experiment.output_feature_name,
             labels_limit=0,
             model_namess=['Model1', 'Model2'],
             output_directory=experiment.model.exp_dir_name,
@@ -294,7 +294,7 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
         visualize.compare_classifiers_multiclass_multimetric(
             [test_stats, test_stats],
             experiment.ground_truth_metadata,
-            experiment.field,
+            experiment.output_feature_name,
             top_n_classes=[6],
             model_namess=['Model1', 'Model2'],
             output_directory=experiment.model.exp_dir_name,
@@ -456,7 +456,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(
             [probability, probability],
             experiment.ground_truth,
             experiment.ground_truth_metadata,
-            experiment.field,
+            experiment.output_feature_name,
             top_n_classes=[3],
             labels_limit=0,
             subset='ground_truth',
@@ -502,22 +502,22 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
         data_df=test_df
     )
 
-    field1 = output_features[0]['name']
-    field2 = output_features[1]['name']
+    output_feature_name1 = output_features[0]['name']
+    output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
     # probability columns ref: https://uber.github.io/ludwig/api/#test - Return
     probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
     probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
 
     ground_truth_metadata = model.train_set_metadata
-    target_predictions1 = test_df[field1]
-    target_predictions2 = test_df[field2]
+    target_predictions1 = test_df[output_feature_name1]
+    target_predictions2 = test_df[output_feature_name2]
     ground_truth1 = np.asarray([
-        ground_truth_metadata[field1]['str2idx'][prediction]
+        ground_truth_metadata[output_feature_name1]['str2idx'][prediction]
         for prediction in target_predictions1
     ])
     ground_truth2 = np.asarray([
-        ground_truth_metadata[field2]['str2idx'][prediction]
+        ground_truth_metadata[output_feature_name2]['str2idx'][prediction]
         for prediction in target_predictions2
     ])
     viz_outputs = ('pdf', 'png')
@@ -526,7 +526,7 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
         visualize.confidence_thresholding_2thresholds_2d(
             [probability1, probability2],
             [ground_truth1, ground_truth2],
-            [field1, field2],
+            [output_feature_name1, output_feature_name2],
             labels_limit=0,
             model_names=['Model1'],
             output_directory=model.exp_dir_name,
@@ -568,22 +568,22 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
         data_df=test_df
     )
 
-    field1 = output_features[0]['name']
-    field2 = output_features[1]['name']
+    output_feature_name1 = output_features[0]['name']
+    output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
     # probability columns ref: https://uber.github.io/ludwig/api/#test - Return
     probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
     probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
 
     ground_truth_metadata = model.train_set_metadata
-    target_predictions1 = test_df[field1]
-    target_predictions2 = test_df[field2]
+    target_predictions1 = test_df[output_feature_name1]
+    target_predictions2 = test_df[output_feature_name2]
     ground_truth1 = np.asarray([
-        ground_truth_metadata[field1]['str2idx'][prediction]
+        ground_truth_metadata[output_feature_name1]['str2idx'][prediction]
         for prediction in target_predictions1
     ])
     ground_truth2 = np.asarray([
-        ground_truth_metadata[field2]['str2idx'][prediction]
+        ground_truth_metadata[output_feature_name2]['str2idx'][prediction]
         for prediction in target_predictions2
     ])
     viz_outputs = ('pdf', 'png')
@@ -592,7 +592,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
         visualize.confidence_thresholding_2thresholds_3d(
             [probability1, probability2],
             [ground_truth1, ground_truth2],
-            [field1, field2],
+            [output_feature_name1, output_feature_name2],
             labels_limit=0,
             output_directory=model.exp_dir_name,
             file_format=viz_output
@@ -670,7 +670,7 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
 
     # Generate test data
     data_csv = generate_data(input_features, output_features, csv_filename)
-    field = output_features[0]['name']
+    output_feature_name = output_features[0]['name']
     input_features[0]['encoder'] = encoder
     model = run_api_experiment(input_features, output_features)
     data_df = read_csv(data_csv)
@@ -681,7 +681,7 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
         vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(viz_output)
         visualize.roc_curves_from_test_statistics(
             [test_stats, test_stats],
-            field,
+            output_feature_name,
             model_namess=['Model1', 'Model2'],
             output_directory=model.exp_dir_name,
             file_format=viz_output
@@ -760,7 +760,7 @@ def test_confusion_matrix_vis_api(csv_filename):
         visualize.confusion_matrix(
             [test_stats, test_stats],
             experiment.ground_truth_metadata,
-            experiment.field,
+            experiment.output_feature_name,
             top_n_classes=[0],
             normalize=False,
             model_names=['Model1', 'Model2'],
@@ -788,7 +788,7 @@ def test_frequency_vs_f1_vis_api(csv_filename):
         visualize.frequency_vs_f1(
             [test_stats, test_stats],
             experiment.ground_truth_metadata,
-            experiment.field,
+            experiment.output_feature_name,
             top_n_classes=[0],
             model_names=['Model1', 'Model2'],
             output_directory=experiment.model.exp_dir_name,
