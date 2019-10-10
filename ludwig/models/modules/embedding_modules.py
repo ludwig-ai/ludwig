@@ -41,7 +41,7 @@ def embedding_matrix(
                 pretrained_embeddings, vocab)
             if embeddings_matrix.shape[-1] != embedding_size:
                 raise ValueError(
-                    'The size of the pretrained embedding size is {}, '
+                    'The size of the pretrained embeddings is {}, '
                     'but the specified embedding_size is {}. '
                     'Please change the embedding_size accordingly.'.format(
                         embeddings_matrix.shape[-1],
