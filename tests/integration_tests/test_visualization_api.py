@@ -125,7 +125,7 @@ def obtain_df_splits(data_csv):
 
 
 def test_learning_curves_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -147,7 +147,7 @@ def test_learning_curves_vis_api(csv_filename):
 
 
 def test_compare_performance_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -172,7 +172,7 @@ def test_compare_performance_vis_api(csv_filename):
 
 
 def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -198,7 +198,7 @@ def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
 
 
 def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -225,7 +225,7 @@ def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
 
 
 def test_compare_classifiers_performance_subset_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -252,7 +252,7 @@ def test_compare_classifiers_performance_subset_vis_api(csv_filename):
 
 
 def test_compare_classifiers_performance_changing_k_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -279,7 +279,7 @@ def test_compare_classifiers_performance_changing_k_vis_api(csv_filename):
 
 
 def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -306,7 +306,7 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
 
 
 def test_compare_classifiers_predictions_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -332,7 +332,7 @@ def test_compare_classifiers_predictions_vis_api(csv_filename):
 
 
 def test_compare_classifiers_predictions_distribution_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -358,7 +358,7 @@ def test_compare_classifiers_predictions_distribution_vis_api(csv_filename):
 
 
 def test_confidence_thresholding_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -384,7 +384,7 @@ def test_confidence_thresholding_vis_api(csv_filename):
 
 
 def test_confidence_thresholding_data_vs_acc_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -410,7 +410,7 @@ def test_confidence_thresholding_data_vs_acc_vis_api(csv_filename):
 
 
 def test_confidence_thresholding_data_vs_acc_subset_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -440,7 +440,7 @@ def test_confidence_thresholding_data_vs_acc_subset_vis_api(csv_filename):
 def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(
         csv_filename
 ):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -472,7 +472,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(
 
 
 def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -538,7 +538,7 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
 
 
 def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -603,7 +603,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
 
 
 def test_binary_threshold_vs_metric_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -632,7 +632,7 @@ def test_binary_threshold_vs_metric_vis_api(csv_filename):
 
 
 def test_roc_curves_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -659,7 +659,7 @@ def test_roc_curves_vis_api(csv_filename):
 
 
 def test_roc_curves_from_test_statistics_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -692,7 +692,7 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
 
 
 def test_calibration_1_vs_all_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -719,7 +719,7 @@ def test_calibration_1_vs_all_vis_api(csv_filename):
 
 
 def test_calibration_multiclass_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -745,7 +745,7 @@ def test_calibration_multiclass_vis_api(csv_filename):
 
 
 def test_confusion_matrix_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None
@@ -773,7 +773,7 @@ def test_confusion_matrix_vis_api(csv_filename):
 
 
 def test_frequency_vs_f1_vis_api(csv_filename):
-    """Ensure pdf and png figures can be saved via visualisation API call.
+    """Ensure pdf and png figures can be saved via visualization API call.
 
     :param csv_filename: csv fixture from tests.fixtures.filenames.csv_filename
     :return: None

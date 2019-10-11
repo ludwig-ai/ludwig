@@ -26,9 +26,6 @@ with open(path.join(here, 'requirements_image.txt'), encoding='utf-8') as f:
 with open(path.join(here, 'requirements_serve.txt'), encoding='utf-8') as f:
     extra_requirements['serve'] = [line.strip() for line in f if line]
 
-with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
-    extra_requirements['test'] = [line.strip() for line in f if line]
-
 with open(path.join(here, 'requirements_text.txt'), encoding='utf-8') as f:
     extra_requirements['text'] = [line.strip() for line in f if line]
 
@@ -37,6 +34,11 @@ with open(path.join(here, 'requirements_viz.txt'), encoding='utf-8') as f:
 
 extra_requirements['full'] = [item for sublist in extra_requirements.values()
                               for item in sublist]
+
+with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
+    extra_requirements['test'] = (
+            extra_requirements['full'] + [line.strip() for line in f if line]
+    )
 
 tensorflow_gpu = 'tensorflow-gpu'
 for req in requirements:

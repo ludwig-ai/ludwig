@@ -20,23 +20,29 @@ from __future__ import print_function
 
 import argparse
 import logging
-import sys
-
-from ludwig.contrib import contrib_command
-from ludwig.utils.print_utils import logging_level_registry
-import json
 import os
+import sys
 import tempfile
-from fastapi import FastAPI
-from starlette.datastructures import UploadFile
-from starlette.requests import Request
-from starlette.responses import JSONResponse
-import uvicorn
 
 from ludwig.api import LudwigModel
-
+from ludwig.contrib import contrib_command
+from ludwig.utils.print_utils import logging_level_registry
 
 logger = logging.getLogger(__name__)
+
+try:
+    import uvicorn
+    from fastapi import FastAPI
+    from starlette.datastructures import UploadFile
+    from starlette.requests import Request
+    from starlette.responses import JSONResponse
+except ImportError:
+    logger.error(
+        ' fastapi and other serving dependencies are not installed. '
+        'In order to install all serving dependencies run '
+        'pip install ludwig[serve]'
+    )
+    sys.exit(-1)
 
 ALL_FEATURES_PRESENT_ERROR = {"error": "entry must contain all input features"}
 
@@ -74,6 +80,7 @@ def server(model):
         finally:
             for f in files:
                 os.remove(f.name)
+
     return app
 
 

@@ -17,6 +17,7 @@
 import collections
 import logging
 import re
+import sys
 
 import tensorflow as tf
 
@@ -26,9 +27,6 @@ from ludwig.models.modules.embedding_modules import EmbedSequence
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.recurrent_modules import RecurrentStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
-
-logger = logging.getLogger(__name__)
-
 
 logger = logging.getLogger(__name__)
 
@@ -1672,13 +1670,17 @@ class BERT:
             reduce_output=True,
             **kwargs
     ):
-
         try:
             from bert.modeling import BertConfig
         except ImportError:
-            raise ValueError(
-                "Please install bert-tensorflow: pip install bert-tensorflow"
+            logger.error(
+                ' bert is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text] '
+                'or run '
+                'pip install bert-tensorflow'
             )
+            sys.exit(-1)
 
         self.checkpoint_path = checkpoint_path
         self.do_lower_case = do_lower_case
@@ -1702,9 +1704,14 @@ class BERT:
             from bert.modeling import BertModel
             from bert.tokenization import validate_case_matches_checkpoint
         except ImportError:
-            raise ValueError(
-                "Please install bert-tensorflow: pip install bert-tensorflow"
+            logger.error(
+                ' bert is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text] '
+                'or run '
+                'pip install bert-tensorflow'
             )
+            sys.exit(-1)
 
         model = BertModel(
             config=self.bert_config,

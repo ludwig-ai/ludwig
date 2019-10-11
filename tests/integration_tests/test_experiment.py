@@ -349,7 +349,10 @@ def test_experiment_sequence_combiner(csv_filename):
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None
+            reduce_output=None,
+            preprocessing={
+                'tokenizer': 'english_tokenize'
+            }
         ),
         sequence_feature(
             name='spanish',
@@ -357,7 +360,10 @@ def test_experiment_sequence_combiner(csv_filename):
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None
+            reduce_output=None,
+            preprocessing = {
+                'tokenizer': 'spanish_tokenize'
+            }
         ),
         category_feature(vocab_size=5)
     ]

@@ -72,7 +72,16 @@ def load_nlp_pipeline(language='xx'):
     global nlp_pipelines
     if nlp_pipelines[language] is None:
         logger.info('Loading NLP pipeline')
-        import spacy
+        try:
+            import spacy
+        except ImportError:
+            logger.error(
+                ' spacy is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
         try:
             nlp_pipelines[language] = spacy.load(
                 spacy_module_name,

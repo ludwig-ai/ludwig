@@ -497,7 +497,8 @@ def confidence_thresholding_2thresholds_2d_cli(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_2d(
-        probabilities_per_model, [gt1, gt2], threshold_output_feature_names, **kwargs
+        probabilities_per_model, [gt1, gt2], threshold_output_feature_names,
+        **kwargs
     )
 
 
@@ -532,7 +533,8 @@ def confidence_thresholding_2thresholds_3d_cli(
         'load_from_file', probabilities, dtype=float
     )
     confidence_thresholding_2thresholds_3d(
-        probabilities_per_model, [gt1, gt2], threshold_output_feature_names, **kwargs
+        probabilities_per_model, [gt1, gt2], threshold_output_feature_names,
+        **kwargs
     )
 
 
@@ -707,20 +709,24 @@ def learning_curves(
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for output_feature_name in output_feature_names:
         for metric in metrics:
-            if metric in train_stats_per_model_list[0]['train'][output_feature_name]:
+            if metric in train_stats_per_model_list[0]['train'][
+                output_feature_name]:
                 filename = None
                 if filename_template_path:
-                    filename = filename_template_path.format(output_feature_name, metric)
+                    filename = filename_template_path.format(
+                        output_feature_name, metric)
 
-                training_stats = [learning_stats['train'][output_feature_name][metric]
-                                  for learning_stats in
-                                  train_stats_per_model_list]
+                training_stats = [
+                    learning_stats['train'][output_feature_name][metric]
+                    for learning_stats in
+                    train_stats_per_model_list]
 
                 validation_stats = []
                 for learning_stats in train_stats_per_model_list:
                     if 'validation' in learning_stats:
                         validation_stats.append(
-                            learning_stats['validation'][output_feature_name][metric]
+                            learning_stats['validation'][output_feature_name][
+                                metric]
                         )
                     else:
                         validation_stats.append(None)
@@ -776,9 +782,11 @@ def compare_performance(
 
         for test_stats_per_model in test_stats_per_model_list:
             if ACCURACY in test_stats_per_model[output_feature_name]:
-                accuracies.append(test_stats_per_model[output_feature_name][ACCURACY])
+                accuracies.append(
+                    test_stats_per_model[output_feature_name][ACCURACY])
             if HITS_AT_K in test_stats_per_model[output_feature_name]:
-                hits_at_ks.append(test_stats_per_model[output_feature_name][HITS_AT_K])
+                hits_at_ks.append(
+                    test_stats_per_model[output_feature_name][HITS_AT_K])
             if EDIT_DISTANCE in test_stats_per_model[output_feature_name]:
                 edit_distances.append(
                     test_stats_per_model[output_feature_name][EDIT_DISTANCE])
@@ -925,8 +933,9 @@ def compare_classifiers_performance_from_pred(
     mapped_preds = []
     try:
         for pred in preds:
-            mapped_preds.append([metadata[output_feature_name]['str2idx'][val] for val in
-                                 pred])
+            mapped_preds.append(
+                [metadata[output_feature_name]['str2idx'][val] for val in
+                 pred])
         preds = mapped_preds
     # If predictions are coming from npy file there is no need to convert to
     # numeric labels using metadata
@@ -1199,7 +1208,8 @@ def compare_classifiers_multiclass_multimetric(
                     'skipping it'.format(output_feature_name, per_class_stats)
                 )
                 break
-            per_class_stats = test_statistics[output_feature_name]['per_class_stats']
+            per_class_stats = test_statistics[output_feature_name][
+                'per_class_stats']
             precisions = []
             recalls = []
             f1_scores = []
@@ -1265,7 +1275,8 @@ def compare_classifiers_multiclass_multimetric(
                 filename = None
                 if filename_template_path:
                     filename = filename_template_path.format(
-                        model_name_name, output_feature_name, 'worst{}'.format(k)
+                        model_name_name, output_feature_name,
+                        'worst{}'.format(k)
                     )
                 visualization_utils.compare_classifiers_multiclass_multimetric_plot(
                     [p_np[lower_f1s],
@@ -1274,7 +1285,8 @@ def compare_classifiers_multiclass_multimetric(
                     ['precision', 'recall', 'f1 score'],
                     labels=labels_np[lower_f1s].tolist(),
                     title='{} Multiclass Precision / Recall / F1 Score worst '
-                          'k classes {}'.format(model_name_name, k, output_feature_name),
+                          'k classes {}'.format(model_name_name, k,
+                                                output_feature_name),
                     filename=filename
                 )
 
@@ -1290,7 +1302,8 @@ def compare_classifiers_multiclass_multimetric(
                     ['precision', 'recall', 'f1 score'],
                     labels=labels_np[sorted_indices[::-1]].tolist(),
                     title='{} Multiclass Precision / Recall / F1 Score '
-                          '{} sorted'.format(model_name_name, output_feature_name),
+                          '{} sorted'.format(model_name_name,
+                                             output_feature_name),
                     filename=filename
                 )
 
@@ -1899,7 +1912,8 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
             accuracies.append(accuracies_alg)
             dataset_kept.append(dataset_kept_alg)
 
-        output_feature_name_name = metadata[output_feature_name]['idx2str'][curr_k]
+        output_feature_name_name = metadata[output_feature_name]['idx2str'][
+            curr_k]
 
         filename = None
         if filename_template_path:
@@ -2828,7 +2842,8 @@ def frequency_vs_f1(
                                if model_names_list is not None and i < len(
                 model_names_list)
                                else '')
-            per_class_stats = test_statistics[output_feature_name]['per_class_stats']
+            per_class_stats = test_statistics[output_feature_name][
+                'per_class_stats']
             f1_scores = []
             labels = []
             class_names = metadata[output_feature_name]['idx2str']
@@ -2844,7 +2859,8 @@ def frequency_vs_f1(
 
             output_feature_name_frequency_dict = {
                 metadata[output_feature_name]['str2idx'][key]: val
-                for key, val in metadata[output_feature_name]['str2freq'].items()
+                for key, val in
+                metadata[output_feature_name]['str2freq'].items()
             }
             output_feature_name_frequency_np = np.array(
                 [output_feature_name_frequency_dict[class_id]
@@ -2852,16 +2868,18 @@ def frequency_vs_f1(
                 dtype=np.int32
             )
 
-            output_feature_name_frequency_reordered = output_feature_name_frequency_np[
-                                            f1_sorted_indices[::-1]
-                                        ][:len(f1_sorted_indices)]
+            output_feature_name_frequency_reordered = \
+            output_feature_name_frequency_np[
+                f1_sorted_indices[::-1]
+            ][:len(f1_sorted_indices)]
             f1_reordered = f1_np[f1_sorted_indices[::-1]][
                            :len(f1_sorted_indices)]
 
             filename = None
             if output_directory:
                 os.makedirs(output_directory, exist_ok=True)
-                filename = filename_template_path.format(model_name_name, output_feature_name)
+                filename = filename_template_path.format(model_name_name,
+                                                         output_feature_name)
 
             visualization_utils.double_axis_line_plot(
                 f1_reordered,
@@ -2877,11 +2895,13 @@ def frequency_vs_f1(
             )
 
             frequency_sorted_indices = output_feature_name_frequency_np.argsort()
-            output_feature_name_frequency_reordered = output_feature_name_frequency_np[
-                                            frequency_sorted_indices[::-1]
-                                        ][:len(f1_sorted_indices)]
+            output_feature_name_frequency_reordered = \
+            output_feature_name_frequency_np[
+                frequency_sorted_indices[::-1]
+            ][:len(f1_sorted_indices)]
 
-            f1_reordered = np.zeros(len(output_feature_name_frequency_reordered))
+            f1_reordered = np.zeros(
+                len(output_feature_name_frequency_reordered))
 
             for idx in frequency_sorted_indices[::-1]:
                 if idx < len(f1_np):
@@ -2947,6 +2967,7 @@ visualizations_registry = {
     'learning_curves':
         learning_curves_cli
 }
+
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(

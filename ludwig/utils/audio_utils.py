@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
 import numpy as np
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
@@ -69,13 +70,14 @@ def get_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s,
     stft_magnitude = np.abs(stft)
     return np.transpose(stft_magnitude)
 
+
 ################################################################################
 # The following code for FBank is adapted from jameslyons/python_speech_features
 # MIT licensed implementation
 # https://github.com/jameslyons/python_speech_features/blob/40c590269b57c64a8c1f1ddaaff2162008d1850c/python_speech_features/base.py#L84################################################################################
 ################################################################################
 def get_fbank(raw_data, sampling_rate_in_hz, window_length_in_s,
-                window_shift_in_s, num_fft_points, window_type, num_filter_bands):
+              window_shift_in_s, num_fft_points, window_type, num_filter_bands):
     stft = _get_stft(raw_data, sampling_rate_in_hz, window_length_in_s,
                      window_shift_in_s, num_fft_points, window_type=window_type,
                      zero_mean_offset=True)
@@ -83,30 +85,37 @@ def get_fbank(raw_data, sampling_rate_in_hz, window_length_in_s,
     upper_limit_freq = int(sampling_rate_in_hz / 2)
     upper_limit_mel = _convert_hz_to_mel(upper_limit_freq)
     lower_limit_mel = 0
-    list_mel_points = np.linspace(lower_limit_mel, upper_limit_mel, num_filter_bands + 2)
+    list_mel_points = np.linspace(lower_limit_mel, upper_limit_mel,
+                                  num_filter_bands + 2)
     mel_fbank_matrix = _get_mel_fbank_matrix(list_mel_points, num_filter_bands,
-                                                num_fft_points, sampling_rate_in_hz)
+                                             num_fft_points,
+                                             sampling_rate_in_hz)
     mel_fbank_feature = np.dot(stft_power, np.transpose(mel_fbank_matrix))
     log_mel_fbank_feature = np.log(mel_fbank_feature + 1.0e-10)
     return np.transpose(log_mel_fbank_feature)
 
 
-def _get_mel_fbank_matrix(list_mel_points, num_filter_bands, num_fft_points, sampling_rate_in_hz):
+def _get_mel_fbank_matrix(list_mel_points, num_filter_bands, num_fft_points,
+                          sampling_rate_in_hz):
     num_ess_fft_points = get_non_symmetric_length(num_fft_points)
     freq_scale = (num_fft_points + 1) / sampling_rate_in_hz
-    freq_bins_on_mel_scale = np.floor(freq_scale * _convert_mel_to_hz(list_mel_points))
-    mel_scaled_fbank = np.zeros((num_filter_bands, num_ess_fft_points), dtype=np.float32)
+    freq_bins_on_mel_scale = np.floor(
+        freq_scale * _convert_mel_to_hz(list_mel_points))
+    mel_scaled_fbank = np.zeros((num_filter_bands, num_ess_fft_points),
+                                dtype=np.float32)
     for filt_idx in range(num_filter_bands):
         start_bin_freq = freq_bins_on_mel_scale[filt_idx]
         middle_bin_freq = freq_bins_on_mel_scale[filt_idx + 1]
         end_bin_freq = freq_bins_on_mel_scale[filt_idx + 2]
         mel_scaled_fbank[filt_idx] = _create_triangular_filter(start_bin_freq,
-                                                                middle_bin_freq, end_bin_freq,
-                                                                num_ess_fft_points)
+                                                               middle_bin_freq,
+                                                               end_bin_freq,
+                                                               num_ess_fft_points)
     return mel_scaled_fbank
 
 
-def _create_triangular_filter(start_bin_freq, middle_bin_freq, end_bin_freq, num_ess_fft_points):
+def _create_triangular_filter(start_bin_freq, middle_bin_freq, end_bin_freq,
+                              num_ess_fft_points):
     filter_window = np.zeros(num_ess_fft_points, dtype=np.float32)
     filt_support_begin = middle_bin_freq - start_bin_freq
     filt_support_end = end_bin_freq - middle_bin_freq
@@ -140,7 +149,8 @@ def _get_stft(raw_data, sampling_rate_in_hz, window_length_in_s,
 
 def _short_time_fourier_transform(data, sampling_rate_in_hz, window_length_in_s,
                                   window_shift_in_s, num_fft_points,
-                                  window_type, data_transformation=None, zero_mean_offset=False):
+                                  window_type, data_transformation=None,
+                                  zero_mean_offset=False):
     window_length_in_samp = get_length_in_samp(window_length_in_s,
                                                sampling_rate_in_hz)
     window_shift_in_samp = get_length_in_samp(window_shift_in_s,

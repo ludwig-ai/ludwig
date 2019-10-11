@@ -19,26 +19,36 @@ from __future__ import division
 
 import copy
 import logging
+import sys
 from collections import Counter
 from sys import platform
 
-import matplotlib as mpl
-
-if platform == "darwin":  # OS X
-    mpl.use('TkAgg')
-import matplotlib.patches as patches
-import matplotlib.path as path
-import matplotlib.patheffects as PathEffects
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-from matplotlib import ticker
-from matplotlib.lines import Line2D
-from mpl_toolkits.mplot3d import Axes3D
 
 import ludwig.contrib
 
 logger = logging.getLogger(__name__)
+
+try:
+    import matplotlib as mpl
+
+    if platform == "darwin":  # OS X
+        mpl.use('TkAgg')
+    import matplotlib.patches as patches
+    import matplotlib.path as path
+    import matplotlib.patheffects as PathEffects
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from matplotlib import ticker
+    from matplotlib.lines import Line2D
+    from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+    logger.error(
+        ' matplotlib or seaborn are not installed. '
+        'In order to install all visualization dependencies run '
+        'pip install ludwig[viz]'
+    )
+    sys.exit(-1)
 
 
 # plt.rc('xtick', labelsize='x-large')
@@ -82,7 +92,8 @@ def learning_curves_plot(
             algorithm_names) else ''
         ax.plot(xs, train_values[i], label=name_prefix + 'training',
                 color=colors[i * 2], linewidth=3)
-        if i < len(vali_values) and vali_values[i] is not None and len(vali_values[i]) > 0:
+        if i < len(vali_values) and vali_values[i] is not None and len(
+                vali_values[i]) > 0:
             ax.plot(xs, vali_values[i], label=name_prefix + 'validation',
                     color=colors[i * 2 + 1], linewidth=3)
 

@@ -17,8 +17,6 @@
 import os
 import shutil
 
-from starlette.testclient import TestClient
-
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
 from ludwig.utils.data_utils import read_csv
@@ -27,6 +25,16 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import text_feature
+
+try:
+    from starlette.testclient import TestClient
+except ImportError:
+    logger.error(
+        ' fastapi and other serving dependencies are not installed. '
+        'In order to install all serving dependencies run '
+        'pip install ludwig[serve]'
+    )
+    sys.exit(-1)
 
 
 def train_model(input_features, output_features, data_csv):
@@ -104,7 +112,7 @@ def convert_to_form(entry):
 
 
 def test_server_integration(csv_filename):
-     # Image Inputs
+    # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
     # Resnet encoder

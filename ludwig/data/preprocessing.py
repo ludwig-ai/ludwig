@@ -251,15 +251,15 @@ def load_data(
         else:
             dataset[input_feature['name']] = hdf5_data[
                 input_feature['name']
-            ].value
+            ][()]
     for output_feature in output_features:
         if output_feature['type'] == TEXT:
             dataset[text_feature_data_field(output_feature)] = hdf5_data[
                 text_feature_data_field(output_feature)
-            ].value
+            ][()]
         else:
             dataset[output_feature['name']] = hdf5_data[
-                output_feature['name']].value
+                output_feature['name']][()]
         if 'limit' in output_feature:
             dataset[output_feature['name']] = collapse_rare_labels(
                 dataset[output_feature['name']],
@@ -270,7 +270,7 @@ def load_data(
         hdf5_data.close()
         return dataset
 
-    split = hdf5_data['split'].value
+    split = hdf5_data['split'][()]
     hdf5_data.close()
     training_set, test_set, validation_set = split_dataset_tvt(dataset, split)
 
