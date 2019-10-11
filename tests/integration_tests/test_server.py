@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import logging
 import os
 import shutil
+import sys
 
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
@@ -25,6 +26,8 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import text_feature
+
+logger = logging.getLogger(__name__)
 
 try:
     from starlette.testclient import TestClient
