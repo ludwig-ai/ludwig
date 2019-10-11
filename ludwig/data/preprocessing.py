@@ -247,7 +247,7 @@ def load_data(
     for input_feature in input_features:
         if input_feature['type'] == TEXT:
             text_data_field = text_feature_data_field(input_feature)
-            dataset[text_data_field] = hdf5_data[text_data_field].value
+            dataset[text_data_field] = hdf5_data[text_data_field][()]
         else:
             dataset[input_feature['name']] = hdf5_data[
                 input_feature['name']
