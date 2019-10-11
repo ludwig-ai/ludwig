@@ -75,7 +75,14 @@ def match_replace(string_to_match, list_regex):
 
 def load_vocabulary(vocab_file):
     with open(vocab_file, 'r') as f:
-        return [line.strip() for line in f]
+        vocabulary = []
+        for line in f:
+            line = line.strip()
+            if ' ' in line:
+                line = line.split(' ')[0]
+            vocabulary.append(line)
+        return vocabulary
+        #return [line.strip() for line in f]
 
 
 def create_vocabulary(
@@ -97,6 +104,8 @@ def create_vocabulary(
         vocab = load_vocabulary(vocab_file)
         add_unknown = False
         add_padding = False
+    elif vocab_file is not None:
+        vocab = load_vocabulary(vocab_file)
 
     tokenizer = get_from_registry(
         tokenizer_type,
@@ -111,10 +120,13 @@ def create_vocabulary(
         vocab = [unit for unit, count in
                  unit_counts.most_common(num_most_frequent)]
 
+    vocab_set = set(vocab)
     if add_unknown:
-        vocab = [unknown_symbol] + vocab
+        if unknown_symbol not in vocab_set:
+            vocab = [unknown_symbol] + vocab
     if add_padding:
-        vocab = [padding_symbol] + vocab
+        if padding_symbol not in vocab_set:
+            vocab = [padding_symbol] + vocab
 
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
