@@ -49,7 +49,7 @@ extra_requirements['gpu'] = [tensorflow_gpu]
 setup(
     name='ludwig',
 
-    version='0.2.1a0',
+    version='0.2.1',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
