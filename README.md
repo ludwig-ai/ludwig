@@ -87,7 +87,7 @@ If you intend to use text features and want to use [spaCy](http://spacy.io) base
 ```
 python -m spacy download <language_code>
 ```
-More details in the [User Guide](user_guide.md#spacy-based-word-format-options).
+More details in the [User Guide](https://uber.github.io/ludwig/user_guide/#spacy-based-word-format-options).
 
 Image features extra packages can be installed with `pip install ludwig[image]` and include:
 
