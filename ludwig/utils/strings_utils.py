@@ -693,9 +693,113 @@ class GreekLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
         )
 
 
+class NorwegianTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('nb'))
+
+
+class NorwegianFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nb'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class NorwegianRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nb'),
+            filter_stopwords=True
+        )
+
+
+class NorwegianLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('nb'), return_lemma=True)
+
+
+class NorwegianLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nb'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class NorwegianLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('nb'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+class LithuanianTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('lt'))
+
+
+class LithuanianFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('lt'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class LithuanianRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('lt'),
+            filter_stopwords=True
+        )
+
+
+class LithuanianLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('lt'), return_lemma=True)
+
+
+class LithuanianLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('lt'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class LithuanianLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('lt'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
 class MultiTokenizer(BaseTokenizer):
     def __call__(self, text):
         return process_text(text, load_nlp_pipeline('xx'))
+
+
 
 
 class MultiFilterTokenizer(BaseTokenizer):
@@ -822,6 +926,18 @@ tokenizer_registry = {
     'greek_lemmatize': GreekLemmatizeTokenizer,
     'greek_lemmatize_filter': GreekLemmatizeFilterTokenizer,
     'greek_lemmatize_remove_stopwords': GreekLemmatizeRemoveStopwordsFilterTokenizer,
+    'norwegian_tokenize': NorwegianTokenizer,
+    'norwegian_tokenize_filter': NorwegianFilterTokenizer,
+    'norwegian_tokenize_remove_stopwords': NorwegianRemoveStopwordsTokenizer,
+    'norwegian_lemmatize': NorwegianLemmatizeTokenizer,
+    'norwegian_lemmatize_filter': NorwegianLemmatizeFilterTokenizer,
+    'norwegian_lemmatize_remove_stopwords': NorwegianLemmatizeRemoveStopwordsFilterTokenizer,
+    'lithuanian_tokenize': LithuanianTokenizer,
+    'lithuanian_tokenize_filter': LithuanianFilterTokenizer,
+    'lithuanian_tokenize_remove_stopwords': LithuanianRemoveStopwordsTokenizer,
+    'lithuanian_lemmatize': LithuanianLemmatizeTokenizer,
+    'lithuanian_lemmatize_filter': LithuanianLemmatizeFilterTokenizer,
+    'lithuanian_lemmatize_remove_stopwords': LithuanianLemmatizeRemoveStopwordsFilterTokenizer,
     'multi_tokenize': MultiTokenizer,
     'multi_tokenize_filter': MultiFilterTokenizer,
     'multi_tokenize_remove_stopwords': MultiRemoveStopwordsTokenizer,
