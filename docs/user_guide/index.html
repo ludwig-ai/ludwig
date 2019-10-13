@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -4849,6 +4849,7 @@ Output
 
 <h5 id="generator-decoder">Generator Decoder<a class="headerlink" href="#generator-decoder" title="Permanent link">&para;</a></h5>
 <p>In the case of <code>generator</code> the decoder is a (potentially empty) stack of fully connected layers, followed by an rnn that generates outputs feeding on its own previous predictions and generates a tensor of size <code>b x s' x c</code>, where <code>b</code> is the batch size, <code>s'</code> is the length of the generated sequence and <code>c</code> is the number of classes, followed by a softmax_cross_entropy.
+During training teacher forcing is adopted, meaning the list of targets is provided as both inputs and outputs (shifted by 1), while at evaluation time greedy decoding (generating one token at a time and feeding it as input for the next step) is performed by beam search, using a beam of 1 by default.
 By default a generator expects a <code>b x h</code> shaped input tensor, where <code>h</code> is a hidden dimension.
 The <code>h</code> vectors are (after an optional stack of fully connected layers) fed into the rnn generator.
 One exception is when the generator uses attention, as in that case the expected size of the input tensor is <code>b x s x h</code>, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner.
@@ -6082,7 +6083,7 @@ The classes on the x axis are sorted by f1 score.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.c648116f.js"></script>
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

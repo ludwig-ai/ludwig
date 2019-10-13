@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -602,8 +602,8 @@
 <p><strong>Inputs</strong></p>
 <ul>
 <li><strong>model_definition</strong> (dict): a dictionary containing information needed
-   to build a model. Refer to the [User Guide]
-   (http://ludwig.ai/user_guide/#model-definition) for details.</li>
+   to build a model. Refer to the <a href="http://ludwig.ai/user_guide/#model-definition">User Guide</a> 
+   for details.</li>
 <li><strong>model_definition_file</strong> (string, optional, default: <code>None</code>): path to
    a YAML file containing the model definition. If available it will be
    used instead of the model_definition dict.</li>
@@ -738,7 +738,8 @@ this function if you don't use <code>train_online</code>.</p>
   <span class="n">return_type</span><span class="o">=&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="s1">&#39;&gt;,</span>
   <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
   <span class="n">gpus</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-  <span class="n">gpu_fraction</span><span class="o">=</span><span class="mi">1</span>
+  <span class="n">gpu_fraction</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+  <span class="n">skip_save_unprocessed_output</span><span class="o">=</span><span class="bp">True</span>
 <span class="p">)</span>
 </pre></div>
 
@@ -766,6 +767,11 @@ variables using the trained model.</p>
    DataFrame , while <code>'dict'</code>, ''dictionary'<code>and</code>dict` will
    return a dictionary.</li>
 <li><strong>batch_size</strong> (int, default: <code>128</code>): batch size</li>
+<li><strong>skip_save_unprocessed_output</strong> (skip_save_unprocessed_output: If this parameter is False):skip_save_unprocessed_output: If this parameter is False,
+   predictions and their probabilities are saved in both raw
+   unprocessed numpy files contaning tensors and as postprocessed
+   CSV files (one for each output feature). If this parameter is
+   True, only the CSV ones are saved and the numpy ones are skipped.</li>
 <li><strong>gpus</strong> (string, default: <code>None</code>): list of GPUs to use (it uses the
    same syntax of CUDA_VISIBLE_DEVICES)</li>
 <li><strong>gpu_fraction</strong> (float, default <code>1.0</code>): fraction of gpu memory to
@@ -847,6 +853,7 @@ constants like <code>logging.DEBUG</code> , <code>logging.INFO</code> and <code>
   <span class="n">data_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">return_type</span><span class="o">=&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="s1">&#39;&gt;,</span>
   <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+  <span class="n">skip_save_unprocessed_output</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">gpus</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">gpu_fraction</span><span class="o">=</span><span class="mi">1</span>
 <span class="p">)</span>
@@ -878,6 +885,11 @@ performance measures, confusion matrices and the like.</p>
    DataFrame , while <code>'dict'</code>, ''dictionary'<code>and</code>dict` will
    return a dictionary.</li>
 <li><strong>batch_size</strong> (int, default: <code>128</code>): batch size</li>
+<li><strong>skip_save_unprocessed_output</strong> (skip_save_unprocessed_output: If this parameter is False):skip_save_unprocessed_output: If this parameter is False,
+   predictions and their probabilities are saved in both raw
+   unprocessed numpy files contaning tensors and as postprocessed
+   CSV files (one for each output feature). If this parameter is
+   True, only the CSV ones are saved and the numpy ones are skipped.</li>
 <li><strong>gpus</strong> (string, default: <code>None</code>): list of GPUs to use (it uses the
    same syntax of CUDA_VISIBLE_DEVICES)</li>
 <li><strong>gpu_fraction</strong> (float, default <code>1.0</code>): fraction of GPU memory to
@@ -930,6 +942,8 @@ performance measures, confusion matrices and the like.</p>
   <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;run&#39;</span><span class="p">,</span>
   <span class="n">model_load_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">model_resume_path</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">skip_save_training_description</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+  <span class="n">skip_save_training_statistics</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">skip_save_model</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">skip_save_progress</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
   <span class="n">skip_save_log</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
@@ -1024,6 +1038,10 @@ specified dataset.</p>
    initialization</li>
 <li><strong>model_resume_path</strong> (string): path of a the model directory to
    resume training of</li>
+<li><strong>skip_save_training_description</strong> (bool, default: <code>False</code>): disables
+   saving the description JSON file.</li>
+<li><strong>skip_save_training_statistics</strong> (bool, default: <code>False</code>): disables
+   saving training statistics JSON file.</li>
 <li><strong>skip_save_model</strong> (bool, default: <code>False</code>): disables
    saving model weights and hyperparameters each time the model
    improves. By default Ludwig saves model weights after each epoch
@@ -1237,7 +1255,7 @@ text of the second datapoint'], 'class_filed_name':
       
     </div>
     
-      <script src="../../assets/javascripts/application.c648116f.js"></script>
+      <script src="../../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       
