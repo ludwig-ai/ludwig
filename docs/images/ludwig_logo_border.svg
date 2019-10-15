@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500px" height="180px" viewBox="0 0 500 180" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
+    <title>Ludwig empty</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Logo-final" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Ludwig-empty" transform="translate(0.000000, 0.000000)" fill-rule="nonzero">
+            <rect id="Background" fill="#FFFFFF" x="20" y="20" width="460" height="140"></rect>
+            <rect id="Rectangle" fill="#404040" x="40" y="40" width="20" height="100"></rect>
+            <rect id="Rectangle" fill="#404040" x="40" y="120" width="100" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="80" y="80" width="60" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="160" y="120" width="40" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="80" y="80" width="60" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="160" y="40" width="40" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="80" y="40" width="20" height="60"></rect>
+            <rect id="Rectangle" fill="#404040" x="120" y="40" width="20" height="60"></rect>
+            <rect id="Rectangle" fill="#404040" x="160" y="40" width="20" height="100"></rect>
+            <rect id="Rectangle" fill="#404040" x="200" y="60" width="20" height="60"></rect>
+            <rect id="Rectangle" fill="#404040" x="240" y="40" width="20" height="100"></rect>
+            <rect id="Rectangle" fill="#404040" x="280" y="40" width="20" height="100"></rect>
+            <rect id="Rectangle" fill="#404040" x="320" y="40" width="20" height="100"></rect>
+            <rect id="Rectangle" fill="#404040" x="360" y="40" width="20" height="100"></rect>
+            <rect id="Rectangle" fill="#404040" x="400" y="40" width="20" height="100"></rect>
+            <rect id="Rectangle" fill="#404040" x="400" y="120" width="60" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="440" y="100" width="20" height="40"></rect>
+            <rect id="Rectangle" fill="#404040" x="430" y="80" width="30" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="400" y="40" width="60" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="240" y="120" width="100" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="0" y="160" width="500" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="0" y="0" width="500" height="20"></rect>
+            <rect id="Rectangle" fill="#404040" x="0" y="0" width="20" height="180"></rect>
+            <rect id="Rectangle" fill="#404040" x="480" y="0" width="20" height="180"></rect>
+            <polygon id="Path" fill="#404040" transform="translate(210.000000, 130.000000) scale(1, -1) translate(-210.000000, -130.000000) " points="200 120 208.693359 120.143555 220 131.790039 220 140 200 140"></polygon>
+            <polygon id="Path" fill="#404040" points="200 40 208.693359 40.1435547 220 51.7900391 220 60 200 60"></polygon>
+        </g>
+    </g>
+</svg>

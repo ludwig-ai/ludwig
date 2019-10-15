@@ -1,8 +1,4 @@
-Ludwig
-======
-
-Introduction
-------------
+![Ludwig logo](https://github.com/uber/ludwig/raw/master/docs/images/ludwig_logo_border.svg "Ludwig logo")
 
 Ludwig is a toolbox built on top of TensorFlow that allows to train and test deep learning models without the need to write code.
 
