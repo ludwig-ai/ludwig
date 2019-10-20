@@ -510,9 +510,6 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             output_feature[LOSS],
             {
                 'type': 'softmax_cross_entropy',
-                'sampler': None,
-                'negative_samples': 0,
-                'distortion': 1,
                 'labels_smoothing': 0,
                 'class_weights': 1,
                 'robust_lambda': 0,
