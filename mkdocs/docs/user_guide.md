@@ -1947,7 +1947,7 @@ reduce_output: last
 #### BERT Encoder
 
 The [BERT](https://arxiv.org/abs/1810.04805) encoder allows for loading a pre-trained bert model.
-Models are available on [GitHube](https://github.com/google-research/bert) for download.
+Models are available on [GitHub](https://github.com/google-research/bert) for download.
 The downloaded pretrained model directory contains:
 - `bert_config.json` which holds the hyperparameters of the bert architecture,
 - `vocab.txt` which contains the vocabulary of BPE word pieces the model was trained on,
