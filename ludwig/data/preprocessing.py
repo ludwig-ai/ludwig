@@ -710,7 +710,7 @@ def _preprocess_df_for_training(
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
 ):
-    """ Method to pre-process dataframes. This doesn't have the optoin to save the
+    """ Method to pre-process dataframes. This doesn't have the option to save the
     processed data as hdf5 as we don't expect users to do this as the data can
     be processed in memory
     """
