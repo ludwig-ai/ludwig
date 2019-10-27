@@ -459,10 +459,13 @@ if __name__ == '__main__':
 
     print('Generating docs for Ludwig %s.' % ludwig.__version__)
     for page_data in PAGES:
+        classes = []
+        functions = []
+        methods = []
         if 'classes' in page_data.keys():
             classes = read_page_data(page_data, 'classes')
         elif 'functions' in page_data.keys():
-            classes = read_page_data(page_data, 'functions')
+            functions = read_page_data(page_data, 'functions')
         else:
             raise TypeError('Invalid type specified in page_data')
 
