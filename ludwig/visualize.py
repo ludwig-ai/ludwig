@@ -682,9 +682,12 @@ def learning_curves(
 ):
     """Show how model measures change over training and validation data epochs.
 
-     For each model and for each output feature and measure of the model,
-     it produces a line plot showing how that measure changed over the course
-     of the epochs of training on the training and validation sets.
+    For each model and for each output feature and measure of the model,
+    it produces a line plot showing how that measure changed over the course
+    of the epochs of training on the training and validation sets.
+
+    # Inputs
+
     :param train_stats_per_model: List containing train statistics per model
     :param output_feature_name: Name of the output feature that is predicted 
            and for which is provided ground truth
