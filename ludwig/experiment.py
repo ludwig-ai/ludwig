@@ -82,17 +82,17 @@ def experiment(
     :param model_definition_file: The file that specifies the model definition.
            It is a yaml file.
     :type model_definition_file: filepath (str)
-    :param data_csv: A CSV file contanining the input data which is used to
+    :param data_csv: A CSV file containing the input data which is used to
            train, validate and test a model. The CSV either contains a
            split column or will be split.
     :type data_csv: filepath (str)
-    :param data_train_csv: A CSV file contanining the input data which is used
+    :param data_train_csv: A CSV file containing the input data which is used
            to train a model.
     :type data_train_csv: filepath (str)
-    :param data_validation_csv: A CSV file contanining the input data which is used
+    :param data_validation_csv: A CSV file containing the input data which is used
            to validate a model..
     :type data_validation_csv: filepath (str)
-    :param data_test_csv: A CSV file contanining the input data which is used
+    :param data_test_csv: A CSV file containing the input data which is used
            to test a model.
     :type data_test_csv: filepath (str)
     :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
@@ -120,7 +120,7 @@ def experiment(
     :param model_resume_path: Resumes training of the model from the path
            specified. The difference with model_load_path is that also training
            statistics like the current epoch and the loss and performance so
-           far are also resumed effectively cotinuing a previously interrupted
+           far are also resumed effectively continuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
     :param skip_save_training_description: Disables saving
@@ -132,7 +132,7 @@ def experiment(
     :param skip_save_model: Disables
                saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure imrpvoes, but if the model is really big
+           the validation measure improves, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -157,7 +157,7 @@ def experiment(
     :type skip_save_processed_input: Boolean
     :param skip_save_unprocessed_output: By default predictions and
            their probabilities are saved in both raw unprocessed numpy files
-           contaning tensors and as postprocessed CSV files
+           containing tensors and as postprocessed CSV files
            (one for each output feature). If this parameter is True,
            only the CSV ones are saved and the numpy ones are skipped.
     :type skip_save_unprocessed_output: Boolean
@@ -165,8 +165,8 @@ def experiment(
     :type skip_save_test_predictions: Boolean
     :param skip_save_test_statistics: skips saving test statistics JSON file
     :type skip_save_test_statistics: Boolean
-    :param output_directory: The directory that will contanin the training
-           statistics, the saved model and the training procgress files.
+    :param output_directory: The directory that will contain the training
+           statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
@@ -436,9 +436,9 @@ def cli(sys_argv):
         action='store_true',
         default=False,
         help='disables saving model weights and hyperparameters each time '
-             'the model imrpoves. '
+             'the model improves. '
              'By default Ludwig saves model weights after each epoch '
-             'the validation measure imrpvoes, but if the model is really big '
+             'the validation measure imprvoes, but if the model is really big '
              'that can be time consuming if you do not want to keep '
              'the weights and just find out what performance can a model get '
              'with a set of hyperparameters, use this parameter to skip it,'
