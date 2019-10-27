@@ -691,10 +691,10 @@ def learning_curves(
     :param train_stats_per_model: (list) List containing train statistics per model
     :param output_feature_name: (string) Name of the output feature that is predicted
            and for which is provided ground truth
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
     :return: (None)
@@ -764,10 +764,10 @@ def compare_performance(
 
     :param test_stats_per_model: (list) List containing train statistics per model
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -852,10 +852,10 @@ def compare_classifiers_performance_from_prob(
     :param top_n_classes: (list) List containing the number of classes to plot
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -1027,10 +1027,10 @@ def compare_classifiers_performance_subset(
     :param top_n_classes: (list) List containing the number of classes to plot
     :param labels_limit: (int) Maximum numbers of labels.
     :param subset: () Type of the subset filtering
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -1142,10 +1142,10 @@ def compare_classifiers_performance_changing_k(
     :param top_k: (int) Number of elements in the ranklist to consider
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -1211,10 +1211,10 @@ def compare_classifiers_multiclass_multimetric(
     :param metadata: () Model's input metadata
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
     :param top_n_classes: (list) List containing the number of classes to plot
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
     :return: (None)
@@ -1383,10 +1383,10 @@ def compare_classifiers_predictions(
     :param ground_truth: (ndarray) NumPy Array containing ground truth data
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -1520,10 +1520,10 @@ def compare_classifiers_predictions_distribution(
     :param ground_truth: (ndarray) NumPy Array containing ground truth data
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -1587,10 +1587,10 @@ def confidence_thresholding(
     :param ground_truth: (ndarray) NumPy Array containing ground truth data
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
     :param output_directory: (sting) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -1676,10 +1676,10 @@ def confidence_thresholding_data_vs_acc(
     :param ground_truth: (ndarray) NumPy Array containing ground truth data
     :param labels_limit:(int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
     :return: (None)
@@ -1776,10 +1776,10 @@ def confidence_thresholding_data_vs_acc_subset(
     :param top_n_classes: (list) List containing the number of classes to plot
     :param labels_limit: (int) Maximum numbers of labels.
     :param subset: (string) Type of the subset filtering
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -1908,10 +1908,10 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
     :param top_n_classes: (list) List containing the number of classes to plot
     :param labels_limit: (int) Maximum numbers of labels.
     :param subset: (string) Type of the subset filtering
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
     :return: (None)
@@ -2028,9 +2028,9 @@ def confidence_thresholding_2thresholds_2d(
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
     :param model_names: (string) Name of the model to use as label.
-    :param output_directory: (string) Directory where to save plots.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -2219,9 +2219,9 @@ def confidence_thresholding_2thresholds_3d(
     :param threshold_output_feature_names: (list) List of output_feature_names for 2d threshold
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param output_directory: (string) Directory where to save plots.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -2341,10 +2341,10 @@ def binary_threshold_vs_metric(
     :param metrics: metrics to dispay (f1, precision, recall,
                     accuracy)
     :param positive_label: (string) Label of the positive class
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -2455,10 +2455,10 @@ def roc_curves(
     :param probabilities_per_model: (list) List of model probabilities
     :param ground_truth: (list) List of NumPy Arrays containing ground truth data
     :param positive_label: (string) Label of the positive class
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -2511,10 +2511,10 @@ def roc_curves_from_test_statistics(
 
     :param test_stats_per_model: (list) List containing train statistics per model
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -2575,10 +2575,10 @@ def calibration_1_vs_all(
     :param top_n_classes: (list) List containing the number of classes to plot
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # String
 
@@ -2697,10 +2697,10 @@ def calibration_multiclass(
     :param ground_truth: (ndarray) NumPy Array containing ground truth data
     :param labels_limit: (int) Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -2809,11 +2809,11 @@ def confusion_matrix(
     :param metadata: () Model's input metadata
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
     :param top_n_classes: (list) List containing the number of classes to plot
-    :param normalize: (boolean) Flag to normalize rows in confusion matrix
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param normalize: (bool) Flag to normalize rows in confusion matrix
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
@@ -2936,10 +2936,10 @@ def frequency_vs_f1(
     :param metadata: () Model's input metadata
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
     :param top_n_classes: (list) List containing the number of classes to plot
-    :param model_names: (list) List of the names of the models to use as labels.
-    :param output_directory: (string) Directory where to save plots.
+    :param model_names: (list, default: None) List of the names of the models to use as labels.
+    :param output_directory: (string, default: None) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: (string) File format of output plots - pdf or png
+    :param file_format: (string, default: 'pdf') File format of output plots - pdf or png
 
     # Return
 
