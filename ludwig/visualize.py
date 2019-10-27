@@ -688,14 +688,16 @@ def learning_curves(
 
     # Inputs
 
-    :param train_stats_per_model: List containing train statistics per model
-    :param output_feature_name: Name of the output feature that is predicted 
+    :param train_stats_per_model: (list) List containing train statistics per model
+    :param output_feature_name: (string) Name of the output feature that is predicted
            and for which is provided ground truth
-    :param model_names: List of the names of the models to use as labels.
-    :param output_directory: Directory where to save plots.
+    :param model_names: (list) List of the names of the models to use as labels.
+    :param output_directory: (string) Directory where to save plots.
              If not specified, plots will be displayed in a window
-    :param file_format: File format of output plots - pdf or png
-    :return None:
+    :param file_format: (string) File format of output plots - pdf or png
+
+    # Return
+    :return: (None)
     """
     filename_template = 'learning_curves_{}_{}.' + file_format
     filename_template_path = generate_filename_template_path(
@@ -757,13 +759,19 @@ def compare_performance(
     For each model (in the aligned lists of test_statistics and model_names)
     it produces bars in a bar plot, one for each overall metric available
     in the test_statistics file for the specified output_feature_name.
+
+    # Inputs
+
     :param test_stats_per_model: List containing train statistics per model
     :param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
     :param model_names: List of the names of the models to use as labels.
     :param output_directory: Directory where to save plots.
              If not specified, plots will be displayed in a window
     :param file_format: File format of output plots - pdf or png
-    :return None:
+
+    # Return
+
+    :return: (None)
     """
     filename_template = 'compare_performance_{}.' + file_format
     filename_template_path = generate_filename_template_path(
