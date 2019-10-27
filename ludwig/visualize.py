@@ -935,7 +935,7 @@ def compare_classifiers_performance_from_pred(
     :param predictions_per_model: (list) List containing the model predictions
            for the specified output_feature_name
     :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param metadata: Model's input metadata
+    :param metadata: (dict) Model's input metadata
     :param output_feature_name: output_feature_name containing ground truth
     :param labels_limit: Maximum numbers of labels.
              If labels in dataset are higher than this number, "rare" label
@@ -1208,7 +1208,7 @@ def compare_classifiers_multiclass_multimetric(
     # Inputs
 
     :param test_stats_per_model: (list) List containing train statistics per model
-    :param metadata: () Model's input metadata
+    :param metadata: (dict) Model's input metadata
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
     :param top_n_classes: (list) List containing the number of classes to plot
     :param model_names: (list, default: None) List of the names of the models to use as labels.
@@ -1904,7 +1904,7 @@ def confidence_thresholding_data_vs_acc_subset_per_class(
 
     :param probabilities_per_model: (list) List of model probabilities
     :param ground_truth: (ndarray) NumPy Array containing ground truth data
-    :param metadata: () Model's input metadata
+    :param metadata: (dict) Model's input metadata
     :param top_n_classes: (list) List containing the number of classes to plot
     :param labels_limit: (int) Maximum numbers of labels.
     :param subset: (string) Type of the subset filtering
@@ -2806,7 +2806,7 @@ def confusion_matrix(
     # Inputs
 
     :param test_stats_per_model: (string) List containing train statistics per model
-    :param metadata: () Model's input metadata
+    :param metadata: (dict) Model's input metadata
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
     :param top_n_classes: (list) List containing the number of classes to plot
     :param normalize: (bool) Flag to normalize rows in confusion matrix
@@ -2933,7 +2933,7 @@ def frequency_vs_f1(
     # Inputs
 
     :param test_stats_per_model: (list) List containing train statistics per model
-    :param metadata: () Model's input metadata
+    :param metadata: (dict) Model's input metadata
     :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
     :param top_n_classes: (list) List containing the number of classes to plot
     :param model_names: (list, default: None) List of the names of the models to use as labels.
