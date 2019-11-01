@@ -21,8 +21,6 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-wandb = None
-
 
 class Wandb():
     """
@@ -37,7 +35,6 @@ class Wandb():
         management.
         """
         try:
-            global wandb
             import wandb
             return Wandb()
         except ImportError:
@@ -46,6 +43,7 @@ class Wandb():
             return None
 
     def train_model(self, model, *args, **kwargs):
+        import wandb
         logger.info("wandb.train_model() called...")
         config = model.hyperparameters.copy()
         del config["input_features"]
@@ -54,17 +52,20 @@ class Wandb():
 
     def train_init(self, experiment_directory, experiment_name, model_name,
                    resume, output_directory):
+        import wandb
         logger.info("wandb.train_init() called...")
         wandb.init(project=os.getenv("WANDB_PROJECT", experiment_name),
                    sync_tensorboard=True, dir=output_directory)
         wandb.save(os.path.join(experiment_directory, "*"))
 
     def visualize_figure(self, fig):
+        import wandb
         logger.info("wandb.visualize_figure() called...")
         if wandb.run:
             wandb.log({"figure": fig})
 
     def predict_end(self, stats, *args, **kwargs):
+        import wandb
         logger.info("wanbb.predict() called... %s" % stats)
         if wandb.run:
             wandb.summary.update(dict(stats))
