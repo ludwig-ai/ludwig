@@ -33,7 +33,8 @@ class Wandb():
         """
         try:
             import wandb
-            return Wandb()
+            # Needed to call an attribute of wandb to make DeepSource not complain
+            return Wandb() if wandb.__version__ else None
         except ImportError:
             logger.error(
                 "Ignored --wandb: Please install wandb; see https://docs.wandb.com")
