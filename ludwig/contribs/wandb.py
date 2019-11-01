@@ -16,7 +16,6 @@
 
 import logging
 import os
-from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,8 @@ class Wandb():
                 "Ignored --wandb: Please install wandb; see https://docs.wandb.com")
             return None
 
-    def train_model(self, model, *args, **kwargs):
+    @staticmethod
+    def train_model(model, *args, **kwargs):
         import wandb
         logger.info("wandb.train_model() called...")
         config = model.hyperparameters.copy()
@@ -50,7 +50,8 @@ class Wandb():
         del config["output_features"]
         wandb.config.update(config)
 
-    def train_init(self, experiment_directory, experiment_name, model_name,
+    @staticmethod
+    def train_init(experiment_directory, experiment_name, model_name,
                    resume, output_directory):
         import wandb
         logger.info("wandb.train_init() called...")
@@ -58,13 +59,15 @@ class Wandb():
                    sync_tensorboard=True, dir=output_directory)
         wandb.save(os.path.join(experiment_directory, "*"))
 
-    def visualize_figure(self, fig):
+    @staticmethod
+    def visualize_figure(fig):
         import wandb
         logger.info("wandb.visualize_figure() called...")
         if wandb.run:
             wandb.log({"figure": fig})
 
-    def predict_end(self, stats, *args, **kwargs):
+    @staticmethod
+    def predict_end(stats, *args, **kwargs):
         import wandb
         logger.info("wanbb.predict() called... %s" % stats)
         if wandb.run:
