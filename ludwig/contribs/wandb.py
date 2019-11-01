@@ -22,9 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Wandb():
-    """
-    Class that defines the methods necessary to hook into process.
-    """
+    "Class that defines the methods necessary to hook into process."
 
     @staticmethod
     def import_call(argv, *args, **kwargs):
@@ -69,6 +67,6 @@ class Wandb():
     @staticmethod
     def predict_end(stats, *args, **kwargs):
         import wandb
-        logger.info("wanbb.predict() called... %s" % stats)
+        logger.info("wandb.predict() called... %s", stats)
         if wandb.run:
             wandb.summary.update(dict(stats))
