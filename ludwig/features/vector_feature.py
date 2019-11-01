@@ -117,7 +117,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32,
             shape=[None, self.vector_size],
             name=self.name,
@@ -181,7 +181,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         _ = self.overwrite_defaults(feature)
 
     def _get_output_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32,
             [None, self.vector_size],
             name='{}_placeholder'.format(self.name)
@@ -189,7 +189,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
     def _get_measures(self, targets, predictions):
 
-        with tf.variable_scope('measures_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('measures_{}'.format(self.name)):
             error_val = get_error(
                 targets,
                 predictions,
@@ -210,7 +210,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         return error_val, squared_error_val, absolute_error_val, r2_val
 
     def vector_loss(self, targets, predictions, logits):
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == MEAN_SQUARED_ERROR:
                 train_loss = tf.reduce_sum(
                     get_squared_error(targets, predictions, self.name), axis=1
@@ -293,15 +293,15 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         output_tensors[R2 + '_' + self.name] = r2
 
         if 'sampled' not in self.loss['type']:
-            tf.summary.scalar(
+            tf.compat.v1.summary.scalar(
                 'train_batch_mean_squared_error_{}'.format(self.name),
                 tf.reduce_mean(squared_error)
             )
-            tf.summary.scalar(
+            tf.compat.v1.summary.scalar(
                 'train_batch_mean_absolute_error_{}'.format(self.name),
                 tf.reduce_mean(absolute_error)
             )
-            tf.summary.scalar(
+            tf.compat.v1.summary.scalar(
                 'train_batch_mean_r2_{}'.format(self.name),
                 tf.reduce_mean(r2)
             )
@@ -314,7 +314,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         output_tensors[
             TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
-        tf.summary.scalar(
+        tf.compat.v1.summary.scalar(
             'train_mean_loss_{}'.format(self.name),
             train_mean_loss,
         )
@@ -327,7 +327,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             hidden_size,
             regularizer=None,
     ):
-        with tf.variable_scope('predictions_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('predictions_{}'.format(self.name)):
             initializer_obj = get_initializer(self.initializer)
             weights = tf.compat.v1.get_variable(
                 'weights',

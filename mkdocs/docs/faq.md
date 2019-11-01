@@ -1,9 +1,3 @@
-## I'm experiencing problems installing `gmpy`, how do I solve them?
-
-If you encounter problems installing `gmpy` please install `libgmp` or `gmp`.
-On Debian based Linux distributions: `sudo apt-get install libgmp3-dev`.
-On MacOS : `brew install gmp`.
-
 ## Do you support \[feature | encoder | decoder\] in Ludwig?
 
 The list of encoders for each feature type is specified in the [User Guide](user_guide.md).
@@ -31,18 +25,18 @@ These name handlers already work:
 
 We will prioritize new features depending on the feedback of the community, but we are already planning to add:
 
-- additional text and sequence encoders (attention, co-attention, hierarchical attention, [Transformer](https://arxiv.org/abs/1706.03762), [ELMo](https://arxiv.org/abs/1802.05365) and [BERT](https://arxiv.org/abs/1810.04805)).
+- additional text and sequence encoders (attention, co-attention, hierarchical attention, [Transformer](https://arxiv.org/abs/1706.03762), [ELMo](https://arxiv.org/abs/1802.05365) and [BERT](https://arxiv.org/abs/1810.04805) derived models, bert is supported already).
 - additional image encoders ([DenseNet](https://arxiv.org/abs/1608.06993) and [FractalNet](https://arxiv.org/abs/1605.07648)).
 - image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).
 - time series decoding.
-- additional features types (vectors, point clouds, nested lists, multi-sentence documents, graphs).
+- additional features types (point clouds, nested lists, multi-sentence documents, graphs, videos).
 - additional measures and losses.
 - additional data formatters and dataset-specific preprocessing scripts.
 
 We also want to address some of the current limitations:
 
 - currently the full dataset needs to be loaded in memory in order to train a model. Image features already have a way to dynamically read batches of datapoints from disk, and we want to extend this capability to other datatypes.
-- add a command to start a rest service maybe with a simple user interface in order to provide a live demo capability.
+- a simple user interface in order to provide a live demo capability.
 - document lower level functions.
 - optimize the data I/O to TensorFlow.
 - increase the number of supported data formats beyond just CSV and integrating with [Petastorm](https://github.com/uber/Petastorm).
@@ -65,3 +59,15 @@ Feel free to reach out to us and ask as there are tasks for all levels of experi
 - Pranav Subramani who contributed documentation
 - Alex Sergeev and Felipe Petroski Such who helped with distributed training
 - Emidio Torre helped with the initial design of the landing page
+
+## How can I cite Ludwig?
+
+Please use this Bibtex:
+```
+@misc{Molino2019,
+  author = {Piero Molino and Yaroslav Dudin and Sai Sumanth Miryala},
+  title = {Ludwig: a type-based declarative deep learning toolbox},
+  year = {2019},
+  eprint = {arXiv:1909.07930},
+}
+```

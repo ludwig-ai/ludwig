@@ -239,12 +239,12 @@ code change will take effect immediately.
 
 To run a single test, run
 ``` 
-python -m pytest path_to_filename::test_method_name
+python -m pytest path_to_filename -k "test_method_name"
 ```
 
 Example
 -------
 
 ```
-python -m pytest tests/integration_tests/test_experiment.py::test_visual_question_answering
+python -m pytest tests/integration_tests/test_experiment.py -k "test_visual_question_answering"
 ```

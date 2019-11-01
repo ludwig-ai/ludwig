@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Integration tests for the visualisation commands.
+# Integration tests for the visualization commands.
 #
 # Author: Ivaylo Stefanov
 # email: ivaylo.stefanov82@gmail.com
@@ -74,23 +74,23 @@ def run_experiment(input_features, output_features, **kwargs):
     return exp_dir_name
 
 
-def get_output_field_name(experiment_dir, output_feature=0):
+def get_output_feature_name(experiment_dir, output_feature=0):
     """Helper function to extract specified output feature name.
 
     :param experiment_dir: Path to the experiment directory
     :param output_feature: position of the output feature the description.json
-    :return field_name: name of the first output feature name
+    :return output_feature_name: name of the first output feature name
                         from the experiment
     """
     description_file = experiment_dir + '/description.json'
     with open(description_file, 'rb') as f:
         content = json.load(f)
-    field_name = \
+    output_feature_name = \
         content['model_definition']['output_features'][output_feature]['name']
-    return field_name
+    return output_feature_name
 
 
-def test_visualisation_learning_curves_output_saved(csv_filename):
+def test_visualization_learning_curves_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -138,7 +138,7 @@ def test_visualisation_learning_curves_output_saved(csv_filename):
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
-def test_visualisation_confusion_matrix_output_saved(csv_filename):
+def test_visualization_confusion_matrix_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -190,7 +190,7 @@ def test_visualisation_confusion_matrix_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_performance_output_saved(csv_filename):
+def test_visualization_compare_performance_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     Compare performance between two models. To reduce test complexity
@@ -251,7 +251,7 @@ def test_visualisation_compare_performance_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
+def test_visualization_compare_classifiers_from_prob_csv_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -277,8 +277,8 @@ def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.csv'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.csv'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -288,8 +288,8 @@ def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
                     'compare_classifiers_performance_from_prob',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -318,7 +318,7 @@ def test_visualisation_compare_classifiers_from_prob_csv_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
+def test_visualization_compare_classifiers_from_prob_npy_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -344,8 +344,8 @@ def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -355,8 +355,8 @@ def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
                     'compare_classifiers_performance_from_prob',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -384,7 +384,7 @@ def test_visualisation_compare_classifiers_from_prob_npy_output_saved(
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
+def test_visualization_compare_classifiers_from_pred_npy_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -409,8 +409,8 @@ def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     ground_truth_metadata = experiment_source_data_name + '.json'
@@ -423,8 +423,8 @@ def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
                     ground_truth_metadata,
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--predictions',
                     prediction,
                     prediction,
@@ -452,7 +452,7 @@ def test_visualisation_compare_classifiers_from_pred_npy_output_saved(
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
+def test_visualization_compare_classifiers_from_pred_csv_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -477,8 +477,8 @@ def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    prediction = exp_dir_name + '/{}_predictions.csv'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.csv'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     ground_truth_metadata = experiment_source_data_name + '.json'
@@ -491,8 +491,8 @@ def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
                     ground_truth_metadata,
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--predictions',
                     prediction,
                     prediction,
@@ -521,7 +521,7 @@ def test_visualisation_compare_classifiers_from_pred_csv_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
+def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -543,8 +543,8 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -552,8 +552,8 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_performance_subset',
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -586,7 +586,7 @@ def test_visualisation_compare_classifiers_subset_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
+def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
     """It should be possible to save figures as pdf in the specified directory.
 
     """
@@ -606,8 +606,8 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -615,8 +615,8 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_performance_changing_k',
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -648,7 +648,7 @@ def test_visualisation_compare_classifiers_changing_k_output_pdf(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
+def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -672,7 +672,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = exp_dir_name + '/test_statistics.json'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth_metadata = experiment_source_data_name + '.json'
@@ -681,8 +681,8 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
                     'ludwig.visualize',
                     '--visualization',
                     'compare_classifiers_multiclass_multimetric',
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--test_statistics',
                     test_stats,
                     test_stats,
@@ -710,7 +710,7 @@ def test_visualisation_compare_classifiers_multiclass_multimetric_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_predictions_npy_output_saved(
+def test_visualization_compare_classifiers_predictions_npy_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -735,8 +735,8 @@ def test_visualisation_compare_classifiers_predictions_npy_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -746,8 +746,8 @@ def test_visualisation_compare_classifiers_predictions_npy_output_saved(
                     'compare_classifiers_predictions',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--predictions',
                     prediction,
                     prediction,
@@ -776,7 +776,7 @@ def test_visualisation_compare_classifiers_predictions_npy_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_compare_classifiers_predictions_csv_output_saved(
+def test_visualization_compare_classifiers_predictions_csv_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -801,8 +801,8 @@ def test_visualisation_compare_classifiers_predictions_csv_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    prediction = exp_dir_name + '/{}_predictions.csv'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.csv'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -812,8 +812,8 @@ def test_visualisation_compare_classifiers_predictions_csv_output_saved(
                     'compare_classifiers_predictions',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--predictions',
                     prediction,
                     prediction,
@@ -841,7 +841,7 @@ def test_visualisation_compare_classifiers_predictions_csv_output_saved(
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
-def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
+def test_visualization_cmp_classifiers_predictions_distribution_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -865,8 +865,8 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    prediction = exp_dir_name + '/{}_predictions.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    prediction = exp_dir_name + '/{}_predictions.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -876,8 +876,8 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
                     'compare_classifiers_predictions_distribution',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--predictions',
                     prediction,
                     prediction,
@@ -906,7 +906,7 @@ def test_visualisation_cmp_classifiers_predictions_distribution_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
+def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -928,8 +928,8 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -939,8 +939,8 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
                     'confidence_thresholding',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -969,7 +969,7 @@ def test_visualisation_cconfidence_thresholding_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
+def test_visualization_confidence_thresholding_data_vs_acc_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -993,8 +993,8 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -1004,8 +1004,8 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
                     'confidence_thresholding_data_vs_acc',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -1034,7 +1034,7 @@ def test_visualisation_confidence_thresholding_data_vs_acc_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
+def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1058,8 +1058,8 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -1069,8 +1069,8 @@ def test_visualisation_confidence_thresholding_data_vs_acc_subset_output_saved(
                     'confidence_thresholding_data_vs_acc_subset',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -1125,8 +1125,8 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     ground_truth_metadata = experiment_source_data_name + '.json'
@@ -1139,8 +1139,8 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
                     ground_truth,
                     '--ground_truth_metadata',
                     ground_truth_metadata,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -1202,13 +1202,13 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    treshhold_field1 = get_output_field_name(exp_dir_name)
-    treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
+    treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
+    treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name, output_feature=1)
     probability1 = exp_dir_name + '/{}_probabilities.npy'.format(
-        treshhold_field1
+        treshhold_output_feature_name1
     )
     probability2 = exp_dir_name + '/{}_probabilities.npy'.format(
-        treshhold_field2
+        treshhold_output_feature_name2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
@@ -1222,9 +1222,9 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
                     '--probabilities',
                     probability1,
                     probability2,
-                    '--threshold_fields',
-                    treshhold_field1,
-                    treshhold_field2,
+                    '--threshold_output_feature_names',
+                    treshhold_output_feature_name1,
+                    treshhold_output_feature_name2,
                     '--model_names',
                     'Model1',
                     '-od', exp_dir_name]
@@ -1278,13 +1278,13 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    treshhold_field1 = get_output_field_name(exp_dir_name)
-    treshhold_field2 = get_output_field_name(exp_dir_name, output_feature=1)
+    treshhold_output_feature_name1 = get_output_feature_name(exp_dir_name)
+    treshhold_output_feature_name2 = get_output_feature_name(exp_dir_name, output_feature=1)
     probability1 = exp_dir_name + '/{}_probabilities.npy'.format(
-        treshhold_field1
+        treshhold_output_feature_name1
     )
     probability2 = exp_dir_name + '/{}_probabilities.npy'.format(
-        treshhold_field2
+        treshhold_output_feature_name2
     )
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
@@ -1298,9 +1298,9 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
                     '--probabilities',
                     probability1,
                     probability2,
-                    '--threshold_fields',
-                    treshhold_field1,
-                    treshhold_field2,
+                    '--threshold_output_feature_names',
+                    treshhold_output_feature_name1,
+                    treshhold_output_feature_name2,
                     '-od', exp_dir_name]
     test_cmd_png = test_cmd_pdf.copy() + ['-ff', 'png']
 
@@ -1325,7 +1325,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
+def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -1352,8 +1352,8 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -1367,8 +1367,8 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
                     'accuracy',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -1397,7 +1397,7 @@ def test_visualisation_binary_threshold_vs_metric_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_roc_curves_output_saved(csv_filename):
+def test_visualization_roc_curves_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -1419,8 +1419,8 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     ground_truth_metadata = experiment_source_data_name + '.json'
@@ -1437,8 +1437,8 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
                     ground_truth,
                     '--ground_truth_metadata',
                     ground_truth_metadata,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -1467,7 +1467,7 @@ def test_visualisation_roc_curves_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_roc_curves_from_test_statistics_output_saved(
+def test_visualization_roc_curves_from_test_statistics_output_saved(
         csv_filename
 ):
     """Ensure pdf and png figures from the experiments can be saved.
@@ -1487,7 +1487,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = exp_dir_name + '/test_statistics.json'
     experiment_source_data_name = csv_filename.split('.')[0]
     test_cmd_pdf = ['python',
@@ -1495,8 +1495,8 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
                     'ludwig.visualize',
                     '--visualization',
                     'roc_curves_from_test_statistics',
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--test_statistics',
                     test_stats,
                     '--model_names',
@@ -1523,7 +1523,7 @@ def test_visualisation_roc_curves_from_test_statistics_output_saved(
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
+def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -1545,8 +1545,8 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -1558,8 +1558,8 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
                     'accuracy',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -1590,7 +1590,7 @@ def test_visualisation_calibration_1_vs_all_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_calibration_multiclass_output_saved(csv_filename):
+def test_visualization_calibration_multiclass_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -1612,8 +1612,8 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
-    probability = exp_dir_name + '/{}_probabilities.npy'.format(field_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
+    probability = exp_dir_name + '/{}_probabilities.npy'.format(output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
     test_cmd_pdf = ['python',
@@ -1623,8 +1623,8 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
                     'calibration_multiclass',
                     '--ground_truth',
                     ground_truth,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--probabilities',
                     probability,
                     probability,
@@ -1653,7 +1653,7 @@ def test_visualisation_calibration_multiclass_output_saved(csv_filename):
             print("Error: %s - %s." % (e.filename, e.strerror))
 
 
-def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
+def test_visualization_frequency_vs_f1_output_saved(csv_filename):
     """Ensure pdf and png figures from the experiments can be saved.
 
     :param csv_filename: csv fixture from tests.conftest.csv_filename
@@ -1675,7 +1675,7 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
-    field_name = get_output_field_name(exp_dir_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = exp_dir_name + '/test_statistics.json'
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth_metadata = experiment_source_data_name + '.json'
@@ -1686,8 +1686,8 @@ def test_visualisation_frequency_vs_f1_output_saved(csv_filename):
                     'frequency_vs_f1',
                     '--ground_truth_metadata',
                     ground_truth_metadata,
-                    '--field',
-                    field_name,
+                    '--output_feature_name',
+                    output_feature_name,
                     '--test_statistics',
                     test_stats,
                     test_stats,
@@ -1735,32 +1735,32 @@ def test_load_ground_truth_split_from_file(csv_filename):
         output_features,
         data_csv=rel_path
     )
-    field_name = get_output_field_name(exp_dir_name)
+    output_feature_name = get_output_feature_name(exp_dir_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
 
-    ground_truth_train_split = load_from_file(ground_truth, field_name,
+    ground_truth_train_split = load_from_file(ground_truth, output_feature_name,
                                               ground_truth_split=0)
-    ground_truth_val_split = load_from_file(ground_truth, field_name,
+    ground_truth_val_split = load_from_file(ground_truth, output_feature_name,
                                               ground_truth_split=1)
-    ground_truth_test_split = load_from_file(ground_truth, field_name)
+    ground_truth_test_split = load_from_file(ground_truth, output_feature_name)
 
     test_df, train_df, val_df = obtain_df_splits(csv_filename)
-    target_predictions_from_train = train_df[field_name]
-    target_predictions_from_val = val_df[field_name]
-    target_predictions_from_test = test_df[field_name]
+    target_predictions_from_train = train_df[output_feature_name]
+    target_predictions_from_val = val_df[output_feature_name]
+    target_predictions_from_test = test_df[output_feature_name]
     gtm_name = experiment_source_data_name + '.json'
     ground_truth_metadata = load_json(gtm_name)
     ground_truth_loaded_train_split = np.asarray([
-        ground_truth_metadata[field_name]['str2idx'][train_row]
+        ground_truth_metadata[output_feature_name]['str2idx'][train_row]
         for train_row in target_predictions_from_train
     ])
     ground_truth_loaded_val_split = np.asarray([
-        ground_truth_metadata[field_name]['str2idx'][val_row]
+        ground_truth_metadata[output_feature_name]['str2idx'][val_row]
         for val_row in target_predictions_from_val
     ])
     ground_truth_loaded_test_split = np.asarray([
-        ground_truth_metadata[field_name]['str2idx'][test_row]
+        ground_truth_metadata[output_feature_name]['str2idx'][test_row]
         for test_row in target_predictions_from_test
     ])
 

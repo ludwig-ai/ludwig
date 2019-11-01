@@ -20,7 +20,6 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-
 nlp_pipelines = {
     'en': None,
     'it': None,
@@ -30,6 +29,8 @@ nlp_pipelines = {
     'pt': None,
     'nl': None,
     'el': None,
+    'nb': None,
+    'lt': None,
     'xx': None
 }
 language_module_registry = {
@@ -41,6 +42,8 @@ language_module_registry = {
     'pt': 'pt_core_news_sm',
     'nl': 'nl_core_news_sm',
     'el': 'el_core_news_sm',
+    'nb': 'nb_core_news_sm',
+    'lt': 'lt_core_news_sm',
     'xx': 'xx_ent_wiki_sm'
 }
 default_characters = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
@@ -69,21 +72,30 @@ def load_nlp_pipeline(language='xx'):
     global nlp_pipelines
     if nlp_pipelines[language] is None:
         logger.info('Loading NLP pipeline')
-        import spacy
+        try:
+            import spacy
+        except ImportError:
+            logger.error(
+                ' spacy is not installed. '
+                'In order to install all text feature dependencies run '
+                'pip install ludwig[text]'
+            )
+            sys.exit(-1)
+
         try:
             nlp_pipelines[language] = spacy.load(
                 spacy_module_name,
                 disable=['parser', 'tagger', 'ner']
             )
         except OSError:
-            logger.error(
-                ' Unable to load spacy model {}. '
-                'Make sure to download it with: '
-                'python -m spacy download {}'.format(
-                    spacy_module_name,
-                    spacy_module_name
-                ))
-            sys.exit(-1)
+            logger.info(
+                ' spaCy {} model is missing, downloading it '
+                '(this will only happen once)'
+            )
+            from spacy.cli import download
+            download(language)
+            nlp_pipelines[language] = spacy.load(language)
+
     return nlp_pipelines[language]
 
 

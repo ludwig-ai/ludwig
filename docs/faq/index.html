@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -95,7 +95,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" tabindex="1" class="md-skip">
+      <a href="#do-you-support-91feature-encoder-decoder93-in-ludwig" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -357,13 +357,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" class="md-nav__link">
-    I'm experiencing problems installing gmpy, how do I solve them?
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#do-you-support-91feature-encoder-decoder93-in-ludwig" class="md-nav__link">
     Do you support [feature | encoder | decoder] in Ludwig?
   </a>
@@ -401,6 +394,13 @@
         <li class="md-nav__item">
   <a href="#who-else-helped-developing-ludwig" class="md-nav__link">
     Who else helped developing Ludwig?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-can-i-cite-ludwig" class="md-nav__link">
+    How can I cite Ludwig?
   </a>
   
 </li>
@@ -435,13 +435,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" class="md-nav__link">
-    I'm experiencing problems installing gmpy, how do I solve them?
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#do-you-support-91feature-encoder-decoder93-in-ludwig" class="md-nav__link">
     Do you support [feature | encoder | decoder] in Ludwig?
   </a>
@@ -483,6 +476,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#how-can-i-cite-ludwig" class="md-nav__link">
+    How can I cite Ludwig?
+  </a>
+  
+</li>
+      
       
       
       
@@ -504,11 +504,7 @@
                 
                   <h1>FAQ</h1>
                 
-                <h3 id="im-experiencing-problems-installing-gmpy-how-do-i-solve-them">I'm experiencing problems installing <code>gmpy</code>, how do I solve them?<a class="headerlink" href="#im-experiencing-problems-installing-gmpy-how-do-i-solve-them" title="Permanent link">&para;</a></h3>
-<p>If you encounter problems installing <code>gmpy</code> please install <code>libgmp</code> or <code>gmp</code>.
-On Debian based Linux distributions: <code>sudo apt-get install libgmp3-dev</code>.
-On MacOS : <code>brew install gmp</code>.</p>
-<h3 id="do-you-support-91feature-encoder-decoder93-in-ludwig">Do you support [feature | encoder | decoder] in Ludwig?<a class="headerlink" href="#do-you-support-91feature-encoder-decoder93-in-ludwig" title="Permanent link">&para;</a></h3>
+                <h3 id="do-you-support-91feature-encoder-decoder93-in-ludwig">Do you support [feature | encoder | decoder] in Ludwig?<a class="headerlink" href="#do-you-support-91feature-encoder-decoder93-in-ludwig" title="Permanent link">&para;</a></h3>
 <p>The list of encoders for each feature type is specified in the <a href="../user_guide/">User Guide</a>.
 We plan to add additional feature types and additional encoders and decoders for all feature types.
 Refer to <a href="#what-additional-features-are-you-working-on">this question</a> for more details.
@@ -524,18 +520,18 @@ This means that if your service provides a mechanism for loading data with a nam
 <h3 id="what-additional-features-are-you-working-on">What additional features are you working on?<a class="headerlink" href="#what-additional-features-are-you-working-on" title="Permanent link">&para;</a></h3>
 <p>We will prioritize new features depending on the feedback of the community, but we are already planning to add:</p>
 <ul>
-<li>additional text and sequence encoders (attention, co-attention, hierarchical attention, <a href="https://arxiv.org/abs/1706.03762">Transformer</a>, <a href="https://arxiv.org/abs/1802.05365">ELMo</a> and <a href="https://arxiv.org/abs/1810.04805">BERT</a>).</li>
+<li>additional text and sequence encoders (attention, co-attention, hierarchical attention, <a href="https://arxiv.org/abs/1706.03762">Transformer</a>, <a href="https://arxiv.org/abs/1802.05365">ELMo</a> and <a href="https://arxiv.org/abs/1810.04805">BERT</a> derived models, bert is supported already).</li>
 <li>additional image encoders (<a href="https://arxiv.org/abs/1608.06993">DenseNet</a> and <a href="https://arxiv.org/abs/1605.07648">FractalNet</a>).</li>
 <li>image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).</li>
 <li>time series decoding.</li>
-<li>additional features types (vectors, point clouds, nested lists, multi-sentence documents, graphs).</li>
+<li>additional features types (point clouds, nested lists, multi-sentence documents, graphs, videos).</li>
 <li>additional measures and losses.</li>
 <li>additional data formatters and dataset-specific preprocessing scripts.</li>
 </ul>
 <p>We also want to address some of the current limitations:</p>
 <ul>
 <li>currently the full dataset needs to be loaded in memory in order to train a model. Image features already have a way to dynamically read batches of datapoints from disk, and we want to extend this capability to other datatypes.</li>
-<li>add a command to start a rest service maybe with a simple user interface in order to provide a live demo capability.</li>
+<li>a simple user interface in order to provide a live demo capability.</li>
 <li>document lower level functions.</li>
 <li>optimize the data I/O to TensorFlow.</li>
 <li>increase the number of supported data formats beyond just CSV and integrating with <a href="https://github.com/uber/Petastorm">Petastorm</a>.</li>
@@ -556,6 +552,15 @@ Feel free to reach out to us and ask as there are tasks for all levels of experi
 <li>Alex Sergeev and Felipe Petroski Such who helped with distributed training</li>
 <li>Emidio Torre helped with the initial design of the landing page</li>
 </ul>
+<h3 id="how-can-i-cite-ludwig">How can I cite Ludwig?<a class="headerlink" href="#how-can-i-cite-ludwig" title="Permanent link">&para;</a></h3>
+<p>Please use this Bibtex:</p>
+<div class="codehilite"><pre><span></span>@misc{Molino2019,
+  author = {Piero Molino and Yaroslav Dudin and Sai Sumanth Miryala},
+  title = {Ludwig: a type-based declarative deep learning toolbox},
+  year = {2019},
+  eprint = {arXiv:1909.07930},
+}
+</pre></div>
                 
                   
                 
@@ -637,7 +642,7 @@ Feel free to reach out to us and ask as there are tasks for all levels of experi
       
     </div>
     
-      <script src="../assets/javascripts/application.c648116f.js"></script>
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

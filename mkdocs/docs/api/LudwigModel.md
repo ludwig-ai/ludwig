@@ -15,8 +15,8 @@ __Inputs__
 
 
 - __model_definition__ (dict): a dictionary containing information needed
-   to build a model. Refer to the [User Guide]
-   (http://ludwig.ai/user_guide/#model-definition) for details.
+   to build a model. Refer to the [User Guide](http://ludwig.ai/user_guide/#model-definition) 
+   for details.
 - __model_definition_file__ (string, optional, default: `None`): path to
    a YAML file containing the model definition. If available it will be
    used instead of the model_definition dict.
@@ -187,7 +187,8 @@ ludwig.predict(
   return_type=<class 'pandas.core.frame.DataFrame'>,
   batch_size=128,
   gpus=None,
-  gpu_fraction=1
+  gpu_fraction=1,
+  skip_save_unprocessed_output=True
 )
 ```
 
@@ -217,6 +218,11 @@ __Inputs__
    DataFrame , while `'dict'`, ''dictionary'` and `dict` will
    return a dictionary.
 - __batch_size__ (int, default: `128`): batch size
+- __skip_save_unprocessed_output__ (skip_save_unprocessed_output: If this parameter is False):skip_save_unprocessed_output: If this parameter is False,
+   predictions and their probabilities are saved in both raw
+   unprocessed numpy files contaning tensors and as postprocessed
+   CSV files (one for each output feature). If this parameter is
+   True, only the CSV ones are saved and the numpy ones are skipped.
 - __gpus__ (string, default: `None`): list of GPUs to use (it uses the
    same syntax of CUDA_VISIBLE_DEVICES)
 - __gpu_fraction__ (float, default `1.0`): fraction of gpu memory to
@@ -326,6 +332,7 @@ ludwig.test(
   data_dict=None,
   return_type=<class 'pandas.core.frame.DataFrame'>,
   batch_size=128,
+  skip_save_unprocessed_output=False,
   gpus=None,
   gpu_fraction=1
 )
@@ -360,6 +367,11 @@ __Inputs__
    DataFrame , while `'dict'`, ''dictionary'` and `dict` will
    return a dictionary.
 - __batch_size__ (int, default: `128`): batch size
+- __skip_save_unprocessed_output__ (skip_save_unprocessed_output: If this parameter is False):skip_save_unprocessed_output: If this parameter is False,
+   predictions and their probabilities are saved in both raw
+   unprocessed numpy files contaning tensors and as postprocessed
+   CSV files (one for each output feature). If this parameter is
+   True, only the CSV ones are saved and the numpy ones are skipped.
 - __gpus__ (string, default: `None`): list of GPUs to use (it uses the
    same syntax of CUDA_VISIBLE_DEVICES)
 - __gpu_fraction__ (float, default `1.0`): fraction of GPU memory to
@@ -416,6 +428,8 @@ train(
   model_name='run',
   model_load_path=None,
   model_resume_path=None,
+  skip_save_training_description=False,
+  skip_save_training_statistics=False,
   skip_save_model=False,
   skip_save_progress=False,
   skip_save_log=False,
@@ -512,6 +526,10 @@ __Inputs__
    initialization
 - __model_resume_path__ (string): path of a the model directory to
    resume training of
+- __skip_save_training_description__ (bool, default: `False`): disables
+   saving the description JSON file.
+- __skip_save_training_statistics__ (bool, default: `False`): disables
+   saving training statistics JSON file.
 - __skip_save_model__ (bool, default: `False`): disables
    saving model weights and hyperparameters each time the model
    improves. By default Ludwig saves model weights after each epoch

@@ -131,7 +131,7 @@ class SetInputFeature(SetBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None is for dealing with variable batch size
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.int32,
             shape=[None, len(self.vocab)],
             name=self.name
@@ -193,7 +193,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         _ = self.overwrite_defaults(feature)
 
     def _get_output_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.bool,
             shape=[None, self.num_classes],
             name='{}_placeholder'.format(self.name)
@@ -208,16 +208,16 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         if not self.regularize:
             regularizer = None
 
-        with tf.variable_scope('predictions_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('predictions_{}'.format(self.name)):
             initializer_obj = get_initializer(self.initializer)
-            weights = tf.get_variable(
+            weights = tf.compat.v1.get_variable(
                 'weights',
                 initializer=initializer_obj([hidden_size, self.num_classes]),
                 regularizer=regularizer
             )
             logger.debug('  class_weights: {0}'.format(weights))
 
-            biases = tf.get_variable(
+            biases = tf.compat.v1.get_variable(
                 'biases',
                 [self.num_classes]
             )
@@ -244,7 +244,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             targets,
             logits
     ):
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
             train_loss = tf.nn.sigmoid_cross_entropy_with_logits(
                 labels=tf.cast(targets, tf.float32),
                 logits=logits
@@ -307,7 +307,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
-        tf.summary.scalar(
+        tf.compat.v1.summary.scalar(
             'train_mean_loss_{}'.format(self.name),
             train_mean_loss
         )

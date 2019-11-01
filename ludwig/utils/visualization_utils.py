@@ -19,26 +19,36 @@ from __future__ import division
 
 import copy
 import logging
+import sys
 from collections import Counter
 from sys import platform
 
-import matplotlib as mpl
-
-if platform == "darwin":  # OS X
-    mpl.use('TkAgg')
-import matplotlib.patches as patches
-import matplotlib.path as path
-import matplotlib.patheffects as PathEffects
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
-from matplotlib import ticker
-from matplotlib.lines import Line2D
-from mpl_toolkits.mplot3d import Axes3D
 
 import ludwig.contrib
 
 logger = logging.getLogger(__name__)
+
+try:
+    import matplotlib as mpl
+
+    if platform == "darwin":  # OS X
+        mpl.use('TkAgg')
+    import matplotlib.patches as patches
+    import matplotlib.path as path
+    import matplotlib.patheffects as PathEffects
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from matplotlib import ticker
+    from matplotlib.lines import Line2D
+    from mpl_toolkits.mplot3d import Axes3D
+except ImportError:
+    logger.error(
+        ' matplotlib or seaborn are not installed. '
+        'In order to install all visualization dependencies run '
+        'pip install ludwig[viz]'
+    )
+    sys.exit(-1)
 
 
 # plt.rc('xtick', labelsize='x-large')
@@ -82,7 +92,8 @@ def learning_curves_plot(
             algorithm_names) else ''
         ax.plot(xs, train_values[i], label=name_prefix + 'training',
                 color=colors[i * 2], linewidth=3)
-        if i < len(vali_values) and vali_values[i] is not None and len(vali_values[i]) > 0:
+        if i < len(vali_values) and vali_values[i] is not None and len(
+                vali_values[i]) > 0:
             ax.plot(xs, vali_values[i], label=name_prefix + 'validation',
                     color=colors[i * 2 + 1], linewidth=3)
 
@@ -624,7 +635,7 @@ def confidence_fitlering_3d_plot(
         thresholds_2,
         accuracies,
         dataset_kepts,
-        threshold_fields=None,
+        threshold_output_feature_names=None,
         title=None,
         filename=None
 ):
@@ -651,8 +662,8 @@ def confidence_fitlering_3d_plot(
     ax.grid(which='minor', alpha=0.5)
     ax.grid(which='major', alpha=0.75)
 
-    ax.set_xlabel('{} probability'.format(threshold_fields[0]))
-    ax.set_ylabel('{} probability'.format(threshold_fields[1]))
+    ax.set_xlabel('{} probability'.format(threshold_output_feature_names[0]))
+    ax.set_ylabel('{} probability'.format(threshold_output_feature_names[1]))
 
     ax.set_xlim(np.min(thresholds_1), np.max(thresholds_1))
     ax.set_ylim(np.min(thresholds_2), np.max(thresholds_2))
@@ -938,7 +949,7 @@ def predictions_distribution_plot(
 def confusion_matrix_plot(
         confusion_matrix,
         labels=None,
-        field=None,
+        output_feature_name=None,
         filename=None
 ):
     mpl.rcParams.update({'figure.autolayout': True})
@@ -957,8 +968,8 @@ def confusion_matrix_plot(
     ax.grid(False)
     ax.tick_params(axis='both', which='both', length=0)
     fig.colorbar(cax, ax=ax, extend='max')
-    ax.set_xlabel('Predicted {}'.format(field))
-    ax.set_ylabel('Actual {}'.format(field))
+    ax.set_xlabel('Predicted {}'.format(output_feature_name))
+    ax.set_ylabel('Actual {}'.format(output_feature_name))
 
     plt.tight_layout()
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())

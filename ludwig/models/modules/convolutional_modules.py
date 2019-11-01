@@ -83,7 +83,7 @@ def conv_layer(inputs, kernel_shape, biases_shape,
                dimensions=2, is_training=True):
     if initializer is not None:
         initializer_obj = get_initializer(initializer)
-        weights = tf.get_variable(
+        weights = tf.compat.v1.get_variable(
             'weights',
             initializer=initializer_obj(kernel_shape),
             regularizer=regularizer
@@ -95,7 +95,7 @@ def conv_layer(inputs, kernel_shape, biases_shape,
             initializer = get_initializer('glorot_uniform')
         # if initializer is None, tensorFlow seems to be using
         # a glorot uniform initializer
-        weights = tf.get_variable(
+        weights = tf.compat.v1.get_variable(
             'weights',
             kernel_shape,
             regularizer=regularizer,
@@ -103,7 +103,7 @@ def conv_layer(inputs, kernel_shape, biases_shape,
         )
     logger.debug('  conv_weights: {0}'.format(weights))
 
-    biases = tf.get_variable('biases', biases_shape,
+    biases = tf.compat.v1.get_variable('biases', biases_shape,
                              initializer=tf.constant_initializer(0.01))
     logger.debug('  conv_biases: {0}'.format(biases))
 
@@ -238,7 +238,7 @@ class ConvStack1D:
 
         for i in range(num_conv_layers):
             layer = self.layers[i]
-            with tf.variable_scope('conv_{}'.format(i)):
+            with tf.compat.v1.variable_scope('conv_{}'.format(i)):
                 # Convolution Layer
                 filter_shape = [
                     layer['filter_size'],
@@ -337,7 +337,7 @@ class ParallelConv1D:
         parallel_conv_layers = []
 
         for i, layer in enumerate(self.layers):
-            with tf.variable_scope(
+            with tf.compat.v1.variable_scope(
                     'conv_{}_fs{}'.format(i, layer['filter_size'])):
                 # Convolution Layer
                 filter_shape = [
@@ -464,7 +464,7 @@ class StackParallelConv1D:
 
         for i in range(len(self.stacked_parallel_layers)):
             parallel_conv_layers = self.stacked_parallel_layers[i]
-            with tf.variable_scope('parallel_conv_{}'.format(i)):
+            with tf.compat.v1.variable_scope('parallel_conv_{}'.format(i)):
                 parallel_conv_1d = ParallelConv1D(parallel_conv_layers)
                 hidden = parallel_conv_1d(
                     hidden,
@@ -550,7 +550,7 @@ class ConvStack2D:
         prev_num_filters = int(input_image.shape[-1])
         for i in range(num_layers):
             layer = self.layers[i]
-            with tf.variable_scope('conv_{}'.format(i)):
+            with tf.compat.v1.variable_scope('conv_{}'.format(i)):
                 # Convolution Layer
                 filter_shape = [
                     layer['filter_size'],

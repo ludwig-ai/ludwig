@@ -319,6 +319,8 @@ class LudwigModel:
             model_name='run',
             model_load_path=None,
             model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
             skip_save_model=False,
             skip_save_progress=False,
             skip_save_log=False,
@@ -412,6 +414,10 @@ class LudwigModel:
                initialization
         :param model_resume_path: (string) path of a the model directory to
                resume training of
+        :param skip_save_training_description: (bool, default: `False`) disables
+               saving the description JSON file.
+        :param skip_save_training_statistics: (bool, default: `False`) disables
+               saving training statistics JSON file.
         :param skip_save_model: (bool, default: `False`) disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
@@ -508,6 +514,8 @@ class LudwigModel:
             model_name=model_name,
             model_load_path=model_load_path,
             model_resume_path=model_resume_path,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
             skip_save_model=skip_save_model,
             skip_save_progress=skip_save_progress,
             skip_save_log=skip_save_log,

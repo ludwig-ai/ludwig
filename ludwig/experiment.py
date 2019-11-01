@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import argparse
 import logging
+import os
 import sys
 import yaml
 
@@ -55,11 +56,15 @@ def experiment(
         model_name='run',
         model_load_path=None,
         model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
         skip_save_model=False,
         skip_save_progress=False,
         skip_save_log=False,
         skip_save_processed_input=False,
         skip_save_unprocessed_output=False,
+        skip_save_test_predictions=False,
+        skip_save_test_statistics=False,
         output_directory='results',
         gpus=None,
         gpu_fraction=1.0,
@@ -77,17 +82,17 @@ def experiment(
     :param model_definition_file: The file that specifies the model definition.
            It is a yaml file.
     :type model_definition_file: filepath (str)
-    :param data_csv: A CSV file contanining the input data which is used to
+    :param data_csv: A CSV file containing the input data which is used to
            train, validate and test a model. The CSV either contains a
            split column or will be split.
     :type data_csv: filepath (str)
-    :param data_train_csv: A CSV file contanining the input data which is used
+    :param data_train_csv: A CSV file containing the input data which is used
            to train a model.
     :type data_train_csv: filepath (str)
-    :param data_validation_csv: A CSV file contanining the input data which is used
+    :param data_validation_csv: A CSV file containing the input data which is used
            to validate a model..
     :type data_validation_csv: filepath (str)
-    :param data_test_csv: A CSV file contanining the input data which is used
+    :param data_test_csv: A CSV file containing the input data which is used
            to test a model.
     :type data_test_csv: filepath (str)
     :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
@@ -115,13 +120,19 @@ def experiment(
     :param model_resume_path: Resumes training of the model from the path
            specified. The difference with model_load_path is that also training
            statistics like the current epoch and the loss and performance so
-           far are also resumed effectively cotinuing a previously interrupted
+           far are also resumed effectively continuing a previously interrupted
            training process.
     :type model_resume_path: filepath (str)
+    :param skip_save_training_description: Disables saving
+           the description JSON file.
+    :type skip_save_training_description: Boolean
+    :param skip_save_training_statistics: Disables saving
+           training statistics JSON file.
+    :type skip_save_training_statistics: Boolean
     :param skip_save_model: Disables
                saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure imrpvoes, but if the model is really big
+           the validation measure improves, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -146,12 +157,16 @@ def experiment(
     :type skip_save_processed_input: Boolean
     :param skip_save_unprocessed_output: By default predictions and
            their probabilities are saved in both raw unprocessed numpy files
-           contaning tensors and as postprocessed CSV files
+           containing tensors and as postprocessed CSV files
            (one for each output feature). If this parameter is True,
            only the CSV ones are saved and the numpy ones are skipped.
     :type skip_save_unprocessed_output: Boolean
-    :param output_directory: The directory that will contanin the training
-           statistics, the saved model and the training procgress files.
+    :param skip_save_test_predictions: skips saving test predictions CSV files
+    :type skip_save_test_predictions: Boolean
+    :param skip_save_test_statistics: skips saving test statistics JSON file
+    :type skip_save_test_statistics: Boolean
+    :param output_directory: The directory that will contain the training
+           statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
@@ -166,7 +181,6 @@ def experiment(
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     """
-
     (
         model,
         preprocessed_data,
@@ -189,6 +203,8 @@ def experiment(
         model_name=model_name,
         model_load_path=model_load_path,
         model_resume_path=model_resume_path,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
@@ -226,6 +242,17 @@ def experiment(
             gpu_fraction=gpu_fraction,
             debug=debug
         )
+
+        # check if we need to create the output dir
+        if is_on_master():
+            if not (
+                    skip_save_unprocessed_output and
+                    skip_save_test_predictions and
+                    skip_save_test_statistics
+            ):
+                if not os.path.exists(experiment_dir_name):
+                    os.makedirs(experiment_dir_name)
+
         # postprocess
         postprocessed_output = postprocess(
             test_results,
@@ -237,9 +264,13 @@ def experiment(
 
         if is_on_master():
             print_test_results(test_results)
-            save_prediction_outputs(postprocessed_output, experiment_dir_name)
-            save_test_statistics(test_results, experiment_dir_name)
-    
+            if not skip_save_test_predictions:
+                save_prediction_outputs(
+                    postprocessed_output,
+                    experiment_dir_name
+                )
+            if not skip_save_test_statistics:
+                save_test_statistics(test_results, experiment_dir_name)
     model.close_session()
 
     if is_on_master():
@@ -253,7 +284,7 @@ def experiment(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description='This script trains and tests a model.',
+        description='This script trains and tests a model',
         prog='ludwig experiment',
         usage='%(prog)s [options]'
     )
@@ -374,18 +405,44 @@ def cli(sys_argv):
         help='path of a the model directory to resume training of'
     )
     parser.add_argument(
+        '-sstd',
+        '--skip_save_training_description',
+        action='store_true',
+        default=False,
+        help='disables saving the description JSON file'
+    )
+    parser.add_argument(
+        '-ssts',
+        '--skip_save_training_statistics',
+        action='store_true',
+        default=False,
+        help='disables saving training statistics JSON file'
+    )
+    parser.add_argument(
+        '-sstp',
+        '--skip_save_test_predictions',
+        help='skips saving test predictions CSV files',
+        action='store_true', default=False
+    )
+    parser.add_argument(
+        '-sstes',
+        '--skip_save_test_statistics',
+        help='skips saving test statistics JSON file',
+        action='store_true', default=False
+    )
+    parser.add_argument(
         '-ssm',
         '--skip_save_model',
         action='store_true',
         default=False,
         help='disables saving model weights and hyperparameters each time '
-             'the model imrpoves. '
+             'the model improves. '
              'By default Ludwig saves model weights after each epoch '
-             'the validation measure imrpvoes, but if the model is really big '
+             'the validation measure imprvoes, but if the model is really big '
              'that can be time consuming if you do not want to keep '
              'the weights and just find out what performance can a model get '
              'with a set of hyperparameters, use this parameter to skip it,'
-             'but the model will not be loadable later on.'
+             'but the model will not be loadable later on'
     )
     parser.add_argument(
         '-ssp',
@@ -397,7 +454,7 @@ def cli(sys_argv):
              'of training, but if the model is really big that can be '
              'time consuming and will uses twice as much space, use '
              'this parameter to skip it, but training cannot be resumed '
-             'later on. '
+             'later on'
     )
     parser.add_argument(
         '-ssl',
@@ -406,7 +463,7 @@ def cli(sys_argv):
         default=False,
         help='disables saving TensorBoard logs. By default Ludwig saves '
              'logs for the TensorBoard, but if it is not needed turning it off '
-             'can slightly increase the overall speed.'
+             'can slightly increase the overall speed'
     )
 
     # ------------------

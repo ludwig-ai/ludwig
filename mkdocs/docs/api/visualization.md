@@ -4,7 +4,7 @@
 ```python
 ludwig.visualize.learning_curves(
   train_stats_per_model,
-  field,
+  output_feature_name,
   model_names=None,
   output_directory=None,
   file_format='pdf'
@@ -18,7 +18,8 @@ For each model and for each output feature and measure of the model,
 it produces a line plot showing how that measure changed over the course
 of the epochs of training on the training and validation sets.
 :param train_stats_per_model: List containing train statistics per model
-:param field: Prediction field containing ground truth.
+:param output_feature_name: Name of the output feature that is predicted 
+and for which is provided ground truth
 :param model_names: List of the names of the models to use as labels.
 :param output_directory: Directory where to save plots.
 If not specified, plots will be displayed in a window
@@ -33,7 +34,7 @@ If not specified, plots will be displayed in a window
 ```python
 ludwig.visualize.compare_performance(
   test_stats_per_model,
-  field,
+  output_feature_name,
   model_names=None,
   output_directory=None,
   file_format='pdf'
@@ -46,9 +47,9 @@ Produces model comparision barplot visualization for each overall metric
 
 For each model (in the aligned lists of test_statistics and model_names)
 it produces bars in a bar plot, one for each overall metric available
-in the test_statistics file for the specified field.
+in the test_statistics file for the specified output_feature_name.
 :param test_stats_per_model: List containing train statistics per model
-:param field: Prediction field containing ground truth.
+:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
 :param model_names: List of the names of the models to use as labels.
 :param output_directory: Directory where to save plots.
 If not specified, plots will be displayed in a window
@@ -77,10 +78,9 @@ Produces model comparision barplot visualization from probabilities.
 
 For each model it produces bars in a bar plot, one for each overall metric
 computed on the fly from the probabilities of predictions for the specified
-field.
+output_feature_name.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param top_n_classes: List containing the number of classes to plot
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
@@ -100,7 +100,7 @@ ludwig.visualize.compare_classifiers_performance_from_pred(
   predictions_per_model,
   ground_truth,
   metadata,
-  field,
+  output_feature_name,
   labels_limit,
   model_names=None,
   output_directory=None,
@@ -112,13 +112,12 @@ ludwig.visualize.compare_classifiers_performance_from_pred(
 Produces model comparision barplot visualization from predictions.
 
 For each model it produces bars in a bar plot, one for each overall metric
-computed on the fly from the predictions for the specified field.
+computed on the fly from the predictions for the specified output_feature_name.
 :param predictions_per_model: List containing the model predictions
-for the specified field
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+for the specified output_feature_name
+:param ground_truth: NumPy Array containing ground truth data
 :param metadata: Model's input metadata
-:param field: field containing ground truth
+:param output_feature_name: output_feature_name containing ground truth
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param model_names: List of the names of the models to use as labels.
@@ -150,12 +149,11 @@ Produces model comparision barplot visualization from train subset.
 
 For each model  it produces bars in a bar plot, one for each overall metric
 computed on the fly from the probabilities predictions for the
-specified field, considering only a subset of the full training set.
+specified output_feature_name, considering only a subset of the full training set.
 The way the subset is obtained is using the top_n_classes and
 subset parameters.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param top_n_classes: List containing the number of classes to plot
 :param labels_limit: Maximum numbers of labels.
 :param subset: Type of the subset filtering
@@ -188,11 +186,10 @@ Produce lineplot that show Hits@K measure while k goes from 1 to top_k.
 
 For each model it produces a line plot that shows the Hits@K measure
 (that counts a prediction as correct if the model produces it among the
-first k) while changing k from 1 to top_k for the specified field.
+first k) while changing k from 1 to top_k for the specified output_feature_name.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
-param top_k: Number of elements in the ranklist to consider
+:param ground_truth: NumPy Array containing ground truth data
+:param top_k: Number of elements in the ranklist to consider
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param model_names: List of the names of the models to use as labels.
@@ -210,7 +207,7 @@ If not specified, plots will be displayed in a window
 ludwig.visualize.compare_classifiers_multiclass_multimetric(
   test_stats_per_model,
   metadata,
-  field,
+  output_feature_name,
   top_n_classes,
   model_names=None,
   output_directory=None,
@@ -219,13 +216,13 @@ ludwig.visualize.compare_classifiers_multiclass_multimetric(
 ```
 
 
-Show the precision, recall and F1 of the model for the specified field.
+Show the precision, recall and F1 of the model for the specified output_feature_name.
 
 For each model it produces four plots that show the precision,
-recall and F1 of the model on several classes for the specified field.
+recall and F1 of the model on several classes for the specified output_feature_name.
 :param test_stats_per_model: List containing train statistics per model
 :param metadata: Model's input metadata
-:param field: Prediction field containing ground truth.
+:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
 :param top_n_classes: List containing the number of classes to plot
 :param model_names: List of the names of the models to use as labels.
 :param output_directory: Directory where to save plots.
@@ -251,11 +248,10 @@ ludwig.visualize.compare_classifiers_predictions(
 ```
 
 
-Show two models comparision of their field predictions.
+Show two models comparision of their output_feature_name predictions.
 
 :param predictions_per_model: List containing the model predictions
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param model_names: List of the names of the models to use as labels.
@@ -273,7 +269,7 @@ If not specified, plots will be displayed in a window
 ludwig.visualize.confidence_thresholding_2thresholds_2d(
   probabilities_per_model,
   ground_truths,
-  threshold_fields,
+  threshold_output_feature_names,
   labels_limit,
   model_names=None,
   output_directory=None,
@@ -282,19 +278,17 @@ ludwig.visualize.confidence_thresholding_2thresholds_2d(
 ```
 
 
-Show confidence trethreshold data vs accuracy for two field thresholds
+Show confidence trethreshold data vs accuracy for two output_feature_name thresholds
 
 The first plot shows several semi transparent lines. They summarize the
 3d surfaces displayed by confidence_thresholding_2thresholds_3d that have
 thresholds on the confidence of the predictions of the two
-threshold_fields  as x and y axes and either the data coverage percentage or
+threshold_output_feature_names  as x and y axes and either the data coverage percentage or
 the accuracy as z axis. Each line represents a slice of the data
 coverage  surface projected onto the accuracy surface.
 :param probabilities_per_model: List of model probabilities
-:param ground_truths: List of NumPy Arrays containing computed model ground
-truth data for target prediction fields based on the model
-metadata
-:param threshold_fields: List of fields for 2d threshold
+:param ground_truths: List of NumPy Arrays containing ground truth data
+:param threshold_output_feature_names: List of output_feature_names for 2d threshold
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param model_names: Name of the model to use as label.
@@ -312,7 +306,7 @@ If not specified, plots will be displayed in a window
 ludwig.visualize.confidence_thresholding_2thresholds_3d(
   probabilities_per_model,
   ground_truths,
-  threshold_fields,
+  threshold_output_feature_names,
   labels_limit,
   output_directory=None,
   file_format='pdf'
@@ -320,17 +314,15 @@ ludwig.visualize.confidence_thresholding_2thresholds_3d(
 ```
 
 
-Show 3d confidence trethreshold data vs accuracy for two field thresholds
+Show 3d confidence trethreshold data vs accuracy for two output_feature_name thresholds
 
 The plot shows the 3d surfaces displayed by
 confidence_thresholding_2thresholds_3d that have thresholds on the
-confidence of the predictions of the two threshold_fields as x and y axes
+confidence of the predictions of the two threshold_output_feature_names as x and y axes
 and either the data coverage percentage or the accuracy as z axis.
 :param probabilities_per_model: List of model probabilities
-:param ground_truths: List of NumPy Arrays containing computed model ground
-truth data for target prediction fields based on the model
-metadata
-:param threshold_fields: List of fields for 2d threshold
+:param ground_truths: List of NumPy Arrays containing ground truth data
+:param threshold_output_feature_names: List of output_feature_names for 2d threshold
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param output_directory: Directory where to save plots.
@@ -359,10 +351,9 @@ Show models accuracy and data coverage while increasing treshold
 
 For each model it produces a pair of lines indicating the accuracy of
 the model and the data coverage while increasing a threshold (x axis) on
-the probabilities of predictions for the specified field.
+the probabilities of predictions for the specified output_feature_name.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param model_names: List of the names of the models to use as labels.
@@ -392,13 +383,12 @@ Show models comparision of confidence treshold data vs accuracy.
 
 For each model it produces a line indicating the accuracy of the model
 and the data coverage while increasing a threshold on the probabilities
-of predictions for the specified field. The difference with
+of predictions for the specified output_feature_name. The difference with
 confidence_thresholding is that it uses two axes instead of three,
 not visualizing the threshold and having coverage as x axis instead of
 the threshold.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param model_names: List of the names of the models to use as labels.
@@ -431,7 +421,7 @@ subset of data.
 
 For each model it produces a line indicating the accuracy of the model
 and the data coverage while increasing a threshold on the probabilities
-of predictions for the specified field, considering only a subset of the
+of predictions for the specified output_feature_name, considering only a subset of the
 full training set. The way the subset is obtained is using the top_n_classes
 and subset parameters.
 The difference with confidence_thresholding is that it uses two axes
@@ -447,8 +437,7 @@ that is within the top n most frequent ones will be considered as test set,
 and the percentage of datapoints that have been kept from the original set
 will be displayed for each model.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param top_n_classes: List containing the number of classes to plot
 :param labels_limit: Maximum numbers of labels.
 :param subset: Type of the subset filtering
@@ -476,20 +465,18 @@ ludwig.visualize.binary_threshold_vs_metric(
 ```
 
 
-Show confidence of the model against metric for the specified field.
+Show confidence of the model against metric for the specified output_feature_name.
 
 For each metric specified in metrics (options are f1, precision, recall,
 accuracy), this visualization produces a line chart plotting a threshold
 on  the confidence of the model against the metric for the specified
-field.  If field is a category feature, positive_label indicates which is
+output_feature_name.  If output_feature_name is a category feature, positive_label indicates which is
 the class to be considered positive class and all the others will be
 considered negative. It needs to be an integer, to figure out the
 association between classes and integers check the ground_truth_metadata
 JSON file.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: List of NumPy Arrays containing computed model
-ground truth data for target prediction fields based on the model
-metadata
+:param ground_truth: List of NumPy Arrays containing ground truth data
 :param metrics: metrics to dispay (f1, precision, recall,
 accuracy)
 :param positive_label: Label of the positive class
@@ -516,18 +503,16 @@ ludwig.visualize.roc_curves(
 ```
 
 
-Show the roc curves for the specified models output field.
+Show the roc curves for the specified models output output_feature_name.
 
 This visualization produces a line chart plotting the roc curves for the
-specified field. If field is a category feature, positive_label indicates
+specified output_feature_name. If output_feature_name is a category feature, positive_label indicates
 which is the class to be considered positive class and all the others will
 be considered negative. It needs to be an integer, to figure out the
 association between classes and integers check the ground_truth_metadata
 JSON file.
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: List of NumPy Arrays containing computed model
-ground truth data for target prediction fields based on the model
-metadata
+:param ground_truth: List of NumPy Arrays containing ground truth data
 :param positive_label: Label of the positive class
 :param model_names: List of the names of the models to use as labels.
 :param output_directory: Directory where to save plots.
@@ -543,7 +528,7 @@ If not specified, plots will be displayed in a window
 ```python
 ludwig.visualize.roc_curves_from_test_statistics(
   test_stats_per_model,
-  field,
+  output_feature_name,
   model_names=None,
   output_directory=None,
   file_format='pdf'
@@ -551,13 +536,13 @@ ludwig.visualize.roc_curves_from_test_statistics(
 ```
 
 
-Show the roc curves for the specified models output binary field.
+Show the roc curves for the specified models output binary output_feature_name.
 
-This visualization uses the field, test_statistics and model_names
-parameters. field needs to be binary feature. This visualization produces a
-line chart plotting the roc curves for the specified field.
+This visualization uses the output_feature_name, test_statistics and model_names
+parameters. output_feature_name needs to be binary feature. This visualization produces a
+line chart plotting the roc curves for the specified output_feature_name.
 :param test_stats_per_model: List containing train statistics per model
-:param field: Prediction field containing ground truth.
+:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
 :param model_names: List of the names of the models to use as labels.
 :param output_directory: Directory where to save plots.
 If not specified, plots will be displayed in a window
@@ -582,11 +567,11 @@ ludwig.visualize.calibration_1_vs_all(
 ```
 
 
-Show models probability of predictions for the specified field.
+Show models probability of predictions for the specified output_feature_name.
 
 For each class or each of the k most frequent classes if top_k is
 specified,  it produces two plots computed on the fly from the
-probabilities  of predictions for the specified field.
+probabilities  of predictions for the specified output_feature_name.
 
 The first plot is a calibration curve that shows the calibration of the
 predictions considering the current class to be the true one and all
@@ -598,8 +583,7 @@ the  current class to be the true one and all others to be a false one,
 drawing the distribution for each model (in the aligned lists of
 probabilities and model_names).
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param top_n_classes: List containing the number of classes to plot
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
@@ -627,11 +611,10 @@ ludwig.visualize.calibration_multiclass(
 
 
 Show models probability of predictions for each class of the the
-specified field.
+specified output_feature_name.
 
 :param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing computed model ground truth
-data for target prediction field based on the model metadata
+:param ground_truth: NumPy Array containing ground truth data
 :param labels_limit: Maximum numbers of labels.
 If labels in dataset are higher than this number, "rare" label
 :param model_names: List of the names of the models to use as labels.
@@ -649,7 +632,7 @@ If not specified, plots will be displayed in a window
 ludwig.visualize.confusion_matrix(
   test_stats_per_model,
   metadata,
-  field,
+  output_feature_name,
   top_n_classes,
   normalize,
   model_names=None,
@@ -659,15 +642,15 @@ ludwig.visualize.confusion_matrix(
 ```
 
 
-Show confision matrix in the models predictions for each field.
+Show confision matrix in the models predictions for each output_feature_name.
 
 For each model (in the aligned lists of test_statistics and model_names)
 it  produces a heatmap of the confusion matrix in the predictions for
-each  field that has a confusion matrix in test_statistics. The value of
+each  output_feature_name that has a confusion matrix in test_statistics. The value of
 top_n_classes limits the heatmap to the n most frequent classes.
 :param test_stats_per_model: List containing train statistics per model
 :param metadata: Model's input metadata
-:param field: Prediction field containing ground truth.
+:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
 :param top_n_classes: List containing the number of classes to plot
 :param normalize: Flag to normalize rows in confusion matrix
 :param model_names: List of the names of the models to use as labels.
@@ -686,7 +669,7 @@ If not specified, plots will be displayed in a window
 ludwig.visualize.frequency_vs_f1(
   test_stats_per_model,
   metadata,
-  field,
+  output_feature_name,
   top_n_classes,
   model_names=None,
   output_directory=None,
@@ -695,10 +678,10 @@ ludwig.visualize.frequency_vs_f1(
 ```
 
 
-Show prediction statistics for the specified field for each model.
+Show prediction statistics for the specified output_feature_name for each model.
 
 For each model (in the aligned lists of test_statistics and model_names),
-produces two plots statistics of predictions for the specified field.
+produces two plots statistics of predictions for the specified output_feature_name.
 
 The first plot is a line plot with one x axis representing the different
 classes and two vertical axes colored in orange and blue respectively.
@@ -711,7 +694,7 @@ but the axes are flipped and the classes on the x axis are sorted by
 frequency.
 :param test_stats_per_model: List containing train statistics per model
 :param metadata: Model's input metadata
-:param field: Prediction field containing ground truth.
+:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
 :param top_n_classes: List containing the number of classes to plot
 :param model_names: List of the names of the models to use as labels.
 :param output_directory: Directory where to save plots.

@@ -174,7 +174,7 @@ class RecurrentStack:
         cell_fn = get_cell_fun(self.cell_type)
 
         # initial state
-        # init_state = tf.get_variable(
+        # init_state = tf.compat.v1.get_variable(
         #   'init_state',
         #   [1, state_size],
         #   initializer=tf.constant_initializer(0.0),
@@ -182,7 +182,7 @@ class RecurrentStack:
         # init_state = tf.tile(init_state, [batch_size, 1])
 
         # main RNN operation
-        with tf.variable_scope('rnn_stack', reuse=tf.AUTO_REUSE,
+        with tf.compat.v1.variable_scope('rnn_stack', reuse=tf.compat.v1.AUTO_REUSE,
                                regularizer=regularizer) as vs:
             if self.bidirectional:
                 # forward direction cell
@@ -239,7 +239,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                       tied_target_embeddings=True, embeddings=None,
                       initializer=None, regularizer=None,
                       is_timeseries=False):
-    with tf.variable_scope('rnn_decoder', reuse=tf.AUTO_REUSE,
+    with tf.compat.v1.variable_scope('rnn_decoder', reuse=tf.compat.v1.AUTO_REUSE,
                            regularizer=regularizer):
 
         # ================ Setup ================
@@ -254,7 +254,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
         # Project the encoder outputs to the size of the decoder state
         encoder_outputs_size = encoder_outputs.shape[-1]
         if projection and encoder_outputs_size != state_size:
-            with tf.variable_scope('projection'):
+            with tf.compat.v1.variable_scope('projection'):
                 encoder_output_rank = len(encoder_outputs.shape)
                 if encoder_output_rank > 2:
                     sequence_length = tf.shape(encoder_outputs)[1]
@@ -277,7 +277,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
 
         # ================ Targets sequence ================
         # Calculate the length of inputs and the batch size
-        with tf.variable_scope('sequence'):
+        with tf.compat.v1.variable_scope('sequence'):
             targets_sequence_length = sequence_length_2D(targets)
             start_tokens = tf.tile([GO_SYMBOL], [batch_size])
             end_tokens = tf.tile([END_SYMBOL], [batch_size])
@@ -296,7 +296,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             targets_embedded = tf.expand_dims(targets_with_go_and_eos, -1)
             targets_embeddings = None
         else:
-            with tf.variable_scope('embedding'):
+            with tf.compat.v1.variable_scope('embedding'):
                 if embeddings is not None:
                     embedding_size = embeddings.shape.as_list()[-1]
                     if tied_target_embeddings:
@@ -305,7 +305,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                     embedding_size = state_size
 
                 if embeddings is not None:
-                    embedding_go = tf.get_variable('embedding_GO',
+                    embedding_go = tf.compat.v1.get_variable('embedding_GO',
                                                    initializer=tf.random_uniform(
                                                        [1, embedding_size],
                                                        -1.0, 1.0))
@@ -313,7 +313,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                                                    axis=0)
                 else:
                     initializer_obj = get_initializer(initializer)
-                    targets_embeddings = tf.get_variable(
+                    targets_embeddings = tf.compat.v1.get_variable(
                         'embeddings',
                         initializer=initializer_obj(
                             [vocab_size + 1, embedding_size]),
@@ -332,19 +332,19 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             class_weights = tf.transpose(targets_embeddings)
         else:
             initializer_obj = get_initializer(initializer)
-            class_weights = tf.get_variable(
+            class_weights = tf.compat.v1.get_variable(
                 'class_weights',
                 initializer=initializer_obj([state_size, vocab_size + 1]),
                 regularizer=regularizer
             )
         logger.debug('  class_weights: {0}'.format(class_weights))
-        class_biases = tf.get_variable('class_biases', [vocab_size + 1])
+        class_biases = tf.compat.v1.get_variable('class_biases', [vocab_size + 1])
         logger.debug('  class_biases: {0}'.format(class_biases))
         projection_layer = Projection(class_weights, class_biases)
 
         # ================ RNN ================
         initial_state = encoder_outputs
-        with tf.variable_scope('rnn_cells') as vs:
+        with tf.compat.v1.variable_scope('rnn_cells') as vs:
             # Cell
             cell_fun = get_cell_fun(cell_type)
 

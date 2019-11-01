@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 import os
+import sys
 
 import h5py
 import numpy as np
@@ -23,7 +24,6 @@ import tensorflow as tf
 
 from functools import partial
 from multiprocessing import Pool
-from skimage.io import imread
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
@@ -87,6 +87,15 @@ class ImageBaseFeature(BaseFeature):
         If the user specifies a number of channels, we try to convert all the
         images to the specifications by dropping channels/padding 0 channels
         """
+        try:
+            from skimage.io import imread
+        except ImportError:
+            logger.error(
+                ' scikit-image is not installed. '
+                'In order to install all image feature dependencies run '
+                'pip install ludwig[image]'
+            )
+            sys.exit(-1)
 
         img = imread(filepath)
         img_num_channels = num_channels_in_image(img)
@@ -157,6 +166,16 @@ class ImageBaseFeature(BaseFeature):
         the same number of channels
         """
         # Read the first image in the dataset
+        try:
+            from skimage.io import imread
+        except ImportError:
+            logger.error(
+                ' scikit-image is not installed. '
+                'In order to install all image feature dependencies run '
+                'pip install ludwig[image]'
+            )
+            sys.exit(-1)
+
         first_image = imread(first_image_path)
         first_img_height = first_image.shape[0]
         first_img_width = first_image.shape[1]

@@ -143,3 +143,11 @@ def set_default_values(dictionary, default_value_dictionary):
     # Set multiple default values
     for key, value in default_value_dictionary.items():
         set_default_value(dictionary, key, value)
+
+def find_non_existing_dir_by_adding_suffix(directory_name):
+    curr_directory_name = directory_name
+    suffix = 0
+    while os.path.exists(curr_directory_name):
+        curr_directory_name = directory_name + '_' + str(suffix)
+        suffix += 1
+    return curr_directory_name

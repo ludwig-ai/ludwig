@@ -362,7 +362,6 @@ def add_sequence_feature_column(df, col_name, seq_length):
     :param col_name: column name containing sequential data
     :param seq_length: length of an array of preceeding column values to use
     """
-
     if col_name not in df.columns.values:
         logger.error('{} column does not exist'.format(col_name))
         return
@@ -375,13 +374,15 @@ def add_sequence_feature_column(df, col_name, seq_length):
             )
         )
 
-    df[new_col_name] = np.nan
+    new_data = [None] * seq_length
+    old_data = np.array(df[col_name])
 
     for i in range(seq_length, len(df)):
-        df.iloc[i, df.columns.get_loc(new_col_name)] = ' '.join(
-            str(j) for j in list((df.iloc[i - seq_length: i][col_name]))
-        )
+        new_data.append(' '.join(
+            str(j) for j in old_data[i - seq_length: i]
+        ))
 
+    df[new_col_name] = new_data
     df[new_col_name] = df[new_col_name].fillna(method='backfill')
 
 

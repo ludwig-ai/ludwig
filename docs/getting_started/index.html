@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.2">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
     
     
       
@@ -547,27 +547,19 @@ A suite of visualization tools allows you to analyze models' training and test p
 - Understandability: deep learning model internals are often considered black boxes, but we provide standard visualizations to understand their performance and compare their predictions.
 - Open Source: Apache License 2.0</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<p>Ludwig's requirements are the following:</p>
+<p>Ludwig's basic requirements are the following:</p>
 <ul>
+<li>tensorflow</li>
 <li>numpy</li>
 <li>pandas</li>
 <li>scipy</li>
 <li>scikit-learn</li>
-<li>scikit-image</li>
-<li>spacy</li>
-<li>tensorflow</li>
-<li>matplotlib</li>
-<li>seaborn</li>
 <li>Cython</li>
 <li>h5py</li>
-<li>tqdm</li>
 <li>tabulate</li>
+<li>tqdm</li>
 <li>PyYAML</li>
-<li>gmpy</li>
-<li>fastapi</li>
-<li>pydantic</li>
-<li>uvicorn</li>
-<li>python-multipart</li>
+<li>absl-py</li>
 </ul>
 <p>Ludwig has been developed and tested with Python 3 in mind.
 If you don’t have Python 3 installed, install it by running:</p>
@@ -577,6 +569,10 @@ brew install python3      # on mac
 
 
 <p>You may want to use a virtual environment to maintain an isolated <a href="https://docs.python-guide.org/dev/virtualenvs/">Python environment</a>.</p>
+<div class="codehilite"><pre><span></span>virtualenv -p python3 venv
+</pre></div>
+
+
 <p>In order to install Ludwig just run:</p>
 <div class="codehilite"><pre><span></span>pip install ludwig
 </pre></div>
@@ -592,17 +588,41 @@ python setup.py install
 </pre></div>
 
 
+<p>This will install only Ludwig-s basic requirements, different feature types require different dependencies.
+We divided them as different extras so that users could install only the ones they actually need.</p>
+<p>Text features extra packages can be installed with <code>pip install ludwig[text]</code> and include:</p>
+<ul>
+<li>spacy</li>
+<li>bert-tensorflow</li>
+</ul>
 <p>If you intend to use text features and want to use <a href="http://spacy.io">spaCy</a> based language tokenizers, install language specific models with:</p>
 <div class="codehilite"><pre><span></span>python -m spacy download &lt;language_code&gt;
 </pre></div>
 
 
 <p>More details in the <a href="../user_guide/#spacy-based-word-format-options">User Guide</a>.</p>
-<p>If you encounter problems installing <code>gmpy</code> please install <code>libgmp</code> or <code>gmp</code>.
-On Debian based Linux distributions: <code>sudo apt-get install libgmp3-dev</code>.
-On MacOS : <code>brew install gmp</code>.</p>
+<p>Image features extra packages can be installed with <code>pip install ludwig[image]</code> and include:</p>
+<p>scikit-image</p>
+<p>Audio features extra packages can be installed with <code>pip install ludwig[audio]</code> and include:</p>
+<ul>
+<li>soundfile</li>
+</ul>
+<p>Visualization extra packages can be installed with <code>pip install ludwig[viz]</code> and include:</p>
+<ul>
+<li>matplotlib</li>
+<li>seaborn</li>
+</ul>
+<p>Model serving extra packages can be installed with <code>pip install ludwig[serve]</code> and include:</p>
+<ul>
+<li>fastapi</li>
+<li>uvicorn</li>
+<li>pydantic</li>
+<li>python-multipart</li>
+</ul>
+<p>Any combination of extra packages can be installed at the same time with <code>pip install ludwig[extra1,extra2,...]</code> like for instance <code>pip install ludwig[text,viz]</code>.
+The full set of dependencies can be installed with <code>pip install ludwig[full]</code>.</p>
 <p>Beware that in the <code>requirements.txt</code> file the <code>tensorflow</code> package is the regular one, not the GPU enabled one.
-To install the GPU enabled one replace it with <code>tensorflow-gpu</code>.</p>
+To install the GPU enabled one, uninstall <code>tensorflow</code> and replace it with <code>tensorflow-gpu</code> after installation.</p>
 <p>If you want to train Ludwig models in a distributed way, you need to also install the <code>horovod</code> and the <code>mpi4py</code> packages.
 Please follow the instructions on <a href="https://github.com/uber/horovod">Horovod's repository</a> to install it.</p>
 <h2 id="basic-principles">Basic Principles<a class="headerlink" href="#basic-principles" title="Permanent link">&para;</a></h2>
@@ -622,6 +642,10 @@ Ludwig will compose a deep learning model accordingly and train it for you.</p>
 <li>text</li>
 <li>timeseries</li>
 <li>image</li>
+<li>audio</li>
+<li>date</li>
+<li>h3</li>
+<li>vector</li>
 </ul>
 <p>The model definition can contain additional information, in particular how to preprocess each column in the CSV, which encoder and decoder to use for each one, feature hyperparameters and training parameters.
 This allows ease of use for novices and flexibility for experts.</p>
@@ -827,7 +851,7 @@ Refer to the <a href="../developer_guide/">Developer Guide</a> for further detai
       
     </div>
     
-      <script src="../assets/javascripts/application.c648116f.js"></script>
+      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

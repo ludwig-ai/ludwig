@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-LUDWIG_VERSION = '0.2'
+LUDWIG_VERSION = '0.2.1'
 
 MODEL_WEIGHTS_FILE_NAME = 'model_weights'
 MODEL_WEIGHTS_PROGRESS_FILE_NAME = 'model_weights_progress'

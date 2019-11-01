@@ -260,7 +260,12 @@ def test_experiment_image_inputs(csv_filename):
     # Stacked CNN encoder, in_memory = False
     input_features[0]['preprocessing']['in_memory'] = False
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(
+        input_features,
+        output_features,
+        data_csv=rel_path,
+        skip_save_processed_input=False,
+    )
 
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
@@ -344,7 +349,10 @@ def test_experiment_sequence_combiner(csv_filename):
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None
+            reduce_output=None,
+            preprocessing={
+                'tokenizer': 'english_tokenize'
+            }
         ),
         sequence_feature(
             name='spanish',
@@ -352,7 +360,10 @@ def test_experiment_sequence_combiner(csv_filename):
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None
+            reduce_output=None,
+            preprocessing = {
+                'tokenizer': 'spanish_tokenize'
+            }
         ),
         category_feature(vocab_size=5)
     ]

@@ -14,14 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
+import sys
+from math import floor, ceil
 
 import numpy as np
-from math import floor, ceil
-from skimage import img_as_ubyte
-from skimage.color import rgb2gray
-from skimage.transform import resize
 
 from ludwig.constants import CROP_OR_PAD, INTERPOLATE
+
+logger = logging.getLogger(__name__)
 
 
 def pad(img, size, axis):
@@ -58,6 +59,17 @@ def crop_or_pad(img, new_size_tuple):
 
 
 def resize_image(img, new_size_typle, resize_method):
+    try:
+        from skimage import img_as_ubyte
+        from skimage.transform import resize
+    except ImportError:
+        logger.error(
+            ' scikit-image is not installed. '
+            'In order to install all image feature dependencies run '
+            'pip install ludwig[image]'
+        )
+        sys.exit(-1)
+
     if tuple(img.shape[:2]) != new_size_typle:
         if resize_method == CROP_OR_PAD:
             return crop_or_pad(img, new_size_typle)
@@ -69,6 +81,17 @@ def resize_image(img, new_size_typle, resize_method):
 
 
 def greyscale(img):
+    try:
+        from skimage import img_as_ubyte
+        from skimage.color import rgb2gray
+    except ImportError:
+        logger.error(
+            ' scikit-image is not installed. '
+            'In order to install all image feature dependencies run '
+            'pip install ludwig[image]'
+        )
+        sys.exit(-1)
+
     return np.expand_dims(img_as_ubyte(rgb2gray(img)), axis=2)
 
 

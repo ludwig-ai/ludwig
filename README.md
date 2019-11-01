@@ -1,8 +1,4 @@
-Ludwig
-======
-
-Introduction
-------------
+![Ludwig logo](https://github.com/uber/ludwig/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
 Ludwig is a toolbox built on top of TensorFlow that allows to train and test deep learning models without the need to write code.
 
@@ -28,29 +24,21 @@ The core design principles we baked into the toolbox are:
 
 
 Installation
-------------
+============
 
-Ludwig's requirements are the following:
+Ludwig's basic requirements are the following:
 
+- tensorflow
 - numpy
 - pandas
 - scipy
 - scikit-learn
-- scikit-image
-- spacy
-- tensorflow
-- matplotlib
-- seaborn
 - Cython
 - h5py
-- tqdm
 - tabulate
+- tqdm
 - PyYAML
-- gmpy
-- fastapi
-- pydantic
-- uvicorn
-- python-multipart
+- absl-py
 
 Ludwig has been developed and tested with Python 3 in mind.
 If you don’t have Python 3 installed, install it by running:
@@ -61,6 +49,10 @@ brew install python3      # on mac
 ```
 
 You may want to use a virtual environment to maintain an isolated [Python environment](https://docs.python-guide.org/dev/virtualenvs/).
+
+```
+virtualenv -p python3 venv
+```
 
 In order to install Ludwig just run:
 
@@ -79,18 +71,45 @@ pip install -r requirements.txt
 python setup.py install
 ```
 
+This will install only Ludwig-s basic requirements, different feature types require different dependencies.
+We divided them as different extras so that users could install only the ones they actually need.
+
+Text features extra packages can be installed with `pip install ludwig[text]` and include:
+
+- spacy
+- bert-tensorflow
+
 If you intend to use text features and want to use [spaCy](http://spacy.io) based language tokenizers, install language specific models with:
 ```
 python -m spacy download <language_code>
 ```
 More details in the [User Guide](https://uber.github.io/ludwig/user_guide/#spacy-based-word-format-options).
 
-If you encounter problems installing `gmpy` please install `libgmp` or `gmp`.
-On Debian based Linus distributions: `sudo apt-get install libgmp3-dev`.
-On MacOS : `brew install gmp`.
+Image features extra packages can be installed with `pip install ludwig[image]` and include:
+
+scikit-image
+
+Audio features extra packages can be installed with `pip install ludwig[audio]` and include:
+
+- soundfile
+
+Visualization extra packages can be installed with `pip install ludwig[viz]` and include:
+
+- matplotlib
+- seaborn
+
+Model serving extra packages can be installed with `pip install ludwig[serve]` and include:
+
+- fastapi
+- uvicorn
+- pydantic
+- python-multipart
+
+Any combination of extra packages can be installed at the same time with `pip install ludwig[extra1,extra2,...]` like for instance `pip install ludwig[text,viz]`.
+The full set of dependencies can be installed with `pip install ludwig[full]`.
 
 Beware that in the `requirements.txt` file the `tensorflow` package is the regular one, not the GPU enabled one.
-To install the GPU enabled one replace it with `tensorflow-gpu`.
+To install the GPU enabled one, uninstall `tensorflow` and replace it with `tensorflow-gpu` after installation.
 
 If you want to train Ludwig models in a distributed way, you need to also install the `horovod` and the `mpi4py` packages.
 Please follow the instructions on [Horovod's repository](https://github.com/uber/horovod) to install it.
@@ -118,6 +137,10 @@ Currently the available datatypes in Ludwig are:
 - text
 - timeseries
 - image
+- audio
+- date
+- h3
+- vector
 
 The model definition can contain additional information, in particular how to preprocess each column in the CSV, which encoder and decoder to use for each one, feature hyperparameters and training parameters.
 This allows ease of use for novices and flexibility for experts.
@@ -169,7 +192,7 @@ ludwig visualize --visualization learning_curves --training_statistics path/to/t
 
 The commands will display a graph that looks like the following, where you can see loss and accuracy as functions of train iteration number:
 
-![Learning Curves](docs/images/getting_started_learning_curves.png "Learning Curves")
+![Learning Curves](https://github.com/uber/ludwig/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
 Several visualizations are available, please refer to [Visualizations](https://uber.github.io/ludwig/user_guide/#visualizations) for more details.
 
@@ -199,7 +222,7 @@ ludwig visualize --visualization compare_performance --test_statistics path/to/t
 
 will return a bar plot comparing the models on different measures:
 
-![Performance Comparison](docs/images/compare_performance.png "Performance Comparison")
+![Performance Comparison](https://github.com/uber/ludwig/raw/master/docs/images/compare_performance.png "Performance Comparison")
 
 A handy `ludwig experiment` command that performs training and prediction one after the other is also available.
 

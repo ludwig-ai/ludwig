@@ -86,7 +86,7 @@ def encoder_test(
     :param output_data: expected output data (optional)
     :return: returns the encoder object for the caller to run extra checks
     """
-    tf.reset_default_graph()
+    tf.compat.v1.reset_default_graph()
 
     # Run the encoder
     input_data = tf.convert_to_tensor(input_data)

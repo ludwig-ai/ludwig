@@ -1,0 +1,4 @@
+uvicorn
+fastapi
+pydantic==0.32.2
+python-multipart

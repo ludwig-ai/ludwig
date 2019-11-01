@@ -197,7 +197,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
         self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
 
     def _get_input_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.int32, shape=[None, None],
             name='{}_placeholder'.format(self.name)
         )
@@ -267,7 +267,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         self.decoder_obj = self.get_sequence_decoder(feature)
 
     def _get_output_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.int32,
             [None, self.max_sequence_length],
             name='{}_placeholder'.format(self.name)
@@ -510,9 +510,6 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             output_feature[LOSS],
             {
                 'type': 'softmax_cross_entropy',
-                'sampler': None,
-                'negative_samples': 0,
-                'distortion': 1,
                 'labels_smoothing': 0,
                 'class_weights': 1,
                 'robust_lambda': 0,

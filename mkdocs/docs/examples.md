@@ -6,7 +6,7 @@ Text Classification
 ===
 
 This example shows how to build a text classifier with Ludwig.
-It can be performed using the [Reuters-21578](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip) dataset, in particular the version available on [CMU's Text Analitycs course website](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/).
+It can be performed using the [Reuters-21578](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip) dataset, in particular the version available on [CMU's Text Analytics course website](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/).
 Other datasets available on the same webpage, like [OHSUMED](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/ohsumed-allcats-6.zip), is a well-known medical abstracts dataset, and [Epinions.com](http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/epinions.zip), a dataset of product reviews, can be used too as the name of the columns is the same.
 
 

@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import logging
 import os
 import shutil
-
-from starlette.testclient import TestClient
+import sys
 
 from ludwig.api import LudwigModel
 from ludwig.serve import server, ALL_FEATURES_PRESENT_ERROR
@@ -27,6 +26,18 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import text_feature
+
+logger = logging.getLogger(__name__)
+
+try:
+    from starlette.testclient import TestClient
+except ImportError:
+    logger.error(
+        ' fastapi and other serving dependencies are not installed. '
+        'In order to install all serving dependencies run '
+        'pip install ludwig[serve]'
+    )
+    sys.exit(-1)
 
 
 def train_model(input_features, output_features, data_csv):
@@ -104,7 +115,7 @@ def convert_to_form(entry):
 
 
 def test_server_integration(csv_filename):
-     # Image Inputs
+    # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
     # Resnet encoder

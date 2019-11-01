@@ -399,7 +399,8 @@ class Model:
             learning_rate *= self.horovod.size()
 
         # ====== Setup file names =======
-        os.makedirs(save_path, exist_ok=True)
+        if is_on_master():
+            os.makedirs(save_path, exist_ok=True)
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
         model_weights_progress_path = os.path.join(
             save_path,

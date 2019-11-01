@@ -145,7 +145,7 @@ class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
         self.type = TIMESERIES
 
     def _get_input_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32, shape=[None, self.length],
             name='{}_placeholder'.format(self.name)
         )
@@ -206,14 +206,14 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         self.decoder_obj = self.get_sequence_decoder(feature)
 
     def _get_output_placeholder(self):
-        return tf.placeholder(
+        return tf.compat.v1.placeholder(
             tf.float32,
             [None, self.max_sequence_length],
             name='{}_placeholder'.format(self.name)
         )
 
     def _get_measures(self, targets, predictions):
-        with tf.variable_scope('measures_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('measures_{}'.format(self.name)):
             error_val = error(targets, predictions, self.name)
             absolute_error_val = absolute_error(targets, predictions, self.name)
             squared_error_val = squared_error(targets, predictions, self.name)
@@ -221,9 +221,9 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         return error_val, squared_error_val, absolute_error_val, r2_val
 
     def _get_loss(self, targets, predictions):
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == 'mean_squared_error':
-                train_loss = tf.losses.mean_squared_error(
+                train_loss = tf.compat.v1.losses.mean_squared_error(
                     labels=targets,
                     predictions=predictions,
                     reduction=Reduction.NONE
@@ -296,7 +296,7 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
 
-        tf.summary.scalar(TRAIN_MEAN_LOSS + '_' + self.name, train_mean_loss)
+        tf.compat.v1.summary.scalar(TRAIN_MEAN_LOSS + '_' + self.name, train_mean_loss)
 
         # ================ Measures ================
         (

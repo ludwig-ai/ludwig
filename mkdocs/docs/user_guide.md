@@ -1947,7 +1947,7 @@ reduce_output: last
 #### BERT Encoder
 
 The [BERT](https://arxiv.org/abs/1810.04805) encoder allows for loading a pre-trained bert model.
-Models are available on [GitHube](https://github.com/google-research/bert) for download.
+Models are available on [GitHub](https://github.com/google-research/bert) for download.
 The downloaded pretrained model directory contains:
 - `bert_config.json` which holds the hyperparameters of the bert architecture,
 - `vocab.txt` which contains the vocabulary of BPE word pieces the model was trained on,
@@ -2123,6 +2123,7 @@ regularize: true
 #### Generator Decoder
 
 In the case of `generator` the decoder is a (potentially empty) stack of fully connected layers, followed by an rnn that generates outputs feeding on its own previous predictions and generates a tensor of size `b x s' x c`, where `b` is the batch size, `s'` is the length of the generated sequence and `c` is the number of classes, followed by a softmax_cross_entropy.
+During training teacher forcing is adopted, meaning the list of targets is provided as both inputs and outputs (shifted by 1), while at evaluation time greedy decoding (generating one token at a time and feeding it as input for the next step) is performed by beam search, using a beam of 1 by default.
 By default a generator expects a `b x h` shaped input tensor, where `h` is a hidden dimension.
 The `h` vectors are (after an optional stack of fully connected layers) fed into the rnn generator.
 One exception is when the generator uses attention, as in that case the expected size of the input tensor is `b x s x h`, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner.
@@ -2346,6 +2347,7 @@ All images in the dataset should have the same size.
 If they have different sizes, a `resize_method`, together with a target `width` and `height`, must be specified in the feature preprocessing parameters.
 
 - `in_memory` (default `true`): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.
+- `num_processes` (default 1): specifies the number of processes to run for preprocessing images.
 - `resize_method` (default `crop_or_pad`): available options: `crop_or_pad` - crops images larger than the specified `width` and `height` to the desired size or pads smalled images using edge padding; `interpolate` - uses interpolation to resize images to the specified `width` and `height`.
 - `height` (default `null`): image height in pixels, must be set if resizing is required
 - `width` (default `null`): image width in pixels, must be set if resizing is required
@@ -2981,15 +2983,11 @@ It also adjusts the learning rate to counter balance the increase in the batch s
 The advantage is that training speed scales almost linearly with the number of nodes.
 
 `experiment`, `train` and `predict` commands accept a `--use_horovod` argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
-An `horovodrun` command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
+A `horovodrun` command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
 For instance, in order to train a Ludwig model on a local machine with four GPUs one you can run:
 
 ```
 horovodrun -np 4 \
-    -H localhost:4 \
-    -bind-to none -map-by slot \
-    -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
-    -mca pml ob1 -mca btl ^openib \
     ludwig train --use_horovod ...other Ludwig parameters...
 ```
 
@@ -2998,9 +2996,6 @@ While for training on four remote machines with four GPUs each you can run:
 ```
 horovodrun -np 16 \
     -H server1:4,server2:4,server3:4,server4:4 \
-    -bind-to none -map-by slot \
-    -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
-    -mca pml ob1 -mca btl ^openib \
     ludwig train --use_horovod ...other Ludwig parameters...
 ```
 
