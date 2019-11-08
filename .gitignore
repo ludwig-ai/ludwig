@@ -139,5 +139,4 @@ ENV/
 tags
 
 # examples
-examples/*/data
-examples/*/results
+examples/*/data/
