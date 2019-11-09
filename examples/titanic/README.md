@@ -20,8 +20,6 @@ titanic/
 |multiple_model_training.py|Trains two models and generates a visualization for results of training.|
 |model_training_results.ipynb||
 
-### Executing the examples
-
 Enter `python simple_model_training.py` will generate model training results 
 ```
 ./results/
