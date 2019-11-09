@@ -18,15 +18,16 @@ titanic/
 |----|-----------|
 |simple_model_training.py|Demonstrates using Ludwig api for training a model.|
 |multiple_model_training.py|Trains two models and generates a visualization for results of training.|
-|model_training_results.ipynb||
+|model_training_results.ipynb|Example for extracting training statistics and generate custom visualizations.|
 
-Enter `python simple_model_training.py` will generate model training results 
+Enter `python simple_model_training.py` will train a single model.  Results of model training will be stored in this location.
 ```
 ./results/
     simple_experiment_simple_model/
 ```
 
-Enter `python multiple_model_training.py` will evaluate two models and places training results and visualizations in the following directories:
+Enter `python multiple_model_training.py` will train two models and generate standard Ludwig visualizations comparing the 
+two models.  Results will in the following directories:
 ``` 
 ./results/
     multiple_model_model1/
@@ -36,5 +37,8 @@ Enter `python multiple_model_training.py` will evaluate two models and places tr
     learning_curves_Survived_loss.png
 ```
  
- This will generate a learning curve plot from training the two models
+ This is the standard Ludwig learning curve plot from training the two models
  ![](../images/learning_curves_Survived_accuracy.png)
+ 
+ This is the custom visualization created by the Jupyter notebook `model_training_results.ipynb`. 
+ ![](../images/custom_learning_curve.png)
