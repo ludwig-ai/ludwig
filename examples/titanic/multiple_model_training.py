@@ -45,14 +45,14 @@ for model_id in list_of_model_ids:
                              experiment_name='multiple_experiment',
                              model_name=model_id)
 
-    # save training stats for later user
+    # save training stats for later use
     list_of_train_stats.append(train_stats)
 
     print('>>>>>>> completed: ', model_id,'\n')
 
     model.close()
 
-# generating learning curves from traiing
+# generating learning curves from training
 learning_curves(list_of_train_stats, 'Survived',
                 model_names=list_of_model_ids,
                 output_directory='./visualizations',
