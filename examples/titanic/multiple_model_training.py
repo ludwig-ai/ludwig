@@ -54,7 +54,7 @@ for model_id in list_of_model_ids:
 
 # generating learning curves from traiing
 learning_curves(list_of_train_stats, 'Survived',
-                model_names=['model1', 'model2'],
+                model_names=list_of_model_ids,
                 output_directory='./visualizations',
                 file_format='png')
 
