@@ -52,12 +52,18 @@ def read_csv(data_fp, header=0):
     :param header: header argument for pandas to read the csv
     :return: Pandas dataframe with the data
     """
+    
+    separator=','
+    with open(data_fp, 'r') as csvfile:
+        dialect = csv.Sniffer().sniff(csvfile.read(1024*100))
+        separator=dialect.delimiter
+    
     try:
-        df = pd.read_csv(data_fp, header=header)
+        df = pd.read_csv(data_fp, sep=separator, header=header)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = pd.read_csv(data_fp, header=header, escapechar='\\')
+        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\')
 
     return df
 
