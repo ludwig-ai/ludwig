@@ -313,7 +313,7 @@ class ImageBaseFeature(BaseFeature):
             # image just use this faster shortcut, bypassing multiprocessing.Pool.map
             else:
                 logger.warning(
-                        'No pooling applied. Using one process for preprocessing images'
+                        'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])
                 data[feature['name']] = np.array([img])
