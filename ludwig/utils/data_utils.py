@@ -55,8 +55,12 @@ def read_csv(data_fp, header=0):
     
     separator=','
     with open(data_fp, 'r') as csvfile:
-        dialect = csv.Sniffer().sniff(csvfile.read(1024*100))
-        separator=dialect.delimiter
+        try:
+            dialect = csv.Sniffer().sniff(csvfile.read(1024*100), delimiters=[',' , '\t', '|', ' '])
+            separator=dialect.delimiter
+        except csv.Error:
+            # Could not conclude the delimiter, defaulting to comma
+            pass
     
     try:
         df = pd.read_csv(data_fp, sep=separator, header=header)
