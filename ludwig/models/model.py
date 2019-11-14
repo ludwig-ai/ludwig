@@ -589,6 +589,15 @@ class Model:
                     eval_batch_size,
                     bucketing_field
                 )
+                # Add a graph within TensorBoard showing the overall loss tracked in the same
+                # way as in the CLI
+                validation_loss = progress_tracker.vali_stats['combined'][LOSS][-1]
+                validation_loss_summary = tf.Summary(value=[
+                    tf.Summary.Value(tag="validation_loss", simple_value=validation_loss)
+                ])
+                # progress_tracker.steps has already been incremented before, so to write on the
+                # previous summary, we need to use -1
+                train_writer.add_summary(validation_loss_summary, progress_tracker.steps - 1)
 
             if test_set is not None and test_set.size > 0:
                 # eval measures on test set
