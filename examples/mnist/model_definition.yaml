@@ -2,6 +2,8 @@ input_features:
     -
         name: image_path
         type: image
+        preprocessing:
+            num_processes: 4
         encoder: stacked_cnn
         conv_layers:
             -
