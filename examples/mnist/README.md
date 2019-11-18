@@ -30,6 +30,7 @@ mnist/
 |File|Description|
 |----|-----------|
 |simple_model_training.py|Demonstrates using Ludwig api for training a model.|
-|multiple_model_training.py|Trains two models and generates a visualization for results of training.|
+|advance_model_training.py|Demonstrates a method to assess alternative model architectures.|
+|assess_model_performance.py|Assess model performance on hold-out test data set.|
 |model_training_results.ipynb|Example for extracting training statistics and generate custom visualizations.|
 
