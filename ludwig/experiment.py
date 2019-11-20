@@ -354,7 +354,11 @@ def cli(sys_argv):
              'used in the same directory with the same name and a hdf5 '
              'extension'
     )
-
+    parser.add_argument(
+        '-tsmd',
+        '--train_set_metadata_json',
+        help='train set metadata json file for hdf5 data'
+    )
     parser.add_argument(
         '--metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file'
@@ -424,6 +428,7 @@ def cli(sys_argv):
         help='skips saving test predictions CSV files',
         action='store_true', default=False
     )
+
     parser.add_argument(
         '-sstes',
         '--skip_save_test_statistics',

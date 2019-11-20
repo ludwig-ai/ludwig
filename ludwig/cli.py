@@ -73,6 +73,11 @@ Available sub-commands:
         ludwig.contrib.contrib_command("train", *sys.argv)
         train.cli(sys.argv[2:])
 
+    def train_preprocessed(self):
+        from ludwig import train_preprocessed
+        ludwig.contrib.contrib_command("train", *sys.argv)
+        train_preprocessed.cli(sys.argv[2:])
+
     def predict(self):
         from ludwig import predict
         ludwig.contrib.contrib_command("predict", *sys.argv)
