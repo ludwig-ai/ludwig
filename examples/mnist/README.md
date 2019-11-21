@@ -1,4 +1,4 @@
-# MNIST Hand-written Digit Prediction
+# MNIST Hand-written Digit Classification
 
 This API example is based on [Ludwig's MNIST Hand-written Digit image classification example](https://uber.github.io/ludwig/examples/#image-classification-mnist). 
 
