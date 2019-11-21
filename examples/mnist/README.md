@@ -29,6 +29,7 @@ mnist/
 ### Examples
 |File|Description|
 |----|-----------|
+|create_training_test_data.sh|Bash script to create MNIST training and test data sets.|
 |simple_model_training.py|Demonstrates using Ludwig api for training a model.|
 |advance_model_training.py|Demonstrates a method to assess alternative model architectures.|
 |assess_model_performance.py|Assess model performance on hold-out test data set.  This shows how to load a previously trained model to make predictions.|
