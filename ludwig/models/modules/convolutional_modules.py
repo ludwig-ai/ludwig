@@ -302,7 +302,7 @@ class ParallelConv1D:
             ]
         else:
             self.layers = layers
-        for layer in layers:
+        for layer in self.layers:
             if 'filter_size' not in layer:
                 layer['filter_size'] = default_filter_size
             if 'num_filters' not in layer:
