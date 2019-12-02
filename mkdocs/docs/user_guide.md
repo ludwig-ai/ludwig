@@ -257,9 +257,6 @@ You can specify an output directory with the argument `--output-directory`, by d
 
 The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors.
 You can specify not to save the raw NPY output files with the argument `skip_save_unprocessed_output`.
-If the argument `--evaluate_performance` if provided, a `predict_statistics.json` file containing all prediction statistics will also be outputted.
-If this parameter is specified, the data must contain columns for each output feature with ground truth output values in order to compute the performance statistics.
-If you receive an error regarding a missing output feature column in your data, it means that the data does not contain the columns for each output feature to use as ground truth.
 
 A specific batch size for speeding up the prediction can be specified using the argument `--batch_size`.
 
@@ -332,6 +329,9 @@ optional arguments:
 All parameters are the same of [predict](#predict) and the behavior is the same.
 The only difference isthat `test` requires the dataset to contain also columns with the same name of output features.
 This is needed because `test` compares the predictions produced by the model with the ground truth and will save all those statistics in a `test_statistics.json` file in the result directory.
+
+Note that the data must contain columns for each output feature with ground truth output values in order to compute the performance statistics.
+If you receive an error regarding a missing output feature column in your data, it means that the data does not contain the columns for each output feature to use as ground truth.
 
 Example:
 ```
