@@ -25,7 +25,16 @@ import random
 import h5py
 import numpy as np
 import pandas as pd
+
 from pandas.errors import ParserError
+from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+from petastorm.unischema import UnischemaField
+from petastorm.unischema import Unischema
+from petastorm.unischema import dict_to_spark_row
+from petastorm.codecs import *
+
+from petastorm.etl.dataset_metadata import materialize_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +109,8 @@ def load_hdf5(data_fp):
 
 
 # def save_hdf5(data_fp: str, data: Dict[str, object]):
-def save_hdf5(data_fp, data, metadata=None):
-    if metadata is None:
-        metadata = {}
+def save_hdf5(data_fp, data, metadata={}):
+
     mode = 'w'
     if os.path.isfile(data_fp):
         mode = 'r+'
@@ -115,6 +123,66 @@ def save_hdf5(data_fp, data, metadata=None):
                         dataset.attrs['in_memory'] = True
                     else:
                         dataset.attrs['in_memory'] = False
+
+
+def parquet_generate_petastorm_schema(data):
+    col_schemas = []
+
+    for key in data:
+        first_element = data[key][0]
+        ndim = first_element.ndim
+        if ndim == 0:
+            # scalar type
+            if isinstance(first_element, np.integer):
+                # integers
+                codec = ScalarCodec(IntegerType())
+            elif isinstance(first_element, np.float):
+                # floating point
+                codec = ScalarCodec(FloatType())
+            else:
+                raise ValueError(
+                    'Invalid scalar type for parquet dataset: {}'.format(
+                        first_element.dtype
+                    )
+                )
+
+            col_schemas.append(UnischemaField(
+                key, first_element.dtype.type, first_element.shape, codec
+            ))
+
+        elif ndim == 1:
+            # array type
+            col_schemas.append(UnischemaField(
+                key, first_element.dtype.type, first_element.shape, NdarrayCodec()
+            ))
+        else:
+            raise ValueError('Data types with >1 dimensions are not supported '
+                             'at the moment for parquet storage')
+
+    return Unischema('ParquetSchema', col_schemas)
+
+
+def save_parquet(data_fp, data, metadata={}):
+
+    def row_generator(i):
+        out = {}
+        for key in data:
+            out[key] = data[key][i]
+        return out
+
+    import pdb; pdb.set_trace()
+    spark = SparkSession.builder.config(
+        'spark.driver.memory', '2g').master('local[2]').getOrCreate()
+    sc = spark.sparkContext
+    schema = parquet_generate_petastorm_schema(data)
+    output_url = 'file://{}'.format(data_fp)
+    num_rows = len(data[list(data.keys())[0]])
+
+    with materialize_dataset(spark, output_url, schema):
+        rdd = sc.parallelize(range(num_rows)).map(row_generator).map(
+            lambda x: dict_to_spark_row(schema, x)
+        )
+        spark.createDataFrame(rdd, schema.as_spark_schema()).coalesce(10).write.mode('overwrite').parquet(output_url)
 
 
 def load_object(object_fp):

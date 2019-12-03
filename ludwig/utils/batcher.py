@@ -70,6 +70,62 @@ class Batcher(object):
         self.step = 0
 
 
+class PetaStormBatcher(object):
+    def __init__(self, dataset, batch_size=128, should_shuffle=True, ignore_last=False):
+        # store our dataset as well
+        self.dataset = dataset
+        self.ignore_last = ignore_last
+        self.batch_size = batch_size
+
+        # if should_shuffle:
+        #     self.dataset.shuffle(self.batch_size)
+
+        self.steps_per_epoch = self.get_num_batches()
+        self.index = 0
+        self.step = 0
+        self.epoch = 0
+
+    def reset(self):
+        self.dataset.reset()
+        self.step = 0
+        self.index = 0
+
+    def get_num_batches(self):
+        num_batches = 0
+        self.dataset.reset()
+        while True:
+            try:
+                _ = self.dataset.next_batch(self.batch_size)# , self.ignore_last)
+                num_batches += 1
+            except StopIteration:
+                return num_batches
+
+    def last_batch(self):
+        return self.step >= self.steps_per_epoch
+
+    def next_batch(self):
+        try:
+            petastorm_batch = self.dataset.next_batch(self.batch_size)
+        except StopIteration:
+            self.epoch += 1
+            self.reset()
+            petastorm_batch = self.dataset.next_batch(self.batch_size)
+
+        sub_batch = {}
+        for features_name in self.dataset.features:
+            sub_batch[features_name] = [
+                row.__getattribute__(features_name) for row in petastorm_batch
+            ]
+
+        self.index += self.batch_size
+        self.step += 1
+
+        if self.step % self.steps_per_epoch == 0:
+            self.reset()
+
+        return sub_batch
+
+
 class BucketedBatcher(object):
     def __init__(self, dataset, bucketing_field, batch_size=128, buckets=10,
                  should_shuffle=True, ignore_last=False,
