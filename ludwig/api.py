@@ -139,10 +139,20 @@ class LudwigModel:
 
     def __init__(
             self,
-            model_definition,
+            model_definition=None,
             model_definition_file=None,
             logging_level=logging.ERROR
     ):
+        if model_definition is None and model_definition_file is None:
+            raise ValueError(
+                'Either model_definition of model_definition_file have not None'
+                ' to initialize a LudwigModel'
+            )
+        if model_definition is not None and model_definition_file is not None:
+            raise ValueError(
+                'Only one between model_definition and '
+                'model_definition_file can be provided'
+            )
 
         self.set_logging_level(logging_level)
 
@@ -154,6 +164,7 @@ class LudwigModel:
         else:
             model_definition_copy = copy.deepcopy(model_definition)
             self.model_definition = merge_with_defaults(model_definition_copy)
+
         self.train_set_metadata = None
         self.model = None
         self.exp_dir_name = ''
