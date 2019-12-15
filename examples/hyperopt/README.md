@@ -14,3 +14,6 @@ titanic/
 ```
 
 ### Examples
+|File|Description|
+|----|-----------|
+|model_hyperopt_example.ipynb|Jupyter notebook illustrates how to use the hyperopt package to perform Ludwig hyperparameter optimiztion| 
