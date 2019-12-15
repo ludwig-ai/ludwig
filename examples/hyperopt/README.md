@@ -7,7 +7,7 @@ Demonstrates hyperparameter optimization using the [hyperopt package](https://gi
 * Download [Kaggle competition dataset](https://www.kaggle.com/c/titanic/data) into the `data` directory.  Directory should
 appear as follows:
 ```
-titanic/
+hyperopt/
     data/
         train.csv
         test.csv
