@@ -73,7 +73,6 @@ coverage.xml
 *.csv
 *.hdf5
 *.json
-*.png
 
 
 # Translations
