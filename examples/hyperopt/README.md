@@ -4,13 +4,12 @@ Demonstrates hyperparameter optimization using the [hyperopt package](https://gi
 
 ### Preparatory Steps
 * Create `data` directory
-* Download [Kaggle competition dataset](https://www.kaggle.com/c/titanic/data) into the `data` directory.  Directory should
+* Download [Kaggle wine quality data set](https://www.kaggle.com/rajyellow46/wine-quality) into the `data` directory.  Directory should
 appear as follows:
 ```
 hyperopt/
     data/
-        train.csv
-        test.csv
+        winequalityN.csv
 ```
 
 ### Examples
