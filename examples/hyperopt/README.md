@@ -1,6 +1,6 @@
-# Demonstrates use of Hyperopt with Ludwig
+# Hyperparameter Optimization
 
-This API example is based on [Ludwig's Kaggle Titanic example](https://uber.github.io/ludwig/examples/#kaggles-titanic-predicting-survivors) for predicting probability of surviving. 
+Demonstrates hyperparameter optimization using the [hyperopt package](https://github.com/hyperopt/hyperopt).
 
 ### Preparatory Steps
 * Create `data` directory
@@ -16,4 +16,4 @@ titanic/
 ### Examples
 |File|Description|
 |----|-----------|
-|model_hyperopt_example.ipynb|Jupyter notebook illustrates how to use the hyperopt package to perform Ludwig hyperparameter optimiztion| 
+|model_hyperopt_example.ipynb|Jupyter notebook uses the hyperopt package to perform Ludwig hyperparameter optimiztion| 
