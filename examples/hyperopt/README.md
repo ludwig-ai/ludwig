@@ -12,7 +12,8 @@ hyperopt/
         winequalityN.csv
 ```
 
-### Examples
-|File|Description|
-|----|-----------|
-|model_hyperopt_example.ipynb|Jupyter notebook uses the hyperopt package to perform Ludwig hyperparameter optimiztion| 
+### Description
+Jupyter notebook `model_hyperopt_example.ipynb` demonstrates using the `hyperopt` package to perform hyperparameter optimization during Ludwig model training. Key features demonstrated in the notebook:
+* Programmatically building a Ludwig model definition from training data set
+* Setup hyperparameter search space for optimization
+* Using `hyperopt` `fmin()` function to determine optimal hyperparameters
