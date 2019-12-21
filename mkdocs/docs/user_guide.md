@@ -557,7 +557,7 @@ optional arguments:
 
 The three most important arguments are `--model_path` where you have to specify the path of the model to load, `--tensors` that lets you specify a list of tensor names in the TensorFlow graph that contain the weights you want to collect, and finally `--output_directory` that lets you specify where the NPY files (one for each tensor name specified) will be saved.
 
-In order to figure out the names fo the tensors containing the weights you want to collect, the best way is to inspect the graph of the model with TensorBoard.
+In order to figure out the names of the tensors containing the weights you want to collect, the best way is to inspect the graph of the model with TensorBoard.
 
 ```
 tensorboard --logdir /path/to/model/log
@@ -616,7 +616,7 @@ optional arguments:
 The data related and runtime related arguments (GPUs, batch size, etc.) are the same used in [predict](#predict), you can refer to that section for an explanation.
 The collect specific arguments `--model_path`, `--tensors` and `--output_directory` are the same used in [collect_weights](#collect_weights), you can refer to that section for an explanation.
 
-In order to figure out the names fo the tensors containing the activations you want to collect, the best way is to inspect the graph of the model with TensorBoard.
+In order to figure out the names of the tensors containing the activations you want to collect, the best way is to inspect the graph of the model with TensorBoard.
 
 ```
 tensorboard --logdir /path/to/model/log
@@ -1135,7 +1135,7 @@ Parameters available for preprocessing are
 ### Numerical Input Features and Encoders
 
 Numerical features have one encoder, the raw float values coming from the input placeholders are passed through a single neuron for scaling purposes, (optionally) passed through a normalization layer (either `null`, `batch_norm`, or `layer_norm`) and returned as outputs.
-Inputs are of size `b` while outputs are fo size `b x 1` where b is the batch size.
+Inputs are of size `b` while outputs are of size `b x 1` where b is the batch size.
 
 The available encoder parameters are:
 
@@ -1224,7 +1224,7 @@ The parameters available for preprocessing are
 ### Category Input Features and Encoders
 
 Category features have one encoder, the raw integer values coming from the input placeholders are mapped to either dense or sparse embeddings (one-hot encodings) and returned as outputs.
-Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionality of the embeddings.
+Inputs are of size `b` while outputs are of size `b x h` where `b` is the batch size and `h` is the dimensionality of the embeddings.
 
 The available encoder parameters are
 
@@ -1361,7 +1361,7 @@ The parameters available for preprocessing arehe parameters available for prepro
 ### Set Input Features and Encoders
 
 Set features have one encoder, the raw binary values coming from the input placeholders are first transformed in sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot encodings), finally they are aggregated and returned as outputs.
-Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionally of the embeddings.
+Inputs are of size `b` while outputs are of size `b x h` where `b` is the batch size and `h` is the dimensionally of the embeddings.
 
 ```
 +-+
@@ -1473,7 +1473,7 @@ Bag features are treated in the same way of set features, with the only differen
 ### Bag Input Features and Encoders
 
 Bag features have one encoder, the raw float values coming from the input placeholders are first transformed in sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot encodings), they are aggregated as a weighted sum, where the weights are the original float values, and finally returned as outputs.
-Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionality of the embeddings.
+Inputs are of size `b` while outputs are of size `b x h` where `b` is the batch size and `h` is the dimensionality of the embeddings.
 
 The parameters are the same used for set input features with the exception of `reduce_output` that does not apply in this case because the weighted sum already acts as a reducer.
 
@@ -1515,7 +1515,7 @@ The parameters available for preprocessing are
 ### Sequence Input Features and Encoders
 
 Sequence features have several encoders and each of them has its own parameters.
-Inputs are of size `b` while outputs are fo size `b x h` where `b` is the batch size and `h` is the dimensionally of the output of the encoder.
+Inputs are of size `b` while outputs are of size `b x h` where `b` is the batch size and `h` is the dimensionally of the output of the encoder.
 In case a representation for each element of the sequence is needed (for example for tagging them, or for using an attention mechanism), one can specify the parameter `reduce_output` to be `null` or `None` and the output will be a `b x s x h` tensor where `s` is the length of the sequence.
 Some encoders, because of their inner workings, may require additional parameters to be specified in order to obtain one representation for each element of the sequence.
 For instance the `parallel_cnn` encoder, by default pools and flattens the sequence dimension and then passes the flattened vector through fully connected layers, so in order to obtain the full tesnor one has to specify `reduce_output: null`.
@@ -2153,7 +2153,7 @@ These are the available parameters of a tagger decoder:
 - `regularize` (default `true`): if `true` the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
 - `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentstion](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
 - `state_size` (default `256`): the size of the state of the rnn.
-- `tied_embeddings` (default `null`): if `null` the embeddings of the targets are initialized randomly, while if the values is the name of an input feature, the embeddings of that input feature will be used as embeddings of the target. The `vocabulary_size` of that input feature has to be the same of the output feature one and it has to have an embedding matrix (binary and numerical features will not have one, fo instance). In this case the `embedding_size` will be the same as the `state_size`. This is useful for implementing autoencoders where the encoding and decoding part of the model share parameters.
+- `tied_embeddings` (default `null`): if `null` the embeddings of the targets are initialized randomly, while if the values is the name of an input feature, the embeddings of that input feature will be used as embeddings of the target. The `vocabulary_size` of that input feature has to be the same of the output feature one and it has to have an embedding matrix (binary and numerical features will not have one, for instance). In this case the `embedding_size` will be the same as the `state_size`. This is useful for implementing autoencoders where the encoding and decoding part of the model share parameters.
 - `embedding_size` (default 256): if `tied_target_embeddings` is `false`, the input embeddings and the weights of the softmax_cross_entropy weights before the softmax_cross_entropy are not tied together and can have different sizes, this parameter describes the size of the embeddings of the inputs of the generator.
 - `beam_width` (default `1`): sampling from the rnn generator is performed using beam search. By default, with a beam of one, only a greedy sequence using always the most probably next token is generated, but the beam size can be increased. This usually leads to better performance at the expense of more computation and slower generation.
 - `attention_mechanism` (default `null`): the recurrent generator may use an attention mechanism. The available ones are `bahdanau` and `luong` (for more information refer to [TensorFlow's documentation](https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention)). When `attention` is not `null` the expected size of the input tensor is `b x s x h`, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.
@@ -2920,7 +2920,7 @@ The final output is a `b x s x h'` tensor where `h'` is the size of the concaten
 
 These are the available parameters of a sequence concat combiner
 
-- `main_sequence_feature` (default `null`): name fo the sequence / text/ time series feature to concatenate the outputs of the other features to. If no `main_sequence_feature` is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence `s` dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the `s` dimension, which means that all of them must have identical `s` dimension, otherwise an error will be thrown.
+- `main_sequence_feature` (default `null`): name of the sequence / text/ time series feature to concatenate the outputs of the other features to. If no `main_sequence_feature` is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence `s` dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the `s` dimension, which means that all of them must have identical `s` dimension, otherwise an error will be thrown.
 
 Example sequence concat combiner in the model definition:
 
@@ -2932,7 +2932,7 @@ main_sequence_feature: null
 ### Sequence Combiner
 
 The sequence combiner stacks a sequence concat combiner with a sequence encoder one on top of each other.
-All the considerations about inputs tensor ranks describer for the [sequence concat combiner](#sequence-concat-combiner) apply also in this case, but the main difference is that this combiner uses the `b x s x h'` output of the sequence concat combiner, where `b` is the batch size, `s` is the sequence length and `h'` is the sum of the hidden dimensions of all input features, as input fo any of the sequence encoders described in the [sequence features encoders section](#sequence-inpit-features-and-encoders).
+All the considerations about inputs tensor ranks describer for the [sequence concat combiner](#sequence-concat-combiner) apply also in this case, but the main difference is that this combiner uses the `b x s x h'` output of the sequence concat combiner, where `b` is the batch size, `s` is the sequence length and `h'` is the sum of the hidden dimensions of all input features, as input for any of the sequence encoders described in the [sequence features encoders section](#sequence-inpit-features-and-encoders).
 Refer to that section for more detailed information about the sequence encoders and their parameters.
 Also all the considerations on the shape of the outputs done for the sequence encoders apply in this case too.
 
