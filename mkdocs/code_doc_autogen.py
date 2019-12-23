@@ -416,10 +416,10 @@ def render_function(_function, _method=True):
     return '\n\n'.join(_subblocks)
 
 
-def read_page_data(page_data, type):
+def read_page_data(_page_data, type):
     assert type in ['classes', 'functions', 'methods']
-    data = page_data.get(type, [])
-    for module in page_data.get('all_module_{}'.format(type), []):
+    data = _page_data.get(type, [])
+    for module in _page_data.get('all_module_{}'.format(type), []):
         module_data = []
         for name in dir(module):
             if name[0] == '_' or name in EXCLUDE:
