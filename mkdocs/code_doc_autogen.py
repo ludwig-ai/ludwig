@@ -132,24 +132,24 @@ ROOT = 'http://ludwig.ai/'
 OUTPUT_DIR = 'docs'
 
 
-def get_function_signature(function, method=True):
-    wrapped = getattr(function, '_original_function', None)
+def get_function_signature(_function, _method=True):
+    wrapped = getattr(_function, '_original_function', None)
     if wrapped is None:
-        signature = inspect.getargspec(function)
+        _signature = inspect.getargspec(_function)
     else:
-        signature = inspect.getargspec(wrapped)
-    defaults = signature.defaults
-    if method and len(signature.args) > 0 and signature.args[0] == 'self':
-        args = signature.args[1:]
+        _signature = inspect.getargspec(wrapped)
+    defaults = _signature.defaults
+    if _method and len(_signature.args) > 0 and _signature.args[0] == 'self':
+        args = _signature.args[1:]
     else:
-        args = signature.args
+        args = _signature.args
     if defaults:
         kwargs = zip(args[-len(defaults):], defaults)
         args = args[:-len(defaults)]
     else:
         kwargs = []
     st = '%s.%s(\n' % (
-        clean_module_name(function.__module__), function.__name__)
+        clean_module_name(_function.__module__), _function.__name__)
 
     for a in args:
         st += '  {},\n'.format(str(a))
@@ -158,32 +158,32 @@ def get_function_signature(function, method=True):
             v = '\'' + v + '\''
         st += '  {}={},\n'.format(str(a), str(v))
     if kwargs or args:
-        signature = st[:-2] + '\n)'
+        _signature = st[:-2] + '\n)'
     else:
-        signature = st + ')'
-    return post_process_signature(signature)
+        _signature = st + ')'
+    return post_process_signature(_signature)
 
 
-def get_class_signature(cls):
+def get_class_signature(_cls):
     try:
-        class_signature = get_function_signature(cls.__init__)
-        class_signature = class_signature.replace('__init__', cls.__name__)
+        class_signature = get_function_signature(_cls.__init__)
+        class_signature = class_signature.replace('__init__', _cls.__name__)
     except (TypeError, AttributeError):
         # in case the class inherits from object and does not
         # define __init__
         class_signature = "{clean_module_name}.{cls_name}()".format(
-            clean_module_name=clean_module_name(cls.__module__),
-            cls_name=cls.__name__
+            clean_module_name=clean_module_name(_cls.__module__),
+            cls_name=_cls.__name__
         )
     return post_process_signature(class_signature)
 
 
-def post_process_signature(signature):
-    parts = re.split(r'\.(?!\d)', signature)
+def post_process_signature(_signature):
+    parts = re.split(r'\.(?!\d)', _signature)
     if len(parts) >= 4:
         if parts[1] == 'api':
-            signature = 'ludwig.' + '.'.join(parts[2:])
-    return signature
+            _signature = 'ludwig.' + '.'.join(parts[2:])
+    return _signature
 
 
 def clean_module_name(name):
@@ -399,7 +399,7 @@ def collect_class_methods(_cls, _methods):
 
 def render_function(_function, _method=True):
     _subblocks = []
-    _signature = get_function_signature(_function, method=_method)
+    _signature = get_function_signature(_function, _method=_method)
     if _method:
         _signature = _signature.replace(
             clean_module_name(_function.__module__) + '.', '')
