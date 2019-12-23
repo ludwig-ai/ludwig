@@ -386,15 +386,15 @@ def read_file(path):
         return f.read()
 
 
-def collect_class_methods(cls, methods):
-    if isinstance(methods, (list, tuple)):
-        return [getattr(cls, m) if isinstance(m, str) else m for m in methods]
-    methods = []
-    for _, _method in inspect.getmembers(cls, predicate=inspect.isroutine):
+def collect_class_methods(_cls, _methods):
+    if isinstance(_methods, (list, tuple)):
+        return [getattr(_cls, m) if isinstance(m, str) else m for m in _methods]
+    _methods = []
+    for _, _method in inspect.getmembers(_cls, predicate=inspect.isroutine):
         if _method.__name__[0] == '_' or _method.__name__ in EXCLUDE:
             continue
-        methods.append(_method)
-    return methods
+        _methods.append(_method)
+    return _methods
 
 
 def render_function(_function, _method=True):
