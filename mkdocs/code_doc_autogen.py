@@ -397,15 +397,15 @@ def collect_class_methods(cls, methods):
     return methods
 
 
-def render_function(function, method=True):
+def render_function(_function, method=True):
     _subblocks = []
-    _signature = get_function_signature(function, method=method)
+    _signature = get_function_signature(_function, method=method)
     if method:
         _signature = _signature.replace(
-            clean_module_name(function.__module__) + '.', '')
-    _subblocks.append('## ' + function.__name__ + '\n')
+            clean_module_name(_function.__module__) + '.', '')
+    _subblocks.append('## ' + _function.__name__ + '\n')
     _subblocks.append(code_snippet(_signature))
-    _docstring = function.__doc__
+    _docstring = _function.__doc__
     if _docstring:
         _subblocks.append(process_docstring(_docstring))
     return '\n\n'.join(_subblocks)
