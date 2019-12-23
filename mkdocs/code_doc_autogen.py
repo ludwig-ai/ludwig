@@ -139,7 +139,7 @@ def get_function_signature(_function, _method=True):
     else:
         _signature = inspect.getargspec(wrapped)
     defaults = _signature.defaults
-    if _method and len(_signature.args) > 0 and _signature.args[0] == 'self':
+    if _method and _signature.args and _signature.args[0] == 'self':
         args = _signature.args[1:]
     else:
         args = _signature.args
