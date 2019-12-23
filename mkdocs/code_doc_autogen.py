@@ -367,8 +367,13 @@ def process_docstring(_docstring):
                         _docstring)
 
     # Strip all remaining leading spaces.
+    # generator function to resolve deepsource.io major issue
+    def strip_leading_spaces(these_lines):
+        for l in these_lines:
+            yield l.lstrip(' ')
+
     lines = _docstring.split('\n')
-    _docstring = '\n'.join([line.lstrip(' ') for line in lines])
+    _docstring = '\n'.join(strip_leading_spaces(lines))
 
     # Reinject list blocks.
     for marker, content in sections.items():
@@ -490,9 +495,13 @@ if __name__ == '__main__':
             if methods:
                 subblocks.append('\n---')
                 subblocks.append('# ' + cls.__name__ + ' methods\n')
-                subblocks.append('\n---\n'.join(
-                    [render_function(method, _method=True) for method in
-                     methods]))
+
+                # generator function to resolve deepsource.io major issue
+                def generate_render_functions(_methods):
+                    for m in _methods:
+                        yield render_function(m, _method=True)
+
+                subblocks.append('\n---\n'.join(generate_render_functions(methods)))
             blocks.append('\n'.join(subblocks))
 
         methods = read_page_data(page_data, 'methods')
