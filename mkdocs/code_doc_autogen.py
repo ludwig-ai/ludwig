@@ -390,17 +390,17 @@ def collect_class_methods(cls, methods):
     if isinstance(methods, (list, tuple)):
         return [getattr(cls, m) if isinstance(m, str) else m for m in methods]
     methods = []
-    for _, method in inspect.getmembers(cls, predicate=inspect.isroutine):
-        if method.__name__[0] == '_' or method.__name__ in EXCLUDE:
+    for _, _method in inspect.getmembers(cls, predicate=inspect.isroutine):
+        if _method.__name__[0] == '_' or _method.__name__ in EXCLUDE:
             continue
-        methods.append(method)
+        methods.append(_method)
     return methods
 
 
-def render_function(_function, method=True):
+def render_function(_function, _method=True):
     _subblocks = []
-    _signature = get_function_signature(_function, method=method)
-    if method:
+    _signature = get_function_signature(_function, method=_method)
+    if _method:
         _signature = _signature.replace(
             clean_module_name(_function.__module__) + '.', '')
     _subblocks.append('## ' + _function.__name__ + '\n')
@@ -491,19 +491,19 @@ if __name__ == '__main__':
                 subblocks.append('\n---')
                 subblocks.append('# ' + cls.__name__ + ' methods\n')
                 subblocks.append('\n---\n'.join(
-                    [render_function(method, method=True) for method in
+                    [render_function(method, _method=True) for method in
                      methods]))
             blocks.append('\n'.join(subblocks))
 
         methods = read_page_data(page_data, 'methods')
 
         for method in methods:
-            blocks.append(render_function(method, method=True))
+            blocks.append(render_function(method, _method=True))
 
         functions = read_page_data(page_data, 'functions')
 
         for function in functions:
-            blocks.append(render_function(function, method=False))
+            blocks.append(render_function(function, _method=False))
 
         if not blocks:
             raise RuntimeError('Found no content for page ' +
