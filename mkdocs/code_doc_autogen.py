@@ -297,17 +297,17 @@ def process_list_block(_docstring, starting_point, section_end,
     return _docstring, block
 
 
-def process_docstring(docstring):
+def process_docstring(_docstring):
     # First, extract code blocks and process them.
     code_blocks = []
-    if '```' in docstring:
-        tmp = docstring[:]
+    if '```' in _docstring:
+        tmp = _docstring[:]
         while '```' in tmp:
             tmp = tmp[tmp.find('```'):]
             index = tmp[3:].find('```') + 6
             snippet = tmp[:index]
             # Place marker in docstring for later reinjection.
-            docstring = docstring.replace(
+            _docstring = _docstring.replace(
                 snippet, '$CODE_BLOCK_%d' % len(code_blocks))
             snippet_lines = snippet.split('\n')
             # Remove leading spaces.
@@ -338,47 +338,47 @@ def process_docstring(docstring):
 
     # Format docstring lists.
     section_regex = r'\n( +)# (.*)\n'
-    section_idx = re.search(section_regex, docstring)
+    section_idx = re.search(section_regex, _docstring)
     shift = 0
     sections = {}
     while section_idx and section_idx.group(2):
         anchor = section_idx.group(2)
         leading_spaces = len(section_idx.group(1))
         shift += section_idx.end()
-        next_section_idx = re.search(section_regex, docstring[shift:])
+        next_section_idx = re.search(section_regex, _docstring[shift:])
         if next_section_idx is None:
             section_end = -1
         else:
             section_end = shift + next_section_idx.start()
         marker = '$' + anchor.replace(' ', '_') + '$'
-        docstring, content = process_list_block(docstring,
-                                                shift,
-                                                section_end,
-                                                leading_spaces,
-                                                marker)
+        _docstring, content = process_list_block(_docstring,
+                                                 shift,
+                                                 section_end,
+                                                 leading_spaces,
+                                                 marker)
         sections[marker] = content
         # `docstring` has changed, so we can't use `next_section_idx` anymore
         # we have to recompute it
-        section_idx = re.search(section_regex, docstring[shift:])
+        section_idx = re.search(section_regex, _docstring[shift:])
 
     # Format docstring section titles.
-    docstring = re.sub(r'\n(\s+)# (.*)\n',
+    _docstring = re.sub(r'\n(\s+)# (.*)\n',
                        r'\n\1__\2__\n\n',
-                       docstring)
+                        _docstring)
 
     # Strip all remaining leading spaces.
-    lines = docstring.split('\n')
-    docstring = '\n'.join([line.lstrip(' ') for line in lines])
+    lines = _docstring.split('\n')
+    _docstring = '\n'.join([line.lstrip(' ') for line in lines])
 
     # Reinject list blocks.
     for marker, content in sections.items():
-        docstring = docstring.replace(marker, content)
+        _docstring = _docstring.replace(marker, content)
 
     # Reinject code blocks.
     for i, code_block in enumerate(code_blocks):
-        docstring = docstring.replace(
+        _docstring = _docstring.replace(
             '$CODE_BLOCK_%d' % i, code_block)
-    return docstring
+    return _docstring
 
 
 def read_file(_path):
