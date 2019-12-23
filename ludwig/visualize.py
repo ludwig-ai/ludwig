@@ -2835,7 +2835,7 @@ def confusion_matrix(
             test_stats_per_model_list):
         for output_feature_name in output_feature_names:
             if 'confusion_matrix' in test_statistics[output_feature_name]:
-                confusion_matrix = np.array(
+                _confusion_matrix = np.array(
                     test_statistics[output_feature_name]['confusion_matrix']
                 )
                 model_name_name = model_names_list[i] if (
@@ -2847,12 +2847,12 @@ def confusion_matrix(
                         metadata[output_feature_name]:
                     labels = metadata[output_feature_name]['idx2str']
                 else:
-                    labels = list(range(len(confusion_matrix)))
+                    labels = list(range(len(_confusion_matrix)))
 
                 for k in top_n_classes:
-                    k = (min(k, confusion_matrix.shape[0])
-                         if k > 0 else confusion_matrix.shape[0])
-                    cm = confusion_matrix[:k, :k]
+                    k = (min(k, _confusion_matrix.shape[0])
+                         if k > 0 else _confusion_matrix.shape[0])
+                    cm = _confusion_matrix[:k, :k]
                     if normalize:
                         with np.errstate(divide='ignore', invalid='ignore'):
                             cm_norm = np.true_divide(cm,
