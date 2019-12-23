@@ -398,17 +398,17 @@ def collect_class_methods(cls, methods):
 
 
 def render_function(function, method=True):
-    subblocks = []
+    _subblocks = []
     _signature = get_function_signature(function, method=method)
     if method:
         _signature = _signature.replace(
             clean_module_name(function.__module__) + '.', '')
-    subblocks.append('## ' + function.__name__ + '\n')
-    subblocks.append(code_snippet(_signature))
+    _subblocks.append('## ' + function.__name__ + '\n')
+    _subblocks.append(code_snippet(_signature))
     _docstring = function.__doc__
     if _docstring:
-        subblocks.append(process_docstring(_docstring))
-    return '\n\n'.join(subblocks)
+        _subblocks.append(process_docstring(_docstring))
+    return '\n\n'.join(_subblocks)
 
 
 def read_page_data(page_data, type):
