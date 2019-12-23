@@ -192,20 +192,20 @@ def clean_module_name(name):
     return name
 
 
-def class_to_docs_link(cls):
-    module_name = clean_module_name(cls.__module__)
+def class_to_docs_link(_cls):
+    module_name = clean_module_name(_cls.__module__)
     module_name = module_name[6:]
-    link = ROOT + module_name.replace('.', '/') + '#' + cls.__name__.lower()
+    link = ROOT + module_name.replace('.', '/') + '#' + _cls.__name__.lower()
     return link
 
 
-def class_to_source_link(cls):
-    module_name = clean_module_name(cls.__module__)
-    path = module_name.replace('.', '/')
-    path += '.py'
-    line = inspect.getsourcelines(cls)[-1]
+def class_to_source_link(_cls):
+    module_name = clean_module_name(_cls.__module__)
+    _path = module_name.replace('.', '/')
+    _path += '.py'
+    line = inspect.getsourcelines(_cls)[-1]
     link = ('https://github.com/uber/'
-            'ludwig/blob/master/' + path + '#L' + str(line))
+            'ludwig/blob/master/' + _path + '#L' + str(line))
     return '[[source]](' + link + ')'
 
 
