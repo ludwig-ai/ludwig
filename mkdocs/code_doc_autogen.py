@@ -135,9 +135,9 @@ OUTPUT_DIR = 'docs'
 def get_function_signature(_function, _method=True):
     wrapped = getattr(_function, '_original_function', None)
     if wrapped is None:
-        _signature = inspect.getargspec(_function)
+        _signature = inspect.getfullargspec(_function)
     else:
-        _signature = inspect.getargspec(wrapped)
+        _signature = inspect.getfullargspec(wrapped)
     defaults = _signature.defaults
     if _method and _signature.args and _signature.args[0] == 'self':
         args = _signature.args[1:]
