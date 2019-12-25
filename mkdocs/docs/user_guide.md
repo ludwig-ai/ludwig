@@ -2587,8 +2587,8 @@ As no date decoders are available at the moment, there are also no date measures
 H3 Features
 -------------
 
-H3 is a indexing system ofr representing geospatial data.
-For more details about it refer to: .
+H3 is a indexing system for representing geospatial data.
+For more details about it refer to: https://eng.uber.com/h3/ .
 
 ### H3 Features Preprocessing
 
