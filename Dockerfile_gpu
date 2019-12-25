@@ -2,7 +2,7 @@
 # Ludwig Docker image with basic set of pre-requiste packages and gpu-enabled Tensorflow
 #
 
-FROM tensorflow/tensorflow:latest-gpu-py3
+FROM tensorflow/tensorflow:1.15.0-gpu-py3
 
 RUN apt-get -y update && apt-get -y install git
 
