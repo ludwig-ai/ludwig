@@ -11,6 +11,7 @@
 from ludwig.api import LudwigModel
 import logging
 import shutil
+import yaml
 
 
 # clean out prior results
@@ -21,11 +22,11 @@ except:
 
 
 # set up Python dictionary to hold model training parameters
-model_definition = {...}
+with open('./model_definition.yaml','r') as f:
+    model_definition = yaml.safe_load(f.read())
 
 # Define Ludwig model object that drive model training
 model = LudwigModel(model_definition,
-                    model_definition_file='./model_definition.yaml',
                     logging_level=logging.INFO)
 
 # initiate model training 
