@@ -395,6 +395,14 @@ def add_sequence_feature_column(df, col_name, seq_length):
     df[new_col_name] = new_data
     df[new_col_name] = df[new_col_name].fillna(method='backfill')
 
+def override_in_memory_flag(input_features, override_value):
+    num_overrides = 0
+    for feature in input_features:
+        if 'preprocessing' in feature:
+            if 'in_memory' in feature['preprocessing']:
+                feature['preprocessing']['in_memory'] = override_value
+                num_overrides += 1
+    return num_overrides
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
