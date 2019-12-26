@@ -296,15 +296,27 @@ class ImageBaseFeature(BaseFeature):
                 (num_images, height, width, num_channels),
                 dtype=np.uint8
             )
-            with Pool(num_processes) as pool:
-                logger.warning(
-                    'Using {} processes for preprocessing images'.format(
-                        num_processes
+            # Split the dataset into pools only if we have an explicit request to use
+            # multiple processes. In case we have multiple input images use the
+            # standard code anyway.
+            if num_processes > 1 or num_images > 1:
+                with Pool(num_processes) as pool:
+                    logger.warning(
+                        'Using {} processes for preprocessing images'.format(
+                            num_processes
+                        )
                     )
+                    data[feature['name']] = np.array(
+                        pool.map(read_image_and_resize, all_file_paths)
+                    )
+            # If we're not running multiple processes and we are only processing one
+            # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+            else:
+                logger.warning(
+                        'No process pool initialized. Using one process for preprocessing images'
                 )
-                data[feature['name']] = np.array(
-                    pool.map(read_image_and_resize, all_file_paths)
-                )
+                img = read_image_and_resize(all_file_paths[0])
+                data[feature['name']] = np.array([img])
         else:
             data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
             mode = 'w'

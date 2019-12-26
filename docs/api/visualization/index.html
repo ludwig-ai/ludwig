@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -46,7 +46,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -57,12 +57,12 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -702,15 +702,21 @@
 <p>Show how model measures change over training and validation data epochs.</p>
 <p>For each model and for each output feature and measure of the model,
 it produces a line plot showing how that measure changed over the course
-of the epochs of training on the training and validation sets.
-:param train_stats_per_model: List containing train statistics per model
-:param output_feature_name: Name of the output feature that is predicted 
-and for which is provided ground truth
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+of the epochs of training on the training and validation sets.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>train_stats_per_model</strong> (list): List containing train statistics per model</li>
+<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted
+   and for which is provided ground truth</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="compare_performance">compare_performance<a class="headerlink" href="#compare_performance" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_performance</span><span class="p">(</span>
@@ -726,14 +732,20 @@ If not specified, plots will be displayed in a window
 <p>Produces model comparision barplot visualization for each overall metric</p>
 <p>For each model (in the aligned lists of test_statistics and model_names)
 it produces bars in a bar plot, one for each overall metric available
-in the test_statistics file for the specified output_feature_name.
-:param test_stats_per_model: List containing train statistics per model
-:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+in the test_statistics file for the specified output_feature_name.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>test_stats_per_model</strong> (list): List containing train statistics per model</li>
+<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="compare_classifiers_performance_from_prob">compare_classifiers_performance_from_prob<a class="headerlink" href="#compare_classifiers_performance_from_prob" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_from_prob</span><span class="p">(</span>
@@ -751,17 +763,23 @@ If not specified, plots will be displayed in a window
 <p>Produces model comparision barplot visualization from probabilities.</p>
 <p>For each model it produces bars in a bar plot, one for each overall metric
 computed on the fly from the probabilities of predictions for the specified
-output_feature_name.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param top_n_classes: List containing the number of classes to plot
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+output_feature_name.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="compare_classifiers_performance_from_pred">compare_classifiers_performance_from_pred<a class="headerlink" href="#compare_classifiers_performance_from_pred" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_from_pred</span><span class="p">(</span>
@@ -779,19 +797,25 @@ If not specified, plots will be displayed in a window
 
 <p>Produces model comparision barplot visualization from predictions.</p>
 <p>For each model it produces bars in a bar plot, one for each overall metric
-computed on the fly from the predictions for the specified output_feature_name.
-:param predictions_per_model: List containing the model predictions
-for the specified output_feature_name
-:param ground_truth: NumPy Array containing ground truth data
-:param metadata: Model's input metadata
-:param output_feature_name: output_feature_name containing ground truth
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+computed on the fly from the predictions for the specified output_feature_name.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>predictions_per_model</strong> (list): List containing the model predictions
+   for the specified output_feature_name</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>metadata</strong> (dict): Model's input metadata</li>
+<li><strong>output_feature_name</strong> (output_feature_name: output_feature_name containing ground trut):output_feature_name: output_feature_name containing ground truth</li>
+<li><strong>labels_limit</strong> (labels_limit: Maximum numbers of labels):labels_limit: Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (model_names: List of the names of the models to use as labels):model_names: List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (output_directory: Directory where to save plots):output_directory: Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (file_format: File format of output plots - pdf or p):file_format: File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="compare_classifiers_performance_subset">compare_classifiers_performance_subset<a class="headerlink" href="#compare_classifiers_performance_subset" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_subset</span><span class="p">(</span>
@@ -812,17 +836,23 @@ If not specified, plots will be displayed in a window
 computed on the fly from the probabilities predictions for the
 specified output_feature_name, considering only a subset of the full training set.
 The way the subset is obtained is using the top_n_classes and
-subset parameters.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param top_n_classes: List containing the number of classes to plot
-:param labels_limit: Maximum numbers of labels.
-:param subset: Type of the subset filtering
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+subset parameters.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.</li>
+<li><strong>subset</strong> (): Type of the subset filtering</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+    If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="compare_classifiers_performance_changing_k">compare_classifiers_performance_changing_k<a class="headerlink" href="#compare_classifiers_performance_changing_k" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_changing_k</span><span class="p">(</span>
@@ -840,17 +870,23 @@ If not specified, plots will be displayed in a window
 <p>Produce lineplot that show Hits@K measure while k goes from 1 to top_k.</p>
 <p>For each model it produces a line plot that shows the Hits@K measure
 (that counts a prediction as correct if the model produces it among the
-first k) while changing k from 1 to top_k for the specified output_feature_name.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param top_k: Number of elements in the ranklist to consider
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+first k) while changing k from 1 to top_k for the specified output_feature_name.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>top_k</strong> (int): Number of elements in the ranklist to consider</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="compare_classifiers_multiclass_multimetric">compare_classifiers_multiclass_multimetric<a class="headerlink" href="#compare_classifiers_multiclass_multimetric" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_multiclass_multimetric</span><span class="p">(</span>
@@ -867,17 +903,22 @@ If not specified, plots will be displayed in a window
 
 <p>Show the precision, recall and F1 of the model for the specified output_feature_name.</p>
 <p>For each model it produces four plots that show the precision,
-recall and F1 of the model on several classes for the specified output_feature_name.
-:param test_stats_per_model: List containing train statistics per model
-:param metadata: Model's input metadata
-:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
-:param top_n_classes: List containing the number of classes to plot
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:
-:return:</p>
+recall and F1 of the model on several classes for the specified output_feature_name.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>test_stats_per_model</strong> (list): List containing train statistics per model</li>
+<li><strong>metadata</strong> (dict): Model's input metadata</li>
+<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
+<li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="compare_classifiers_predictions">compare_classifiers_predictions<a class="headerlink" href="#compare_classifiers_predictions" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_predictions</span><span class="p">(</span>
@@ -892,15 +933,21 @@ If not specified, plots will be displayed in a window
 
 
 <p>Show two models comparision of their output_feature_name predictions.</p>
-<p>:param predictions_per_model: List containing the model predictions
-:param ground_truth: NumPy Array containing ground truth data
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>predictions_per_model</strong> (list): List containing the model predictions</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="confidence_thresholding_2thresholds_2d">confidence_thresholding_2thresholds_2d<a class="headerlink" href="#confidence_thresholding_2thresholds_2d" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_2thresholds_2d</span><span class="p">(</span>
@@ -921,17 +968,23 @@ If not specified, plots will be displayed in a window
 thresholds on the confidence of the predictions of the two
 threshold_output_feature_names  as x and y axes and either the data coverage percentage or
 the accuracy as z axis. Each line represents a slice of the data
-coverage  surface projected onto the accuracy surface.
-:param probabilities_per_model: List of model probabilities
-:param ground_truths: List of NumPy Arrays containing ground truth data
-:param threshold_output_feature_names: List of output_feature_names for 2d threshold
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: Name of the model to use as label.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+coverage  surface projected onto the accuracy surface.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truths</strong> (list): List of NumPy Arrays containing ground truth data</li>
+<li><strong>threshold_output_feature_names</strong> (list): List of output_feature_names for 2d threshold</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (string): Name of the model to use as label.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="confidence_thresholding_2thresholds_3d">confidence_thresholding_2thresholds_3d<a class="headerlink" href="#confidence_thresholding_2thresholds_3d" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_2thresholds_3d</span><span class="p">(</span>
@@ -949,16 +1002,22 @@ If not specified, plots will be displayed in a window
 <p>The plot shows the 3d surfaces displayed by
 confidence_thresholding_2thresholds_3d that have thresholds on the
 confidence of the predictions of the two threshold_output_feature_names as x and y axes
-and either the data coverage percentage or the accuracy as z axis.
-:param probabilities_per_model: List of model probabilities
-:param ground_truths: List of NumPy Arrays containing ground truth data
-:param threshold_output_feature_names: List of output_feature_names for 2d threshold
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+and either the data coverage percentage or the accuracy as z axis.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truths</strong> (list): List of NumPy Arrays containing ground truth data</li>
+<li><strong>threshold_output_feature_names</strong> (list): List of output_feature_names for 2d threshold</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="confidence_thresholding">confidence_thresholding<a class="headerlink" href="#confidence_thresholding" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding</span><span class="p">(</span>
@@ -975,16 +1034,22 @@ If not specified, plots will be displayed in a window
 <p>Show models accuracy and data coverage while increasing treshold</p>
 <p>For each model it produces a pair of lines indicating the accuracy of
 the model and the data coverage while increasing a threshold (x axis) on
-the probabilities of predictions for the specified output_feature_name.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+the probabilities of predictions for the specified output_feature_name.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (sting): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="confidence_thresholding_data_vs_acc">confidence_thresholding_data_vs_acc<a class="headerlink" href="#confidence_thresholding_data_vs_acc" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_data_vs_acc</span><span class="p">(</span>
@@ -1004,16 +1069,22 @@ and the data coverage while increasing a threshold on the probabilities
 of predictions for the specified output_feature_name. The difference with
 confidence_thresholding is that it uses two axes instead of three,
 not visualizing the threshold and having coverage as x axis instead of
-the threshold.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+the threshold.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="confidence_thresholding_data_vs_acc_subset">confidence_thresholding_data_vs_acc_subset<a class="headerlink" href="#confidence_thresholding_data_vs_acc_subset" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_data_vs_acc_subset</span><span class="p">(</span>
@@ -1046,17 +1117,23 @@ kept  from the original set will be displayed. If the values of subset is
 predictions, then only datapoints where the the model predicts a class
 that is within the top n most frequent ones will be considered as test set,
 and the percentage of datapoints that have been kept from the original set
-will be displayed for each model.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param top_n_classes: List containing the number of classes to plot
-:param labels_limit: Maximum numbers of labels.
-:param subset: Type of the subset filtering
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+will be displayed for each model.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.</li>
+<li><strong>subset</strong> (string): Type of the subset filtering</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="binary_threshold_vs_metric">binary_threshold_vs_metric<a class="headerlink" href="#binary_threshold_vs_metric" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">binary_threshold_vs_metric</span><span class="p">(</span>
@@ -1079,17 +1156,23 @@ output_feature_name.  If output_feature_name is a category feature, positive_lab
 the class to be considered positive class and all the others will be
 considered negative. It needs to be an integer, to figure out the
 association between classes and integers check the ground_truth_metadata
-JSON file.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: List of NumPy Arrays containing ground truth data
-:param metrics: metrics to dispay (f1, precision, recall,
-accuracy)
-:param positive_label: Label of the positive class
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+JSON file.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (list): List of NumPy Arrays containing ground truth data</li>
+<li><strong>metrics</strong> (f1, precision, recall):metrics: metrics to dispay (f1, precision, recall,
+            accuracy)</li>
+<li><strong>positive_label</strong> (string): Label of the positive class</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="roc_curves">roc_curves<a class="headerlink" href="#roc_curves" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">roc_curves</span><span class="p">(</span>
@@ -1109,15 +1192,21 @@ specified output_feature_name. If output_feature_name is a category feature, pos
 which is the class to be considered positive class and all the others will
 be considered negative. It needs to be an integer, to figure out the
 association between classes and integers check the ground_truth_metadata
-JSON file.
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: List of NumPy Arrays containing ground truth data
-:param positive_label: Label of the positive class
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+JSON file.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (list): List of NumPy Arrays containing ground truth data</li>
+<li><strong>positive_label</strong> (string): Label of the positive class</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink" href="#roc_curves_from_test_statistics" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">roc_curves_from_test_statistics</span><span class="p">(</span>
@@ -1133,14 +1222,20 @@ If not specified, plots will be displayed in a window
 <p>Show the roc curves for the specified models output binary output_feature_name.</p>
 <p>This visualization uses the output_feature_name, test_statistics and model_names
 parameters. output_feature_name needs to be binary feature. This visualization produces a
-line chart plotting the roc curves for the specified output_feature_name.
-:param test_stats_per_model: List containing train statistics per model
-:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+line chart plotting the roc curves for the specified output_feature_name.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>test_stats_per_model</strong> (list): List containing train statistics per model</li>
+<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="calibration_1_vs_all">calibration_1_vs_all<a class="headerlink" href="#calibration_1_vs_all" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">calibration_1_vs_all</span><span class="p">(</span>
@@ -1166,17 +1261,23 @@ aligned  lists of probabilities and model_names).</p>
 <p>The second plot shows the distributions of the predictions considering
 the  current class to be the true one and all others to be a false one,
 drawing the distribution for each model (in the aligned lists of
-probabilities and model_names).
-:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param top_n_classes: List containing the number of classes to plot
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+probabilities and model_names).</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>String</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="calibration_multiclass">calibration_multiclass<a class="headerlink" href="#calibration_multiclass" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">calibration_multiclass</span><span class="p">(</span>
@@ -1192,15 +1293,21 @@ If not specified, plots will be displayed in a window
 
 <p>Show models probability of predictions for each class of the the
 specified output_feature_name.</p>
-<p>:param probabilities_per_model: List of model probabilities
-:param ground_truth: NumPy Array containing ground truth data
-:param labels_limit: Maximum numbers of labels.
-If labels in dataset are higher than this number, "rare" label
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
+<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
+<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
+     If labels in dataset are higher than this number, "rare" label</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="confusion_matrix">confusion_matrix<a class="headerlink" href="#confusion_matrix" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confusion_matrix</span><span class="p">(</span>
@@ -1220,18 +1327,23 @@ If not specified, plots will be displayed in a window
 <p>For each model (in the aligned lists of test_statistics and model_names)
 it  produces a heatmap of the confusion matrix in the predictions for
 each  output_feature_name that has a confusion matrix in test_statistics. The value of
-top_n_classes limits the heatmap to the n most frequent classes.
-:param test_stats_per_model: List containing train statistics per model
-:param metadata: Model's input metadata
-:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
-:param top_n_classes: List containing the number of classes to plot
-:param normalize: Flag to normalize rows in confusion matrix
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:
-:return:</p>
+top_n_classes limits the heatmap to the n most frequent classes.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>test_stats_per_model</strong> (string): List containing train statistics per model</li>
+<li><strong>metadata</strong> (dict): Model's input metadata</li>
+<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
+<li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+<li><strong>normalize</strong> (bool): Flag to normalize rows in confusion matrix</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
 <hr />
 <h3 id="frequency_vs_f1">frequency_vs_f1<a class="headerlink" href="#frequency_vs_f1" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">frequency_vs_f1</span><span class="p">(</span>
@@ -1257,19 +1369,25 @@ line is plotted to show the trend. The classes on the x axis are sorted by
 f1 score.
 The second plot has the same structure of the first one,
 but the axes are flipped and the classes on the x axis are sorted by
-frequency.
-:param test_stats_per_model: List containing train statistics per model
-:param metadata: Model's input metadata
-:param output_feature_name: Name of the output feature that is predicted and for which is provided ground truth
-:param top_n_classes: List containing the number of classes to plot
-:param model_names: List of the names of the models to use as labels.
-:param output_directory: Directory where to save plots.
-If not specified, plots will be displayed in a window
-:param file_format: File format of output plots - pdf or png
-:return None:
-:return:</p>
+frequency.</p>
+<p><strong>Inputs</strong></p>
+<ul>
+<li><strong>test_stats_per_model</strong> (list): List containing train statistics per model</li>
+<li><strong>metadata</strong> (dict): Model's input metadata</li>
+<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
+<li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+     If not specified, plots will be displayed in a window</li>
+<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+</ul>
+<p><strong>Return</strong></p>
+<ul>
+<li><strong>return</strong> (None):</li>
+</ul>
                 
                   
+                
                 
               
               
@@ -1368,7 +1486,7 @@ If not specified, plots will be displayed in a window
       
     </div>
     
-      <script src="../../assets/javascripts/application.ac79c3b0.js"></script>
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

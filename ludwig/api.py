@@ -54,6 +54,7 @@ from ludwig.models.model import load_model_and_definition
 from ludwig.predict import calculate_overall_stats
 from ludwig.train import full_train
 from ludwig.train import update_model_definition_with_metadata
+from ludwig.utils.data_utils import override_in_memory_flag
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
@@ -139,10 +140,20 @@ class LudwigModel:
 
     def __init__(
             self,
-            model_definition,
+            model_definition=None,
             model_definition_file=None,
             logging_level=logging.ERROR
     ):
+        if model_definition is None and model_definition_file is None:
+            raise ValueError(
+                'Either model_definition of model_definition_file have not None'
+                ' to initialize a LudwigModel'
+            )
+        if model_definition is not None and model_definition_file is not None:
+            raise ValueError(
+                'Only one between model_definition and '
+                'model_definition_file can be provided'
+            )
 
         self.set_logging_level(logging_level)
 
@@ -154,6 +165,7 @@ class LudwigModel:
         else:
             model_definition_copy = copy.deepcopy(model_definition)
             self.model_definition = merge_with_defaults(model_definition_copy)
+
         self.train_set_metadata = None
         self.model = None
         self.exp_dir_name = ''
@@ -333,7 +345,7 @@ class LudwigModel:
             debug=False,
             **kwargs
     ):
-        """This function is used to perform a full training of the model on the 
+        """This function is used to perform a full training of the model on the
            specified dataset.
 
         # Inputs
@@ -608,22 +620,22 @@ class LudwigModel:
             gpus=None,
             gpu_fraction=1,
     ):
-        """This function is used to perform one epoch of training of the model 
+        """This function is used to perform one epoch of training of the model
         on the specified dataset.
 
         # Inputs
 
         :param data_df: (DataFrame) dataframe containing data.
         :param data_csv: (string) input data CSV file.
-        :param data_dict: (dict) input data dictionary. It is expected to 
-               contain one key for each field and the values have to be lists of 
-               the same length. Each index in the lists corresponds to one 
-               datapoint. For example a data set consisting of two datapoints 
-               with a text and a class may be provided as the following dict 
+        :param data_dict: (dict) input data dictionary. It is expected to
+               contain one key for each field and the values have to be lists of
+               the same length. Each index in the lists corresponds to one
+               datapoint. For example a data set consisting of two datapoints
+               with a text and a class may be provided as the following dict
                ``{'text_field_name': ['text of the first datapoint', text of the
-               second datapoint'], 'class_filed_name': ['class_datapoints_1', 
+               second datapoint'], 'class_filed_name': ['class_datapoints_1',
                'class_datapoints_2']}`.
-        :param batch_size: (int) the batch size to use for training. By default 
+        :param batch_size: (int) the batch size to use for training. By default
                it's the one specified in the model definition.
         :param learning_rate: (float) the learning rate to use for training. By
                default the values is the one specified in the model definition.
@@ -740,6 +752,16 @@ class LudwigModel:
         else:
             output_features = []
         features_to_load += output_features
+
+        num_overrides = override_in_memory_flag(
+            self.model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported for Ludwig API.'
+            )
+
 
         preprocessed_data = build_data(
             data_df,
