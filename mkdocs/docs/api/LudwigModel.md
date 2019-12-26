@@ -3,7 +3,7 @@
 
 ```python
 ludwig.api.LudwigModel(
-  model_definition,
+  model_definition=None,
   model_definition_file=None,
   logging_level=40
 )
@@ -15,8 +15,8 @@ __Inputs__
 
 
 - __model_definition__ (dict): a dictionary containing information needed
-   to build a model. Refer to the [User Guide](http://ludwig.ai/user_guide/#model-definition) 
-   for details.
+   to build a model. Refer to the [User Guide]
+   (http://ludwig.ai/user_guide/#model-definition) for details.
 - __model_definition_file__ (string, optional, default: `None`): path to
    a YAML file containing the model definition. If available it will be
    used instead of the model_definition dict.

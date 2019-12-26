@@ -48,8 +48,8 @@ class ConfusionMatrix:
             self.idx2label = {idx: str(label) for idx, label in
                               enumerate(np.unique(
                                   [self.predictions, self.conditions]))}
-        self.cm = confusion_matrix(self.predictions,
-                                   self.conditions,
+        self.cm = confusion_matrix(self.conditions,
+                                   self.predictions,
                                    labels=labels,
                                    sample_weight=sample_weight)
 
