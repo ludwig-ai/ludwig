@@ -52,12 +52,22 @@ def read_csv(data_fp, header=0):
     :param header: header argument for pandas to read the csv
     :return: Pandas dataframe with the data
     """
+    
+    separator=','
+    with open(data_fp, 'r') as csvfile:
+        try:
+            dialect = csv.Sniffer().sniff(csvfile.read(1024*100), delimiters=[',' , '\t', '|', ' '])
+            separator=dialect.delimiter
+        except csv.Error:
+            # Could not conclude the delimiter, defaulting to comma
+            pass
+    
     try:
-        df = pd.read_csv(data_fp, header=header)
+        df = pd.read_csv(data_fp, sep=separator, header=header)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = pd.read_csv(data_fp, header=header, escapechar='\\')
+        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\')
 
     return df
 
@@ -385,6 +395,14 @@ def add_sequence_feature_column(df, col_name, seq_length):
     df[new_col_name] = new_data
     df[new_col_name] = df[new_col_name].fillna(method='backfill')
 
+def override_in_memory_flag(input_features, override_value):
+    num_overrides = 0
+    for feature in input_features:
+        if 'preprocessing' in feature:
+            if 'in_memory' in feature['preprocessing']:
+                feature['preprocessing']['in_memory'] = override_value
+                num_overrides += 1
+    return num_overrides
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
