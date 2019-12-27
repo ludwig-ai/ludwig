@@ -21,10 +21,14 @@ from __future__ import print_function
 import argparse
 import logging
 import os
+import os.path
 import sys
 from pprint import pformat
 
 import yaml
+import tempfile
+import pandas as pd
+from sklearn.model_selection import KFold
 
 from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_training
@@ -35,7 +39,7 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.models.modules.measure_modules import get_best_function
-from ludwig.utils.data_utils import save_json
+from ludwig.utils.data_utils import save_json, load_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description, \
@@ -396,6 +400,53 @@ def full_train(
     )
 
 
+def kfold_cross_validate(
+                model_definition,
+                model_definition_file = None,
+                data_csv = None,
+                data_train_csv = None,
+                data_validation_csv = None,
+                k_fold = None,
+                **kwargs
+):
+    logger = logging.getLogger('ludwig')
+    logger.info('starting {:d}-fold cross validation'.format(k_fold))
+
+    # read in data to split for the folds
+    data_df = pd.read_csv(data_csv)
+
+    # place each fold in a separate directory
+    data_dir = os.path.dirname(data_csv)
+    kf = KFold(n_splits=k_fold, shuffle=True)
+    i = 0
+    kfold_training_stats = {}
+    for train_index, vald_index in kf.split(data_df):
+        with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
+            # save training and validation subset for the fold into a temporary directory
+            train_csv_fp = os.path.join(temp_dir_name, 'train.csv')
+            vald_csv_fp = os.path.join(temp_dir_name, 'vald.csv')
+            i += 1
+            logger.info(">>>>> for fold {:d} created temporary directory: {}".format(i, temp_dir_name))
+            data_df.iloc[train_index].to_csv(train_csv_fp, index=False)
+            data_df.iloc[vald_index].to_csv(vald_csv_fp, index=False)
+
+            # train and validate model on this fold
+            logger.info("training on fold {:d}".format(i))
+            full_train({},
+                       model_definition_file=model_definition_file,
+                       data_train_csv = train_csv_fp,
+                       data_validation_csv = vald_csv_fp,
+                       experiment_name='cross_validation',
+                       model_name='fold_' + str(i),
+                       output_directory = os.path.join(temp_dir_name,'results'))
+
+            # retrieve training statistics
+            training_stats = load_json(os.path(temp_dir_name,'results','cross_validation','fold_'+str(i)))
+
+
+    logger.info('completed {:d}-fold cross validation'.format(k_fold))
+
+
 def train(
         training_set,
         validation_set,
@@ -737,6 +788,13 @@ def cli(sys_argv):
              'initialization and training set shuffling'
     )
     parser.add_argument(
+        '-kf',
+        '--k_fold',
+        type=int,
+        default=None,
+        help='number of folds for a k-fold cross validation run '
+    )
+    parser.add_argument(
         '-g',
         '--gpus',
         nargs='+',
@@ -782,7 +840,10 @@ def cli(sys_argv):
     if is_on_master():
         print_ludwig('Train', LUDWIG_VERSION)
 
-    full_train(**vars(args))
+    if args.k_fold is None:
+        full_train(**vars(args))
+    else:
+        kfold_cross_validate(**vars(args))
 
 
 if __name__ == '__main__':
