@@ -431,7 +431,7 @@ def kfold_cross_validate(
                 train_csv_fp = os.path.join(temp_dir_name, 'train.csv')
                 vald_csv_fp = os.path.join(temp_dir_name, 'vald.csv')
                 i += 1
-                logger.info(">>>>> for fold {:d} created temporary directory: {}".format(i, temp_dir_name))
+                logger.info("\n\n>>>>> for fold {:d} created temporary directory: {}".format(i, temp_dir_name))
                 data_df.iloc[train_index].to_csv(train_csv_fp, index=False)
                 data_df.iloc[vald_index].to_csv(vald_csv_fp, index=False)
 
