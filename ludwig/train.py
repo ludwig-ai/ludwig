@@ -425,30 +425,35 @@ def kfold_cross_validate(
     kf = KFold(n_splits=k_fold, shuffle=True)
     i = 0
     kfold_training_stats = {}
-    for train_index, vald_index in kf.split(data_df):
+    for train_index, test_index in kf.split(data_df):
             with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
                 # save training and validation subset for the fold into a temporary directory
-                train_csv_fp = os.path.join(temp_dir_name, 'train.csv')
-                vald_csv_fp = os.path.join(temp_dir_name, 'vald.csv')
+                train_csv_fp = os.path.join(temp_dir_name, 'train_fold.csv')
+                test_csv_fp = os.path.join(temp_dir_name, 'test_fold.csv')
                 i += 1
                 logger.info("\n\n>>>>> for fold {:d} created temporary directory: {}".format(i, temp_dir_name))
                 data_df.iloc[train_index].to_csv(train_csv_fp, index=False)
-                data_df.iloc[vald_index].to_csv(vald_csv_fp, index=False)
+                data_df.iloc[test_index].to_csv(test_csv_fp, index=False)
 
                 # train and validate model on this fold
                 logger.info("training on fold {:d}".format(i))
-                full_train({},
+                (model, preprocessed_data, _, train_stats, model_definition) = full_train({},
                            model_definition_file=model_definition_file,
                            data_train_csv = train_csv_fp,
-                           data_validation_csv = vald_csv_fp,
+                           data_test_csv = test_csv_fp,
                            experiment_name='cross_validation',
                            model_name='fold_' + str(i),
                            output_directory=os.path.join(temp_dir_name,'results'))
 
+                # score on hold out fold
+                preds = model.predict(preprocessed_data[2],
+                                      model_definition['training']['batch_size'])
+
+                # augment the training statistics with scoring metric fron the hold out fold
+                train_stats['fold_metric'] = preds['combined']
+
                 # collect training statistics for this fold
-                training_stats = load_json(os.path.join(temp_dir_name,'results','cross_validation_fold_'+str(i),
-                                                        'training_statistics.json'))
-                kfold_training_stats['fold_'+str(i)] = training_stats
+                kfold_training_stats['fold_'+str(i)] = train_stats
 
     # save consolidated training statistics from k-fold cv runs
     save_json(os.path.join(output_directory,'kfold_training_statistics.json'), kfold_training_stats)
