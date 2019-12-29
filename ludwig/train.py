@@ -100,17 +100,17 @@ def full_train(
     :param model_definition_file: The file that specifies the model definition.
            It is a yaml file.
     :type model_definition_file: filepath (str)
-    :param data_csv: A CSV file contanining the input data which is used to
+    :param data_csv: A CSV file containing the input data which is used to
            train, validate and test a model. The CSV either contains a
            split column or will be split.
     :type data_csv: filepath (str)
-    :param data_train_csv: A CSV file contanining the input data which is used
+    :param data_train_csv: A CSV file containing the input data which is used
            to train a model.
     :type data_train_csv: filepath (str)
-    :param data_validation_csv: A CSV file contanining the input data which is used
+    :param data_validation_csv: A CSV file containing the input data which is used
            to validate a model..
     :type data_validation_csv: filepath (str)
-    :param data_test_csv: A CSV file contanining the input data which is used
+    :param data_test_csv: A CSV file containing the input data which is used
            to test a model.
     :type data_test_csv: filepath (str)
     :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
@@ -150,7 +150,7 @@ def full_train(
     :param skip_save_model: Disables saving model weights
            and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure imrpvoes, but if the model is really big
+           the validation measure improves, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -173,8 +173,8 @@ def full_train(
            is not needed turning it off can slightly increase the
            overall speed..
     :type skip_save_progress: Boolean
-    :param output_directory: The directory that will contanin the training
-           statistics, the saved model and the training procgress files.
+    :param output_directory: The directory that will contain the training
+           statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
