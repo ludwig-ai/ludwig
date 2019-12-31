@@ -39,7 +39,7 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.models.modules.measure_modules import get_best_function
-from ludwig.utils.data_utils import save_json, load_json
+from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description, \
