@@ -418,10 +418,10 @@ def kfold_cross_validate(
         os.mkdir(output_directory)
 
     # read in data to split for the folds
-    data_df = pd.read_csv(data_csv)
+    data_df = pd.read_csv(data_train_csv)
 
     # place each fold in a separate directory
-    data_dir = os.path.dirname(data_csv)
+    data_dir = os.path.dirname(data_train_csv)
     kf = KFold(n_splits=k_fold, shuffle=True)
     i = 0
     kfold_training_stats = {}
