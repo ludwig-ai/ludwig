@@ -26,6 +26,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from pandas.errors import ParserError
+from sklearn.model_selection import KFold
 
 logger = logging.getLogger(__name__)
 
@@ -418,3 +419,11 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         else:
             return json.JSONEncoder.default(self, obj)
+
+def generate_kfold_splits(data_train_df_fp, k_fold):
+    kf = KFold(n_splits=k_fold, shuffle=True)
+    data_train_df = pd.read_csv(data_train_df_fp)
+    fold_num = 0
+    for train_index, test_index in kf.split(data_train_df):
+        fold_num += 1
+        yield train_index, test_index, fold_num

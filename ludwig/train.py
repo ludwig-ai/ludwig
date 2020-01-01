@@ -28,7 +28,6 @@ from pprint import pformat
 import yaml
 import tempfile
 import pandas as pd
-from sklearn.model_selection import KFold
 
 from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_training
@@ -40,6 +39,7 @@ from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.models.modules.measure_modules import get_best_function
 from ludwig.utils.data_utils import save_json
+from ludwig.utils.data_utils import generate_kfold_splits
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description, \
@@ -398,15 +398,6 @@ def full_train(
         train_stats,
         model_definition
     )
-
-
-def generate_kfold_splits(data_train_df_fp, k_fold):
-    kf = KFold(n_splits=k_fold, shuffle=True)
-    data_train_df = pd.read_csv(data_train_df_fp)
-    fold_num = 0
-    for train_index, test_index in kf.split(data_train_df):
-        fold_num += 1
-        yield train_index, test_index, fold_num
 
 
 def kfold_cross_validate(
