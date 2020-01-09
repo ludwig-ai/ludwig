@@ -32,12 +32,8 @@ list_of_train_stats = []
 for model_id in list_of_model_ids:
     print('>>>> training: ', model_id)
 
-    # set up Python dictionary to hold model training parameters
-    model_definition = {...}
-
     # Define Ludwig model object that drive model training
-    model = LudwigModel(model_definition,
-                        model_definition_file='./' + model_id + '_definition.yaml',
+    model = LudwigModel(model_definition_file='./' + model_id + '_definition.yaml',
                         logging_level=logging.WARN)
 
     # initiate model training
