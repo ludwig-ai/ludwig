@@ -577,6 +577,18 @@ class Model:
                 bucketing_field
             )
 
+            # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
+            # the same way as in the CLI. For each one, progress_tracker.steps has already
+            # been incremented before, so in order to write on the previous summary, we need
+            # to use -1
+            training_loss = progress_tracker.train_stats['combined'][LOSS][-1]
+            training_accuracy = progress_tracker.train_stats['combined'][ACCURACY][-1]
+            training_summary = tf.compat.v1.Summary(value=[
+                tf.compat.v1.Summary.Value(tag="evaluation/training_loss", simple_value=training_loss),
+                tf.compat.v1.Summary.Value(tag="evaluation/training_accuracy", simple_value=training_accuracy)
+            ])
+            train_writer.add_summary(training_summary, progress_tracker.steps - 1)
+
             if validation_set is not None and validation_set.size > 0:
                 # eval measures on validation set
                 self.evaluation(
@@ -589,17 +601,18 @@ class Model:
                     eval_batch_size,
                     bucketing_field
                 )
-                if is_on_master():
-                    if not skip_save_log:
-                        # Add a graph within TensorBoard showing the overall loss tracked in the same
-                        # way as in the CLI
-                        validation_loss = progress_tracker.vali_stats['combined'][LOSS][-1]
-                        validation_loss_summary = tf.Summary(value=[
-                            tf.Summary.Value(tag="validation_loss", simple_value=validation_loss)
-                        ])
-                        # progress_tracker.steps has already been incremented before, so to write on the
-                        # previous summary, we need to use -1
-                        train_writer.add_summary(validation_loss_summary, progress_tracker.steps - 1)
+                if is_on_master() and not skip_save_log:
+                    # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
+                    # the same way as in the CLI. For each one, progress_tracker.steps has already
+                    # been incremented before, so in order to write on the previous summary, we need
+                    # to use -1
+                    validation_loss = progress_tracker.vali_stats['combined'][LOSS][-1]
+                    validation_accuracy = progress_tracker.vali_stats['combined'][ACCURACY][-1]
+                    validation_summary = tf.compat.v1.Summary(value=[
+                        tf.compat.v1.Summary.Value(tag="evaluation/validation_loss", simple_value=validation_loss),
+                        tf.compat.v1.Summary.Value(tag="evaluation/validation_accuracy", simple_value=validation_accuracy)
+                    ])
+                    train_writer.add_summary(validation_summary, progress_tracker.steps - 1)
 
             if test_set is not None and test_set.size > 0:
                 # eval measures on test set
@@ -613,6 +626,18 @@ class Model:
                     eval_batch_size,
                     bucketing_field
                 )
+                if is_on_master() and not skip_save_log:
+                    # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
+                    # the same way as in the CLI. For each one, progress_tracker.steps has already
+                    # been incremented before, so in order to write on the previous summary, we need
+                    # to use -1
+                    test_loss = progress_tracker.test_stats['combined'][LOSS][-1]
+                    test_accuracy = progress_tracker.test_stats['combined'][ACCURACY][-1]
+                    test_summary = tf.compat.v1.Summary(value=[
+                        tf.compat.v1.Summary.Value(tag="evaluation/test_loss", simple_value=test_loss),
+                        tf.compat.v1.Summary.Value(tag="evaluation/test_accuracy", simple_value=test_accuracy)
+                    ])
+                    train_writer.add_summary(test_summary, progress_tracker.steps - 1)
 
             # mbiu and end of epoch prints
             elapsed_time = (time.time() - start_time) * 1000.0
