@@ -20,12 +20,8 @@ except:
     pass
 
 
-# set up Python dictionary to hold model training parameters
-model_definition = {...}
-
 # Define Ludwig model object that drive model training
-model = LudwigModel(model_definition,
-                    model_definition_file='./model1_definition.yaml',
+model = LudwigModel(model_definition_file='./model1_definition.yaml',
                     logging_level=logging.INFO)
 
 # initiate model training 
