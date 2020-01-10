@@ -403,14 +403,12 @@ def full_train(
 def kfold_cross_validate(
                 model_definition,
                 model_definition_file=None,
-                data_csv=None,
                 data_train_csv=None,
-                data_validation_csv=None,
                 output_directory='results',
                 k_fold=None,
                 **kwargs
 ):
-    logger = logging.getLogger('ludwig')
+
     logger.info('starting {:d}-fold cross validation'.format(k_fold))
 
     # create output_directory if not available
@@ -423,12 +421,14 @@ def kfold_cross_validate(
     # place each fold in a separate directory
     data_dir = os.path.dirname(data_train_csv)
     kfold_training_stats = {}
-    for train_index, test_index, fold_num in generate_kfold_splits(data_train_csv, k_fold):
+    for train_index, test_index, fold_num in generate_kfold_splits(data_df, k_fold):
         with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
             # save training and validation subset for the fold into a temporary directory
             train_csv_fp = os.path.join(temp_dir_name, 'train_fold.csv')
             test_csv_fp = os.path.join(temp_dir_name, 'test_fold.csv')
-            logger.info("\n\n>>>>> for fold {:d} created temporary directory: {}".format(fold_num, temp_dir_name))
+            logger.info(
+                '\n\n>>>>> for fold {:d} created temporary '
+                'directory: {}'.format(fold_num, temp_dir_name))
             data_df.iloc[train_index].to_csv(train_csv_fp, index=False)
             data_df.iloc[test_index].to_csv(test_csv_fp, index=False)
 
@@ -438,10 +438,9 @@ def kfold_cross_validate(
              preprocessed_data,
              _,
              train_stats,
-             model_definition) = full_train({},
-                                            model_definition_file=model_definition_file,
-                                            data_train_csv = train_csv_fp,
-                                            data_test_csv = test_csv_fp,
+             model_definition) = full_train({}, model_definition_file=model_definition_file,
+                                            data_train_csv=train_csv_fp,
+                                            data_test_csv=test_csv_fp,
                                             experiment_name='cross_validation',
                                             model_name='fold_' + str(fold_num),
                                             output_directory=os.path.join(temp_dir_name,'results'))
