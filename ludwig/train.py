@@ -438,12 +438,15 @@ def kfold_cross_validate(
              preprocessed_data,
              _,
              train_stats,
-             model_definition) = full_train({}, model_definition_file=model_definition_file,
-                                            data_train_csv=train_csv_fp,
-                                            data_test_csv=test_csv_fp,
-                                            experiment_name='cross_validation',
-                                            model_name='fold_' + str(fold_num),
-                                            output_directory=os.path.join(temp_dir_name,'results'))
+             model_definition) = full_train(
+                {},
+                model_definition_file=model_definition_file,
+                data_train_csv=train_csv_fp,
+                data_test_csv=test_csv_fp,
+                experiment_name='cross_validation',
+                model_name='fold_' + str(fold_num),
+                output_directory=os.path.join(temp_dir_name,'results')
+            )
 
             # score on hold out fold
             preds = model.predict(preprocessed_data[2],
@@ -456,7 +459,8 @@ def kfold_cross_validate(
             kfold_training_stats['fold_'+str(fold_num)] = train_stats
 
     # save consolidated training statistics from k-fold cv runs
-    save_json(os.path.join(output_directory,'kfold_training_statistics.json'), kfold_training_stats)
+    save_json(os.path.join(output_directory,'kfold_training_statistics.json'),
+              kfold_training_stats)
 
     logger.info('completed {:d}-fold cross validation'.format(k_fold))
 
