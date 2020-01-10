@@ -266,6 +266,8 @@ class Model:
 
     @classmethod
     def add_tensorboard_combined_summary(cls, stats, prefix, train_writer, step):
+        if not train_writer:
+            return
         summaries = []
         combined_output_f = stats['combined']
         for metric in combined_output_f:
@@ -274,8 +276,8 @@ class Model:
             summaries.append(
                 tf.compat.v1.Summary.Value(tag=metric_tag, simple_value=metric_val)
             )
-        test_summary = tf.compat.v1.Summary(value=summaries)
-        train_writer.add_summary(test_summary, step)
+        summary = tf.compat.v1.Summary(value=summaries)
+        train_writer.add_summary(summary, step)
 
     def train(
             self,
@@ -590,16 +592,17 @@ class Model:
                 bucketing_field
             )
 
-            # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
-            # the same way as in the CLI. For each one, progress_tracker.steps has already
-            # been incremented before, so in order to write on the previous summary, we need
-            # to use -1
-            self.add_tensorboard_combined_summary(
-                progress_tracker.train_stats,
-                "training",
-                train_writer,
-                progress_tracker.steps - 1
-            )
+            if is_on_master() and not skip_save_log:
+                # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
+                # the same way as in the CLI. For each one, progress_tracker.steps has already
+                # been incremented before, so in order to write on the previous summary, we need
+                # to use -1
+                self.add_tensorboard_combined_summary(
+                    progress_tracker.train_stats,
+                    "training",
+                    train_writer,
+                    progress_tracker.steps - 1
+                )
 
             if validation_set is not None and validation_set.size > 0:
                 # eval measures on validation set
