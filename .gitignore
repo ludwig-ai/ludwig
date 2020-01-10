@@ -137,3 +137,7 @@ ENV/
 
 # ctags
 tags
+
+# examples
+examples/*/data/
+examples/*/visualizations/
