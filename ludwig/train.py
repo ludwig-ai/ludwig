@@ -470,7 +470,7 @@ def kfold_cross_validate(
             # augment the training statistics with scoring metric fron
             # the hold out fold
             train_stats['fold_metric'] = {}
-            for metric_category in preds.keys():
+            for metric_category in preds:
                 train_stats['fold_metric'][metric_category] = {}
                 for metric in preds[metric_category]:
                     train_stats['fold_metric'][metric_category][metric] = \
@@ -481,7 +481,7 @@ def kfold_cross_validate(
 
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
-    for fold_name in kfold_training_stats.keys():
+    for fold_name in kfold_training_stats:
         for category in kfold_training_stats[fold_name]['fold_metric']:
             if category not in raw_kfold_stats:
                 raw_kfold_stats[category] = {}
@@ -496,9 +496,9 @@ def kfold_cross_validate(
 
     # calculate overall kfold statistics
     overall_kfold_stats = {}
-    for category in raw_kfold_stats.keys():
+    for category in raw_kfold_stats:
         overall_kfold_stats[category] = {}
-        for metric in raw_kfold_stats[category].keys():
+        for metric in raw_kfold_stats[category]:
             mean = np.mean(raw_kfold_stats[category][metric])
             std = np.std(raw_kfold_stats[category][metric])
             overall_kfold_stats[category][metric+'_mean'] = mean
