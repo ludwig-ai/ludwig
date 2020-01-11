@@ -421,8 +421,8 @@ class NumpyEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
-def generate_kfold_splits(data_train_df, k_fold):
-    kf = KFold(n_splits=k_fold, shuffle=True)
+def generate_kfold_splits(data_train_df, k_fold, random_state):
+    kf = KFold(n_splits=k_fold, shuffle=True, random_state=random_state)
     fold_num = 0
     for train_index, test_index in kf.split(data_train_df):
         fold_num += 1

@@ -28,6 +28,7 @@ from pprint import pformat
 import yaml
 import tempfile
 import pandas as pd
+import numpy as np
 
 from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_training
@@ -405,6 +406,7 @@ def kfold_cross_validate(
                 model_definition_file=None,
                 data_train_csv=None,
                 output_directory='results',
+                random_seed=default_random_seed,
                 skip_save_k_fold_split_indices=False,
                 **kwargs
 ):
@@ -422,7 +424,8 @@ def kfold_cross_validate(
     data_dir = os.path.dirname(data_train_csv)
     kfold_training_stats = {}
     kfold_split_indices = {}
-    for train_index, test_index, fold_num in generate_kfold_splits(data_df, k_fold):
+    for train_index, test_index, fold_num in \
+            generate_kfold_splits(data_df, k_fold, random_seed):
         with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
             # save training and validation subset for the fold into a temporary directory
             train_csv_fp = os.path.join(temp_dir_name, 'train_fold.csv')
@@ -433,13 +436,11 @@ def kfold_cross_validate(
             data_df.iloc[train_index].to_csv(train_csv_fp, index=False)
             data_df.iloc[test_index].to_csv(test_csv_fp, index=False)
 
-            train_i = train_index.tolist()
             if not skip_save_k_fold_split_indices:
                 kfold_split_indices['fold_'+str(fold_num)] = {
                     'training_index': train_index,
                     'test_index': test_index
                 }
-
 
             # train and validate model on this fold
             logger.info("training on fold {:d}".format(fold_num))
@@ -454,7 +455,7 @@ def kfold_cross_validate(
                 data_test_csv=test_csv_fp,
                 experiment_name='cross_validation',
                 model_name='fold_' + str(fold_num),
-                output_directory=os.path.join(temp_dir_name,'results')
+                output_directory=os.path.join(temp_dir_name, 'results')
             )
 
             # score on hold out fold
@@ -476,8 +477,35 @@ def kfold_cross_validate(
             # collect training statistics for this fold
             kfold_training_stats['fold_'+str(fold_num)] = train_stats
 
-    # save consolidated training statistics from k-fold cv runs
-    save_json(os.path.join(output_directory,'kfold_training_statistics.json'),
+    # consolidate raw fold metrics across all folds
+    raw_kfold_stats = {}
+    for fold_name in kfold_training_stats.keys():
+        for category in kfold_training_stats[fold_name]['fold_metric']:
+            if category not in raw_kfold_stats:
+                raw_kfold_stats[category] = {}
+            category_stats = \
+                kfold_training_stats[fold_name]['fold_metric'][category]
+            for metric in category_stats:
+                if metric not in {'predictions', 'probabilities'}:
+                    if metric not in raw_kfold_stats[category]:
+                        raw_kfold_stats[category][metric] = []
+                    raw_kfold_stats[category][metric]\
+                        .append(category_stats[metric])
+
+    # calculate overall kfold statistics
+    overall_kfold_stats = {}
+    for category in raw_kfold_stats.keys():
+        overall_kfold_stats[category] = {}
+        for metric in raw_kfold_stats[category].keys():
+            mean = np.mean(raw_kfold_stats[category][metric])
+            std = np.std(raw_kfold_stats[category][metric])
+            overall_kfold_stats[category][metric+'_mean'] = mean
+            overall_kfold_stats[category][metric+'_std'] = std
+
+    kfold_training_stats['overall'] = overall_kfold_stats
+
+    # save k-fold cv statistics
+    save_json(os.path.join(output_directory, 'kfold_training_statistics.json'),
               kfold_training_stats)
 
     # save k-fold split indices
