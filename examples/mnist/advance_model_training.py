@@ -26,12 +26,13 @@ try:
 except FileNotFoundError:
     pass
 
-try:
-    file_list = glob.glob('./data/*.json')
-    file_list.append(glob.glob('./data/*.hdf5'))
-    os.remove(file_list)
-except:
-    pass
+file_list = glob.glob('./data/*.json')
+file_list += glob.glob('./data/*.hdf5')
+for f in file_list:
+    try:
+        os.remove(f)
+    except FileNotFoundError:
+        pass
 
 # read in base model definition
 with open('./model_definition.yaml', 'r') as f:
