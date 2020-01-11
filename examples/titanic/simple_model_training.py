@@ -16,7 +16,7 @@ import shutil
 # clean out prior results
 try:
     shutil.rmtree('./results')
-except:
+except FileNotFoundError:
     pass
 
 
