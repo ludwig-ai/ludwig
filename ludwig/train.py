@@ -427,7 +427,8 @@ def kfold_cross_validate(
     for train_index, test_index, fold_num in \
             generate_kfold_splits(data_df, k_fold, random_seed):
         with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
-            # save training and validation subset for the fold into a temporary directory
+            # save training and validation subset for the fold into a
+            # temporary directory
             train_csv_fp = os.path.join(temp_dir_name, 'train_fold.csv')
             test_csv_fp = os.path.join(temp_dir_name, 'test_fold.csv')
             logger.info(
@@ -466,7 +467,8 @@ def kfold_cross_validate(
                 eval_batch_size if eval_batch_size != 0 else batch_size
             )
 
-            # augment the training statistics with scoring metric fron the hold out fold
+            # augment the training statistics with scoring metric fron
+            # the hold out fold
             train_stats['fold_metric'] = {}
             for metric_category in preds.keys():
                 train_stats['fold_metric'][metric_category] = {}
