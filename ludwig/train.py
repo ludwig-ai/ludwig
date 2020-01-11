@@ -444,14 +444,15 @@ def kfold_cross_validate(
                 }
 
             # train and validate model on this fold
+            with open(model_definition_file, 'r') as def_file:
+                model_definition = merge_with_defaults(yaml.safe_load(def_file))
             logger.info("training on fold {:d}".format(fold_num))
             (model,
              preprocessed_data,
              _,
              train_stats,
              model_definition) = full_train(
-                {},
-                model_definition_file=model_definition_file,
+                model_definition,
                 data_train_csv=train_csv_fp,
                 data_test_csv=test_csv_fp,
                 experiment_name='cross_validation',
