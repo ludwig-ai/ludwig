@@ -466,7 +466,12 @@ def kfold_cross_validate(
             )
 
             # augment the training statistics with scoring metric fron the hold out fold
-            train_stats['fold_metric'] = preds['combined']
+            train_stats['fold_metric'] = {}
+            for metric_category in preds.keys():
+                train_stats['fold_metric'][metric_category] = {}
+                for metric in preds[metric_category]:
+                    train_stats['fold_metric'][metric_category][metric] = \
+                        preds[metric_category][metric]
 
             # collect training statistics for this fold
             kfold_training_stats['fold_'+str(fold_num)] = train_stats
