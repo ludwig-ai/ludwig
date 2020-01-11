@@ -405,6 +405,7 @@ def kfold_cross_validate(
                 model_definition_file=None,
                 data_train_csv=None,
                 output_directory='results',
+                skip_save_k_fold_split_indices=False,
                 **kwargs
 ):
 
@@ -420,6 +421,7 @@ def kfold_cross_validate(
     # place each fold in a separate directory
     data_dir = os.path.dirname(data_train_csv)
     kfold_training_stats = {}
+    kfold_split_indices = {}
     for train_index, test_index, fold_num in generate_kfold_splits(data_df, k_fold):
         with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
             # save training and validation subset for the fold into a temporary directory
@@ -430,6 +432,14 @@ def kfold_cross_validate(
                 'directory: {}'.format(fold_num, temp_dir_name))
             data_df.iloc[train_index].to_csv(train_csv_fp, index=False)
             data_df.iloc[test_index].to_csv(test_csv_fp, index=False)
+
+            train_i = train_index.tolist()
+            if not skip_save_k_fold_split_indices:
+                kfold_split_indices['fold_'+str(fold_num)] = {
+                    'training_index': train_index,
+                    'test_index': test_index
+                }
+
 
             # train and validate model on this fold
             logger.info("training on fold {:d}".format(fold_num))
@@ -464,6 +474,11 @@ def kfold_cross_validate(
     # save consolidated training statistics from k-fold cv runs
     save_json(os.path.join(output_directory,'kfold_training_statistics.json'),
               kfold_training_stats)
+
+    # save k-fold split indices
+    if not skip_save_k_fold_split_indices:
+        save_json(os.path.join(output_directory, 'kfold_split_indices.json'),
+                  kfold_split_indices)
 
     logger.info('completed {:d}-fold cross validation'.format(k_fold))
 
@@ -794,6 +809,15 @@ def cli(sys_argv):
         help='disables saving TensorBoard logs. By default Ludwig saves '
              'logs for the TensorBoard, but if it is not needed turning it off '
              'can slightly increase the overall speed'
+    )
+    parser.add_argument(
+        '-skfsi',
+        '--skip_save_k_fold_split_indices',
+        action='store_true',
+        default=False,
+        help='disables saving indices generated to split training data set ' 
+             'for the k-fold cross validation run, but if it is not needed '
+             'turning it off can slightly increase the overall speed'
     )
 
     # ------------------
