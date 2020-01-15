@@ -206,7 +206,7 @@ class Model:
                 self.horovod
             )
 
-            tf.compat.v1.summary.scalar('train_reg_mean_loss', self.train_reg_mean_loss)
+            tf.compat.v1.summary.scalar('batch_combined/train_reg_mean_loss', self.train_reg_mean_loss)
 
             self.merged_summary = tf.compat.v1.summary.merge_all()
             self.graph = graph
@@ -271,7 +271,7 @@ class Model:
         summaries = []
         combined_output_f = stats['combined']
         for metric in combined_output_f:
-            metric_tag = "evaluation/{}_{}".format(prefix, metric)
+            metric_tag = "epoch_combined/{}_{}".format(prefix, metric)
             metric_val = combined_output_f[metric][-1]
             summaries.append(
                 tf.compat.v1.Summary.Value(tag=metric_tag, simple_value=metric_val)
