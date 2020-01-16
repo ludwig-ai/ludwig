@@ -15,12 +15,12 @@ import shutil
 # clean out old results
 try:
     shutil.rmtree('./results')
-except:
+except FileNotFoundError:
     pass
 
 try:
     shutil.rmtree('./visualizations')
-except:
+except FileNotFoundError:
     pass
 
 # list models to train
