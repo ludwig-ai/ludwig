@@ -132,24 +132,24 @@ ROOT = 'http://ludwig.ai/'
 OUTPUT_DIR = 'docs'
 
 
-def get_function_signature(function, method=True):
-    wrapped = getattr(function, '_original_function', None)
+def get_function_signature(_function, _method=True):
+    wrapped = getattr(_function, '_original_function', None)
     if wrapped is None:
-        signature = inspect.getargspec(function)
+        _signature = inspect.getfullargspec(_function)
     else:
-        signature = inspect.getargspec(wrapped)
-    defaults = signature.defaults
-    if method and len(signature.args) > 0 and signature.args[0] == 'self':
-        args = signature.args[1:]
+        _signature = inspect.getfullargspec(wrapped)
+    defaults = _signature.defaults
+    if _method and _signature.args and _signature.args[0] == 'self':
+        args = _signature.args[1:]
     else:
-        args = signature.args
+        args = _signature.args
     if defaults:
         kwargs = zip(args[-len(defaults):], defaults)
         args = args[:-len(defaults)]
     else:
         kwargs = []
     st = '%s.%s(\n' % (
-        clean_module_name(function.__module__), function.__name__)
+        clean_module_name(_function.__module__), _function.__name__)
 
     for a in args:
         st += '  {},\n'.format(str(a))
@@ -158,32 +158,32 @@ def get_function_signature(function, method=True):
             v = '\'' + v + '\''
         st += '  {}={},\n'.format(str(a), str(v))
     if kwargs or args:
-        signature = st[:-2] + '\n)'
+        _signature = st[:-2] + '\n)'
     else:
-        signature = st + ')'
-    return post_process_signature(signature)
+        _signature = st + ')'
+    return post_process_signature(_signature)
 
 
-def get_class_signature(cls):
+def get_class_signature(_cls):
     try:
-        class_signature = get_function_signature(cls.__init__)
-        class_signature = class_signature.replace('__init__', cls.__name__)
+        class_signature = get_function_signature(_cls.__init__)
+        class_signature = class_signature.replace('__init__', _cls.__name__)
     except (TypeError, AttributeError):
         # in case the class inherits from object and does not
         # define __init__
         class_signature = "{clean_module_name}.{cls_name}()".format(
-            clean_module_name=clean_module_name(cls.__module__),
-            cls_name=cls.__name__
+            clean_module_name=clean_module_name(_cls.__module__),
+            cls_name=_cls.__name__
         )
     return post_process_signature(class_signature)
 
 
-def post_process_signature(signature):
-    parts = re.split(r'\.(?!\d)', signature)
+def post_process_signature(_signature):
+    parts = re.split(r'\.(?!\d)', _signature)
     if len(parts) >= 4:
         if parts[1] == 'api':
-            signature = 'ludwig.' + '.'.join(parts[2:])
-    return signature
+            _signature = 'ludwig.' + '.'.join(parts[2:])
+    return _signature
 
 
 def clean_module_name(name):
@@ -192,20 +192,20 @@ def clean_module_name(name):
     return name
 
 
-def class_to_docs_link(cls):
-    module_name = clean_module_name(cls.__module__)
+def class_to_docs_link(_cls):
+    module_name = clean_module_name(_cls.__module__)
     module_name = module_name[6:]
-    link = ROOT + module_name.replace('.', '/') + '#' + cls.__name__.lower()
+    link = ROOT + module_name.replace('.', '/') + '#' + _cls.__name__.lower()
     return link
 
 
-def class_to_source_link(cls):
-    module_name = clean_module_name(cls.__module__)
-    path = module_name.replace('.', '/')
-    path += '.py'
-    line = inspect.getsourcelines(cls)[-1]
+def class_to_source_link(_cls):
+    module_name = clean_module_name(_cls.__module__)
+    _path = module_name.replace('.', '/')
+    _path += '.py'
+    line = inspect.getsourcelines(_cls)[-1]
     link = ('https://github.com/uber/'
-            'ludwig/blob/master/' + path + '#L' + str(line))
+            'ludwig/blob/master/' + _path + '#L' + str(line))
     return '[[source]](' + link + ')'
 
 
@@ -224,18 +224,18 @@ def count_leading_spaces(s):
         return 0
 
 
-def process_list_block(docstring, starting_point, section_end,
+def process_list_block(_docstring, starting_point, section_end,
                        leading_spaces, marker):
-    ending_point = docstring.find('\n\n', starting_point)
-    block = docstring[starting_point:(None if ending_point == -1 else
+    ending_point = _docstring.find('\n\n', starting_point)
+    block = _docstring[starting_point:(None if ending_point == -1 else
                                       ending_point - 1)]
     # Place marker for later reinjection.
-    docstring_slice = docstring[
+    docstring_slice = _docstring[
                       starting_point:None if section_end == -1 else section_end].replace(
         block, marker)
-    docstring = (docstring[:starting_point]
+    _docstring = (_docstring[:starting_point]
                  + docstring_slice
-                 + docstring[section_end:])
+                 + _docstring[section_end:])
     lines = block.split('\n')
     # Remove the computed number of leading white spaces from each line.
     lines = [re.sub('^' + ' ' * leading_spaces, '', line) for line in lines]
@@ -294,20 +294,20 @@ def process_list_block(docstring, starting_point, section_end,
             lines[i] = '- __return__{}:{}'.format(inside_brackets, line)
 
     block = '\n'.join(lines)
-    return docstring, block
+    return _docstring, block
 
 
-def process_docstring(docstring):
+def process_docstring(_docstring):
     # First, extract code blocks and process them.
     code_blocks = []
-    if '```' in docstring:
-        tmp = docstring[:]
+    if '```' in _docstring:
+        tmp = _docstring[:]
         while '```' in tmp:
             tmp = tmp[tmp.find('```'):]
             index = tmp[3:].find('```') + 6
             snippet = tmp[:index]
             # Place marker in docstring for later reinjection.
-            docstring = docstring.replace(
+            _docstring = _docstring.replace(
                 snippet, '$CODE_BLOCK_%d' % len(code_blocks))
             snippet_lines = snippet.split('\n')
             # Remove leading spaces.
@@ -338,83 +338,88 @@ def process_docstring(docstring):
 
     # Format docstring lists.
     section_regex = r'\n( +)# (.*)\n'
-    section_idx = re.search(section_regex, docstring)
+    section_idx = re.search(section_regex, _docstring)
     shift = 0
     sections = {}
     while section_idx and section_idx.group(2):
         anchor = section_idx.group(2)
         leading_spaces = len(section_idx.group(1))
         shift += section_idx.end()
-        next_section_idx = re.search(section_regex, docstring[shift:])
+        next_section_idx = re.search(section_regex, _docstring[shift:])
         if next_section_idx is None:
             section_end = -1
         else:
             section_end = shift + next_section_idx.start()
         marker = '$' + anchor.replace(' ', '_') + '$'
-        docstring, content = process_list_block(docstring,
-                                                shift,
-                                                section_end,
-                                                leading_spaces,
-                                                marker)
+        _docstring, content = process_list_block(_docstring,
+                                                 shift,
+                                                 section_end,
+                                                 leading_spaces,
+                                                 marker)
         sections[marker] = content
         # `docstring` has changed, so we can't use `next_section_idx` anymore
         # we have to recompute it
-        section_idx = re.search(section_regex, docstring[shift:])
+        section_idx = re.search(section_regex, _docstring[shift:])
 
     # Format docstring section titles.
-    docstring = re.sub(r'\n(\s+)# (.*)\n',
+    _docstring = re.sub(r'\n(\s+)# (.*)\n',
                        r'\n\1__\2__\n\n',
-                       docstring)
+                        _docstring)
 
     # Strip all remaining leading spaces.
-    lines = docstring.split('\n')
-    docstring = '\n'.join([line.lstrip(' ') for line in lines])
+    # generator function to resolve deepsource.io major issue
+    def strip_leading_spaces(these_lines):
+        for l in these_lines:
+            yield l.lstrip(' ')
+
+    lines = _docstring.split('\n')
+    _docstring = '\n'.join(strip_leading_spaces(lines))
 
     # Reinject list blocks.
     for marker, content in sections.items():
-        docstring = docstring.replace(marker, content)
+        _docstring = _docstring.replace(marker, content)
 
     # Reinject code blocks.
     for i, code_block in enumerate(code_blocks):
-        docstring = docstring.replace(
+        _docstring = _docstring.replace(
             '$CODE_BLOCK_%d' % i, code_block)
-    return docstring
+    return _docstring
 
 
-def read_file(path):
-    with open(path) as f:
-        return f.read()
+def read_file(_path):
+    with open(_path) as _f:
+        return _f.read()
 
 
-def collect_class_methods(cls, methods):
-    if isinstance(methods, (list, tuple)):
-        return [getattr(cls, m) if isinstance(m, str) else m for m in methods]
-    methods = []
-    for _, method in inspect.getmembers(cls, predicate=inspect.isroutine):
-        if method.__name__[0] == '_' or method.__name__ in EXCLUDE:
+def collect_class_methods(_cls, _methods):
+    if isinstance(_methods, (list, tuple)):
+        return [getattr(_cls, m) if isinstance(m, str) else m for m in _methods]
+    _methods = []
+    for _, _method in inspect.getmembers(_cls, predicate=inspect.isroutine):
+        if _method.__name__[0] == '_' or _method.__name__ in EXCLUDE:
             continue
-        methods.append(method)
-    return methods
+        _methods.append(_method)
+    return _methods
 
 
-def render_function(function, method=True):
-    subblocks = []
-    signature = get_function_signature(function, method=method)
-    if method:
-        signature = signature.replace(
-            clean_module_name(function.__module__) + '.', '')
-    subblocks.append('## ' + function.__name__ + '\n')
-    subblocks.append(code_snippet(signature))
-    docstring = function.__doc__
-    if docstring:
-        subblocks.append(process_docstring(docstring))
-    return '\n\n'.join(subblocks)
+def render_function(_function, _method=True):
+    _subblocks = []
+    _signature = get_function_signature(_function, _method=_method)
+    if _method:
+        _signature = _signature.replace(
+            clean_module_name(_function.__module__) + '.', '')
+    _subblocks.append('## ' + _function.__name__ + '\n')
+    _subblocks.append(code_snippet(_signature))
+    _docstring = _function.__doc__
+    if _docstring:
+        _subblocks.append(process_docstring(_docstring))
+    return '\n\n'.join(_subblocks)
 
 
-def read_page_data(page_data, type):
+def read_page_data(_page_data, type):
     assert type in ['classes', 'functions', 'methods']
-    data = page_data.get(type, [])
-    for module in page_data.get('all_module_{}'.format(type), []):
+    data = _page_data.get(type, [])
+    for module in _page_data.get('all_module_{}'.format(type), []):
         module_data = []
         for name in dir(module):
             if name[0] == '_' or name in EXCLUDE:
@@ -459,7 +464,15 @@ if __name__ == '__main__':
 
     print('Generating docs for Ludwig %s.' % ludwig.__version__)
     for page_data in PAGES:
-        classes = read_page_data(page_data, 'classes')
+        classes = []
+        functions = []
+        methods = []
+        if 'classes' in page_data.keys():
+            classes = read_page_data(page_data, 'classes')
+        elif 'functions' in page_data.keys():
+            functions = read_page_data(page_data, 'functions')
+        else:
+            raise TypeError('Invalid type specified in page_data')
 
         blocks = []
         for element in classes:
@@ -482,20 +495,24 @@ if __name__ == '__main__':
             if methods:
                 subblocks.append('\n---')
                 subblocks.append('# ' + cls.__name__ + ' methods\n')
-                subblocks.append('\n---\n'.join(
-                    [render_function(method, method=True) for method in
-                     methods]))
+
+                # generator function to resolve deepsource.io major issue
+                def generate_render_functions(_methods):
+                    for m in _methods:
+                        yield render_function(m, _method=True)
+
+                subblocks.append('\n---\n'.join(generate_render_functions(methods)))
             blocks.append('\n'.join(subblocks))
 
         methods = read_page_data(page_data, 'methods')
 
         for method in methods:
-            blocks.append(render_function(method, method=True))
+            blocks.append(render_function(method, _method=True))
 
         functions = read_page_data(page_data, 'functions')
 
         for function in functions:
-            blocks.append(render_function(function, method=False))
+            blocks.append(render_function(function, _method=False))
 
         if not blocks:
             raise RuntimeError('Found no content for page ' +

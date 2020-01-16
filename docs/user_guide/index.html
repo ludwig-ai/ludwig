@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.3">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
     
     
       
@@ -46,7 +46,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.30686662.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -57,12 +57,12 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.74668098.js"></script>
+      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -3182,10 +3182,7 @@ If the new data contains a split column, you can specify which split to use to c
 If you trained a model previously and got the results in, for instance, <code>./results/experiment_run_0</code>, you have to specify <code>./results/experiment_run_0/model</code> for using it to predict.</p>
 <p>You can specify an output directory with the argument <code>--output-directory</code>, by default it will be <code>./result_0</code>, with increasing numbers if a directory with the same name is present.</p>
 <p>The directory will contain a prediction CSV file and a probability CSV file for each output feature, together with raw NPY files containing raw tensors.
-You can specify not to save the raw NPY output files with the argument <code>skip_save_unprocessed_output</code>.
-If the argument <code>--evaluate_performance</code> if provided, a <code>predict_statistics.json</code> file containing all prediction statistics will also be outputted.
-If this parameter is specified, the data must contain columns for each output feature with ground truth output values in order to compute the performance statistics.
-If you receive an error regarding a missing output feature column in your data, it means that the data does not contain the columns for each output feature to use as ground truth.</p>
+You can specify not to save the raw NPY output files with the argument <code>skip_save_unprocessed_output</code>.</p>
 <p>A specific batch size for speeding up the prediction can be specified using the argument <code>--batch_size</code>.</p>
 <p>Finally the <code>--logging_level</code>, <code>--debug</code> and <code>--gpus</code> related arguments behave exactly like described in the train command section.</p>
 <p>Example:</p>
@@ -3249,6 +3246,8 @@ optional arguments:
 <p>All parameters are the same of <a href="#predict">predict</a> and the behavior is the same.
 The only difference isthat <code>test</code> requires the dataset to contain also columns with the same name of output features.
 This is needed because <code>test</code> compares the predictions produced by the model with the ground truth and will save all those statistics in a <code>test_statistics.json</code> file in the result directory.</p>
+<p>Note that the data must contain columns for each output feature with ground truth output values in order to compute the performance statistics.
+If you receive an error regarding a missing output feature column in your data, it means that the data does not contain the columns for each output feature to use as ground truth.</p>
 <p>Example:</p>
 <div class="codehilite"><pre><span></span>ludwig test --data_csv reuters-allcats.csv --model_path results/experiment_run_0/model/
 </pre></div>
@@ -3454,7 +3453,7 @@ optional arguments:
 
 
 <p>The three most important arguments are <code>--model_path</code> where you have to specify the path of the model to load, <code>--tensors</code> that lets you specify a list of tensor names in the TensorFlow graph that contain the weights you want to collect, and finally <code>--output_directory</code> that lets you specify where the NPY files (one for each tensor name specified) will be saved.</p>
-<p>In order to figure out the names fo the tensors containing the weights you want to collect, the best way is to inspect the graph of the model with TensorBoard.</p>
+<p>In order to figure out the names of the tensors containing the weights you want to collect, the best way is to inspect the graph of the model with TensorBoard.</p>
 <div class="codehilite"><pre><span></span>tensorboard --logdir /path/to/model/log
 </pre></div>
 
@@ -3505,7 +3504,7 @@ optional arguments:
 
 <p>The data related and runtime related arguments (GPUs, batch size, etc.) are the same used in <a href="#predict">predict</a>, you can refer to that section for an explanation.
 The collect specific arguments <code>--model_path</code>, <code>--tensors</code> and <code>--output_directory</code> are the same used in <a href="#collect_weights">collect_weights</a>, you can refer to that section for an explanation.</p>
-<p>In order to figure out the names fo the tensors containing the activations you want to collect, the best way is to inspect the graph of the model with TensorBoard.</p>
+<p>In order to figure out the names of the tensors containing the activations you want to collect, the best way is to inspect the graph of the model with TensorBoard.</p>
 <div class="codehilite"><pre><span></span>tensorboard --logdir /path/to/model/log
 </pre></div>
 
@@ -3947,7 +3946,7 @@ No additional information about them is available in the JSON metadata file.</p>
 </ul>
 <h4 id="numerical-input-features-and-encoders">Numerical Input Features and Encoders<a class="headerlink" href="#numerical-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Numerical features have one encoder, the raw float values coming from the input placeholders are passed through a single neuron for scaling purposes, (optionally) passed through a normalization layer (either <code>null</code>, <code>batch_norm</code>, or <code>layer_norm</code>) and returned as outputs.
-Inputs are of size <code>b</code> while outputs are fo size <code>b x 1</code> where b is the batch size.</p>
+Inputs are of size <code>b</code> while outputs are of size <code>b x 1</code> where b is the batch size.</p>
 <p>The available encoder parameters are:</p>
 <ul>
 <li><code>norm'</code> (default <code>null</code>): norm to apply after the single neuron. It can be <code>null</code>, <code>batch</code> or <code>layer</code>.</li>
@@ -4024,7 +4023,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 </ul>
 <h4 id="category-input-features-and-encoders">Category Input Features and Encoders<a class="headerlink" href="#category-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Category features have one encoder, the raw integer values coming from the input placeholders are mapped to either dense or sparse embeddings (one-hot encodings) and returned as outputs.
-Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionality of the embeddings.</p>
+Inputs are of size <code>b</code> while outputs are of size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionality of the embeddings.</p>
 <p>The available encoder parameters are</p>
 <ul>
 <li><code>representation'</code> (default <code>dense</code>): the possible values are <code>dense</code> and <code>sparse</code>. <code>dense</code> means the embeddings are initialized randomly, <code>sparse</code> means they are initialized to be one-hot encodings.</li>
@@ -4149,7 +4148,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 </ul>
 <h4 id="set-input-features-and-encoders">Set Input Features and Encoders<a class="headerlink" href="#set-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Set features have one encoder, the raw binary values coming from the input placeholders are first transformed in sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot encodings), finally they are aggregated and returned as outputs.
-Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionally of the embeddings.</p>
+Inputs are of size <code>b</code> while outputs are of size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionally of the embeddings.</p>
 <div class="codehilite"><pre><span></span>+-+
 |0|          +-----+
 |0|   +-+    |emb 2|   +-----------+
@@ -4249,7 +4248,7 @@ You can set either of them as <code>validation_measure</code> in the <code>train
 <p>Bag features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).</p>
 <h4 id="bag-input-features-and-encoders">Bag Input Features and Encoders<a class="headerlink" href="#bag-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Bag features have one encoder, the raw float values coming from the input placeholders are first transformed in sparse integer lists, then they are mapped to either dense or sparse embeddings (one-hot encodings), they are aggregated as a weighted sum, where the weights are the original float values, and finally returned as outputs.
-Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionality of the embeddings.</p>
+Inputs are of size <code>b</code> while outputs are of size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionality of the embeddings.</p>
 <p>The parameters are the same used for set input features with the exception of <code>reduce_output</code> that does not apply in this case because the weighted sum already acts as a reducer.</p>
 <h4 id="bag-output-features-and-decoders">Bag Output Features and Decoders<a class="headerlink" href="#bag-output-features-and-decoders" title="Permanent link">&para;</a></h4>
 <p>There is no bag decoder available yet.</p>
@@ -4280,7 +4279,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 </ul>
 <h4 id="sequence-input-features-and-encoders">Sequence Input Features and Encoders<a class="headerlink" href="#sequence-input-features-and-encoders" title="Permanent link">&para;</a></h4>
 <p>Sequence features have several encoders and each of them has its own parameters.
-Inputs are of size <code>b</code> while outputs are fo size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionally of the output of the encoder.
+Inputs are of size <code>b</code> while outputs are of size <code>b x h</code> where <code>b</code> is the batch size and <code>h</code> is the dimensionally of the output of the encoder.
 In case a representation for each element of the sequence is needed (for example for tagging them, or for using an attention mechanism), one can specify the parameter <code>reduce_output</code> to be <code>null</code> or <code>None</code> and the output will be a <code>b x s x h</code> tensor where <code>s</code> is the length of the sequence.
 Some encoders, because of their inner workings, may require additional parameters to be specified in order to obtain one representation for each element of the sequence.
 For instance the <code>parallel_cnn</code> encoder, by default pools and flattens the sequence dimension and then passes the flattened vector through fully connected layers, so in order to obtain the full tesnor one has to specify <code>reduce_output: null</code>.</p>
@@ -4690,7 +4689,7 @@ If you want to output the full <code>b x s x h</code> where <code>h</code> is th
 
 <h5 id="bert-encoder">BERT Encoder<a class="headerlink" href="#bert-encoder" title="Permanent link">&para;</a></h5>
 <p>The <a href="https://arxiv.org/abs/1810.04805">BERT</a> encoder allows for loading a pre-trained bert model.
-Models are available on <a href="https://github.com/google-research/bert">GitHube</a> for download.
+Models are available on <a href="https://github.com/google-research/bert">GitHub</a> for download.
 The downloaded pretrained model directory contains:
 - <code>bert_config.json</code> which holds the hyperparameters of the bert architecture,
 - <code>vocab.txt</code> which contains the vocabulary of BPE word pieces the model was trained on,
@@ -4878,7 +4877,7 @@ If a <code>b x h</code> input is provided to a generator decoder using an rnn wi
 <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
 <li><code>cell_type</code> (default <code>rnn</code>): the type of recurrent cell to use. Available values are: <code>rnn</code>, <code>lstm</code>, <code>lstm_block</code>, <code>lstm</code>, <code>ln</code>, <code>lstm_cudnn</code>, <code>gru</code>, <code>gru_block</code>, <code>gru_cudnn</code>. For reference about the differences between the cells please refer to <a href="https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell">TensorFlow's documentstion</a>. We suggest to use the <code>block</code> variants on CPU and the <code>cudnn</code> variants on GPU because of their increased speed.</li>
 <li><code>state_size</code> (default <code>256</code>): the size of the state of the rnn.</li>
-<li><code>tied_embeddings</code> (default <code>null</code>): if <code>null</code> the embeddings of the targets are initialized randomly, while if the values is the name of an input feature, the embeddings of that input feature will be used as embeddings of the target. The <code>vocabulary_size</code> of that input feature has to be the same of the output feature one and it has to have an embedding matrix (binary and numerical features will not have one, fo instance). In this case the <code>embedding_size</code> will be the same as the <code>state_size</code>. This is useful for implementing autoencoders where the encoding and decoding part of the model share parameters.</li>
+<li><code>tied_embeddings</code> (default <code>null</code>): if <code>null</code> the embeddings of the targets are initialized randomly, while if the values is the name of an input feature, the embeddings of that input feature will be used as embeddings of the target. The <code>vocabulary_size</code> of that input feature has to be the same of the output feature one and it has to have an embedding matrix (binary and numerical features will not have one, for instance). In this case the <code>embedding_size</code> will be the same as the <code>state_size</code>. This is useful for implementing autoencoders where the encoding and decoding part of the model share parameters.</li>
 <li><code>embedding_size</code> (default 256): if <code>tied_target_embeddings</code> is <code>false</code>, the input embeddings and the weights of the softmax_cross_entropy weights before the softmax_cross_entropy are not tied together and can have different sizes, this parameter describes the size of the embeddings of the inputs of the generator.</li>
 <li><code>beam_width</code> (default <code>1</code>): sampling from the rnn generator is performed using beam search. By default, with a beam of one, only a greedy sequence using always the most probably next token is generated, but the beam size can be increased. This usually leads to better performance at the expense of more computation and slower generation.</li>
 <li><code>attention_mechanism</code> (default <code>null</code>): the recurrent generator may use an attention mechanism. The available ones are <code>bahdanau</code> and <code>luong</code> (for more information refer to <a href="https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention">TensorFlow's documentation</a>). When <code>attention</code> is not <code>null</code> the expected size of the input tensor is <code>b x s x h</code>, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner. If a <code>b x h</code> input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.</li>
@@ -5034,6 +5033,7 @@ All images in the dataset should have the same size.
 If they have different sizes, a <code>resize_method</code>, together with a target <code>width</code> and <code>height</code>, must be specified in the feature preprocessing parameters.</p>
 <ul>
 <li><code>in_memory</code> (default <code>true</code>): defines whether image dataset will reside in memory during the training process or will be dynamically fetched from disk (useful for large datasets). In the latter case a training batch of input images will be fetched from disk each training iteration.</li>
+<li><code>num_processes</code> (default 1): specifies the number of processes to run for preprocessing images.</li>
 <li><code>resize_method</code> (default <code>crop_or_pad</code>): available options: <code>crop_or_pad</code> - crops images larger than the specified <code>width</code> and <code>height</code> to the desired size or pads smalled images using edge padding; <code>interpolate</code> - uses interpolation to resize images to the specified <code>width</code> and <code>height</code>.</li>
 <li><code>height</code> (default <code>null</code>): image height in pixels, must be set if resizing is required</li>
 <li><code>width</code> (default <code>null</code>): image width in pixels, must be set if resizing is required</li>
@@ -5237,8 +5237,8 @@ It takes the following optional parameters:</p>
 <h4 id="date-features-measures">Date Features Measures<a class="headerlink" href="#date-features-measures" title="Permanent link">&para;</a></h4>
 <p>As no date decoders are available at the moment, there are also no date measures.</p>
 <h3 id="h3-features">H3 Features<a class="headerlink" href="#h3-features" title="Permanent link">&para;</a></h3>
-<p>H3 is a indexing system ofr representing geospatial data.
-For more details about it refer to: .</p>
+<p>H3 is a indexing system for representing geospatial data.
+For more details about it refer to: https://eng.uber.com/h3/ .</p>
 <h4 id="h3-features-preprocessing">H3 Features Preprocessing<a class="headerlink" href="#h3-features-preprocessing" title="Permanent link">&para;</a></h4>
 <p>Ludwig will parse the H3 64bit encoded format automatically. 
 The parameters for preprocessing are:</p>
@@ -5531,7 +5531,7 @@ The final output is a <code>b x s x h'</code> tensor where <code>h'</code> is th
 
 <p>These are the available parameters of a sequence concat combiner</p>
 <ul>
-<li><code>main_sequence_feature</code> (default <code>null</code>): name fo the sequence / text/ time series feature to concatenate the outputs of the other features to. If no <code>main_sequence_feature</code> is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence <code>s</code> dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the <code>s</code> dimension, which means that all of them must have identical <code>s</code> dimension, otherwise an error will be thrown.</li>
+<li><code>main_sequence_feature</code> (default <code>null</code>): name of the sequence / text/ time series feature to concatenate the outputs of the other features to. If no <code>main_sequence_feature</code> is specified, the combiner will look through all the features in the order they are defined in the model definition and will look for a feature with a rank 3 tensor output (sequence, text or time series). If it cannot find one it will raise an exception, otherwise the output of that feature will be used for concatenating the other features along the sequence <code>s</code> dimension. If there are other input features with a rank 3 output tensor, the combiner will concatenate them alongside the <code>s</code> dimension, which means that all of them must have identical <code>s</code> dimension, otherwise an error will be thrown.</li>
 </ul>
 <p>Example sequence concat combiner in the model definition:</p>
 <div class="codehilite"><pre><span></span><span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_concat</span>
@@ -5541,7 +5541,7 @@ The final output is a <code>b x s x h'</code> tensor where <code>h'</code> is th
 
 <h4 id="sequence-combiner">Sequence Combiner<a class="headerlink" href="#sequence-combiner" title="Permanent link">&para;</a></h4>
 <p>The sequence combiner stacks a sequence concat combiner with a sequence encoder one on top of each other.
-All the considerations about inputs tensor ranks describer for the <a href="#sequence-concat-combiner">sequence concat combiner</a> apply also in this case, but the main difference is that this combiner uses the <code>b x s x h'</code> output of the sequence concat combiner, where <code>b</code> is the batch size, <code>s</code> is the sequence length and <code>h'</code> is the sum of the hidden dimensions of all input features, as input fo any of the sequence encoders described in the <a href="#sequence-inpit-features-and-encoders">sequence features encoders section</a>.
+All the considerations about inputs tensor ranks describer for the <a href="#sequence-concat-combiner">sequence concat combiner</a> apply also in this case, but the main difference is that this combiner uses the <code>b x s x h'</code> output of the sequence concat combiner, where <code>b</code> is the batch size, <code>s</code> is the sequence length and <code>h'</code> is the sum of the hidden dimensions of all input features, as input for any of the sequence encoders described in the <a href="#sequence-inpit-features-and-encoders">sequence features encoders section</a>.
 Refer to that section for more detailed information about the sequence encoders and their parameters.
 Also all the considerations on the shape of the outputs done for the sequence encoders apply in this case too.</p>
 <div class="codehilite"><pre><span></span>Sequence
@@ -5986,6 +5986,7 @@ The classes on the x axis are sorted by f1 score.</p>
                 
                   
                 
+                
               
               
                 
@@ -6083,7 +6084,7 @@ The classes on the x axis are sorted by f1 score.</p>
       
     </div>
     
-      <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+      <script src="../assets/javascripts/application.808e90bb.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       
