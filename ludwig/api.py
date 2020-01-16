@@ -144,10 +144,11 @@ class LudwigModel:
             model_definition_file=None,
             logging_level=logging.ERROR
     ):
+        # check for model_definition and model_definition_file
         if model_definition is None and model_definition_file is None:
             raise ValueError(
-                'Either model_definition of model_definition_file have not None'
-                ' to initialize a LudwigModel'
+                'Either model_definition of model_definition_file have to be'
+                'not None to initialize a LudwigModel'
             )
         if model_definition is not None and model_definition_file is not None:
             raise ValueError(
