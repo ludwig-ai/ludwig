@@ -40,8 +40,7 @@ class Wandb():
                 "Ignored --wandb: Please install wandb; see https://docs.wandb.com")
             return None
 
-    @staticmethod
-    def train_model(model, *args, **kwargs):
+    def train_model(self, model, *args, **kwargs):
         import wandb
         logger.info("wandb.train_model() called...")
         config = model.hyperparameters.copy()
@@ -49,8 +48,7 @@ class Wandb():
         del config["output_features"]
         wandb.config.update(config)
 
-    @staticmethod
-    def train_init(experiment_directory, experiment_name, model_name,
+    def train_init(self, experiment_directory, experiment_name, model_name,
                    resume, output_directory):
         import wandb
         logger.info("wandb.train_init() called...")
@@ -58,15 +56,13 @@ class Wandb():
                    sync_tensorboard=True, dir=output_directory)
         wandb.save(os.path.join(experiment_directory, "*"))
 
-    @staticmethod
-    def visualize_figure(fig):
+    def visualize_figure(self, fig):
         import wandb
         logger.info("wandb.visualize_figure() called...")
         if wandb.run:
             wandb.log({"figure": fig})
 
-    @staticmethod
-    def predict_end(stats, *args, **kwargs):
+    def predict_end(self, stats, *args, **kwargs):
         import wandb
         logger.info("wandb.predict() called... %s", stats)
         if wandb.run:
