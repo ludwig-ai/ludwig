@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 
 def full_train(
-        model_definition,
+        model_definition=None,
         model_definition_file=None,
         data_df=None,
         data_train_df=None,
@@ -184,6 +184,18 @@ def full_train(
     :type debug: Boolean
     :returns: None
     """
+    # check for model_definition and model_definition_file
+    if model_definition is None and model_definition_file is None:
+        raise ValueError(
+            'Either model_definition of model_definition_file have to be'
+            'not None to initialize a LudwigModel'
+        )
+    if model_definition is not None and model_definition_file is not None:
+        raise ValueError(
+            'Only one between model_definition and '
+            'model_definition_file can be provided'
+        )
+
     # merge with default model definition to set defaults
     if model_definition_file is not None:
         with open(model_definition_file, 'r') as def_file:
