@@ -493,8 +493,10 @@ def kfold_cross_validate(
                 }
 
             # train and validate model on this fold
-            with open(model_definition_file, 'r') as def_file:
-                model_definition = merge_with_defaults(yaml.safe_load(def_file))
+            if model_definition_file is not None:
+                with open(model_definition_file, 'r') as def_file:
+                    model_definition = \
+                        merge_with_defaults(yaml.safe_load(def_file))
             logger.info("training on fold {:d}".format(fold_num))
             (model,
              preprocessed_data,
