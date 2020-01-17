@@ -414,14 +414,51 @@ def full_train(
 
 
 def kfold_cross_validate(
-                k_fold,
+                model_definition=None,
                 model_definition_file=None,
-                data_train_csv=None,
+                k_fold=None,
+                data_csv=None,
                 output_directory='results',
                 random_seed=default_random_seed,
                 skip_save_k_fold_split_indices=False,
                 **kwargs
 ):
+    """Performs k-fold cross validation.
+
+    # Inputs
+    :param model_definition: (dict, default: None) a dictionary containing
+            information needed to build a model. Refer to the [User Guide]
+           (http://ludwig.ai/user_guide/#model-definition) for details.
+    :param model_definition_file: (string, optional, default: `None`) path to
+           a YAML file containing the model definition. If available it will be
+           used instead of the model_definition dict.
+    :param k_fold: (int, default: None) number of folds to create for the cross-validation
+    :param data_csv: (string, default: None)
+    :param output_directory: (string, default: 'results')
+    :param random_seed: (int) Random seed used k-fold splits.
+    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
+            saving k-fold split indices
+
+    :return: None
+    """
+
+    # check for model_definition and model_definition_file
+    if model_definition is None and model_definition_file is None:
+        raise ValueError(
+            'Either model_definition of model_definition_file have to be'
+            'not None to initialize a LudwigModel'
+        )
+    if model_definition is not None and model_definition_file is not None:
+        raise ValueError(
+            'Only one between model_definition and '
+            'model_definition_file can be provided'
+        )
+
+    # check for k_fold
+    if k_fold is None:
+        raise ValueError(
+            'k_fold parameter must be specified'
+        )
 
     logger.info('starting {:d}-fold cross validation'.format(k_fold))
 
@@ -430,10 +467,10 @@ def kfold_cross_validate(
         os.mkdir(output_directory)
 
     # read in data to split for the folds
-    data_df = pd.read_csv(data_train_csv)
+    data_df = pd.read_csv(data_csv)
 
     # place each fold in a separate directory
-    data_dir = os.path.dirname(data_train_csv)
+    data_dir = os.path.dirname(data_csv)
     kfold_training_stats = {}
     kfold_split_indices = {}
     for train_index, test_index, fold_num in \
