@@ -111,11 +111,18 @@ optional arguments:
                         saves logs for the TensorBoard, but if it is not
                         needed turning it off can slightly increase the
                         overall speed.
+  -skfsi, --skip_save_k_fold_split_indices
+                        disables saving indices generated to split training 
+                        data set for the k-fold cross validation run, but if it 
+                        is not needed turning it off can slightly increase the 
+                        overall speed
   -rs RANDOM_SEED, --random_seed RANDOM_SEED
                         a random seed that is going to be used anywhere there
                         is a call to a random number generator: data
                         splitting, parameter initialization and training set
                         shuffling
+  -kf K_FOLD, --k_fold K_FOLD
+                        number of folds for a k-fold cross validation run
   -g GPUS [GPUS ...], --gpus GPUS [GPUS ...]
                         list of gpus to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
@@ -158,6 +165,8 @@ The directory will contain
 - `description.json` - a file containing a description of the training process with all the information to reproduce it.
 - `training_statistics.json` which contains records of all measures and losses for each epoch.
 - `model` - a directory containing model hyperparameters, weights, checkpoints and logs (for TensorBoard).
+- `kfold_training_statistics.json` - an optional file that is created when the `--k_fold` parameter is specified.  This file contains metrics from k-fold cross validation run.  In addition to the metrics for each fold, there is an `overall` key that shows mean and standard deviation for metrics across all folds.
+- `kfold_split_indicies.json` - this file is present if `--k_fold` parameter is specified and `--skip_save_k_fold_split_indices` is not specified.  This file contains for each fold the row index values for the training data that creates the training and hold-out test folds.  These indices can be used to reproduce the fold splits.
 
 The model definition can be provided either as a string (`--model_definition`) or as YAML file (`--model_definition_file`).
 Details on how to write your model definition are provided in the [Model Definition](#model-definition) section.
@@ -170,6 +179,8 @@ You can avoid saving the latest weights and the overall progress so far by using
 Another available option is to load a previously trained model as an initialization for a new training process.
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
 It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the `--model_load_path` argument.
+
+You can request a k-fold cross validation run by specifing the `--k_fold` parameter.
 
 You can specify a random seed to be used by the python environment, python random package, numpy and TensorFlow with the `--random_seed` argument.
 This is useful for reproducibility.
