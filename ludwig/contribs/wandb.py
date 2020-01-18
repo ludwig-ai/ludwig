@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 class Wandb():
-    "Class that defines the methods necessary to hook into process."
+    """
+    Class that defines the methods necessary to hook into process.
+    """
 
     @staticmethod
     def import_call(argv, *args, **kwargs):
