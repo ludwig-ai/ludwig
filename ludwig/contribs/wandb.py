@@ -63,9 +63,3 @@ class Wandb():
         logger.info("wandb.visualize_figure() called...")
         if wandb.run:
             wandb.log({"figure": fig})
-
-    def predict_end(self, stats, *args, **kwargs):
-        import wandb
-        logger.info("wandb.predict() called... %s", stats)
-        if wandb.run:
-            wandb.summary.update(dict(stats))

@@ -190,8 +190,6 @@ def predict(
             train_set_metadata
         )
 
-    contrib_command("predict_end", test_stats)
-
     return test_stats
 
 
