@@ -2,8 +2,6 @@ import logging
 import os
 import os.path
 import tempfile
-
-import pytest
 import yaml
 
 from ludwig.train import kfold_cross_validate
