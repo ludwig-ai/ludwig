@@ -43,6 +43,9 @@ def test_wandb_experiment(csv_filename):
     # End session
     wandb.join()
 
+    # Remove instance from contrib_registry
+    ludwig.contrib.contrib_registry['instances'].pop()
+
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
 
