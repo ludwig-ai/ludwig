@@ -1238,6 +1238,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#integrations" class="md-nav__link">
+    Integrations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#programmatic-api" class="md-nav__link">
     Programmatic API
   </a>
@@ -2605,6 +2612,13 @@
         <li class="md-nav__item">
   <a href="#distributed-training" class="md-nav__link">
     Distributed Training
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integrations" class="md-nav__link">
+    Integrations
   </a>
   
 </li>
@@ -5601,6 +5615,16 @@ For instance, in order to train a Ludwig model on a local machine with four GPUs
 
 <p>The same applies to <code>experiment</code>, <code>predict</code> and <code>test</code>.</p>
 <p>More details on Horovod installation and run parameters can be found in <a href="https://github.com/uber/horovod">Horovod's documentation</a>.</p>
+<h2 id="integrations">Integrations<a class="headerlink" href="#integrations" title="Permanent link">&para;</a></h2>
+<p>Ludwig provides an extendable interface to integrate with third-party
+systems. To activate a particular integration, simply insert its flag
+into the command line. Each integration may have specific requirements
+and use.</p>
+<p>Ludwig supports the following integrations:</p>
+<ul>
+<li><code>--comet</code> - logs training metrics, environment details, test results, visualizations, and more to <a href="https://comet.ml">Comet.ML</a>. Requires a freely available account. For more details, see Comet's <a href="https://www.comet.ml/docs/python-sdk/ludwig/#running-ludwig-with-comet">Running Ludwig with Comet</a>.</li>
+</ul>
+<p>For more information about integration contributions, please see the <a href="../developer_guide/">Developer Guide</a>.</p>
 <h2 id="programmatic-api">Programmatic API<a class="headerlink" href="#programmatic-api" title="Permanent link">&para;</a></h2>
 <p>Ludwig functionalities can also be accessed through a programmatic API.
 The API consists of one <code>LudwigModel</code> class that can be initialized with a model definition dictionary and then can be trained with data coming in the form of a dataframe or a CSV file.

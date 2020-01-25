@@ -405,6 +405,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#adding-a-new-integration" class="md-nav__link">
+    Adding a new Integration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#style-guidelines" class="md-nav__link">
     Style Guidelines
   </a>
@@ -643,6 +650,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#adding-a-new-integration" class="md-nav__link">
+    Adding a new Integration
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#style-guidelines" class="md-nav__link">
     Style Guidelines
   </a>
@@ -867,6 +881,95 @@ Input and output feature classes are defined in the same file, for example <code
 - <strong>output_tensors</strong> (dict): dictionary containing feature specific output tensors (predictions, probabilities, losses, etc).</p>
 <h3 id="2-add-the-new-feature-class-to-the-corresponding-feature-registry">2. Add the new feature class to the corresponding feature registry<a class="headerlink" href="#2-add-the-new-feature-class-to-the-corresponding-feature-registry" title="Permanent link">&para;</a></h3>
 <p>Input and output feature registries are defined in <code>ludwig/features/feature_registries.py</code>.</p>
+<h2 id="adding-a-new-integration">Adding a new Integration<a class="headerlink" href="#adding-a-new-integration" title="Permanent link">&para;</a></h2>
+<p>Ludwig provides an open-ended method of third-party system
+integration. This makes it easy to integrate other systems or services
+with Ludwig without having users do anything other than adding a flag
+to the command line interface.</p>
+<p>To contribute an integration, follow these steps:</p>
+<ol>
+<li>Create a Python file in <code>ludwig/contribs/</code> with an obvious name. In this example, it is called <code>mycontrib.py</code>.</li>
+<li>Inside that file, create a class with the following structure, renaming <code>MyContribution</code> to a name that is associated with the third-party system:</li>
+</ol>
+<div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">MyContribution</span><span class="p">():</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">import_call</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># This is called when your flag is used before any other</span>
+    <span class="c1"># imports.</span>
+
+    <span class="k">def</span> <span class="nf">experiment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/experiment.py and ludwig/cli.py</span>
+
+    <span class="k">def</span> <span class="nf">experiment_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/experiment.py</span>
+
+    <span class="k">def</span> <span class="nf">train_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiment_directory</span><span class="p">,</span> <span class="n">experiment_name</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span>
+                   <span class="n">resume</span><span class="p">,</span> <span class="n">output_directory</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/train.py</span>
+
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/train.py and ludwig/cli.py</span>
+
+    <span class="k">def</span> <span class="nf">train_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/train.py</span>
+
+    <span class="k">def</span> <span class="nf">train_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/train.py</span>
+
+    <span class="k">def</span> <span class="nf">train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress_tracker</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/models/model.py</span>
+
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/predict.py and ludwig/cli.py</span>
+
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/test.py and ludwig/cli.py</span>
+
+    <span class="k">def</span> <span class="nf">visualize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See: ludwig/visualize.py and ludwig/cli.py</span>
+
+    <span class="k">def</span> <span class="nf">visualize_figure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">):</span>
+    <span class="c1"># See ludwig/utils/visualization_utils.py</span>
+
+    <span class="k">def</span> <span class="nf">serve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># See ludwig/utils/serve.py and ludwig/cli.py</span>
+
+    <span class="k">def</span> <span class="nf">collect_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># See ludwig/collect.py and ludwig/cli.py</span>
+
+    <span class="k">def</span> <span class="nf">collect_activations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># See ludwig/collect.py and ludwig/cli.py</span>
+</pre></div>
+
+
+<p>If your integration does not handle a particular action, you can simply remove the method, or do nothing (e.g., <code>pass</code>).</p>
+<p>If you would like to add additional actions not already handled by the
+above, add them to the appropriate calling location, add the
+associated method to your class, and add them to this
+documentation. See existing calls as a pattern to follow.</p>
+<ol>
+<li>In the file <code>ludwig/contribs/__init__.py</code> add an import in this pattern, using your names:</li>
+</ol>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">.mycontrib</span> <span class="kn">import</span> <span class="n">MyContribution</span>
+</pre></div>
+
+
+<ol>
+<li>In the file <code>ludwig/contribs/__init__.py</code> in the <code>contrib_registry["classes"]</code> dictionary, add a key/value pair where the key is your flag, and the value is your class name, like:</li>
+</ol>
+<div class="codehilite"><pre><span></span><span class="n">contrib_registry</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">...</span>
+    <span class="s2">&quot;classes&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="o">...</span><span class="p">,</span>
+        <span class="s2">&quot;myflag&quot;</span><span class="p">:</span> <span class="n">MyContribution</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<ol>
+<li>Submit your contribution as a pull request to the Ludwig github repository.</li>
+</ol>
 <h2 id="style-guidelines">Style Guidelines<a class="headerlink" href="#style-guidelines" title="Permanent link">&para;</a></h2>
 <p>We expect contributions to mimic existing patterns in the codebase and demonstrate good practices: the code should be concise, readable, PEP8-compliant, and conforming to 80 character line length limit.</p>
 <h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
