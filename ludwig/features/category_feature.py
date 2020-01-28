@@ -633,11 +633,11 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             probs = result[PROBABILITIES]
             prob = np.amax(probs, axis=1)
             postprocessed[PROBABILITIES] = probs
-            postprocessed['probability'] = prob
+            postprocessed[PROBABILITY] = prob
 
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PROBABILITIES), probs)
-                np.save(npy_filename.format(name, 'probability'), probs)
+                np.save(npy_filename.format(name, PROBABILITY), probs)
 
             del result[PROBABILITIES]
 

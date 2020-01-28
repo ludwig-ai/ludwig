@@ -787,11 +787,11 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                     prob = np.prod(probs, axis=-1)
 
                 postprocessed[PROBABILITIES] = probs
-                postprocessed['probability'] = prob
+                postprocessed[PROBABILITY] = prob
 
                 if not skip_save_unprocessed_output:
                     np.save(npy_filename.format(name, PROBABILITIES), probs)
-                    np.save(npy_filename.format(name, 'probability'), prob)
+                    np.save(npy_filename.format(name, PROBABILITY), prob)
 
             del result[PROBABILITIES]
 
