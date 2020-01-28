@@ -786,11 +786,15 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                         probs = np.amax(probs, axis=-1)
                     prob = np.prod(probs, axis=-1)
 
-                postprocessed[PROBABILITIES] = probs
+                # commenting probabilities out because usually it is huge:
+                # dataset x length x classes
+                # todo: add a mechanism for letting the user decide to save it
+                #postprocessed[PROBABILITIES] = probs
                 postprocessed[PROBABILITY] = prob
 
                 if not skip_save_unprocessed_output:
-                    np.save(npy_filename.format(name, PROBABILITIES), probs)
+                    # commenting probabilities out, see comment above
+                    #np.save(npy_filename.format(name, PROBABILITIES), probs)
                     np.save(npy_filename.format(name, PROBABILITY), prob)
 
             del result[PROBABILITIES]

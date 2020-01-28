@@ -435,6 +435,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             experiment_dir_name,
             skip_save_unprocessed_output=False,
     ):
+        # todo: refactor to reuse SeuuqnceOutputFeature.postprocess_results
         postprocessed = {}
         npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
@@ -484,11 +485,15 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
                     probs = np.amax(probs, axis=-1)
                     prob = np.prod(probs, axis=-1)
 
-                postprocessed[PROBABILITIES] = probs
+                # commenting probabilities out because usually it is huge:
+                # dataset x length x classes
+                # todo: add a mechanism for letting the user decide to save it
+                # postprocessed[PROBABILITIES] = probs
                 postprocessed[PROBABILITY] = prob
 
                 if not skip_save_unprocessed_output:
-                    np.save(npy_filename.format(name, PROBABILITIES), probs)
+                    # commenting probabilities out, see comment above
+                    # np.save(npy_filename.format(name, PROBABILITIES), probs)
                     np.save(npy_filename.format(name, PROBABILITY), prob)
 
             del result[PROBABILITIES]
