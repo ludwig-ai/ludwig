@@ -394,11 +394,11 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             prob = [[prob for prob in prob_set if
                      prob >= output_feature['threshold']] for prob_set in probs]
             postprocessed[PROBABILITIES] = probs
-            postprocessed['probability'] = prob
+            postprocessed[PROBABILITY] = prob
 
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PROBABILITIES), probs)
-                np.save(npy_filename.format(name, 'probability'), probs)
+                np.save(npy_filename.format(name, PROBABILITY), probs)
 
             del result[PROBABILITIES]
 

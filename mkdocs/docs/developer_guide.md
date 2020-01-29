@@ -256,6 +256,9 @@ class MyContribution():
     def predict(self, *args, **kwargs):
 	# See: ludwig/predict.py and ludwig/cli.py
 
+    def predict_end(self, test_stats):
+        # See: ludwig/predict.py
+
     def test(self, *args, **kwargs):
 	# See: ludwig/test.py and ludwig/cli.py
 
