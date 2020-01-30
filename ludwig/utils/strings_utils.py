@@ -74,7 +74,7 @@ def match_replace(string_to_match, list_regex):
 
 
 def load_vocabulary(vocab_file):
-    with open(vocab_file, 'r') as f:
+    with open(vocab_file, 'r', encoding='utf-8') as f:
         vocabulary = []
         for line in f:
             line = line.strip()
