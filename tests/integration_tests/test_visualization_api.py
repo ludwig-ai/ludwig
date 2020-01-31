@@ -715,7 +715,7 @@ def test_calibration_1_vs_all_vis_api(csv_filename):
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 7 == len(figure_cnt)
+        assert 5 == len(figure_cnt)
     shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
 
 
