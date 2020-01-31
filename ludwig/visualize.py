@@ -2606,7 +2606,7 @@ def calibration_1_vs_all(
     classes = (min(num_classes, top_n_classes[0]) if top_n_classes[0] > 0
                else num_classes)
 
-    for class_idx in range(1, classes):
+    for class_idx in range(classes):
         fraction_positives_class = []
         mean_predicted_vals_class = []
         probs_class = []
