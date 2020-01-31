@@ -2599,7 +2599,7 @@ def calibration_1_vs_all(
             prob_limit[:, labels_limit] = prob[:, labels_limit:].sum(1)
             probs[i] = prob_limit
 
-    num_classes = max(ground_truth)
+    num_classes = max(ground_truth) + 1
 
     brier_scores = []
 
@@ -2629,6 +2629,15 @@ def calibration_1_vs_all(
                 curr_fraction_positives,
                 curr_mean_predicted_vals
             ) = calibration_curve(gt_class, prob_class, n_bins=21)
+
+            if len(curr_fraction_positives) < 2:
+                curr_fraction_positives = np.concatenate(
+                    (np.array([0.]), curr_fraction_positives)
+                )
+            if len(curr_mean_predicted_vals) < 2:
+                curr_mean_predicted_vals = np.concatenate(
+                    (np.array([0.]), curr_mean_predicted_vals)
+                )
 
             fraction_positives_class.append(curr_fraction_positives)
             mean_predicted_vals_class.append(curr_mean_predicted_vals)
