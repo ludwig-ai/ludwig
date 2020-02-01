@@ -849,7 +849,7 @@ def calibration_plot(
         # sns.tsplot(mean_predicted_values[i], fraction_positives[i], ax=ax1, color=colors[i])
 
         assert len(mean_predicted_values[i]) == len(fraction_positives[i])
-        order = min(3, len(mean_predicted_values[i] - 1))
+        order = min(3, len(mean_predicted_values[i]) - 1)
 
         sns.regplot(mean_predicted_values[i], fraction_positives[i],
                     order=order, x_estimator=np.mean, color=colors[i],
