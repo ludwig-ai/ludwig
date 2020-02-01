@@ -23,12 +23,12 @@ import logging
 import os
 import os.path
 import sys
+import tempfile
 from pprint import pformat
 
-import yaml
-import tempfile
-import pandas as pd
 import numpy as np
+import pandas as pd
+import yaml
 
 from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_training
@@ -39,8 +39,8 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
 from ludwig.models.modules.measure_modules import get_best_function
-from ludwig.utils.data_utils import save_json
 from ludwig.utils.data_utils import generate_kfold_splits
+from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.misc import get_experiment_description, \
@@ -414,25 +414,25 @@ def full_train(
 
 
 def kfold_cross_validate(
-                model_definition=None,
-                model_definition_file=None,
-                k_fold=None,
-                data_csv=None,
-                output_directory='results',
-                random_seed=default_random_seed,
-                skip_save_k_fold_split_indices=False,
-                **kwargs
+        k_fold,
+        model_definition=None,
+        model_definition_file=None,
+        data_csv=None,
+        output_directory='results',
+        random_seed=default_random_seed,
+        skip_save_k_fold_split_indices=False,
+        **kwargs
 ):
     """Performs k-fold cross validation.
 
     # Inputs
+    :param k_fold: (int) number of folds to create for the cross-validation
     :param model_definition: (dict, default: None) a dictionary containing
             information needed to build a model. Refer to the [User Guide]
            (http://ludwig.ai/user_guide/#model-definition) for details.
     :param model_definition_file: (string, optional, default: `None`) path to
            a YAML file containing the model definition. If available it will be
            used instead of the model_definition dict.
-    :param k_fold: (int, default: None) number of folds to create for the cross-validation
     :param data_csv: (string, default: None)
     :param output_directory: (string, default: 'results')
     :param random_seed: (int) Random seed used k-fold splits.
@@ -473,7 +473,7 @@ def kfold_cross_validate(
     data_dir = os.path.dirname(data_csv)
     kfold_training_stats = {}
     kfold_split_indices = {}
-    for train_index, test_index, fold_num in \
+    for train_indices, test_indices, fold_num in \
             generate_kfold_splits(data_df, k_fold, random_seed):
         with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
             # save training and validation subset for the fold into a
@@ -483,13 +483,13 @@ def kfold_cross_validate(
             logger.info(
                 '\n\n>>>>> for fold {:d} created temporary '
                 'directory: {}'.format(fold_num, temp_dir_name))
-            data_df.iloc[train_index].to_csv(train_csv_fp, index=False)
-            data_df.iloc[test_index].to_csv(test_csv_fp, index=False)
+            data_df.iloc[train_indices].to_csv(train_csv_fp, index=False)
+            data_df.iloc[test_indices].to_csv(test_csv_fp, index=False)
 
             if not skip_save_k_fold_split_indices:
-                kfold_split_indices['fold_'+str(fold_num)] = {
-                    'training_index': train_index,
-                    'test_index': test_index
+                kfold_split_indices['fold_' + str(fold_num)] = {
+                    'training_indices': train_indices,
+                    'test_indices': test_indices
                 }
 
             # train and validate model on this fold
@@ -529,7 +529,7 @@ def kfold_cross_validate(
                         preds[metric_category][metric]
 
             # collect training statistics for this fold
-            kfold_training_stats['fold_'+str(fold_num)] = train_stats
+            kfold_training_stats['fold_' + str(fold_num)] = train_stats
 
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
@@ -543,7 +543,7 @@ def kfold_cross_validate(
                 if metric not in {'predictions', 'probabilities'}:
                     if metric not in raw_kfold_stats[category]:
                         raw_kfold_stats[category][metric] = []
-                    raw_kfold_stats[category][metric]\
+                    raw_kfold_stats[category][metric] \
                         .append(category_stats[metric])
 
     # calculate overall kfold statistics
@@ -553,13 +553,12 @@ def kfold_cross_validate(
         for metric in raw_kfold_stats[category]:
             mean = np.mean(raw_kfold_stats[category][metric])
             std = np.std(raw_kfold_stats[category][metric])
-            overall_kfold_stats[category][metric+'_mean'] = mean
-            overall_kfold_stats[category][metric+'_std'] = std
+            overall_kfold_stats[category][metric + '_mean'] = mean
+            overall_kfold_stats[category][metric + '_std'] = std
 
     kfold_training_stats['overall'] = overall_kfold_stats
 
     # save k-fold cv statistics
-
     save_json(os.path.join(output_directory, 'kfold_training_statistics.json'),
               kfold_training_stats)
 
@@ -903,7 +902,7 @@ def cli(sys_argv):
         '--skip_save_k_fold_split_indices',
         action='store_true',
         default=False,
-        help='disables saving indices generated to split training data set ' 
+        help='disables saving indices generated to split training data set '
              'for the k-fold cross validation run, but if it is not needed '
              'turning it off can slightly increase the overall speed'
     )

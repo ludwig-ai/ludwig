@@ -53,16 +53,17 @@ def read_csv(data_fp, header=0):
     :param header: header argument for pandas to read the csv
     :return: Pandas dataframe with the data
     """
-    
-    separator=','
+
+    separator = ','
     with open(data_fp, 'r') as csvfile:
         try:
-            dialect = csv.Sniffer().sniff(csvfile.read(1024*100), delimiters=[',' , '\t', '|', ' '])
-            separator=dialect.delimiter
+            dialect = csv.Sniffer().sniff(csvfile.read(1024 * 100),
+                                          delimiters=[',', '\t', '|', ' '])
+            separator = dialect.delimiter
         except csv.Error:
             # Could not conclude the delimiter, defaulting to comma
             pass
-    
+
     try:
         df = pd.read_csv(data_fp, sep=separator, header=header)
     except ParserError:
@@ -396,6 +397,7 @@ def add_sequence_feature_column(df, col_name, seq_length):
     df[new_col_name] = new_data
     df[new_col_name] = df[new_col_name].fillna(method='backfill')
 
+
 def override_in_memory_flag(input_features, override_value):
     num_overrides = 0
     for feature in input_features:
@@ -404,6 +406,7 @@ def override_in_memory_flag(input_features, override_value):
                 feature['preprocessing']['in_memory'] = override_value
                 num_overrides += 1
     return num_overrides
+
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -421,9 +424,9 @@ class NumpyEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
-def generate_kfold_splits(data_train_df, k_fold, random_state):
-    kf = KFold(n_splits=k_fold, shuffle=True, random_state=random_state)
+def generate_kfold_splits(data_df, num_folds, random_state):
+    kf = KFold(n_splits=num_folds, shuffle=True, random_state=random_state)
     fold_num = 0
-    for train_index, test_index in kf.split(data_train_df):
+    for train_indices, test_indices in kf.split(data_df):
         fold_num += 1
-        yield train_index, test_index, fold_num
+        yield train_indices, test_indices, fold_num
