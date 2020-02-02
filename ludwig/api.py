@@ -45,6 +45,7 @@ from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing import build_dataset
 from ludwig.data.preprocessing import load_metadata
 from ludwig.data.preprocessing import replace_text_feature_level
+from ludwig.experiment import kfold_cross_validate
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -545,6 +546,35 @@ class LudwigModel:
         self.train_set_metadata = preprocessed_data[-1]
 
         return train_stats
+
+    def kfold_cross_validate(
+            self,
+            k_fold,
+            data_csv=None,
+            output_directory='results',
+            random_seed=default_random_seed,
+            skip_save_k_fold_split_indices=False,
+            **kwargs
+    ):
+        """Performs k-fold cross validation.
+
+        # Inputs
+        :param k_fold: (int) number of folds to create for the cross-validation
+        :param data_csv: (string, default: None)
+        :param output_directory: (string, default: 'results')
+        :param random_seed: (int) Random seed used k-fold splits.
+        :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
+                saving k-fold split indices
+
+        :return: kfold_cv_stats
+        """
+
+
+        kfold_cross_validate(
+            k_fold,
+            model_definition=self.model_definition
+        )
+
 
     def initialize_model(
             self,
