@@ -286,7 +286,7 @@ def experiment(
     return experiment_dir_name
 
 
-def run_kfold_cross_validate(
+def kfold_cross_validate(
     k_fold,
     model_definition=None,
     model_definition_file=None,
@@ -462,7 +462,7 @@ def experiment_kfold_cross_validate(
 
 
     (kfold_training_stats,
-     kfold_split_indices) = run_kfold_cross_validate(
+     kfold_split_indices) = kfold_cross_validate(
         k_fold,
         model_definition=model_definition,
         model_definition_file=model_definition_file,
