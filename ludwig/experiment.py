@@ -310,8 +310,8 @@ def kfold_cross_validate(
     :param output_directory: (string, default: 'results')
 
     :param random_seed: (int) Random seed used k-fold splits.
-    :return: overall_kfold_stats, kfold_split_indices (tuple of dict):
-             overall_kfold_stats contains metrics from cv run.
+    :return: kfold_training_stats, kfold_split_indices (tuple of dict):
+             kfold_training_stats contains metrics from cv run.
              kfold_split_indices: indices to split training data into
                 training fold and test fold.
     """
