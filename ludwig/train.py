@@ -329,6 +329,11 @@ def full_train(
                 train_set_metadata
             )
 
+    contrib_command("train_init", experiment_directory=experiment_dir_name,
+                    experiment_name=experiment_name, model_name=model_name,
+                    output_directory=output_directory,
+                    resume=model_resume_path is not None)
+
     # run the experiment
     model, result = train(
         training_set=training_set,
