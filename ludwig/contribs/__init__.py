@@ -35,13 +35,15 @@ If you don't want to handle the call, either provide an empty
 method with `pass`, or just don't implement the method.
 """
 
-## Contributors, import your class here:
+# Contributors, import your class here:
 from .comet import Comet
+from .wandb import Wandb
 
 contrib_registry = {
-    ## Contributors, add your class here:
+    # Contributors, add your class here:
     'classes': {
         'comet': Comet,
+        'wandb': Wandb,
     },
     'instances': [],
 }

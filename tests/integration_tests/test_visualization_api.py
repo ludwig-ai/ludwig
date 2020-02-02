@@ -82,7 +82,8 @@ class Experiment:
         # probabilities need to be list of lists containing each row data
         # from the probability columns
         # ref: https://uber.github.io/ludwig/api/#test - Return
-        self.probability = self.test_stats_full[0].iloc[:, 2:].values
+        num_probs = self.output_features[0]['vocab_size']
+        self.probability = self.test_stats_full[0].iloc[:, 1:(num_probs+2)].values
         self.ground_truth_metadata = self.model.train_set_metadata
         target_predictions = test_df[self.output_feature_name]
         self.ground_truth = np.asarray([

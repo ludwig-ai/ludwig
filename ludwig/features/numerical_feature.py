@@ -313,15 +313,15 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         if 'sampled' not in self.loss['type']:
             tf.compat.v1.summary.scalar(
-                'train_batch_mean_squared_error_{}'.format(self.name),
+                'batch_train_mean_squared_error_{}'.format(self.name),
                 tf.reduce_mean(squared_error)
             )
             tf.compat.v1.summary.scalar(
-                'train_batch_mean_absolute_error_{}'.format(self.name),
+                'batch_train_mean_absolute_error_{}'.format(self.name),
                 tf.reduce_mean(absolute_error)
             )
             tf.compat.v1.summary.scalar(
-                'train_batch_mean_r2_{}'.format(self.name),
+                'batch_train_mean_r2_{}'.format(self.name),
                 tf.reduce_mean(r2)
             )
 
@@ -333,7 +333,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
         tf.compat.v1.summary.scalar(
-            'train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss,
         )
 

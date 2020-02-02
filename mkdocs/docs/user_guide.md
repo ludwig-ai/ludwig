@@ -3027,6 +3027,8 @@ Ludwig supports the following integrations:
 
 - `--comet` - logs training metrics, environment details, test results, visualizations, and more to [Comet.ML](https://comet.ml). Requires a freely available account. For more details, see Comet's [Running Ludwig with Comet](https://www.comet.ml/docs/python-sdk/ludwig/#running-ludwig-with-comet).
 
+- `--wandb` - logs training metrics, configuration parameters, environment details, and trained model to [Weights & Biases](https://www.wandb.com/). For more details, refer to [W&B Quickstart](https://docs.wandb.com/quickstart).
+
 For more information about integration contributions, please see the [Developer Guide](developer_guide.md).
 
 Programmatic API
