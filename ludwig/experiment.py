@@ -292,7 +292,8 @@ def run_kfold_cross_validate(
     model_definition_file=None,
     data_csv=None,
     output_directory='results',
-    random_seed=default_random_seed
+    random_seed=default_random_seed,
+    **kwargs
 ):
     """Performs k-fold cross validation and return result data structures.
 
@@ -437,7 +438,8 @@ def experiment_kfold_cross_validate(
         data_csv=None,
         output_directory='results',
         random_seed=default_random_seed,
-        skip_save_k_fold_split_indices=False
+        skip_save_k_fold_split_indices=False,
+        **kwargs
 ):
     """Wrapper function to performs k-fold cross validation.
 
@@ -465,6 +467,7 @@ def experiment_kfold_cross_validate(
         model_definition=model_definition,
         model_definition_file=model_definition_file,
         data_csv=data_csv,
+        output_directory=output_directory,
         random_seed=random_seed
     )
 
