@@ -2,12 +2,13 @@ import logging
 import os
 import os.path
 import tempfile
+
 import yaml
 
-from ludwig.train import kfold_cross_validate
+from ludwig.experiment import kfold_cross_validate
 from ludwig.utils.data_utils import load_json
-from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
 
 logger = logging.getLogger(__name__)
@@ -16,13 +17,16 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
 def test_kfold_cv():
+    num_folds = 3
+
     # setup temporary directory to run test
     with tempfile.TemporaryDirectory() as tmpdir:
 
         training_data_fp = os.path.join(tmpdir, 'train.csv')
         model_definition_fp = os.path.join(tmpdir, 'model_definition.yaml')
         results_dir = os.path.join(tmpdir, 'results')
-        statistics_fp = os.path.join(results_dir, 'kfold_training_statistics.json')
+        statistics_fp = os.path.join(results_dir,
+                                     'kfold_training_statistics.json')
         indices_fp = os.path.join(results_dir, 'kfold_split_indices.json')
 
         # generate synthetic data for the test
@@ -50,9 +54,9 @@ def test_kfold_cv():
 
         # run k-fold cv
         kfold_cross_validate(
+            k_fold=num_folds,
             model_definition_file=model_definition_fp,
             data_csv=training_data_fp,
-            k_fold=5,
             output_directory=results_dir,
             logging_level='warn'
         )
@@ -63,7 +67,8 @@ def test_kfold_cv():
 
         # check for required keys
         cv_statistics = load_json(statistics_fp)
-        for key in ['fold_'+str(i+1) for i in range(5)] + ['overall']:
+        for key in ['fold_' + str(i + 1)
+                    for i in range(num_folds)] + ['overall']:
             assert key in cv_statistics
 
         # check for existence and structure of split indices file
@@ -71,5 +76,5 @@ def test_kfold_cv():
 
         # check for required keys
         cv_indices = load_json(indices_fp)
-        for key in ['fold_'+str(i+1) for i in range(5)]:
+        for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in cv_indices
