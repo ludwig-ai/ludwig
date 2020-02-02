@@ -286,7 +286,7 @@ def experiment(
     return experiment_dir_name
 
 
-def kfold_cross_validate(
+def experiment_kfold_cross_validate(
         k_fold,
         model_definition=None,
         model_definition_file=None,
@@ -703,7 +703,7 @@ def cli(sys_argv):
     if args.k_fold is None:
         experiment(**vars(args))
     else:
-        kfold_cross_validate(**vars(args))
+        experiment_kfold_cross_validate(**vars(args))
 
 
 if __name__ == '__main__':

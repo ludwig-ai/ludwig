@@ -5,7 +5,7 @@ import tempfile
 
 import yaml
 
-from ludwig.experiment import kfold_cross_validate
+from ludwig.experiment import experiment_kfold_cross_validate
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -53,7 +53,7 @@ def test_kfold_cv():
             yaml.dump(model_definition, f)
 
         # run k-fold cv
-        kfold_cross_validate(
+        experiment_kfold_cross_validate(
             k_fold=num_folds,
             model_definition_file=model_definition_fp,
             data_csv=training_data_fp,
