@@ -5,6 +5,7 @@ import tempfile
 
 import yaml
 
+from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_kfold_cross_validate
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import category_feature
@@ -16,7 +17,8 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
-def test_kfold_cv():
+def test_kfold_cv_cli():
+    # k-fold cross validation cli
     num_folds = 3
 
     # setup temporary directory to run test
@@ -78,3 +80,120 @@ def test_kfold_cv():
         cv_indices = load_json(indices_fp)
         for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in cv_indices
+
+
+def test_kfold_cv_api_from_file():
+    # k-fold_cross_validate api with model_definition_file
+    num_folds = 3
+
+    # setup temporary directory to run test
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        # setup required data structures for test
+        training_data_fp = os.path.join(tmpdir, 'train.csv')
+        model_definition_fp = os.path.join(tmpdir, 'model_definition.yaml')
+        results_dir = os.path.join(tmpdir, 'results')
+        statistics_fp = os.path.join(results_dir,
+                                     'kfold_training_statistics.json')
+        indices_fp = os.path.join(results_dir, 'kfold_split_indices.json')
+
+        # generate synthetic data for the test
+        input_features = [
+            numerical_feature(normalization='zscore'),
+            numerical_feature(normalization='zscore')
+        ]
+
+        output_features = [
+            category_feature(vocab_size=2, reduce_input='sum')
+        ]
+
+        generate_data(input_features, output_features, training_data_fp)
+
+        # generate model definition file
+        model_definition = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'combiner': {'type': 'concat', 'fc_size': 14},
+            'training': {'epochs': 2}
+        }
+
+        with open(model_definition_fp, 'w') as f:
+            yaml.dump(model_definition, f)
+
+
+        # test kfold_cross_validate api with model definition file
+
+        # Define Ludwig model object that drive model training from file
+        model = LudwigModel(model_definition_file=model_definition_fp,
+                            logging_level=logging.INFO)
+
+        # execute k-fold cross validation run
+        (kfold_training_stats,
+         kfold_split_indices) = model.kfold_cross_validate(
+            3,
+            data_csv=training_data_fp
+        )
+
+        model.close()
+
+        # correct structure for results from kfold cv
+        for key in ['fold_' + str(i + 1)
+                    for i in range(num_folds)] + ['overall']:
+            assert key in kfold_training_stats
+
+        for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
+            assert key in kfold_split_indices
+
+def test_kfold_cv_api_in_memory():
+    # k-fold_cross_validate api with in-memory model defintion
+    num_folds = 3
+
+    # setup temporary directory to run test
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+        # setup required data structures for test
+        training_data_fp = os.path.join(tmpdir, 'train.csv')
+        results_dir = os.path.join(tmpdir, 'results')
+
+        # generate synthetic data for the test
+        input_features = [
+            numerical_feature(normalization='zscore'),
+            numerical_feature(normalization='zscore')
+        ]
+
+        output_features = [
+            category_feature(vocab_size=2, reduce_input='sum')
+        ]
+
+        generate_data(input_features, output_features, training_data_fp)
+
+        # generate model definition file
+        model_definition = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'combiner': {'type': 'concat', 'fc_size': 14},
+            'training': {'epochs': 2}
+        }
+
+        # test kfold_cross_validate api with model definition in-memory
+
+        # Define Ludwig model object that drive model training from in-memory
+        model = LudwigModel(model_definition=model_definition,
+                            logging_level=logging.INFO)
+
+        # execute k-fold cross validation run
+        (kfold_training_stats,
+         kfold_split_indices) = model.kfold_cross_validate(
+            3,
+            data_csv=training_data_fp
+        )
+
+        model.close()
+
+        # correct structure for results from kfold cv
+        for key in ['fold_' + str(i + 1)
+                    for i in range(num_folds)] + ['overall']:
+            assert key in kfold_training_stats
+
+        for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
+            assert key in kfold_split_indices
