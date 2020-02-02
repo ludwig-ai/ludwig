@@ -152,8 +152,10 @@ class Model:
                 tf.float32,
                 name='learning_rate'
             )
-            self.dropout_rate = tf.compat.v1.placeholder(tf.float32, name='dropout_rate')
-            self.is_training = tf.compat.v1.placeholder(tf.bool, [], name='is_training')
+            self.dropout_rate = tf.compat.v1.placeholder(tf.float32,
+                                                         name='dropout_rate')
+            self.is_training = tf.compat.v1.placeholder(tf.bool, [],
+                                                        name='is_training')
 
             # ================ Inputs ================
             feature_encodings = build_inputs(
@@ -206,7 +208,10 @@ class Model:
                 self.horovod
             )
 
-            tf.compat.v1.summary.scalar('batch_combined/train_reg_mean_loss', self.train_reg_mean_loss)
+            tf.compat.v1.summary.scalar(
+                'combined/batch_train_reg_mean_loss',
+                self.train_reg_mean_loss
+            )
 
             self.merged_summary = tf.compat.v1.summary.merge_all()
             self.graph = graph
@@ -265,17 +270,22 @@ class Model:
         return feed_dict
 
     @classmethod
-    def add_tensorboard_combined_summary(cls, stats, prefix, train_writer, step):
+    def add_tensorboard_epoch_summary(cls, stats, prefix, train_writer, step):
         if not train_writer:
             return
         summaries = []
-        combined_output_f = stats['combined']
-        for metric in combined_output_f:
-            metric_tag = "epoch_combined/{}_{}".format(prefix, metric)
-            metric_val = combined_output_f[metric][-1]
-            summaries.append(
-                tf.compat.v1.Summary.Value(tag=metric_tag, simple_value=metric_val)
-            )
+        for feature_name, output_feature in stats.items():
+            for metric in output_feature:
+                metric_tag = "{}/epoch_{}_{}".format(
+                    feature_name, prefix, metric
+                )
+                metric_val = output_feature[metric][-1]
+                summaries.append(
+                    tf.compat.v1.Summary.Value(
+                        tag=metric_tag,
+                        simple_value=metric_val
+                    )
+                )
         summary = tf.compat.v1.Summary(value=summaries)
         train_writer.add_summary(summary, step)
 
@@ -597,11 +607,11 @@ class Model:
                 # the same way as in the CLI. For each one, progress_tracker.steps has already
                 # been incremented before, so in order to write on the previous summary, we need
                 # to use -1
-                self.add_tensorboard_combined_summary(
+                self.add_tensorboard_epoch_summary(
                     progress_tracker.train_stats,
                     "training",
                     train_writer,
-                    progress_tracker.steps - 1
+                    progress_tracker.epoch
                 )
 
             if validation_set is not None and validation_set.size > 0:
@@ -621,11 +631,11 @@ class Model:
                     # the same way as in the CLI. For each one, progress_tracker.steps has already
                     # been incremented before, so in order to write on the previous summary, we need
                     # to use -1
-                    self.add_tensorboard_combined_summary(
+                    self.add_tensorboard_epoch_summary(
                         progress_tracker.vali_stats,
                         "validation",
                         train_writer,
-                        progress_tracker.steps - 1
+                        progress_tracker.epoch
                     )
 
             if test_set is not None and test_set.size > 0:
@@ -645,11 +655,11 @@ class Model:
                     # the same way as in the CLI. For each one, progress_tracker.steps has already
                     # been incremented before, so in order to write on the previous summary, we need
                     # to use -1
-                    self.add_tensorboard_combined_summary(
+                    self.add_tensorboard_epoch_summary(
                         progress_tracker.test_stats,
                         "test",
                         train_writer,
-                        progress_tracker.steps - 1
+                        progress_tracker.epoch
                     )
 
             # mbiu and end of epoch prints

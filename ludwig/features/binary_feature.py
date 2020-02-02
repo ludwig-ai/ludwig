@@ -258,7 +258,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
         output_tensors[ACCURACY + '_' + self.name] = accuracy
 
-        # ================ Loss (Binary Cross Entropy) ================
+        tf.compat.v1.summary.scalar(
+            'batch_train_accuracy_{}'.format(self.name),
+            accuracy
+        )
+
+        # ================ Loss ================
         train_mean_loss, eval_loss = self._get_loss(
             targets,
             logits,
@@ -269,10 +274,9 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
         tf.compat.v1.summary.scalar(
-            'train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss
         )
-
         return train_mean_loss, eval_loss, output_tensors
 
     default_validation_measure = ACCURACY

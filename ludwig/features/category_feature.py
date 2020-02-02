@@ -451,15 +451,15 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         if 'sampled' not in self.loss['type']:
             tf.compat.v1.summary.scalar(
-                'train_batch_accuracy_{}'.format(self.name),
+                'batch_train_accuracy_{}'.format(self.name),
                 accuracy
             )
             tf.compat.v1.summary.scalar(
-                'train_batch_mean_hits_at_k_{}'.format(self.name),
+                'batch_train_mean_hits_at_k_{}'.format(self.name),
                 mean_hits_at_k
             )
 
-        # ================ Loss (Cross Entropy) ================
+        # ================ Loss ================
         train_mean_loss, eval_loss = self._get_loss(
             targets,
             hidden,
@@ -473,7 +473,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
         tf.compat.v1.summary.scalar(
-            'train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss
         )
 

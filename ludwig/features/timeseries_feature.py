@@ -35,7 +35,6 @@ from ludwig.utils.strings_utils import tokenizer_registry
 
 logger = logging.getLogger(__name__)
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -287,17 +286,6 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         output_tensors[PREDICTIONS + '_' + self.name] = predictions_sequence
         output_tensors[LENGTHS + '_' + self.name] = predictions_sequence_length
 
-        # ================ Loss ================
-        train_mean_loss, eval_loss = self._get_loss(
-            targets,
-            predictions_sequence
-        )
-
-        output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
-        output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
-
-        tf.compat.v1.summary.scalar(TRAIN_MEAN_LOSS + '_' + self.name, train_mean_loss)
-
         # ================ Measures ================
         (
             error_val,
@@ -313,6 +301,34 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         output_tensors[SQUARED_ERROR + '_' + self.name] = squared_error_val
         output_tensors[ABSOLUTE_ERROR + '_' + self.name] = absolute_error_val
         output_tensors[R2 + '_' + self.name] = r2_val
+
+        if 'sampled' not in self.loss['type']:
+            tf.compat.v1.summary.scalar(
+                'batch_train_mean_squared_error_{}'.format(self.name),
+                tf.reduce_mean(squared_error)
+            )
+            tf.compat.v1.summary.scalar(
+                'batch_train_mean_absolute_error_{}'.format(self.name),
+                tf.reduce_mean(absolute_error)
+            )
+            tf.compat.v1.summary.scalar(
+                'batch_train_mean_r2_{}'.format(self.name),
+                tf.reduce_mean(r2)
+            )
+
+        # ================ Loss ================
+        train_mean_loss, eval_loss = self._get_loss(
+            targets,
+            predictions_sequence
+        )
+
+        output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
+        output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
+
+        tf.compat.v1.summary.scalar(
+            'batch_train_mean_loss_{}'.format(self.name),
+            train_mean_loss,
+        )
 
         return train_mean_loss, eval_loss, output_tensors
 

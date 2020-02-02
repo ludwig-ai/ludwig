@@ -295,20 +295,26 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         )
         predictions, probabilities, logits = ppl
 
+        # ================ Measures ================
         jaccard_index = self._get_measures(targets, predictions)
 
         output_tensors[PREDICTIONS + '_' + self.name] = predictions
         output_tensors[PROBABILITIES + '_' + self.name] = probabilities
         output_tensors[JACCARD + '_' + self.name] = jaccard_index
 
-        # ================ Loss (Binary Cross Entropy) ================
+        tf.compat.v1.summary.scalar(
+            'batch_train_jaccard_{}'.format(self.name),
+            jaccard_index
+        )
+
+        # ================ Loss ================
         train_mean_loss, eval_loss = self._get_loss(targets, logits)
 
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
         tf.compat.v1.summary.scalar(
-            'train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss
         )
 

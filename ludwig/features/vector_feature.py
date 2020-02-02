@@ -20,13 +20,13 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
-from ludwig.models.modules.initializer_modules import get_initializer
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.dense_encoders import Dense
+from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
 from ludwig.models.modules.measure_modules import \
     absolute_error as get_absolute_error
@@ -74,7 +74,8 @@ class VectorBaseFeature(BaseFeature):
         # Convert the string of features into a numpy array
         try:
             data[feature['name']] = np.array(
-                [x.split() for x in dataset_df[feature['name']]], dtype=np.double
+                [x.split() for x in dataset_df[feature['name']]],
+                dtype=np.double
             )
         except ValueError:
             logger.error(
@@ -294,15 +295,15 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         if 'sampled' not in self.loss['type']:
             tf.compat.v1.summary.scalar(
-                'train_batch_mean_squared_error_{}'.format(self.name),
+                'batch_train_mean_squared_error_{}'.format(self.name),
                 tf.reduce_mean(squared_error)
             )
             tf.compat.v1.summary.scalar(
-                'train_batch_mean_absolute_error_{}'.format(self.name),
+                'batch_train_mean_absolute_error_{}'.format(self.name),
                 tf.reduce_mean(absolute_error)
             )
             tf.compat.v1.summary.scalar(
-                'train_batch_mean_r2_{}'.format(self.name),
+                'batch_train_mean_r2_{}'.format(self.name),
                 tf.reduce_mean(r2)
             )
 
@@ -315,7 +316,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
         tf.compat.v1.summary.scalar(
-            'train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss,
         )
 
