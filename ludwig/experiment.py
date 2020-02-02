@@ -286,35 +286,34 @@ def experiment(
     return experiment_dir_name
 
 
-def experiment_kfold_cross_validate(
-        k_fold,
-        model_definition=None,
-        model_definition_file=None,
-        data_csv=None,
-        output_directory='results',
-        random_seed=default_random_seed,
-        skip_save_k_fold_split_indices=False,
-        **kwargs
+def run_kfold_cross_validate(
+    k_fold,
+    model_definition=None,
+    model_definition_file=None,
+    data_csv=None,
+    output_directory='results',
+    random_seed=default_random_seed
 ):
-    """Performs k-fold cross validation.
+    """Performs k-fold cross validation and return result data structures.
 
     # Inputs
     :param k_fold: (int) number of folds to create for the cross-validation
     :param model_definition: (dict, default: None) a dictionary containing
-            information needed to build a model. Refer to the [User Guide]
-           (http://ludwig.ai/user_guide/#model-definition) for details.
+             information needed to build a model. Refer to the [User Guide]
+            (http://ludwig.ai/user_guide/#model-definition) for details.
     :param model_definition_file: (string, optional, default: `None`) path to
-           a YAML file containing the model definition. If available it will be
-           used instead of the model_definition dict.
+            a YAML file containing the model definition. If available it will be
+            used instead of the model_definition dict.
+    :param data_csv: (dataframe, default: None)
     :param data_csv: (string, default: None)
     :param output_directory: (string, default: 'results')
+
     :param random_seed: (int) Random seed used k-fold splits.
-    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
-            saving k-fold split indices
-
-    :return: None
+    :return: overall_kfold_stats, kfold_split_indices (tuple of dict):
+             overall_kfold_stats contains metrics from cv run.
+             kfold_split_indices: indices to split training data into
+                training fold and test fold.
     """
-
     # check for model_definition and model_definition_file
     if model_definition is None and model_definition_file is None:
         raise ValueError(
@@ -335,6 +334,12 @@ def experiment_kfold_cross_validate(
 
     logger.info('starting {:d}-fold cross validation'.format(k_fold))
 
+    # extract out model definition for use
+    if model_definition_file is not None:
+        with open(model_definition_file, 'r') as def_file:
+            model_definition = \
+                merge_with_defaults(yaml.safe_load(def_file))
+
     # create output_directory if not available
     if not os.path.isdir(output_directory):
         os.mkdir(output_directory)
@@ -344,25 +349,22 @@ def experiment_kfold_cross_validate(
 
     # place each fold in a separate directory
     data_dir = os.path.dirname(data_csv)
+
     kfold_training_stats = {}
     kfold_split_indices = {}
+
     for train_indices, test_indices, fold_num in \
             generate_kfold_splits(data_df, k_fold, random_seed):
         with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
             curr_train_df = data_df.iloc[train_indices]
             curr_test_df = data_df.iloc[test_indices]
 
-            if not skip_save_k_fold_split_indices:
-                kfold_split_indices['fold_' + str(fold_num)] = {
-                    'training_indices': train_indices,
-                    'test_indices': test_indices
-                }
+            kfold_split_indices['fold_' + str(fold_num)] = {
+                'training_indices': train_indices,
+                'test_indices': test_indices
+            }
 
             # train and validate model on this fold
-            if model_definition_file is not None:
-                with open(model_definition_file, 'r') as def_file:
-                    model_definition = \
-                        merge_with_defaults(yaml.safe_load(def_file))
             logger.info("training on fold {:d}".format(fold_num))
             (model,
              preprocessed_data,
@@ -424,6 +426,48 @@ def experiment_kfold_cross_validate(
 
     kfold_training_stats['overall'] = overall_kfold_stats
 
+    logger.info('completed {:d}-fold cross validation'.format(k_fold))
+
+    return kfold_training_stats, kfold_split_indices
+
+def experiment_kfold_cross_validate(
+        k_fold,
+        model_definition=None,
+        model_definition_file=None,
+        data_csv=None,
+        output_directory='results',
+        random_seed=default_random_seed,
+        skip_save_k_fold_split_indices=False
+):
+    """Wrapper function to performs k-fold cross validation.
+
+    # Inputs
+    :param k_fold: (int) number of folds to create for the cross-validation
+    :param model_definition: (dict, default: None) a dictionary containing
+            information needed to build a model. Refer to the [User Guide]
+           (http://ludwig.ai/user_guide/#model-definition) for details.
+    :param model_definition_file: (string, optional, default: `None`) path to
+           a YAML file containing the model definition. If available it will be
+           used instead of the model_definition dict.
+    :param data_csv: (string, default: None)
+    :param output_directory: (string, default: 'results')
+    :param random_seed: (int) Random seed used k-fold splits.
+    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
+            saving k-fold split indices
+
+    :return: None
+    """
+
+
+    (kfold_training_stats,
+     kfold_split_indices) = run_kfold_cross_validate(
+        k_fold,
+        model_definition=model_definition,
+        model_definition_file=model_definition_file,
+        data_csv=data_csv,
+        random_seed=random_seed
+    )
+
     # save k-fold cv statistics
     save_json(os.path.join(output_directory, 'kfold_training_statistics.json'),
               kfold_training_stats)
@@ -432,8 +476,6 @@ def experiment_kfold_cross_validate(
     if not skip_save_k_fold_split_indices:
         save_json(os.path.join(output_directory, 'kfold_split_indices.json'),
                   kfold_split_indices)
-
-    logger.info('completed {:d}-fold cross validation'.format(k_fold))
 
 
 def cli(sys_argv):

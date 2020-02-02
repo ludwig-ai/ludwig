@@ -45,7 +45,7 @@ from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing import build_dataset
 from ludwig.data.preprocessing import load_metadata
 from ludwig.data.preprocessing import replace_text_feature_level
-from ludwig.experiment import kfold_cross_validate
+from ludwig.experiment import experiment_kfold_cross_validate
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -570,10 +570,15 @@ class LudwigModel:
         """
 
 
-        kfold_cross_validate(
+        experiment_kfold_cross_validate(
             k_fold,
-            model_definition=self.model_definition
+            data_csv=data_csv,
+            model_definition=self.model_definition,
+            output_directory=output_directory,
+            random_seed=random_seed,
+            skip_save_k_fold_split_indices=skip_save_k_fold_split_indices
         )
+
 
 
     def initialize_model(
