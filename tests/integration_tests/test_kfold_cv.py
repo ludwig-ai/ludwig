@@ -92,10 +92,6 @@ def test_kfold_cv_api_from_file():
         # setup required data structures for test
         training_data_fp = os.path.join(tmpdir, 'train.csv')
         model_definition_fp = os.path.join(tmpdir, 'model_definition.yaml')
-        results_dir = os.path.join(tmpdir, 'results')
-        statistics_fp = os.path.join(results_dir,
-                                     'kfold_training_statistics.json')
-        indices_fp = os.path.join(results_dir, 'kfold_split_indices.json')
 
         # generate synthetic data for the test
         input_features = [
@@ -153,7 +149,6 @@ def test_kfold_cv_api_in_memory():
 
         # setup required data structures for test
         training_data_fp = os.path.join(tmpdir, 'train.csv')
-        results_dir = os.path.join(tmpdir, 'results')
 
         # generate synthetic data for the test
         input_features = [
