@@ -43,6 +43,75 @@ from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
 
+# def experiment(
+#
+# ):
+#     (
+#         model,
+#         preprocessed_data,
+#         experiment_dir_name,
+#         _,
+#         model_definition
+#     ) = full_train(
+#         model_definition,
+#         model_definition_file=model_definition_file,
+#         data_csv=data_csv,
+#         data_train_csv=data_train_csv,
+#         data_validation_csv=data_validation_csv,
+#         data_test_csv=data_test_csv,
+#         data_hdf5=data_hdf5,
+#         data_train_hdf5=data_train_hdf5,
+#         data_validation_hdf5=data_validation_hdf5,
+#         data_test_hdf5=data_test_hdf5,
+#         train_set_metadata_json=train_set_metadata_json,
+#         experiment_name=experiment_name,
+#         model_name=model_name,
+#         model_load_path=model_load_path,
+#         model_resume_path=model_resume_path,
+#         skip_save_training_description=skip_save_training_description,
+#         skip_save_training_statistics=skip_save_training_statistics,
+#         skip_save_model=skip_save_model,
+#         skip_save_progress=skip_save_progress,
+#         skip_save_log=skip_save_log,
+#         skip_save_processed_input=skip_save_processed_input,
+#         output_directory=output_directory,
+#         should_close_session=False,
+#         gpus=gpus,
+#         gpu_fraction=gpu_fraction,
+#         use_horovod=use_horovod,
+#         random_seed=random_seed,
+#         debug=debug,
+#         **kwargs
+#     )
+#
+#     (training_set,
+#      validation_set,
+#      test_set,
+#      train_set_metadata) = preprocessed_data
+#
+#     if test_set is not None:
+#         if model_definition['training']['eval_batch_size'] > 0:
+#             batch_size = model_definition['training']['eval_batch_size']
+#         else:
+#             batch_size = model_definition['training']['batch_size']
+#
+#         # predict
+#         test_results = predict(
+#             test_set,
+#             train_set_metadata,
+#             model,
+#             model_definition,
+#             batch_size,
+#             evaluate_performance=True,
+#             gpus=gpus,
+#             gpu_fraction=gpu_fraction,
+#             debug=debug
+#         )
+#     else:
+#         test_results = None
+#
+#     return test_results
+
 
 def full_experiment(
         model_definition,
