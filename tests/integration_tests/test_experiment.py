@@ -21,7 +21,7 @@ import pytest
 import yaml
 
 from ludwig.data.concatenate_datasets import concatenate_df
-from ludwig.experiment import experiment
+from ludwig.experiment import full_experiment
 from ludwig.features.h3_feature import h3_encoder_registry
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
@@ -80,7 +80,7 @@ def run_experiment(input_features, output_features, **kwargs):
     }
     args.update(kwargs)
 
-    exp_dir_name = experiment(**args)
+    exp_dir_name = full_experiment(**args)
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
@@ -397,7 +397,7 @@ def test_experiment_sequence_combiner(csv_filename):
 
         model_definition['input_features'] = input_features
 
-        exp_dir_name = experiment(
+        exp_dir_name = full_experiment(
             model_definition,
             skip_save_processed_input=False,
             skip_save_progress=True,
@@ -422,10 +422,10 @@ def test_experiment_model_resume(csv_filename):
         'training': {'epochs': 2}
     }
 
-    exp_dir_name = experiment(model_definition, data_csv=rel_path)
+    exp_dir_name = full_experiment(model_definition, data_csv=rel_path)
     logger.info('Experiment Directory: {0}'.format(exp_dir_name))
 
-    experiment(
+    full_experiment(
         model_definition,
         data_csv=rel_path,
         model_resume_path=exp_dir_name

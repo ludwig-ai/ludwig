@@ -44,7 +44,7 @@ from ludwig.utils.print_utils import print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def experiment(
+def full_experiment(
         model_definition,
         model_definition_file=None,
         data_csv=None,
@@ -746,7 +746,7 @@ def cli(sys_argv):
         print_ludwig('Experiment', LUDWIG_VERSION)
 
     if args.k_fold is None:
-        experiment(**vars(args))
+        full_experiment(**vars(args))
     else:
         experiment_kfold_cross_validate(**vars(args))
 
