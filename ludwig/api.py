@@ -1003,8 +1003,8 @@ class LudwigModel:
 
 
 def kfold_cross_validate(
-        self,
         k_fold,
+        model_definition=None,
         data_csv=None,
         output_directory='results',
         random_seed=default_random_seed,
@@ -1032,7 +1032,7 @@ def kfold_cross_validate(
     kfold_split_indices) = kfold_cross_validate(
         k_fold,
         data_csv=data_csv,
-        model_definition=self.model_definition,
+        model_definition=model_definition,
         output_directory=output_directory,
         random_seed=random_seed,
         skip_save_k_fold_split_indices=skip_save_k_fold_split_indices
