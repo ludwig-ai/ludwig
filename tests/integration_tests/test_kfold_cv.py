@@ -5,7 +5,6 @@ import tempfile
 
 import yaml
 
-from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_kfold_cross_validate
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import category_feature
