@@ -44,113 +44,6 @@ from ludwig.utils.print_utils import print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def run_an_experiment(
-        model_definition,
-        model_definition_file=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        data__df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        train_set_metadata_json=None,
-        experiment_name='experiment',
-        model_name='run',
-        model_load_path=None,
-        model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
-        output_directory='results',
-        should_close_session=False,
-        gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
-):
-    (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
-        _,
-        model_definition
-    ) = full_train(
-        model_definition,
-        model_definition_file=model_definition_file,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
-        experiment_name=experiment_name,
-        model_name=model_name,
-        model_load_path=model_load_path,
-        model_resume_path=model_resume_path,
-        skip_save_training_description=skip_save_training_description,
-        skip_save_training_statistics=skip_save_training_statistics,
-        skip_save_model=skip_save_model,
-        skip_save_progress=skip_save_progress,
-        skip_save_log=skip_save_log,
-        skip_save_processed_input=skip_save_processed_input,
-        output_directory=output_directory,
-        should_close_session=should_close_session,
-        gpus=gpus,
-        gpu_fraction=gpu_fraction,
-        use_horovod=use_horovod,
-        random_seed=random_seed,
-        debug=debug,
-        **kwargs
-    )
-
-    (training_set,
-     validation_set,
-     test_set,
-     train_set_metadata) = preprocessed_data
-
-    if test_set is not None:
-        if model_definition['training']['eval_batch_size'] > 0:
-            batch_size = model_definition['training']['eval_batch_size']
-        else:
-            batch_size = model_definition['training']['batch_size']
-
-        # predict
-        test_results = predict(
-            test_set,
-            train_set_metadata,
-            model,
-            model_definition,
-            batch_size,
-            evaluate_performance=True,
-            gpus=gpus,
-            gpu_fraction=gpu_fraction,
-            debug=debug
-        )
-    else:
-        test_results = None
-
-    model.close_session()
-
-    return test_results, train_set_metadata, experiment_dir_name
-
-
 def experiment(
         model_definition,
         model_definition_file=None,
@@ -292,12 +185,13 @@ def experiment(
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     """
-
     (
-        test_results,
-        train_set_metadata,
-        experiment_dir_name
-     ) = run_an_experiment(
+        model,
+        preprocessed_data,
+        experiment_dir_name,
+        _,
+        model_definition
+    ) = full_train(
         model_definition,
         model_definition_file=model_definition_file,
         data_csv=data_csv,
@@ -329,34 +223,59 @@ def experiment(
         **kwargs
     )
 
-    # check if we need to create the output dir
-    if is_on_master():
-        if not (
-                skip_save_unprocessed_output and
-                skip_save_test_predictions and
-                skip_save_test_statistics
-        ):
-            if not os.path.exists(experiment_dir_name):
-                os.makedirs(experiment_dir_name)
+    (training_set,
+     validation_set,
+     test_set,
+     train_set_metadata) = preprocessed_data
 
-    # postprocess
-    postprocessed_output = postprocess(
-        test_results,
-        model_definition['output_features'],
-        train_set_metadata,
-        experiment_dir_name,
-        skip_save_unprocessed_output or not is_on_master()
-    )
+    if test_set is not None:
+        if model_definition['training']['eval_batch_size'] > 0:
+            batch_size = model_definition['training']['eval_batch_size']
+        else:
+            batch_size = model_definition['training']['batch_size']
 
-    if is_on_master():
-        print_test_results(test_results)
-        if not skip_save_test_predictions:
-            save_prediction_outputs(
-                postprocessed_output,
-                experiment_dir_name
-            )
-        if not skip_save_test_statistics:
-            save_test_statistics(test_results, experiment_dir_name)
+        # predict
+        test_results = predict(
+            test_set,
+            train_set_metadata,
+            model,
+            model_definition,
+            batch_size,
+            evaluate_performance=True,
+            gpus=gpus,
+            gpu_fraction=gpu_fraction,
+            debug=debug
+        )
+
+        # check if we need to create the output dir
+        if is_on_master():
+            if not (
+                    skip_save_unprocessed_output and
+                    skip_save_test_predictions and
+                    skip_save_test_statistics
+            ):
+                if not os.path.exists(experiment_dir_name):
+                    os.makedirs(experiment_dir_name)
+
+        # postprocess
+        postprocessed_output = postprocess(
+            test_results,
+            model_definition['output_features'],
+            train_set_metadata,
+            experiment_dir_name,
+            skip_save_unprocessed_output or not is_on_master()
+        )
+
+        if is_on_master():
+            print_test_results(test_results)
+            if not skip_save_test_predictions:
+                save_prediction_outputs(
+                    postprocessed_output,
+                    experiment_dir_name
+                )
+            if not skip_save_test_statistics:
+                save_test_statistics(test_results, experiment_dir_name)
+    model.close_session()
 
     if is_on_master():
         logger.info('\nFinished: {0}_{1}'.format(
