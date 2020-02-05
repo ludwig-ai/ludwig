@@ -488,7 +488,6 @@ class LudwigModel:
 
         :return: (dict) a dictionary containing training statistics for each
         output feature containing loss and measures values for each epoch.
-
         """
 
         if data_df is None and data_dict is not None:
