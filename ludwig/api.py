@@ -45,7 +45,6 @@ from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing import build_dataset
 from ludwig.data.preprocessing import load_metadata
 from ludwig.data.preprocessing import replace_text_feature_level
-from ludwig.experiment import kfold_cross_validate
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -1000,47 +999,6 @@ class LudwigModel:
         )
 
         return predictions, test_stats
-
-
-def kfold_cross_validate(
-        k_fold,
-        model_definition=None,
-        data_csv=None,
-        output_directory='results',
-        random_seed=default_random_seed,
-        skip_save_k_fold_split_indices=False,
-        **kwargs
-):
-    """Performs k-fold cross validation.
-
-    # Inputs
-    :param k_fold: (int) number of folds to create for the cross-validation
-    :param data_csv: (string, default: None)
-    :param output_directory: (string, default: 'results')
-    :param random_seed: (int) Random seed used k-fold splits.
-    :param skip_save_k_fold_split_indices: (boolean, default: False) Disables
-            saving k-fold split indices
-
-    :return: kfold_training_stats, kfold_split_indices (tuple of dict):
-      kfold_training_stats contains metrics from cv run
-      kfold_split_indices: indices to split training data into
-        training fold and test fold.
-    """
-
-
-    (kfold_training_stats,
-    kfold_split_indices) = kfold_cross_validate(
-        k_fold,
-        data_csv=data_csv,
-        model_definition=model_definition,
-        output_directory=output_directory,
-        random_seed=random_seed,
-        skip_save_k_fold_split_indices=skip_save_k_fold_split_indices
-    )
-
-    return kfold_training_stats, kfold_split_indices
-
-
 
 
 def test_train(
