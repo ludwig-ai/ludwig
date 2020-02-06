@@ -82,6 +82,7 @@ def experiment(
         debug=False,
         **kwargs
 ):
+
     (
         model,
         preprocessed_data,
@@ -513,7 +514,15 @@ def kfold_cross_validate(
             category_stats = \
                 kfold_training_stats[fold_name]['fold_metric'][category]
             for metric in category_stats:
-                if metric not in {'predictions', 'probabilities'}:
+                if metric not in {
+                    'predictions',
+                    'probabilities',
+                    'confusion_matrix',
+                    'overall_stats',
+                    'per_class_stats',
+                    'roc_curve',
+                    'precision_recall_curve'
+                }:
                     if metric not in raw_kfold_stats[category]:
                         raw_kfold_stats[category][metric] = []
                     raw_kfold_stats[category][metric] \
