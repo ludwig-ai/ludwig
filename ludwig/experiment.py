@@ -66,9 +66,9 @@ def experiment(
         skip_save_progress=False,
         skip_save_log=False,
         skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
+        skip_save_unprocessed_output=False,   # skipcq: PYL-W0613
+        skip_save_test_predictions=False,     # skipcq: PYL-W0613
+        skip_save_test_statistics=False,      # skipcq: PYL-W0613
         output_directory='results',
         should_close_session=False,
         gpus=None,
@@ -116,8 +116,8 @@ def experiment(
         **kwargs
     )
 
-    (training_set,
-     validation_set,
+    (_,  # training_set
+     _,  # validation_set
      test_set,
      train_set_metadata) = preprocessed_data
 
@@ -298,7 +298,7 @@ def full_experiment(
         model,
         preprocessed_data,
         experiment_dir_name,
-        train_stats,
+        _,  #train_stats
         model_definition,
         test_results
     ) = experiment(
