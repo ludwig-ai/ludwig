@@ -139,6 +139,8 @@ def experiment(
             gpu_fraction=gpu_fraction,
             debug=debug
         )
+    else:
+        test_results = None
 
     return (
         model,
@@ -336,7 +338,7 @@ def full_experiment(
         train_stats,
         model_definition,
         test_results
-    ) = full_experiment(
+    ) = experiment(
         model_definition,
         model_definition_file=model_definition_file,
         data_csv=data_csv,
@@ -374,24 +376,6 @@ def full_experiment(
      train_set_metadata) = preprocessed_data
 
     if test_set is not None:
-        if model_definition['training']['eval_batch_size'] > 0:
-            batch_size = model_definition['training']['eval_batch_size']
-        else:
-            batch_size = model_definition['training']['batch_size']
-
-        # predict
-        test_results = predict(
-            test_set,
-            train_set_metadata,
-            model,
-            model_definition,
-            batch_size,
-            evaluate_performance=True,
-            gpus=gpus,
-            gpu_fraction=gpu_fraction,
-            debug=debug
-        )
-
         # check if we need to create the output dir
         if is_on_master():
             if not (
