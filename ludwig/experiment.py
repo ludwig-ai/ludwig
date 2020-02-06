@@ -293,43 +293,6 @@ def full_experiment(
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     """
-    # (
-    #     model,
-    #     preprocessed_data,
-    #     experiment_dir_name,
-    #     _,
-    #     model_definition
-    # ) = full_train(
-    #     model_definition,
-    #     model_definition_file=model_definition_file,
-    #     data_csv=data_csv,
-    #     data_train_csv=data_train_csv,
-    #     data_validation_csv=data_validation_csv,
-    #     data_test_csv=data_test_csv,
-    #     data_hdf5=data_hdf5,
-    #     data_train_hdf5=data_train_hdf5,
-    #     data_validation_hdf5=data_validation_hdf5,
-    #     data_test_hdf5=data_test_hdf5,
-    #     train_set_metadata_json=train_set_metadata_json,
-    #     experiment_name=experiment_name,
-    #     model_name=model_name,
-    #     model_load_path=model_load_path,
-    #     model_resume_path=model_resume_path,
-    #     skip_save_training_description=skip_save_training_description,
-    #     skip_save_training_statistics=skip_save_training_statistics,
-    #     skip_save_model=skip_save_model,
-    #     skip_save_progress=skip_save_progress,
-    #     skip_save_log=skip_save_log,
-    #     skip_save_processed_input=skip_save_processed_input,
-    #     output_directory=output_directory,
-    #     should_close_session=False,
-    #     gpus=gpus,
-    #     gpu_fraction=gpu_fraction,
-    #     use_horovod=use_horovod,
-    #     random_seed=random_seed,
-    #     debug=debug,
-    #     **kwargs
-    # )
 
     (
         model,
@@ -404,6 +367,7 @@ def full_experiment(
                 )
             if not skip_save_test_statistics:
                 save_test_statistics(test_results, experiment_dir_name)
+
     model.close_session()
 
     if is_on_master():
