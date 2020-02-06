@@ -476,11 +476,14 @@ def kfold_cross_validate(
 
             # train and validate model on this fold
             logger.info("training on fold {:d}".format(fold_num))
-            (model,
-             preprocessed_data,
-             _,
-             train_stats,
-             model_definition) = full_train(
+            (
+                model,
+                preprocessed_data,
+                experiment_dir_name,
+                train_stats,
+                model_definition,
+                test_results
+            ) = experiment(
                 model_definition,
                 data_train_df=curr_train_df,
                 data_test_df=curr_test_df,
@@ -489,22 +492,14 @@ def kfold_cross_validate(
                 output_directory=os.path.join(temp_dir_name, 'results')
             )
 
-            # score on hold out fold
-            eval_batch_size = model_definition['training']['eval_batch_size']
-            batch_size = model_definition['training']['batch_size']
-            preds = model.predict(
-                preprocessed_data[2],
-                eval_batch_size if eval_batch_size != 0 else batch_size
-            )
-
-            # augment the training statistics with scoring metric fron
+            # augment the training statistics with scoring metric from
             # the hold out fold
             train_stats['fold_metric'] = {}
-            for metric_category in preds:
+            for metric_category in test_results:
                 train_stats['fold_metric'][metric_category] = {}
-                for metric in preds[metric_category]:
+                for metric in test_results[metric_category]:
                     train_stats['fold_metric'][metric_category][metric] = \
-                        preds[metric_category][metric]
+                        test_results[metric_category][metric]
 
             # collect training statistics for this fold
             kfold_training_stats['fold_' + str(fold_num)] = train_stats
