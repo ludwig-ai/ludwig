@@ -458,9 +458,9 @@ def do_kfold_cross_validate(
             # train and validate model on this fold
             logger.info("training on fold {:d}".format(fold_num))
             (
-                model,
-                preprocessed_data,
-                experiment_dir_name,
+                _,                  #model
+                _,                  #preprocessed_data
+                _,                  #experiment_dir_name
                 train_stats,
                 model_definition,
                 test_results
