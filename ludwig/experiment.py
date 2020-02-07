@@ -405,26 +405,6 @@ def do_kfold_cross_validate(
     random_seed=default_random_seed,
     **kwargs
 ):
-    """Performs k-fold cross validation and return result data structures.
-
-    # Inputs
-    :param k_fold: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: None) a dictionary containing
-             information needed to build a model. Refer to the [User Guide]
-            (http://ludwig.ai/user_guide/#model-definition) for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-            a YAML file containing the model definition. If available it will be
-            used instead of the model_definition dict.
-    :param data_csv: (dataframe, default: None)
-    :param data_csv: (string, default: None)
-    :param output_directory: (string, default: 'results')
-
-    :param random_seed: (int) Random seed used k-fold splits.
-    :return: kfold_training_stats, kfold_split_indices (tuple of dict):
-             kfold_training_stats contains metrics from cv run.
-             kfold_split_indices: indices to split training data into
-                training fold and test fold.
-    """
     # check for model_definition and model_definition_file
     if model_definition is None and model_definition_file is None:
         raise ValueError(
