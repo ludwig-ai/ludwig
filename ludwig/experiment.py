@@ -24,8 +24,8 @@ import os
 import sys
 import tempfile
 
-import numpy as np
 import pandas as pd
+import numpy as np
 import yaml
 
 from ludwig.contrib import contrib_command
@@ -36,7 +36,7 @@ from ludwig.predict import print_test_results
 from ludwig.predict import save_prediction_outputs
 from ludwig.predict import save_test_statistics
 from ludwig.train import full_train, logger
-from ludwig.utils.data_utils import generate_kfold_splits, save_json
+from ludwig.utils.data_utils import save_json, generate_kfold_splits
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
@@ -396,7 +396,7 @@ def full_experiment(
     return experiment_dir_name
 
 
-def kfold_cross_validate(
+def do_kfold_cross_validate(
     k_fold,
     model_definition=None,
     model_definition_file=None,
@@ -544,6 +544,7 @@ def kfold_cross_validate(
 
     return kfold_training_stats, kfold_split_indices
 
+
 def experiment_kfold_cross_validate(
         k_fold,
         model_definition=None,
@@ -573,9 +574,8 @@ def experiment_kfold_cross_validate(
     :return: None
     """
 
-
     (kfold_training_stats,
-     kfold_split_indices) = kfold_cross_validate(
+     kfold_split_indices) = do_kfold_cross_validate(
         k_fold,
         model_definition=model_definition,
         model_definition_file=model_definition_file,

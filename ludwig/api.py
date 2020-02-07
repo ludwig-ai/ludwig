@@ -45,6 +45,7 @@ from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing import build_dataset
 from ludwig.data.preprocessing import load_metadata
 from ludwig.data.preprocessing import replace_text_feature_level
+from ludwig.experiment import do_kfold_cross_validate
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -1108,6 +1109,27 @@ def test_predict(
     )
 
     logger.critical(predictions)
+
+def kfold_cross_validate(
+        k_fold,
+        model_definition=None,
+        model_definition_file=None,
+        data_csv=None,
+        output_directory='results',
+        random_seed=default_random_seed,
+        **kwargs
+):
+    (kfold_training_stats,
+     kfold_split_indices) = do_kfold_cross_validate(
+        k_fold,
+        model_definition=model_definition,
+        model_definition_file=model_definition_file,
+        data_csv=data_csv,
+        output_directory=output_directory,
+        random_seed=random_seed
+    )
+
+    return kfold_training_stats, kfold_split_indices
 
 
 def main(sys_argv):
