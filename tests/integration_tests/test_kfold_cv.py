@@ -6,7 +6,7 @@ import tempfile
 import yaml
 
 from ludwig.api import kfold_cross_validate
-from ludwig.experiment import experiment_kfold_cross_validate
+from ludwig.experiment import full_kfold_cross_validate
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -55,7 +55,7 @@ def test_kfold_cv_cli():
             yaml.dump(model_definition, f)
 
         # run k-fold cv
-        experiment_kfold_cross_validate(
+        full_kfold_cross_validate(
             k_fold=num_folds,
             model_definition_file=model_definition_fp,
             data_csv=training_data_fp,
@@ -120,7 +120,7 @@ def test_kfold_cv_api_from_file():
 
         # execute k-fold cross validation run
         (
-            kfold_training_stats,
+            kfold_cv_stats,
             kfold_split_indices
          ) = kfold_cross_validate(
             3,
@@ -131,7 +131,7 @@ def test_kfold_cv_api_from_file():
         # correct structure for results from kfold cv
         for key in ['fold_' + str(i + 1)
                     for i in range(num_folds)] + ['overall']:
-            assert key in kfold_training_stats
+            assert key in kfold_cv_stats
 
         for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in kfold_split_indices
@@ -170,7 +170,7 @@ def test_kfold_cv_api_in_memory():
 
         # execute k-fold cross validation run
         (
-            kfold_training_stats,
+            kfold_cv_stats,
             kfold_split_indices
         ) = kfold_cross_validate(
              3,
@@ -181,7 +181,7 @@ def test_kfold_cv_api_in_memory():
         # correct structure for results from kfold cv
         for key in ['fold_' + str(i + 1)
                     for i in range(num_folds)] + ['overall']:
-            assert key in kfold_training_stats
+            assert key in kfold_cv_stats
 
         for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in kfold_split_indices

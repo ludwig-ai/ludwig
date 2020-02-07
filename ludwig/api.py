@@ -45,7 +45,8 @@ from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing import build_dataset
 from ludwig.data.preprocessing import load_metadata
 from ludwig.data.preprocessing import replace_text_feature_level
-from ludwig.experiment import do_kfold_cross_validate
+from ludwig.experiment import \
+    kfold_cross_validate as experiment_kfold_cross_validate
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -546,7 +547,6 @@ class LudwigModel:
 
         return train_stats
 
-
     def initialize_model(
             self,
             train_set_metadata=None,
@@ -763,7 +763,6 @@ class LudwigModel:
             logger.warning(
                 'Using in_memory = False is not supported for Ludwig API.'
             )
-
 
         preprocessed_data = build_data(
             data_df,
@@ -1002,6 +1001,53 @@ class LudwigModel:
         return predictions, test_stats
 
 
+def kfold_cross_validate(
+        k_fold,
+        model_definition=None,
+        model_definition_file=None,
+        data_csv=None,
+        output_directory='results',
+        random_seed=default_random_seed,
+        **kwargs
+):
+    """Performs k-fold cross validation and returns result data structures.
+
+
+    # Inputs
+    
+    :param k_fold: (int) number of folds to create for the cross-validation
+    :param model_definition: (dict, default: None) a dictionary containing
+             information needed to build a model. Refer to the [User Guide]
+            (http://ludwig.ai/user_guide/#model-definition) for details.
+    :param model_definition_file: (string, optional, default: `None`) path to
+            a YAML file containing the model definition. If available it will be
+            used instead of the model_definition dict.
+    :param data_csv: (dataframe, default: None)
+    :param data_csv: (string, default: None)
+    :param output_directory: (string, default: 'results')
+    :param random_seed: (int) Random seed used k-fold splits.
+    
+    # Return
+
+    :return: kfold_cv_stats, kfold_split_indices (tuple of dict):
+             kfold_cv_stats contains metrics from cv run.
+             kfold_split_indices: indices to split training data into
+                training fold and test fold.
+    """
+
+    (kfold_cv_stats,
+     kfold_split_indices) = experiment_kfold_cross_validate(
+        k_fold,
+        model_definition=model_definition,
+        model_definition_file=model_definition_file,
+        data_csv=data_csv,
+        output_directory=output_directory,
+        random_seed=random_seed
+    )
+
+    return kfold_cv_stats, kfold_split_indices
+
+
 def test_train(
         data_csv,
         model_definition,
@@ -1109,49 +1155,7 @@ def test_predict(
     )
 
     logger.critical(predictions)
-
-def kfold_cross_validate(
-        k_fold,
-        model_definition=None,
-        model_definition_file=None,
-        data_csv=None,
-        output_directory='results',
-        random_seed=default_random_seed,
-        **kwargs
-):
-    """Performs k-fold cross validation and return result data structures.
-
-    # Inputs
-    :param k_fold: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: None) a dictionary containing
-             information needed to build a model. Refer to the [User Guide]
-            (http://ludwig.ai/user_guide/#model-definition) for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-            a YAML file containing the model definition. If available it will be
-            used instead of the model_definition dict.
-    :param data_csv: (dataframe, default: None)
-    :param data_csv: (string, default: None)
-    :param output_directory: (string, default: 'results')
-
-    :param random_seed: (int) Random seed used k-fold splits.
-    :return: kfold_training_stats, kfold_split_indices (tuple of dict):
-             kfold_training_stats contains metrics from cv run.
-             kfold_split_indices: indices to split training data into
-                training fold and test fold.
-    """
-
-    (kfold_training_stats,
-     kfold_split_indices) = do_kfold_cross_validate(
-        k_fold,
-        model_definition=model_definition,
-        model_definition_file=model_definition_file,
-        data_csv=data_csv,
-        output_directory=output_directory,
-        random_seed=random_seed
-    )
-
-    return kfold_training_stats, kfold_split_indices
-
+    
 
 def main(sys_argv):
     parser = argparse.ArgumentParser(

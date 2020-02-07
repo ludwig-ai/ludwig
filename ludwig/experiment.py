@@ -24,8 +24,8 @@ import os
 import sys
 import tempfile
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import yaml
 
 from ludwig.contrib import contrib_command
@@ -70,9 +70,9 @@ def experiment(
         skip_save_progress=False,
         skip_save_log=False,
         skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,   # skipcq: PYL-W0613
-        skip_save_test_predictions=False,     # skipcq: PYL-W0613
-        skip_save_test_statistics=False,      # skipcq: PYL-W0613
+        skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
+        skip_save_test_predictions=False,  # skipcq: PYL-W0613
+        skip_save_test_statistics=False,  # skipcq: PYL-W0613
         output_directory='results',
         should_close_session=False,
         gpus=None,
@@ -82,7 +82,6 @@ def experiment(
         debug=False,
         **kwargs
 ):
-
     (
         model,
         preprocessed_data,
@@ -311,7 +310,7 @@ def full_experiment(
         model,
         preprocessed_data,
         experiment_dir_name,
-        _,  #train_stats
+        _,  # train_stats
         model_definition,
         test_results
     ) = experiment(
@@ -396,15 +395,21 @@ def full_experiment(
     return experiment_dir_name
 
 
-def do_kfold_cross_validate(
-    k_fold,
-    model_definition=None,
-    model_definition_file=None,
-    data_csv=None,
-    output_directory='results',
-    random_seed=default_random_seed,
-    **kwargs
+def kfold_cross_validate(
+        k_fold,
+        model_definition=None,
+        model_definition_file=None,
+        data_csv=None,
+        output_directory='results',
+        random_seed=default_random_seed,
+        **kwargs
 ):
+    # check for k_fold
+    if k_fold is None:
+        raise ValueError(
+            'k_fold parameter must be specified'
+        )
+
     # check for model_definition and model_definition_file
     if model_definition is None and model_definition_file is None:
         raise ValueError(
@@ -415,12 +420,6 @@ def do_kfold_cross_validate(
         raise ValueError(
             'Only one between model_definition and '
             'model_definition_file can be provided'
-        )
-
-    # check for k_fold
-    if k_fold is None:
-        raise ValueError(
-            'k_fold parameter must be specified'
         )
 
     logger.info('starting {:d}-fold cross validation'.format(k_fold))
@@ -441,7 +440,7 @@ def do_kfold_cross_validate(
     # place each fold in a separate directory
     data_dir = os.path.dirname(data_csv)
 
-    kfold_training_stats = {}
+    kfold_cv_stats = {}
     kfold_split_indices = {}
 
     for train_indices, test_indices, fold_num in \
@@ -458,9 +457,9 @@ def do_kfold_cross_validate(
             # train and validate model on this fold
             logger.info("training on fold {:d}".format(fold_num))
             (
-                _,                  #model
-                _,                  #preprocessed_data
-                _,                  #experiment_dir_name
+                _,  # model
+                _,  # preprocessed_data
+                _,  # experiment_dir_name
                 train_stats,
                 model_definition,
                 test_results
@@ -483,16 +482,16 @@ def do_kfold_cross_validate(
                         test_results[metric_category][metric]
 
             # collect training statistics for this fold
-            kfold_training_stats['fold_' + str(fold_num)] = train_stats
+            kfold_cv_stats['fold_' + str(fold_num)] = train_stats
 
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
-    for fold_name in kfold_training_stats:
-        for category in kfold_training_stats[fold_name]['fold_metric']:
+    for fold_name in kfold_cv_stats:
+        for category in kfold_cv_stats[fold_name]['fold_metric']:
             if category not in raw_kfold_stats:
                 raw_kfold_stats[category] = {}
             category_stats = \
-                kfold_training_stats[fold_name]['fold_metric'][category]
+                kfold_cv_stats[fold_name]['fold_metric'][category]
             for metric in category_stats:
                 if metric not in {
                     'predictions',
@@ -518,14 +517,14 @@ def do_kfold_cross_validate(
             overall_kfold_stats[category][metric + '_mean'] = mean
             overall_kfold_stats[category][metric + '_std'] = std
 
-    kfold_training_stats['overall'] = overall_kfold_stats
+    kfold_cv_stats['overall'] = overall_kfold_stats
 
     logger.info('completed {:d}-fold cross validation'.format(k_fold))
 
-    return kfold_training_stats, kfold_split_indices
+    return kfold_cv_stats, kfold_split_indices
 
 
-def experiment_kfold_cross_validate(
+def full_kfold_cross_validate(
         k_fold,
         model_definition=None,
         model_definition_file=None,
@@ -554,8 +553,8 @@ def experiment_kfold_cross_validate(
     :return: None
     """
 
-    (kfold_training_stats,
-     kfold_split_indices) = do_kfold_cross_validate(
+    (kfold_cv_stats,
+     kfold_split_indices) = kfold_cross_validate(
         k_fold,
         model_definition=model_definition,
         model_definition_file=model_definition_file,
@@ -566,7 +565,7 @@ def experiment_kfold_cross_validate(
 
     # save k-fold cv statistics
     save_json(os.path.join(output_directory, 'kfold_training_statistics.json'),
-              kfold_training_stats)
+              kfold_cv_stats)
 
     # save k-fold split indices
     if not skip_save_k_fold_split_indices:
@@ -841,7 +840,7 @@ def cli(sys_argv):
     if args.k_fold is None:
         full_experiment(**vars(args))
     else:
-        experiment_kfold_cross_validate(**vars(args))
+        full_kfold_cross_validate(**vars(args))
 
 
 if __name__ == '__main__':
