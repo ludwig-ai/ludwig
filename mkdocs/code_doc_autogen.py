@@ -91,7 +91,7 @@ PAGES = [
             (LudwigModel, "*")
         ],
         'functions': [
-            kfold_cross_validate
+            ludwig.api.kfold_cross_validate
         ]
     },
     {

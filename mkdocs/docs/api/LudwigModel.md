@@ -677,23 +677,24 @@ Performs k-fold cross validation and returns result data structures.
 __Inputs__
 
 
-:param k_fold: (int) number of folds to create for the cross-validation
-:param model_definition: (dict, default: None) a dictionary containing
-information needed to build a model. Refer to the [User Guide]
-(http://ludwig.ai/user_guide/#model-definition) for details.
-:param model_definition_file: (string, optional, default: `None`) path to
-a YAML file containing the model definition. If available it will be
-used instead of the model_definition dict.
-:param data_csv: (dataframe, default: None)
-:param data_csv: (string, default: None)
-:param output_directory: (string, default: 'results')
-:param random_seed: (int) Random seed used k-fold splits.
+- __k_fold__ (int): number of folds to create for the cross-validation
+- __model_definition__ (dict, default: None): a dictionary containing
+   information needed to build a model. Refer to the
+   [User Guide](http://ludwig.ai/user_guide/#model-definition)
+   for details.
+- __model_definition_file__ (string, optional, default: `None`): path to
+   a YAML file containing the model definition. If available it will be
+   used instead of the model_definition dict.
+- __data_csv__ (dataframe, default: None):
+- __data_csv__ (string, default: None):
+- __output_directory__ (string, default: 'results'):
+- __random_seed__ (int): Random seed used k-fold splits.
 
 __Return__
 
 
-- __return__ (tuple of dict)::
-     kfold_cv_stats contains metrics from cv run.
-     kfold_split_indices: indices to split training data into
-        training fold and test fold.
+- __return__ (tuple(kfold_cv_stats, kfold_split_indices), dict): a tuple of
+    dictionaries `kfold_cv_stats`: contains metrics from cv run.
+     `kfold_split_indices`: indices to split training data into
+     training fold and test fold.
  
