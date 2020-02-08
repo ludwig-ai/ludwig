@@ -656,6 +656,10 @@ text of the second datapoint'], 'class_filed_name':
 
 ----
 
+# Module functions
+
+----
+
 ## kfold_cross_validate
 
 

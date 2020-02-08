@@ -91,7 +91,7 @@ PAGES = [
             (LudwigModel, "*")
         ],
         'functions': [
-            ludwig.api.kfold_cross_validate
+            kfold_cross_validate
         ]
     },
     {
@@ -514,6 +514,9 @@ if __name__ == '__main__':
             blocks.append(render_function(method, _method=True))
 
         functions = read_page_data(page_data, 'functions')
+
+        if functions:
+            blocks.append('# Module functions\n')
 
         for function in functions:
             blocks.append(render_function(function, _method=False))
