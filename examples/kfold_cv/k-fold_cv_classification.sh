@@ -10,3 +10,7 @@ ludwig experiment \
   --output_directory results \
   -kf 5
 
+#
+# Display results from k-fold cv
+#
+./display_kfold_cv_results.py --results_directory results
