@@ -27,6 +27,7 @@ import os
 import re
 import sys
 
+from ludwig.api import kfold_cross_validate
 from ludwig.visualize import learning_curves, compare_performance, \
     compare_classifiers_performance_from_prob, \
     compare_classifiers_performance_from_pred, \
@@ -89,6 +90,9 @@ PAGES = [
         'classes': [
             (LudwigModel, "*")
         ],
+        'functions': [
+            kfold_cross_validate
+        ]
     },
     {
         'page': 'api/visualization.md',
@@ -510,6 +514,9 @@ if __name__ == '__main__':
             blocks.append(render_function(method, _method=True))
 
         functions = read_page_data(page_data, 'functions')
+
+        if functions:
+            blocks.append('# Module functions\n')
 
         for function in functions:
             blocks.append(render_function(function, _method=False))

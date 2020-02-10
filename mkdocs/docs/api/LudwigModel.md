@@ -1,4 +1,4 @@
-<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig/api.py#L66)</span>
+<span style="float:right;">[[source]](https://github.com/uber/ludwig/blob/master/ludwig/api.py#L69)</span>
 # LudwigModel class
 
 ```python
@@ -444,7 +444,7 @@ train(
 ```
 
 
-This function is used to perform a full training of the model on the 
+This function is used to perform a full training of the model on the
 specified dataset.
 
 __Inputs__
@@ -587,8 +587,7 @@ __Return__
 
 - __return__ (dict): a dictionary containing training statistics for each
 output feature containing loss and measures values for each epoch.
-
-
+ 
 ---
 ## train_online
 
@@ -609,7 +608,7 @@ train_online(
 ```
 
 
-This function is used to perform one epoch of training of the model 
+This function is used to perform one epoch of training of the model
 on the specified dataset.
 
 __Inputs__
@@ -617,15 +616,15 @@ __Inputs__
 
 - __data_df__ (DataFrame): dataframe containing data.
 - __data_csv__ (string): input data CSV file.
-- __data_dict__ (dict): input data dictionary. It is expected to 
-   contain one key for each field and the values have to be lists of 
-   the same length. Each index in the lists corresponds to one 
-   datapoint. For example a data set consisting of two datapoints 
-   with a text and a class may be provided as the following dict 
+- __data_dict__ (dict): input data dictionary. It is expected to
+   contain one key for each field and the values have to be lists of
+   the same length. Each index in the lists corresponds to one
+   datapoint. For example a data set consisting of two datapoints
+   with a text and a class may be provided as the following dict
    ``{'text_field_name': ['text of the first datapoint', text of the
-   second datapoint'], 'class_filed_name': ['class_datapoints_1', 
+   second datapoint'], 'class_filed_name': ['class_datapoints_1',
    'class_datapoints_2']}`.
-- __batch_size__ (int): the batch size to use for training. By default 
+- __batch_size__ (int): the batch size to use for training. By default
    it's the one specified in the model definition.
 - __learning_rate__ (float): the learning rate to use for training. By
    default the values is the one specified in the model definition.
@@ -654,3 +653,52 @@ consisting of two datapoints with a text and a class may be provided as
 the following dict ``{'text_field_name}: ['text of the first datapoint',
 text of the second datapoint'], 'class_filed_name':
 ['class_datapoints_1', 'class_datapoints_2']}`.
+
+----
+
+# Module functions
+
+----
+
+## kfold_cross_validate
+
+
+```python
+ludwig.api.kfold_cross_validate(
+  k_fold,
+  model_definition=None,
+  model_definition_file=None,
+  data_csv=None,
+  output_directory='results',
+  random_seed=42
+)
+```
+
+
+Performs k-fold cross validation and returns result data structures.
+
+
+__Inputs__
+
+
+- __k_fold__ (int): number of folds to create for the cross-validation
+- __model_definition__ (dict, default: None): a dictionary containing
+   information needed to build a model. Refer to the
+   [User Guide](http://ludwig.ai/user_guide/#model-definition)
+   for details.
+- __model_definition_file__ (string, optional, default: `None`): path to
+   a YAML file containing the model definition. If available it will be
+   used instead of the model_definition dict.
+- __data_csv__ (dataframe, default: None):
+- __data_csv__ (string, default: None):
+- __output_directory__ (string, default: 'results'):
+- __random_seed__ (int): Random seed used k-fold splits.
+
+__Return__
+
+
+- __return__ (tuple(kfold_cv_stats, kfold_split_indices), dict): a tuple of
+    dictionaries `kfold_cv_stats`: contains metrics from cv run.
+     `kfold_split_indices`: indices to split training data into
+     training fold and test fold.
+ 
