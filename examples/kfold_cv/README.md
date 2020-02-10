@@ -3,7 +3,7 @@
 This directory contains two examples of performing a k-fold cross validation analysis with Ludwig.
 
 ## Classification Example
-This example ilustrates running the k-fold cv with the `ludwig experiment` cli.
+This example illustrates running the k-fold cv with the `ludwig experiment` cli.
 
 To run this example execute this bash script:
 ``` 
