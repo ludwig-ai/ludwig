@@ -153,7 +153,7 @@ def test_kfold_cv_api_in_memory():
         ]
 
         output_features = [
-            category_feature(vocab_size=2, reduce_input='sum')
+            numerical_feature()
         ]
 
         generate_data(input_features, output_features, training_data_fp)
