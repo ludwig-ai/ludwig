@@ -1002,7 +1002,7 @@ class LudwigModel:
 
 
 def kfold_cross_validate(
-        k_fold,
+        num_folds,
         model_definition=None,
         model_definition_file=None,
         data_csv=None,
@@ -1015,7 +1015,7 @@ def kfold_cross_validate(
 
     # Inputs
     
-    :param k_fold: (int) number of folds to create for the cross-validation
+    :param num_folds: (int) number of folds to create for the cross-validation
     :param model_definition: (dict, default: None) a dictionary containing
              information needed to build a model. Refer to the [User Guide]
             (http://ludwig.ai/user_guide/#model-definition) for details.
@@ -1037,7 +1037,7 @@ def kfold_cross_validate(
 
     (kfold_cv_stats,
      kfold_split_indices) = experiment_kfold_cross_validate(
-        k_fold,
+        num_folds,
         model_definition=model_definition,
         model_definition_file=model_definition_file,
         data_csv=data_csv,
