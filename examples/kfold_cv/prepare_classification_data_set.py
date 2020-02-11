@@ -9,10 +9,10 @@
 #
 import os.path
 import shutil
-import yaml
 
 import pandas as pd
 import requests
+import yaml
 from sklearn.model_selection import train_test_split
 
 # Constants
