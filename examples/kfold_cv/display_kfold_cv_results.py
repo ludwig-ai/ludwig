@@ -4,11 +4,10 @@
 
 import argparse
 import os.path
-import sys
 import pprint
+import sys
 
 from ludwig.utils.data_utils import load_json
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -30,7 +29,7 @@ if __name__ == '__main__':
     args = parser.parse_args(sys.argv[1:])
     results_directory = args.results_directory
 
-    print("retrieving results from ", results_directory)
+    print("Retrieving results from ", results_directory)
 
     kfold_cv_stats = load_json(
         os.path.join(results_directory, 'kfold_training_statistics.json')
