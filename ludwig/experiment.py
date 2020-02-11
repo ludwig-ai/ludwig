@@ -396,7 +396,7 @@ def full_experiment(
 
 
 def kfold_cross_validate(
-        k_fold,
+        num_folds,
         model_definition=None,
         model_definition_file=None,
         data_csv=None,
@@ -405,7 +405,7 @@ def kfold_cross_validate(
         **kwargs
 ):
     # check for k_fold
-    if k_fold is None:
+    if num_folds is None:
         raise ValueError(
             'k_fold parameter must be specified'
         )
@@ -422,7 +422,7 @@ def kfold_cross_validate(
             'model_definition_file can be provided'
         )
 
-    logger.info('starting {:d}-fold cross validation'.format(k_fold))
+    logger.info('starting {:d}-fold cross validation'.format(num_folds))
 
     # extract out model definition for use
     if model_definition_file is not None:
@@ -444,7 +444,7 @@ def kfold_cross_validate(
     kfold_split_indices = {}
 
     for train_indices, test_indices, fold_num in \
-            generate_kfold_splits(data_df, k_fold, random_seed):
+            generate_kfold_splits(data_df, num_folds, random_seed):
         with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
             curr_train_df = data_df.iloc[train_indices]
             curr_test_df = data_df.iloc[test_indices]
@@ -519,7 +519,7 @@ def kfold_cross_validate(
 
     kfold_cv_stats['overall'] = overall_kfold_stats
 
-    logger.info('completed {:d}-fold cross validation'.format(k_fold))
+    logger.info('completed {:d}-fold cross validation'.format(num_folds))
 
     return kfold_cv_stats, kfold_split_indices
 
