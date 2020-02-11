@@ -11,7 +11,7 @@ from ludwig.utils.data_utils import load_json
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Display k-fold cross validation results',
+        description='Display K-fold cross validation results',
         prog='display_kfold_cv_results',
         usage='%(prog)s [options]'
     )
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         '--results_directory',
         type=str,
         default='results',
-        help='directory that contains the k-fold cv results'
+        help='directory that contains the K-fold cv results'
     )
 
     args = parser.parse_args(sys.argv[1:])
