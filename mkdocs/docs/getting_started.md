@@ -109,6 +109,10 @@ Model serving extra packages can be installed with `pip install ludwig[serve]` a
 Any combination of extra packages can be installed at the same time with `pip install ludwig[extra1,extra2,...]` like for instance `pip install ludwig[text,viz]`.
 The full set of dependencies can be installed with `pip install ludwig[full]`.
 
+Beware that the `tensorflow` package contained in the `requirements.txt` file is the regular one, not the GPU enabled one.
+To install the GPU enabled one, uninstall `tensorflow` and replace it with `tensorflow-gpu` after having installed `ludwig`.
+To make sure the version fo `tensorflow` is the correct one, you can install `ludwig[gpu]` which has a dependency on `tensorflow-gpu`, but make sure you don't end up with both `tensorflow` and `tensorflow-gpu` installed.
+
 If you want to train Ludwig models in a distributed way, you need to also install the `horovod` and the `mpi4py` packages.
 Please follow the instructions on [Horovod's repository](https://github.com/uber/horovod) to install it.
 
