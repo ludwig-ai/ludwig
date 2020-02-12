@@ -75,7 +75,7 @@ def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,
             log_device_placement=False,
             intra_op_parallelism_threads=intra_op_parallelism_threads,
             inter_op_parallelism_threads=inter_op_parallelism_threads,
-            gpu_options=tf.GPUOptions(allow_growth=True)
+            gpu_options=tf.compat.v1.GPUOptions(allow_growth=True)
         )
 
     if horovod is not None:
