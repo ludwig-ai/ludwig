@@ -809,9 +809,16 @@ class Model:
             field_name = output_feature['name']
             scores = [dataset_name]
 
-            for stat in stats[field_name]:
-                stats[field_name][stat].append(results[field_name][stat])
-                scores.append(results[field_name][stat])
+            # Get column names from the existing results table
+            table_columns = tables[field_name][0][1:]
+
+            # Cycle over the column names we are expecting and for each one look into
+            # the stats and find the corresponding value. If matched, append scores.
+            for column in table_columns:
+                for stat in stats[field_name]:
+                    if column == stat:
+                        stats[field_name][stat].append(results[field_name][stat])
+                        scores.append(results[field_name][stat])
 
             tables[field_name].append(scores)
 
