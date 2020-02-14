@@ -287,9 +287,8 @@ class Model:
                         simple_value=metric_val
                     )
                 )
-        # todo tf2: fix this
-        # summary = tf.Summary(value=summaries)
-        # train_writer.add_summary(summary, step)
+        summary = tf.Summary(value=summaries)
+        # train_writer.add_summary(summary, step)  # todo tf2: delete following to clean up after TF2
 
     def train(
             self,
