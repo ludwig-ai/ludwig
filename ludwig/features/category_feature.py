@@ -507,6 +507,28 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     )
                 )
 
+        if isinstance(output_feature[LOSS]['class_weights'], dict):
+            if (
+                    feature_metadata['str2idx'].keys() !=
+                    output_feature[LOSS]['class_weights'].keys()
+            ):
+                raise ValueError(
+                    'The class_weights keys ({}) are not compatible with '
+                    'the classes ({}) of feature {}. '
+                    'Check the metadata JSON file to see the classes '
+                    'and consider there needs to be a weight '
+                    'for the <UNK> class too.'.format(
+                        output_feature[LOSS]['class_weights'].keys(),
+                        feature_metadata['str2idx'].keys(),
+                        output_feature['name']
+                    )
+                )
+            else:
+                class_weights = output_feature[LOSS]['class_weights']
+                idx2str = feature_metadata['idx2str']
+                class_weights_list = [class_weights[s] for s in idx2str]
+                output_feature[LOSS]['class_weights'] = class_weights_list
+
         if output_feature[LOSS]['class_similarities_temperature'] > 0:
             if 'class_similarities' in output_feature[LOSS]:
                 similarities = output_feature[LOSS]['class_similarities']
