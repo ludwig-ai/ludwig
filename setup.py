@@ -40,12 +40,6 @@ with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
             extra_requirements['full'] + [line.strip() for line in f if line]
     )
 
-tensorflow_gpu = []
-for req in requirements:
-    if req.startswith('tensorflow'):
-        tensorflow_gpu.append(req.replace('tensorflow', 'tensorflow-gpu'))
-extra_requirements['gpu'] = tensorflow_gpu
-
 setup(
     name='ludwig',
 

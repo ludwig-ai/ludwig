@@ -6,6 +6,6 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
-tensorflow==1.15.2
+tensorflow-gpu==1.15.2
 PyYAML>=3.12
 absl-py

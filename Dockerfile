@@ -7,7 +7,7 @@
 #   model serving
 #
 
-FROM tensorflow/tensorflow:1.15.2-py3
+FROM tensorflow/tensorflow:1.15.2-gpu-py3
 
 RUN apt-get -y update && apt-get -y install git libsndfile1
 
