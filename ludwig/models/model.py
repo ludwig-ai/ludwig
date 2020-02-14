@@ -54,7 +54,8 @@ from ludwig.models.modules.loss_modules import regularizer_registry
 from ludwig.models.modules.measure_modules import get_improved_fun
 from ludwig.models.modules.measure_modules import get_initial_validation_value
 from ludwig.models.modules.optimization_modules import optimize
-from ludwig.models.outputs import build_outputs
+from ludwig.models.outputs import build_outputs, get_all_measures_names, \
+    get_measures_names
 from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
@@ -419,7 +420,7 @@ class Model:
         should_validate = validation_set is not None and validation_set.size > 0
         if eval_batch_size < 1:
             eval_batch_size = batch_size
-        stat_names = self.get_stat_names(output_features)
+        stat_names = get_all_measures_names(output_features)
         if self.horovod:
             learning_rate *= self.horovod.size()
 
@@ -806,21 +807,14 @@ class Model:
         )
 
         for output_feature in self.hyperparameters['output_features']:
-            field_name = output_feature['name']
-            scores = [dataset_name]
+            of_name = output_feature['name']
+            table_row = [dataset_name]
 
-            # Get column names from the existing results table
-            table_columns = tables[field_name][0][1:]
+            for measure in get_measures_names(output_feature['type']):
+                stats[of_name][measure].append(results[of_name][measure])
+                table_row.append(results[of_name][measure])
 
-            # Cycle over the column names we are expecting and for each one look into
-            # the stats and find the corresponding value. If matched, append scores.
-            for column in table_columns:
-                for stat in stats[field_name]:
-                    if column == stat:
-                        stats[field_name][stat].append(results[field_name][stat])
-                        scores.append(results[field_name][stat])
-
-            tables[field_name].append(scores)
+            tables[of_name].append(table_row)
 
         stats['combined'][LOSS].append(results['combined'][LOSS])
         stats['combined'][ACCURACY].append(results['combined'][ACCURACY])
@@ -1508,21 +1502,6 @@ class Model:
             }
 
         return train_stats, vali_stats, test_stats
-
-    def get_stat_names(self, output_features):
-        stat_names = {}
-        for output_feature in output_features:
-            field_name = output_feature['name']
-            output_config = output_type_registry[
-                output_feature['type']].output_config
-
-            for stat, config in output_config.items():
-                if config['type'] == MEASURE:
-                    stats = stat_names.get(field_name, [])
-                    stats.append(stat)
-                    stat_names[field_name] = stats
-        stat_names['combined'] = [LOSS, ACCURACY]
-        return stat_names
 
     def initialize_batcher(
             self,
