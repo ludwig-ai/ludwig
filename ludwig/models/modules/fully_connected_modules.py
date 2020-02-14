@@ -16,6 +16,7 @@
 import logging
 
 import tensorflow.compat.v1 as tf
+import tensorflow_addons as tfa
 
 from ludwig.models.modules.initializer_modules import get_initializer
 
@@ -60,10 +61,10 @@ def fc_layer(inputs, in_count, out_count,
 
     if norm is not None:
         if norm == 'batch':
-            hidden = tf.contrib.layers.batch_norm(hidden,
-                                                  is_training=is_training)
+            hidden = tfa.layers.batch_norm(hidden,
+                                           is_training=is_training)
         elif norm == 'layer':
-            hidden = tf.contrib.layers.layer_norm(hidden)
+            hidden = tfa.layers.layer_norm(hidden)
 
     if activation:
         hidden = getattr(tf.nn, activation)(hidden)

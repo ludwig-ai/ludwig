@@ -17,7 +17,8 @@ import collections
 import logging
 
 import tensorflow.compat.v1 as tf
-from tensorflow.contrib.rnn import MultiRNNCell, LSTMStateTuple
+import tensorflow_addons as tfa
+from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, LSTMStateTuple
 from tensorflow.python.framework import dtypes, tensor_shape
 from tensorflow.python.framework import ops
 from tensorflow.python.util import nest
@@ -38,19 +39,19 @@ def get_cell_fun(cell_type):
         cell_fn = tf.nn.rnn_cell.LSTMCell
     elif cell_type == 'lstm_block':
         # Faster version of basic LSTM
-        cell_fn = tf.contrib.rnn.LSTMBlockCell
+        cell_fn = tfa.rnn.LSTMBlockCell
     elif cell_type == 'lstm_ln':
-        cell_fn = tf.contrib.rnn.LayerNormBasicLSTMCell
+        cell_fn = tfa.rnn.LayerNormBasicLSTMCell
     elif cell_type == 'lstm_cudnn':
-        cell_fn = tf.contrib.cudnn_rnn.CudnnCompatibleLSTMCell
+        cell_fn = tfa.cudnn_rnn.CudnnCompatibleLSTMCell
     elif cell_type == 'gru':
         cell_fn = tf.nn.rnn_cell.GRUCell
     elif cell_type == 'gru_block':
         # Faster version of GRU (25% faster in my tests)
-        cell_fn = tf.contrib.rnn.GRUBlockCell
+        cell_fn = tfa.rnn.GRUBlockCell
     elif cell_type == 'gru_cudnn':
         # Faster version of GRU (25% faster in my tests)
-        cell_fn = tf.contrib.cudnn_rnn.CudnnCompatibleGRUCell
+        cell_fn = tfa.cudnn_rnn.CudnnCompatibleGRUCell
     else:
         cell_fn = tf.nn.rnn_cell.BasicRNNCell
     return cell_fn
@@ -93,7 +94,7 @@ class BasicDecoderOutput(
     pass
 
 
-class BasicDecoder(tf.contrib.seq2seq.BasicDecoder):
+class BasicDecoder(tfa.seq2seq.BasicDecoder):
     def _projection_input_size(self):
         return self._cell.output_size
 
@@ -130,9 +131,9 @@ class BasicDecoder(tf.contrib.seq2seq.BasicDecoder):
         return (outputs, next_state, next_inputs, finished)
 
 
-class TimeseriesTrainingHelper(tf.contrib.seq2seq.TrainingHelper):
+class TimeseriesTrainingSampler(tfa.seq2seq.sampler.TrainingSampler):
     def sample(self, time, outputs, name=None, **unused_kwargs):
-        with ops.name_scope(name, 'TrainingHelperSample', [time, outputs]):
+        with ops.name_scope(name, 'TrainingSamplerSample', [time, outputs]):
             return tf.zeros(tf.shape(outputs)[:-1], dtype=dtypes.int32)
 
 
@@ -191,7 +192,7 @@ class RecurrentStack:
                             range(self.num_layers)]
                 bw_cells = [bw_cell(self.state_size) for _ in
                             range(self.num_layers)]
-                rnn_outputs, final_state_fw, final_state_bw = tf.contrib.rnn.stack_bidirectional_dynamic_rnn(
+                rnn_outputs, final_state_fw, final_state_bw = tfa.rnn.stack_bidirectional_dynamic_rnn(
                     cells_fw=fw_cells,
                     cells_bw=bw_cells,
                     dtype=tf.float32,
@@ -368,12 +369,12 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             # Attention
             if attention_mechanism is not None:
                 if attention_mechanism == 'bahdanau':
-                    attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(
+                    attention_mechanism = tfa.seq2seq.BahdanauAttention(
                         num_units=state_size, memory=encoder_outputs,
                         memory_sequence_length=sequence_length_3D(
                             encoder_outputs))
                 elif attention_mechanism == 'luong':
-                    attention_mechanism = tf.contrib.seq2seq.LuongAttention(
+                    attention_mechanism = tfa.seq2seq.LuongAttention(
                         num_units=state_size, memory=encoder_outputs,
                         memory_sequence_length=sequence_length_3D(
                             encoder_outputs))
@@ -381,7 +382,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                     raise ValueError(
                         'Attention mechanism {} not supported'.format(
                             attention_mechanism))
-                cell = tf.contrib.seq2seq.AttentionWrapper(
+                cell = tfa.seq2seq.AttentionWrapper(
                     cell, attention_mechanism, attention_layer_size=state_size)
                 initial_state = cell.zero_state(
                     dtype=tf.float32,
@@ -399,9 +400,9 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             # The decoder itself
             if beam_width > 1:
                 # Tile inputs for beam search decoder
-                beam_initial_state = tf.contrib.seq2seq.tile_batch(
+                beam_initial_state = tfa.seq2seq.tile_batch(
                     initial_state, beam_width)
-                decoder = tf.contrib.seq2seq.BeamSearchDecoder(
+                decoder = tfa.seq2seq.BeamSearchDecoder(
                     cell=cell,
                     embedding=targets_embeddings,
                     start_tokens=start_tokens,
@@ -416,7 +417,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                     output_layer=projection_layer)
 
             # The decoding operation
-            outputs = tf.contrib.seq2seq.dynamic_decode(
+            outputs = tfa.seq2seq.dynamic_decode(
                 decoder=decoder,
                 output_time_major=False,
                 impute_finished=False if beam_width > 1 else True,
@@ -427,7 +428,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
 
         # ================ Decoding helpers ================
         if is_timeseries:
-            train_helper = TimeseriesTrainingHelper(
+            train_helper = TimeseriesTrainingSampler(
                 inputs=targets_embedded,
                 sequence_length=targets_sequence_length_with_eos)
             final_outputs_pred, final_state_pred, final_sequence_lengths_pred = decode(
@@ -441,7 +442,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             predictions_sequence_length_with_eos = final_sequence_lengths_pred
 
         else:
-            train_helper = tf.contrib.seq2seq.TrainingHelper(
+            train_helper = tfa.seq2seq.sampler.TrainingSampler(
                 inputs=targets_embedded,
                 sequence_length=targets_sequence_length_with_eos)
             final_outputs_train, final_state_train, final_sequence_lengths_train = decode(
@@ -453,7 +454,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             train_logits = final_outputs_train.projection_input
             # train_predictions = final_outputs_train.sample_id
 
-            pred_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+            pred_helper = tfa.seq2seq.sampler.GreedyEmbeddingSampler(
                 embedding=targets_embeddings,
                 start_tokens=start_tokens,
                 end_token=END_SYMBOL)

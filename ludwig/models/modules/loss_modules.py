@@ -15,6 +15,7 @@
 # ==============================================================================
 import numpy as np
 import tensorflow.compat.v1 as tf
+import tensorflow_addons as tfa
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
 
@@ -68,7 +69,7 @@ def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
     padded_logits = padded_logits[:, :batch_max_targets_sequence_length, :]
 
     with tf.variable_scope('sequence_loss'):
-        sequence_loss = tf.contrib.seq2seq.sequence_loss(
+        sequence_loss = tfa.seq2seq.sequence_loss(
             padded_logits,
             targets,
             tf.sequence_mask(targets_sequence_length,
@@ -82,7 +83,7 @@ def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
     # batch_max_seq_length = tf.shape(logits)[1]
     # unpadded_targets = targets[:, :tf.shape(logits)[1]]
     # with tf.variable_scope('sequence_loss'):
-    #     sequence_loss = tf.contrib.seq2seq.sequence_loss(
+    #     sequence_loss = tfa.seq2seq.sequence_loss(
     #         logits,
     #         unpadded_targets,
     #         tf.sequence_mask(targets_sequence_length, batch_max_seq_length, dtype=tf.float32),
@@ -253,7 +254,7 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
                                        sampled_values=sampled_values),
             tf.float32)
 
-    train_loss = tf.contrib.seq2seq.sequence_loss(
+    train_loss = tfa.seq2seq.sequence_loss(
         padded_train_logits,
         targets,
         tf.sequence_mask(targets_sequence_length,
@@ -266,7 +267,7 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
     # batch_max_seq_length_eval = tf.shape(eval_logits)[1]
     # unpadded_targets_eval = targets[:, :batch_max_seq_length_eval]
 
-    eval_loss = tf.contrib.seq2seq.sequence_loss(
+    eval_loss = tfa.seq2seq.sequence_loss(
         padded_eval_logits,
         targets,
         tf.sequence_mask(targets_sequence_length,
@@ -319,8 +320,14 @@ def loss_multilabel(logits, vector_labels, loss):
     return train_loss
 
 
-regularizer_registry = {'l1': tf.contrib.layers.l1_regularizer,
-                        'l2': tf.contrib.layers.l2_regularizer,
-                        'sum': tf.contrib.layers.sum_regularizer,
+# todo tf2: fix this!
+# regularizer_registry = {'l1': tf2.keras.regularizers.l1,
+#                         'l2': tf2.keras.regularizers.l2,
+#                         'l1_l2': tf2.keras.regularizers.l1_l2,
+#                         'None': lambda x: None,
+#                         None: lambda x: None}
+regularizer_registry = {'l1': lambda x: None,
+                        'l2': lambda x: None,
+                        'l1_l2': lambda x: None,
                         'None': lambda x: None,
                         None: lambda x: None}

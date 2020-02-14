@@ -16,6 +16,7 @@
 import logging
 
 import tensorflow.compat.v1 as tf
+import tensorflow_addons as tfa
 
 from ludwig.models.modules.initializer_modules import get_initializer
 
@@ -39,7 +40,7 @@ def conv_1d(inputs, weights, biases,
             )
         elif norm == 'layer':
             # todo remplace with addons
-            hidden = tf.contrib.layers.layer_norm(hidden)
+            hidden = tfa.layers.layer_norm(hidden)
 
     if activation:
         hidden = getattr(tf.nn, activation)(hidden)
@@ -66,7 +67,7 @@ def conv_2d(inputs, weights, biases,
                 training=is_training
             )
         elif norm == 'layer':
-            hidden = tf.contrib.layers.layer_norm(hidden)
+            hidden = tfa.layers.layer_norm(hidden)
 
     if activation:
         hidden = getattr(tf.nn, activation)(hidden)

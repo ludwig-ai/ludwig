@@ -32,6 +32,7 @@ import time
 from collections import OrderedDict
 
 import numpy as np
+import tensorflow as tf2
 import tensorflow.compat.v1 as tf
 from tabulate import tabulate
 from tensorflow.python import debug as tf_debug
@@ -286,8 +287,9 @@ class Model:
                         simple_value=metric_val
                     )
                 )
-        summary = tf.Summary(value=summaries)
-        train_writer.add_summary(summary, step)
+        # todo tf2: fix this
+        # summary = tf.Summary(value=summaries)
+        # train_writer.add_summary(summary, step)
 
     def train(
             self,
@@ -445,9 +447,9 @@ class Model:
         train_writer = None
         if is_on_master():
             if not skip_save_log:
-                train_writer = tf.summary.FileWriter(
+                train_writer = tf2.summary.create_file_writer(
                     os.path.join(save_path, 'log', 'train'),
-                    session.graph
+                    # session.graph  # todo tf2: fix this
                 )
 
         if self.debug:
@@ -567,8 +569,10 @@ class Model:
                 if is_on_master():
                     if not skip_save_log:
                         # it is initialized only on master
-                        train_writer.add_summary(output_values['summary'],
-                                                 progress_tracker.steps)
+                        # todo tf2: fix this
+                        # train_writer.add_summary(output_values['summary'],
+                        #                         progress_tracker.steps)
+                        continue
 
                 progress_tracker.steps += 1
                 if is_on_master():
@@ -1382,7 +1386,9 @@ class Model:
         return collected_tensors
 
     def save_weights(self, session, save_path):
-        self.weights_save_path = self.saver.save(session, save_path)
+        # todo tf2: fix this
+        # self.weights_save_path = self.saver.save(session, save_path)
+        pass
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
