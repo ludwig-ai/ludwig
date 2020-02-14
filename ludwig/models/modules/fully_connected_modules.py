@@ -15,10 +15,9 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.initializer_modules import get_initializer
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ def fc_layer(inputs, in_count, out_count,
     if weights is None:
         if initializer is not None:
             initializer_obj = get_initializer(initializer)
-            weights = tf.compat.v1.get_variable(
+            weights = tf.get_variable(
                 'weights',
                 initializer=initializer_obj([in_count, out_count]),
                 regularizer=regularizer
@@ -43,7 +42,7 @@ def fc_layer(inputs, in_count, out_count,
                 initializer = get_initializer('glorot_uniform')
             # if initializer is None, tensorFlow seems to be using
             # a glorot uniform initializer
-            weights = tf.compat.v1.get_variable(
+            weights = tf.get_variable(
                 'weights',
                 [in_count, out_count],
                 regularizer=regularizer,
@@ -53,7 +52,7 @@ def fc_layer(inputs, in_count, out_count,
     logger.debug('  fc_weights: {}'.format(weights))
 
     if biases is None:
-        biases = tf.compat.v1.get_variable('biases', [out_count],
+        biases = tf.get_variable('biases', [out_count],
                                  initializer=tf.constant_initializer(0.01))
     logger.debug('  fc_biases: {}'.format(biases))
 
@@ -121,7 +120,7 @@ class FCStack:
     ):
         hidden = inputs
         for i, layer in enumerate(self.layers):
-            with tf.compat.v1.variable_scope('fc_' + str(i)):
+            with tf.variable_scope('fc_' + str(i)):
                 hidden = fc_layer(
                     hidden,
                     inputs_size,

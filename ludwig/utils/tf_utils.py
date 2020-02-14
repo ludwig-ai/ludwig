@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
-from tensorflow.compat.v1 import GPUOptions, ConfigProto
+import tensorflow.compat.v1 as tf
 
 
 def sequence_length_3D(sequence):
@@ -53,17 +52,17 @@ def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,
     if gpus is not None:
         if gpu_fraction > 0 and gpu_fraction < 1:
             # this is the source of freezing in tensorflow 1.3.1
-            gpu_options = GPUOptions(
+            gpu_options = tf.GPUOptions(
                 per_process_gpu_memory_fraction=gpu_fraction,
                 allow_growth=True)
         else:
-            gpu_options = GPUOptions(allow_growth=True)
+            gpu_options = tf.GPUOptions(allow_growth=True)
             # allow_growth=True is needed for a weird behavior with CUDA 10
             # https://github.com/tensorflow/tensorflow/issues/24828
         if isinstance(gpus, int):
             gpus = [gpus]
         gpu_options.visible_device_list = ','.join(str(g) for g in gpus)
-        tf_config = ConfigProto(
+        tf_config = tf.ConfigProto(
             allow_soft_placement=True,
             log_device_placement=False,
             intra_op_parallelism_threads=intra_op_parallelism_threads,
@@ -71,12 +70,12 @@ def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,
             gpu_options=gpu_options
         )
     else:
-        tf_config = ConfigProto(
+        tf_config = tf.ConfigProto(
             allow_soft_placement=True,
             log_device_placement=False,
             intra_op_parallelism_threads=intra_op_parallelism_threads,
             inter_op_parallelism_threads=inter_op_parallelism_threads,
-            gpu_options=GPUOptions(allow_growth=True)
+            gpu_options=tf.GPUOptions(allow_growth=True)
         )
 
     if horovod is not None:

@@ -16,12 +16,11 @@
 import logging
 from collections import OrderedDict
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.misc import get_from_registry
-
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +48,12 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
         output_eval_losses.append(of_eval_loss)
         output_tensors.update(of_output_tensors)
 
-    train_combined_mean_loss = tf.reduce_sum(tf.stack(output_train_losses),
-                                             name='train_combined_mean_loss')
+    train_combined_mean_loss = tf.reduce_sum(
+        tf.stack(output_train_losses),
+        name='train_combined_mean_loss')
     if regularizer is not None:
-        regularization_losses = tf.compat.v1.get_collection(
-            tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES)
+        regularization_losses = tf.get_collection(
+            tf.GraphKeys.REGULARIZATION_LOSSES)
         if regularization_losses:
             regularization_loss = tf.add_n(regularization_losses)
             logger.debug('- Regularization losses: {0}'.format(
@@ -64,10 +64,12 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
     else:
         regularization_loss = tf.constant(0.0)
 
-    train_reg_mean_loss = tf.add(train_combined_mean_loss, regularization_loss,
+    train_reg_mean_loss = tf.add(train_combined_mean_loss,
+                                 regularization_loss,
                                  name='train_combined_regularized_mean_loss')
 
-    eval_combined_loss = tf.reduce_sum(tf.stack(output_eval_losses), axis=0,
+    eval_combined_loss = tf.reduce_sum(tf.stack(output_eval_losses),
+                                       axis=0,
                                        name='eval_combined_loss')
 
     return train_reg_mean_loss, eval_combined_loss, regularization_loss, output_tensors
@@ -80,7 +82,7 @@ def build_single_output(output_feature, feature_hidden, feature_hidden_size,
         output_feature['type'],
         output_feature['name']
     ))
-    with tf.compat.v1.variable_scope(output_feature['name']):
+    with tf.variable_scope(output_feature['name']):
         feature_class = get_from_registry(
             output_feature['type'],
             output_type_registry

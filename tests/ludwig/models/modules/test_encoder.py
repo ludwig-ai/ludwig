@@ -13,20 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import numpy as np
 import random
-import tensorflow as tf
 
+import numpy as np
+import tensorflow.compat.v1 as tf
+
+from ludwig.data.dataset_synthesyzer import build_vocab
 from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder
+from ludwig.models.modules.loss_modules import regularizer_registry
+from ludwig.models.modules.sequence_encoders import CNNRNN
 from ludwig.models.modules.sequence_encoders import EmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
+from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
-from ludwig.models.modules.sequence_encoders import RNN
-from ludwig.models.modules.sequence_encoders import CNNRNN
-from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.data.dataset_synthesyzer import build_vocab
-
 
 L1_REGULARIZER = regularizer_registry['l1'](0.1)
 L2_REGULARIZER = regularizer_registry['l2'](0.1)
@@ -86,7 +86,7 @@ def encoder_test(
     :param output_data: expected output data (optional)
     :return: returns the encoder object for the caller to run extra checks
     """
-    tf.compat.v1.reset_default_graph()
+    tf.reset_default_graph()
 
     # Run the encoder
     input_data = tf.convert_to_tensor(input_data)

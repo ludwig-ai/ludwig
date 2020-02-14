@@ -19,7 +19,7 @@ import logging
 import re
 import sys
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.convolutional_modules import ConvStack1D, \
     StackParallelConv1D, ParallelConv1D
@@ -836,7 +836,7 @@ class StackedCNN:
         logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Conv Layers ================
-        with tf.compat.v1.variable_scope('stack_conv'):
+        with tf.variable_scope('stack_conv'):
             hidden = self.conv_stack_1d(
                 hidden,
                 self.embedding_size,
@@ -1174,7 +1174,7 @@ class StackedParallelCNN:
         logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Conv Layers ================
-        with tf.compat.v1.variable_scope('stack_parallel_conv'):
+        with tf.variable_scope('stack_parallel_conv'):
             hidden = self.stack_parallel_conv_1d(
                 hidden,
                 self.embedding_size,

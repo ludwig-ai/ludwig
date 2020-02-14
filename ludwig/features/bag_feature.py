@@ -18,7 +18,7 @@ import logging
 from collections import Counter
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -124,7 +124,7 @@ class BagInputFeature(BagBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.float32,
             shape=[None, len(self.vocab)],
             name=self.name

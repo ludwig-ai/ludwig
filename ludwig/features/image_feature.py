@@ -17,13 +17,13 @@
 import logging
 import os
 import sys
+from functools import partial
+from multiprocessing import Pool
 
 import h5py
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
-from functools import partial
-from multiprocessing import Pool
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
@@ -361,7 +361,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.float32,
             shape=[None, self.height, self.width, self.num_channels],
             name=self.name,

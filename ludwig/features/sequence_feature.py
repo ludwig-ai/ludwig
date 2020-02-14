@@ -19,7 +19,7 @@ import os
 from collections import OrderedDict
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -143,7 +143,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.int32,
             shape=[None, None],
             name='{}_placeholder'.format(self.name)
@@ -241,7 +241,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _get_output_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.int32,
             [None, self.max_sequence_length],
             name='{}_placeholder'.format(self.name)
@@ -317,7 +317,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         output_tensors[TRAIN_MEAN_LOSS + '_' + feature_name] = train_mean_loss
         output_tensors[EVAL_LOSS + '_' + feature_name] = eval_loss
 
-        tf.compat.v1.summary.scalar(
+        tf.summary.scalar(
             'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss,
         )
@@ -354,19 +354,19 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         output_tensors[PERPLEXITY + '_' + feature_name] = perplexity_val
 
         if 'sampled' not in self.loss['type']:
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'batch_train_last_accuracy_{}'.format(feature_name),
                 last_accuracy
             )
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'batch_train_token_accuracy_{}'.format(feature_name),
                 token_accuracy
             )
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'batch_train_rowwise_accuracy_{}'.format(feature_name),
                 rowwise_accuracy
             )
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'batch_train_mean_edit_distance_{}'.format(feature_name),
                 mean_edit_distance
             )
@@ -382,7 +382,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             regularizer=None,
             is_timeseries=False
     ):
-        with tf.compat.v1.variable_scope('predictions_{}'.format(self.name)):
+        with tf.variable_scope('predictions_{}'.format(self.name)):
             decoder_output = decoder(
                 dict(self.__dict__),
                 targets,
@@ -450,7 +450,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             last_predictions,
             eval_loss
     ):
-        with tf.compat.v1.variable_scope('measures_{}'.format(self.name)):
+        with tf.variable_scope('measures_{}'.format(self.name)):
             (
                 token_accuracy_val,
                 overall_correct_predictions,
@@ -507,7 +507,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 tf.shape(targets)[1]
             )
         loss = self.loss
-        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.name)):
             if loss['type'] == 'softmax_cross_entropy':
                 train_loss = seq2seq_sequence_loss(
                     targets,

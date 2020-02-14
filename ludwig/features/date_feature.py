@@ -19,7 +19,7 @@ from datetime import date
 from datetime import datetime
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from dateutil.parser import parse
 
 from ludwig.constants import *
@@ -132,7 +132,7 @@ class DateInputFeature(DateBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.int32,
             shape=[None, DATE_VECTOR_LENGTH],
             name=self.name

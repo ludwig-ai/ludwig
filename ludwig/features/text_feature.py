@@ -19,7 +19,7 @@ import os
 from collections import OrderedDict
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -197,7 +197,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
         self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
 
     def _get_input_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.int32, shape=[None, None],
             name='{}_placeholder'.format(self.name)
         )
@@ -267,7 +267,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         self.decoder_obj = self.get_sequence_decoder(feature)
 
     def _get_output_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.int32,
             [None, self.max_sequence_length],
             name='{}_placeholder'.format(self.name)

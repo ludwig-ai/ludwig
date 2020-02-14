@@ -15,14 +15,13 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.attention_modules import \
     feed_forward_memory_attention
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.recurrent_modules import recurrent_decoder
 from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
-
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +177,7 @@ class Tagger:
         targets_sequence_length = sequence_length_2D(targets)
 
         initializer_obj = get_initializer(self.initializer)
-        class_weights = tf.compat.v1.get_variable(
+        class_weights = tf.get_variable(
             'weights',
             initializer=initializer_obj(
                 [hidden_size, output_feature['num_classes']]),
@@ -186,7 +185,7 @@ class Tagger:
         )
         logger.debug('  weights: {0}'.format(class_weights))
 
-        class_biases = tf.compat.v1.get_variable(
+        class_biases = tf.get_variable(
             'biases',
             [output_feature['num_classes']]
         )

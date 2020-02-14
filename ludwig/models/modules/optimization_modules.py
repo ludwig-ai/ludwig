@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 def optimize(
@@ -24,15 +24,15 @@ def optimize(
         horovod=None
 ):
     if training_parameters is not None and training_parameters['decay'] is True:
-        learning_rate = tf.compat.v1.train.exponential_decay(
+        learning_rate = tf.train.exponential_decay(
             learning_rate, global_step,
             training_parameters['decay_steps'],
             training_parameters['decay_rate'],
             staircase=training_parameters['staircase'])
 
-    update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
-    with tf.compat.v1.variable_scope('optimizer'):
+    with tf.variable_scope('optimizer'):
         if training_parameters is not None:
             optimizer_args = dict(training_parameters['optimizer'])
             optimizer_type = optimizer_args.pop('type')
@@ -55,8 +55,10 @@ def optimize(
                 gradients, _ = tf.clip_by_global_norm(gradients, grad_clip_norm)
                 apply_grads = optimizer.apply_gradients(
                     zip(gradients, variables))
-                increment_global_step = tf.assign(global_step, global_step + 1)
-                optimize = tf.group(apply_grads, increment_global_step)
+                increment_global_step = tf.assign(global_step,
+                                                  global_step + 1)
+                optimize = tf.group(apply_grads,
+                                    increment_global_step)
         else:
             optimizer = tf.train.AdamOptimizer(learning_rate)
 
@@ -81,7 +83,7 @@ def get_optimizer_fun(optimizer_type):
     ):
         return tf.train.GradientDescentOptimizer
     elif optimizer_type == 'adam':
-        return tf.compat.v1.train.AdamOptimizer
+        return tf.train.AdamOptimizer
     elif optimizer_type == 'adadelta':
         return tf.train.AdadeltaOptimizer
     elif optimizer_type == 'adagrad':
@@ -97,6 +99,6 @@ def get_optimizer_fun(optimizer_type):
     elif optimizer_type == 'proximaladagrad':
         return tf.train.ProximalAdagradOptimizer
     elif optimizer_type == 'rmsprop':
-        return tf.compat.v1.train.RMSPropOptimizer
+        return tf.train.RMSPropOptimizer
     else:
         raise ValueError('Invalid optimizer_type: ' + optimizer_type)

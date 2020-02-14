@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.models.modules.fully_connected_modules import FCStack
@@ -28,7 +28,6 @@ from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
-
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +80,7 @@ class ConcatCombiner:
             representations_size += fe_properties['size']
 
         scope_name = 'concat_combiner'
-        with tf.compat.v1.variable_scope(scope_name):
+        with tf.variable_scope(scope_name):
             # ================ Concat ================
             hidden = tf.concat(representations, 1)
             hidden_size = representations_size
@@ -145,7 +144,7 @@ class SequenceConcatCombiner:
         scope_name = 'sequence_concat_combiner'
         sequence_length = sequence_length_3D(representation)
 
-        with tf.compat.v1.variable_scope(scope_name):
+        with tf.variable_scope(scope_name):
             # ================ Concat ================
             for fe_name, fe_properties in feature_encodings.items():
                 if fe_name is not self.main_sequence_feature:
@@ -285,7 +284,7 @@ class SequenceCombiner:
             **kwargs
     ):
         scope_name = 'sequence_combiner'
-        with tf.compat.v1.variable_scope(scope_name):
+        with tf.variable_scope(scope_name):
             # ================ Concat ================
             hidden, hidden_size = self.combiner(
                 feature_encodings,

@@ -19,7 +19,7 @@ import os
 from collections import OrderedDict
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -131,7 +131,7 @@ class SetInputFeature(SetBaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.int32,
             shape=[None, len(self.vocab)],
             name=self.name
@@ -193,7 +193,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         _ = self.overwrite_defaults(feature)
 
     def _get_output_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.bool,
             shape=[None, self.num_classes],
             name='{}_placeholder'.format(self.name)
@@ -208,22 +208,22 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         if not self.regularize:
             regularizer = None
 
-        with tf.compat.v1.variable_scope('predictions_{}'.format(self.name)):
+        with tf.variable_scope('predictions_{}'.format(self.name)):
             initializer_obj = get_initializer(self.initializer)
-            weights = tf.compat.v1.get_variable(
+            weights = tf.get_variable(
                 'weights',
                 initializer=initializer_obj([hidden_size, self.num_classes]),
                 regularizer=regularizer
             )
             logger.debug('  class_weights: {0}'.format(weights))
 
-            biases = tf.compat.v1.get_variable(
+            biases = tf.get_variable(
                 'biases',
                 [self.num_classes]
             )
             logger.debug('  class_biases: {0}'.format(biases))
 
-            logits = tf.matmul(hidden, weights) + biases
+            logits = tf.linalg.matmul(hidden, weights) + biases
             logger.debug('  logits: {0}'.format(logits))
 
             probabilities = tf.nn.sigmoid(
@@ -244,7 +244,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             targets,
             logits
     ):
-        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.name)):
             train_loss = tf.nn.sigmoid_cross_entropy_with_logits(
                 labels=tf.cast(targets, tf.float32),
                 logits=logits
@@ -302,7 +302,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         output_tensors[PROBABILITIES + '_' + self.name] = probabilities
         output_tensors[JACCARD + '_' + self.name] = jaccard_index
 
-        tf.compat.v1.summary.scalar(
+        tf.summary.scalar(
             'batch_train_jaccard_{}'.format(self.name),
             jaccard_index
         )
@@ -313,7 +313,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
-        tf.compat.v1.summary.scalar(
+        tf.summary.scalar(
             'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss
         )

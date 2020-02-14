@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.embedding_modules import Embed
 from ludwig.models.modules.fully_connected_modules import FCStack
@@ -177,35 +177,35 @@ class H3Embed:
             :type is_training: Tensor
         """
         # ================ Embeddings ================
-        with tf.compat.v1.variable_scope('mode', reuse=tf.compat.v1.AUTO_REUSE):
+        with tf.variable_scope('mode', reuse=tf.AUTO_REUSE):
             embedded_mode, _ = self.embed_mode(
                 input_vector[:, 0:1],
                 regularizer,
                 dropout_rate,
                 is_training=is_training
             )
-        with tf.compat.v1.variable_scope('edge', reuse=tf.compat.v1.AUTO_REUSE):
+        with tf.variable_scope('edge', reuse=tf.AUTO_REUSE):
             embedded_edge, _ = self.embed_edge(
                 input_vector[:, 1:2],
                 regularizer,
                 dropout_rate,
                 is_training=is_training
             )
-        with tf.compat.v1.variable_scope('resolution', reuse=tf.compat.v1.AUTO_REUSE):
+        with tf.variable_scope('resolution', reuse=tf.AUTO_REUSE):
             embedded_resolution, _ = self.embed_resolution(
                 input_vector[:, 2:3],
                 regularizer,
                 dropout_rate,
                 is_training=True
             )
-        with tf.compat.v1.variable_scope('base_cell', reuse=tf.compat.v1.AUTO_REUSE):
+        with tf.variable_scope('base_cell', reuse=tf.AUTO_REUSE):
             embedded_base_cell, _ = self.embed_base_cell(
                 input_vector[:, 3:4],
                 regularizer,
                 dropout_rate,
                 is_training=True
             )
-        with tf.compat.v1.variable_scope('cells', reuse=tf.compat.v1.AUTO_REUSE):
+        with tf.variable_scope('cells', reuse=tf.AUTO_REUSE):
             embedded_cells, _ = self.embed_cells(
                 input_vector[:, 4:],
                 regularizer,
@@ -216,7 +216,8 @@ class H3Embed:
         # ================ Masking ================
         resolution = input_vector[:, 2]
         mask = tf.cast(
-            tf.expand_dims(tf.sequence_mask(resolution, 15), -1),
+            tf.expand_dims(tf.sequence_mask(resolution, 15),
+                           -1),
             dtype=tf.float32
         )
         masked_embedded_cells = embedded_cells * mask
@@ -311,7 +312,7 @@ class H3WeightedSum:
             reduce_output=None,
         )
 
-        self.weights = tf.compat.v1.get_variable(
+        self.weights = tf.get_variable(
             'weights',
             [19, 1],
             initializer=initializer

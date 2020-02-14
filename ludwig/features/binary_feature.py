@@ -19,7 +19,7 @@ import os
 from collections import OrderedDict
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -72,7 +72,7 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
         _ = self.overwrite_defaults(feature)
 
     def _get_input_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.bool,
             shape=[None],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
@@ -135,7 +135,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         _ = self.overwrite_defaults(feature)
 
     def _get_output_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.bool,
             [None],  # None is for dealing with variable batch size
             name='{}_placeholder'.format(self.name)
@@ -150,16 +150,16 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         if not self.regularize:
             regularizer = None
 
-        with tf.compat.v1.variable_scope('predictions_{}'.format(self.name)):
+        with tf.variable_scope('predictions_{}'.format(self.name)):
             initializer_obj = get_initializer(self.initializer)
-            weights = tf.compat.v1.get_variable(
+            weights = tf.get_variable(
                 'weights',
                 initializer=initializer_obj([hidden_size, 1]),
                 regularizer=regularizer
             )
             logger.debug('  regression_weights: {0}'.format(weights))
 
-            biases = tf.compat.v1.get_variable('biases', [1])
+            biases = tf.get_variable('biases', [1])
             logger.debug('  regression_biases: {0}'.format(biases))
 
             logits = tf.reshape(tf.matmul(hidden, weights) + biases, [-1])
@@ -179,7 +179,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         return predictions, probabilities, logits
 
     def _get_loss(self, targets, logits, probabilities):
-        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.name)):
             positive_class_weight = self.loss['positive_class_weight']
             if not positive_class_weight > 0:
                 raise ValueError(
@@ -213,7 +213,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         return train_mean_loss, train_loss
 
     def _get_measures(self, targets, predictions):
-        with tf.compat.v1.variable_scope('measures_{}'.format(self.name)):
+        with tf.variable_scope('measures_{}'.format(self.name)):
             accuracy, correct_predictions = get_accuracy(
                 targets,
                 predictions,
@@ -258,7 +258,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
         output_tensors[ACCURACY + '_' + self.name] = accuracy
 
-        tf.compat.v1.summary.scalar(
+        tf.summary.scalar(
             'batch_train_accuracy_{}'.format(self.name),
             accuracy
         )
@@ -273,7 +273,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
 
-        tf.compat.v1.summary.scalar(
+        tf.summary.scalar(
             'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss
         )

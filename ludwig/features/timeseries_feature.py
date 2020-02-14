@@ -18,7 +18,7 @@ import logging
 from collections import OrderedDict
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
 from ludwig.constants import *
@@ -144,7 +144,7 @@ class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
         self.type = TIMESERIES
 
     def _get_input_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.float32, shape=[None, self.length],
             name='{}_placeholder'.format(self.name)
         )
@@ -205,14 +205,14 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         self.decoder_obj = self.get_sequence_decoder(feature)
 
     def _get_output_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.float32,
             [None, self.max_sequence_length],
             name='{}_placeholder'.format(self.name)
         )
 
     def _get_measures(self, targets, predictions):
-        with tf.compat.v1.variable_scope('measures_{}'.format(self.name)):
+        with tf.variable_scope('measures_{}'.format(self.name)):
             error_val = error(targets, predictions, self.name)
             absolute_error_val = absolute_error(targets, predictions, self.name)
             squared_error_val = squared_error(targets, predictions, self.name)
@@ -220,9 +220,9 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         return error_val, squared_error_val, absolute_error_val, r2_val
 
     def _get_loss(self, targets, predictions):
-        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == 'mean_squared_error':
-                train_loss = tf.compat.v1.losses.mean_squared_error(
+                train_loss = tf.losses.mean_squared_error(
                     labels=targets,
                     predictions=predictions,
                     reduction=Reduction.NONE
@@ -303,15 +303,15 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         output_tensors[R2 + '_' + self.name] = r2_val
 
         if 'sampled' not in self.loss['type']:
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'batch_train_mean_squared_error_{}'.format(self.name),
                 tf.reduce_mean(squared_error)
             )
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'batch_train_mean_absolute_error_{}'.format(self.name),
                 tf.reduce_mean(absolute_error)
             )
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'batch_train_mean_r2_{}'.format(self.name),
                 tf.reduce_mean(r2)
             )
@@ -325,7 +325,7 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
 
-        tf.compat.v1.summary.scalar(
+        tf.summary.scalar(
             'batch_train_mean_loss_{}'.format(self.name),
             train_mean_loss,
         )

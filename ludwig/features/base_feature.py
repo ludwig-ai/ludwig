@@ -15,7 +15,7 @@
 # ==============================================================================
 from abc import ABC, abstractmethod
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.reduction_modules import reduce_sequence

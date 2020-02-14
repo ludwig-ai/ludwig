@@ -19,7 +19,7 @@ import os
 import sys
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import AUDIO, BACKFILL
 from ludwig.features.base_feature import BaseFeature
@@ -358,7 +358,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
                 'check "update_model_definition_with_metadata()"')
 
     def _get_input_placeholder(self):
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.float32, shape=[None, self.length, self.embedding_size],
             name='{}_placeholder'.format(self.name)
         )

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.utils.tf_utils import to_sparse
@@ -52,8 +52,9 @@ def accuracy(targets, predictions, output_feature_name):
     correct_predictions = tf.equal(predictions, targets,
                                    name='correct_predictions_{}'.format(
                                        output_feature_name))
-    accuracy = tf.reduce_mean(tf.cast(correct_predictions, tf.float32),
-                              name='accuracy_{}'.format(output_feature_name))
+    accuracy = tf.reduce_mean(
+        tf.cast(correct_predictions, tf.float32),
+        name='accuracy_{}'.format(output_feature_name))
     return accuracy, correct_predictions
 
 
@@ -61,16 +62,20 @@ def masked_accuracy(targets, predictions, sequence_lengths,
                     output_feature_name):
     truncated_predictions = predictions[:, :targets.shape[1]]
     paddings = tf.stack([[0, 0], [0, tf.shape(targets)[1] -
-                                  tf.shape(truncated_predictions)[1]]])
-    padded_truncated_predictions = tf.pad(truncated_predictions, paddings,
+                                  tf.shape(
+                                      truncated_predictions)[1]]])
+    padded_truncated_predictions = tf.pad(truncated_predictions,
+                                          paddings,
                                           name='ptp')
 
-    correct_predictions = tf.equal(padded_truncated_predictions, targets,
+    correct_predictions = tf.equal(padded_truncated_predictions,
+                                   targets,
                                    name='overall_correct_predictions_{}'.format(
                                        output_feature_name))
 
     mask = tf.sequence_mask(sequence_lengths,
-                            maxlen=correct_predictions.shape[1], dtype=tf.int32)
+                            maxlen=correct_predictions.shape[1],
+                            dtype=tf.int32)
 
     filtered_out, masked_correct_predictions = tf.dynamic_partition(
         correct_predictions, mask, 2)
@@ -78,13 +83,17 @@ def masked_accuracy(targets, predictions, sequence_lengths,
         tf.cast(masked_correct_predictions, tf.float32),
         name='token_accuracy_{}'.format(output_feature_name))
 
-    one_masked_correct_prediction = 1.0 - tf.cast(mask, tf.float32) + (
-            tf.cast(mask, tf.float32) * tf.cast(correct_predictions,
-                                                tf.float32))
-    rowwise_correct_predictions = tf.reduce_prod(one_masked_correct_prediction,
-                                                 axis=-1,
-                                                 name='rowwise_correct_predictions_{}'.format(
-                                                     output_feature_name))
+    one_masked_correct_prediction = 1.0 - tf.cast(mask,
+                                                  tf.float32) + (
+                                            tf.cast(mask,
+                                                    tf.float32) * tf.cast(
+                                        correct_predictions,
+                                        tf.float32))
+    rowwise_correct_predictions = tf.reduce_prod(
+        one_masked_correct_prediction,
+        axis=-1,
+        name='rowwise_correct_predictions_{}'.format(
+            output_feature_name))
     rowwise_accuracy = tf.reduce_mean(rowwise_correct_predictions,
                                       name='rowwise_accuracy_{}'.format(
                                           output_feature_name))
@@ -134,19 +143,19 @@ def perplexity(cross_entropy_loss):
 
 
 def error(targets, predictions, output_feature_name):
-    # return tf.compat.v1.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
+    # return tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     return tf.subtract(targets, predictions,
                        name='error_{}'.format(output_feature_name))
 
 
 def absolute_error(targets, predictions, output_feature_name):
-    # error = tf.compat.v1.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
+    # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
     return tf.abs(error, name='absolute_error_{}'.format(output_feature_name))
 
 
 def squared_error(targets, predictions, output_feature_name):
-    # error = tf.compat.v1.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
+    # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
     return tf.pow(error, 2, name='squared_error_{}'.format(output_feature_name))
 

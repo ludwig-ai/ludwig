@@ -17,7 +17,7 @@
 import logging
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -94,7 +94,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
 
     def _get_input_placeholder(self):
         # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
+        return tf.placeholder(
             tf.int32,
             shape=[None, H3_VECTOR_LENGTH],
             name=self.name

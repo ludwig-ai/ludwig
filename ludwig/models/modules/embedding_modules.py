@@ -16,7 +16,7 @@
 import logging
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
@@ -64,14 +64,14 @@ def embedding_matrix(
                     {'type': 'uniform', 'minval': -1.0, 'maxval': 1.0})
             initializer_obj = initializer_obj_ref([vocab_size, embedding_size])
 
-        embeddings = tf.compat.v1.get_variable('embeddings',
+        embeddings = tf.get_variable('embeddings',
                                      initializer=initializer_obj,
                                      trainable=embeddings_trainable,
                                      regularizer=regularizer)
 
     elif representation == 'sparse':
         embedding_size = vocab_size
-        embeddings = tf.compat.v1.get_variable('embeddings',
+        embeddings = tf.get_variable('embeddings',
                                      initializer=get_initializer('identity')(
                                          [vocab_size, embedding_size]),
                                      trainable=False)
@@ -215,10 +215,12 @@ class EmbedWeighted:
             )
         logger.debug('  embeddings: {0}'.format(embeddings))
 
-        signed_input = tf.cast(tf.sign(tf.abs(input_ids)), tf.int32)
+        signed_input = tf.cast(
+            tf.sign(tf.abs(input_ids)), tf.int32)
         multiple_hot_indexes = tf.multiply(
             signed_input,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
+            tf.constant(
+                np.array([range(len(self.vocab))], dtype=np.int32))
         )
         embedded = tf.nn.embedding_lookup(
             embeddings,

@@ -32,7 +32,7 @@ import time
 from collections import OrderedDict
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tabulate import tabulate
 from tensorflow.python import debug as tf_debug
 from tensorflow.python.saved_model import builder as saved_model_builder
@@ -134,28 +134,28 @@ class Model:
         if self.horovod:
             self.horovod.init()
 
-        tf.compat.v1.reset_default_graph()
+        tf.reset_default_graph()
         graph = tf.Graph()
         with graph.as_default():
             # ================ Setup ================
-            tf.compat.v1.set_random_seed(random_seed)
+            tf.set_random_seed(random_seed)
 
             self.global_step = tf.Variable(0, trainable=False)
-            self.regularization_lambda = tf.compat.v1.placeholder(
+            self.regularization_lambda = tf.placeholder(
                 tf.float32,
                 name='regularization_lambda'
             )
             regularizer = regularizer_registry[training['regularizer']]
             self.regularizer = regularizer(self.regularization_lambda)
 
-            self.learning_rate = tf.compat.v1.placeholder(
+            self.learning_rate = tf.placeholder(
                 tf.float32,
                 name='learning_rate'
             )
-            self.dropout_rate = tf.compat.v1.placeholder(tf.float32,
-                                                         name='dropout_rate')
-            self.is_training = tf.compat.v1.placeholder(tf.bool, [],
-                                                        name='is_training')
+            self.dropout_rate = tf.placeholder(tf.float32,
+                                               name='dropout_rate')
+            self.is_training = tf.placeholder(tf.bool, [],
+                                              name='is_training')
 
             # ================ Inputs ================
             feature_encodings = build_inputs(
@@ -208,22 +208,22 @@ class Model:
                 self.horovod
             )
 
-            tf.compat.v1.summary.scalar(
+            tf.summary.scalar(
                 'combined/batch_train_reg_mean_loss',
                 self.train_reg_mean_loss
             )
 
-            self.merged_summary = tf.compat.v1.summary.merge_all()
+            self.merged_summary = tf.summary.merge_all()
             self.graph = graph
-            self.graph_initialize = tf.compat.v1.global_variables_initializer()
+            self.graph_initialize = tf.global_variables_initializer()
             if self.horovod:
                 self.broadcast_op = self.horovod.broadcast_global_variables(0)
-            self.saver = tf.compat.v1.train.Saver()
+            self.saver = tf.train.Saver()
 
     def initialize_session(self, gpus=None, gpu_fraction=1):
         if self.session is None:
 
-            self.session = tf.compat.v1.Session(
+            self.session = tf.Session(
                 config=get_tf_config(gpus, gpu_fraction, self.horovod),
                 graph=self.graph
             )
@@ -281,12 +281,12 @@ class Model:
                 )
                 metric_val = output_feature[metric][-1]
                 summaries.append(
-                    tf.compat.v1.Summary.Value(
+                    tf.Summary.Value(
                         tag=metric_tag,
                         simple_value=metric_val
                     )
                 )
-        summary = tf.compat.v1.Summary(value=summaries)
+        summary = tf.Summary(value=summaries)
         train_writer.add_summary(summary, step)
 
     def train(
@@ -445,7 +445,7 @@ class Model:
         train_writer = None
         if is_on_master():
             if not skip_save_log:
-                train_writer = tf.compat.v1.summary.FileWriter(
+                train_writer = tf.summary.FileWriter(
                     os.path.join(save_path, 'log', 'train'),
                     session.graph
                 )

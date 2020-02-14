@@ -15,13 +15,12 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.attention_modules import \
     reduce_feed_forward_attention
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,8 @@ def reduce_last(sequence, **kwargs):
     sequence_length = sequence_length_3D(sequence)
     # gather the correct outputs from the the RNN outputs (the outputs after sequence_length are all 0s)
     return tf.gather_nd(sequence, tf.stack(
-        [tf.range(batch_size), tf.maximum(sequence_length - 1, 0)], axis=1))
+        [tf.range(batch_size),
+         tf.maximum(sequence_length - 1, 0)], axis=1))
 
 
 def reduce_sum(sequence, **kwargs):
@@ -58,7 +58,8 @@ def reduce_concat(sequence, **kwargs):
         return reduce_last(sequence, **kwargs)
     else:
         return tf.reshape(sequence,
-                          [-1, sequence.shape[-2] * sequence.shape[-1]])
+                          [-1,
+                           sequence.shape[-2] * sequence.shape[-1]])
 
 
 def dont_reduce(sequence, **kwargs):
