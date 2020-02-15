@@ -445,8 +445,7 @@ class Model:
         if is_on_master():
             if not skip_save_log:
                 train_writer = tf2.summary.create_file_writer(
-                    os.path.join(save_path, 'log', 'train'),
-                    # session.graph  # todo tf2: fix this
+                    os.path.join(save_path, 'log', 'train')
                 )
 
         if self.debug:
