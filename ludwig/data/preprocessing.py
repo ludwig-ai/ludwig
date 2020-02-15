@@ -855,6 +855,12 @@ def preprocess_for_prediction(
                     dataset = validation_set
                 else:  # if split == TEST:
                     dataset = test_set
+            else:
+                logger.warning(
+                    'You requested the {} split, but the data CSV '
+                    'does not contain a "split" column, so the '
+                    'full data will be used instead'
+                )
 
     replace_text_feature_level(
         features,
