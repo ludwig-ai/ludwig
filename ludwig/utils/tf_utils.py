@@ -43,8 +43,8 @@ def to_sparse(tensor, lengths, max_length):
 
 def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,
                   allow_parallel_threads=True):
-    intra_op_parallelism_threads = 2  # defult in tensorflow
-    inter_op_parallelism_threads = 5  # defult in tensorflow
+    intra_op_parallelism_threads = 0  # tf determines automatically
+    inter_op_parallelism_threads = 0  # tf determines automatically
     if not allow_parallel_threads:
         # this is needed for reproducibility
         intra_op_parallelism_threads = 1
