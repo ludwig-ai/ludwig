@@ -274,21 +274,19 @@ class Model:
     def add_tensorboard_epoch_summary(cls, stats, prefix, train_writer, step):
         if not train_writer:
             return
-        summaries = []
-        for feature_name, output_feature in stats.items():
-            for metric in output_feature:
-                metric_tag = "{}/epoch_{}_{}".format(
-                    feature_name, prefix, metric
-                )
-                metric_val = output_feature[metric][-1]
-                summaries.append(
-                    tf.Summary.Value(
-                        tag=metric_tag,
-                        simple_value=metric_val
+
+        with train_writer.as_default():
+            for feature_name, output_feature in stats.items():
+                for metric in output_feature:
+                    metric_tag = "{}/epoch_{}_{}".format(
+                        feature_name, prefix, metric
                     )
-                )
-        summary = tf.Summary(value=summaries)
-        # train_writer.add_summary(summary, step)  # todo tf2: delete following to clean up after TF2
+                    metric_val = output_feature[metric][-1]
+                    tf2.summary.scalar(metric_tag,
+                                       metric_val,
+                                       step=step)
+
+        train_writer.flush()
 
     def train(
             self,
