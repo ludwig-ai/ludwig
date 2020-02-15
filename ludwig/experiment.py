@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from ludwig.constants import TRAINING
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
@@ -130,10 +131,10 @@ def experiment(
      train_set_metadata) = preprocessed_data
 
     if test_set is not None:
-        if model_definition['training']['eval_batch_size'] > 0:
-            batch_size = model_definition['training']['eval_batch_size']
+        if model_definition[TRAINING]['eval_batch_size'] > 0:
+            batch_size = model_definition[TRAINING]['eval_batch_size']
         else:
-            batch_size = model_definition['training']['batch_size']
+            batch_size = model_definition[TRAINING]['batch_size']
 
         # predict
         test_results = predict(

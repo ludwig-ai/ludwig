@@ -5,15 +5,17 @@
 # 
 # This example trains multiple models and extracts training statistics
 
+import glob
+import logging
+import os
+import shutil
+from collections import namedtuple
+
+import yaml
+
 # ## Import required libraries
 from ludwig.api import LudwigModel
 from ludwig.visualize import learning_curves
-import logging
-import shutil
-import os
-import glob
-import yaml
-from collections import namedtuple
 
 # clean out old results
 try:

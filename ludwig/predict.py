@@ -25,6 +25,7 @@ import sys
 from collections import OrderedDict
 from pprint import pformat
 
+from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_prediction
@@ -40,7 +41,6 @@ from ludwig.utils.print_utils import logging_level_registry, repr_ordered_dict
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +48,7 @@ def full_predict(
         model_path,
         data_csv=None,
         data_hdf5=None,
-        split='test',
+        split=TEST,
         batch_size=128,
         skip_save_unprocessed_output=False,
         skip_save_test_predictions=False,
@@ -286,8 +286,8 @@ def cli(sys_argv):
     parser.add_argument(
         '-s',
         '--split',
-        default='test',
-        choices=['training', 'validation', 'test', 'full'],
+        default=TEST,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
         help='the split to test the model on'
     )
 

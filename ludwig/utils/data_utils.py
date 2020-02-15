@@ -28,6 +28,8 @@ import pandas as pd
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
+from ludwig.constants import SPLIT
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,12 +47,14 @@ def load_csv(data_fp):
     return data
 
 
-def read_csv(data_fp, header=0):
+def read_csv(data_fp, header=0, nrows=None, skiprows=None):
     """
     Helper method to read a csv file. Wraps around pd.read_csv to handle some
     exceptions. Can extend to cover cases as necessary
     :param data_fp: path to the csv file
     :param header: header argument for pandas to read the csv
+    :param nrows: number of rows to read from the csv, None means all
+    :param skiprows: number of rows to skip from the csv, None means no skips
     :return: Pandas dataframe with the data
     """
 
@@ -65,11 +69,13 @@ def read_csv(data_fp, header=0):
             pass
 
     try:
-        df = pd.read_csv(data_fp, sep=separator, header=header)
+        df = pd.read_csv(data_fp, sep=separator, header=header,
+                         nrows=nrows, skiprows=skiprows)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\')
+        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\',
+                         nrows=nrows, skiprows=skiprows)
 
     return df
 
@@ -82,6 +88,10 @@ def save_csv(data_fp, data):
                                                                        str):
                 row = [row]
             writer.writerow(row)
+
+
+def csv_contains_column(data_fp, column_name):
+    return column_name in read_csv(data_fp, nrows=0)  # only loads header
 
 
 def load_json(data_fp):
@@ -242,7 +252,7 @@ def shuffle_unison_inplace(list_of_lists, random_state=None):
     if list_of_lists:
         assert all(len(l) == len(list_of_lists[0]) for l in list_of_lists)
         if random_state is not None:
-            random_state.permutation(len(list_of_lists[0]))
+            p = random_state.permutation(len(list_of_lists[0]))
         else:
             p = np.random.permutation(len(list_of_lists[0]))
         return [l[p] for l in list_of_lists]
@@ -281,8 +291,8 @@ def shuffle_inplace(np_dict):
 
 
 def split_dataset_tvt(dataset, split):
-    if 'split' in dataset:
-        del dataset['split']
+    if SPLIT in dataset:
+        del dataset[SPLIT]
     training_set = split_dataset(dataset, split, value_to_split=0)
     validation_set = split_dataset(dataset, split, value_to_split=1)
     test_set = split_dataset(dataset, split, value_to_split=2)
@@ -327,7 +337,7 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     """
     if file_name.endswith('.hdf5') and field is not None:
         hdf5_data = h5py.File(file_name, 'r')
-        split = hdf5_data['split'][()]
+        split = hdf5_data[SPLIT][()]
         column = hdf5_data[field][()]
         hdf5_data.close()
         array = column[split == ground_truth_split]  # ground truth

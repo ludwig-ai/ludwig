@@ -127,7 +127,7 @@ class Model:
         self.hyperparameters['input_features'] = input_features
         self.hyperparameters['output_features'] = output_features
         self.hyperparameters['combiner'] = combiner
-        self.hyperparameters['training'] = training
+        self.hyperparameters[TRAINING] = training
         self.hyperparameters['preprocessing'] = preprocessing
         self.hyperparameters['random_seed'] = random_seed
         self.hyperparameters.update(kwargs)
@@ -595,7 +595,7 @@ class Model:
             self.evaluation(
                 session,
                 training_set,
-                'train',
+                TRAINING,
                 regularization_lambda,
                 progress_tracker.train_stats,
                 tables,
@@ -644,7 +644,7 @@ class Model:
                 self.evaluation(
                     session,
                     test_set,
-                    'test',
+                    TEST,
                     regularization_lambda,
                     progress_tracker.test_stats,
                     tables,
@@ -1038,7 +1038,7 @@ class Model:
         output_features = self.hyperparameters['output_features']
         combined_correct_predictions = None
 
-        for i, output_feature in enumerate(output_features):
+        for output_feature in output_features:
             field_name = output_feature['name']
             feature_type = output_feature['type']
             output_config = output_type_registry[feature_type].output_config
@@ -1328,9 +1328,10 @@ class Model:
             session = self.session
 
         # get operation names
-        operation_names = set(
-            [t.name for op in self.graph.get_operations() for t in op.values()]
-        )
+        operation_names = {
+            t.name for op in self.graph.get_operations() for t in op.values()
+        }
+
         for tensor_name in tensor_names:
             if tensor_name not in operation_names:
                 raise ValueError(
@@ -1364,9 +1365,9 @@ class Model:
         else:
             session = self.session
 
-        operation_names = set(
-            [t.name for op in self.graph.get_operations() for t in op.values()]
-        )
+        operation_names = {
+            t.name for op in self.graph.get_operations() for t in op.values()
+        }
         for tensor_name in tensor_names:
             if tensor_name not in operation_names:
                 raise ValueError(
