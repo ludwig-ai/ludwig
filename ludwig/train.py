@@ -26,9 +26,8 @@ import sys
 from pprint import pformat
 
 import yaml
-from nltk.test.unit.test_classify import TEST
 
-from ludwig.constants import VALIDATION, TRAINING
+from ludwig.constants import TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
