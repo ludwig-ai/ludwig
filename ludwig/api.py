@@ -1156,7 +1156,7 @@ def test_predict(
     )
 
     logger.critical(predictions)
-    
+
 
 def main(sys_argv):
     parser = argparse.ArgumentParser(

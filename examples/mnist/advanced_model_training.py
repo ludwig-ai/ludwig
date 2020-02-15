@@ -65,7 +65,7 @@ for model_option in list_of_fc_layers:
     # set up Python dictionary to hold model training parameters
     model_definition = base_model.copy()
     model_definition['input_features'][0]['fc_layers'] = model_option.fc_layers
-    model_definition[TRAINING]['epochs'] = 8
+    model_definition['training']['epochs'] = 8
 
     # Define Ludwig model object that drive model training
     model = LudwigModel(model_definition,
