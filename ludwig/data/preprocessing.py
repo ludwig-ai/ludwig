@@ -96,7 +96,7 @@ def build_dataset_df(
         global_preprocessing_parameters
     )
 
-    data_val['split'] = get_split(
+    data_val[SPLIT] = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -208,8 +208,8 @@ def get_split(
         stratify=None,
         random_seed=default_random_seed,
 ):
-    if 'split' in dataset_df and not force_split:
-        split = dataset_df['split']
+    if SPLIT in dataset_df and not force_split:
+        split = dataset_df[SPLIT]
     else:
         set_random_seed(random_seed)
         if stratify is None or stratify not in dataset_df:
@@ -270,7 +270,7 @@ def load_data(
         hdf5_data.close()
         return dataset
 
-    split = hdf5_data['split'][()]
+    split = hdf5_data[SPLIT][()]
     hdf5_data.close()
     training_set, test_set, validation_set = split_dataset_tvt(dataset, split)
 
@@ -629,7 +629,7 @@ def _preprocess_csv_for_training(
 
         training_set, test_set, validation_set = split_dataset_tvt(
             data,
-            data['split']
+            data[SPLIT]
         )
 
     elif data_train_csv is not None:
@@ -656,7 +656,7 @@ def _preprocess_csv_for_training(
         )
         training_set, test_set, validation_set = split_dataset_tvt(
             data,
-            data['split']
+            data[SPLIT]
         )
         if not skip_save_processed_input:
             logger.info('Writing dataset')
@@ -742,7 +742,7 @@ def _preprocess_df_for_training(
     )
     training_set, test_set, validation_set = split_dataset_tvt(
         data,
-        data['split']
+        data[SPLIT]
     )
     return training_set, test_set, validation_set, train_set_metadata
 
@@ -801,7 +801,7 @@ def preprocess_for_prediction(
 
     # Load data
     train_set_metadata = load_metadata(train_set_metadata)
-    if split == 'full':
+    if split == FULL:
         if data_hdf5 is not None:
             dataset = load_data(
                 data_hdf5,
@@ -825,11 +825,11 @@ def preprocess_for_prediction(
                 shuffle_training=False
             )
 
-            if split == 'training':
+            if split == TRAINING:
                 dataset = training_set
-            elif split == 'validation':
+            elif split == VALIDATION:
                 dataset = validation_set
-            else:  # if split == 'test':
+            else:  # if split == TEST:
                 dataset = test_set
 
         else:
@@ -844,16 +844,16 @@ def preprocess_for_prediction(
             # we have to check in the csv not in the built dataset.
             # The logic is that if there is no split in the original csv
             # we treat the split parameter as if it was == full
-            if csv_contains_column(data_csv, 'split'):
+            if csv_contains_column(data_csv, SPLIT):
                 training_set, test_set, validation_set = split_dataset_tvt(
                     dataset,
-                    dataset['split']
+                    dataset[SPLIT]
                 )
-                if split == 'training':
+                if split == TRAINING:
                     dataset = training_set
-                elif split == 'validation':
+                elif split == VALIDATION:
                     dataset = validation_set
-                else:  # if split == 'test':
+                else:  # if split == TEST:
                     dataset = test_set
 
     replace_text_feature_level(

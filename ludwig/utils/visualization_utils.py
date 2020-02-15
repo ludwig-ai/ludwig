@@ -26,6 +26,7 @@ from sys import platform
 import numpy as np
 
 import ludwig.contrib
+from ludwig.constants import TRAINING, VALIDATION
 
 logger = logging.getLogger(__name__)
 
@@ -90,11 +91,13 @@ def learning_curves_plot(
         name_prefix = algorithm_names[
                           i] + ' ' if algorithm_names is not None and i < len(
             algorithm_names) else ''
-        ax.plot(xs[:len(train_values[i])], train_values[i], label=name_prefix + 'training',
+        ax.plot(xs[:len(train_values[i])], train_values[i],
+                label=name_prefix + TRAINING,
                 color=colors[i * 2], linewidth=3)
         if i < len(vali_values) and vali_values[i] is not None and len(
                 vali_values[i]) > 0:
-            ax.plot(xs[:len(vali_values[i])], vali_values[i], label=name_prefix + 'validation',
+            ax.plot(xs[:len(vali_values[i])], vali_values[i],
+                    label=name_prefix + VALIDATION,
                     color=colors[i * 2 + 1], linewidth=3)
 
     ax.legend()

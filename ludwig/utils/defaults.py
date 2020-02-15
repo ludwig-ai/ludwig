@@ -158,8 +158,8 @@ def _perform_sanity_checks(model_definition):
         'Model definition needs to have at least one output feature'
     )
 
-    if 'training' in model_definition:
-        assert isinstance(model_definition['training'], dict), (
+    if TRAINING in model_definition:
+        assert isinstance(model_definition[TRAINING], dict), (
             'There is an issue while reading the training section of the '
             'model definition. The parameters are expected to be'
             'read as a dictionary. Please check your model definition format.'
@@ -204,14 +204,14 @@ def merge_with_defaults(model_definition):
                       {'type': default_combiner_type})
 
     # ===== Training =====
-    set_default_value(model_definition, 'training', default_training_params)
+    set_default_value(model_definition, TRAINING, default_training_params)
 
     for param, value in default_training_params.items():
-        set_default_value(model_definition['training'], param,
+        set_default_value(model_definition[TRAINING], param,
                           value)
 
     set_default_value(
-        model_definition['training'],
+        model_definition[TRAINING],
         'validation_measure',
 
         output_type_registry[model_definition['output_features'][0][
@@ -219,7 +219,7 @@ def merge_with_defaults(model_definition):
     )
 
     # ===== Training Optimizer =====
-    optimizer = model_definition['training']['optimizer']
+    optimizer = model_definition[TRAINING]['optimizer']
     default_optimizer_params = get_default_optimizer_params(optimizer['type'])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])

@@ -25,6 +25,7 @@ import sys
 
 import numpy as np
 
+from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION
@@ -36,7 +37,6 @@ from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 from ludwig.utils.strings_utils import make_safe_filename
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +45,7 @@ def collect_activations(
         tensors,
         data_csv=None,
         data_hdf5=None,
-        split='test',
+        split=TEST,
         batch_size=128,
         output_directory='results',
         gpus=None,
@@ -191,8 +191,8 @@ def cli_collect_activations(sys_argv):
     parser.add_argument(
         '-s',
         '--split',
-        default='test',
-        choices=['training', 'validation', 'test', 'full'],
+        default=TEST,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
         help='the split to test the model on'
     )
 

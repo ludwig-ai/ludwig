@@ -5,15 +5,17 @@
 # 
 # This example trains multiple models and extracts training statistics
 
+import glob
+import logging
+import os
+import shutil
+from collections import namedtuple
+
+import yaml
+
 # ## Import required libraries
 from ludwig.api import LudwigModel
 from ludwig.visualize import learning_curves
-import logging
-import shutil
-import os
-import glob
-import yaml
-from collections import namedtuple
 
 # clean out old results
 try:
@@ -63,7 +65,7 @@ for model_option in list_of_fc_layers:
     # set up Python dictionary to hold model training parameters
     model_definition = base_model.copy()
     model_definition['input_features'][0]['fc_layers'] = model_option.fc_layers
-    model_definition['training']['epochs'] = 8
+    model_definition[TRAINING]['epochs'] = 8
 
     # Define Ludwig model object that drive model training
     model = LudwigModel(model_definition,

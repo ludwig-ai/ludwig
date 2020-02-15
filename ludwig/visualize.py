@@ -714,7 +714,7 @@ def learning_curves(
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for output_feature_name in output_feature_names:
         for metric in metrics:
-            if metric in train_stats_per_model_list[0]['train'][
+            if metric in train_stats_per_model_list[0][TRAINING][
                 output_feature_name]:
                 filename = None
                 if filename_template_path:
@@ -722,15 +722,15 @@ def learning_curves(
                         output_feature_name, metric)
 
                 training_stats = [
-                    learning_stats['train'][output_feature_name][metric]
+                    learning_stats[TRAINING][output_feature_name][metric]
                     for learning_stats in
                     train_stats_per_model_list]
 
                 validation_stats = []
                 for learning_stats in train_stats_per_model_list:
-                    if 'validation' in learning_stats:
+                    if VALIDATION in learning_stats:
                         validation_stats.append(
-                            learning_stats['validation'][output_feature_name][
+                            learning_stats[VALIDATION][output_feature_name][
                                 metric]
                         )
                     else:

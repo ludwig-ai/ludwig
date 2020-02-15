@@ -26,7 +26,9 @@ import sys
 from pprint import pformat
 
 import yaml
+from nltk.test.unit.test_classify import TEST
 
+from ludwig.constants import VALIDATION, TRAINING
 from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
@@ -356,9 +358,9 @@ def full_train(
 
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
     train_stats = {
-        'train': train_trainset_stats,
-        'validation': train_valisest_stats,
-        'test': train_testset_stats
+        TRAINING: train_trainset_stats,
+        VALIDATION: train_valisest_stats,
+        TEST: train_testset_stats
     }
 
     if should_close_session:
@@ -370,8 +372,8 @@ def full_train(
             save_json(training_stats_fn, train_stats)
 
     # grab the results of the model with highest validation test performance
-    validation_field = model_definition['training']['validation_field']
-    validation_measure = model_definition['training']['validation_measure']
+    validation_field = model_definition[TRAINING]['validation_field']
+    validation_measure = model_definition[TRAINING]['validation_measure']
     validation_field_result = train_valisest_stats[validation_field]
 
     best_function = get_best_function(validation_measure)
@@ -494,7 +496,7 @@ def train(
             model_definition['input_features'],
             model_definition['output_features'],
             model_definition['combiner'],
-            model_definition['training'],
+            model_definition[TRAINING],
             model_definition['preprocessing'],
             use_horovod=use_horovod,
             random_seed=random_seed,
@@ -517,7 +519,7 @@ def train(
         skip_save_log=skip_save_log,
         gpus=gpus, gpu_fraction=gpu_fraction,
         random_seed=random_seed,
-        **model_definition['training']
+        **model_definition[TRAINING]
     )
 
 

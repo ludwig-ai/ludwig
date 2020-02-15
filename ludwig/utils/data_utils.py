@@ -28,6 +28,8 @@ import pandas as pd
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
+from ludwig.constants import SPLIT
+
 logger = logging.getLogger(__name__)
 
 
@@ -289,8 +291,8 @@ def shuffle_inplace(np_dict):
 
 
 def split_dataset_tvt(dataset, split):
-    if 'split' in dataset:
-        del dataset['split']
+    if SPLIT in dataset:
+        del dataset[SPLIT]
     training_set = split_dataset(dataset, split, value_to_split=0)
     validation_set = split_dataset(dataset, split, value_to_split=1)
     test_set = split_dataset(dataset, split, value_to_split=2)
@@ -335,7 +337,7 @@ def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):
     """
     if file_name.endswith('.hdf5') and field is not None:
         hdf5_data = h5py.File(file_name, 'r')
-        split = hdf5_data['split'][()]
+        split = hdf5_data[SPLIT][()]
         column = hdf5_data[field][()]
         hdf5_data.close()
         array = column[split == ground_truth_split]  # ground truth
