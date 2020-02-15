@@ -275,6 +275,7 @@ class Model:
         if not train_writer:
             return
 
+        # todo tf2: completed fix
         with train_writer.as_default():
             for feature_name, output_feature in stats.items():
                 for metric in output_feature:
@@ -444,6 +445,7 @@ class Model:
         train_writer = None
         if is_on_master():
             if not skip_save_log:
+                # todo tf2: completed fix
                 train_writer = tf2.summary.create_file_writer(
                     os.path.join(save_path, 'log', 'train')
                 )
