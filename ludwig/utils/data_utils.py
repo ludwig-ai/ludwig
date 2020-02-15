@@ -45,12 +45,14 @@ def load_csv(data_fp):
     return data
 
 
-def read_csv(data_fp, header=0):
+def read_csv(data_fp, header=0, nrows=None, skiprows=None):
     """
     Helper method to read a csv file. Wraps around pd.read_csv to handle some
     exceptions. Can extend to cover cases as necessary
     :param data_fp: path to the csv file
     :param header: header argument for pandas to read the csv
+    :param nrows: number of rows to read from the csv, None means all
+    :param skiprows: number of rows to skip from the csv, None means no skips
     :return: Pandas dataframe with the data
     """
 
@@ -65,11 +67,13 @@ def read_csv(data_fp, header=0):
             pass
 
     try:
-        df = pd.read_csv(data_fp, sep=separator, header=header)
+        df = pd.read_csv(data_fp, sep=separator, header=header,
+                         nrows=nrows, skiprows=skiprows)
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\')
+        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\',
+                         nrows=nrows, skiprows=skiprows)
 
     return df
 
@@ -82,6 +86,10 @@ def save_csv(data_fp, data):
                                                                        str):
                 row = [row]
             writer.writerow(row)
+
+
+def csv_contains_column(data_fp, column_name):
+    return column_name in read_csv(data_fp, nrows=0)  # only loads header
 
 
 def load_json(data_fp):

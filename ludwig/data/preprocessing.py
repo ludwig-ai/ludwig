@@ -30,7 +30,7 @@ from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import collapse_rare_labels
+from ludwig.utils.data_utils import collapse_rare_labels, csv_contains_column
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.data_utils import read_csv
@@ -818,7 +818,7 @@ def preprocess_for_prediction(
             )
     else:
         if data_hdf5 is not None:
-            training, test, validation = load_data(
+            training_set, test_set, validation_set = load_data(
                 data_hdf5,
                 model_definition['input_features'],
                 output_features,
@@ -826,11 +826,12 @@ def preprocess_for_prediction(
             )
 
             if split == 'training':
-                dataset = training
+                dataset = training_set
             elif split == 'validation':
-                dataset = validation
+                dataset = validation_set
             else:  # if split == 'test':
-                dataset = test
+                dataset = test_set
+
         else:
             dataset, train_set_metadata = build_dataset(
                 data_csv,
@@ -838,6 +839,22 @@ def preprocess_for_prediction(
                 preprocessing_params,
                 train_set_metadata=train_set_metadata
             )
+            # build_dataset adds a split column if there is none in the csv
+            # so if we want to check if the csv contained a split column
+            # we have to check in the csv not in the built dataset.
+            # The logic is that if there is no split in the original csv
+            # we treat the split parameter as if it was == full
+            if csv_contains_column(data_csv, 'split'):
+                training_set, test_set, validation_set = split_dataset_tvt(
+                    dataset,
+                    dataset['split']
+                )
+                if split == 'training':
+                    dataset = training_set
+                elif split == 'validation':
+                    dataset = validation_set
+                else:  # if split == 'test':
+                    dataset = test_set
 
     replace_text_feature_level(
         features,
