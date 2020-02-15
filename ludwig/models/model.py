@@ -39,7 +39,9 @@ from tensorflow.python import debug as tf_debug
 from tensorflow.python.saved_model import builder as saved_model_builder
 from tqdm import tqdm
 
-from ludwig.constants import *
+from ludwig.constants import ACCURACY, APPEND, AVG_EXP, BINARY, CATEGORY, \
+    CORRECT_PREDICTIONS, CORRECT_ROWWISE_PREDICTIONS, LENGTHS, LOSS, \
+    MEASURE, PREDICTION, PREDICTIONS, PROBABILITIES, SUM, SEQ_SUM, SEQUENCE
 from ludwig.contrib import contrib_command
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
@@ -1039,7 +1041,7 @@ class Model:
         output_features = self.hyperparameters['output_features']
         combined_correct_predictions = None
 
-        for i, output_feature in enumerate(output_features):
+        for _, output_feature in enumerate(output_features):
             field_name = output_feature['name']
             feature_type = output_feature['type']
             output_config = output_type_registry[feature_type].output_config
