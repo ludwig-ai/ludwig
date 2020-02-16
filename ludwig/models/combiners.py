@@ -138,7 +138,7 @@ class SequenceConcatCombiner:
             feature_encodings[self.main_sequence_feature]
 
         representation = main_sequence_feature_encoding['representation']
-        representations_size = representation.shape[2].value
+        representations_size = representation.shape[2]
         representations = [representation]
 
         scope_name = 'sequence_concat_combiner'
