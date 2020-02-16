@@ -161,8 +161,8 @@ def flatten(hidden, skip_first=True):
     # if hidden is activation, the first dimension is the batch_size
     start = 1 if skip_first else 0
     for x in hidden.shape[start:]:
-        if x.value is not None:
-            hidden_size *= x.value
+        if x is not None:
+            hidden_size *= x
     hidden = tf.reshape(hidden, [-1, hidden_size], name='flatten')
     logger.debug('  flatten hidden: {0}'.format(hidden))
     return hidden, hidden_size
