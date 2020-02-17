@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def get_cell_fun(cell_type):
     if cell_type == 'rnn':
-        cell_fn = tf2.keras.layers.SimpleRNNCell   # todo tf2 remove obsolete #tf.nn.rnn_cell.BasicRNNCell
+        cell_fn = tf2.keras.layers.RNN   # todo tf2 remove obsolete #tf.nn.rnn_cell.BasicRNNCell
     elif cell_type == 'lstm':
         # allows for optional peephole connections and cell clipping
         cell_fn = tf.nn.rnn_cell.LSTMCell
@@ -412,10 +412,14 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                     beam_width=beam_width,
                     output_layer=projection_layer)
             else:
+                initial_state = cell.get_initial_state(
+                    batch_size=batch_size, dtype=tf.float32
+                )
                 decoder = BasicDecoder(
                     cell=cell, sampler=sampler,
                     # todo tf2: remove obsolete code #initial_state=initial_state,
                     output_layer=projection_layer)
+
 
             # The decoding operation
             outputs = tfa.seq2seq.dynamic_decode(
