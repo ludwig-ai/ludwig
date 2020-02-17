@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def get_cell_fun(cell_type):
     if cell_type == 'rnn':
-        cell_fn = tf2.keras.layers.SimpleRNNCell   # todo tf2 remove obsolete #tf.nn.rnn_cell.BasicRNNCell
+        cell_fn = tf.nn.rnn_cell.BasicRNNCell  # todo tf2: do we eventually need tf2.keras.layers.SimpleRNNCell
     elif cell_type == 'lstm':
         # allows for optional peephole connections and cell clipping
         cell_fn = tf.nn.rnn_cell.LSTMCell
