@@ -108,10 +108,10 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
 
     @property
     def output_dtype(self):
-        dtype = nest.flatten(self._initial_state)[0].dtype
+        dtype = self._cell_dtype
         return BasicDecoderOutput(
             nest.map_structure(lambda _: dtype, self._rnn_output_size()),
-            self._helper.sample_ids_dtype,
+            self.sampler.sample_ids_dtype,
             nest.map_structure(lambda _: dtype, self._projection_input_size()))
 
     def step(self, time, inputs, state, name=None):
