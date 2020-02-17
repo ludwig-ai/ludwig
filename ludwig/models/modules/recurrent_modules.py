@@ -97,7 +97,7 @@ class BasicDecoderOutput(
 
 class BasicDecoder(tfa.seq2seq.BasicDecoder):
     def _projection_input_size(self):
-        return self._cell.output_size
+        return self.cell.output_size
 
     @property
     def output_size(self):
