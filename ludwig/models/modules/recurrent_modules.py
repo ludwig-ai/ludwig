@@ -412,14 +412,17 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                     beam_width=beam_width,
                     output_layer=projection_layer)
             else:
-                initial_state = cell.get_initial_state(
-                    batch_size=batch_size, dtype=tf.float32
-                )
                 decoder = BasicDecoder(
                     cell=cell, sampler=sampler,
                     # todo tf2: remove obsolete code #initial_state=initial_state,
                     output_layer=projection_layer)
 
+                initial_state = cell.get_initial_state(
+                    batch_size=batch_size, dtype=tf.float32
+                )
+
+                # todo tf2: need to figure out 'inputs' to next function
+                decoder.initialize(inputs=None, initial_state=initial_state)
 
             # The decoding operation
             outputs = tfa.seq2seq.dynamic_decode(
