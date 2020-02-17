@@ -103,7 +103,7 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
     def output_size(self):
         return BasicDecoderOutput(
             rnn_output=self._rnn_output_size(),
-            sample_id=self._helper.sample_ids_shape,
+            sample_id=self.sampler.sample_ids_shape,
             projection_input=self._projection_input_size())
 
     @property
