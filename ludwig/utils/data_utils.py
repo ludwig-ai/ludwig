@@ -62,7 +62,7 @@ def read_csv(data_fp, header=0, nrows=None, skiprows=None):
     with open(data_fp, 'r') as csvfile:
         try:
             dialect = csv.Sniffer().sniff(csvfile.read(1024 * 100),
-                                          delimiters=[',', '\t', '|', ' '])
+                                          delimiters=[',', '\t', '|'])
             separator = dialect.delimiter
         except csv.Error:
             # Could not conclude the delimiter, defaulting to comma
