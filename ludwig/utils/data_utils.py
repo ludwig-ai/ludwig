@@ -21,6 +21,7 @@ import logging
 import os.path
 import pickle
 import random
+import re
 
 import h5py
 import numpy as np
@@ -440,3 +441,27 @@ def generate_kfold_splits(data_df, num_folds, random_state):
     for train_indices, test_indices in kf.split(data_df):
         fold_num += 1
         yield train_indices, test_indices, fold_num
+
+
+def get_path_size(
+        start_path,
+        regex_accept=None,
+        regex_reject=None
+):
+    total_size = 0
+    pattern_accept = re.compile(regex_accept) if regex_accept else None
+    pattern_reject = re.compile(regex_reject) if regex_reject else None
+
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for filename in filenames:
+            filepath = os.path.join(dirpath, filename)
+            if not os.path.islink(filepath):
+                accepted = True
+                if pattern_accept:
+                    accepted = accepted and pattern_accept.match(filename)
+                if pattern_reject:
+                    accepted = accepted and not pattern_reject.match(filename)
+                if accepted:
+                    total_size += os.path.getsize(filepath)
+
+    return total_size
