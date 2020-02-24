@@ -932,8 +932,29 @@ Details about the available decoders and losses alongside with the description o
 
 For the sake of simplicity you can imagine the input coming from the combiner to be a vector in most of the cases, but there is a `reduce_input` parameter one can specify to change the default behavior.
 
-Output Features Dependencies
-----------------------------
+### Multi-task Learning
+
+As Ludwig allows for multiple output features to be specified and each output feature can be seen as a task the model is learning to perform, by consequence Ludwig supports Multi-task learning natively.
+When multiple output features are specified, the loss that is optimized is a weighted sum of the losses of each individual output feature.
+By default each loss weight is `1`, but it can be changed by specifying a value for the `weight` parameter in the `loss` section of each output feature definition.
+
+For example, given a `category` feature `A` and `numerical` feature `B`, in order to optimize the loss `loss_total = 1.5 * loss_A + 0.8 + loss_B` the `output_feature` section of the model definition should look like:
+
+```yaml
+output_features:
+    -
+        name: A
+        type: category
+        loss:
+          weight: 1.5
+    -
+        name: A
+        type: numerical
+        loss:
+          weight: 0.8
+```
+
+### Output Features Dependencies
 
 An additional feature that Ludwig provides is the concept of dependency between `output_features`.
 You can specify a list of output features as dependencies when you write the dictionary of a specific feature.
