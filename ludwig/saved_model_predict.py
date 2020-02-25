@@ -29,11 +29,11 @@ def saved_model_predict(
 
     print("Obtain Ludwig predictions")
     ludwig_model = LudwigModel.load(ludwig_model_path)
-    ludwig_prediction_df = ludwig_model.predict(data_csv=data_csv)
-    ludwig_prediction_df.to_csv('ludwig_predictions.csv', index=False)
-    ludwig_weights = \
-    ludwig_model.model.collect_weights(['utterance/fc_0/weights:0'])[
-        'utterance/fc_0/weights:0']
+    ludwig_predictions_df = ludwig_model.predict(data_csv=data_csv)
+    ludwig_predictions_df.to_csv('ludwig_predictions.csv', index=False)
+    ludwig_weights = ludwig_model.model.collect_weights(
+        ['utterance/fc_0/weights:0']
+    )['utterance/fc_0/weights:0']
     print(ludwig_weights[0])
     ludwig_model.close()
 
@@ -66,10 +66,11 @@ def saved_model_predict(
             }
         )
 
-        df = pd.DataFrame(
+        savedmodel_predictions_df = pd.DataFrame(
             data=[train_set_metadata['intent']["idx2str"][p] for p in
-                  predictions], columns=['intent'])
-        df.to_csv('saved_model_predictions.csv', index=False)
+                  predictions], columns=['intent_predictions'])
+        savedmodel_predictions_df.to_csv('saved_model_predictions.csv',
+                                         index=False)
 
         savedmodel_weights = sess.run('utterance/fc_0/weights:0')
         print(savedmodel_weights[0])
@@ -78,7 +79,8 @@ def saved_model_predict(
     print("Are the weights identical?",
           np.all(ludwig_weights == savedmodel_weights))
     print("Are the predictions identical?",
-          np.all(ludwig_prediction_df['intent_predictions'] == df['intent']))
+          np.all(ludwig_predictions_df['intent_predictions'] ==
+                 savedmodel_predictions_df['intent_predictions']))
 
 
 def cli(sys_argv):
