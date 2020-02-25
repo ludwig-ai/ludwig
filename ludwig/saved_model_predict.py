@@ -1,23 +1,22 @@
 import argparse
-import sys
 import os
+import sys
 
 import pandas as pd
-
 import tensorflow as tf
-from tensorflow.compat.v1 import saved_model
 
+from ludwig.api import LudwigModel
+from ludwig.constants import FULL
 from ludwig.contrib import contrib_command
-from ludwig.models.model import load_model_and_definition
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.constants import FULL
+
 
 def saved_model_predict(
-    saved_model_path = None,
-    ludwig_model_path = None,
-    data_csv = None,
-    output_dir = None,
+        saved_model_path=None,
+        ludwig_model_path=None,
+        data_csv=None,
+        output_dir=None,
 ):
     if saved_model_path == None:
         raise ValueError('saved_model_path is required')
@@ -28,8 +27,17 @@ def saved_model_predict(
     if data_csv == None:
         raise ValueError('data_csv is required')
 
-    model, model_definition = load_model_and_definition(ludwig_model_path)
+    print("Obtain Ludwig predictions")
+    ludwig_model = LudwigModel.load(ludwig_model_path)
+    ludwig_prediction_df = ludwig_model.predict(data_csv=data_csv)
+    ludwig_prediction_df.to_csv('ludwig_predictions.csv', index=False)
+    ludwig_weights = \
+    ludwig_model.model.collect_weights(['utterance/fc_0/weights:0'])[
+        'utterance/fc_0/weights:0']
+    print(ludwig_weights[0])
+    ludwig_model.close()
 
+    print("Obtain savedmodel predictions")
     train_set_metadata_json_fp = os.path.join(
         ludwig_model_path,
         TRAIN_SET_METADATA_FILE_NAME
@@ -44,26 +52,36 @@ def saved_model_predict(
         True,
     )
 
-    with tf.Session(graph=tf.Graph()) as sess:
+    with tf.compat.v1.Session() as sess:
         tf.saved_model.loader.load(
             sess,
-            [tf.saved_model.tag_constants.SERVING],
+            [tf.saved_model.SERVING],
             saved_model_path
         )
 
         predictions = sess.run(
-            'class/predictions_class/predictions_class:0',
+            'intent/predictions_intent/predictions_intent:0',
             feed_dict={
-                'text/text:0': dataset.get('text'),
+                'utterance/utterance_placeholder:0': dataset.get('utterance'),
             }
         )
 
-        df = pd.DataFrame(data=predictions, columns=['class'])
-        df.to_csv('saved_model_predictions.csv')
-    
+        df = pd.DataFrame(
+            data=[train_set_metadata['intent']["idx2str"][p] for p in
+                  predictions], columns=['intent'])
+        df.to_csv('saved_model_predictions.csv', index=False)
+
+        savedmodel_weights = sess.run('utterance/fc_0/weights:0')
+        print(savedmodel_weights[0])
+
+    import numpy as np
+    print("Are the weights identical?",
+          np.all(ludwig_weights == savedmodel_weights))
+    print("Are the predictions identical?",
+          np.all(ludwig_prediction_df['intent_predictions'] == df['intent']))
+
 
 def cli(sys_argv):
-    
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained tensorflow model '
                     'and uses it to predict',

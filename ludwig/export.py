@@ -7,6 +7,7 @@ from tensorflow.compat.v1 import saved_model
 from ludwig.contrib import contrib_command
 from ludwig.models.model import load_model_and_definition
 
+
 def export(
     ludwig_model_path = None,
     export_path = None,
@@ -18,6 +19,9 @@ def export(
         raise ValueError('export_path is required')
 
     model, model_definition = load_model_and_definition(ludwig_model_path)
+    ludwig_weights = model.collect_weights(['utterance/fc_0/weights:0'])[
+        'utterance/fc_0/weights:0']
+    print(ludwig_weights[0])
 
     print('Successfully loaded ludwig model')
 
@@ -42,25 +46,42 @@ def export(
     model.initialize_session()
 
     with model.session as sess:
-        signature = tf.saved_model.signature_def_utils.predict_signature_def(
+        signature = tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
             inputs=inputs,
             outputs=outputs
         )
-                                                                  
-        builder.add_meta_graph_and_variables(                                                                                                        
+
+        builder.add_meta_graph_and_variables(
             sess=sess,
-            tags=[tf.saved_model.tag_constants.SERVING],                                                                                             
+            tags=[tf.saved_model.SERVING],
             signature_def_map={
                 tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
                     signature
             })
-        
+
         builder.save()
 
+        # savedmodel_weights = sess.run('utterance/fc_0/weights:0')
+        # print(savedmodel_weights[0])
+
     print('Successfully exported model to', export_path)
+    model.close_session()
+
+    with tf.compat.v1.Session() as sess:
+        tf.saved_model.loader.load(
+            sess,
+            [tf.saved_model.SERVING],
+            export_path
+        )
+        savedmodel_weights = sess.run('utterance/fc_0/weights:0')
+        print(savedmodel_weights[0])
+
+    import numpy as np
+    print("Are the weights identical?",
+          np.all(ludwig_weights == savedmodel_weights))
+
 
 def cli(sys_argv):
-    
     parser = argparse.ArgumentParser(
         description='This script exports model to tensorflow format',
         prog='ludwig export',
