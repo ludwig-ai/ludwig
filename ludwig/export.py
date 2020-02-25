@@ -33,7 +33,8 @@ def export(
         break
 
     for feature in model_definition['output_features']:
-        outputs[feature['name']] = getattr(model, feature['name'])
+        outputs[feature['name']] = getattr(model,
+                                           'predictions_' + feature['name'])
         break
 
     print('=== Inputs ===')
