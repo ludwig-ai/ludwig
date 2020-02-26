@@ -126,6 +126,9 @@ def test_savedmodel(csv_filename):
 
         builder.save()
 
+    with ludwig_model.model.session as sess:
+        all_variables = tf.compat.v1.trainable_variables()
+        all_variables_names = [v.name for v in all_variables]
     ludwig_model.close()
 
     ###################################################
@@ -133,9 +136,7 @@ def test_savedmodel(csv_filename):
     ###################################################
     ludwig_model = LudwigModel.load(ludwigmodel_path)
     ludwig_prediction_df = ludwig_model.predict(data_csv=data_csv_path)
-    ludwig_weights = ludwig_model.model.collect_weights(
-        [weight_tensor_name]
-    )[weight_tensor_name]
+    ludwig_weights = ludwig_model.model.collect_weights(all_variables_names)
     ludwig_model.close()
 
     #################################################
@@ -172,7 +173,7 @@ def test_savedmodel(csv_filename):
             data=[train_set_metadata[input_feature_name]["idx2str"][p] for p in
                   predictions], columns=[predictions_column_name])
 
-        savedmodel_weights = sess.run(weight_tensor_name)
+        savedmodel_weights = sess.run({n: n for n in all_variables_names})
 
     #########
     # Cleanup
@@ -183,10 +184,12 @@ def test_savedmodel(csv_filename):
     ###############################################
     # Check if weights and predictions are the same
     ###############################################
-    print(
-        "Are the weights identical?",
-        np.all(ludwig_weights == savedmodel_weights)
-    )
+
+    for var in all_variables_names:
+        print(
+            "Are the weights in {} identical?".format(var),
+            np.all(ludwig_weights[var] == savedmodel_weights[var])
+        )
     print(
         "Are loaded model predictions identical to original ones?",
         np.all(
@@ -202,7 +205,8 @@ def test_savedmodel(csv_filename):
         )
     )
 
-    assert np.all(ludwig_weights == savedmodel_weights)
+    for var in all_variables_names:
+        assert np.all(ludwig_weights[var] == savedmodel_weights[var])
     assert np.all(
         original_predictions_df[predictions_column_name] == \
         ludwig_prediction_df[predictions_column_name]
