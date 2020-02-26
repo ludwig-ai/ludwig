@@ -20,6 +20,8 @@ def export(
         raise ValueError('export_path is required')
 
     model, model_definition = load_model_and_definition(ludwig_model_path)
+    model.initialize_session()
+
     ludwig_weights = model.collect_weights(['utterance/fc_0/weights:0'])[
         'utterance/fc_0/weights:0']
     print(ludwig_weights[0])
@@ -44,9 +46,7 @@ def export(
     print(outputs)
 
     shutil.rmtree(export_path, ignore_errors=True)
-    builder = saved_model.builder.SavedModelBuilder(export_path)                                                                    
-
-    model.initialize_session()
+    builder = saved_model.builder.SavedModelBuilder(export_path)
 
     with model.session as sess:
         signature = tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
