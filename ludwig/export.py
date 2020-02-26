@@ -1,4 +1,5 @@
 import argparse
+import shutil
 import sys
 
 import tensorflow as tf
@@ -42,6 +43,7 @@ def export(
     print('=== Outputs ===')
     print(outputs)
 
+    shutil.rmtree(export_path, ignore_errors=True)
     builder = saved_model.builder.SavedModelBuilder(export_path)                                                                    
 
     model.initialize_session()
