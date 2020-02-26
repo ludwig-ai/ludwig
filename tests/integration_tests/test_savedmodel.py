@@ -90,6 +90,8 @@ def test_savedmodel(csv_filename):
     savedmodel_path = os.path.join(dir_path, 'savedmodel')
     shutil.rmtree(savedmodel_path, ignore_errors=True)
 
+    ludwig_model.model.initialize_session()
+
     inputs = {}
     outputs = {}
 
@@ -107,8 +109,6 @@ def test_savedmodel(csv_filename):
 
     builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(
         savedmodel_path)
-
-    ludwig_model.model.initialize_session()
 
     with ludwig_model.model.session as sess:
         signature = tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
