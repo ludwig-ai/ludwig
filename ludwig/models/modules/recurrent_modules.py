@@ -17,11 +17,10 @@ import collections
 import logging
 
 import tensorflow.compat.v1 as tf
-import tensorflow as tf2
 import tensorflow_addons as tfa
 from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, LSTMStateTuple
-from tensorflow.python.framework import dtypes, tensor_shape
 from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.util import nest
 
 from ludwig.models.modules.fully_connected_modules import fc_layer
@@ -132,12 +131,6 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
         return (outputs, next_state, next_inputs, finished)
 
 
-class TimeseriesTrainingSampler(tfa.seq2seq.sampler.TrainingSampler):
-    def sample(self, time, outputs, name=None, **unused_kwargs):
-        with ops.name_scope(name, 'TrainingSamplerSample', [time, outputs]):
-            return tf.zeros(tf.shape(outputs)[:-1], dtype=dtypes.int32)
-
-
 class RecurrentStack:
     def __init__(
             self,
@@ -238,15 +231,11 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                       num_layers=1,
                       attention_mechanism=None, beam_width=1, projection=True,
                       tied_target_embeddings=True, embeddings=None,
-                      initializer=None, regularizer=None,
-                      is_timeseries=False):
+                      initializer=None, regularizer=None):
     with tf.variable_scope('rnn_decoder', reuse=tf.AUTO_REUSE,
                            regularizer=regularizer):
 
         # ================ Setup ================
-        if beam_width > 1 and is_timeseries:
-            raise ValueError('Invalid beam_width: {}'.format(beam_width))
-
         GO_SYMBOL = vocab_size
         END_SYMBOL = 0
         batch_size = tf.shape(encoder_outputs)[0]
@@ -282,50 +271,44 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             targets_sequence_length = sequence_length_2D(targets)
             start_tokens = tf.tile([GO_SYMBOL], [batch_size])
             end_tokens = tf.tile([END_SYMBOL], [batch_size])
-            if is_timeseries:
-                start_tokens = tf.cast(start_tokens, tf.float32)
-                end_tokens = tf.cast(end_tokens, tf.float32)
             targets_with_go_and_eos = tf.concat([
                 tf.expand_dims(start_tokens, 1),
                 targets,
                 tf.expand_dims(end_tokens, 1)], 1)
-            logger.debug('  targets_with_go: {0}'.format(targets_with_go_and_eos))
+            logger.debug(
+                '  targets_with_go: {0}'.format(targets_with_go_and_eos))
             targets_sequence_length_with_eos = targets_sequence_length + 1  # the EOS symbol is 0 so it's not increasing the real length of the sequence
 
         # ================ Embeddings ================
-        if is_timeseries:
-            targets_embedded = tf.expand_dims(targets_with_go_and_eos, -1)
-            targets_embeddings = None
-        else:
-            with tf.variable_scope('embedding'):
-                if embeddings is not None:
-                    embedding_size = embeddings.shape.as_list()[-1]
-                    if tied_target_embeddings:
-                        state_size = embedding_size
-                elif tied_target_embeddings:
-                    embedding_size = state_size
+        with tf.variable_scope('embedding'):
+            if embeddings is not None:
+                embedding_size = embeddings.shape.as_list()[-1]
+                if tied_target_embeddings:
+                    state_size = embedding_size
+            elif tied_target_embeddings:
+                embedding_size = state_size
 
-                if embeddings is not None:
-                    embedding_go = tf.get_variable('embedding_GO',
-                                                   initializer=tf.random_uniform(
-                                                       [1, embedding_size],
-                                                       -1.0, 1.0))
-                    targets_embeddings = tf.concat([embeddings, embedding_go],
-                                                   axis=0)
-                else:
-                    initializer_obj = get_initializer(initializer)
-                    targets_embeddings = tf.get_variable(
-                        'embeddings',
-                        initializer=initializer_obj(
-                            [vocab_size + 1, embedding_size]),
-                        regularizer=regularizer
-                    )
-                logger.debug(
-                    '  targets_embeddings: {0}'.format(targets_embeddings))
+            if embeddings is not None:
+                embedding_go = tf.get_variable('embedding_GO',
+                                               initializer=tf.random_uniform(
+                                                   [1, embedding_size],
+                                                   -1.0, 1.0))
+                targets_embeddings = tf.concat([embeddings, embedding_go],
+                                               axis=0)
+            else:
+                initializer_obj = get_initializer(initializer)
+                targets_embeddings = tf.get_variable(
+                    'embeddings',
+                    initializer=initializer_obj(
+                        [vocab_size + 1, embedding_size]),
+                    regularizer=regularizer
+                )
+            logger.debug(
+                '  targets_embeddings: {0}'.format(targets_embeddings))
 
-                targets_embedded = tf.nn.embedding_lookup(targets_embeddings,
-                                                          targets_with_go_and_eos,
-                                                          name='decoder_input_embeddings')
+            targets_embedded = tf.nn.embedding_lookup(targets_embeddings,
+                                                      targets_with_go_and_eos,
+                                                      name='decoder_input_embeddings')
         logger.debug('  targets_embedded: {0}'.format(targets_embedded))
 
         # ================ Class prediction ================
@@ -415,7 +398,7 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                 decoder = BasicDecoder(
                     cell=cell, sampler=sampler,
                     output_layer=projection_layer)
-                    # todo tf2: remove obsolete code #initial_state=initial_state,
+                # todo tf2: remove obsolete code #initial_state=initial_state,
 
                 # todo tf2: need to figure out 'inputs' to next function
                 decoder.initialize(inputs, initial_state=initial_state)
@@ -433,68 +416,54 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
             return outputs
 
         # ================ Decoding helpers ================
-        if is_timeseries:
-            train_helper = TimeseriesTrainingSampler(
-                inputs=targets_embedded,
-                sequence_length=targets_sequence_length_with_eos)
-            final_outputs_pred, final_state_pred, final_sequence_lengths_pred = decode(
-                initial_state,
-                cell,
-                train_helper,
-                projection_layer=projection_layer)
-            eval_logits = final_outputs_pred.rnn_output
-            train_logits = final_outputs_pred.projection_input
-            predictions_sequence = tf.reshape(eval_logits, [batch_size, -1])
-            predictions_sequence_length_with_eos = final_sequence_lengths_pred
 
+        train_sampler = tfa.seq2seq.sampler.TrainingSampler()
+        train_sampler.initialize(targets_embedded,
+                                 sequence_length=targets_sequence_length_with_eos)
+        # todo tf2: cleanout obsolete code
+        # train_helper = tfa.seq2seq.sampler.TrainingSampler(
+        #     inputs=targets_embedded,
+        #     sequence_length=targets_sequence_length_with_eos)
+
+        # # todo tf2: test code
+        # initial_state = cell.get_initial_state(
+        #     batch_size=batch_size, dtype=tf.float32
+        # )
+
+        final_outputs_train, final_state_train, final_sequence_lengths_train = decode(
+            initial_state,
+            cell,
+            train_sampler,  # todo: tf2 to be removed #train_helper,
+            projection_layer=projection_layer,
+            inputs=encoder_outputs
+        )
+        eval_logits = final_outputs_train.rnn_output
+        train_logits = final_outputs_train.projection_input
+        # train_predictions = final_outputs_train.sample_id
+
+        pred_helper = tfa.seq2seq.sampler.GreedyEmbeddingSampler(
+            embedding=targets_embeddings,
+            start_tokens=start_tokens,
+            end_token=END_SYMBOL)
+        final_outputs_pred, final_state_pred, final_sequence_lengths_pred = decode(
+            initial_state,
+            cell,
+            pred_helper,
+            beam_width,
+            projection_layer=projection_layer)
+
+        if beam_width > 1:
+            predictions_sequence = final_outputs_pred.beam_search_decoder_output.predicted_ids[
+                                   :, :, 0]
+            # final_outputs_pred..predicted_ids[:,:,0] would work too, but it contains -1s for padding
+            predictions_sequence_scores = final_outputs_pred.beam_search_decoder_output.scores[
+                                          :, :, 0]
+            predictions_sequence_length_with_eos = final_sequence_lengths_pred[
+                                                   :, 0]
         else:
-            train_sampler = tfa.seq2seq.sampler.TrainingSampler()
-            train_sampler.initialize(targets_embedded,
-                                     sequence_length=targets_sequence_length_with_eos)
-            # todo tf2: cleanout obsolete code
-            # train_helper = tfa.seq2seq.sampler.TrainingSampler(
-            #     inputs=targets_embedded,
-            #     sequence_length=targets_sequence_length_with_eos)
-
-            # # todo tf2: test code
-            # initial_state = cell.get_initial_state(
-            #     batch_size=batch_size, dtype=tf.float32
-            # )
-
-            final_outputs_train, final_state_train, final_sequence_lengths_train = decode(
-                initial_state,
-                cell,
-                train_sampler,  # todo: tf2 to be removed #train_helper,
-                projection_layer=projection_layer,
-                inputs=encoder_outputs
-            )
-            eval_logits = final_outputs_train.rnn_output
-            train_logits = final_outputs_train.projection_input
-            # train_predictions = final_outputs_train.sample_id
-
-            pred_helper = tfa.seq2seq.sampler.GreedyEmbeddingSampler(
-                embedding=targets_embeddings,
-                start_tokens=start_tokens,
-                end_token=END_SYMBOL)
-            final_outputs_pred, final_state_pred, final_sequence_lengths_pred = decode(
-                initial_state,
-                cell,
-                pred_helper,
-                beam_width,
-                projection_layer=projection_layer)
-
-            if beam_width > 1:
-                predictions_sequence = final_outputs_pred.beam_search_decoder_output.predicted_ids[
-                                       :, :, 0]
-                # final_outputs_pred..predicted_ids[:,:,0] would work too, but it contains -1s for padding
-                predictions_sequence_scores = final_outputs_pred.beam_search_decoder_output.scores[
-                                              :, :, 0]
-                predictions_sequence_length_with_eos = final_sequence_lengths_pred[
-                                                       :, 0]
-            else:
-                predictions_sequence = final_outputs_pred.sample_id
-                predictions_sequence_scores = final_outputs_pred.rnn_output
-                predictions_sequence_length_with_eos = final_sequence_lengths_pred
+            predictions_sequence = final_outputs_pred.sample_id
+            predictions_sequence_scores = final_outputs_pred.rnn_output
+            predictions_sequence_length_with_eos = final_sequence_lengths_pred
 
     logger.debug('  train_logits: {0}'.format(train_logits))
     logger.debug('  eval_logits: {0}'.format(eval_logits))
