@@ -20,7 +20,6 @@ def export(
         raise ValueError('export_path is required')
 
     model, model_definition = load_model_and_definition(ludwig_model_path)
-    model.initialize_session()
 
     ludwig_weights = model.collect_weights(['utterance/fc_0/weights:0'])[
         'utterance/fc_0/weights:0']

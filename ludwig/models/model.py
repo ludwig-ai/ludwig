@@ -1432,7 +1432,7 @@ class Model:
         self.saver.restore(session, weights_path)
 
     @staticmethod
-    def load(load_path, use_horovod=False):
+    def load(load_path, gpus=None, gpu_fraction=1, use_horovod=False):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -1443,6 +1443,8 @@ class Model:
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
+        model.initialize_session(gpus, gpu_fraction)
+        model.restore(model.session, model.weights_save_path)
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
