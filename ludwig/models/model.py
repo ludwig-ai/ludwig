@@ -35,7 +35,6 @@ import numpy as np
 import tensorflow as tf
 from tabulate import tabulate
 from tensorflow.python import debug as tf_debug
-from tensorflow.python.saved_model import builder as saved_model_builder
 from tqdm import tqdm
 
 from ludwig.constants import *
@@ -1400,39 +1399,59 @@ class Model:
 
     def save_savedmodel(self, save_path):
 
-        input_tensors = {}
-        for input_feature in self.hyperparameters['input_features']:
-            input_tensors[input_feature['name']] = getattr(
-                self, input_feature['name']
+        if self.session is None:
+            logger.warning(
+                "The model has no initialized session."
+                "Initializing a news session and restoring the weights "
+                "of the model (if a weights path has been specified)."
+            )
+            self.initialize_session()
+            if self.weights_save_path:
+                self.restore(self.session, self.weights_save_path)
+
+        inputs = {}
+        outputs = {}
+
+        for feature in self.hyperparameters['input_features']:
+            inputs[feature['name']] = getattr(self, feature['name'])
+
+        for feature in self.hyperparameters['output_features']:
+            outputs[feature['name']] = getattr(
+                self, 'predictions_' + feature['name']
+            )
+            if hasattr(self, 'probabilities_' + feature['name']):
+                outputs[feature['name']] = getattr(
+                    self, 'probabilities_' + feature['name']
+                )
+            if hasattr(self, 'probability_' + feature['name']):
+                outputs[feature['name']] = getattr(
+                    self,
+                    'probabilities_' + feature['name']
+                )
+
+        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(save_path)
+
+        with self.session as session:
+            signature = tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
+                inputs=inputs,
+                outputs=outputs
             )
 
-        output_tensors = {}
-        for output_feature in self.hyperparameters['output_features']:
-            output_tensors[output_feature['name']] = getattr(
-                self,
-                output_feature['name']
-            )
+            builder.add_meta_graph_and_variables(
+                sess=session,
+                tags=[tf.saved_model.SERVING],
+                signature_def_map={
+                    tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                        signature
+                })
 
-        session = self.initialize_session()
-
-        builder = saved_model_builder.SavedModelBuilder(save_path)
-        builder.add_meta_graph_and_variables(
-            session,
-            [tf.saved_model.tag_constants.SERVING],
-            signature_def_map={
-                'predict': tf.saved_model.predict_signature_def(
-                    input_tensors, output_tensors)
-            },
-            strip_default_attrs=True,
-            saver=self.saver,
-        )
-        builder.save()
+            builder.save()
 
     def restore(self, session, weights_path):
         self.saver.restore(session, weights_path)
 
     @staticmethod
-    def load(load_path, use_horovod=False):
+    def load(load_path, gpus=None, gpu_fraction=1, use_horovod=False):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -1443,6 +1462,8 @@ class Model:
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
+        model.initialize_session(gpus, gpu_fraction)
+        model.restore(model.session, model.weights_save_path)
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
