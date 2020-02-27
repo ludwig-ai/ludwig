@@ -90,8 +90,6 @@ def test_savedmodel(csv_filename):
     savedmodel_path = os.path.join(dir_path, 'savedmodel')
     shutil.rmtree(savedmodel_path, ignore_errors=True)
 
-    ludwig_model.model.initialize_session()
-
     inputs = {}
     outputs = {}
 
@@ -101,6 +99,14 @@ def test_savedmodel(csv_filename):
     for feature in ludwig_model.model_definition['output_features']:
         outputs[feature['name']] = getattr(ludwig_model.model,
                                            'predictions_' + feature['name'])
+        if hasattr(ludwig_model.model, 'probabilities_' + feature['name']):
+            outputs[feature['name']] = getattr(ludwig_model.model,
+                                               'probabilities_' + feature[
+                                                   'name'])
+        if hasattr(ludwig_model.model, 'probability_' + feature['name']):
+            outputs[feature['name']] = getattr(ludwig_model.model,
+                                               'probabilities_' + feature[
+                                                   'name'])
 
     print('=== Inputs ===')
     print(inputs)
