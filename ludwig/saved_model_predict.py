@@ -27,15 +27,15 @@ def saved_model_predict(
     if data_csv == None:
         raise ValueError('data_csv is required')
 
-    print("Obtain Ludwig predictions")
-    ludwig_model = LudwigModel.load(ludwig_model_path)
-    ludwig_predictions_df = ludwig_model.predict(data_csv=data_csv)
-    ludwig_predictions_df.to_csv('ludwig_predictions.csv', index=False)
-    ludwig_weights = ludwig_model.model.collect_weights(
-        ['utterance/fc_0/weights:0']
-    )['utterance/fc_0/weights:0']
-    print(ludwig_weights[0])
-    ludwig_model.close()
+    # print("Obtain Ludwig predictions")
+    # ludwig_model = LudwigModel.load(ludwig_model_path)
+    # ludwig_predictions_df = ludwig_model.predict(data_csv=data_csv)
+    # ludwig_predictions_df.to_csv('ludwig_predictions.csv', index=False)
+    # ludwig_weights = ludwig_model.model.collect_weights(
+    #     ['utterance/fc_0/weights:0']
+    # )['utterance/fc_0/weights:0']
+    # print(ludwig_weights[0])
+    # ludwig_model.close()
 
     print("Obtain savedmodel predictions")
     train_set_metadata_json_fp = os.path.join(
@@ -74,6 +74,16 @@ def saved_model_predict(
 
         savedmodel_weights = sess.run('utterance/fc_0/weights:0')
         print(savedmodel_weights[0])
+
+    print("Obtain Ludwig predictions")
+    ludwig_model = LudwigModel.load(ludwig_model_path)
+    ludwig_predictions_df = ludwig_model.predict(data_csv=data_csv)
+    ludwig_predictions_df.to_csv('ludwig_predictions.csv', index=False)
+    ludwig_weights = ludwig_model.model.collect_weights(
+        ['utterance/fc_0/weights:0']
+    )['utterance/fc_0/weights:0']
+    print(ludwig_weights[0])
+    ludwig_model.close()
 
     import numpy as np
     print("Are the weights identical?",

@@ -170,7 +170,7 @@ def test_savedmodel(csv_filename):
         )
 
         savedmodel_prediction_df = pd.DataFrame(
-            data=[train_set_metadata[input_feature_name]["idx2str"][p] for p in
+            data=[train_set_metadata[output_feature_name]["idx2str"][p] for p in
                   predictions], columns=[predictions_column_name])
 
         savedmodel_weights = sess.run({n: n for n in all_variables_names})
