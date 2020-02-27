@@ -89,51 +89,11 @@ def test_savedmodel(csv_filename):
     #################
     savedmodel_path = os.path.join(dir_path, 'savedmodel')
     shutil.rmtree(savedmodel_path, ignore_errors=True)
+    ludwig_model.model.save_savedmodel(savedmodel_path)
 
-    inputs = {}
-    outputs = {}
-
-    for feature in ludwig_model.model_definition['input_features']:
-        inputs[feature['name']] = getattr(ludwig_model.model, feature['name'])
-
-    for feature in ludwig_model.model_definition['output_features']:
-        outputs[feature['name']] = getattr(ludwig_model.model,
-                                           'predictions_' + feature['name'])
-        if hasattr(ludwig_model.model, 'probabilities_' + feature['name']):
-            outputs[feature['name']] = getattr(
-                ludwig_model.model,
-                'probabilities_' + feature['name']
-            )
-        if hasattr(ludwig_model.model, 'probability_' + feature['name']):
-            outputs[feature['name']] = getattr(
-                ludwig_model.model,
-                'probabilities_' + feature['name']
-            )
-
-    print('=== Inputs ===')
-    print(inputs)
-    print('=== Outputs ===')
-    print(outputs)
-
-    builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(
-        savedmodel_path)
-
-    with ludwig_model.model.session as sess:
-        signature = tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
-            inputs=inputs,
-            outputs=outputs
-        )
-
-        builder.add_meta_graph_and_variables(
-            sess=sess,
-            tags=[tf.saved_model.SERVING],
-            signature_def_map={
-                tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                    signature
-            })
-
-        builder.save()
-
+    ##############################
+    # collect weight tensors names
+    ##############################
     with ludwig_model.model.session as sess:
         all_variables = tf.compat.v1.trainable_variables()
         all_variables_names = [v.name for v in all_variables]
@@ -206,7 +166,7 @@ def test_savedmodel(csv_filename):
         )
     )
     print(
-        "Are the predictions identical?",
+        "Are savedmodel predictions identical to loaded model?",
         np.all(
             ludwig_prediction_df[predictions_column_name] == \
             savedmodel_prediction_df[predictions_column_name]
