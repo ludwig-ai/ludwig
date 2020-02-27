@@ -100,13 +100,15 @@ def test_savedmodel(csv_filename):
         outputs[feature['name']] = getattr(ludwig_model.model,
                                            'predictions_' + feature['name'])
         if hasattr(ludwig_model.model, 'probabilities_' + feature['name']):
-            outputs[feature['name']] = getattr(ludwig_model.model,
-                                               'probabilities_' + feature[
-                                                   'name'])
+            outputs[feature['name']] = getattr(
+                ludwig_model.model,
+                'probabilities_' + feature['name']
+            )
         if hasattr(ludwig_model.model, 'probability_' + feature['name']):
-            outputs[feature['name']] = getattr(ludwig_model.model,
-                                               'probabilities_' + feature[
-                                                   'name'])
+            outputs[feature['name']] = getattr(
+                ludwig_model.model,
+                'probabilities_' + feature['name']
+            )
 
     print('=== Inputs ===')
     print(inputs)
