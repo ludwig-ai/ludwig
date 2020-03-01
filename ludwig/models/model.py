@@ -80,6 +80,7 @@ logger = logging.getLogger(__name__)
 loss_object = tf2.keras.losses.MeanSquaredError()
 optimizer = tf2.keras.optimizers.Adam(epsilon=1e-7)
 
+# todo: tf2 proof-of-concept code, need to be generalized
 train_loss = tf2.keras.metrics.Mean(name='train_loss')
 train_metric = tf2.keras.metrics.MeanSquaredError(name='train_metric')
 
@@ -87,6 +88,7 @@ test_loss = tf2.keras.metrics.Mean(name='test_loss')
 test_metric = tf2.keras.metrics.MeanSquaredError(name='test_metric')
 
 tf.config.experimental_run_functions_eagerly(True)
+# end of proof-of-concept
 
 class Model(ModelTf2):
     """
