@@ -90,6 +90,7 @@ test_metric = tf2.keras.metrics.MeanSquaredError(name='test_metric')
 tf.config.experimental_run_functions_eagerly(True)
 # end of proof-of-concept
 
+# todo: tf2 change ludwig.Model not be subclass of tensorflow.keras Model class?
 class Model(ModelTf2):
     """
     Model is a class that builds the model that Ludwig uses
