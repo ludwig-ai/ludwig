@@ -77,10 +77,10 @@ from ludwig.utils.tf_utils import get_tf_config
 
 logger = logging.getLogger(__name__)
 
+# todo: tf2 proof-of-concept code, need to be generalized
 loss_object = tf2.keras.losses.MeanSquaredError()
 optimizer = tf2.keras.optimizers.Adam(epsilon=1e-7)
 
-# todo: tf2 proof-of-concept code, need to be generalized
 train_loss = tf2.keras.metrics.Mean(name='train_loss')
 train_metric = tf2.keras.metrics.MeanSquaredError(name='train_metric')
 
