@@ -90,12 +90,35 @@ test_metric = tf2.keras.metrics.MeanSquaredError(name='test_metric')
 tf.config.experimental_run_functions_eagerly(True)
 # end of proof-of-concept
 
-# todo: tf2 change ludwig.Model not be subclass of tensorflow.keras Model class?
-class Model(ModelTf2):
+
+class KerasModel(ModelTf2):
+    def __init__(self):
+        super().__init__()
+        self.keras_layers = []
+        self.__build(keras_layers=self.keras_layers)
+
+
+    def call(self, inputs):
+        # todo: tf2 proof-of-concept code
+        this_list = [inputs] + self.keras_layers
+        return reduce(lambda x, y: y(x), this_list)
+
+
+    def __build(self, keras_layers=None):
+        # todo: tf2 proof-of-concept code
+        keras_layers.append(Dense(64, activation='relu'))
+        keras_layers.append(Dense(64, activation='relu'))
+        keras_layers.append(Dense(64, activation='relu'))
+        keras_layers.append(Dense(64, activation='relu'))
+        keras_layers.append(Dense(64, activation='relu'))
+        keras_layers.append(Dense(1, activation='linear'))
+        # end of proof-of-concept
+
+
+class Model:
     """
     Model is a class that builds the model that Ludwig uses
     """
-
     def __init__(
             self,
             input_features,
@@ -108,8 +131,6 @@ class Model(ModelTf2):
             debug=False,
             **kwargs
     ):
-        super().__init__()  # todo: tf2 port
-
         self.horovod = None
         if use_horovod:
             import horovod.tensorflow
@@ -125,7 +146,7 @@ class Model(ModelTf2):
         self.epochs = None
         self.received_sigint = False
 
-        self.keras_layers = []  # todo: tf2 proof-of-concept
+        self.keras_model = KerasModel()
 
         self.__build(
             input_features,
@@ -134,7 +155,6 @@ class Model(ModelTf2):
             training,
             preprocessing,
             random_seed,
-            keras_layers=self.keras_layers, # todo: tf2 proof-of-concept
             **kwargs
         )
 
@@ -149,15 +169,6 @@ class Model(ModelTf2):
             keras_layers=None,  # todo: tf2 proof-of-concept
             **kwargs
     ):
-        # todo: tf2 proof-of-concept code need to be replace
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(1, activation='linear'))
-        # end of proof-of-concept code
-
         self.hyperparameters['input_features'] = input_features
         self.hyperparameters['output_features'] = output_features
         self.hyperparameters['combiner'] = combiner
@@ -255,28 +266,31 @@ class Model(ModelTf2):
                 self.broadcast_op = self.horovod.broadcast_global_variables(0)
             self.saver = tf.train.Saver()
 
-    # added for tf2
-    def call(self, inputs):
-        # todo: tf2 proof-of-concept code
-        this_list = [inputs] + self.keras_layers
-        return reduce(lambda x, y: y(x), this_list)
-
     # todo: tf2 proof-of-concept code
     @tf2.function
-    def train_step(self, optimizer, loss_object, x, y):
+    def train_step(self, model, optimizer, loss_object, x, y):
         #  issue?: https://github.com/tensorflow/tensorflow/issues/28901
         y = y[:, tf2.newaxis]
         with tf2.GradientTape() as tape:
-            y_hat = self(x, training=True)
+            y_hat = model(x, training=True)
             # print("in training", y.shape, y_hat.shape)
             loss = loss_object(y, y_hat)
             # print("training lost:", loss.numpy())
-        gradients = tape.gradient(loss, self.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+        gradients = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
         train_loss(loss)
         train_metric(y, y_hat)
 
+    @tf2.function
+    def test_step(self, model, loss_object, x, y):
+        y = y[:, tf.newaxis]
+        y_hat = model(x, training=False)
+        # print("in testing", y.shape, y_hat.shape)
+        t_loss = loss_object(y, y_hat)
+
+        test_loss(t_loss)
+        test_metric(y, y_hat)
 
     def initialize_session(self, gpus=None, gpu_fraction=1):
         if self.session is None:
@@ -606,7 +620,7 @@ class Model(ModelTf2):
                 else:
                     target = batch[self.hyperparameters['output_features'][0]['name']]
 
-                self.train_step(optimizer, loss_object, predictors, target)
+                self.train_step(self.keras_model, optimizer, loss_object, predictors, target)
 
                 # todo: tf2 add back relevant code
                 # if self.horovod:
@@ -688,6 +702,11 @@ class Model(ModelTf2):
             #     eval_batch_size,
             #     bucketing_field
             # )
+            #
+            # template = 'Training: Loss: {}, : metric {}'
+            # print(template.format(progress_tracker.epoch,
+            #                       test_loss.result(),
+            #                       test_metric.result()))
             #
             # if is_on_master() and not skip_save_log:
             #     # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
@@ -961,15 +980,36 @@ class Model(ModelTf2):
 
         while not batcher.last_batch():
             batch = batcher.next_batch()
-            result = session.run(
-                output_nodes,
-                feed_dict=self.feed_dict(
-                    batch,
-                    regularization_lambda=regularization_lambda,
-                    dropout_rate=0.0,
-                    is_training=is_training
-                )
-            )
+
+            # todo: tf2 clean up  code
+            # result = session.run(
+            #     output_nodes,
+            #     feed_dict=self.feed_dict(
+            #         batch,
+            #         regularization_lambda=regularization_lambda,
+            #         dropout_rate=0.0,
+            #         is_training=is_training
+            #     )
+            # )
+
+            # todo: tf2 need to rationalize to reduce redundant code
+            # create array for predictors
+            # todo: tf2 need to handle case of single predictor, e.g., image
+            predictors = reduce(lambda x, y: np.vstack((x, y)),
+                                [batch[f['name']] for f in
+                                 self.hyperparameters['input_features']]).T
+
+            # create array for target
+            # is there more than one target
+            if len(self.hyperparameters['output_features']) > 1:
+                target = reduce(lambda x, y: np.vstack((x, y)),
+                                [batch[f['name']] for f in
+                                 self.hyperparameters['output_features']]).T
+            else:
+                target = batch[
+                    self.hyperparameters['output_features'][0]['name']]
+
+            result = self.test_step(loss_object, predictors, target)
 
             output_stats, seq_set_size = self.update_output_stats_batch(
                 output_stats,
