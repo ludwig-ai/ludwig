@@ -22,6 +22,8 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
+import tensorflow as tf2  # todo: tf2 clean up
+
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
@@ -346,36 +348,42 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
+            'calc_fn': tf2.keras.metrics.Mean(name='train_loss'),  # todo: tf2
             'type': MEASURE
         }),
         (MEAN_SQUARED_ERROR, {
             'output': SQUARED_ERROR,
             'aggregation': SUM,
             'value': 0,
+            'calc_fn': tf2.keras.metrics.MeanSquaredError(name='metric_mse'), # todo: tf2
             'type': MEASURE
         }),
         (MEAN_ABSOLUTE_ERROR, {
             'output': ABSOLUTE_ERROR,
             'aggregation': SUM,
             'value': 0,
+            'calc_fn': tf2.keras.metrics.MeanAbsoluteError(name='metric_mae'), # todo: tf2,
             'type': MEASURE
         }),
         (R2, {
             'output': R2,
             'aggregation': SUM,
             'value': 0,
+            'calc_fn': lambda y, y_hat: -1, # todo: tf2 need to find function
             'type': MEASURE
         }),
         (ERROR, {
             'output': ERROR,
             'aggregation': SUM,
             'value': 0,
+            'calc_fn': lambda y, y_hat: y - y_hat,  # todo: tf2
             'type': MEASURE
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,
             'aggregation': APPEND,
             'value': [],
+            'calc_fn': None, # todo: tf2 need to define function
             'type': PREDICTION
         })
     ])
