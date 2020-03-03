@@ -1,9 +1,9 @@
 ![Ludwig logo](https://github.com/uber/ludwig/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
-Ludwig is a toolbox built on top of TensorFlow that allows to train and test deep learning models without the need to write code.
+Ludwig is a toolbox built on top of TensorFlow that allows us to train and test deep learning models without the need to write code.
 
 All you need to provide is a CSV file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
-Simple commands can be used to train models both locally and in a distributed way, and to use them to predict on new data.
+Simple commands can be used to train models both locally and in a distributed way, and to use them to predict new data.
 
 A programmatic API is also available in order to use Ludwig from your python code.
 A suite of visualization tools allows you to analyze models' training and test performance and to compare them.
@@ -12,7 +12,7 @@ Ludwig is built with extensibility principles in mind and is based on data type 
 
 It can be used by practitioners to quickly train and test deep learning models as well as by researchers to obtain strong baselines to compare against and have an experimentation setting that ensures comparability by performing standard data preprocessing and visualization.
 
-Ludwig provides a set of model architectures that can be combined together to create an end-to-end model for a given use case. As an analogy, if deep learning libraries provide the building blocks to make your building, Ludwig provides the buildings to make your city, and you can chose among the available buildings or add your own building to the set of available ones.
+Ludwig provides a set of model architectures that can be combined together to create an end-to-end model for a given use case. As an analogy, if deep learning libraries provide the building blocks to make your building, Ludwig provides the buildings to make your city, and you can choose among the available buildings or add your own building to the set of available ones.
 
 The core design principles we baked into the toolbox are:
 - No coding required: no coding skills are required to train a model and use it for obtaining predictions.
@@ -79,7 +79,7 @@ Text features extra packages can be installed with `pip install ludwig[text]` an
 - spacy
 - bert-tensorflow
 
-If you intend to use text features and want to use [spaCy](http://spacy.io) based language tokenizers, install language specific models with:
+If you intend to use text features and want to use [spaCy](http://spacy.io) based language tokenizers, install language-specific models with:
 ```
 python -m spacy download <language_code>
 ```
@@ -122,10 +122,10 @@ It is based on datatype abstraction, so that the same data preprocessing and pos
 
 Training a model in Ludwig is pretty straightforward: you provide a CSV dataset and a model definition YAML file.
 
-The model definition contains a list of input features and output features, all you have to do is specify names of the columns in the CSV that are inputs to your model alongside with their datatypes, and names of columns in the CSV that will be outputs, the target variables which the model will learn to predict.
+The model definition contains a list of input features and output features, all you have to do is specify names of the columns in the CSV that are inputs to your model alongside with their data types, and names of columns in the CSV that will be outputs, the target variables which the model will learn to predict.
 Ludwig will compose a deep learning model accordingly and train it for you.
 
-Currently the available datatypes in Ludwig are:
+Currently, the available datatypes in Ludwig are:
 
 - binary
 - numerical
@@ -170,7 +170,7 @@ and start the training typing the following command in your console:
 ludwig train --data_csv path/to/file.csv --model_definition "{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}"
 ```
 
-where `path/to/file.csv` is the path to a UTF-8 encoded CSV file contaning the dataset in the previous table.
+where `path/to/file.csv` is the path to a UTF-8 encoded CSV file containing the dataset in the previous table.
 Ludwig will perform a random split of the data, preprocess it, build a WordCNN model (the default for text features) that decodes output classes through a softmax classifier, train the model on the training set until the accuracy on the validation set stops improving.
 Training progress will be displayed in the console, but TensorBoard can also be used.
 
@@ -199,7 +199,7 @@ Several visualizations are available, please refer to [Visualizations](https://u
 Distributed Training
 --------------------
 
-You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
+You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
 Refer to the [User Guide](https://uber.github.io/ludwig/user_guide/#distributed-training) for more details.
 
 
@@ -248,7 +248,7 @@ predictions = model.predict(test_dataframe)
 model.close()
 ```
 
-`model_definition` is a dictionary contaning the same information of the YAML file.
+`model_definition` is a dictionary containing the same information of the YAML file.
 More details are provided in the [User Guide](https://uber.github.io/ludwig/user_guide/) and in the [API documentation](https://uber.github.io/ludwig/api/).
 
 
@@ -256,9 +256,9 @@ Extensibility
 -------------
 
 Ludwig is built from the ground up with extensibility in mind.
-It is easy to add an additional datatype that is not currently supported by adding a datatype-specific implementation of abstract classes which contain functions to preprocess the data, encode it, and decode it.
+It is easy to add an additional data type that is not currently supported by adding a datatype-specific implementation of abstract classes that contain functions to preprocess the data, encode it, and decode it.
 
-Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
+Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending on the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
 Refer to the [Developer Guide](https://uber.github.io/ludwig/developer_guide/) for further details.
 
