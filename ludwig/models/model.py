@@ -81,10 +81,10 @@ logger = logging.getLogger(__name__)
 loss_object = tf2.keras.losses.MeanSquaredError()
 optimizer = tf2.keras.optimizers.Adam(epsilon=1e-7)
 
-train_loss = tf2.keras.metrics.Mean(name='train_loss')
+train_loss = tf2.keras.metrics.MeanSquaredError(name='train_loss')
 train_metric = tf2.keras.metrics.MeanSquaredError(name='train_metric')
 
-test_loss = tf2.keras.metrics.Mean(name='test_loss')
+test_loss = tf2.keras.metrics.MeanSquaredError(name='test_loss')
 test_metric = tf2.keras.metrics.MeanSquaredError(name='test_metric')
 
 tf.config.experimental_run_functions_eagerly(True)
@@ -279,7 +279,7 @@ class Model:
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        train_loss(loss)
+        train_loss(y, y_hat)
         train_metric(y, y_hat)
 
     @tf2.function
@@ -289,8 +289,12 @@ class Model:
         # print("in testing", y.shape, y_hat.shape)
         t_loss = loss_object(y, y_hat)
 
-        test_loss(t_loss)
+        test_loss(y, y_hat)
         test_metric(y, y_hat)
+
+    @tf2.function
+    def predict_step(self, model, x):
+        y_hat = model(x, training=False)
 
     def initialize_session(self, gpus=None, gpu_fraction=1):
         if self.session is None:
@@ -589,6 +593,12 @@ class Model:
             # needed because batch size may change
             batcher.batch_size = progress_tracker.batch_size
 
+            # Reset the metrics at the start of the next epoch
+            train_loss.reset_states()
+            train_metric.reset_states()
+            test_loss.reset_states()
+            test_metric.reset_states()
+
             # ================ Train ================
             if is_on_master():
                 progress_bar = tqdm(
@@ -850,8 +860,13 @@ class Model:
         #     progress_tracker.vali_stats,
         #     progress_tracker.test_stats
         # )
-
-        return (None, None, None)  # todo: tf2 debugging only
+        fake_stats = OrderedDict([('y', OrderedDict([('loss', [9489.847173455057]),
+                                                     ('mean_squared_error', [9489.847173455057]),
+                                                     ('mean_absolute_error', [76.44962405086903]),
+                                                     ('r2', [0.00020098610875311863]),
+                                                     ('error', [-0.8305106002293275])])),
+                                  ('combined', {'loss': [9489.847173455057], 'accuracy': [0.0]})])
+        return (fake_stats, fake_stats, fake_stats)  # todo: tf2 debugging only
 
 
     def train_online(
@@ -1045,7 +1060,16 @@ class Model:
             )[0]
             output_stats['combined'][LOSS] += regularization
 
-        return output_stats
+        # todo: tf2 debugging
+        fake_stats = OrderedDict(
+            [('y', OrderedDict([('loss', [9489.847173455057]),
+                                ('mean_squared_error', [9489.847173455057]),
+                                ('mean_absolute_error', [76.44962405086903]),
+                                ('r2', [0.00020098610875311863]),
+                                ('error', [-0.8305106002293275])])),
+             ('combined', {'loss': [9489.847173455057], 'accuracy': [0.0]})])
+        return fake_stats
+        # return output_stats
 
     def merge_workers_outputs(self, output_stats, seq_set_size):
         # gather outputs from all workers
