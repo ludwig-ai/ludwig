@@ -168,6 +168,10 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
+        # added for tf2
+        self.loss_function = None
+        self.measure_functions = None
+
     def _get_output_placeholder(self):
         return tf.placeholder(
             tf.float32,

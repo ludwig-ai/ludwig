@@ -39,7 +39,7 @@ from tensorflow.python import debug as tf_debug
 from tensorflow.python.saved_model import builder as saved_model_builder
 from tqdm import tqdm
 
-import tensorflow as tf2    # todo: tf2 port
+#import tensorflow as tf2    # todo: tf2 port
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Model as ModelTf2
 
@@ -78,14 +78,14 @@ from ludwig.utils.tf_utils import get_tf_config
 logger = logging.getLogger(__name__)
 
 # todo: tf2 proof-of-concept code, need to be generalized
-loss_object = tf2.keras.losses.MeanSquaredError()
-optimizer = tf2.keras.optimizers.Adam(epsilon=1e-7)
+loss_object = tf.keras.losses.MeanSquaredError()
+optimizer = tf.keras.optimizers.Adam(epsilon=1e-7)
 
-train_loss = tf2.keras.metrics.MeanSquaredError(name='train_loss')
-train_metric = tf2.keras.metrics.MeanSquaredError(name='train_metric')
+train_loss = tf.keras.metrics.MeanSquaredError(name='train_loss')
+train_metric = tf.keras.metrics.MeanSquaredError(name='train_metric')
 
-test_loss = tf2.keras.metrics.MeanSquaredError(name='test_loss')
-test_metric = tf2.keras.metrics.MeanSquaredError(name='test_metric')
+test_loss = tf.keras.metrics.MeanSquaredError(name='test_loss')
+test_metric = tf.keras.metrics.MeanSquaredError(name='test_metric')
 
 tf.config.experimental_run_functions_eagerly(True)
 # end of proof-of-concept
@@ -267,11 +267,11 @@ class Model:
             self.saver = tf.train.Saver()
 
     # todo: tf2 proof-of-concept code
-    @tf2.function
+    @tf.function
     def train_step(self, model, optimizer, loss_object, x, y):
         #  issue?: https://github.com/tensorflow/tensorflow/issues/28901
-        y = y[:, tf2.newaxis]
-        with tf2.GradientTape() as tape:
+        y = y[:, tf.newaxis]
+        with tf.GradientTape() as tape:
             y_hat = model(x, training=True)
             # print("in training", y.shape, y_hat.shape)
             loss = loss_object(y, y_hat)
@@ -282,7 +282,7 @@ class Model:
         train_loss(y, y_hat)
         train_metric(y, y_hat)
 
-    @tf2.function
+    @tf.function
     def test_step(self, model, loss_object, x, y):
         y = y[:, tf.newaxis]
         y_hat = model(x, training=False)
@@ -292,7 +292,7 @@ class Model:
         test_loss(y, y_hat)
         test_metric(y, y_hat)
 
-    @tf2.function
+    @tf.function
     def predict_step(self, model, x):
         y_hat = model(x, training=False)
 
@@ -358,7 +358,7 @@ class Model:
                         feature_name, prefix, metric
                     )
                     metric_val = output_feature[metric][-1]
-                    tf2.summary.scalar(metric_tag,
+                    tf.summary.scalar(metric_tag,
                                        metric_val,
                                        step=step)
 
@@ -521,7 +521,7 @@ class Model:
         if is_on_master():
             if not skip_save_log:
                 # todo tf2: completed fix
-                train_writer = tf2.summary.create_file_writer(
+                train_writer = tf.summary.create_file_writer(
                     os.path.join(save_path, 'log', 'train')
                 )
 
