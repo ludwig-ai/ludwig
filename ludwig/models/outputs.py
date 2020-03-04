@@ -27,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 def build_outputs(output_features, hidden, hidden_size, regularizer,
                   dropout_rate,
-                  is_training=True, **kwargs):
+                  is_training=True,
+                  model=None, **kwargs):
     output_features = topological_sort_feature_dependencies(output_features)
     output_tensors = OrderedDict()
     final_hidden = {}
@@ -42,6 +43,7 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
             dropout_rate,
             regularizer,
             is_training,
+            model=model,
             **kwargs
         )
         output_train_losses.append(of_train_mean_loss)
@@ -77,7 +79,8 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
 
 def build_single_output(output_feature, feature_hidden, feature_hidden_size,
                         final_hidden,
-                        dropout_rate, regularizer, is_training=True, **kwargs):
+                        dropout_rate, regularizer, is_training=True,
+                        model=None, **kwargs):
     logger.debug('- Output {} feature {}'.format(
         output_feature['type'],
         output_feature['name']
@@ -97,4 +100,6 @@ def build_single_output(output_feature, feature_hidden, feature_hidden_size,
             is_training=is_training,
             **kwargs
         )
+
+    model.add_output_feature(feature)
     return weighted_train_mean_loss, weighted_eval_loss, output_tensors

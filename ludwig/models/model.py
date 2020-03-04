@@ -74,13 +74,11 @@ from ludwig.utils.math_utils import learning_rate_warmup_distributed, \
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 from ludwig.utils.tf_utils import get_tf_config
+from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
 
 logger = logging.getLogger(__name__)
 
 # todo: tf2 proof-of-concept code, need to be generalized
-loss_object = tf.keras.losses.MeanSquaredError()
-optimizer = tf.keras.optimizers.Adam(epsilon=1e-7)
-
 train_loss = tf.keras.metrics.MeanSquaredError(name='train_loss')
 train_metric = tf.keras.metrics.MeanSquaredError(name='train_metric')
 
@@ -146,7 +144,12 @@ class Model:
         self.epochs = None
         self.received_sigint = False
 
+        # tf2 functionality
         self.keras_model = KerasModel()
+        self.input_features = None
+        self.output_features = None
+        self.optimizer_function = None
+
 
         self.__build(
             input_features,
@@ -232,7 +235,8 @@ class Model:
                 hidden_size,
                 regularizer=self.regularizer,
                 dropout_rate=self.dropout_rate,
-                is_training=self.is_training
+                is_training=self.is_training,
+                model=self
             )
 
             (
@@ -254,6 +258,11 @@ class Model:
                 self.horovod
             )
 
+            # todo tf2 work-in-progress to handle optimiser
+            self.optimizer_function = get_optimizer_fun_tf2(
+                self.hyperparameters['training']['optimizer']['type']
+            )
+
             tf.summary.scalar(
                 'combined/batch_train_reg_mean_loss',
                 self.train_reg_mean_loss
@@ -268,19 +277,19 @@ class Model:
 
     # todo: tf2 proof-of-concept code
     @tf.function
-    def train_step(self, model, optimizer, loss_object, x, y):
+    def train_step(self, model, optimizer, loss_object, inputs, targets):
         #  issue?: https://github.com/tensorflow/tensorflow/issues/28901
-        y = y[:, tf.newaxis]
+        targets = targets[:, tf.newaxis]
         with tf.GradientTape() as tape:
-            y_hat = model(x, training=True)
+            targets_hat = model(inputs, training=True)
             # print("in training", y.shape, y_hat.shape)
-            loss = loss_object(y, y_hat)
+            loss = loss_object(targets, targets_hat)
             # print("training lost:", loss.numpy())
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        train_loss(y, y_hat)
-        train_metric(y, y_hat)
+        train_loss(targets, targets_hat)
+        train_metric(targets, targets_hat)
 
     @tf.function
     def test_step(self, model, loss_object, x, y):
@@ -295,6 +304,12 @@ class Model:
     @tf.function
     def predict_step(self, model, x):
         y_hat = model(x, training=False)
+
+    def add_output_feature(self, feature):
+        if self.output_features is None:
+            self.output_features = {}
+
+        self.output_features.update({feature.name: feature})
 
     def initialize_session(self, gpus=None, gpu_fraction=1):
         if self.session is None:
@@ -617,7 +632,7 @@ class Model:
 
                 # create array for predictors
                 # todo: tf2 need to handle case of single predictor, e.g., image
-                predictors = reduce(lambda x, y: np.vstack((x, y)),
+                inputs = reduce(lambda x, y: np.vstack((x, y)),
                            [batch[f['name']] for f in
                                 self.hyperparameters['input_features']]).T
 
@@ -628,9 +643,16 @@ class Model:
                                [batch[f['name']] for f in
                                     self.hyperparameters['output_features']]).T
                 else:
+                    of_name = self.hyperparameters['output_features'][0]['name']
+                    loss_function = self.output_features[of_name].loss_function
                     target = batch[self.hyperparameters['output_features'][0]['name']]
 
-                self.train_step(self.keras_model, optimizer, loss_object, predictors, target)
+
+                self.train_step(self.keras_model,
+                                self.optimizer_function,
+                                loss_function,
+                                inputs,
+                                target)
 
                 # todo: tf2 add back relevant code
                 # if self.horovod:

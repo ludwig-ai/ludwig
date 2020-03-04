@@ -20,7 +20,7 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-from tensorflow.python.ops.losses.losses_impl import Reduction
+from tensorflow.keras.losses import Reduction
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -170,6 +170,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         # added for tf2
         self.loss_function = None
+        self.eval_function = None
         self.measure_functions = None
 
     def _get_output_placeholder(self):
@@ -227,6 +228,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         return predictions
 
+    # todo tf2 remove function
     def _get_loss(self, targets, predictions):
         with tf.variable_scope('loss_{}'.format(self.name)):
             if self.loss['type'] == 'mean_squared_error':
@@ -251,6 +253,31 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             train_mean_loss = tf.reduce_mean(
                 train_loss,
                 name='train_mean_loss_{}'.format(self.name)
+            )
+
+        return train_mean_loss, train_loss
+
+    # todo tf2 revert to original name upon completion
+    def _get_loss_tf2(self):
+        if self.loss['type'] == 'mean_squared_error':
+            train_loss = tf.keras.losses.MeanSquaredError(
+                reduction=Reduction.NONE
+            )
+            train_mean_loss = tf.keras.losses.MeanSquaredError(
+                reduction=Reduction.SUM
+            )
+        elif self.loss['type'] == 'mean_absolute_error':
+            train_loss = tf.keras.losses.MeanAbsoluteError(
+                reduction=Reduction.NONE
+            )
+            train_mean_loss = tf.keras.losses.MeanAbsoluteError(
+                reduction=Reduction.SUM
+            )
+        else:
+            train_mean_loss = None
+            train_loss = None
+            raise ValueError(
+                'Unsupported loss type {}'.format(self.loss['type'])
             )
 
         return train_mean_loss, train_loss
@@ -330,7 +357,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             )
 
         # ================ Loss ================
-        train_mean_loss, eval_loss = self._get_loss(targets, predictions)
+        train_mean_loss, eval_loss = self._get_loss(targets, predictions)  # todo tf2 remove
+        self.loss_function, self.eval_function = self._get_loss_tf2()
 
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[

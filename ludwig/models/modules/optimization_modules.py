@@ -15,7 +15,7 @@
 # ==============================================================================
 import tensorflow.compat.v1 as tf
 
-
+# todo tf2 need a tf2 version of this function
 def optimize(
         loss,
         training_parameters,
@@ -102,3 +102,36 @@ def get_optimizer_fun(optimizer_type):
         return tf.train.RMSPropOptimizer
     else:
         raise ValueError('Invalid optimizer_type: ' + optimizer_type)
+
+
+def get_optimizer_fun_tf2(optimizer_type):
+    optimizer_type = optimizer_type.lower()
+    if (
+            optimizer_type == 'sgd' or
+            optimizer_type == 'stochastic_gradient_descent' or
+            optimizer_type == 'gd' or
+            optimizer_type == 'gradient_descent'
+    ):
+        return tf.keras.optimizers.SGD()
+    elif optimizer_type == 'adam':
+        return tf.keras.optimizers.Adam()
+    elif optimizer_type == 'adadelta':
+        return tf.keras.optimizers.Adadelta()
+    elif optimizer_type == 'adagrad':
+        return tf.keras.optimizers.Adagrad()
+    elif optimizer_type == 'adagradda':
+        return None # tf.train.AdagradDAOptimizer  todo appears tf.keras.optimizers does not support
+    elif optimizer_type == 'momentum':
+        return None # tf.train.MomentumOptimizer  todo appears tf.keras.optimizers does not support
+    elif optimizer_type == 'ftrl':
+        return tf.keras.optimizers.Ftrl()
+    elif optimizer_type == 'proximalgd':
+        return None #tf.train.ProximalGradientDescentOptimizer todo appears tf.keras.optimizers does not support
+    elif optimizer_type == 'proximaladagrad':
+        return None #tf.train.ProximalAdagradOptimizer todo appears tf.keras.optimizers does not support
+    elif optimizer_type == 'rmsprop':
+        return tf.keras.optimizers.RMSprop()
+    else:
+        raise ValueError('Invalid optimizer_type: ' + optimizer_type)
+
+
