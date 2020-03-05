@@ -485,7 +485,8 @@ def train(
         if is_on_master():
             print_boxed('LOADING MODEL')
             logger.info('Loading model: {}\n'.format(model_load_path))
-        model, _ = load_model_and_definition(model_load_path)
+        model, _ = load_model_and_definition(model_load_path,
+                                             use_horovod=use_horovod)
     else:
         # Build model
         if is_on_master():
@@ -516,7 +517,8 @@ def train(
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
-        gpus=gpus, gpu_fraction=gpu_fraction,
+        gpus=gpus,
+        gpu_fraction=gpu_fraction,
         random_seed=random_seed,
         **model_definition[TRAINING]
     )
