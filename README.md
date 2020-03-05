@@ -1,6 +1,6 @@
 ![Ludwig logo](https://github.com/uber/ludwig/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
-Ludwig is a toolbox built on top of TensorFlow that allows us to train and test deep learning models without the need to write code.
+Ludwig is a toolbox built on top of TensorFlow that allows users to train and test deep learning models without the need to write code.
 
 All you need to provide is a CSV file containing your data, a list of columns to use as inputs, and a list of columns to use as outputs, Ludwig will do the rest.
 Simple commands can be used to train models both locally and in a distributed way, and to use them to predict new data.
