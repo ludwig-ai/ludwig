@@ -34,6 +34,16 @@ from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.models.modules.measure_modules import r2 as get_r2
 from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
+
+from ludwig.models.modules.loss_modules import \
+    absolute_loss as get_absolute_loss
+from ludwig.models.modules.loss_modules import \
+    squared_loss as get_squared_loss
+from ludwig.models.modules.loss_modules import \
+    mean_squared_error as get_mean_squared_error
+from ludwig.models.modules.loss_modules import \
+    mean_absolute_error as get_mean_absolute_error
+
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.misc import set_default_values
 
@@ -260,19 +270,11 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     # todo tf2 revert to original name upon completion
     def _get_loss_tf2(self):
         if self.loss['type'] == 'mean_squared_error':
-            train_loss = tf.keras.losses.MeanSquaredError(
-                reduction=Reduction.NONE
-            )
-            train_mean_loss = tf.keras.losses.MeanSquaredError(
-                reduction=Reduction.SUM
-            )
+            train_loss = get_squared_loss
+            train_mean_loss = get_mean_squared_error
         elif self.loss['type'] == 'mean_absolute_error':
-            train_loss = tf.keras.losses.MeanAbsoluteError(
-                reduction=Reduction.NONE
-            )
-            train_mean_loss = tf.keras.losses.MeanAbsoluteError(
-                reduction=Reduction.SUM
-            )
+            train_loss = get_absolute_loss
+            train_mean_loss = get_mean_absolute_error
         else:
             train_mean_loss = None
             train_loss = None

@@ -320,6 +320,18 @@ def loss_multilabel(logits, vector_labels, loss):
     return train_loss
 
 
+def absolute_loss(y, y_hat):
+    return tf.abs(tf.subtract(y, y_hat))
+
+def squared_loss(y, y_hat):
+    return tf.square(tf.subtract(y, y_hat))
+
+def mean_absolute_error(y, y_hat, weight=1.0):
+    return tf.reduce_mean(tf.multiply(absolute_loss(y, y_hat), weight))
+
+def mean_squared_error(y, y_hat, weight=1.0):
+        return tf.reduce_mean(tf.multiply(squared_loss(y, y_hat), weight))
+
 # todo tf2: fix this!
 # regularizer_registry = {'l1': tf2.keras.regularizers.l1,
 #                         'l2': tf2.keras.regularizers.l2,
