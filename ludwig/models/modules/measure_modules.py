@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+import numpy as np
+
 import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
@@ -27,12 +30,49 @@ min_measures = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
                 PERPLEXITY}
 
 
+#
+# Custom classes to support Tensorflow 2
+#
+class R2Score(tf.keras.metrics.Metric):
+    # custom tf.keras.metrics class to compute r2 score from batches
+    # See for additional info:
+    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
+
+    def __init__(self, name='r2_score'):
+        super(R2Score, self).__init__(name=name)
+        self._reset_states()
+
+    def _reset_states(self):
+        self.sum_y = 0.0
+        self.sum_y_squared = 0.0
+        self.sum_y_hat = 0.0
+        self.sum_y_hat_squared = 0.0
+        self.sum_y_y_hat = 0.0
+        self.N = 0
+
+
+    def update_state(self, y, y_hat):
+        self.sum_y += np.sum(y)
+        self.sum_y_squared += np.sum(y**2)
+        self.sum_y_hat += np.sum(y_hat)
+        self.sum_y_hat_squared += np.sum(y_hat**2)
+        self.sum_y_y_hat += np.sum(y * y_hat)
+        self.N += y.shape[0]
+
+    def result(self):
+        y_bar = self.sum_y / self.N
+        tot_ss = self.sum_y_squared - 2 * y_bar * self.sum_y \
+                 + self.N * y_bar ** 2
+        res_ss = self.sum_y_squared - 2 * self.sum_y_y_hat \
+                 + self.sum_y_hat_squared
+        return 1.0 - res_ss / tot_ss
+
+
 def get_improved_fun(measure):
     if measure in min_measures:
         return lambda x, y: x < y
     else:
         return lambda x, y: x > y
-
 
 def get_initial_validation_value(measure):
     if measure in min_measures:

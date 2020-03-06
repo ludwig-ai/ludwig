@@ -34,6 +34,7 @@ from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.models.modules.measure_modules import r2 as get_r2
 from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
+from ludwig.models.modules.measure_modules import R2Score
 
 from ludwig.models.modules.loss_modules import \
     absolute_loss as get_absolute_loss
@@ -315,12 +316,14 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         of.measure_functions.update({'error':  None})  #todo tf2 need to add
         of.measure_functions.update(
-            {'mse': tf.keras.metrics.MeanSquaredError(name='train_mse')}
+            {'mse': tf.keras.metrics.MeanSquaredError(name='metric_mse')}
         )
         of.measure_functions.update(
-            {'mae': tf.keras.metrics.MeanAbsoluteError(name='train_mae')}
+            {'mae': tf.keras.metrics.MeanAbsoluteError(name='metric_mae')}
         )
-        of.measure_functions.update({'r2':  None}) #todo tf2 Need to add
+        of.measure_functions.update(
+            {'r2':  R2Score(name='metric_r2')}
+        )
 
     def reset_measures(self):
         for of_name, measure_fn in self.measure_functions.items():
