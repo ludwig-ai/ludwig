@@ -79,9 +79,9 @@ from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
 logger = logging.getLogger(__name__)
 
 # todo: tf2 proof-of-concept code, need to be generalized
-train_loss = tf.keras.metrics.MeanSquaredError(name='train_loss')
-train_metric_mse = tf.keras.metrics.MeanSquaredError(name='train_mse')
-train_metric_mae = tf.keras.metrics.MeanAbsoluteError(name='train_mae')
+# train_loss = tf.keras.metrics.MeanSquaredError(name='train_loss')
+# train_metric_mse = tf.keras.metrics.MeanSquaredError(name='train_mse')
+# train_metric_mae = tf.keras.metrics.MeanAbsoluteError(name='train_mae')
 
 test_loss = tf.keras.metrics.MeanSquaredError(name='test_loss')
 test_metric = tf.keras.metrics.MeanSquaredError(name='test_metric')
@@ -296,9 +296,10 @@ class Model:
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        train_loss.update_state(targets, targets_hat)
-        train_metric_mse.update_state(targets, targets_hat)
-        train_metric_mae.update_state(targets, targets_hat)
+        # todo tf2 clean up testing code
+        # train_loss.update_state(targets, targets_hat)
+        # train_metric_mse.update_state(targets, targets_hat)
+        # train_metric_mae.update_state(targets, targets_hat)
 
         for measure_name, measure_fn in output_feature.measure_functions.items():
             # todo tf2 try-except for debugging purposes
@@ -627,9 +628,9 @@ class Model:
                 of.reset_measures()
 
             # todo tf2: debugging code
-            train_loss.reset_states()
-            train_metric_mse.reset_states()
-            train_metric_mae.reset_states()
+            # train_loss.reset_states()
+            # train_metric_mse.reset_states()
+            # train_metric_mae.reset_states()
 
             # ================ Train ================
             if is_on_master():
@@ -725,11 +726,12 @@ class Model:
             progress_tracker.epoch += 1
             batcher.reset()  # todo this may be useless, doublecheck
 
-            template = '>>>Epoch {}, train Loss: {}, : train metric mse {}, train metric mae {}'
-            print(template.format(progress_tracker.epoch,
-                                  train_loss.result(),
-                                  train_metric_mse.result(),
-                                  train_metric_mae.result()))
+            # todo tf2 clean up commented code
+            # template = '>>>Epoch {}, train Loss: {}, : train metric mse {}, train metric mae {}'
+            # print(template.format(progress_tracker.epoch,
+            #                       train_loss.result(),
+            #                       train_metric_mse.result(),
+            #                       train_metric_mae.result()))
 
             template = f'Epoch {progress_tracker.epoch:d}:'
             for measure, measure_fn in output_feature.measure_functions.items():
