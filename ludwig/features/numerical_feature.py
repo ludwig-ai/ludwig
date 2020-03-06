@@ -314,21 +314,18 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         # todo tf2 change to object method when Graph is eliminated.
 
         of.measure_functions.update({'error':  None})  #todo tf2 need to add
-
-        of.measure_functions.update(
-            {'mae': tf.keras.metrics.MeanAbsoluteError(name='train_mae')}
-        )
-
         of.measure_functions.update(
             {'mse': tf.keras.metrics.MeanSquaredError(name='train_mse')}
         )
-
+        of.measure_functions.update(
+            {'mae': tf.keras.metrics.MeanAbsoluteError(name='train_mae')}
+        )
         of.measure_functions.update({'r2':  None}) #todo tf2 Need to add
 
     def reset_measures(self):
-        for _, measure_fn in self.measure_functions.items():
+        for of_name, measure_fn in self.measure_functions.items():
             if measure_fn is not None:
-                measure_fn.reset_state()
+                measure_fn.reset_states()
 
     def build_output(
             self,

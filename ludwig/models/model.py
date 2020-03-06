@@ -300,11 +300,10 @@ class Model:
         train_metric_mse.update_state(targets, targets_hat)
         train_metric_mae.update_state(targets, targets_hat)
 
-        for _, measure_fn in output_feature.measure_functions.items():
-            try:
+        for measure_name, measure_fn in output_feature.measure_functions.items():
+            # todo tf2 try-except for debugging purposes
+            if measure_fn is not None:
                 measure_fn.update_state(targets, targets_hat)
-            except:
-                pass
 
     @tf.function
     def test_step(self, model, loss_object, x, y):
@@ -625,10 +624,12 @@ class Model:
 
             # Reset the metrics at the start of the next epoch
             for of_name, of in self.output_features.items():
-                try:
-                    of.reset_measures()
-                except:
-                    pass
+                of.reset_measures()
+
+            # todo tf2: debugging code
+            train_loss.reset_states()
+            train_metric_mse.reset_states()
+            train_metric_mae.reset_states()
 
             # ================ Train ================
             if is_on_master():
@@ -724,7 +725,7 @@ class Model:
             progress_tracker.epoch += 1
             batcher.reset()  # todo this may be useless, doublecheck
 
-            template = 'Epoch {}, train Loss: {}, : train metric mse {}, train metric mae {}'
+            template = '>>>Epoch {}, train Loss: {}, : train metric mse {}, train metric mae {}'
             print(template.format(progress_tracker.epoch,
                                   train_loss.result(),
                                   train_metric_mse.result(),
