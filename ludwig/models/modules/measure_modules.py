@@ -38,6 +38,8 @@ class R2Score(tf.keras.metrics.Metric):
     # See for additional info:
     #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
 
+    # todo tf2 - convert to tensors?
+
     def __init__(self, name='r2_score'):
         super(R2Score, self).__init__(name=name)
         self._reset_states()
@@ -49,6 +51,9 @@ class R2Score(tf.keras.metrics.Metric):
         self.sum_y_hat_squared = 0.0
         self.sum_y_y_hat = 0.0
         self.N = 0
+
+    def reset_states(self):
+        self._reset_states()
 
     def update_state(self, y, y_hat):
         self.sum_y += np.sum(y)
