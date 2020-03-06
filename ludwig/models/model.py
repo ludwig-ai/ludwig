@@ -79,8 +79,8 @@ from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
 logger = logging.getLogger(__name__)
 
 # todo: tf2 proof-of-concept code, need to be generalized
-test_loss = tf.keras.metrics.MeanSquaredError(name='test_loss')
-test_metric = tf.keras.metrics.MeanSquaredError(name='test_metric')
+# test_loss = tf.keras.metrics.MeanSquaredError(name='test_loss')
+# test_metric = tf.keras.metrics.MeanSquaredError(name='test_metric')
 
 tf.config.experimental_run_functions_eagerly(True)
 # end of proof-of-concept
@@ -297,14 +297,16 @@ class Model:
                 measure_fn.update_state(targets, targets_hat)
 
     @tf.function
-    def test_step(self, model, loss_object, x, y):
-        y = y[:, tf.newaxis]
-        y_hat = model(x, training=False)
+    def evaluation_step(self, model, output_feature, inputs, targets):
+        targets = targets[:, tf.newaxis]
+        targets_hat = model(inputs, training=False)
+        # todo tf2 clean up commented out code
         # print("in testing", y.shape, y_hat.shape)
-        t_loss = loss_object(y, y_hat)
+        #t_loss = loss_object(y, y_hat)
 
-        test_loss(y, y_hat)
-        test_metric(y, y_hat)
+        for measure_name, measure_fn in output_feature.measure_functions.items():
+            if measure_fn is not None:  # todo tf2 test only needed during development
+                measure_fn.update_state(targets, targets_hat)
 
     @tf.function
     def predict_step(self, model, x):
@@ -1052,7 +1054,7 @@ class Model:
                 target = batch[
                     self.hyperparameters['output_features'][0]['name']]
 
-            result = self.test_step(loss_object, predictors, target)
+            result = self.evaluation_step(loss_object, predictors, target)
 
             output_stats, seq_set_size = self.update_output_stats_batch(
                 output_stats,
