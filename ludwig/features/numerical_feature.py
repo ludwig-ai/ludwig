@@ -181,7 +181,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         # added for tf2
         self.loss_function = None
         self.eval_function = None
-        self.measure_functions = None
+        self.measure_functions = {}
 
     def _get_output_placeholder(self):
         return tf.placeholder(
@@ -268,13 +268,13 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         return train_mean_loss, train_loss
 
     # todo tf2 revert to original name upon completion
-    def _get_loss_tf2(self):
+    def _setup_loss_tf2(self):
         if self.loss['type'] == 'mean_squared_error':
-            train_loss = get_squared_loss
-            train_mean_loss = get_mean_squared_error
+            self.loss_function = get_mean_squared_error
+            self.eval_function = get_squared_loss
         elif self.loss['type'] == 'mean_absolute_error':
-            train_loss = get_absolute_loss
-            train_mean_loss = get_mean_absolute_error
+            self.loss_function = get_mean_absolute_error
+            self.eval_function = get_absolute_loss
         else:
             train_mean_loss = None
             train_loss = None
@@ -282,8 +282,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                 'Unsupported loss type {}'.format(self.loss['type'])
             )
 
-        return train_mean_loss, train_loss
-
+    # todo: remove function after tf2 port
     def _get_measures(self, targets, predictions):
 
         with tf.variable_scope('measures_{}'.format(self.name)):
@@ -308,6 +307,28 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             r2_val = get_r2(targets, predictions, self.name)
 
         return error_val, squared_error_val, absolute_error_val, r2_val
+
+    # todo: revert to original name after tf2 port
+    @staticmethod
+    def _setup_measures_tf2(of):
+        # todo tf2 change to object method when Graph is eliminated.
+
+        of.measure_functions.update({'error':  None})  #todo tf2 need to add
+
+        of.measure_functions.update(
+            {'mae': tf.keras.metrics.MeanAbsoluteError(name='train_mae')}
+        )
+
+        of.measure_functions.update(
+            {'mse': tf.keras.metrics.MeanSquaredError(name='train_mse')}
+        )
+
+        of.measure_functions.update({'r2':  None}) #todo tf2 Need to add
+
+    def reset_measures(self):
+        for _, measure_fn in self.measure_functions.items():
+            if measure_fn is not None:
+                measure_fn.reset_state()
 
     def build_output(
             self,
@@ -334,6 +355,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         output_tensors[PREDICTIONS + '_' + self.name] = predictions
 
         # ================ Measures ================
+        #todo tf2 remove code after tf2 port
         error, squared_error, absolute_error, r2 = self._get_measures(
             targets,
             predictions
@@ -343,6 +365,11 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         output_tensors[SQUARED_ERROR + '_' + self.name] = squared_error
         output_tensors[ABSOLUTE_ERROR + '_' + self.name] = absolute_error
         output_tensors[R2 + '_' + self.name] = r2
+        # end of code to remove
+
+        # todo tf2 revert to original names after tf2 port
+        #self._setup_measures_tf2()
+
 
         if 'sampled' not in self.loss['type']:
             tf.summary.scalar(
@@ -360,7 +387,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         # ================ Loss ================
         train_mean_loss, eval_loss = self._get_loss(targets, predictions)  # todo tf2 remove
-        self.loss_function, self.eval_function = self._get_loss_tf2()
+        self._setup_loss_tf2()
 
         output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
         output_tensors[

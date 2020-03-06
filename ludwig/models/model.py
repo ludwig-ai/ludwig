@@ -80,7 +80,8 @@ logger = logging.getLogger(__name__)
 
 # todo: tf2 proof-of-concept code, need to be generalized
 train_loss = tf.keras.metrics.MeanSquaredError(name='train_loss')
-train_metric = tf.keras.metrics.MeanSquaredError(name='train_metric')
+train_metric_mse = tf.keras.metrics.MeanSquaredError(name='train_mse')
+train_metric_mae = tf.keras.metrics.MeanAbsoluteError(name='train_mae')
 
 test_loss = tf.keras.metrics.MeanSquaredError(name='test_loss')
 test_metric = tf.keras.metrics.MeanSquaredError(name='test_metric')
@@ -275,21 +276,35 @@ class Model:
                 self.broadcast_op = self.horovod.broadcast_global_variables(0)
             self.saver = tf.train.Saver()
 
+        # todo tf2 doing this out of context of Graph to avoid this error
+        # this is work-around until we can get rid of graph
+        # tensorflow.python.eager.core._FallbackException: This function does not handle the case of the path where all inputs are not already EagerTensors.
+        for of_name, of in self.output_features.items():
+            of._setup_measures_tf2(of)
+
+
     # todo: tf2 proof-of-concept code
     @tf.function
-    def train_step(self, model, optimizer, loss_object, inputs, targets):
+    def train_step(self, model, optimizer, output_feature, inputs, targets):
         #  issue?: https://github.com/tensorflow/tensorflow/issues/28901
         targets = targets[:, tf.newaxis]
         with tf.GradientTape() as tape:
             targets_hat = model(inputs, training=True)
             # print("in training", y.shape, y_hat.shape)
-            loss = loss_object(targets, targets_hat)
+            loss = output_feature.loss_function(targets, targets_hat)
             # print("training lost:", loss.numpy())
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        train_loss(targets, targets_hat)
-        train_metric(targets, targets_hat)
+        train_loss.update_state(targets, targets_hat)
+        train_metric_mse.update_state(targets, targets_hat)
+        train_metric_mae.update_state(targets, targets_hat)
+
+        for _, measure_fn in output_feature.measure_functions.items():
+            try:
+                measure_fn.update_state(targets, targets_hat)
+            except:
+                pass
 
     @tf.function
     def test_step(self, model, loss_object, x, y):
@@ -609,10 +624,11 @@ class Model:
             batcher.batch_size = progress_tracker.batch_size
 
             # Reset the metrics at the start of the next epoch
-            train_loss.reset_states()
-            train_metric.reset_states()
-            test_loss.reset_states()
-            test_metric.reset_states()
+            for of_name, of in self.output_features.items():
+                try:
+                    of.reset_measures()
+                except:
+                    pass
 
             # ================ Train ================
             if is_on_master():
@@ -644,13 +660,13 @@ class Model:
                                     self.hyperparameters['output_features']]).T
                 else:
                     of_name = self.hyperparameters['output_features'][0]['name']
-                    loss_function = self.output_features[of_name].loss_function
+                    output_feature = self.output_features[of_name]
                     target = batch[self.hyperparameters['output_features'][0]['name']]
 
 
                 self.train_step(self.keras_model,
                                 self.optimizer_function,
-                                loss_function,
+                                output_feature,
                                 inputs,
                                 target)
 
@@ -708,10 +724,19 @@ class Model:
             progress_tracker.epoch += 1
             batcher.reset()  # todo this may be useless, doublecheck
 
-            template = 'Epoch {}, train Loss: {}, : train metric {}'
+            template = 'Epoch {}, train Loss: {}, : train metric mse {}, train metric mae {}'
             print(template.format(progress_tracker.epoch,
                                   train_loss.result(),
-                                  train_metric.result()))
+                                  train_metric_mse.result(),
+                                  train_metric_mae.result()))
+
+            template = f'Epoch {progress_tracker.epoch:d}:'
+            for measure, measure_fn in output_feature.measure_functions.items():
+                if measure_fn is not None:
+                    template += f' {measure}: {measure_fn.result()}'
+
+            print(template)
+
 
             # ================ Eval ================
             # init tables
