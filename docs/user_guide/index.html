@@ -38,15 +38,14 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.4.3" name="generator">
     
     
       
         <title>User Guide - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
+
+
+      <link href="../assets/stylesheets/application.30686662.css" rel="stylesheet">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -54,15 +53,15 @@
         
         
         <meta name="theme-color" content="#757575">
-      
-    
-    
-      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
+
+
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback"
+            rel="stylesheet">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -441,31 +440,44 @@
   </a>
   
 </li>
-        
+
           <li class="md-nav__item">
-  <a href="#output-features" class="md-nav__link">
-    Output Features
-  </a>
-  
-</li>
-        
+              <a href="#output-features" class="md-nav__link">
+                  Output Features
+              </a>
+
+              <nav class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a class="md-nav__link" href="#multi-task-learning">
+                              Multi-task Learning
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
+                          <a href="#output-features-dependencies" class="md-nav__link">
+                              Output Features Dependencies
+                          </a>
+
+                      </li>
+
+                  </ul>
+              </nav>
+
+          </li>
+
           <li class="md-nav__item">
-  <a href="#output-features-dependencies" class="md-nav__link">
-    Output Features Dependencies
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#training" class="md-nav__link">
-    Training
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#optimizers-details" class="md-nav__link">
+              <a href="#training" class="md-nav__link">
+                  Training
+              </a>
+
+              <nav class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#optimizers-details" class="md-nav__link">
     Optimizers details
   </a>
   
@@ -1820,20 +1832,33 @@
   </a>
   
 </li>
-        
+
           <li class="md-nav__item">
-  <a href="#output-features" class="md-nav__link">
-    Output Features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#output-features-dependencies" class="md-nav__link">
-    Output Features Dependencies
-  </a>
-  
-</li>
+              <a href="#output-features" class="md-nav__link">
+                  Output Features
+              </a>
+
+              <nav class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a class="md-nav__link" href="#multi-task-learning">
+                              Multi-task Learning
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
+                          <a href="#output-features-dependencies" class="md-nav__link">
+                              Output Features Dependencies
+                          </a>
+
+                      </li>
+
+                  </ul>
+              </nav>
+
+          </li>
         
           <li class="md-nav__item">
   <a href="#training" class="md-nav__link">
@@ -3065,11 +3090,18 @@ optional arguments:
                         saves logs for the TensorBoard, but if it is not
                         needed turning it off can slightly increase the
                         overall speed.
+  -skfsi, --skip_save_k_fold_split_indices
+                        disables saving indices generated to split training 
+                        data set for the k-fold cross validation run, but if it 
+                        is not needed turning it off can slightly increase the 
+                        overall speed
   -rs RANDOM_SEED, --random_seed RANDOM_SEED
                         a random seed that is going to be used anywhere there
                         is a call to a random number generator: data
                         splitting, parameter initialization and training set
                         shuffling
+  -kf K_FOLD, --k_fold K_FOLD
+                        number of folds for a k-fold cross validation run
   -g GPUS [GPUS ...], --gpus GPUS [GPUS ...]
                         list of gpus to use
   -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
@@ -3109,11 +3141,27 @@ That directory will contain a directory named <code>[experiment_name]_[model_nam
 If the same combination of experiment and model name is used again, the integer at the end of the name wil be increased.
 If neither of them is specified the directory will be named <code>run_0</code>.
 The directory will contain</p>
-<ul>
-<li><code>description.json</code> - a file containing a description of the training process with all the information to reproduce it.</li>
-<li><code>training_statistics.json</code> which contains records of all measures and losses for each epoch.</li>
-<li><code>model</code> - a directory containing model hyperparameters, weights, checkpoints and logs (for TensorBoard).</li>
-</ul>
+                <ul>
+                    <li><code>description.json</code> - a file containing a description of the training process with all
+                        the information to reproduce it.
+                    </li>
+                    <li><code>training_statistics.json</code> which contains records of all measures and losses for each
+                        epoch.
+                    </li>
+                    <li><code>model</code> - a directory containing model hyperparameters, weights, checkpoints and logs
+                        (for TensorBoard).
+                    </li>
+                    <li><code>kfold_training_statistics.json</code> - an optional file that is created when the <code>--k_fold</code>
+                        parameter is specified. This file contains metrics from k-fold cross validation run. In addition
+                        to the metrics for each fold, there is an <code>overall</code> key that shows mean and standard
+                        deviation for metrics across all folds.
+                    </li>
+                    <li><code>kfold_split_indicies.json</code> - this file is present if <code>--k_fold</code> parameter
+                        is specified and <code>--skip_save_k_fold_split_indices</code> is not specified. This file
+                        contains for each fold the row index values for the training data that creates the training and
+                        hold-out test folds. These indices can be used to reproduce the fold splits.
+                    </li>
+                </ul>
 <p>The model definition can be provided either as a string (<code>--model_definition</code>) or as YAML file (<code>--model_definition_file</code>).
 Details on how to write your model definition are provided in the <a href="#model-definition">Model Definition</a> section.</p>
 <p>During training Ludwig saves two sets of weights for the model, one that is the weights at the end of the epoch where the best performance on the validation measure was achieved and one that is the weights at the end of the latest epoch.
@@ -3123,6 +3171,7 @@ You can avoid saving the latest weights and the overall progress so far by using
 Another available option is to load a previously trained model as an initialization for a new training process.
 In this case Ludwig will start a new training process, without knowing any progress of the previous model, no training statistics, nor the number of epochs the model has been trained on so far.
 It's not resuming training, just initializing training with a previously trained model with the same model definition, and it is accomplished through the <code>--model_load_path</code> argument.</p>
+                <p>You can request a k-fold cross validation run by specifing the <code>--k_fold</code> parameter.</p>
 <p>You can specify a random seed to be used by the python environment, python random package, numpy and TensorFlow with the <code>--random_seed</code> argument.
 This is useful for reproducibility.
 Be aware that due to asynchronicity in the TensorFlow GPU execution, when training on GPU results may not be reproducible.</p>
@@ -3773,25 +3822,78 @@ Different combiners implement different combination logic, but the default one <
 </pre></div>
 
 
-<p>For the sake of simplicity you can imagine the both inputs and outputs are vectors in most of the cases, but there are <code>reduce_input</code> and <code>reduce_output</code> parameters to specify to change the default behavior.</p>
-<h3 id="output-features">Output Features<a class="headerlink" href="#output-features" title="Permanent link">&para;</a></h3>
-<p>The <code>output_features</code> list has the same structure of the <code>input_features</code> list: it is a list of dictionaries containing a <code>name</code> and a <code>type</code>.
-They represent outputs / targets that you want your model to predict.
-In most machine learning tasks you want to predict only one target variable, but in Ludwig you are allowed to specify as many outputs as you want and they are going to be optimized in a multi-task fashion, using a weighted sum of their losses as a combined loss to optimize.</p>
-<p>Instead of having <code>encoders</code>, output features have <code>decoders</code>, but most of them have only one decoder so you don't have to specify it.</p>
-<p>Decoders take the output of the combiner as input, process it further, for instance passing it through fully connected layers, and finally predict values and compute a loss and some measures (depending on the datatype different losses and measures apply).</p>
-<p>Decoders have additional parameters, in particular <code>loss</code> that allows you to specify a different loss to optimize for this specific decoder, for instance numerical features support both <code>mean_squared_error</code> and <code>mean_absolute_error</code> as losses.
-Details about the available decoders and losses alongside with the description of all parameters will be provided in the datatype-specific sections.</p>
-<p>For the sake of simplicity you can imagine the input coming from the combiner to be a vector in most of the cases, but there is a <code>reduce_input</code> parameter one can specify to change the default behavior.</p>
-<h3 id="output-features-dependencies">Output Features Dependencies<a class="headerlink" href="#output-features-dependencies" title="Permanent link">&para;</a></h3>
-<p>An additional feature that Ludwig provides is the concept of dependency between <code>output_features</code>.
-You can specify a list of output features as dependencies when you write the dictionary of a specific feature.
-At model building time Ludwig checks that no cyclic dependency exists.
-If you do so Ludwig will concatenate all the final representations before the prediction of those output features to the original input of the decoder.
-The reason is that if different output features have a causal dependency, knowing which prediction has been made for one can help making the prediction of the other.</p>
-<p>For instance if two output features are one coarse grained category and one fine-grained category that are in a hierarchical structure with each other, knowing the prediction made for coarse grained restricts the possible categories to predict for the fine-grained.
-In this case the following model definition structure can be used:</p>
-<div class="codehilite"><pre><span></span><span class="nt">output_features</span><span class="p">:</span>
+                <p>For the sake of simplicity you can imagine the both inputs and outputs are vectors in most of the
+                    cases, but there are <code>reduce_input</code> and <code>reduce_output</code> parameters to specify
+                    to change the default behavior.</p>
+                <h3 id="output-features">Output Features<a class="headerlink" href="#output-features"
+                                                           title="Permanent link">&para;</a></h3>
+                <p>The <code>output_features</code> list has the same structure of the <code>input_features</code> list:
+                    it is a list of dictionaries containing a <code>name</code> and a <code>type</code>.
+                    They represent outputs / targets that you want your model to predict.
+                    In most machine learning tasks you want to predict only one target variable, but in Ludwig you are
+                    allowed to specify as many outputs as you want and they are going to be optimized in a multi-task
+                    fashion, using a weighted sum of their losses as a combined loss to optimize.</p>
+                <p>Instead of having <code>encoders</code>, output features have <code>decoders</code>, but most of them
+                    have only one decoder so you don't have to specify it.</p>
+                <p>Decoders take the output of the combiner as input, process it further, for instance passing it
+                    through fully connected layers, and finally predict values and compute a loss and some measures
+                    (depending on the datatype different losses and measures apply).</p>
+                <p>Decoders have additional parameters, in particular <code>loss</code> that allows you to specify a
+                    different loss to optimize for this specific decoder, for instance numerical features support both
+                    <code>mean_squared_error</code> and <code>mean_absolute_error</code> as losses.
+                    Details about the available decoders and losses alongside with the description of all parameters
+                    will be provided in the datatype-specific sections.</p>
+                <p>For the sake of simplicity you can imagine the input coming from the combiner to be a vector in most
+                    of the cases, but there is a <code>reduce_input</code> parameter one can specify to change the
+                    default behavior.</p>
+                <h4 id="multi-task-learning">Multi-task Learning<a class="headerlink" href="#multi-task-learning"
+                                                                   title="Permanent link">&para;</a></h4>
+                <p>As Ludwig allows for multiple output features to be specified and each output feature can be seen as
+                    a task the model is learning to perform, by consequence Ludwig supports Multi-task learning
+                    natively.
+                    When multiple output features are specified, the loss that is optimized is a weighted sum of the
+                    losses of each individual output feature.
+                    By default each loss weight is <code>1</code>, but it can be changed by specifying a value for the
+                    <code>weight</code> parameter in the <code>loss</code> section of each output feature definition.
+                </p>
+                <p>For example, given a <code>category</code> feature <code>A</code> and <code>numerical</code> feature
+                    <code>B</code>, in order to optimize the loss <code>loss_total = 1.5 * loss_A + 0.8 + loss_B</code>
+                    the <code>output_feature</code> section of the model definition should look like:</p>
+                <div class="codehilite"><pre><span></span><span class="nt">output_features</span><span
+                        class="p">:</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">A</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+        <span class="nt">loss</span><span class="p">:</span>
+          <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1.5</span>
+    <span class="p p-Indicator">-</span>
+        <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">A</span>
+        <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
+        <span class="nt">loss</span><span class="p">:</span>
+          <span class="nt">weight</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0.8</span>
+</pre>
+                </div>
+
+
+                <h4 id="output-features-dependencies">Output Features Dependencies<a class="headerlink"
+                                                                                     href="#output-features-dependencies"
+                                                                                     title="Permanent link">&para;</a>
+                </h4>
+                <p>An additional feature that Ludwig provides is the concept of dependency between
+                    <code>output_features</code>.
+                    You can specify a list of output features as dependencies when you write the dictionary of a
+                    specific feature.
+                    At model building time Ludwig checks that no cyclic dependency exists.
+                    If you do so Ludwig will concatenate all the final representations before the prediction of those
+                    output features to the original input of the decoder.
+                    The reason is that if different output features have a causal dependency, knowing which prediction
+                    has been made for one can help making the prediction of the other.</p>
+                <p>For instance if two output features are one coarse grained category and one fine-grained category
+                    that are in a hierarchical structure with each other, knowing the prediction made for coarse grained
+                    restricts the possible categories to predict for the fine-grained.
+                    In this case the following model definition structure can be used:</p>
+                <div class="codehilite"><pre><span></span><span class="nt">output_features</span><span
+                        class="p">:</span>
     <span class="p p-Indicator">-</span>
         <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">coarse_class</span>
         <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
@@ -3909,7 +4011,15 @@ There is only one decoder available for binary features and it is a (potentially
 <li><code>reduce_inputs</code> (default <code>sum</code>): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the first dimension), <code>last</code> (returns the last vector of the first dimension).</li>
 <li><code>dependencies</code> (default <code>[]</code>): the output features this one is dependent on. For a detailed explanation refer to <a href="#output-features-dependencies">Output Features Dependencies</a>.</li>
 <li><code>reduce_dependencies</code> (default <code>sum</code>): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: <code>sum</code>, <code>mean</code> or <code>avg</code>, <code>max</code>, <code>concat</code> (concatenates along the first dimension), <code>last</code> (returns the last vector of the first dimension).</li>
-<li><code>loss</code> (default <code>{type: cross_entropy, confidence_penalty: 0, robust_lambda: 0}</code>): is a dictionary containing a loss <code>type</code> and its hyperparameters. The only available loss <code>type</code> is <code>cross_entropy</code> (cross entropy), and the two optional parameters are <code>confidence_penalty</code> (an additional term that penalizes too confident predictions by adding a <code>a * (max_entropy - entropy) / max_entropy</code> term to the loss, where a is the value of this parameter) and <code>robust_lambda</code> (replaces the loss with <code>(1 - robust_lambda) * loss + robust_lambda / 2</code> which is useful in case of noisy labels).</li>
+    <li><code>loss</code> (default <code>{type: cross_entropy, confidence_penalty: 0, robust_lambda: 0,
+        positive_class_weight: 1}</code>): is a dictionary containing a loss <code>type</code> and its hyperparameters.
+        The only available loss <code>type</code> is <code>cross_entropy</code> (cross entropy), and the optional
+        parameters are <code>confidence_penalty</code> (an additional term that penalizes too confident predictions by
+        adding a <code>a * (max_entropy - entropy) / max_entropy</code> term to the loss, where a is the value of this
+        parameter), <code>robust_lambda</code> (replaces the loss with <code>(1 - robust_lambda) * loss + robust_lambda
+            / 2</code> which is useful in case of noisy labels) and <code>positive_class_weight</code> (multiplies the
+        loss for the positive class, increasing its importance).
+    </li>
 </ul>
 <p>These are the available parameters of a binary output feature decoder</p>
 <ul>
@@ -3924,7 +4034,8 @@ There is only one decoder available for binary features and it is a (potentially
 <li><code>threshold</code> (default <code>0.5</code>): The threshold above (greater or equal) which the predicted output of the sigmoid will be mapped to 1.</li>
 </ul>
 <p>Example binary feature entry (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary_csv_column_name</span>
+<div class="codehilite"><pre><span></span><span class="nt">name</span><span class="p">:</span> <span
+        class="l l-Scalar l-Scalar-Plain">binary_csv_column_name</span>
 <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
 <span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
@@ -3933,6 +4044,8 @@ There is only one decoder available for binary features and it is a (potentially
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">cross_entropy</span>
     <span class="nt">confidence_penalty</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">robust_lambda</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">positive_class_weight</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
@@ -4087,7 +4200,13 @@ There is only one decoder available for category features and it is a (potential
 <ul>
 <li><code>confidence_penalty</code> (default <code>0</code>): penalizes overconfident predictions (low entropy) by adding an additional term that penalizes too confident predictions by adding a <code>a * (max_entropy - entropy) / max_entropy</code> term to the loss, where a is the value of this parameter. Useful in case of noisy labels.</li>
 <li><code>robust_lambda</code> (default <code>0</code>): replaces the loss with <code>(1 - robust_lambda) * loss + robust_lambda / c</code> where <code>c</code> is the number of classes, which is useful in case of noisy labels.</li>
-<li><code>class_weights</code> (default <code>1</code>): the value can be a vector of weights, one of each class, that is multiplied to the loss of the datapoints that have that class as ground truth. It is an alternative to oversampling in case of unbalanced class distribution. The ordering of the vector follows the category to integer ID mapping in the JSON metadata file (the <code>&lt;UNK&gt;</code> class needs to be included too).</li>
+    <li><code>class_weights</code> (default <code>1</code>): the value can be a vector of weights, one for each class,
+        that is multiplied to the loss of the datapoints that have that class as ground truth. It is an alternative to
+        oversampling in case of unbalanced class distribution. The ordering of the vector follows the category to
+        integer ID mapping in the JSON metadata file (the <code>&lt;UNK&gt;</code> class needs to be included too).
+        Alternatively, the value can be a dictionary with class strings as keys and weights as values, like <code>{class_a:
+            0.5, class_b: 0.7, ...}</code>.
+    </li>
 <li><code>class_similarities</code> (default <code>null</code>): if not <code>null</code> it is a <code>c x c</code> matrix in the form of a list of lists that contains the mutual similarity of classes. It is used if <code>class_similarities_temperature</code> is greater than 0. The ordering of the vector follows the category to integer ID mapping in the JSON metadata file (the <code>&lt;UNK&gt;</code> class needs to be included too).</li>
 <li><code>class_similarities_temperature</code> (default <code>0</code>): is the temperature parameter of the softmax that is performed on each row of <code>class_similarities</code>. The output of that softmax is used to determine the supervision vector to provide instead of the one hot vector that would be provided otherwise for each datapoint. The intuition behind it is that errors between similar classes are more tollerable than errors between really different classes.</li>
 <li><code>labels_smoothing</code> (default <code>0</code>): If label_smoothing is nonzero, smooth the labels towards <code>1/num_classes</code>: <code>new_onehot_labels = onehot_labels * (1 - label_smoothing) + label_smoothing / num_classes</code>.</li>
@@ -5621,9 +5740,20 @@ systems. To activate a particular integration, simply insert its flag
 into the command line. Each integration may have specific requirements
 and use.</p>
 <p>Ludwig supports the following integrations:</p>
-<ul>
-<li><code>--comet</code> - logs training metrics, environment details, test results, visualizations, and more to <a href="https://comet.ml">Comet.ML</a>. Requires a freely available account. For more details, see Comet's <a href="https://www.comet.ml/docs/python-sdk/ludwig/#running-ludwig-with-comet">Running Ludwig with Comet</a>.</li>
-</ul>
+                <ul>
+                    <li>
+                        <p><code>--comet</code> - logs training metrics, environment details, test results,
+                            visualizations, and more to <a href="https://comet.ml">Comet.ML</a>. Requires a freely
+                            available account. For more details, see Comet's <a
+                                    href="https://www.comet.ml/docs/python-sdk/ludwig/#running-ludwig-with-comet">Running
+                                Ludwig with Comet</a>.</p>
+                    </li>
+                    <li>
+                        <p><code>--wandb</code> - logs training metrics, configuration parameters, environment details,
+                            and trained model to <a href="https://www.wandb.com/">Weights &amp; Biases</a>. For more
+                            details, refer to <a href="https://docs.wandb.com/quickstart">W&amp;B Quickstart</a>.</p>
+                    </li>
+                </ul>
 <p>For more information about integration contributions, please see the <a href="../developer_guide/">Developer Guide</a>.</p>
 <h2 id="programmatic-api">Programmatic API<a class="headerlink" href="#programmatic-api" title="Permanent link">&para;</a></h2>
 <p>Ludwig functionalities can also be accessed through a programmatic API.
@@ -6007,16 +6137,8 @@ The classes on the x axis are sorted by f1 score.</p>
 <p><img alt="Frequency vs F1 sorted by F1" src="../images/freq_vs_f1_sorted_f1.png" title="Frequency vs F1 sorted by F1" /></p>
 <p>The second plot has the same structure of the first one, but the axes are flipped and the classes on the x axis are sorted by frequency.</p>
 <p><img alt="Frequency vs F1 sorted by Frequency" src="../images/freq_vs_f1_sorted_freq.png" title="Frequency vs F1 sorted by Frequency" /></p>
-                
-                  
-                
-                
-              
-              
-                
 
 
-              
             </article>
           </div>
         </div>
@@ -6107,8 +6229,8 @@ The classes on the x axis are sorted by f1 score.</p>
 </footer>
       
     </div>
-    
-      <script src="../assets/javascripts/application.808e90bb.js"></script>
+
+    <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

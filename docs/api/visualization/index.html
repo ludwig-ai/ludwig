@@ -38,15 +38,14 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.4.3" name="generator">
     
     
       
         <title>Visualization - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+
+
+      <link href="../../assets/stylesheets/application.30686662.css" rel="stylesheet">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -54,15 +53,15 @@
         
         
         <meta name="theme-color" content="#757575">
-      
-    
-    
-      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+
+
+      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback"
+            rel="stylesheet">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -94,10 +93,10 @@
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-    
-      <a href="#learning_curves" tabindex="1" class="md-skip">
+
+    <a class="md-skip" href="#module-functions" tabindex="1">
         Skip to content
-      </a>
+    </a>
     
     
       <header class="md-header" data-md-component="header">
@@ -340,146 +339,159 @@
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
-      
+
         <li class="md-nav__item">
-  <a href="#learning_curves" class="md-nav__link">
-    learning_curves
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_performance" class="md-nav__link">
-    compare_performance
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_from_prob" class="md-nav__link">
-    compare_classifiers_performance_from_prob
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_from_pred" class="md-nav__link">
-    compare_classifiers_performance_from_pred
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_subset" class="md-nav__link">
-    compare_classifiers_performance_subset
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_changing_k" class="md-nav__link">
-    compare_classifiers_performance_changing_k
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_multiclass_multimetric" class="md-nav__link">
-    compare_classifiers_multiclass_multimetric
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_predictions" class="md-nav__link">
-    compare_classifiers_predictions
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_2d" class="md-nav__link">
-    confidence_thresholding_2thresholds_2d
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_3d" class="md-nav__link">
-    confidence_thresholding_2thresholds_3d
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding" class="md-nav__link">
-    confidence_thresholding
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
-    confidence_thresholding_data_vs_acc
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc_subset" class="md-nav__link">
-    confidence_thresholding_data_vs_acc_subset
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#binary_threshold_vs_metric" class="md-nav__link">
-    binary_threshold_vs_metric
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#roc_curves" class="md-nav__link">
-    roc_curves
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#roc_curves_from_test_statistics" class="md-nav__link">
-    roc_curves_from_test_statistics
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#calibration_1_vs_all" class="md-nav__link">
-    calibration_1_vs_all
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#calibration_multiclass" class="md-nav__link">
-    calibration_multiclass
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confusion_matrix" class="md-nav__link">
-    confusion_matrix
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#frequency_vs_f1" class="md-nav__link">
-    frequency_vs_f1
-  </a>
-  
-</li>
+            <a class="md-nav__link" href="#module-functions">
+                Module functions
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#learning_curves" class="md-nav__link">
+                            learning_curves
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_performance" class="md-nav__link">
+                            compare_performance
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_from_prob" class="md-nav__link">
+                            compare_classifiers_performance_from_prob
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_from_pred" class="md-nav__link">
+                            compare_classifiers_performance_from_pred
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_subset" class="md-nav__link">
+                            compare_classifiers_performance_subset
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_changing_k" class="md-nav__link">
+                            compare_classifiers_performance_changing_k
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_multiclass_multimetric" class="md-nav__link">
+                            compare_classifiers_multiclass_multimetric
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_predictions" class="md-nav__link">
+                            compare_classifiers_predictions
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_2thresholds_2d" class="md-nav__link">
+                            confidence_thresholding_2thresholds_2d
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_2thresholds_3d" class="md-nav__link">
+                            confidence_thresholding_2thresholds_3d
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding" class="md-nav__link">
+                            confidence_thresholding
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
+                            confidence_thresholding_data_vs_acc
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_data_vs_acc_subset" class="md-nav__link">
+                            confidence_thresholding_data_vs_acc_subset
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#binary_threshold_vs_metric" class="md-nav__link">
+                            binary_threshold_vs_metric
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#roc_curves" class="md-nav__link">
+                            roc_curves
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#roc_curves_from_test_statistics" class="md-nav__link">
+                            roc_curves_from_test_statistics
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#calibration_1_vs_all" class="md-nav__link">
+                            calibration_1_vs_all
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#calibration_multiclass" class="md-nav__link">
+                            calibration_multiclass
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confusion_matrix" class="md-nav__link">
+                            confusion_matrix
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#frequency_vs_f1" class="md-nav__link">
+                            frequency_vs_f1
+                        </a>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
       
       
       
@@ -526,146 +538,159 @@
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
-      
+
         <li class="md-nav__item">
-  <a href="#learning_curves" class="md-nav__link">
-    learning_curves
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_performance" class="md-nav__link">
-    compare_performance
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_from_prob" class="md-nav__link">
-    compare_classifiers_performance_from_prob
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_from_pred" class="md-nav__link">
-    compare_classifiers_performance_from_pred
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_subset" class="md-nav__link">
-    compare_classifiers_performance_subset
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_changing_k" class="md-nav__link">
-    compare_classifiers_performance_changing_k
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_multiclass_multimetric" class="md-nav__link">
-    compare_classifiers_multiclass_multimetric
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#compare_classifiers_predictions" class="md-nav__link">
-    compare_classifiers_predictions
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_2d" class="md-nav__link">
-    confidence_thresholding_2thresholds_2d
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_3d" class="md-nav__link">
-    confidence_thresholding_2thresholds_3d
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding" class="md-nav__link">
-    confidence_thresholding
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
-    confidence_thresholding_data_vs_acc
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc_subset" class="md-nav__link">
-    confidence_thresholding_data_vs_acc_subset
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#binary_threshold_vs_metric" class="md-nav__link">
-    binary_threshold_vs_metric
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#roc_curves" class="md-nav__link">
-    roc_curves
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#roc_curves_from_test_statistics" class="md-nav__link">
-    roc_curves_from_test_statistics
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#calibration_1_vs_all" class="md-nav__link">
-    calibration_1_vs_all
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#calibration_multiclass" class="md-nav__link">
-    calibration_multiclass
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#confusion_matrix" class="md-nav__link">
-    confusion_matrix
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#frequency_vs_f1" class="md-nav__link">
-    frequency_vs_f1
-  </a>
-  
-</li>
+            <a class="md-nav__link" href="#module-functions">
+                Module functions
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#learning_curves" class="md-nav__link">
+                            learning_curves
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_performance" class="md-nav__link">
+                            compare_performance
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_from_prob" class="md-nav__link">
+                            compare_classifiers_performance_from_prob
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_from_pred" class="md-nav__link">
+                            compare_classifiers_performance_from_pred
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_subset" class="md-nav__link">
+                            compare_classifiers_performance_subset
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_performance_changing_k" class="md-nav__link">
+                            compare_classifiers_performance_changing_k
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_multiclass_multimetric" class="md-nav__link">
+                            compare_classifiers_multiclass_multimetric
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#compare_classifiers_predictions" class="md-nav__link">
+                            compare_classifiers_predictions
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_2thresholds_2d" class="md-nav__link">
+                            confidence_thresholding_2thresholds_2d
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_2thresholds_3d" class="md-nav__link">
+                            confidence_thresholding_2thresholds_3d
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding" class="md-nav__link">
+                            confidence_thresholding
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
+                            confidence_thresholding_data_vs_acc
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confidence_thresholding_data_vs_acc_subset" class="md-nav__link">
+                            confidence_thresholding_data_vs_acc_subset
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#binary_threshold_vs_metric" class="md-nav__link">
+                            binary_threshold_vs_metric
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#roc_curves" class="md-nav__link">
+                            roc_curves
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#roc_curves_from_test_statistics" class="md-nav__link">
+                            roc_curves_from_test_statistics
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#calibration_1_vs_all" class="md-nav__link">
+                            calibration_1_vs_all
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#calibration_multiclass" class="md-nav__link">
+                            calibration_multiclass
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#confusion_matrix" class="md-nav__link">
+                            confusion_matrix
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#frequency_vs_f1" class="md-nav__link">
+                            frequency_vs_f1
+                        </a>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
       
       
       
@@ -680,26 +705,34 @@
             
           
           <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/api/visualization.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
-                
-                
+              <article class="md-content__inner md-typeset">
+
+
+                  <a href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/api/visualization.md"
+                     title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+
+
                   <h1>Visualization</h1>
-                
-                <h3 id="learning_curves">learning_curves<a class="headerlink" href="#learning_curves" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">learning_curves</span><span class="p">(</span>
+
+                  <h2 id="module-functions">Module functions<a class="headerlink" href="#module-functions"
+                                                               title="Permanent link">&para;</a></h2>
+                  <hr/>
+                  <h3 id="learning_curves">learning_curves<a class="headerlink" href="#learning_curves"
+                                                             title="Permanent link">&para;</a></h3>
+                  <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span
+                          class="n">visualize</span><span class="o">.</span><span class="n">learning_curves</span><span
+                          class="p">(</span>
   <span class="n">train_stats_per_model</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
   <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</pre></div>
+</pre>
+                  </div>
 
 
-<p>Show how model measures change over training and validation data epochs.</p>
+                  <p>Show how model measures change over training and validation data epochs.</p>
 <p>For each model and for each output feature and measure of the model,
 it produces a line plot showing how that measure changed over the course
 of the epochs of training on the training and validation sets.</p>
@@ -1385,17 +1418,9 @@ frequency.</p>
 <ul>
 <li><strong>return</strong> (None):</li>
 </ul>
-                
-                  
-                
-                
-              
-              
-                
 
 
-              
-            </article>
+              </article>
           </div>
         </div>
       </main>
@@ -1485,8 +1510,8 @@ frequency.</p>
 </footer>
       
     </div>
-    
-      <script src="../../assets/javascripts/application.808e90bb.js"></script>
+
+    <script src="../../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       

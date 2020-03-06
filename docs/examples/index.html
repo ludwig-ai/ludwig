@@ -38,15 +38,14 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.4.3" name="generator">
     
     
       
         <title>Examples - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
+
+
+      <link href="../assets/stylesheets/application.30686662.css" rel="stylesheet">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -54,15 +53,15 @@
         
         
         <meta name="theme-color" content="#757575">
-      
-    
-    
-      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
+
+
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback"
+            rel="stylesheet">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -1795,17 +1794,17 @@ train_size = int(0.6 * len(df))
 vali_size = int(0.2 * len(df))
 
 # train, validation, test split
-df[&#39;split&#39;] = 0
+df[SPLIT] = 0
 df.loc[
     (
         (df.index.values &gt;= train_size) &amp;
         (df.index.values &lt; train_size + vali_size)
     ),
-    (&#39;split&#39;)
+    (SPLIT)
 ] = 1
 df.loc[
     df.index.values &gt;= train_size + vali_size,
-    (&#39;split&#39;)
+    (SPLIT)
 ] = 2
 
 # prepare timeseries input feature colum
@@ -2229,16 +2228,8 @@ df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
     <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fraud_label</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
 </pre></div>
-                
-                  
-                
-                
-              
-              
-                
 
 
-              
             </article>
           </div>
         </div>
@@ -2329,8 +2320,8 @@ df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
 </footer>
       
     </div>
-    
-      <script src="../assets/javascripts/application.808e90bb.js"></script>
+
+    <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

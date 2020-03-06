@@ -38,15 +38,14 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.4.3" name="generator">
     
     
       
         <title>Developer Guide - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
+
+
+      <link href="../assets/stylesheets/application.30686662.css" rel="stylesheet">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -54,15 +53,15 @@
         
         
         <meta name="theme-color" content="#757575">
-      
-    
-    
-      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
+
+
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback"
+            rel="stylesheet">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -913,22 +912,37 @@ to the command line interface.</p>
     <span class="k">def</span> <span class="nf">train_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># See: ludwig/train.py</span>
 
-    <span class="k">def</span> <span class="nf">train_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">train_save</span><span class="p">(</span><span
+            class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span
+            class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># See: ludwig/train.py</span>
 
-    <span class="k">def</span> <span class="nf">train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">progress_tracker</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">train_epoch_end</span><span class="p">(</span><span
+            class="bp">self</span><span class="p">,</span> <span class="n">progress_tracker</span><span
+            class="p">):</span>
     <span class="c1"># See: ludwig/models/model.py</span>
 
-    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span
+            class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span
+            class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># See: ludwig/predict.py and ludwig/cli.py</span>
 
-    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">predict_end</span><span class="p">(</span><span
+            class="bp">self</span><span class="p">,</span> <span class="n">test_stats</span><span class="p">):</span>
+        <span class="c1"># See: ludwig/predict.py</span>
+
+    <span class="k">def</span> <span class="nf">test</span><span class="p">(</span><span class="bp">self</span><span
+            class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span
+            class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># See: ludwig/test.py and ludwig/cli.py</span>
 
-    <span class="k">def</span> <span class="nf">visualize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">visualize</span><span class="p">(</span><span
+            class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span
+            class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># See: ludwig/visualize.py and ludwig/cli.py</span>
 
-    <span class="k">def</span> <span class="nf">visualize_figure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">visualize_figure</span><span class="p">(</span><span
+            class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">):</span>
     <span class="c1"># See ludwig/utils/visualization_utils.py</span>
 
     <span class="k">def</span> <span class="nf">serve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -992,16 +1006,8 @@ code change will take effect immediately.</p>
 <h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
 <div class="codehilite"><pre><span></span>python -m pytest tests/integration_tests/test_experiment.py -k &quot;test_visual_question_answering&quot;
 </pre></div>
-                
-                  
-                
-                
-              
-              
-                
 
 
-              
             </article>
           </div>
         </div>
@@ -1092,8 +1098,8 @@ code change will take effect immediately.</p>
 </footer>
       
     </div>
-    
-      <script src="../assets/javascripts/application.808e90bb.js"></script>
+
+    <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

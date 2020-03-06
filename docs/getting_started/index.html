@@ -38,15 +38,14 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.4.3" name="generator">
     
     
       
         <title>Getting Started - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/application.1b62728e.css">
+
+
+      <link href="../assets/stylesheets/application.30686662.css" rel="stylesheet">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -54,15 +53,15 @@
         
         
         <meta name="theme-color" content="#757575">
-      
-    
-    
-      <script src="../assets/javascripts/modernizr.268332fc.js"></script>
+
+
+      <script src="../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback"
+            rel="stylesheet">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -621,6 +620,11 @@ We divided them as different extras so that users could install only the ones th
 </ul>
 <p>Any combination of extra packages can be installed at the same time with <code>pip install ludwig[extra1,extra2,...]</code> like for instance <code>pip install ludwig[text,viz]</code>.
 The full set of dependencies can be installed with <code>pip install ludwig[full]</code>.</p>
+                <p>Beware that the <code>tensorflow</code> package contained in the <code>requirements.txt</code> file
+                    is the GPU version which works only on machines without a GPU and reverts back to CPU computation.
+                    If you prefer to install the CPU version, uninstall <code>tensorflow-gpu</code> and replace it with
+                    <code>tensorflow</code> after having installed <code>ludwig</code>, being careful at matching the
+                    version ludwig requires, as shown in <code>requirements.txt</code>.</p>
 <p>If you want to train Ludwig models in a distributed way, you need to also install the <code>horovod</code> and the <code>mpi4py</code> packages.
 Please follow the instructions on <a href="https://github.com/uber/horovod">Horovod's repository</a> to install it.</p>
 <h2 id="basic-principles">Basic Principles<a class="headerlink" href="#basic-principles" title="Permanent link">&para;</a></h2>
@@ -749,16 +753,8 @@ It is easy to add an additional datatype that is not currently supported by addi
 <p>Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
 Refer to the <a href="../developer_guide/">Developer Guide</a> for further details.</p>
-                
-                  
-                
-                
-              
-              
-                
 
 
-              
             </article>
           </div>
         </div>
@@ -849,8 +845,8 @@ Refer to the <a href="../developer_guide/">Developer Guide</a> for further detai
 </footer>
       
     </div>
-    
-      <script src="../assets/javascripts/application.808e90bb.js"></script>
+
+    <script src="../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
       

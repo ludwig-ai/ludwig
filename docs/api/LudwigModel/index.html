@@ -38,15 +38,14 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../../favicon.ico">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.4.3" name="generator">
     
     
       
         <title>LudwigModel - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+
+
+      <link href="../../assets/stylesheets/application.30686662.css" rel="stylesheet">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -54,15 +53,15 @@
         
         
         <meta name="theme-color" content="#757575">
-      
-    
-    
-      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+
+
+      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback"
+            rel="stylesheet">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -402,27 +401,44 @@
         
           <li class="md-nav__item">
   <a href="#train" class="md-nav__link">
-    train
+      train
   </a>
-  
-</li>
-        
+
+          </li>
+
           <li class="md-nav__item">
-  <a href="#train_online" class="md-nav__link">
-    train_online
-  </a>
-  
-</li>
-        
+              <a href="#train_online" class="md-nav__link">
+                  train_online
+              </a>
+
+          </li>
+
       </ul>
     </nav>
-  
-</li>
-      
-      
-      
-      
-      
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#module-functions">
+                Module functions
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#kfold_cross_validate">
+                            kfold_cross_validate
+                        </a>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
+
+
     </ul>
   
 </nav>
@@ -557,20 +573,37 @@
         
           <li class="md-nav__item">
   <a href="#train_online" class="md-nav__link">
-    train_online
+      train_online
   </a>
-  
-</li>
-        
+
+          </li>
+
       </ul>
     </nav>
-  
-</li>
-      
-      
-      
-      
-      
+
+        </li>
+
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="#module-functions">
+                Module functions
+            </a>
+
+            <nav class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#kfold_cross_validate">
+                            kfold_cross_validate
+                        </a>
+
+                    </li>
+
+                </ul>
+            </nav>
+
+        </li>
+
+
     </ul>
   
 </nav>
@@ -587,8 +620,9 @@
                 
                 
                   <h1>LudwigModel</h1>
-                
-                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig/api.py#L66">[source]</a></span></p>
+
+                <p><span style="float:right;"><a href="https://github.com/uber/ludwig/blob/master/ludwig/api.py#L69">[source]</a></span>
+                </p>
 <h2 id="ludwigmodel-class">LudwigModel class<a class="headerlink" href="#ludwigmodel-class" title="Permanent link">&para;</a></h2>
 <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">LudwigModel</span><span class="p">(</span>
   <span class="n">model_definition</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -958,8 +992,8 @@ performance measures, confusion matrices and the like.</p>
 </pre></div>
 
 
-<p>This function is used to perform a full training of the model on the 
-specified dataset.</p>
+                <p>This function is used to perform a full training of the model on the
+                    specified dataset.</p>
 <p><strong>Inputs</strong></p>
 <ul>
 <li><strong>data_df</strong> (DataFrame): dataframe containing data. If it has a split
@@ -1113,22 +1147,24 @@ output feature containing loss and measures values for each epoch.</li>
 </pre></div>
 
 
-<p>This function is used to perform one epoch of training of the model 
-on the specified dataset.</p>
+                <p>This function is used to perform one epoch of training of the model
+                    on the specified dataset.</p>
 <p><strong>Inputs</strong></p>
 <ul>
 <li><strong>data_df</strong> (DataFrame): dataframe containing data.</li>
 <li><strong>data_csv</strong> (string): input data CSV file.</li>
-<li><strong>data_dict</strong> (dict): input data dictionary. It is expected to 
-   contain one key for each field and the values have to be lists of 
-   the same length. Each index in the lists corresponds to one 
-   datapoint. For example a data set consisting of two datapoints 
-   with a text and a class may be provided as the following dict 
-   <code>`{'text_field_name': ['text of the first datapoint', text of the
-   second datapoint'], 'class_filed_name': ['class_datapoints_1', 
-   'class_datapoints_2']}</code>.</li>
-<li><strong>batch_size</strong> (int): the batch size to use for training. By default 
-   it's the one specified in the model definition.</li>
+    <li><strong>data_dict</strong> (dict): input data dictionary. It is expected to
+        contain one key for each field and the values have to be lists of
+        the same length. Each index in the lists corresponds to one
+        datapoint. For example a data set consisting of two datapoints
+        with a text and a class may be provided as the following dict
+        <code>`{'text_field_name': ['text of the first datapoint', text of the
+            second datapoint'], 'class_filed_name': ['class_datapoints_1',
+            'class_datapoints_2']}</code>.
+    </li>
+    <li><strong>batch_size</strong> (int): the batch size to use for training. By default
+        it's the one specified in the model definition.
+    </li>
 <li><strong>learning_rate</strong> (float): the learning rate to use for training. By
    default the values is the one specified in the model definition.</li>
 <li><strong>regularization_lambda</strong> (float): the regularization lambda
@@ -1145,26 +1181,66 @@ on the specified dataset.</p>
    initialize the process with</li>
 </ul>
 <p>There are three ways to provide data: by dataframes using the <code>data_df</code>
-parameter, by CSV using the <code>data_csv</code> parameter and by dictionary,
-using the <code>data_dict</code> parameter.</p>
-<p>The DataFrame approach uses data previously obtained and put in a
-dataframe, the CSV approach loads data from a CSV file, while dict
-approach uses data organized by keys representing columns and values
-that are lists of the datapoints for each. For example a data set
-consisting of two datapoints with a text and a class may be provided as
-the following dict <code>`{'text_field_name}: ['text of the first datapoint',
-text of the second datapoint'], 'class_filed_name':
-['class_datapoints_1', 'class_datapoints_2']}</code>.</p>
-                
-                  
-                
-                
-              
-              
-                
+    parameter, by CSV using the <code>data_csv</code> parameter and by dictionary,
+    using the <code>data_dict</code> parameter.</p>
+                <p>The DataFrame approach uses data previously obtained and put in a
+                    dataframe, the CSV approach loads data from a CSV file, while dict
+                    approach uses data organized by keys representing columns and values
+                    that are lists of the datapoints for each. For example a data set
+                    consisting of two datapoints with a text and a class may be provided as
+                    the following dict <code>`{'text_field_name}: ['text of the first datapoint',
+                        text of the second datapoint'], 'class_filed_name':
+                        ['class_datapoints_1', 'class_datapoints_2']}</code>.</p>
+                <hr/>
+                <h2 id="module-functions">Module functions<a class="headerlink" href="#module-functions"
+                                                             title="Permanent link">&para;</a></h2>
+                <hr/>
+                <h3 id="kfold_cross_validate">kfold_cross_validate<a class="headerlink" href="#kfold_cross_validate"
+                                                                     title="Permanent link">&para;</a></h3>
+                <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span
+                        class="n">api</span><span class="o">.</span><span class="n">kfold_cross_validate</span><span
+                        class="p">(</span>
+  <span class="n">k_fold</span><span class="p">,</span>
+  <span class="n">model_definition</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">model_definition_file</span><span class="o">=</span><span class="bp">None</span><span
+                            class="p">,</span>
+  <span class="n">data_csv</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="s1">&#39;results&#39;</span><span
+                            class="p">,</span>
+  <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span>
+<span class="p">)</span>
+</pre>
+                </div>
 
 
-              
+                <p>Performs k-fold cross validation and returns result data structures.</p>
+                <p><strong>Inputs</strong></p>
+                <ul>
+                    <li><strong>k_fold</strong> (int): number of folds to create for the cross-validation</li>
+                    <li><strong>model_definition</strong> (dict, default: None): a dictionary containing
+                        information needed to build a model. Refer to the
+                        <a href="http://ludwig.ai/user_guide/#model-definition">User Guide</a>
+                        for details.
+                    </li>
+                    <li><strong>model_definition_file</strong> (string, optional, default: <code>None</code>): path to
+                        a YAML file containing the model definition. If available it will be
+                        used instead of the model_definition dict.
+                    </li>
+                    <li><strong>data_csv</strong> (dataframe, default: None):</li>
+                    <li><strong>data_csv</strong> (string, default: None):</li>
+                    <li><strong>output_directory</strong> (string, default: 'results'):</li>
+                    <li><strong>random_seed</strong> (int): Random seed used k-fold splits.</li>
+                </ul>
+                <p><strong>Return</strong></p>
+                <ul>
+                    <li><strong>return</strong> (tuple(kfold_cv_stats, kfold_split_indices), dict): a tuple of
+                        dictionaries <code>kfold_cv_stats</code>: contains metrics from cv run.
+                        <code>kfold_split_indices</code>: indices to split training data into
+                        training fold and test fold.
+                    </li>
+                </ul>
+
+
             </article>
           </div>
         </div>
@@ -1255,8 +1331,8 @@ text of the second datapoint'], 'class_filed_name':
 </footer>
       
     </div>
-    
-      <script src="../../assets/javascripts/application.808e90bb.js"></script>
+
+    <script src="../../assets/javascripts/application.ac79c3b0.js"></script>
       
       <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
       
