@@ -50,7 +50,6 @@ class R2Score(tf.keras.metrics.Metric):
         self.sum_y_y_hat = 0.0
         self.N = 0
 
-
     def update_state(self, y, y_hat):
         self.sum_y += np.sum(y)
         self.sum_y_squared += np.sum(y**2)
@@ -61,9 +60,9 @@ class R2Score(tf.keras.metrics.Metric):
 
     def result(self):
         y_bar = self.sum_y / self.N
-        tot_ss = self.sum_y_squared - 2 * y_bar * self.sum_y \
+        tot_ss = self.sum_y_squared - 2.0 * y_bar * self.sum_y \
                  + self.N * y_bar ** 2
-        res_ss = self.sum_y_squared - 2 * self.sum_y_y_hat \
+        res_ss = self.sum_y_squared - 2.0 * self.sum_y_y_hat \
                  + self.sum_y_hat_squared
         return 1.0 - res_ss / tot_ss
 
