@@ -72,6 +72,33 @@ class R2Score(tf.keras.metrics.Metric):
         return 1.0 - res_ss / tot_ss
 
 
+class ErrorScore(tf.keras.metrics.Metric):
+    # custom tf.keras.metrics class to compute r2 score from batches
+    # See for additional info:
+    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
+
+    # todo tf2 - convert to tensors?
+
+    def __init__(self, name='error_score'):
+        super(ErrorScore, self).__init__(name=name)
+        self._reset_states()
+
+    def _reset_states(self):
+        self.sum_error = 0.0
+        self.N = 0
+
+    def reset_states(self):
+        self._reset_states()
+
+    def update_state(self, y, y_hat):
+        self.sum_error += np.sum(y - y_hat)
+        self.N += y.shape[0]
+
+    def result(self):
+        return self.sum_error / self.N
+
+
+
 def get_improved_fun(measure):
     if measure in min_measures:
         return lambda x, y: x < y

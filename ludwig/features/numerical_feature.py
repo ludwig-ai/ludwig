@@ -34,6 +34,7 @@ from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.models.modules.measure_modules import r2 as get_r2
 from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
+from ludwig.models.modules.measure_modules import ErrorScore
 from ludwig.models.modules.measure_modules import R2Score
 
 from ludwig.models.modules.loss_modules import \
@@ -314,7 +315,9 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def _setup_measures_tf2(of):
         # todo tf2 change to object method when Graph is eliminated.
 
-        of.measure_functions.update({'error':  None})  #todo tf2 need to add
+        of.measure_functions.update(
+            {'error':  ErrorScore(name='metric_error')}
+        )
         of.measure_functions.update(
             {'mse': tf.keras.metrics.MeanSquaredError(name='metric_mse')}
         )
