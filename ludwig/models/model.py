@@ -1104,11 +1104,10 @@ class Model:
         #     output_stats['combined'][LOSS] += regularization
 
         # todo: tf2 debugging
-        template = f'Dataset {name}:'
+        template = f'Measures for {name}:'
         for measure, measure_fn in output_feature.measure_functions.items():
             if measure_fn is not None:  # todo tf2 test is needed only during development
                 template += f' {measure}: {measure_fn.result()}'
-
         print(template)
 
         fake_stats = OrderedDict(
