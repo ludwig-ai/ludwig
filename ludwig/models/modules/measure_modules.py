@@ -97,13 +97,14 @@ class ErrorScore(tf.keras.metrics.Metric):
     def result(self):
         return self.sum_error / self.N
 
-
+# end of custom classes
 
 def get_improved_fun(measure):
     if measure in min_measures:
         return lambda x, y: x < y
     else:
         return lambda x, y: x > y
+
 
 def get_initial_validation_value(measure):
     if measure in min_measures:

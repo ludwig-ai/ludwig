@@ -292,9 +292,10 @@ class Model:
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        for measure_name, measure_fn in output_feature.measure_functions.items():
-            if measure_fn is not None:  # todo tf2 test only needed during development
-                measure_fn.update_state(targets, targets_hat)
+        # todo tf2 remove when development done
+        # for measure_name, measure_fn in output_feature.measure_functions.items():
+        #     if measure_fn is not None:  # todo tf2 test only needed during development
+        #         measure_fn.update_state(targets, targets_hat)
 
     @tf.function
     def evaluation_step(self, model, output_feature, inputs, targets):
@@ -713,12 +714,13 @@ class Model:
             progress_tracker.epoch += 1
             batcher.reset()  # todo this may be useless, doublecheck
 
-            template = f'Epoch {progress_tracker.epoch:d}:'
-            for measure, measure_fn in output_feature.measure_functions.items():
-                if measure_fn is not None:  # todo tf2 test is needed only during development
-                    template += f' {measure}: {measure_fn.result()}'
-
-            print(template)
+            # todo tf2 remove when development done
+            # template = f'Epoch {progress_tracker.epoch:d}:'
+            # for measure, measure_fn in output_feature.measure_functions.items():
+            #     if measure_fn is not None:  # todo tf2 test is needed only during development
+            #         template += f' {measure}: {measure_fn.result()}'
+            #
+            # print(template)
 
 
             # ================ Eval ================
@@ -732,16 +734,16 @@ class Model:
 
             # eval measures on train
             # todo: tf2 add back relevant code as needed
-            # self.evaluation(
-            #     session,
-            #     training_set,
-            #     'train',
-            #     regularization_lambda,
-            #     progress_tracker.train_stats,
-            #     tables,
-            #     eval_batch_size,
-            #     bucketing_field
-            # )
+            self.evaluation(
+                session,
+                training_set,
+                'train',
+                regularization_lambda,
+                progress_tracker.train_stats,
+                tables,
+                eval_batch_size,
+                bucketing_field
+            )
             #
             # template = 'Training: Loss: {}, : metric {}'
             # print(template.format(progress_tracker.epoch,
@@ -760,18 +762,18 @@ class Model:
             #         progress_tracker.epoch
             #     )
             #
-            # if validation_set is not None and validation_set.size > 0:
-            #     # eval measures on validation set
-            #     self.evaluation(
-            #         session,
-            #         validation_set,
-            #         'vali',
-            #         regularization_lambda,
-            #         progress_tracker.vali_stats,
-            #         tables,
-            #         eval_batch_size,
-            #         bucketing_field
-            #     )
+            if validation_set is not None and validation_set.size > 0:
+                # eval measures on validation set
+                self.evaluation(
+                    session,
+                    validation_set,
+                    'vali',
+                    regularization_lambda,
+                    progress_tracker.vali_stats,
+                    tables,
+                    eval_batch_size,
+                    bucketing_field
+                )
             #     if is_on_master() and not skip_save_log:
             #         # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
             #         # the same way as in the CLI. For each one, progress_tracker.steps has already
@@ -784,18 +786,18 @@ class Model:
             #             progress_tracker.epoch
             #         )
             #
-            # if test_set is not None and test_set.size > 0:
-            #     # eval measures on test set
-            #     self.evaluation(
-            #         session,
-            #         test_set,
-            #         'test',
-            #         regularization_lambda,
-            #         progress_tracker.test_stats,
-            #         tables,
-            #         eval_batch_size,
-            #         bucketing_field
-            #     )
+            if test_set is not None and test_set.size > 0:
+                # eval measures on test set
+                self.evaluation(
+                    session,
+                    test_set,
+                    'test',
+                    regularization_lambda,
+                    progress_tracker.test_stats,
+                    tables,
+                    eval_batch_size,
+                    bucketing_field
+                )
             #     if is_on_master() and not skip_save_log:
             #         # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
             #         # the same way as in the CLI. For each one, progress_tracker.steps has already
@@ -1014,6 +1016,10 @@ class Model:
             should_shuffle=False
         )
 
+        # todo tf2: hardcoding for a single output feature - need to generalize
+        of_name = self.hyperparameters['output_features'][0]['name']
+        output_feature = self.output_features[of_name]
+
         if is_on_master():
             progress_bar = tqdm(
                 desc='Evaluation' if name is None
@@ -1051,46 +1057,60 @@ class Model:
                                 [batch[f['name']] for f in
                                  self.hyperparameters['output_features']]).T
             else:
+                of_name = self.hyperparameters['output_features'][0]['name']
+                output_feature = self.output_features[of_name]
                 target = batch[
                     self.hyperparameters['output_features'][0]['name']]
 
-            result = self.evaluation_step(loss_object, predictors, target)
-
-            output_stats, seq_set_size = self.update_output_stats_batch(
-                output_stats,
-                seq_set_size,
-                collect_predictions,
-                only_predictions,
-                result
+            result = self.evaluation_step(
+                self.keras_model,
+                output_feature,
+                predictors,
+                target
             )
+
+            # output_stats, seq_set_size = self.update_output_stats_batch(
+            #     output_stats,
+            #     seq_set_size,
+            #     collect_predictions,
+            #     only_predictions,
+            #     result
+            # )
             if is_on_master():
                 progress_bar.update(1)
 
         if is_on_master():
             progress_bar.close()
 
-        if self.horovod:
-            output_stats, seq_set_size = self.merge_workers_outputs(
-                output_stats,
-                seq_set_size
-            )
+        # if self.horovod:
+        #     output_stats, seq_set_size = self.merge_workers_outputs(
+        #         output_stats,
+        #         seq_set_size
+        #     )
+        #
+        # output_stats = self.update_output_stats(
+        #     output_stats,
+        #     set_size,
+        #     seq_set_size,
+        #     collect_predictions,
+        #     only_predictions
+        # )
 
-        output_stats = self.update_output_stats(
-            output_stats,
-            set_size,
-            seq_set_size,
-            collect_predictions,
-            only_predictions
-        )
-
-        if 'combined' in output_stats and LOSS in output_stats['combined']:
-            regularization = session.run(
-                [self.regularization_loss],
-                feed_dict={self.regularization_lambda: regularization_lambda}
-            )[0]
-            output_stats['combined'][LOSS] += regularization
+        # if 'combined' in output_stats and LOSS in output_stats['combined']:
+        #     regularization = session.run(
+        #         [self.regularization_loss],
+        #         feed_dict={self.regularization_lambda: regularization_lambda}
+        #     )[0]
+        #     output_stats['combined'][LOSS] += regularization
 
         # todo: tf2 debugging
+        template = f'Dataset {name}:'
+        for measure, measure_fn in output_feature.measure_functions.items():
+            if measure_fn is not None:  # todo tf2 test is needed only during development
+                template += f' {measure}: {measure_fn.result()}'
+
+        print(template)
+
         fake_stats = OrderedDict(
             [('y', OrderedDict([('loss', [9489.847173455057]),
                                 ('mean_squared_error', [9489.847173455057]),
