@@ -35,7 +35,7 @@ from ludwig.models.modules.measure_modules import perplexity
 from ludwig.models.modules.sequence_decoders import Generator
 from ludwig.models.modules.sequence_decoders import Tagger
 from ludwig.models.modules.sequence_encoders import BERT
-from ludwig.models.modules.sequence_encoders import CNNRNN, PassthroughEncoder
+from ludwig.models.modules.sequence_encoders import CNNRNN, SequencePassthroughEncoder
 from ludwig.models.modules.sequence_encoders import EmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
@@ -863,11 +863,11 @@ sequence_encoder_registry = {
     'cnnrnn': CNNRNN,
     'embed': EmbedEncoder,
     'bert': BERT,
-    'passthrough': PassthroughEncoder,
-    'null': PassthroughEncoder,
-    'none': PassthroughEncoder,
-    'None': PassthroughEncoder,
-    None: PassthroughEncoder
+    'passthrough': SequencePassthroughEncoder,
+    'null': SequencePassthroughEncoder,
+    'none': SequencePassthroughEncoder,
+    'None': SequencePassthroughEncoder,
+    None: SequencePassthroughEncoder
 }
 
 sequence_decoder_registry = {
