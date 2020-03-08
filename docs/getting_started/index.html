@@ -38,14 +38,15 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta content="mkdocs-1.0.4, mkdocs-material-4.4.3" name="generator">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-4.6.3">
     
     
       
         <title>Getting Started - Ludwig</title>
-
-
-      <link href="../assets/stylesheets/application.30686662.css" rel="stylesheet">
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.adb8469c.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
       
@@ -53,15 +54,15 @@
         
         
         <meta name="theme-color" content="#757575">
-
-
-      <script src="../assets/javascripts/modernizr.74668098.js"></script>
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.86422ebf.js"></script>
     
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback"
-            rel="stylesheet">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
@@ -94,7 +95,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#introduction" tabindex="1" class="md-skip">
+      <a href="#introduction" tabindex="0" class="md-skip">
         Skip to content
       </a>
     
@@ -129,7 +130,7 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
       <label class="md-icon md-search__icon" for="__search"></label>
       <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
         &#xE5CD;
@@ -562,29 +563,29 @@ A suite of visualization tools allows you to analyze models' training and test p
 </ul>
 <p>Ludwig has been developed and tested with Python 3 in mind.
 If you don’t have Python 3 installed, install it by running:</p>
-<div class="codehilite"><pre><span></span>sudo apt install python3  # on ubuntu
+<div class="codehilite"><pre><span></span><code>sudo apt install python3  # on ubuntu
 brew install python3      # on mac
-</pre></div>
+</code></pre></div>
 
 
 <p>You may want to use a virtual environment to maintain an isolated <a href="https://docs.python-guide.org/dev/virtualenvs/">Python environment</a>.</p>
-<div class="codehilite"><pre><span></span>virtualenv -p python3 venv
-</pre></div>
+<div class="codehilite"><pre><span></span><code>virtualenv -p python3 venv
+</code></pre></div>
 
 
 <p>In order to install Ludwig just run:</p>
-<div class="codehilite"><pre><span></span>pip install ludwig
-</pre></div>
+<div class="codehilite"><pre><span></span><code>pip install ludwig
+</code></pre></div>
 
 
 <p>or install it by building the source code from the repository:</p>
-<div class="codehilite"><pre><span></span>git clone git@github.com:uber/ludwig.git
+<div class="codehilite"><pre><span></span><code>git clone git@github.com:uber/ludwig.git
 cd ludwig
 virtualenv -p python3 venv
 source venv/bin/activate
 pip install -r requirements.txt
 python setup.py install
-</pre></div>
+</code></pre></div>
 
 
 <p>This will install only Ludwig-s basic requirements, different feature types require different dependencies.
@@ -595,8 +596,8 @@ We divided them as different extras so that users could install only the ones th
 <li>bert-tensorflow</li>
 </ul>
 <p>If you intend to use text features and want to use <a href="http://spacy.io">spaCy</a> based language tokenizers, install language specific models with:</p>
-<div class="codehilite"><pre><span></span>python -m spacy download &lt;language_code&gt;
-</pre></div>
+<div class="codehilite"><pre><span></span><code>python -m spacy download &lt;language_code&gt;
+</code></pre></div>
 
 
 <p>More details in the <a href="../user_guide/#spacy-based-word-format-options">User Guide</a>.</p>
@@ -620,11 +621,7 @@ We divided them as different extras so that users could install only the ones th
 </ul>
 <p>Any combination of extra packages can be installed at the same time with <code>pip install ludwig[extra1,extra2,...]</code> like for instance <code>pip install ludwig[text,viz]</code>.
 The full set of dependencies can be installed with <code>pip install ludwig[full]</code>.</p>
-                <p>Beware that the <code>tensorflow</code> package contained in the <code>requirements.txt</code> file
-                    is the GPU version which works only on machines without a GPU and reverts back to CPU computation.
-                    If you prefer to install the CPU version, uninstall <code>tensorflow-gpu</code> and replace it with
-                    <code>tensorflow</code> after having installed <code>ludwig</code>, being careful at matching the
-                    version ludwig requires, as shown in <code>requirements.txt</code>.</p>
+<p>Beware that the <code>tensorflow</code> package contained in the <code>requirements.txt</code> file is the GPU version which works only on machines without a GPU and reverts back to CPU computation. If you prefer to install the CPU version, uninstall <code>tensorflow-gpu</code> and replace it with <code>tensorflow</code> after having installed <code>ludwig</code>, being careful at matching the version ludwig requires, as shown in <code>requirements.txt</code>.</p>
 <p>If you want to train Ludwig models in a distributed way, you need to also install the <code>horovod</code> and the <code>mpi4py</code> packages.
 Please follow the instructions on <a href="https://github.com/uber/horovod">Horovod's repository</a> to install it.</p>
 <h2 id="basic-principles">Basic Principles<a class="headerlink" href="#basic-principles" title="Permanent link">&para;</a></h2>
@@ -681,28 +678,28 @@ This allows ease of use for novices and flexibility for experts.</p>
 </table>
 <p>you want to learn a model that uses the content of the <code>doc_text</code> column as input to predict the values in the <code>class</code> column.
 You can use the following model definition:</p>
-<div class="codehilite"><pre><span></span><span class="p p-Indicator">{</span><span class="nt">input_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">doc_text</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">text</span><span class="p p-Indicator">}],</span><span class="nt"> output_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">class</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">category</span><span class="p p-Indicator">}]}</span>
-</pre></div>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">{</span><span class="nt">input_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">doc_text</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">text</span><span class="p p-Indicator">}],</span><span class="nt"> output_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">class</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">category</span><span class="p p-Indicator">}]}</span>
+</code></pre></div>
 
 
 <p>and start the training typing the following command in your console:</p>
-<div class="codehilite"><pre><span></span>ludwig train --data_csv path/to/file.csv --model_definition &quot;{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}&quot;
-</pre></div>
+<div class="codehilite"><pre><span></span><code>ludwig train --data_csv path/to/file.csv --model_definition &quot;{input_features: [{name: doc_text, type: text}], output_features: [{name: class, type: category}]}&quot;
+</code></pre></div>
 
 
 <p>where <code>path/to/file.csv</code> is the path to a UTF-8 encoded CSV file contaning the dataset in the previous table.
 Ludwig will perform a random split of the data, preprocess it, build a WordCNN model (the default for text features) that decodes output classes through a softmax classifier, train the model on the training set until the accuracy on the validation set stops improving.
 Training progress will be displayed in the console, but TensorBoard can also be used.</p>
 <p>If you prefer to use an RNN encoder and increase the number of epochs you want the model to train for, all you have to do is to change the model definition to:</p>
-<div class="codehilite"><pre><span></span><span class="p p-Indicator">{</span><span class="nt">input_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">doc_text</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">text</span><span class="p p-Indicator">,</span><span class="nt"> encoder</span><span class="p">:</span> <span class="nv">rnn</span><span class="p p-Indicator">}],</span><span class="nt"> output_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">class</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">category</span><span class="p p-Indicator">}],</span><span class="nt"> training</span><span class="p">:</span> <span class="p p-Indicator">{</span><span class="nt">epochs</span><span class="p">:</span> <span class="nv">50</span><span class="p p-Indicator">}}</span>
-</pre></div>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">{</span><span class="nt">input_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">doc_text</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">text</span><span class="p p-Indicator">,</span><span class="nt"> encoder</span><span class="p">:</span> <span class="nv">rnn</span><span class="p p-Indicator">}],</span><span class="nt"> output_features</span><span class="p">:</span> <span class="p p-Indicator">[{</span><span class="nt">name</span><span class="p">:</span> <span class="nv">class</span><span class="p p-Indicator">,</span><span class="nt"> type</span><span class="p">:</span> <span class="nv">category</span><span class="p p-Indicator">}],</span><span class="nt"> training</span><span class="p">:</span> <span class="p p-Indicator">{</span><span class="nt">epochs</span><span class="p">:</span> <span class="nv">50</span><span class="p p-Indicator">}}</span>
+</code></pre></div>
 
 
 <p>Refer to the <a href="../user_guide/">User Guide</a> to find out all the options available to you in the model definition and take a look at the <a href="../examples/">Examples</a> to see how you can use Ludwig for several different tasks.</p>
 <p>After training, Ludwig will create a directory under <code>results</code> containing the trained model with its hyperparameters and summary statistics of the training process.
 You can visualize them using one of the several visualization options available in the <code>visualize</code> tool, for instance:</p>
-<div class="codehilite"><pre><span></span>ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
-</pre></div>
+<div class="codehilite"><pre><span></span><code>ludwig visualize --visualization learning_curves --training_statistics path/to/training_statistics.json
+</code></pre></div>
 
 
 <p>The commands will display a graph that looks like the following, where you can see loss and accuracy as functions of train iteration number:</p>
@@ -713,14 +710,14 @@ You can visualize them using one of the several visualization options available 
 Refer to the <a href="../user_guide/#distributed-training">User Guide</a> for more details.</p>
 <h3 id="predict">Predict<a class="headerlink" href="#predict" title="Permanent link">&para;</a></h3>
 <p>If you have new data and you want your previously trained model to predict target output values, you can type the following command in your console:</p>
-<div class="codehilite"><pre><span></span>ludwig predict --data_csv path/to/data.csv --model_path /path/to/model
-</pre></div>
+<div class="codehilite"><pre><span></span><code>ludwig predict --data_csv path/to/data.csv --model_path /path/to/model
+</code></pre></div>
 
 
 <p>Running this command will return model predictions and some test performance statistics if the dataset contains ground truth information to compare to.
 Those can be visualized by the <code>visualize</code> tool, which can also be used to compare performances and predictions of different models, for instance:</p>
-<div class="codehilite"><pre><span></span>ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
-</pre></div>
+<div class="codehilite"><pre><span></span><code>ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
+</code></pre></div>
 
 
 <p>will return a bar plot comparing the models on different measures:</p>
@@ -728,7 +725,7 @@ Those can be visualized by the <code>visualize</code> tool, which can also be us
 <p>A handy <code>ludwig experiment</code> command that performs training and prediction one after the other is also available.</p>
 <h3 id="programmatic-api">Programmatic API<a class="headerlink" href="#programmatic-api" title="Permanent link">&para;</a></h3>
 <p>Ludwig also provides a simple programmatic API that allows you to train or load a model and use it to obtain predictions on new data:</p>
-<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">ludwig.api</span> <span class="kn">import</span> <span class="n">LudwigModel</span>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">ludwig.api</span> <span class="kn">import</span> <span class="n">LudwigModel</span>
 
 <span class="c1"># train a model</span>
 <span class="n">model_definition</span> <span class="o">=</span> <span class="p">{</span><span class="o">...</span><span class="p">}</span>
@@ -742,7 +739,7 @@ Those can be visualized by the <code>visualize</code> tool, which can also be us
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_dataframe</span><span class="p">)</span>
 
 <span class="n">model</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</pre></div>
+</code></pre></div>
 
 
 <p><code>model_definition</code> is a dictionary contaning the same information of the YAML file.
@@ -753,8 +750,16 @@ It is easy to add an additional datatype that is not currently supported by addi
 <p>Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending of the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
 Refer to the <a href="../developer_guide/">Developer Guide</a> for further details.</p>
+                
+                  
+                
+                
+              
+              
+                
 
 
+              
             </article>
           </div>
         </div>
@@ -845,10 +850,10 @@ Refer to the <a href="../developer_guide/">Developer Guide</a> for further detai
 </footer>
       
     </div>
-
-    <script src="../assets/javascripts/application.ac79c3b0.js"></script>
+    
+      <script src="../assets/javascripts/application.c33a9706.js"></script>
       
-      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.1",url:{base:".."}})</script>
       
     
   </body>

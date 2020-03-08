@@ -751,17 +751,17 @@ train_size = int(0.6 * len(df))
 vali_size = int(0.2 * len(df))
 
 # train, validation, test split
-df[SPLIT] = 0
+df['split'] = 0
 df.loc[
     (
         (df.index.values >= train_size) &
         (df.index.values < train_size + vali_size)
     ),
-    (SPLIT)
+    ('split')
 ] = 1
 df.loc[
     df.index.values >= train_size + vali_size,
-    (SPLIT)
+    ('split')
 ] = 2
 
 # prepare timeseries input feature colum
