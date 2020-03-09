@@ -25,51 +25,41 @@ from ludwig.utils.misc import get_from_registry
 logger = logging.getLogger(__name__)
 
 
-def build_inputs(input_features,
-                 regularizer,
-                 dropout_rate,
-                 is_training=True,
-                 **kwargs):
+def build_inputs(
+        input_features_def,
+        regularizer,
+        **kwargs
+):
     # ================ Inputs =============
-    feature_representations = OrderedDict()
-    input_features = topological_sort_feature_dependencies(input_features)
-    for input_feature in input_features:
-        feature_representation = build_single_input(input_feature,
-                                                    regularizer,
-                                                    dropout_rate,
-                                                    is_training=is_training,
-                                                    **kwargs)
-        feature_representations[input_feature['name']] = feature_representation
-    return feature_representations
+    input_features = OrderedDict()
+    input_features_def = topological_sort_feature_dependencies(input_features_def)
+    for input_feature_def in input_features_def:
+        input_features[input_feature_def['name']] = build_single_input(
+            input_feature_def,
+            regularizer,
+            **kwargs
+        )
+    return input_features
 
 
-def build_single_input(input_feature,
+def build_single_input(input_feature_def,
                        regularizer,
-                       dropout_rate,
-                       is_training=True,
                        **kwargs):
-    scope_name = input_feature['name']
+    scope_name = input_feature_def['name']
     logger.debug('- Input {} feature {}'.format(
-        input_feature['type'],
-        input_feature['name']
+        input_feature_def['type'],
+        input_feature_def['name']
     ))
-    if input_feature.get('tied_weights', None) is not None:
-        scope_name = input_feature['tied_weights']
+    if input_feature_def.get('tied_weights', None) is not None:
+        scope_name = input_feature_def['tied_weights']
 
     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE):
         input_feature_class = get_from_registry(
-            input_feature['type'],
+            input_feature_def['type'],
             input_type_registry
         )
-        input_feature_obj = input_feature_class(input_feature)
-        feature_representation = input_feature_obj.build_input(
-            regularizer=regularizer,
-            dropout_rate=dropout_rate, is_training=is_training,
-            **kwargs)
-        feature_representation['representation'] = tf.identity(
-            feature_representation['representation'],
-            name=scope_name)
-    return feature_representation
+        input_feature_obj = input_feature_class(input_feature_def)
+    return input_feature_obj
 
 
 dynamic_length_encoders = {

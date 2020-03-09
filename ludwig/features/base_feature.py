@@ -154,7 +154,7 @@ class OutputFeature(ABC, BaseFeature):
     def populate_defaults(input_feature):
         pass
 
-    def concat_dependencies(self, hidden, hidden_size, final_hidden):
+    def concat_dependencies(self, hidden, final_hidden):
         if len(self.dependencies) > 0:
             dependencies_hidden = []
             for dependency in self.dependencies:
@@ -225,7 +225,7 @@ class OutputFeature(ABC, BaseFeature):
                     )
                 )
 
-        return hidden, hidden_size
+        return hidden
 
     def output_specific_fully_connected(
             self,
@@ -274,8 +274,7 @@ class OutputFeature(ABC, BaseFeature):
     def concat_dependencies_and_build_output(
             self,
             combiner_hidden,
-            combiner_hidden_size,
-            final_hidden,
+            other_output_features,
             regularizer=None,
             **kwargs
     ):
@@ -287,24 +286,21 @@ class OutputFeature(ABC, BaseFeature):
             )
 
         # ================ Adding Dependencies ================
-        feature_hidden, feature_hidden_size = self.concat_dependencies(
+        feature_hidden = self.concat_dependencies(
             combiner_hidden,
-            combiner_hidden_size,
-            final_hidden
+            other_output_features
         )
 
         # ================ Output-wise Fully Connected ================
         (
             feature_hidden,
-            feature_hidden_size
         ) = self.output_specific_fully_connected(
             feature_hidden,
-            feature_hidden_size,
             dropout_rate=kwargs['dropout_rate'],
             regularizer=regularizer,
             is_training=kwargs['is_training']
         )
-        final_hidden[self.name] = (feature_hidden, feature_hidden_size)
+        other_output_features[self.name] = (feature_hidden, feature_hidden_size)
 
         # ================ Outputs ================
         train_mean_loss, eval_loss, output_tensors = self.build_output(

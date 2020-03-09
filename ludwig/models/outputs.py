@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-from collections import OrderedDict
 
 import tensorflow.compat.v1 as tf
 
@@ -25,46 +24,77 @@ from ludwig.utils.misc import get_from_registry
 logger = logging.getLogger(__name__)
 
 
-def build_outputs(output_features, hidden, hidden_size, regularizer,
-                  dropout_rate,
-                  is_training=True,
-                  model=None, **kwargs):
-    output_features = topological_sort_feature_dependencies(output_features)
-    output_tensors = OrderedDict()
-    final_hidden = {}
-    output_train_losses = []
-    output_eval_losses = []
-    for output_feature in output_features:
-        of_train_mean_loss, of_eval_loss, of_output_tensors = build_single_output(
-            output_feature,
+def build_outputs(
+        output_features_def,
+        hidden,
+        regularizer,
+        **kwargs
+):
+    output_features_def = topological_sort_feature_dependencies(output_features_def)
+    output_features = {}
+
+    for output_feature_def in output_features_def:
+        output_feature = build_single_output(
+            output_feature_def,
             hidden,
-            hidden_size,
-            final_hidden,
-            dropout_rate,
+            output_features,
             regularizer,
-            is_training,
-            model=model,
             **kwargs
         )
-        output_train_losses.append(of_train_mean_loss)
-        output_eval_losses.append(of_eval_loss)
-        output_tensors.update(of_output_tensors)
+        output_features[output_feature_def['name']] = output_feature
+
+    return output_features
+
+
+def build_single_output(
+        output_feature_def,
+        feature_hidden,
+        other_output_features,
+        regularizer,
+        **kwargs
+):
+    logger.debug('- Output {} feature {}'.format(
+        output_feature_def['type'],
+        output_feature_def['name']
+    ))
+    with tf.variable_scope(output_feature_def['name']):
+        feature_class = get_from_registry(
+            output_feature_def['type'],
+            output_type_registry
+        )
+        feature = feature_class(output_feature_def)
+        weighted_train_mean_loss, weighted_eval_loss, output_tensors = feature.concat_dependencies_and_build_output(
+            feature_hidden,
+            other_output_features,
+            regularizer,
+            **kwargs
+        )
+
+    return weighted_train_mean_loss, weighted_eval_loss, output_tensors
+
+
+def calculate_combined_loss(output_feature):
+    output_train_losses.append(output_feature)
+    output_eval_losses.append(of_eval_loss)
+    output_tensors.update(of_output_tensors)
 
     train_combined_mean_loss = tf.reduce_sum(
         tf.stack(output_train_losses),
         name='train_combined_mean_loss')
-    if regularizer is not None:
-        regularization_losses = tf.get_collection(
-            tf.GraphKeys.REGULARIZATION_LOSSES)
-        if regularization_losses:
-            regularization_loss = tf.add_n(regularization_losses)
-            logger.debug('- Regularization losses: {0}'.format(
-                regularization_losses))
 
-        else:
-            regularization_loss = tf.constant(0.0)
-    else:
-        regularization_loss = tf.constant(0.0)
+    # todo re-add later
+    # if regularizer is not None:
+    #    regularization_losses = tf.get_collection(
+    #        tf.GraphKeys.REGULARIZATION_LOSSES)
+    #   if regularization_losses:
+    #        regularization_loss = tf.add_n(regularization_losses)
+    #        logger.debug('- Regularization losses: {0}'.format(
+    #            regularization_losses))
+    #
+    #   else:
+    #        regularization_loss = tf.constant(0.0)
+    # else:
+    regularization_loss = tf.constant(0.0)
 
     train_reg_mean_loss = tf.add(train_combined_mean_loss,
                                  regularization_loss,
@@ -75,31 +105,3 @@ def build_outputs(output_features, hidden, hidden_size, regularizer,
                                        name='eval_combined_loss')
 
     return train_reg_mean_loss, eval_combined_loss, regularization_loss, output_tensors
-
-
-def build_single_output(output_feature, feature_hidden, feature_hidden_size,
-                        final_hidden,
-                        dropout_rate, regularizer, is_training=True,
-                        model=None, **kwargs):
-    logger.debug('- Output {} feature {}'.format(
-        output_feature['type'],
-        output_feature['name']
-    ))
-    with tf.variable_scope(output_feature['name']):
-        feature_class = get_from_registry(
-            output_feature['type'],
-            output_type_registry
-        )
-        feature = feature_class(output_feature)
-        weighted_train_mean_loss, weighted_eval_loss, output_tensors = feature.concat_dependencies_and_build_output(
-            feature_hidden,
-            feature_hidden_size,
-            final_hidden,
-            dropout_rate=dropout_rate,
-            regularizer=regularizer,
-            is_training=is_training,
-            **kwargs
-        )
-
-    model.add_output_feature(feature)
-    return weighted_train_mean_loss, weighted_eval_loss, output_tensors

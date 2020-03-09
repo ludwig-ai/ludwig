@@ -34,19 +34,16 @@ from functools import reduce
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-from tabulate import tabulate
+# import tensorflow as tf2    # todo: tf2 port
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Model as ModelTf2
 from tensorflow.python import debug as tf_debug
 from tensorflow.python.saved_model import builder as saved_model_builder
 from tqdm import tqdm
 
-#import tensorflow as tf2    # todo: tf2 port
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.models import Model as ModelTf2
-
 from ludwig.constants import ACCURACY, APPEND, AVG_EXP, BINARY, CATEGORY, \
     CORRECT_PREDICTIONS, CORRECT_ROWWISE_PREDICTIONS, LENGTHS, LOSS, \
     MEASURE, PREDICTION, PREDICTIONS, PROBABILITIES, SUM, SEQ_SUM, SEQUENCE
-from ludwig.contrib import contrib_command
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
@@ -55,26 +52,23 @@ from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
 from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
-from ludwig.models.combiners import get_build_combiner
+from ludwig.models.combiners import get_combiner, get_combiner_class
 from ludwig.models.inputs import build_inputs, dynamic_length_encoders
 from ludwig.models.modules.loss_modules import regularizer_registry
 from ludwig.models.modules.measure_modules import get_improved_fun
 from ludwig.models.modules.measure_modules import get_initial_validation_value
+from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
 from ludwig.models.modules.optimization_modules import optimize
 from ludwig.models.outputs import build_outputs
-from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import default_training_params
-from ludwig.utils.math_utils import learning_rate_warmup_distributed, \
-    learning_rate_warmup
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 from ludwig.utils.tf_utils import get_tf_config
-from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +77,9 @@ logger = logging.getLogger(__name__)
 # test_metric = tf.keras.metrics.MeanSquaredError(name='test_metric')
 
 tf.config.experimental_run_functions_eagerly(True)
-# end of proof-of-concept
 
+
+# end of proof-of-concept
 
 class KerasModel(ModelTf2):
     def __init__(self):
@@ -92,12 +87,10 @@ class KerasModel(ModelTf2):
         self.keras_layers = []
         self.__build(keras_layers=self.keras_layers)
 
-
     def call(self, inputs):
         # todo: tf2 proof-of-concept code
         this_list = [inputs] + self.keras_layers
         return reduce(lambda x, y: y(x), this_list)
-
 
     def __build(self, keras_layers=None):
         # todo: tf2 proof-of-concept code
@@ -110,10 +103,97 @@ class KerasModel(ModelTf2):
         # end of proof-of-concept
 
 
+class ECD(ModelTf2):
+    def __init__(
+            self,
+            input_features_def,
+            combiner_def,
+            output_features_def,
+            **kwargs
+    ):
+        super().__init__()
+
+        # if self.horovod:
+        #    self.horovod.init()
+
+        # tf.reset_default_graph()
+
+        # ================ Setup ================
+        # tf.set_random_seed(random_seed)
+
+        # self.global_step = tf.Variable(0, trainable=False)
+        # self.regularization_lambda = tf.placeholder(
+        #    tf.float32,
+        #    name='regularization_lambda'
+        # )
+        # regularizer = regularizer_registry[training['regularizer']]
+        # self.regularizer = regularizer(self.regularization_lambda)
+
+        # self.learning_rate = tf.placeholder(
+        #    tf.float32,
+        #    name='learning_rate'
+        # )
+        # self.dropout_rate = tf.placeholder(tf.float32,
+        #                                   name='dropout_rate')
+        # self.is_training = tf.placeholder(tf.bool, [],
+        #                                  name='is_training')
+
+        # ================ Inputs ================
+        self.input_features = build_inputs(
+            input_features_def,
+            self.regularizer
+        )
+
+        # for fe_name, fe_properties in feature_encodings.items():
+        #    setattr(self, fe_name, fe_properties['placeholder'])
+
+        # ================ Model ================
+        logger.debug('- Combiner {}'.format(combiner_def['type']))
+        combiner_class = get_combiner_class(combiner_def['type'])
+        self.combiner = combiner_class(
+            self.input_features,
+            self.regularizer,
+            **combiner_def,
+            **kwargs
+        )
+        # self.combiner = build_combiner(
+        #    self.input_features,
+        #    self.regularizer,
+        #    **kwargs
+        # )
+
+        # ================ Outputs ================
+        self.output_features = build_outputs(
+            output_features_def,
+            self.combiner,
+            self.regularizer,
+        )
+
+    def call(self, inputs, training=None, mask=None):
+        # todo: tf2 proof-of-concept code
+        # inputs is a dict feature_name -> tensor / ndarray
+        assert inputs.keys() == self.input_features.keys()
+
+        encoder_outputs = []
+        for input_feature_name, input_values in inputs:
+            encoder_output = self.input_features[input_feature_name].encode(input_values)
+            encoder_outputs.append(encoder_output)
+
+        combiner_outputs = self.combiner(encoder_outputs)
+
+        output_tensors = {}
+        for output_feature_name, output_features in self.output_features:
+            decoder_output = output_features.decode(combiner_outputs)
+            output_tensors[output_feature_name] = decoder_output
+
+        return output_tensors
+
+
 class Model:
     """
     Model is a class that builds the model that Ludwig uses
     """
+
     def __init__(
             self,
             input_features,
@@ -132,6 +212,7 @@ class Model:
             self.horovod = horovod.tensorflow
             from mpi4py import MPI
             self.comm = MPI.COMM_WORLD
+            self.horovod.init()
 
         self.debug = debug
         self.weights_save_path = None
@@ -141,22 +222,59 @@ class Model:
         self.epochs = None
         self.received_sigint = False
 
-        # tf2 functionality
-        self.keras_model = KerasModel()
-        self.input_features = None
-        self.output_features = None
-        self.optimizer_function = None
+        self.hyperparameters['input_features'] = input_features
+        self.hyperparameters['combiner'] = combiner
+        self.hyperparameters['output_features'] = output_features
+        self.hyperparameters['training'] = training
+        self.hyperparameters['preprocessing'] = preprocessing
+        self.hyperparameters['random_seed'] = random_seed
+        self.hyperparameters.update(kwargs)
 
+        tf.set_random_seed(random_seed)
+        self.global_step = tf.Variable(0, trainable=False)
 
-        self.__build(
-            input_features,
-            output_features,
-            combiner,
+        self.ecd = ECD(input_features, combiner, output_features)
+
+        # ================ Optimizer ================
+        self.optimize, self.learning_rate = optimize(
+            self.train_reg_mean_loss,
             training,
-            preprocessing,
-            random_seed,
-            **kwargs
+            self.learning_rate,
+            self.global_step,
+            self.horovod
         )
+
+        # todo tf2 work-in-progress to handle optimiser
+        self.optimizer_function = get_optimizer_fun_tf2(
+            self.hyperparameters['training']['optimizer']['type']
+        )
+
+        tf.summary.scalar(
+            'combined/batch_train_reg_mean_loss',
+            self.train_reg_mean_loss
+        )
+
+        # self.merged_summary = tf.summary.merge_all()
+        # self.graph_initialize = tf.global_variables_initializer()
+        if self.horovod:
+            self.broadcast_op = self.horovod.broadcast_global_variables(0)
+        self.saver = tf.train.Saver()
+
+        # todo tf2 doing this out of context of Graph to avoid this error
+        # this is work-around until we can get rid of graph
+        # tensorflow.python.eager.core._FallbackException: This function does not handle the case of the path where all inputs are not already EagerTensors.
+        # for of_name, of in self.output_features.items():
+        #    of._setup_measures_tf2(of)
+
+        # self.__build(
+        #    input_features,
+        #    output_features,
+        #    combiner,
+        #    training,
+        #    preprocessing,
+        #    random_seed,
+        #    **kwargs
+        # )
 
     def __build(
             self,
@@ -198,17 +316,11 @@ class Model:
                 tf.float32,
                 name='learning_rate'
             )
-            self.dropout_rate = tf.placeholder(tf.float32,
-                                               name='dropout_rate')
-            self.is_training = tf.placeholder(tf.bool, [],
-                                              name='is_training')
 
             # ================ Inputs ================
             feature_encodings = build_inputs(
                 input_features,
-                self.regularizer,
-                self.dropout_rate,
-                is_training=self.is_training
+                self.regularizer
             )
 
             for fe_name, fe_properties in feature_encodings.items():
@@ -216,7 +328,7 @@ class Model:
 
             # ================ Model ================
             logger.debug('- Combiner {}'.format(combiner['type']))
-            build_combiner = get_build_combiner(combiner['type'])(**combiner)
+            build_combiner = get_combiner(combiner['type'])(**combiner)
             hidden, hidden_size = build_combiner(
                 feature_encodings,
                 self.regularizer,
@@ -230,10 +342,6 @@ class Model:
                 output_features,
                 hidden,
                 hidden_size,
-                regularizer=self.regularizer,
-                dropout_rate=self.dropout_rate,
-                is_training=self.is_training,
-                model=self
             )
 
             (
@@ -278,7 +386,6 @@ class Model:
         for of_name, of in self.output_features.items():
             of._setup_measures_tf2(of)
 
-
     # todo: tf2 proof-of-concept code
     @tf.function
     def train_step(self, model, optimizer, output_feature, inputs, targets):
@@ -303,7 +410,7 @@ class Model:
         targets_hat = model(inputs, training=False)
         # todo tf2 clean up commented out code
         # print("in testing", y.shape, y_hat.shape)
-        #t_loss = loss_object(y, y_hat)
+        # t_loss = loss_object(y, y_hat)
 
         for measure_name, measure_fn in output_feature.measure_functions.items():
             if measure_fn is not None:  # todo tf2 test only needed during development
@@ -382,8 +489,8 @@ class Model:
                     )
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag,
-                                       metric_val,
-                                       step=step)
+                                      metric_val,
+                                      step=step)
 
         train_writer.flush()
 
@@ -639,22 +746,21 @@ class Model:
                 # create array for predictors
                 # todo: tf2 need to handle case of single predictor, e.g., image
                 inputs = reduce(lambda x, y: np.vstack((x, y)),
-                           [batch[f['name']] for f in
-                                self.hyperparameters['input_features']]).T
+                                [batch[f['name']] for f in
+                                 self.hyperparameters['input_features']]).T
 
                 # create array for target
                 # is there more than one target
                 if len(self.hyperparameters['output_features']) > 1:
                     target = reduce(lambda x, y: np.vstack((x, y)),
-                               [batch[f['name']] for f in
-                                    self.hyperparameters['output_features']]).T
+                                    [batch[f['name']] for f in
+                                     self.hyperparameters['output_features']]).T
                 else:
                     of_name = self.hyperparameters['output_features'][0]['name']
                     output_feature = self.output_features[of_name]
                     target = batch[self.hyperparameters['output_features'][0]['name']]
 
-
-                self.train_step(self.keras_model,
+                self.train_step(self.ecd,
                                 self.optimizer_function,
                                 output_feature,
                                 inputs,
@@ -706,7 +812,6 @@ class Model:
                 if is_on_master():
                     progress_bar.update(1)
 
-
             # post training ############################
             if is_on_master():
                 progress_bar.close()
@@ -721,7 +826,6 @@ class Model:
             #         template += f' {measure}: {measure_fn.result()}'
             #
             # print(template)
-
 
             # ================ Eval ================
             # init tables
@@ -900,7 +1004,6 @@ class Model:
                                   ('combined', {'loss': [9489.847173455057], 'accuracy': [0.0]})])
         return (fake_stats, fake_stats, fake_stats)  # todo: tf2 debugging only
 
-
     def train_online(
             self,
             dataset,
@@ -1063,7 +1166,7 @@ class Model:
                     self.hyperparameters['output_features'][0]['name']]
 
             result = self.evaluation_step(
-                self.keras_model,
+                self.ecd,
                 output_feature,
                 predictors,
                 target

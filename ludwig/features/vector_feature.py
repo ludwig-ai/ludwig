@@ -25,7 +25,7 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.dense_encoders import Dense
+from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
 from ludwig.models.modules.measure_modules import \
@@ -450,5 +450,5 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
 
 vector_encoder_registry = {
-    'fc_stack': Dense
+    'fc_stack': FCStack
 }

@@ -17,6 +17,12 @@ import logging
 
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import LayerNormalization
 
 from ludwig.models.modules.initializer_modules import get_initializer
 
@@ -77,7 +83,7 @@ def fc_layer(inputs, in_count, out_count,
     return hidden
 
 
-class FCStack:
+class FCStack(Layer):
 
     def __init__(
             self,
@@ -85,11 +91,19 @@ class FCStack:
             num_layers=1,
             default_fc_size=256,
             default_activation='relu',
+            default_use_bias=True,
             default_norm=None,
-            default_dropout=False,
-            default_initializer=None,
-            default_regularize=True
+            default_dropout_rate=0,
+            default_weights_initializer='glorot_uniform',
+            default_bias_initializer='zeros',
+            default_weights_regularizer=None,
+            default_bias_regularizer=None,
+            # default_activity_regularizer=None,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
     ):
+        super(FCStack, self).__init__()
+
         if layers is None:
             self.layers = []
             for i in range(num_layers):
@@ -104,39 +118,49 @@ class FCStack:
                 layer['activation'] = default_activation
             if 'norm' not in layer:
                 layer['norm'] = default_norm
-            if 'dropout' not in layer:
-                layer['dropout'] = default_dropout
-            if 'regularize' not in layer:
-                layer['regularize'] = default_regularize
-            if 'initializer' not in layer:
-                layer['initializer'] = default_initializer
-        
-    def __call__(
-            self,
-            inputs,
-            inputs_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=False
-    ):
-        hidden = inputs
+            if 'dropout_rate' not in layer:
+                layer['dropout_rate'] = default_dropout_rate
+            if 'weights_initializer' not in layer:
+                layer['weights_initializer'] = default_weights_initializer
+            if 'weights_regularizer ' not in layer:
+                layer['weights_regularizer '] = default_weights_regularizer
+
+        self.stack = []
+
         for i, layer in enumerate(self.layers):
             with tf.variable_scope('fc_' + str(i)):
-                hidden = fc_layer(
-                    hidden,
-                    inputs_size,
+                self.stack.append(Dense(
                     layer['fc_size'],
-                    activation=layer['activation'],
-                    norm=layer['norm'],
-                    dropout=layer['dropout'],
-                    dropout_rate=dropout_rate,
-                    is_training=is_training,
-                    initializer=layer['initializer'],
-                    regularizer=regularizer if layer[
-                        'regularize'] else None
-                )
-                logger.debug('  fc_{}: {}'.format(i, hidden))
+                    kernel_initializer=layer['weights_initializer'],
+                    kernel_regularizer=layer['weights_regularizer'],
+                ))
 
-            inputs_size = layer['fc_size']
+                if layer['norm']:
+                    if layer['norm'] == 'batch':
+                        self.stack.append(BatchNormalization())
+                    if layer['norm'] == 'layer':
+                        self.stack.append(LayerNormalization())
 
+                self.stack.append(Activation(layer['activation']))
+
+                if layer['dropout_rate'] > 0:
+                    self.stack.append(Dropout(layer['dropout_rate']))
+
+                # logger.debug('  fc_{}: {}'.format(i, hidden))
+
+    def build(
+            self,
+            input_shape,
+    ):
+        super(FCStack, self).build(input_shape)
+
+    def call(self, inputs, training=None):
+        hidden = inputs
+        for layer in self.stack:
+            hidden = layer(hidden, training=training)
         return hidden
+
+    def compute_output_shape(self, input_shape):
+        if self.stack:
+            return self.stack[-1].compute_output_shape(input_shape)
+        return input_shape

@@ -26,27 +26,26 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.fully_connected_modules import fc_layer
+from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.initializer_modules import get_initializer
+from ludwig.models.modules.loss_modules import \
+    absolute_loss as get_absolute_loss
+from ludwig.models.modules.loss_modules import \
+    mean_absolute_error as get_mean_absolute_error
+from ludwig.models.modules.loss_modules import \
+    mean_squared_error as get_mean_squared_error
+from ludwig.models.modules.loss_modules import \
+    squared_loss as get_squared_loss
+from ludwig.models.modules.measure_modules import ErrorScore
+from ludwig.models.modules.measure_modules import R2Score
 from ludwig.models.modules.measure_modules import \
     absolute_error as get_absolute_error
 from ludwig.models.modules.measure_modules import error as get_error
 from ludwig.models.modules.measure_modules import r2 as get_r2
 from ludwig.models.modules.measure_modules import \
     squared_error as get_squared_error
-from ludwig.models.modules.measure_modules import ErrorScore
-from ludwig.models.modules.measure_modules import R2Score
-
-from ludwig.models.modules.loss_modules import \
-    absolute_loss as get_absolute_loss
-from ludwig.models.modules.loss_modules import \
-    squared_loss as get_squared_loss
-from ludwig.models.modules.loss_modules import \
-    mean_squared_error as get_mean_squared_error
-from ludwig.models.modules.loss_modules import \
-    mean_absolute_error as get_mean_absolute_error
-
-from ludwig.utils.misc import set_default_value
+from ludwig.models.modules.numerical_encoders import NumericalPassthroughEncoder
+from ludwig.utils.misc import set_default_value, get_from_registry
 from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
@@ -100,60 +99,80 @@ class NumericalBaseFeature(BaseFeature):
             if preprocessing_parameters['normalization'] == 'zscore':
                 mean = metadata[feature['name']]['mean']
                 std = metadata[feature['name']]['std']
-                data[feature['name']] = (data[feature['name']]-mean)/std
+                data[feature['name']] = (data[feature['name']] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
                 min_ = metadata[feature['name']]['min']
                 max_ = metadata[feature['name']]['max']
                 data[feature['name']] = (
-                    data[feature['name']]-min_)/(max_-min_)
+                                                data[feature['name']] - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
+        self.encoder = 'passthrough'
         self.norm = None
         self.dropout = False
 
-        _ = self.overwrite_defaults(feature)
+        encoder_parameters = self.overwrite_defaults(feature)
 
-    def _get_input_placeholder(self):
-        return tf.placeholder(
-            tf.float32,
-            shape=[None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.name)
+        self.encoder_obj = self.get_numerical_encoder(encoder_parameters)
+
+    def get_numerical_encoder(self, encoder_parameters):
+        return get_from_registry(self.encoder, numerical_encoder_registry)(
+            **encoder_parameters
         )
 
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
+    # def _get_input_placeholder(self):
+    #    return tf.placeholder(
+    #        tf.float32,
+    #        shape=[None],  # None is for dealing with variable batch size
+    #        name='{}_placeholder'.format(self.name)
+    #    )
 
-        feature_representation = fc_layer(
-            tf.expand_dims(tf.cast(placeholder, tf.float32), 1),
-            1,
-            1,
-            activation=None,
-            norm=self.norm,
-            dropout=self.dropout,
-            dropout_rate=dropout_rate,
-            regularizer=regularizer,
-            initializer='ones'
-        )
+    # def build_input(
+    #         self,
+    #         regularizer,
+    #         dropout_rate,
+    #         is_training=False,
+    #         **kwargs
+    # ):
+    #     #placeholder = self._get_input_placeholder()
+    #
+    #     feature_representation = fc_layer(
+    #         tf.expand_dims(tf.cast(placeholder, tf.float32), 1),
+    #         1,
+    #         1,
+    #         activation=None,
+    #         norm=self.norm,
+    #         dropout=self.dropout,
+    #         dropout_rate=dropout_rate,
+    #         regularizer=regularizer,
+    #         initializer='ones'
+    #     )
+    #
+    #     logger.debug('  feature_representation: {0}'.format(
+    #         feature_representation))
+    #
+    #     feature_representation = {'type': self.name,
+    #                               'representation': feature_representation,
+    #                               'size': 1,
+    #                               'placeholder': placeholder}
+    #
+    #     return feature_representation
 
-        logger.debug('  feature_representation: {0}'.format(
-            feature_representation))
+    def encode(self, inputs):
+        assert isinstance(inputs, tf.float32)
+        assert len(inputs.shape) == 1
 
-        feature_representation = {'type': self.name,
-                                  'representation': feature_representation,
-                                  'size': 1,
-                                  'placeholder': placeholder}
+        inputs_exp = tf.expand_dims(tf.cast(inputs, tf.float32), 1)
+        inputs_encoded = self.encoder_obj(inputs_exp)
 
-        return feature_representation
+        return inputs_encoded
+
+    def get_last_simension(self):
+        self.encoder_obj.get_last_dimension()
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -316,7 +335,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         # todo tf2 change to object method when Graph is eliminated.
 
         of.measure_functions.update(
-            {'error':  ErrorScore(name='metric_error')}
+            {'error': ErrorScore(name='metric_error')}
         )
         of.measure_functions.update(
             {'mse': tf.keras.metrics.MeanSquaredError(name='metric_mse')}
@@ -325,7 +344,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             {'mae': tf.keras.metrics.MeanAbsoluteError(name='metric_mae')}
         )
         of.measure_functions.update(
-            {'r2':  R2Score(name='metric_r2')}
+            {'r2': R2Score(name='metric_r2')}
         )
 
     def reset_measures(self):
@@ -358,7 +377,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         output_tensors[PREDICTIONS + '_' + self.name] = predictions
 
         # ================ Measures ================
-        #todo tf2 remove code after tf2 port
+        # todo tf2 remove code after tf2 port
         error, squared_error, absolute_error, r2 = self._get_measures(
             targets,
             predictions
@@ -371,8 +390,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         # end of code to remove
 
         # todo tf2 revert to original names after tf2 port
-        #self._setup_measures_tf2()
-
+        # self._setup_measures_tf2()
 
         if 'sampled' not in self.loss['type']:
             tf.summary.scalar(
@@ -513,3 +531,13 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                 'reduce_dependencies': SUM
             }
         )
+
+
+numerical_encoder_registry = {
+    'dense': FCStack,
+    'passthrough': NumericalPassthroughEncoder,
+    'null': NumericalPassthroughEncoder,
+    'none': NumericalPassthroughEncoder,
+    'None': NumericalPassthroughEncoder,
+    None: NumericalPassthroughEncoder
+}
