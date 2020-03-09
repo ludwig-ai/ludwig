@@ -1420,11 +1420,11 @@ class Model:
                 self, 'predictions_' + feature['name']
             )
             if hasattr(self, 'probabilities_' + feature['name']):
-                outputs[feature['name']] = getattr(
+                outputs['probabilities_' + feature['name']] = getattr(
                     self, 'probabilities_' + feature['name']
                 )
             if hasattr(self, 'probability_' + feature['name']):
-                outputs[feature['name']] = getattr(
+                outputs['probabilities_' + feature['name']] = getattr(
                     self,
                     'probabilities_' + feature['name']
                 )
