@@ -1416,7 +1416,7 @@ class Model:
             inputs[feature['name']] = getattr(self, feature['name'])
 
         for feature in self.hyperparameters['output_features']:
-            outputs[feature['name']] = getattr(
+            outputs['predictions_' + feature['name']] = getattr(
                 self, 'predictions_' + feature['name']
             )
             if hasattr(self, 'probabilities_' + feature['name']):
@@ -1424,9 +1424,9 @@ class Model:
                     self, 'probabilities_' + feature['name']
                 )
             if hasattr(self, 'probability_' + feature['name']):
-                outputs['probabilities_' + feature['name']] = getattr(
+                outputs['probability_' + feature['name']] = getattr(
                     self,
-                    'probabilities_' + feature['name']
+                    'probability_' + feature['name']
                 )
 
         builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(save_path)
