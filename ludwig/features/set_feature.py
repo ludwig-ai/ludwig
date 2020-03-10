@@ -268,9 +268,9 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             axis=1
         )
         jaccard_index = intersection / union
-        mean_jaccard_Index = tf.reduce_mean(jaccard_index)
+        mean_jaccard_index = tf.reduce_mean(jaccard_index)
 
-        return jaccard_index, mean_jaccard_Index
+        return jaccard_index, mean_jaccard_index
 
     def build_output(
             self,
