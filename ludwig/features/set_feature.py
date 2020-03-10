@@ -268,8 +268,9 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             axis=1
         )
         jaccard_index = intersection / union
+        mean_jaccard_Index = tf.reduce_mean(jaccard_index)
 
-        return jaccard_index
+        return jaccard_index, mean_jaccard_Index
 
     def build_output(
             self,
@@ -296,15 +297,15 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         predictions, probabilities, logits = ppl
 
         # ================ Measures ================
-        jaccard_index = self._get_measures(targets, predictions)
+        jaccard_index, mean_jaccard = self._get_measures(targets, predictions)
 
         output_tensors[PREDICTIONS + '_' + self.name] = predictions
         output_tensors[PROBABILITIES + '_' + self.name] = probabilities
         output_tensors[JACCARD + '_' + self.name] = jaccard_index
 
         tf.compat.v1.summary.scalar(
-            'batch_train_jaccard_{}'.format(self.name),
-            jaccard_index
+            'batch_train_mean_jaccard_{}'.format(self.name),
+            mean_jaccard
         )
 
         # ================ Loss ================
