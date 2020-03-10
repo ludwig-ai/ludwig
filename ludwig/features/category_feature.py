@@ -451,7 +451,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         if 'sampled' not in self.loss['type']:
             tf.compat.v1.summary.scalar(
-                'batch_train_accuracy_{}'.format(self.name),
+                'batch_train_mean_accuracy_{}'.format(self.name),
                 accuracy
             )
             tf.compat.v1.summary.scalar(
