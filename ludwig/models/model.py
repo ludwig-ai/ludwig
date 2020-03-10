@@ -1459,8 +1459,7 @@ class Model:
                 )
             if hasattr(self, 'probability_' + feature['name']):
                 outputs['probability_' + feature['name']] = getattr(
-                    self,
-                    'probability_' + feature['name']
+                    self, 'probability_' + feature['name']
                 )
 
         builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(save_path)
