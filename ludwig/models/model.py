@@ -423,6 +423,40 @@ class Model:
         if self.horovod:
             learning_rate *= self.horovod.size()
 
+        # check if validation_field is valid
+        valid_validation_field = False
+        validation_output_feature_name = None
+        if validation_field is 'combined':
+            valid_validation_field = True
+            validation_output_feature_name = 'combined'
+        else:
+            for output_feature in output_features:
+                if validation_field == output_feature['name']:
+                    valid_validation_field = True
+                    validation_output_feature_name = output_feature['name']
+        if not valid_validation_field:
+            raise ValueError(
+                'The specificed validation_field {} is not valid.'
+                'Available ones are: {}'.format(
+                    validation_field,
+                    [of['name'] for of in output_features] + ['combined']
+                )
+            )
+
+        # check if validation_measure is valid
+        valid_validation_measure = validation_measure in stat_names[
+            validation_output_feature_name
+        ]
+        if not valid_validation_measure:
+            raise ValueError(
+                'The specificed measure {} is not valid.'
+                'Available measures for {} output features are: {}'.format(
+                    validation_measure,
+                    validation_output_feature_name,
+                    stat_names[validation_output_feature_name]
+                )
+            )
+
         # ====== Setup file names =======
         if is_on_master():
             os.makedirs(save_path, exist_ok=True)
