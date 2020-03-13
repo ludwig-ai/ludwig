@@ -2128,6 +2128,7 @@ Example sequence feature entry using a tagger decoder (with default parameters) 
 ```yaml
 name: sequence_csv_column_name
 type: sequence
+decoder: tagger
 reduce_inputs: sum
 dependencies: []
 reduce_dependencies: sum
@@ -2191,11 +2192,12 @@ These are the available parameters of a tagger decoder:
 - `beam_width` (default `1`): sampling from the rnn generator is performed using beam search. By default, with a beam of one, only a greedy sequence using always the most probably next token is generated, but the beam size can be increased. This usually leads to better performance at the expense of more computation and slower generation.
 - `attention_mechanism` (default `null`): the recurrent generator may use an attention mechanism. The available ones are `bahdanau` and `luong` (for more information refer to [TensorFlow's documentation](https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention)). When `attention` is not `null` the expected size of the input tensor is `b x s x h`, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.
 
-Example sequence feature entry using a tagger decoder (with default parameters) in the output features list:
+Example sequence feature entry using a generator decoder (with default parameters) in the output features list:
 
 ```yaml
 name: sequence_csv_column_name
 type: sequence
+decoder: generator
 reduce_inputs: sum
 dependencies: []
 reduce_dependencies: sum
