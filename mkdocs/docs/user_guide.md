@@ -2129,7 +2129,7 @@ Example sequence feature entry using a tagger decoder (with default parameters) 
 name: sequence_csv_column_name
 type: sequence
 decoder: tagger
-reduce_inputs: sum
+reduce_inputs: null
 dependencies: []
 reduce_dependencies: sum
 loss:
