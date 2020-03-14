@@ -92,32 +92,33 @@ def set_embed_para(
     force_embedding_size=False,
     embeddings_on_cpu=False,
     initializer=None,
-    regularize=True
+    regularize=True,
+    regularizer
 ):
-    if not self.regularize:
+    if not regularize:
         regularizer = None
 
-    if self.embeddings_on_cpu:
+    if embeddings_on_cpu:
         with tf.device('/cpu:0'):
             embeddings, embedding_size = embedding_matrix(
-                self.vocab,
-                self.embedding_size,
-                representation=self.representation,
-                embeddings_trainable=self.embeddings_trainable,
-                pretrained_embeddings=self.pretrained_embeddings,
-                force_embedding_size=self.force_embedding_size,
-                initializer=self.initializer,
+                vocab,
+                embedding_size,
+                representation=representation,
+                embeddings_trainable=embeddings_trainable,
+                pretrained_embeddings=pretrained_embeddings,
+                force_embedding_size=force_embedding_size,
+                initializer=initializer,
                 regularizer=regularizer
             )
     else:
         embeddings, embedding_size = embedding_matrix(
-            self.vocab,
-            self.embedding_size,
-            representation=self.representation,
-            embeddings_trainable=self.embeddings_trainable,
-            pretrained_embeddings=self.pretrained_embeddings,
-            force_embedding_size=self.force_embedding_size,
-            initializer=self.initializer,
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            initializer=initializer,
             regularizer=regularizer
         )
 
