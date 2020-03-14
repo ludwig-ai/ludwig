@@ -83,6 +83,49 @@ def embedding_matrix(
     return embeddings, embedding_size
 
 
+def set_embed_para(
+    vocab,
+    embedding_size,
+    representation='dense',
+    embeddings_trainable=True,
+    pretrained_embeddings=None,
+    force_embedding_size=False,
+    embeddings_on_cpu=False,
+    initializer=None,
+    regularize=True
+):
+    if not self.regularize:
+        regularizer = None
+
+    if self.embeddings_on_cpu:
+        with tf.device('/cpu:0'):
+            embeddings, embedding_size = embedding_matrix(
+                self.vocab,
+                self.embedding_size,
+                representation=self.representation,
+                embeddings_trainable=self.embeddings_trainable,
+                pretrained_embeddings=self.pretrained_embeddings,
+                force_embedding_size=self.force_embedding_size,
+                initializer=self.initializer,
+                regularizer=regularizer
+            )
+    else:
+        embeddings, embedding_size = embedding_matrix(
+            self.vocab,
+            self.embedding_size,
+            representation=self.representation,
+            embeddings_trainable=self.embeddings_trainable,
+            pretrained_embeddings=self.pretrained_embeddings,
+            force_embedding_size=self.force_embedding_size,
+            initializer=self.initializer,
+            regularizer=regularizer
+        )
+
+    logger.debug('  embeddings: {0}'.format(embeddings))
+
+    return regularizer, embeddings, embedding_size
+
+
 class Embed:
     def __init__(
             self,
@@ -115,33 +158,18 @@ class Embed:
             dropout_rate,
             is_training=True
     ):
-        if not self.regularize:
-            regularizer = None
-
-        if self.embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                embeddings, embedding_size = embedding_matrix(
-                    self.vocab,
-                    self.embedding_size,
-                    representation=self.representation,
-                    embeddings_trainable=self.embeddings_trainable,
-                    pretrained_embeddings=self.pretrained_embeddings,
-                    force_embedding_size=self.force_embedding_size,
-                    initializer=self.initializer,
-                    regularizer=regularizer
-                )
-        else:
-            embeddings, embedding_size = embedding_matrix(
-                self.vocab,
-                self.embedding_size,
-                representation=self.representation,
-                embeddings_trainable=self.embeddings_trainable,
-                pretrained_embeddings=self.pretrained_embeddings,
-                force_embedding_size=self.force_embedding_size,
-                initializer=self.initializer,
-                regularizer=regularizer
-            )
-        logger.debug('  embeddings: {0}'.format(embeddings))
+        
+        regularizer, embeddings, embedding_size = set_embed_para(
+            self.vocab,
+            self.embedding_size,
+            self.representation,
+            self.embeddings_trainable,
+            self.pretrained_embeddings,
+            self.force_embedding_size,
+            self.embeddings_on_cpu,
+            self.initializer,
+            self.regularize
+        )
 
         embedded = tf.nn.embedding_lookup(embeddings, input_ids,
                                           name='embeddings_lookup')
@@ -187,33 +215,17 @@ class EmbedWeighted:
             dropout_rate,
             is_training=True
     ):
-        if not self.regularize:
-            regularizer = None
-
-        if self.embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                embeddings, embedding_size = embedding_matrix(
-                    self.vocab,
-                    self.embedding_size,
-                    representation=self.representation,
-                    embeddings_trainable=self.embeddings_trainable,
-                    pretrained_embeddings=self.pretrained_embeddings,
-                    force_embedding_size=self.force_embedding_size,
-                    initializer=self.initializer,
-                    regularizer=regularizer
-                )
-        else:
-            embeddings, embedding_size = embedding_matrix(
-                self.vocab,
-                self.embedding_size,
-                representation=self.representation,
-                embeddings_trainable=self.embeddings_trainable,
-                pretrained_embeddings=self.pretrained_embeddings,
-                force_embedding_size=self.force_embedding_size,
-                initializer=self.initializer,
-                regularizer=regularizer
-            )
-        logger.debug('  embeddings: {0}'.format(embeddings))
+        regularizer, embeddings, embedding_size = set_embed_para(
+            self.vocab,
+            self.embedding_size,
+            self.representation,
+            self.embeddings_trainable,
+            self.pretrained_embeddings,
+            self.force_embedding_size,
+            self.embeddings_on_cpu,
+            self.initializer,
+            self.regularize
+        )
 
         signed_input = tf.cast(tf.sign(tf.abs(input_ids)), tf.int32)
         multiple_hot_indexes = tf.multiply(
@@ -277,33 +289,17 @@ class EmbedSparse:
             dropout_rate,
             is_training=True
     ):
-        if not self.regularize:
-            regularizer = None
-
-        if self.embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                embeddings, embedding_size = embedding_matrix(
-                    self.vocab,
-                    self.embedding_size,
-                    representation=self.representation,
-                    embeddings_trainable=self.embeddings_trainable,
-                    pretrained_embeddings=self.pretrained_embeddings,
-                    force_embedding_size=self.force_embedding_size,
-                    initializer=self.initializer,
-                    regularizer=regularizer
-                )
-        else:
-            embeddings, embedding_size = embedding_matrix(
-                self.vocab,
-                self.embedding_size,
-                representation=self.representation,
-                embeddings_trainable=self.embeddings_trainable,
-                pretrained_embeddings=self.pretrained_embeddings,
-                force_embedding_size=self.force_embedding_size,
-                initializer=self.initializer,
-                regularizer=regularizer
-            )
-        logger.debug('  embeddings: {0}'.format(embeddings))
+        regularizer, embeddings, embedding_size = set_embed_para(
+            self.vocab,
+            self.embedding_size,
+            self.representation,
+            self.embeddings_trainable,
+            self.pretrained_embeddings,
+            self.force_embedding_size,
+            self.embeddings_on_cpu,
+            self.initializer,
+            self.regularize
+        )
 
         multiple_hot_indexes = tf.multiply(
             input_sparse,
