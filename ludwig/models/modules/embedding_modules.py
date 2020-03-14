@@ -158,7 +158,7 @@ class Embed:
             regularizer,
             dropout_rate,
             is_training=True
-    ):    
+    ):
         regularizer, embeddings, embedding_size = set_embed_para(
             self.vocab,
             self.embedding_size,
