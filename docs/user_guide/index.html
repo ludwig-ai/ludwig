@@ -4888,19 +4888,34 @@ Output
 <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
 </ul>
 <p>Example sequence feature entry using a tagger decoder (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
+<div class="codehilite"><pre><span></span><code><span
+        class="nt">name</span><span class="p">:</span> <span
+        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="nt">decoder</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">tagger</span>
+<span class="nt">reduce_inputs</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="nt">dependencies</span><span class="p">:</span> <span
+            class="p p-Indicator">[]</span>
+<span class="nt">reduce_dependencies</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
-    <span class="nt">confidence_penalty</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">robust_lambda</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">class_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">class_similarities</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">class_similarities_temperature</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">labels_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+    <span class="nt">confidence_penalty</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">robust_lambda</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">class_weights</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="nt">class_similarities</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="nt">class_similarities_temperature</span><span
+            class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">labels_smoothing</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">negative_samples</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">sampler</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
     <span class="nt">distortion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
@@ -4952,19 +4967,34 @@ If a <code>b x h</code> input is provided to a generator decoder using an rnn wi
 <li><code>beam_width</code> (default <code>1</code>): sampling from the rnn generator is performed using beam search. By default, with a beam of one, only a greedy sequence using always the most probably next token is generated, but the beam size can be increased. This usually leads to better performance at the expense of more computation and slower generation.</li>
 <li><code>attention_mechanism</code> (default <code>null</code>): the recurrent generator may use an attention mechanism. The available ones are <code>bahdanau</code> and <code>luong</code> (for more information refer to <a href="https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention">TensorFlow's documentation</a>). When <code>attention</code> is not <code>null</code> the expected size of the input tensor is <code>b x s x h</code>, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner. If a <code>b x h</code> input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.</li>
 </ul>
-<p>Example sequence feature entry using a tagger decoder (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
-<span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sequence</span>
-<span class="nt">reduce_inputs</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
-<span class="nt">dependencies</span><span class="p">:</span> <span class="p p-Indicator">[]</span>
-<span class="nt">reduce_dependencies</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sum</span>
+                <p>Example sequence feature entry using a generator decoder
+                    (with default parameters) in the output features list:</p>
+<div class="codehilite"><pre><span></span><code><span
+        class="nt">name</span><span class="p">:</span> <span
+        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+<span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">sequence</span>
+<span class="nt">decoder</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">generator</span>
+<span class="nt">reduce_inputs</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">sum</span>
+<span class="nt">dependencies</span><span class="p">:</span> <span
+            class="p p-Indicator">[]</span>
+<span class="nt">reduce_dependencies</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">loss</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
-    <span class="nt">confidence_penalty</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">robust_lambda</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">class_weights</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">class_similarities</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">class_similarities_temperature</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+    <span class="nt">confidence_penalty</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">robust_lambda</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">class_weights</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="nt">class_similarities</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="nt">class_similarities_temperature</span><span
+            class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">labels_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">negative_samples</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">sampler</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
