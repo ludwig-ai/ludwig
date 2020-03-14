@@ -162,6 +162,7 @@ class Embed:
         regularizer, embeddings, embedding_size = set_embed_para(
             self.vocab,
             self.embedding_size,
+            regularizer,
             self.representation,
             self.embeddings_trainable,
             self.pretrained_embeddings,
@@ -218,6 +219,7 @@ class EmbedWeighted:
         regularizer, embeddings, embedding_size = set_embed_para(
             self.vocab,
             self.embedding_size,
+            regularizer,
             self.representation,
             self.embeddings_trainable,
             self.pretrained_embeddings,
@@ -292,6 +294,7 @@ class EmbedSparse:
         regularizer, embeddings, embedding_size = set_embed_para(
             self.vocab,
             self.embedding_size,
+            regularizer,
             self.representation,
             self.embeddings_trainable,
             self.pretrained_embeddings,
