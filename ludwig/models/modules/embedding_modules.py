@@ -86,6 +86,7 @@ def embedding_matrix(
 def set_embed_para(
         vocab,
         embedding_size,
+        regularizer,
         representation='dense',
         embeddings_trainable=True,
         pretrained_embeddings=None,
@@ -93,7 +94,6 @@ def set_embed_para(
         embeddings_on_cpu=False,
         initializer=None,
         regularize=True,
-        regularizer
 ):
     if not regularize:
         regularizer = None
