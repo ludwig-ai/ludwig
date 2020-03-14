@@ -122,7 +122,7 @@ def sampled_softmax_cross_entropy(output_placeholder, feature_hidden, logits,
                                   vector_labels, class_weights,
                                   class_biases, loss, num_classes):
     output_exp = tf.cast(tf.expand_dims(output_placeholder, -1), tf.int64)    
-    sampled_values = set_Parameters(num_classes, output_exp, loss)
+    sampled_values = obtained_sampled_values(num_classes, output_exp, loss)
     train_loss = tf.nn.sampled_softmax_loss(weights=tf.transpose(class_weights),
                                             biases=class_biases,
                                             labels=output_exp,
@@ -160,7 +160,7 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
     # unpadded_targets = targets[:, :batch_max_seq_length]
     # output_exp = tf.cast(tf.reshape(unpadded_targets, [-1, 1]), tf.int64)
     output_exp = tf.cast(tf.reshape(targets, [-1, 1]), tf.int64)
-    sampled_values = set_Parameters(num_classes, output_exp, loss)
+    sampled_values = obtained_sampled_values(num_classes, output_exp, loss)
 
     def _sampled_loss(labels, logits):
         labels = tf.cast(labels, tf.int64)
@@ -251,7 +251,7 @@ regularizer_registry = {'l1': tf.contrib.layers.l1_regularizer,
 
 
 
-def set_Parameters(num_classes, output_exp, loss):
+def obtained_sampled_values(num_classes, output_exp, loss):
     """returns sampled_values using the chosen sampler"""
     if loss['sampler'] == 'fixed_unigram':
         sampled_values = tf.nn.fixed_unigram_candidate_sampler(
