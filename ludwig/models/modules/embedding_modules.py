@@ -83,7 +83,7 @@ def embedding_matrix(
     return embeddings, embedding_size
 
 
-def set_embed_para(
+def embedding_matrix_on_device(
         vocab,
         embedding_size,
         regularizer,
@@ -124,7 +124,7 @@ def set_embed_para(
 
     logger.debug('  embeddings: {0}'.format(embeddings))
 
-    return regularizer, embeddings, embedding_size
+    return embeddings, embedding_size
 
 
 class Embed:
@@ -159,7 +159,7 @@ class Embed:
             dropout_rate,
             is_training=True
     ):
-        regularizer, embeddings, embedding_size = set_embed_para(
+        embeddings, embedding_size = embedding_matrix_on_device(
             self.vocab,
             self.embedding_size,
             regularizer,
@@ -216,7 +216,7 @@ class EmbedWeighted:
             dropout_rate,
             is_training=True
     ):
-        regularizer, embeddings, embedding_size = set_embed_para(
+        embeddings, embedding_size = embedding_matrix_on_device(
             self.vocab,
             self.embedding_size,
             regularizer,
@@ -291,7 +291,7 @@ class EmbedSparse:
             dropout_rate,
             is_training=True
     ):
-        regularizer, embeddings, embedding_size = set_embed_para(
+        embeddings, embedding_size = embedding_matrix_on_device(
             self.vocab,
             self.embedding_size,
             regularizer,
