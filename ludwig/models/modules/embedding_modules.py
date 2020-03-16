@@ -95,9 +95,6 @@ def embedding_matrix_on_device(
         initializer=None,
         regularize=True,
 ):
-    if not regularize:
-        regularizer = None
-
     if embeddings_on_cpu:
         with tf.device('/cpu:0'):
             embeddings, embedding_size = embedding_matrix(
@@ -159,6 +156,9 @@ class Embed:
             dropout_rate,
             is_training=True
     ):
+        if not self.regularize:
+            regularizer = None
+
         embeddings, embedding_size = embedding_matrix_on_device(
             self.vocab,
             self.embedding_size,
@@ -216,6 +216,9 @@ class EmbedWeighted:
             dropout_rate,
             is_training=True
     ):
+        if not self.regularize:
+            regularizer = None
+
         embeddings, embedding_size = embedding_matrix_on_device(
             self.vocab,
             self.embedding_size,
@@ -291,6 +294,9 @@ class EmbedSparse:
             dropout_rate,
             is_training=True
     ):
+        if not self.regularize:
+            regularizer = None
+
         embeddings, embedding_size = embedding_matrix_on_device(
             self.vocab,
             self.embedding_size,
