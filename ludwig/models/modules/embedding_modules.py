@@ -92,8 +92,7 @@ def embedding_matrix_on_device(
         pretrained_embeddings=None,
         force_embedding_size=False,
         embeddings_on_cpu=False,
-        initializer=None,
-        regularize=True,
+        initializer=None
 ):
     if embeddings_on_cpu:
         with tf.device('/cpu:0'):
@@ -168,8 +167,7 @@ class Embed:
             self.pretrained_embeddings,
             self.force_embedding_size,
             self.embeddings_on_cpu,
-            self.initializer,
-            self.regularize
+            self.initializer
         )
 
         embedded = tf.nn.embedding_lookup(embeddings, input_ids,
@@ -228,8 +226,7 @@ class EmbedWeighted:
             self.pretrained_embeddings,
             self.force_embedding_size,
             self.embeddings_on_cpu,
-            self.initializer,
-            self.regularize
+            self.initializer
         )
 
         signed_input = tf.cast(tf.sign(tf.abs(input_ids)), tf.int32)
@@ -306,8 +303,7 @@ class EmbedSparse:
             self.pretrained_embeddings,
             self.force_embedding_size,
             self.embeddings_on_cpu,
-            self.initializer,
-            self.regularize
+            self.initializer
         )
 
         multiple_hot_indexes = tf.multiply(
