@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-from ludwig.constants import AUDIO, BACKFILL
+from ludwig.constants import AUDIO, BACKFILL, TIED
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import calculate_incr_mean
