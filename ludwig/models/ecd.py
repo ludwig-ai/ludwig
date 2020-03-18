@@ -56,12 +56,49 @@ class ECD(tf.keras.Model):
 
         combiner_outputs = self.combiner(encoder_outputs)
 
-        output_tensors = {}
+        output_logits = {}
+        output_last_hidden = {}
         for output_feature_name, decoder in self.output_features:
-            decoder_output = decoder(combiner_outputs)
-            output_tensors[output_feature_name] = decoder_output
+            decoder_logits, decoder_last_hidden = decoder(combiner_outputs, output_last_hidden)
+            output_logits[output_feature_name] = decoder_last_hidden
+            output_last_hidden[output_feature_name] = decoder_last_hidden
 
-        return output_tensors
+        return output_logits
+
+    def train_loss(self, targets, predictions):
+        train_loss = 0
+        of_train_losses = {}
+        for of_name, of_obj in self.output_features.items():
+            of_train_loss = of_obj.train_loss(targets[of_name], predictions[of_name])
+            train_loss += of_obj.weight * of_train_loss
+            of_train_losses[of_name] = of_train_loss
+        train_loss += sum(self.losses)  # regularization / other losses
+        return train_loss, of_train_losses
+
+    def eval_loss(self, targets, predictions):
+        eval_loss = 0
+        of_eval_losses = {}
+        for of_name, of_obj in self.output_features.items():
+            of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
+            eval_loss += of_obj.weight * of_eval_loss
+            of_eval_losses[of_name] = of_eval_loss
+        # eval_loss += sum(self.losses)  # regularization / other losses
+        return eval_loss, of_eval_losses
+
+    def update_measures(self, targets, predictions):
+        for of_name, of_obj in self.output_features.items():
+            of_obj.update_measures(targets[of_name], predictions[of_name])
+
+    def get_measures(self, targets, predictions):
+        all_of_measures = {}
+        for of_name, of_obj in self.output_features:
+            of_measures = of_obj.get_measures(targets[of_name], predictions[of_name])
+            all_of_measures[of_name] = of_measures
+        return all_of_measures
+
+    def reset_measures(self, targets, predictions):
+        for of_obj in self.output_features.values():
+            of_obj.reset_measures()
 
 
 def build_inputs(
@@ -144,13 +181,13 @@ def build_single_output(
         output_type_registry
     )
     output_feature_obj = output_feature_class(output_feature_def)
-    weighted_train_mean_loss, weighted_eval_loss, output_tensors = output_feature_obj.concat_dependencies_and_build_output(
-        feature_hidden,
-        other_output_features,
-        **kwargs
-    )
+    # weighted_train_mean_loss, weighted_eval_loss, output_tensors = output_feature_obj.concat_dependencies_and_build_output(
+    #    feature_hidden,
+    #    other_output_features,
+    #    **kwargs
+    # )
 
-    return weighted_train_mean_loss, weighted_eval_loss, output_tensors
+    return output_feature_obj
 
 
 def calculate_combined_loss(output_feature):

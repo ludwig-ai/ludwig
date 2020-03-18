@@ -49,7 +49,7 @@ class BaseFeature:
         return remaining_dict
 
 
-class InputFeature(ABC):
+class InputFeature(ABC, tf.keras.Model):
 
     @staticmethod
     @abstractmethod
@@ -67,7 +67,7 @@ class InputFeature(ABC):
         pass
 
 
-class OutputFeature(ABC, BaseFeature):
+class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
     def __init__(self, feature):
         super().__init__(feature)
@@ -84,7 +84,25 @@ class OutputFeature(ABC, BaseFeature):
         self.dropout = False
         self.regularize = True
         self.initializer = None
+
         self.overwrite_defaults(feature)
+
+        self.fc_stack = FCStack(
+            layers=self.fc_layers,
+            num_layers=self.num_fc_layers,
+            default_fc_size=self.fc_size,
+            default_activation=self.activation,
+            default_use_bias=True,
+            default_norm=self.norm,
+            # default_dropout_rate=self.dropout_rate,
+            default_weights_initializer=self.initializer,
+            # default_bias_initializer='zeros',
+            # default_weights_regularizer=None,
+            # default_bias_regularizer=None,
+            # default_activity_regularizer=None,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
+        )
 
     @property
     @abstractmethod
@@ -127,23 +145,12 @@ class OutputFeature(ABC, BaseFeature):
     ):
         pass
 
-    @abstractmethod
-    def build_output(
-            self,
-            hidden,
-            hidden_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=None,
-            **kwargs
-    ):
-        pass
-
     @staticmethod
     @abstractmethod
     def populate_defaults(input_feature):
         pass
 
+    # todo tf2: adapt for tf2
     def concat_dependencies(self, hidden, final_hidden):
         if len(self.dependencies) > 0:
             dependencies_hidden = []
@@ -219,89 +226,90 @@ class OutputFeature(ABC, BaseFeature):
 
     def output_specific_fully_connected(
             self,
-            feature_hidden,
-            feature_hidden_size,
-            dropout_rate,
-            regularizer,
-            is_training=True
+            inputs,  # feature_hidden
+            is_training=None,
+            mask=None
     ):
-        original_feature_hidden = feature_hidden
+        feature_hidden = inputs
+        original_feature_hidden = inputs
+
+        # flatten inputs
         if len(original_feature_hidden.shape) > 2:
             feature_hidden = tf.reshape(
                 feature_hidden,
-                [-1, feature_hidden_size]
+                [-1, feature_hidden.shape[-1]]
             )
 
-        if self.fc_layers is not None or self.num_fc_layers > 0:
-            fc_stack = FCStack(
-                layers=self.fc_layers,
-                num_layers=self.num_fc_layers,
-                default_fc_size=self.fc_size,
-                default_activation=self.activation,
-                default_norm=self.norm,
-                default_dropout=self.dropout,
-                default_regularize=self.regularize,
-                default_initializer=self.initializer
-            )
-            feature_hidden = fc_stack(
-                feature_hidden,
-                feature_hidden_size,
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-            feature_hidden_size = feature_hidden.shape.as_list()[-1]
+        # pass it through fc_stack
+        feature_hidden = self.fc_stack(
+            feature_hidden,
+            is_training=is_training,
+            mask=mask
+        )
+        feature_hidden_size = feature_hidden.shape[-1]
 
+        # reshape back to original first and second dimension
         if len(original_feature_hidden.shape) > 2:
-            sequence_length = tf.shape(original_feature_hidden)[1]
+            sequence_length = original_feature_hidden.shape[1]
             feature_hidden = tf.reshape(
                 feature_hidden,
                 [-1, sequence_length, feature_hidden_size]
             )
 
-        return feature_hidden, feature_hidden_size
+        return feature_hidden
 
-    def concat_dependencies_and_build_output(
+    def prepare_decoder_inputs(
             self,
-            combiner_hidden,
+            combiner_output,
             other_output_features,
-            regularizer=None,
-            **kwargs
+            is_training=None,
+            mask=None
     ):
+        """
+        Takes the combiner output and the outputs of other outputs features
+        computed so far and performs:
+        - reduction of combiner outputs (if needed)
+        - concatenating the outputs of dependent features (if needed)
+        - output_specific fully connected layers (if needed)
+
+        :param combiner_output: output tensor of the combiner
+        :param other_output_features: output tensors from other features
+        :param kwargs:
+        :return: tensor
+        """
+        feature_hidden = combiner_output
+
         # ================ Reduce Inputs ================
-        if self.reduce_input is not None and len(combiner_hidden.shape) > 2:
-            combiner_hidden = reduce_sequence(
-                combiner_hidden,
+        if self.reduce_input is not None and len(feature_hidden.shape) > 2:
+            feature_hidden = reduce_sequence(
+                feature_hidden,
                 self.reduce_input
             )
 
         # ================ Adding Dependencies ================
-        feature_hidden = self.concat_dependencies(
-            combiner_hidden,
-            other_output_features
-        )
+        # todo tf2 reintroduce this
+        # feature_hidden = self.concat_dependencies(
+        #    feature_hidden,
+        #    other_output_features
+        # )
 
         # ================ Output-wise Fully Connected ================
-        (
+        feature_hidden = self.output_specific_fully_connected(
             feature_hidden,
-        ) = self.output_specific_fully_connected(
-            feature_hidden,
-            dropout_rate=kwargs['dropout_rate'],
-            regularizer=regularizer,
-            is_training=kwargs['is_training']
+            is_training=is_training,
+            mask=mask
         )
-        other_output_features[self.name] = (feature_hidden, feature_hidden_size)
+        other_output_features[self.name] = feature_hidden
 
         # ================ Outputs ================
-        train_mean_loss, eval_loss, output_tensors = self.build_output(
-            feature_hidden,
-            feature_hidden_size,
-            regularizer=regularizer,
-            **kwargs
-        )
+        # train_mean_loss, eval_loss, output_tensors = self.build_output(
+        #    feature_hidden,
+        #    feature_hidden_size,
+        #    **kwargs
+        # )
+        #
+        # loss_weight = float(self.loss['weight'])
+        # weighted_train_mean_loss = train_mean_loss * loss_weight
+        # weighted_eval_loss = eval_loss * loss_weight
 
-        loss_weight = float(self.loss['weight'])
-        weighted_train_mean_loss = train_mean_loss * loss_weight
-        weighted_eval_loss = eval_loss * loss_weight
-
-        return weighted_train_mean_loss, weighted_eval_loss, output_tensors
+        return feature_hidden

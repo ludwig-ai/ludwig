@@ -301,13 +301,12 @@ class Model:
 
     # todo: tf2 proof-of-concept code
     @tf.function
-    def train_step(self, model, optimizer, output_feature, inputs, targets):
+    def train_step(self, model, optimizer, inputs, targets):
         #  issue?: https://github.com/tensorflow/tensorflow/issues/28901
-        targets = targets[:, tf.newaxis]
         with tf.GradientTape() as tape:
-            targets_hat = model(inputs, training=True)
+            predictions = model(inputs, training=True)
             # print("in training", y.shape, y_hat.shape)
-            loss = output_feature.loss_function(targets, targets_hat)
+            loss = model.train_loss(targets, predictions)
             # print("training lost:", loss.numpy())
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -318,20 +317,13 @@ class Model:
         #         measure_fn.update_state(targets, targets_hat)
 
     @tf.function
-    def evaluation_step(self, model, output_feature, inputs, targets):
-        targets = targets[:, tf.newaxis]
-        targets_hat = model(inputs, training=False)
-        # todo tf2 clean up commented out code
-        # print("in testing", y.shape, y_hat.shape)
-        # t_loss = loss_object(y, y_hat)
-
-        for measure_name, measure_fn in output_feature.measure_functions.items():
-            if measure_fn is not None:  # todo tf2 test only needed during development
-                measure_fn.update_state(targets, targets_hat)
+    def evaluation_step(self, model, inputs, targets):
+        predictions = model(inputs, training=False)
+        model.update_measures(targets, predictions)
 
     @tf.function
     def predict_step(self, model, x):
-        y_hat = model(x, training=False)
+        return model(x, training=False)
 
     def add_output_feature(self, feature):
         if self.output_features is None:
@@ -656,28 +648,15 @@ class Model:
                 # batch_num += 1
                 # print("epoch:", progress_tracker.epoch, "batch:", batch_num)
 
-                # create array for predictors
-                # todo: tf2 need to handle case of single predictor, e.g., image
-                inputs = reduce(lambda x, y: np.vstack((x, y)),
-                                [batch[f['name']] for f in
-                                 self.hyperparameters['input_features']]).T
+                inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self.hyperparameters['input_features']}
+                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['putut_features']}
 
-                # create array for target
-                # is there more than one target
-                if len(self.hyperparameters['output_features']) > 1:
-                    target = reduce(lambda x, y: np.vstack((x, y)),
-                                    [batch[f['name']] for f in
-                                     self.hyperparameters['output_features']]).T
-                else:
-                    of_name = self.hyperparameters['output_features'][0]['name']
-                    output_feature = self.output_features[of_name]
-                    target = batch[self.hyperparameters['output_features'][0]['name']]
-
-                self.train_step(self.ecd,
-                                self.optimizer_function,
-                                output_feature,
-                                inputs,
-                                target)
+                self.train_step(
+                    self.ecd,
+                    self.optimizer_function,
+                    inputs,
+                    targets
+                )
 
                 # todo: tf2 add back relevant code
                 # if self.horovod:
@@ -1078,9 +1057,8 @@ class Model:
                 target = batch[
                     self.hyperparameters['output_features'][0]['name']]
 
-            result = self.evaluation_step(
+            self.evaluation_step(
                 self.ecd,
-                output_feature,
                 predictors,
                 target
             )
