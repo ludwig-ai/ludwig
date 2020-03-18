@@ -47,10 +47,6 @@ class ConcatCombiner(tf.keras.Model):
             regularize=True,
             **kwargs
     ):
-        self.last_dimension_inputs = 0
-        for input_feature in input_features:
-            self.last_dimension_inputs += input_feature.last_dimension()
-
         self.fc_stack = None
 
         # todo this may be redundant, check
