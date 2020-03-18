@@ -127,7 +127,7 @@ class BagInputFeature(BagBaseFeature, InputFeature):
         return tf.placeholder(
             tf.float32,
             shape=[None, len(self.vocab)],
-            name=self.name
+            name=self.feature_name
         )
 
     def build_input(
@@ -149,7 +149,7 @@ class BagInputFeature(BagBaseFeature, InputFeature):
         logger.debug('feature_representation: {0}'.format(embedded))
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': embedded,
             'size': embedding_size,

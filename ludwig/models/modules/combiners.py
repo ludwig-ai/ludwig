@@ -61,17 +61,6 @@ class ConcatCombiner(tf.keras.Model):
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
-                default_norm=norm,
-                default_activation=activation,
-                # default_dropout=dropout,
-                default_weights_initializer=initializer,
-                default_weights_regularizer=regularize
-            )
-
-            self.fc_stack = FCStack(
-                layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
                 default_activation=activation,
                 # default_use_bias=use_bias,
                 default_norm=norm,

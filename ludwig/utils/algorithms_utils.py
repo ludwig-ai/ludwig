@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 
+from ludwig.constants import TIED
 
 logger = logging.getLogger(__name__)
 

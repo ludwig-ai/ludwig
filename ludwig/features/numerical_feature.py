@@ -98,7 +98,8 @@ class NumericalBaseFeature(BaseFeature):
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
     def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
+        NumericalBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
 
         self.encoder = 'passthrough'
         self.norm = None
@@ -143,7 +144,8 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
 
 class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def __init__(self, feature):
-        super().__init__(feature)
+        NumericalBaseFeature.__init__(self, feature)
+        OutputFeature.__init__(self, feature)
 
         self.loss = {'type': MEAN_SQUARED_ERROR}
         self.clip = None
@@ -183,7 +185,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                 raise ValueError(
                     'The clip parameter of {} is {}. '
                     'It must be a list or a tuple of length 2.'.format(
-                        self.name,
+                        self.feature_name,
                         self.clip
                     )
                 )

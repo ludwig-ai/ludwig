@@ -75,7 +75,7 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
         return tf.placeholder(
             tf.bool,
             shape=[None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_input(
@@ -95,7 +95,7 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
             feature_representation))
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': feature_representation,
             'size': 1,
@@ -138,7 +138,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         return tf.placeholder(
             tf.bool,
             [None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def _get_predictions(
@@ -150,7 +150,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         if not self.regularize:
             regularizer = None
 
-        with tf.variable_scope('predictions_{}'.format(self.name)):
+        with tf.variable_scope('predictions_{}'.format(self.feature_name)):
             initializer_obj = get_initializer(self.initializer)
             weights = tf.get_variable(
                 'weights',
@@ -168,18 +168,18 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             probabilities = tf.nn.sigmoid(
                 logits,
                 name='probabilities_{}'.format(
-                    self.name)
+                    self.feature_name)
             )
             predictions = tf.greater_equal(
                 probabilities,
                 self.threshold,
                 name='predictions_{}'.format(
-                    self.name)
+                    self.feature_name)
             )
         return predictions, probabilities, logits
 
     def _get_loss(self, targets, logits, probabilities):
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.feature_name)):
             positive_class_weight = self.loss['positive_class_weight']
             if not positive_class_weight > 0:
                 raise ValueError(
@@ -201,7 +201,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             train_mean_loss = tf.reduce_mean(
                 train_loss,
                 name='train_mean_loss_{}'.format(
-                    self.name)
+                    self.feature_name)
             )
 
             if self.loss['confidence_penalty'] > 0:
@@ -213,11 +213,11 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         return train_mean_loss, train_loss
 
     def _get_measures(self, targets, predictions):
-        with tf.variable_scope('measures_{}'.format(self.name)):
+        with tf.variable_scope('measures_{}'.format(self.feature_name)):
             accuracy, correct_predictions = get_accuracy(
                 targets,
                 predictions,
-                self.name
+                self.feature_name
             )
         return correct_predictions, accuracy
 
@@ -235,7 +235,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         # ================ Placeholder ================
         targets = self._get_output_placeholder()
         logger.debug('  targets_placeholder: {0}'.format(targets))
-        output_tensors[self.name] = targets
+        output_tensors[self.feature_name] = targets
 
         # ================ Predictions ================
         ppl = self._get_predictions(
@@ -246,20 +246,20 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         predictions, probabilities, logits = ppl
 
         output_tensors[
-            PREDICTIONS + '_' + self.name] = predictions
+            PREDICTIONS + '_' + self.feature_name] = predictions
         output_tensors[
-            PROBABILITIES + '_' + self.name] = probabilities
+            PROBABILITIES + '_' + self.feature_name] = probabilities
 
         # ================ Measures ================
         correct_predictions, accuracy = self._get_measures(targets, predictions)
 
         output_tensors[
-            CORRECT_PREDICTIONS + '_' + self.name] = correct_predictions
+            CORRECT_PREDICTIONS + '_' + self.feature_name] = correct_predictions
 
-        output_tensors[ACCURACY + '_' + self.name] = accuracy
+        output_tensors[ACCURACY + '_' + self.feature_name] = accuracy
 
         tf.summary.scalar(
-            'batch_train_accuracy_{}'.format(self.name),
+            'batch_train_accuracy_{}'.format(self.feature_name),
             accuracy
         )
 
@@ -270,11 +270,11 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             probabilities
         )
 
-        output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
-        output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
+        output_tensors[EVAL_LOSS + '_' + self.feature_name] = eval_loss
+        output_tensors[TRAIN_MEAN_LOSS + '_' + self.feature_name] = train_mean_loss
 
         tf.summary.scalar(
-            'batch_train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.feature_name),
             train_mean_loss
         )
         return train_mean_loss, eval_loss, output_tensors

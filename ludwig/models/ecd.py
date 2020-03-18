@@ -32,7 +32,6 @@ class ECD(tf.keras.Model):
         combiner_class = get_combiner_class(combiner_def['type'])
         self.combiner = combiner_class(
             self.input_features,
-            self.regularizer,
             **combiner_def,
             **kwargs
         )
@@ -96,7 +95,7 @@ class ECD(tf.keras.Model):
             all_of_measures[of_name] = of_measures
         return all_of_measures
 
-    def reset_measures(self, targets, predictions):
+    def reset_measures(self):
         for of_obj in self.output_features.values():
             of_obj.reset_measures()
 
@@ -168,7 +167,6 @@ def build_single_output(
         output_feature_def,
         feature_hidden,
         other_output_features,
-        regularizer,
         **kwargs
 ):
     logger.debug('- Output {} feature {}'.format(

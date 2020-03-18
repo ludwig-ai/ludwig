@@ -135,7 +135,7 @@ class DateInputFeature(DateBaseFeature, InputFeature):
         return tf.placeholder(
             tf.int32,
             shape=[None, DATE_VECTOR_LENGTH],
-            name=self.name
+            name=self.feature_name
         )
 
     def build_input(
@@ -158,7 +158,7 @@ class DateInputFeature(DateBaseFeature, InputFeature):
             feature_representation))
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': feature_representation,
             'size': feature_representation_size,

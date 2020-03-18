@@ -121,7 +121,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
         return tf.placeholder(
             tf.float32,
             shape=[None, self.vector_size],
-            name=self.name,
+            name=self.feature_name,
         )
 
     def build_input(
@@ -146,7 +146,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
         )
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': feature_representation,
             'size': feature_representation_size,
@@ -185,41 +185,41 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         return tf.placeholder(
             tf.float32,
             [None, self.vector_size],
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def _get_measures(self, targets, predictions):
 
-        with tf.variable_scope('measures_{}'.format(self.name)):
+        with tf.variable_scope('measures_{}'.format(self.feature_name)):
             error_val = get_error(
                 targets,
                 predictions,
-                self.name
+                self.feature_name
             )
 
             absolute_error_val = tf.reduce_sum(
-                get_absolute_error(targets, predictions, self.name), axis=1
+                get_absolute_error(targets, predictions, self.feature_name), axis=1
             )
 
             squared_error_val = tf.reduce_sum(
-                get_squared_error(targets, predictions, self.name), axis=1
+                get_squared_error(targets, predictions, self.feature_name), axis=1
             )
 
             # TODO - not sure if this is correct
-            r2_val = tf.reduce_sum(get_r2(targets, predictions, self.name))
+            r2_val = tf.reduce_sum(get_r2(targets, predictions, self.feature_name))
 
         return error_val, squared_error_val, absolute_error_val, r2_val
 
     def vector_loss(self, targets, predictions, logits):
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.feature_name)):
             if self.loss['type'] == MEAN_SQUARED_ERROR:
                 train_loss = tf.reduce_sum(
-                    get_squared_error(targets, predictions, self.name), axis=1
+                    get_squared_error(targets, predictions, self.feature_name), axis=1
                 )
 
             elif self.loss['type'] == MEAN_ABSOLUTE_ERROR:
                 train_loss = tf.reduce_sum(
-                    get_absolute_error(targets, predictions, self.name), axis=1
+                    get_absolute_error(targets, predictions, self.feature_name), axis=1
                 )
 
             elif self.loss['type'] == SOFTMAX_CROSS_ENTROPY:
@@ -238,7 +238,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
             train_mean_loss = tf.reduce_mean(
                 train_loss,
-                name='train_mean_loss_{}'.format(self.name)
+                name='train_mean_loss_{}'.format(self.feature_name)
             )
 
         return train_mean_loss, train_loss
@@ -267,7 +267,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             hidden_size,
             regularizer=None,
     ):
-        feature_name = self.name
+        feature_name = self.feature_name
         output_tensors = {}
 
         # ================ Placeholder ================
@@ -288,22 +288,22 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             predictions
         )
 
-        output_tensors[ERROR + '_' + self.name] = error
-        output_tensors[SQUARED_ERROR + '_' + self.name] = squared_error
-        output_tensors[ABSOLUTE_ERROR + '_' + self.name] = absolute_error
-        output_tensors[R2 + '_' + self.name] = r2
+        output_tensors[ERROR + '_' + self.feature_name] = error
+        output_tensors[SQUARED_ERROR + '_' + self.feature_name] = squared_error
+        output_tensors[ABSOLUTE_ERROR + '_' + self.feature_name] = absolute_error
+        output_tensors[R2 + '_' + self.feature_name] = r2
 
         if 'sampled' not in self.loss['type']:
             tf.summary.scalar(
-                'batch_train_mean_squared_error_{}'.format(self.name),
+                'batch_train_mean_squared_error_{}'.format(self.feature_name),
                 tf.reduce_mean(squared_error)
             )
             tf.summary.scalar(
-                'batch_train_mean_absolute_error_{}'.format(self.name),
+                'batch_train_mean_absolute_error_{}'.format(self.feature_name),
                 tf.reduce_mean(absolute_error)
             )
             tf.summary.scalar(
-                'batch_train_mean_r2_{}'.format(self.name),
+                'batch_train_mean_r2_{}'.format(self.feature_name),
                 tf.reduce_mean(r2)
             )
 
@@ -311,12 +311,12 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         train_mean_loss, eval_loss = self.vector_loss(
             targets, predictions, logits
         )
-        output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
+        output_tensors[EVAL_LOSS + '_' + self.feature_name] = eval_loss
         output_tensors[
-            TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
+            TRAIN_MEAN_LOSS + '_' + self.feature_name] = train_mean_loss
 
         tf.summary.scalar(
-            'batch_train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.feature_name),
             train_mean_loss,
         )
 
@@ -328,7 +328,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             hidden_size,
             regularizer=None,
     ):
-        with tf.variable_scope('predictions_{}'.format(self.name)):
+        with tf.variable_scope('predictions_{}'.format(self.feature_name)):
             initializer_obj = get_initializer(self.initializer)
             weights = tf.get_variable(
                 'weights',

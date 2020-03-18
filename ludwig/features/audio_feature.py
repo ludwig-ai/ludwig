@@ -360,7 +360,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
     def _get_input_placeholder(self):
         return tf.placeholder(
             tf.float32, shape=[None, self.length, self.embedding_size],
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_input(

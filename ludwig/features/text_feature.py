@@ -199,7 +199,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
     def _get_input_placeholder(self):
         return tf.placeholder(
             tf.int32, shape=[None, None],
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_input(
@@ -270,7 +270,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         return tf.placeholder(
             tf.int32,
             [None, self.max_sequence_length],
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_output(

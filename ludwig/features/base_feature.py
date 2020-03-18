@@ -28,7 +28,7 @@ class BaseFeature:
         if 'name' not in feature:
             raise ValueError('Missing feature name')
 
-        self.name = feature['name']
+        self.feature_name = feature['name']
         self.type = None
 
     def overwrite_defaults(self, feature):
@@ -70,7 +70,9 @@ class InputFeature(ABC, tf.keras.Model):
 class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
     def __init__(self, feature):
-        super().__init__(feature)
+        BaseFeature.__init__(self, feature)
+        tf.keras.Model.__init__(self)
+
         self.loss = None
         self.reduce_input = None
         self.reduce_dependencies = None
@@ -215,7 +217,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
                     'bucketing_field to None / null, as activating it will '
                     'reduce the length of the field the bucketing is performed '
                     'on.'.format(
-                        self.name,
+                        self.feature_name,
                         self.dependencies,
                         hidden,
                         dependencies_hidden
@@ -299,7 +301,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             is_training=is_training,
             mask=mask
         )
-        other_output_features[self.name] = feature_hidden
+        other_output_features[self.feature_name] = feature_hidden
 
         # ================ Outputs ================
         # train_mean_loss, eval_loss, output_tensors = self.build_output(

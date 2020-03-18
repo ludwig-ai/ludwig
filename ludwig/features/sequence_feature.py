@@ -146,7 +146,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         return tf.placeholder(
             tf.int32,
             shape=[None, None],
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_input(
@@ -244,7 +244,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         return tf.placeholder(
             tf.int32,
             [None, self.max_sequence_length],
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_output(
@@ -275,7 +275,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             regularizer=None,
             **kwargs
     ):
-        feature_name = self.name
+        feature_name = self.feature_name
         output_tensors = {}
 
         # ================ Placeholder ================
@@ -318,7 +318,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         output_tensors[EVAL_LOSS + '_' + feature_name] = eval_loss
 
         tf.summary.scalar(
-            'batch_train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.feature_name),
             train_mean_loss,
         )
 
@@ -382,7 +382,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             regularizer=None,
             is_timeseries=False
     ):
-        with tf.variable_scope('predictions_{}'.format(self.name)):
+        with tf.variable_scope('predictions_{}'.format(self.feature_name)):
             decoder_output = decoder(
                 dict(self.__dict__),
                 targets,
@@ -450,7 +450,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             last_predictions,
             eval_loss
     ):
-        with tf.variable_scope('measures_{}'.format(self.name)):
+        with tf.variable_scope('measures_{}'.format(self.feature_name)):
             (
                 token_accuracy_val,
                 overall_correct_predictions,
@@ -460,19 +460,19 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 targets,
                 predictions_sequence,
                 targets_sequence_length,
-                self.name
+                self.feature_name
             )
             last_accuracy_val, correct_last_predictions = accuracy(
                 last_targets,
                 last_predictions,
-                self.name
+                self.feature_name
             )
             edit_distance_val, mean_edit_distance = edit_distance(
                 targets,
                 targets_sequence_length,
                 predictions_sequence,
                 predictions_sequence_length,
-                self.name
+                self.feature_name
             )
             perplexity_val = perplexity(eval_loss)
 
@@ -507,7 +507,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 tf.shape(targets)[1]
             )
         loss = self.loss
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.feature_name)):
             if loss['type'] == 'softmax_cross_entropy':
                 train_loss = seq2seq_sequence_loss(
                     targets,
@@ -516,7 +516,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 )
                 train_mean_loss = tf.reduce_mean(
                     train_loss,
-                    name='mean_loss_{}'.format(self.name)
+                    name='mean_loss_{}'.format(self.feature_name)
                 )
                 eval_loss = train_loss
 
@@ -534,7 +534,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
                 train_mean_loss = tf.reduce_mean(
                     train_loss,
-                    name='mean_loss_{}'.format(self.name)
+                    name='mean_loss_{}'.format(self.feature_name)
                 )
             else:
                 train_mean_loss = None
