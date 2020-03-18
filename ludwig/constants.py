@@ -63,6 +63,7 @@ TOKEN_ACCURACY = 'token_accuracy'
 LAST_PROBABILTIES = 'last_probabilities'
 LAST_PREDICTIONS = 'last_predictions'
 LENGTHS = 'lengths'
+TIED = 'tied'
 
 FILL_WITH_CONST = 'fill_with_const'
 FILL_WITH_MODE = 'fill_with_mode'

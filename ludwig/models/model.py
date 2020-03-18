@@ -52,14 +52,13 @@ from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
 from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
-from ludwig.models.combiners import get_combiner, get_combiner_class
-from ludwig.models.inputs import build_inputs, dynamic_length_encoders
+from ludwig.models.ecd import ECD, build_inputs, dynamic_length_encoders, build_outputs
+from ludwig.models.modules.combiners import get_combiner_class
 from ludwig.models.modules.loss_modules import regularizer_registry
 from ludwig.models.modules.measure_modules import get_improved_fun
 from ludwig.models.modules.measure_modules import get_initial_validation_value
 from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
 from ludwig.models.modules.optimization_modules import optimize
-from ludwig.models.outputs import build_outputs
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
@@ -101,92 +100,6 @@ class KerasModel(ModelTf2):
         keras_layers.append(Dense(64, activation='relu'))
         keras_layers.append(Dense(1, activation='linear'))
         # end of proof-of-concept
-
-
-class ECD(ModelTf2):
-    def __init__(
-            self,
-            input_features_def,
-            combiner_def,
-            output_features_def,
-            **kwargs
-    ):
-        super().__init__()
-
-        # if self.horovod:
-        #    self.horovod.init()
-
-        # tf.reset_default_graph()
-
-        # ================ Setup ================
-        # tf.set_random_seed(random_seed)
-
-        # self.global_step = tf.Variable(0, trainable=False)
-        # self.regularization_lambda = tf.placeholder(
-        #    tf.float32,
-        #    name='regularization_lambda'
-        # )
-        # regularizer = regularizer_registry[training['regularizer']]
-        # self.regularizer = regularizer(self.regularization_lambda)
-
-        # self.learning_rate = tf.placeholder(
-        #    tf.float32,
-        #    name='learning_rate'
-        # )
-        # self.dropout_rate = tf.placeholder(tf.float32,
-        #                                   name='dropout_rate')
-        # self.is_training = tf.placeholder(tf.bool, [],
-        #                                  name='is_training')
-
-        # ================ Inputs ================
-        self.input_features = build_inputs(
-            input_features_def,
-            self.regularizer
-        )
-
-        # for fe_name, fe_properties in feature_encodings.items():
-        #    setattr(self, fe_name, fe_properties['placeholder'])
-
-        # ================ Model ================
-        logger.debug('- Combiner {}'.format(combiner_def['type']))
-        combiner_class = get_combiner_class(combiner_def['type'])
-        self.combiner = combiner_class(
-            self.input_features,
-            self.regularizer,
-            **combiner_def,
-            **kwargs
-        )
-        # self.combiner = build_combiner(
-        #    self.input_features,
-        #    self.regularizer,
-        #    **kwargs
-        # )
-
-        # ================ Outputs ================
-        self.output_features = build_outputs(
-            output_features_def,
-            self.combiner,
-            self.regularizer,
-        )
-
-    def call(self, inputs, training=None, mask=None):
-        # todo: tf2 proof-of-concept code
-        # inputs is a dict feature_name -> tensor / ndarray
-        assert inputs.keys() == self.input_features.keys()
-
-        encoder_outputs = []
-        for input_feature_name, input_values in inputs:
-            encoder_output = self.input_features[input_feature_name].encode(input_values)
-            encoder_outputs.append(encoder_output)
-
-        combiner_outputs = self.combiner(encoder_outputs)
-
-        output_tensors = {}
-        for output_feature_name, output_features in self.output_features:
-            decoder_output = output_features.decode(combiner_outputs)
-            output_tensors[output_feature_name] = decoder_output
-
-        return output_tensors
 
 
 class Model:
@@ -328,7 +241,7 @@ class Model:
 
             # ================ Model ================
             logger.debug('- Combiner {}'.format(combiner['type']))
-            build_combiner = get_combiner(combiner['type'])(**combiner)
+            build_combiner = get_combiner_class(combiner['type'])(**combiner)
             hidden, hidden_size = build_combiner(
                 feature_encodings,
                 self.regularizer,

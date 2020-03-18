@@ -16,7 +16,6 @@
 import logging
 
 import tensorflow.compat.v1 as tf
-import tensorflow_addons as tfa
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Dense
@@ -24,63 +23,7 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import LayerNormalization
 
-from ludwig.models.modules.initializer_modules import get_initializer
-
 logger = logging.getLogger(__name__)
-
-
-def fc_layer(inputs, in_count, out_count,
-             activation='relu', norm=None,
-             is_training=True, weights=None, biases=None,
-             dropout=False, dropout_rate=None,
-             initializer=None, regularizer=None):
-    if weights is None:
-        if initializer is not None:
-            initializer_obj = get_initializer(initializer)
-            weights = tf.get_variable(
-                'weights',
-                initializer=initializer_obj([in_count, out_count]),
-                regularizer=regularizer
-            )
-        else:
-            if activation == 'relu':
-                initializer = get_initializer('he_uniform')
-            elif activation == 'sigmoid' or activation == 'tanh':
-                initializer = get_initializer('glorot_uniform')
-            # if initializer is None, tensorFlow seems to be using
-            # a glorot uniform initializer
-            weights = tf.get_variable(
-                'weights',
-                [in_count, out_count],
-                regularizer=regularizer,
-                initializer=initializer
-            )
-
-    logger.debug('  fc_weights: {}'.format(weights))
-
-    if biases is None:
-        biases = tf.get_variable('biases', [out_count],
-                                 initializer=tf.constant_initializer(0.01))
-    logger.debug('  fc_biases: {}'.format(biases))
-
-    hidden = tf.matmul(inputs, weights) + biases
-
-    if norm is not None:
-        if norm == 'batch':
-            hidden = tfa.layers.batch_norm(hidden,
-                                           is_training=is_training)
-        elif norm == 'layer':
-            hidden = tfa.layers.layer_norm(hidden)
-
-    if activation:
-        hidden = getattr(tf.nn, activation)(hidden)
-
-    if dropout and dropout_rate is not None:
-        hidden = tf.layers.dropout(hidden, rate=dropout_rate,
-                                   training=is_training)
-        logger.debug('  fc_dropout: {}'.format(hidden))
-
-    return hidden
 
 
 class FCStack(Layer):

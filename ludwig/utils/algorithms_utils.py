@@ -83,8 +83,8 @@ def topological_sort_feature_dependencies(features):
         dependencies = []
         if 'dependencies' in feature:
             dependencies.extend(feature['dependencies'])
-        if 'tied_weights' in feature:
-            dependencies.append(feature['tied_weights'])
+        if TIED in feature:
+            dependencies.append(feature[TIED])
         dependencies_graph[feature['name']] = dependencies
         output_features_dict[feature['name']] = feature
     return [output_features_dict[node[0]]

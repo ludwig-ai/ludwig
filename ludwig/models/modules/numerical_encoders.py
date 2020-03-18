@@ -16,28 +16,22 @@
 # ==============================================================================
 import logging
 
+from tensorflow.keras.layers import Layer
+
 logger = logging.getLogger(__name__)
 
 
-class NumericalPassthroughEncoder:
+class NumericalPassthroughEncoder(Layer):
 
     def __init__(
             self,
             **kwargs
     ):
-        pass
+        super(NumericalPassthroughEncoder, self).__init__()
 
-    def __call__(
-            self,
-            inputs,
-            regularizer
-    ):
+    def call(self, inputs):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
-            :type input_sequence: Tensor
         """
         return inputs
-
-    def get_last_dimension(self):
-        return 1

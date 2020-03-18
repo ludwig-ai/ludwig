@@ -397,7 +397,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
         set_default_values(
             input_feature,
             {
-                'tied_weights': None,
+                TIED: None,
                 'preprocessing': {}
             }
         )

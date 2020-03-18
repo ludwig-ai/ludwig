@@ -33,7 +33,7 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class ConcatCombiner:
+class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
             input_features,
@@ -89,38 +89,26 @@ class ConcatCombiner:
                 # default_bias_constraint=bias_constraint,
             )
 
-    def __call__(
+    def call(
             self,
-            encoder_outputs,
+            inputs,  # encoder outputs
             training=None,
+            mask=None,
             **kwargs
     ):
-        scope_name = 'concat_combiner'
-        with tf.variable_scope(scope_name):
-            # ================ Concat ================
-            hidden = concatenate(encoder_outputs, 1)
+        encoder_outputs = inputs
+        # ================ Concat ================
+        hidden = concatenate(encoder_outputs, 1)
 
-            #logger.debug('  concat_hidden: {0}'.format(hidden))
-
-            # ================ Fully Connected ================
-            if self.fc_stack is not None:
-                hidden = self.fc_stack(
-                    hidden,
-                    training=training
-                )
-
-                # hidden_size = self.fc_stack.layers[-1]['fc_size']
-                # logger.debug('  final_hidden: {0}'.format(hidden))
-
-            # hidden = tf.identity(hidden, name=scope_name)
+        # ================ Fully Connected ================
+        if self.fc_stack is not None:
+            hidden = self.fc_stack(
+                hidden,
+                training=training,
+                mask=mask
+            )
 
         return hidden
-
-    def get_last_simension(self):
-        if self.fc_stack:
-            return self.fc_stack.layers[-1]['fc_size']
-        else:
-            return self.last_dimension_inputs
 
 
 class SequenceConcatCombiner:
@@ -186,7 +174,6 @@ class SequenceConcatCombiner:
                         # features have different lengths for some data points.
                         if fe_properties['representation'].shape[1] != \
                                 representation.shape[1]:
-
                             raise ValueError(
                                 'The sequence length of the input feature {} '
                                 'is {} and is different from the sequence '

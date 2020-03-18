@@ -107,8 +107,8 @@ class NumericalBaseFeature(BaseFeature):
                                                 data[feature['name']] - min_) / (max_ - min_)
 
 
-class NumericalInputFeature(NumericalBaseFeature, InputFeature):
-    def __init__(self, feature):
+class NumericalInputFeature(NumericalBaseFeature, InputFeature, tf.keras.Model):
+    def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
 
         self.encoder = 'passthrough'
@@ -117,57 +117,24 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
 
         encoder_parameters = self.overwrite_defaults(feature)
 
-        self.encoder_obj = self.get_numerical_encoder(encoder_parameters)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.get_numerical_encoder(encoder_parameters)
 
     def get_numerical_encoder(self, encoder_parameters):
         return get_from_registry(self.encoder, numerical_encoder_registry)(
             **encoder_parameters
         )
 
-    # def _get_input_placeholder(self):
-    #    return tf.placeholder(
-    #        tf.float32,
-    #        shape=[None],  # None is for dealing with variable batch size
-    #        name='{}_placeholder'.format(self.name)
-    #    )
-
-    # def build_input(
-    #         self,
-    #         regularizer,
-    #         dropout_rate,
-    #         is_training=False,
-    #         **kwargs
-    # ):
-    #     #placeholder = self._get_input_placeholder()
-    #
-    #     feature_representation = fc_layer(
-    #         tf.expand_dims(tf.cast(placeholder, tf.float32), 1),
-    #         1,
-    #         1,
-    #         activation=None,
-    #         norm=self.norm,
-    #         dropout=self.dropout,
-    #         dropout_rate=dropout_rate,
-    #         regularizer=regularizer,
-    #         initializer='ones'
-    #     )
-    #
-    #     logger.debug('  feature_representation: {0}'.format(
-    #         feature_representation))
-    #
-    #     feature_representation = {'type': self.name,
-    #                               'representation': feature_representation,
-    #                               'size': 1,
-    #                               'placeholder': placeholder}
-    #
-    #     return feature_representation
-
-    def encode(self, inputs):
+    def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.float32)
         assert len(inputs.shape) == 1
 
         inputs_exp = tf.expand_dims(tf.cast(inputs, tf.float32), 1)
-        inputs_encoded = self.encoder_obj(inputs_exp)
+        inputs_encoded = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
+        )
 
         return inputs_encoded
 
@@ -185,7 +152,7 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, TIED, None)
 
 
 class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):

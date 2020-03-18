@@ -239,7 +239,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
         set_default_values(
             input_feature,
             {
-                'tied_weights': None,
+                TIED: None,
                 'encoder': 'parallel_cnn',
                 'level': 'word'
             }

@@ -61,16 +61,6 @@ class InputFeature(ABC):
     ):
         pass
 
-    @abstractmethod
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        pass
-
     @staticmethod
     @abstractmethod
     def populate_defaults(input_feature):
