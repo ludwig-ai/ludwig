@@ -34,6 +34,7 @@ from collections import OrderedDict
 import numpy as np
 import tensorflow.compat.v1 as tf
 # import tensorflow as tf2    # todo: tf2 port
+from tabulate import tabulate
 from tensorflow.python import debug as tf_debug
 from tensorflow.python.saved_model import builder as saved_model_builder
 from tqdm import tqdm
@@ -53,6 +54,7 @@ from ludwig.models.ecd import ECD, dynamic_length_encoders
 from ludwig.models.modules.measure_modules import get_improved_fun
 from ludwig.models.modules.measure_modules import get_initial_validation_value
 from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
+from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
@@ -641,30 +643,30 @@ class Model:
             #             progress_tracker.epoch
             #         )
             #
-            # # mbiu and end of epoch prints
-            # elapsed_time = (time.time() - start_time) * 1000.0
-            #
-            # if is_on_master():
-            #     logger.info('Took {time}'.format(
-            #         time=time_utils.strdelta(elapsed_time)))
 
-        #     # stat prints
-        #     for output_feature, table in tables.items():
-        #         if (
-        #                 output_feature != 'combined' or
-        #                 (output_feature == 'combined' and
-        #                  len(output_features) > 1)
-        #         ):
-        #             if is_on_master():
-        #                 logger.info(
-        #                     tabulate(
-        #                         table,
-        #                         headers='firstrow',
-        #                         tablefmt='fancy_grid',
-        #                         floatfmt='.4f'
-        #                     )
-        #                 )
-        #
+            elapsed_time = (time.time() - start_time) * 1000.0
+
+            if is_on_master():
+                logger.info('Took {time}'.format(
+                    time=time_utils.strdelta(elapsed_time)))
+
+            # stat prints
+            for output_feature, table in tables.items():
+                if (
+                        output_feature != 'combined' or
+                        (output_feature == 'combined' and
+                         len(output_features) > 1)
+                ):
+                    if is_on_master():
+                        logger.info(
+                            tabulate(
+                                table,
+                                headers='firstrow',
+                                tablefmt='fancy_grid',
+                                floatfmt='.4f'
+                            )
+                        )
+
         #     if should_validate:
         #         should_break = self.check_progress_on_validation(
         #             progress_tracker,
@@ -796,15 +798,16 @@ class Model:
 
             tables[field_name].append(scores)
 
-        stats['combined'][LOSS].append(results['combined'][LOSS])
-        stats['combined'][ACCURACY].append(results['combined'][ACCURACY])
-        tables['combined'].append(
-            [
-                dataset_name,
-                results['combined'][LOSS],
-                results['combined'][ACCURACY]
-            ]
-        )
+        # todo tf2: reintroduce combined
+        # stats['combined'][LOSS].append(results['combined'][LOSS])
+        # stats['combined'][ACCURACY].append(results['combined'][ACCURACY])
+        # tables['combined'].append(
+        #    [
+        #        dataset_name,
+        #        results['combined'][LOSS],
+        #        results['combined'][ACCURACY]
+        #    ]
+        # )
         return stats, tables
 
     def batch_evaluation(
@@ -893,19 +896,9 @@ class Model:
         #     )[0]
         #     output_stats['combined'][LOSS] += regularization
 
-        # print(self.ecd.get_loss())
-        print(self.ecd.get_measures())
+        stats = self.ecd.get_measures()
         self.ecd.reset_measures()
-
-        fake_stats = OrderedDict(
-            [('y', OrderedDict([('loss', [9489.847173455057]),
-                                ('mean_squared_error', [9489.847173455057]),
-                                ('mean_absolute_error', [76.44962405086903]),
-                                ('r2', [0.00020098610875311863]),
-                                ('error', [-0.8305106002293275])])),
-             ('combined', {'loss': [9489.847173455057], 'accuracy': [0.0]})])
-        return fake_stats
-        # return output_stats
+        return stats
 
     def merge_workers_outputs(self, output_stats, seq_set_size):
         # gather outputs from all workers

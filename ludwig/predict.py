@@ -40,7 +40,6 @@ from ludwig.utils.print_utils import logging_level_registry, repr_ordered_dict
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -174,6 +173,7 @@ def predict(
         """
     if is_on_master():
         print_boxed('PREDICT')
+
     test_stats = model.predict(
         dataset,
         batch_size,

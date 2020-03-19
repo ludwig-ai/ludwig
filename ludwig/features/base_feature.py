@@ -119,7 +119,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
     def get_measures(self):
         measure_vals = {}
         for measure_name, measure_onj in self.measure_functions.items():
-            measure_vals[measure_name] = measure_onj.result()
+            measure_vals[measure_name] = measure_onj.result().numpy()
         return measure_vals
 
     def reset_measures(self):

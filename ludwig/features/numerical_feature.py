@@ -160,9 +160,8 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         # added for tf2
         self.loss_function = None
         self.eval_function = None
-        self._setup_loss()
-
         self.measure_functions = {}
+        self._setup_loss()
         self._setup_measures()
 
         self.decoder = Dense(
@@ -201,27 +200,30 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def _setup_loss(self):
         if self.loss['type'] == 'mean_squared_error':
             self.train_loss_function = MeanSquaredError()
-            self.eval_loss_function = MeanSquaredError()
+            self.eval_loss_function = tf.keras.metrics.MeanSquaredError(name='eval_loss')
         elif self.loss['type'] == 'mean_absolute_error':
             self.train_loss_function = MeanAbsoluteError()
-            self.eval_loss_function = MeanAbsoluteError()
+            self.eval_loss_function = tf.keras.metrics.MeanAbsoluteError(name='eval_loss')
         else:
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss['type'])
             )
+        self.measure_functions.update(
+            {LOSS: self.eval_loss_function}
+        )
 
     def _setup_measures(self):
         self.measure_functions.update(
-            {'error': ErrorScore(name='metric_error')}
+            {ERROR: ErrorScore(name='metric_error')}
         )
         self.measure_functions.update(
-            {'mse': tf.keras.metrics.MeanSquaredError(name='metric_mse')}
+            {MEAN_SQUARED_ERROR: tf.keras.metrics.MeanSquaredError(name='metric_mse')}
         )
         self.measure_functions.update(
-            {'mae': tf.keras.metrics.MeanAbsoluteError(name='metric_mae')}
+            {MEAN_ABSOLUTE_ERROR: tf.keras.metrics.MeanAbsoluteError(name='metric_mae')}
         )
         self.measure_functions.update(
-            {'r2': R2Score(name='metric_r2')}
+            {R2: R2Score(name='metric_r2')}
         )
 
     default_validation_measure = MEAN_SQUARED_ERROR
