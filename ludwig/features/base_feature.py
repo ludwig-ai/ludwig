@@ -106,6 +106,47 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             # default_bias_constraint=None,
         )
 
+    def train_loss(self, targets, predictions):
+        return self.train_loss_function(targets, predictions)
+
+    def eval_loss(self, targets, predictions):
+        return self.eval_loss_function(targets, predictions)
+
+    def update_measures(self, targets, predictions):
+        for measure in self.measure_functions.values():
+            measure.update_state(targets, predictions)
+
+    def get_measures(self):
+        measure_vals = {}
+        for measure_name, measure_onj in self.measure_functions.items():
+            measure_vals[measure_name] = measure_onj.result()
+        return measure_vals
+
+    def reset_measures(self):
+        for of_name, measure_fn in self.measure_functions.items():
+            if measure_fn is not None:
+                measure_fn.reset_states()
+
+    def call(
+            self,
+            inputs,  # hidden, other_output_hidden
+            training=None,
+            mask=None
+    ):
+        combiner_output, other_output_hidden = inputs
+
+        feature_hidden = self.prepare_decoder_inputs(
+            combiner_output,
+            other_output_hidden,
+            training=training,
+            mask=mask
+        )
+
+        # ================ Predictions ================
+        predictions = self.predictions(feature_hidden)
+
+        return predictions
+
     @property
     @abstractmethod
     def default_validation_measure(self):
@@ -200,7 +241,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
                         # vector vector -> concat
                         dependencies_hidden.append(dependency_final_hidden[0])
 
-                hidden_size += dependency_final_hidden[1]
+                # hidden_size += dependency_final_hidden[1]
 
             try:
                 hidden = tf.concat([hidden] + dependencies_hidden, -1)
@@ -229,7 +270,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
     def output_specific_fully_connected(
             self,
             inputs,  # feature_hidden
-            is_training=None,
+            training=None,
             mask=None
     ):
         feature_hidden = inputs
@@ -245,7 +286,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         # pass it through fc_stack
         feature_hidden = self.fc_stack(
             feature_hidden,
-            is_training=is_training,
+            training=training,
             mask=mask
         )
         feature_hidden_size = feature_hidden.shape[-1]
@@ -264,7 +305,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             self,
             combiner_output,
             other_output_features,
-            is_training=None,
+            training=None,
             mask=None
     ):
         """
@@ -298,7 +339,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         # ================ Output-wise Fully Connected ================
         feature_hidden = self.output_specific_fully_connected(
             feature_hidden,
-            is_training=is_training,
+            training=training,
             mask=mask
         )
         other_output_features[self.feature_name] = feature_hidden

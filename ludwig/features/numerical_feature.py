@@ -21,16 +21,18 @@ from collections import OrderedDict
 import numpy as np
 import tensorflow.compat.v1 as tf
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.losses import MeanAbsoluteError
+from tensorflow.keras.losses import MeanSquaredError
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.loss_modules import absolute_loss
-from ludwig.models.modules.loss_modules import mean_absolute_error
-from ludwig.models.modules.loss_modules import mean_squared_error
-from ludwig.models.modules.loss_modules import squared_loss
+# from ludwig.models.modules.loss_modules import absolute_loss
+# from ludwig.models.modules.loss_modules import mean_absolute_error
+# from ludwig.models.modules.loss_modules import mean_squared_error
+# from ludwig.models.modules.loss_modules import squared_loss
 from ludwig.models.modules.measure_modules import ErrorScore
 from ludwig.models.modules.measure_modules import R2Score
 from ludwig.models.modules.numerical_encoders import NumericalPassthroughEncoder
@@ -118,7 +120,8 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
         )
 
     def call(self, inputs, training=None, mask=None):
-        assert isinstance(inputs, tf.float32)
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
         assert len(inputs.shape) == 1
 
         inputs_exp = tf.expand_dims(tf.cast(inputs, tf.float32), 1)
@@ -157,7 +160,10 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         # added for tf2
         self.loss_function = None
         self.eval_function = None
+        self._setup_loss()
+
         self.measure_functions = {}
+        self._setup_measures()
 
         self.decoder = Dense(
             1,
@@ -190,34 +196,19 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                     )
                 )
 
-        return predictions
-
-    def train_loss(self, targets, predictions):
-        return self.train_loss_function(targets, predictions)
-
-    def eval_loss(self, targets, predictions):
-        return self.eval_loss_function(targets, predictions)
+        return predictions, inputs
 
     def _setup_loss(self):
         if self.loss['type'] == 'mean_squared_error':
-            self.train_loss_function = mean_squared_error
-            self.eval_loss_function = squared_loss
+            self.train_loss_function = MeanSquaredError()
+            self.eval_loss_function = MeanSquaredError()
         elif self.loss['type'] == 'mean_absolute_error':
-            self.train_loss_function = mean_absolute_error
-            self.eval_loss_function = absolute_loss
+            self.train_loss_function = MeanAbsoluteError()
+            self.eval_loss_function = MeanAbsoluteError()
         else:
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss['type'])
             )
-
-    def update_measures(self, targets, predictions):
-        for measure in self.measure_functions.values():
-            measure.update_state(targets, predictions)
-
-    def get_measures(self, targets, predictions):
-        measure_vals = {}
-        for measure_name, measure_onj in self.measure_functions.items():
-            measure_vals[measure_name] = measure_onj(targets, predictions).result()
 
     def _setup_measures(self):
         self.measure_functions.update(
@@ -232,31 +223,6 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         self.measure_functions.update(
             {'r2': R2Score(name='metric_r2')}
         )
-
-    def reset_measures(self):
-        for of_name, measure_fn in self.measure_functions.items():
-            if measure_fn is not None:
-                measure_fn.reset_states()
-
-    def call(
-            self,
-            inputs,  # hidden, other_output_hidden
-            is_training=None,
-            mask=None
-    ):
-        combiner_output, other_output_hidden = inputs
-
-        feature_hidden = self.prepare_decoder_inputs(
-            combiner_output,
-            other_output_hidden,
-            is_training=is_training,
-            mask=mask
-        )
-
-        # ================ Predictions ================
-        predictions = self._get_predictions(feature_hidden)
-
-        return predictions
 
     default_validation_measure = MEAN_SQUARED_ERROR
 

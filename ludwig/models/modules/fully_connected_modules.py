@@ -74,8 +74,8 @@ class FCStack(Layer):
             with tf.variable_scope('fc_' + str(i)):
                 self.stack.append(Dense(
                     layer['fc_size'],
-                    kernel_initializer=layer['weights_initializer'],
-                    kernel_regularizer=layer['weights_regularizer'],
+                    # kernel_initializer=layer['weights_initializer'],
+                    # kernel_regularizer=layer['weights_regularizer'],
                 ))
 
                 if layer['norm']:
@@ -97,7 +97,7 @@ class FCStack(Layer):
     ):
         super(FCStack, self).build(input_shape)
 
-    def call(self, inputs, training=None):
+    def call(self, inputs, training=None, mask=None):
         hidden = inputs
         for layer in self.stack:
             hidden = layer(hidden, training=training)

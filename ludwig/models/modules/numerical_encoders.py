@@ -29,7 +29,7 @@ class NumericalPassthroughEncoder(Layer):
     ):
         super(NumericalPassthroughEncoder, self).__init__()
 
-    def call(self, inputs):
+    def call(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32

@@ -47,6 +47,8 @@ class ConcatCombiner(tf.keras.Model):
             regularize=True,
             **kwargs
     ):
+        tf.keras.Model.__init__(self)
+
         self.fc_stack = None
 
         # todo this may be redundant, check
@@ -83,7 +85,7 @@ class ConcatCombiner(tf.keras.Model):
     ):
         encoder_outputs = inputs
         # ================ Concat ================
-        hidden = concatenate(encoder_outputs, 1)
+        hidden = concatenate(encoder_outputs.values(), 1)
 
         # ================ Fully Connected ================
         if self.fc_stack is not None:

@@ -47,19 +47,23 @@ class ECD(tf.keras.Model):
         # inputs is a dict feature_name -> tensor / ndarray
         assert inputs.keys() == self.input_features.keys()
 
-        encoder_outputs = []
-        for input_feature_name, input_values in inputs:
+        encoder_outputs = {}
+        for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
-            encoder_output = encoder(input_values)
-            encoder_outputs.append(encoder_output)
+            encoder_output = encoder(input_values, training=training, mask=mask)
+            encoder_outputs[input_feature_name] = encoder_output
 
         combiner_outputs = self.combiner(encoder_outputs)
 
         output_logits = {}
         output_last_hidden = {}
-        for output_feature_name, decoder in self.output_features:
-            decoder_logits, decoder_last_hidden = decoder(combiner_outputs, output_last_hidden)
-            output_logits[output_feature_name] = decoder_last_hidden
+        for output_feature_name, decoder in self.output_features.items():
+            decoder_logits, decoder_last_hidden = decoder(
+                (combiner_outputs, output_last_hidden),
+                training=training,
+                mask=mask
+            )
+            output_logits[output_feature_name] = decoder_logits
             output_last_hidden[output_feature_name] = decoder_last_hidden
 
         return output_logits
@@ -69,7 +73,7 @@ class ECD(tf.keras.Model):
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
             of_train_loss = of_obj.train_loss(targets[of_name], predictions[of_name])
-            train_loss += of_obj.weight * of_train_loss
+            train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
         train_loss += sum(self.losses)  # regularization / other losses
         return train_loss, of_train_losses
@@ -88,11 +92,10 @@ class ECD(tf.keras.Model):
         for of_name, of_obj in self.output_features.items():
             of_obj.update_measures(targets[of_name], predictions[of_name])
 
-    def get_measures(self, targets, predictions):
+    def get_measures(self):
         all_of_measures = {}
-        for of_name, of_obj in self.output_features:
-            of_measures = of_obj.get_measures(targets[of_name], predictions[of_name])
-            all_of_measures[of_name] = of_measures
+        for of_name, of_obj in self.output_features.items():
+            all_of_measures[of_name] = of_obj.get_measures()
         return all_of_measures
 
     def reset_measures(self):

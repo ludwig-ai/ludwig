@@ -30,13 +30,10 @@ import sys
 import threading
 import time
 from collections import OrderedDict
-from functools import reduce
 
 import numpy as np
 import tensorflow.compat.v1 as tf
 # import tensorflow as tf2    # todo: tf2 port
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.models import Model as ModelTf2
 from tensorflow.python import debug as tf_debug
 from tensorflow.python.saved_model import builder as saved_model_builder
 from tqdm import tqdm
@@ -68,35 +65,7 @@ from ludwig.utils.tf_utils import get_tf_config
 
 logger = logging.getLogger(__name__)
 
-# todo: tf2 proof-of-concept code, need to be generalized
-# test_loss = tf.keras.metrics.MeanSquaredError(name='test_loss')
-# test_metric = tf.keras.metrics.MeanSquaredError(name='test_metric')
-
 tf.config.experimental_run_functions_eagerly(True)
-
-
-# end of proof-of-concept
-
-class KerasModel(ModelTf2):
-    def __init__(self):
-        super().__init__()
-        self.keras_layers = []
-        self.__build(keras_layers=self.keras_layers)
-
-    def call(self, inputs):
-        # todo: tf2 proof-of-concept code
-        this_list = [inputs] + self.keras_layers
-        return reduce(lambda x, y: y(x), this_list)
-
-    def __build(self, keras_layers=None):
-        # todo: tf2 proof-of-concept code
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(64, activation='relu'))
-        keras_layers.append(Dense(1, activation='linear'))
-        # end of proof-of-concept
 
 
 class Model:
@@ -128,6 +97,7 @@ class Model:
         self.weights_save_path = None
         self.hyperparameters = {}
         self.session = None
+        self.output_stats_cache = None
 
         self.epochs = None
         self.received_sigint = False
@@ -179,10 +149,12 @@ class Model:
         with tf.GradientTape() as tape:
             predictions = model(inputs, training=True)
             # print("in training", y.shape, y_hat.shape)
-            loss = model.train_loss(targets, predictions)
+            loss, _ = model.train_loss(targets, predictions)
             # print("training lost:", loss.numpy())
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+        print('Training loss (for one batch): %s' % float(loss))
 
         # todo tf2: make sure tensorboard works for batch  and epoch level measures
         # model.update_measures(targets, predictions)
@@ -921,6 +893,7 @@ class Model:
         #     )[0]
         #     output_stats['combined'][LOSS] += regularization
 
+        # print(self.ecd.get_loss())
         print(self.ecd.get_measures())
         self.ecd.reset_measures()
 
@@ -1310,21 +1283,10 @@ class Model:
             gpu_fraction=1,
             **kwargs
     ):
-        if self.session is None:
-            session = self.initialize_session(gpus, gpu_fraction)
-
-            # load parameters
-            if self.weights_save_path:
-                self.restore(session, self.weights_save_path)
-        else:
-            session = self.session
-
         # predict
         predict_stats = self.batch_evaluation(
-            session,
             dataset,
             batch_size,
-            is_training=False,
             collect_predictions=True,
             only_predictions=not evaluate_performance
         )
