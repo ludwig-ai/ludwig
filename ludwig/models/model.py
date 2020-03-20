@@ -36,7 +36,7 @@ import tensorflow.compat.v1 as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import ACCURACY, LOSS
+from ludwig.constants import LOSS, COMBINED
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
@@ -553,7 +553,7 @@ class Model:
                 tables[output_feature_name] = [
                     [output_feature_name] + metrics_names[output_feature_name]
                 ]
-            tables['combined'] = [['combined', LOSS, ACCURACY]]
+            tables[COMBINED] = [[COMBINED, LOSS]]
 
             # eval metrics on train
             # todo: tf2 add back relevant code as needed
@@ -565,12 +565,7 @@ class Model:
                 eval_batch_size,
                 bucketing_field
             )
-            #
-            # template = 'Training: Loss: {}, : metric {}'
-            # print(template.format(progress_tracker.epoch,
-            #                       test_loss.result(),
-            #                       test_metric.result()))
-            #
+
             # if is_on_master() and not skip_save_log:
             #     # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
             #     # the same way as in the CLI. For each one, progress_tracker.steps has already
@@ -582,7 +577,7 @@ class Model:
             #         train_writer,
             #         progress_tracker.epoch
             #     )
-            #
+
             if validation_set is not None and validation_set.size > 0:
                 # eval metrics on validation set
                 self.evaluation(
@@ -593,6 +588,7 @@ class Model:
                     eval_batch_size,
                     bucketing_field
                 )
+
             #     if is_on_master() and not skip_save_log:
             #         # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
             #         # the same way as in the CLI. For each one, progress_tracker.steps has already
@@ -604,7 +600,7 @@ class Model:
             #             train_writer,
             #             progress_tracker.epoch
             #         )
-            #
+
             if test_set is not None and test_set.size > 0:
                 # eval metrics on test set
                 self.evaluation(
@@ -615,6 +611,7 @@ class Model:
                     eval_batch_size,
                     bucketing_field
                 )
+
             #     if is_on_master() and not skip_save_log:
             #         # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
             #         # the same way as in the CLI. For each one, progress_tracker.steps has already
@@ -637,8 +634,8 @@ class Model:
             # metric prints
             for output_feature, table in tables.items():
                 if (
-                        output_feature != 'combined' or
-                        (output_feature == 'combined' and
+                        output_feature != COMBINED or
+                        (output_feature == COMBINED and
                          len(output_features) > 1)
                 ):
                     if is_on_master():
@@ -709,13 +706,12 @@ class Model:
         #     progress_tracker.vali_metrics,
         #     progress_tracker.test_metrics
         # )
-        fake_metrics = OrderedDict([('y', OrderedDict([('loss', [9489.847173455057]),
-                                                       ('mean_squared_error', [9489.847173455057]),
-                                                       ('mean_absolute_error', [76.44962405086903]),
-                                                       ('r2', [0.00020098610875311863]),
-                                                       ('error', [-0.8305106002293275])])),
-                                    ('combined', {'loss': [9489.847173455057], 'accuracy': [0.0]})])
-        return (fake_metrics, fake_metrics, fake_metrics)  # todo: tf2 debugging only
+
+        return (
+            progress_tracker.train_metrics,
+            progress_tracker.vali_metrics,
+            progress_tracker.test_metrics
+        )
 
     def train_online(
             self,
@@ -763,16 +759,8 @@ class Model:
 
             tables[output_feature].append(scores)
 
-        # todo tf2: reintroduce combined
-        # metrics['combined'][LOSS].append(results['combined'][LOSS])
-        # metrics['combined'][ACCURACY].append(results['combined'][ACCURACY])
-        # tables['combined'].append(
-        #    [
-        #        dataset_name,
-        #        results['combined'][LOSS],
-        #        results['combined'][ACCURACY]
-        #    ]
-        # )
+        metrics_log[COMBINED][LOSS].append(results[COMBINED][LOSS])
+        tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
 
         return metrics_log, tables
 
@@ -1210,10 +1198,7 @@ class Model:
                 test_metrics[output_feature_name][metric] = []
 
         for metrics in [train_metrics, vali_metrics, test_metrics]:
-            metrics['combined'] = {
-                LOSS: [],
-                ACCURACY: []
-            }
+            metrics[COMBINED] = {LOSS: []}
 
         return train_metrics, vali_metrics, test_metrics
 
@@ -1224,7 +1209,7 @@ class Model:
                 metrics = metrics_names.get(output_feature_name, [])
                 metrics.append(metric)
                 metrics_names[output_feature_name] = metrics
-        metrics_names['combined'] = [LOSS, ACCURACY]
+        metrics_names[COMBINED] = [LOSS]
         return metrics_names
 
     def initialize_batcher(

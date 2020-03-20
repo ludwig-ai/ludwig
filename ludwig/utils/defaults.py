@@ -62,7 +62,7 @@ default_training_params = {
     'decay_rate': 0.96,
     'staircase': False,
     'gradient_clipping': None,
-    'validation_field': 'combined',
+    'validation_field': COMBINED,
     'validation_metric': LOSS,
     'bucketing_field': None,
     'learning_rate_warmup_epochs': 1

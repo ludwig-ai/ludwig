@@ -27,7 +27,7 @@ from pprint import pformat
 
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
-from ludwig.data.preprocessing import preprocess_for_prediction
+from ludwig.data.preprocessing import preprocess_for_prediction, COMBINED
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -232,8 +232,8 @@ def save_test_statistics(test_stats, experiment_dir_name):
 
 def print_test_results(test_stats):
     for output_field, result in test_stats.items():
-        if (output_field != 'combined' or
-                (output_field == 'combined' and len(test_stats) > 2)):
+        if (output_field != COMBINED or
+                (output_field == COMBINED and len(test_stats) > 2)):
             logger.info('\n===== {} ====='.format(output_field))
             for metric in sorted(list(result)):
                 if metric != 'confusion_matrix' and metric != 'roc_curve':

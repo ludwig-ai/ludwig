@@ -64,7 +64,7 @@ LAST_PROBABILTIES = 'last_probabilities'
 LAST_PREDICTIONS = 'last_predictions'
 LENGTHS = 'lengths'
 TIED = 'tied'
-
+COMBINED = 'combined'
 FILL_WITH_CONST = 'fill_with_const'
 FILL_WITH_MODE = 'fill_with_mode'
 FILL_WITH_MEAN = 'fill_with_mean'

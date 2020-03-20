@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import tensorflow as tf
 
-from ludwig.constants import TIED
+from ludwig.constants import TIED, LOSS, COMBINED
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.models.modules.combiners import get_combiner_class
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -41,6 +41,9 @@ class ECD(tf.keras.Model):
             output_features_def,
             self.combiner
         )
+
+        # ================ Combined loss metric ================
+        self.eval_loss_metric = tf.keras.metrics.Mean()
 
     def call(self, inputs, training=None, mask=None):
         # todo: tf2 proof-of-concept code
@@ -83,24 +86,29 @@ class ECD(tf.keras.Model):
         of_eval_losses = {}
         for of_name, of_obj in self.output_features.items():
             of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
-            eval_loss += of_obj.weight * of_eval_loss
+            eval_loss += of_obj.loss['weight'] * of_eval_loss
             of_eval_losses[of_name] = of_eval_loss
-        # eval_loss += sum(self.losses)  # regularization / other losses
+        eval_loss += sum(self.losses)  # regularization / other losses
         return eval_loss, of_eval_losses
 
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
             of_obj.update_metrics(targets[of_name], predictions[of_name])
+        self.eval_loss_metric.update_state(self.eval_loss(targets, predictions)[0])
 
     def get_metrics(self):
         all_of_metrics = {}
         for of_name, of_obj in self.output_features.items():
             all_of_metrics[of_name] = of_obj.get_metrics()
+        all_of_metrics[COMBINED] = {
+            LOSS: self.eval_loss_metric.result().numpy()
+        }
         return all_of_metrics
 
     def reset_metrics(self):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
+        self.eval_loss_metric.reset_states()
 
 
 def build_inputs(
@@ -190,36 +198,3 @@ def build_single_output(
 
     return output_feature_obj
 
-
-def calculate_combined_loss(output_feature):
-    output_train_losses.append(output_feature)
-    output_eval_losses.append(of_eval_loss)
-    output_tensors.update(of_output_tensors)
-
-    train_combined_mean_loss = tf.reduce_sum(
-        tf.stack(output_train_losses),
-        name='train_combined_mean_loss')
-
-    # todo re-add later
-    # if regularizer is not None:
-    #    regularization_losses = tf.get_collection(
-    #        tf.GraphKeys.REGULARIZATION_LOSSES)
-    #   if regularization_losses:
-    #        regularization_loss = tf.add_n(regularization_losses)
-    #        logger.debug('- Regularization losses: {0}'.format(
-    #            regularization_losses))
-    #
-    #   else:
-    #        regularization_loss = tf.constant(0.0)
-    # else:
-    regularization_loss = tf.constant(0.0)
-
-    train_reg_mean_loss = tf.add(train_combined_mean_loss,
-                                 regularization_loss,
-                                 name='train_combined_regularized_mean_loss')
-
-    eval_combined_loss = tf.reduce_sum(tf.stack(output_eval_losses),
-                                       axis=0,
-                                       name='eval_combined_loss')
-
-    return train_reg_mean_loss, eval_combined_loss, regularization_loss, output_tensors
