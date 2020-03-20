@@ -4916,16 +4916,26 @@ Output
             class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">labels_smoothing</span><span class="p">:</span> <span
             class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">negative_samples</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">sampler</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">distortion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">unique</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
+    <span class="nt">negative_samples</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">sampler</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="nt">distortion</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="nt">unique</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="nt">fc_layers</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="nt">num_fc_layers</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">fc_size</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="nt">activation</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="nt">norm</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="nt">dropout</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
@@ -4957,54 +4967,130 @@ If a <code>b x h</code> input is provided to a generator decoder using an rnn wi
 <li><code>fc_size</code> (default <code>256</code>): if a <code>fc_size</code> is not already specified in <code>fc_layers</code> this is the default <code>fc_size</code> that will be used for each layer. It indicates the size of the output of a fully connected layer.</li>
 <li><code>activation</code> (default <code>relu</code>): if an <code>activation</code> is not already specified in <code>fc_layers</code> this is the default <code>activation</code> that will be used for each layer. It indicates the activation function applied to the output.</li>
 <li><code>norm</code> (default <code>null</code>): if a <code>norm</code> is not already specified in <code>fc_layers</code> this is the default <code>norm</code> that will be used for each layer. It indicates the norm of the output and it can be <code>null</code>, <code>batch</code> or <code>layer</code>.</li>
-<li><code>dropout</code> (default <code>false</code>): determines if there should be a dropout layer after each layer.</li>
-<li><code>initializer</code> (default <code>null</code>): the initializer to use. If <code>null</code>, the default initialized of each variable is used (<code>glorot_uniform</code> in most cases). Options are: <code>constant</code>, <code>identity</code>, <code>zeros</code>, <code>ones</code>, <code>orthogonal</code>, <code>normal</code>, <code>uniform</code>, <code>truncated_normal</code>, <code>variance_scaling</code>, <code>glorot_normal</code>, <code>glorot_uniform</code>, <code>xavier_normal</code>, <code>xavier_uniform</code>, <code>he_normal</code>, <code>he_uniform</code>, <code>lecun_normal</code>, <code>lecun_uniform</code>. Alternatively it is possible to specify a dictionary with a key <code>type</code> that identifies the type of initializer and other keys for its parameters, e.g. <code>{type: normal, mean: 0, stddev: 0}</code>. To know the parameters of each initializer, please refer to <a href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's documentation</a>.</li>
-<li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
-<li><code>cell_type</code> (default <code>rnn</code>): the type of recurrent cell to use. Available values are: <code>rnn</code>, <code>lstm</code>, <code>lstm_block</code>, <code>lstm</code>, <code>ln</code>, <code>lstm_cudnn</code>, <code>gru</code>, <code>gru_block</code>, <code>gru_cudnn</code>. For reference about the differences between the cells please refer to <a href="https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell">TensorFlow's documentstion</a>. We suggest to use the <code>block</code> variants on CPU and the <code>cudnn</code> variants on GPU because of their increased speed.</li>
-<li><code>state_size</code> (default <code>256</code>): the size of the state of the rnn.</li>
-<li><code>tied_embeddings</code> (default <code>null</code>): if <code>null</code> the embeddings of the targets are initialized randomly, while if the values is the name of an input feature, the embeddings of that input feature will be used as embeddings of the target. The <code>vocabulary_size</code> of that input feature has to be the same of the output feature one and it has to have an embedding matrix (binary and numerical features will not have one, for instance). In this case the <code>embedding_size</code> will be the same as the <code>state_size</code>. This is useful for implementing autoencoders where the encoding and decoding part of the model share parameters.</li>
-<li><code>embedding_size</code> (default 256): if <code>tied_target_embeddings</code> is <code>false</code>, the input embeddings and the weights of the softmax_cross_entropy weights before the softmax_cross_entropy are not tied together and can have different sizes, this parameter describes the size of the embeddings of the inputs of the generator.</li>
-<li><code>beam_width</code> (default <code>1</code>): sampling from the rnn generator is performed using beam search. By default, with a beam of one, only a greedy sequence using always the most probably next token is generated, but the beam size can be increased. This usually leads to better performance at the expense of more computation and slower generation.</li>
-<li><code>attention_mechanism</code> (default <code>null</code>): the recurrent generator may use an attention mechanism. The available ones are <code>bahdanau</code> and <code>luong</code> (for more information refer to <a href="https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention">TensorFlow's documentation</a>). When <code>attention</code> is not <code>null</code> the expected size of the input tensor is <code>b x s x h</code>, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner. If a <code>b x h</code> input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.</li>
+    <li><code>dropout</code> (default <code>false</code>): determines if there
+        should be a dropout layer after each layer.
+    </li>
+    <li><code>initializer</code> (default <code>null</code>): the initializer to
+        use. If <code>null</code>, the default initialized of each variable is
+        used (<code>glorot_uniform</code> in most cases). Options are: <code>constant</code>,
+        <code>identity</code>, <code>zeros</code>, <code>ones</code>, <code>orthogonal</code>,
+        <code>normal</code>, <code>uniform</code>, <code>truncated_normal</code>,
+        <code>variance_scaling</code>, <code>glorot_normal</code>, <code>glorot_uniform</code>,
+        <code>xavier_normal</code>, <code>xavier_uniform</code>,
+        <code>he_normal</code>, <code>he_uniform</code>,
+        <code>lecun_normal</code>, <code>lecun_uniform</code>. Alternatively it
+        is possible to specify a dictionary with a key <code>type</code> that
+        identifies the type of initializer and other keys for its parameters,
+        e.g. <code>{type: normal, mean: 0, stddev: 0}</code>. To know the
+        parameters of each initializer, please refer to <a
+                href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's
+            documentation</a>.
+    </li>
+    <li><code>regularize</code> (default <code>true</code>): if
+        <code>true</code> the weights of the layers are added to the set of
+        weights that get regularized by a regularization loss (if the <code>regularization_lambda</code>
+        in <code>training</code> is greater than 0).
+    </li>
+    <li><code>cell_type</code> (default <code>rnn</code>): the type of recurrent
+        cell to use. Available values are: <code>rnn</code>, <code>lstm</code>,
+        <code>lstm_block</code>, <code>lstm</code>, <code>ln</code>, <code>lstm_cudnn</code>,
+        <code>gru</code>, <code>gru_block</code>, <code>gru_cudnn</code>. For
+        reference about the differences between the cells please refer to <a
+                href="https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell">TensorFlow's
+            documentstion</a>. We suggest to use the <code>block</code> variants
+        on CPU and the <code>cudnn</code> variants on GPU because of their
+        increased speed.
+    </li>
+    <li><code>state_size</code> (default <code>256</code>): the size of the
+        state of the rnn.
+    </li>
+    <li><code>tied_embeddings</code> (default <code>null</code>): if
+        <code>null</code> the embeddings of the targets are initialized
+        randomly, while if the values is the name of an input feature, the
+        embeddings of that input feature will be used as embeddings of the
+        target. The <code>vocabulary_size</code> of that input feature has to be
+        the same of the output feature one and it has to have an embedding
+        matrix (binary and numerical features will not have one, for instance).
+        In this case the <code>embedding_size</code> will be the same as the
+        <code>state_size</code>. This is useful for implementing autoencoders
+        where the encoding and decoding part of the model share parameters.
+    </li>
+    <li><code>embedding_size</code> (default 256): if <code>tied_target_embeddings</code>
+        is <code>false</code>, the input embeddings and the weights of the
+        softmax_cross_entropy weights before the softmax_cross_entropy are not
+        tied together and can have different sizes, this parameter describes the
+        size of the embeddings of the inputs of the generator.
+    </li>
+    <li><code>beam_width</code> (default <code>1</code>): sampling from the rnn
+        generator is performed using beam search. By default, with a beam of
+        one, only a greedy sequence using always the most probably next token is
+        generated, but the beam size can be increased. This usually leads to
+        better performance at the expense of more computation and slower
+        generation.
+    </li>
+    <li><code>attention_mechanism</code> (default <code>null</code>): the
+        recurrent generator may use an attention mechanism. The available ones
+        are <code>bahdanau</code> and <code>luong</code> (for more information
+        refer to <a
+                href="https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention">TensorFlow's
+            documentation</a>). When <code>attention</code> is not
+        <code>null</code> the expected size of the input tensor is <code>b x s x
+            h</code>, which is the output of a sequence, text or timeseries
+        input feature without reduced outputs or the output of a sequence-based
+        combiner. If a <code>b x h</code> input is provided to a generator
+        decoder using an rnn with attention instead, an error will be raised
+        during model building.
+    </li>
 </ul>
                 <p>Example sequence feature entry using a generator decoder
                     (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><code><span
-        class="nt">name</span><span class="p">:</span> <span
-        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+                <div class="codehilite"><pre><span></span><code><span
+                        class="nt">name</span><span class="p">:</span> <span
+                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
 <span class="nt">type</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">sequence</span>
+                            class="l l-Scalar l-Scalar-Plain">sequence</span>
 <span class="nt">decoder</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">generator</span>
+                            class="l l-Scalar l-Scalar-Plain">generator</span>
 <span class="nt">reduce_inputs</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">sum</span>
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">dependencies</span><span class="p">:</span> <span
-            class="p p-Indicator">[]</span>
+                            class="p p-Indicator">[]</span>
 <span class="nt">reduce_dependencies</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">sum</span>
+                            class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">loss</span><span class="p">:</span>
     <span class="nt">type</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+                            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
     <span class="nt">confidence_penalty</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">0</span>
+                            class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">robust_lambda</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">0</span>
+                            class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">class_weights</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">1</span>
+                            class="l l-Scalar l-Scalar-Plain">1</span>
     <span class="nt">class_similarities</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">null</span>
+                            class="l l-Scalar l-Scalar-Plain">null</span>
     <span class="nt">class_similarities_temperature</span><span
-            class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">labels_smoothing</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">negative_samples</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-    <span class="nt">sampler</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-    <span class="nt">distortion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">unique</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="nt">fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
-<span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
-<span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">256</span>
-<span class="nt">activation</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">relu</span>
-<span class="nt">norm</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
+                            class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">labels_smoothing</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">negative_samples</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+    <span class="nt">sampler</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+    <span class="nt">distortion</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="nt">unique</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="nt">fc_layers</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="nt">num_fc_layers</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="nt">fc_size</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="nt">activation</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">relu</span>
+<span class="nt">norm</span><span class="p">:</span> <span
+                            class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">dropout</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="nt">initializer</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">regularize</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
