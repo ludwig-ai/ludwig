@@ -384,8 +384,6 @@ def full_experiment(
             if not skip_save_test_statistics:
                 save_test_statistics(test_results, experiment_dir_name)
 
-    model.close_session()
-
     if is_on_master():
         logger.info('\nFinished: {0}_{1}'.format(
             experiment_name, model_name))

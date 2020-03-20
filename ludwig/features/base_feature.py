@@ -74,6 +74,10 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         tf.keras.Model.__init__(self)
 
         self.loss = None
+        self.train_loss_function = None
+        self.eval_loss_function = None
+        self.measure_functions = {}
+
         self.reduce_input = None
         self.reduce_dependencies = None
         self.dependencies = []
@@ -150,11 +154,6 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
     @property
     @abstractmethod
     def default_validation_measure(self):
-        pass
-
-    @property
-    @abstractmethod
-    def output_config(self):
         pass
 
     @staticmethod

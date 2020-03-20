@@ -16,23 +16,20 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow.compat.v1 as tf
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.losses import MeanAbsoluteError
 from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.metrics import MeanAbsoluteError as MeanAbsoluteErrorMetric
+from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.fully_connected_modules import FCStack
-# from ludwig.models.modules.loss_modules import absolute_loss
-# from ludwig.models.modules.loss_modules import mean_absolute_error
-# from ludwig.models.modules.loss_modules import mean_squared_error
-# from ludwig.models.modules.loss_modules import squared_loss
 from ludwig.models.modules.measure_modules import ErrorScore
 from ludwig.models.modules.measure_modules import R2Score
 from ludwig.models.modules.numerical_encoders import NumericalPassthroughEncoder
@@ -94,8 +91,8 @@ class NumericalBaseFeature(BaseFeature):
             elif preprocessing_parameters['normalization'] == 'minmax':
                 min_ = metadata[feature['name']]['min']
                 max_ = metadata[feature['name']]['max']
-                data[feature['name']] = (
-                                                data[feature['name']] - min_) / (max_ - min_)
+                values = data[feature['name']]
+                data[feature['name']] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
@@ -124,7 +121,7 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
         assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
         assert len(inputs.shape) == 1
 
-        inputs_exp = tf.expand_dims(tf.cast(inputs, tf.float32), 1)
+        inputs_exp = inputs[:, tf.newaxis]
         inputs_encoded = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )
@@ -157,10 +154,6 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
-        # added for tf2
-        self.loss_function = None
-        self.eval_function = None
-        self.measure_functions = {}
         self._setup_loss()
         self._setup_measures()
 
@@ -217,55 +210,16 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             {ERROR: ErrorScore(name='metric_error')}
         )
         self.measure_functions.update(
-            {MEAN_SQUARED_ERROR: tf.keras.metrics.MeanSquaredError(name='metric_mse')}
+            {MEAN_SQUARED_ERROR: MeanSquaredErrorMetric(name='metric_mse')}
         )
         self.measure_functions.update(
-            {MEAN_ABSOLUTE_ERROR: tf.keras.metrics.MeanAbsoluteError(name='metric_mae')}
+            {MEAN_ABSOLUTE_ERROR: MeanAbsoluteErrorMetric(name='metric_mae')}
         )
         self.measure_functions.update(
             {R2: R2Score(name='metric_r2')}
         )
 
     default_validation_measure = MEAN_SQUARED_ERROR
-
-    output_config = OrderedDict([
-        (LOSS, {
-            'output': EVAL_LOSS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (MEAN_SQUARED_ERROR, {
-            'output': SQUARED_ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (MEAN_ABSOLUTE_ERROR, {
-            'output': ABSOLUTE_ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (R2, {
-            'output': R2,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (ERROR, {
-            'output': ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (PREDICTIONS, {
-            'output': PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        })
-    ])
 
     @staticmethod
     def update_model_definition_with_metadata(
