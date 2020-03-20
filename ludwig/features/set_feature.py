@@ -258,7 +258,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
 
         return train_mean_loss, train_loss
 
-    def _get_measures(self, targets, predictions):
+    def _get_metrics(self, targets, predictions):
         intersection = tf.reduce_sum(
             tf.cast(tf.logical_and(targets, predictions), tf.float32),
             axis=1
@@ -295,8 +295,8 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         )
         predictions, probabilities, logits = ppl
 
-        # ================ Measures ================
-        jaccard_index = self._get_measures(targets, predictions)
+        # ================ metrics ================
+        jaccard_index = self._get_metrics(targets, predictions)
 
         output_tensors[PREDICTIONS + '_' + self.feature_name] = predictions
         output_tensors[PROBABILITIES + '_' + self.feature_name] = probabilities
@@ -320,20 +320,20 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
 
         return train_mean_loss, eval_loss, output_tensors
 
-    default_validation_measure = JACCARD
+    default_validation_metric = JACCARD
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (JACCARD, {
             'output': JACCARD,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,

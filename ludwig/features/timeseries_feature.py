@@ -25,10 +25,10 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
-from ludwig.models.modules.measure_modules import absolute_error
-from ludwig.models.modules.measure_modules import error
-from ludwig.models.modules.measure_modules import r2
-from ludwig.models.modules.measure_modules import squared_error
+from ludwig.models.modules.metric_modules import absolute_error
+from ludwig.models.modules.metric_modules import error
+from ludwig.models.modules.metric_modules import r2
+from ludwig.models.modules.metric_modules import squared_error
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import tokenizer_registry
@@ -209,8 +209,8 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
             name='{}_placeholder'.format(self.feature_name)
         )
 
-    def _get_measures(self, targets, predictions):
-        with tf.variable_scope('measures_{}'.format(self.feature_name)):
+    def _get_metrics(self, targets, predictions):
+        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
             error_val = error(targets, predictions, self.feature_name)
             absolute_error_val = absolute_error(targets, predictions, self.feature_name)
             squared_error_val = squared_error(targets, predictions, self.feature_name)
@@ -284,13 +284,13 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         output_tensors[PREDICTIONS + '_' + self.feature_name] = predictions_sequence
         output_tensors[LENGTHS + '_' + self.feature_name] = predictions_sequence_length
 
-        # ================ Measures ================
+        # ================ metrics ================
         (
             error_val,
             squared_error_val,
             absolute_error_val,
             r2_val
-        ) = self._get_measures(
+        ) = self._get_metrics(
             targets,
             predictions_sequence
         )
@@ -330,38 +330,38 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
 
         return train_mean_loss, eval_loss, output_tensors
 
-    default_validation_measure = LOSS
+    default_validation_metric = LOSS
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (MEAN_SQUARED_ERROR, {
             'output': SQUARED_ERROR,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (MEAN_ABSOLUTE_ERROR, {
             'output': ABSOLUTE_ERROR,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (R2, {
             'output': R2,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (ERROR, {
             'output': ERROR,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,

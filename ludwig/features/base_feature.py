@@ -76,7 +76,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         self.loss = None
         self.train_loss_function = None
         self.eval_loss_function = None
-        self.measure_functions = {}
+        self.metric_functions = {}
 
         self.reduce_input = None
         self.reduce_dependencies = None
@@ -116,20 +116,20 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
     def eval_loss(self, targets, predictions):
         return self.eval_loss_function(targets, predictions)
 
-    def update_measures(self, targets, predictions):
-        for measure in self.measure_functions.values():
-            measure.update_state(targets, predictions)
+    def update_metrics(self, targets, predictions):
+        for metric in self.metric_functions.values():
+            metric.update_state(targets, predictions)
 
-    def get_measures(self):
-        measure_vals = {}
-        for measure_name, measure_onj in self.measure_functions.items():
-            measure_vals[measure_name] = measure_onj.result().numpy()
-        return measure_vals
+    def get_metrics(self):
+        metric_vals = {}
+        for metric_name, metric_onj in self.metric_functions.items():
+            metric_vals[metric_name] = metric_onj.result().numpy()
+        return metric_vals
 
-    def reset_measures(self):
-        for of_name, measure_fn in self.measure_functions.items():
-            if measure_fn is not None:
-                measure_fn.reset_states()
+    def reset_metrics(self):
+        for of_name, metric_fn in self.metric_functions.items():
+            if metric_fn is not None:
+                metric_fn.reset_states()
 
     def call(
             self,
@@ -153,7 +153,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
     @property
     @abstractmethod
-    def default_validation_measure(self):
+    def default_validation_metric(self):
         pass
 
     @staticmethod

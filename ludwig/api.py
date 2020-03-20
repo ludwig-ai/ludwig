@@ -436,7 +436,7 @@ class LudwigModel:
         :param skip_save_model: (bool, default: `False`) disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
-               the validation measure imrpvoes, but if the model is really big
+               the validation metric imrpvoes, but if the model is really big
                that can be time consuming if you do not want to keep
                the weights and just find out what performance can a model get
                with a set of hyperparameters, use this parameter to skip it,
@@ -488,7 +488,7 @@ class LudwigModel:
         # Return
 
         :return: (dict) a dictionary containing training statistics for each
-        output feature containing loss and measures values for each epoch.
+        output feature containing loss and metrics values for each epoch.
         """
 
         if data_df is None and data_dict is not None:
@@ -928,7 +928,7 @@ class LudwigModel:
     ):
         """This function is used to predict the output variables given the input
         variables using the trained model and compute test statistics like
-        performance measures, confusion matrices and the like.
+        performance metrics, confusion matrices and the like.
 
 
         # Inputs
@@ -983,7 +983,7 @@ class LudwigModel:
                  arrays of predictions and probabilities / scores.
                  The second object of the tuple is a dictionary that contains
                  the test statistics, with each key being the name of an output
-                 feature and the values being dictionaries containing measures
+                 feature and the values being dictionaries containing metrics
                  names and their values.
         """
         predictions, test_stats = self._predict(

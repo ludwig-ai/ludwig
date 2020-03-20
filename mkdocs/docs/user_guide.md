@@ -95,7 +95,7 @@ optional arguments:
   -ssm, --skip_save_model
                         disables saving weights each time the model imrpoves. By
                         default Ludwig saves weights after each epoch the
-                        validation measure improves, but if the model is
+                        validation metric improves, but if the model is
                         really big that can be time consuming if you do not
                         want to keep the weights and just find out what
                         performance can a model get with a set of
@@ -152,7 +152,7 @@ This allows for a few possible input data scenarios:
 - you can provide separate UTF-8 encoded train, validation and test CSVs (`--data_train_csv`, `--data_validation_csv`, `--data_test_csv`).
 
 - the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (`--data_train_hdf5`, `--data_validation_hdf5`, `--data_test_hdf5`), with the only difference that you need to specify only one JSON file (`--metadata_json`) instead of three.
-The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure does not improve for a a certain amount of epochs.
+The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation metric does not improve for a a certain amount of epochs.
 The test set is optional too.
 
 Other optional arguments are `--output_directory`, `--experiment_name` and `--model name`.
@@ -163,7 +163,7 @@ If neither of them is specified the directory will be named `run_0`.
 The directory will contain
 
 - `description.json` - a file containing a description of the training process with all the information to reproduce it.
-- `training_statistics.json` which contains records of all measures and losses for each epoch.
+- `training_statistics.json` which contains records of all metrics and losses for each epoch.
 - `model` - a directory containing model hyperparameters, weights, checkpoints and logs (for TensorBoard).
 - `kfold_training_statistics.json` - an optional file that is created when the `--k_fold` parameter is specified.  This file contains metrics from k-fold cross validation run.  In addition to the metrics for each fold, there is an `overall` key that shows mean and standard deviation for metrics across all folds.
 - `kfold_split_indicies.json` - this file is present if `--k_fold` parameter is specified and `--skip_save_k_fold_split_indices` is not specified.  This file contains for each fold the row index values for the training data that creates the training and hold-out test folds.  These indices can be used to reproduce the fold splits.
@@ -171,7 +171,7 @@ The directory will contain
 The model definition can be provided either as a string (`--model_definition`) or as YAML file (`--model_definition_file`).
 Details on how to write your model definition are provided in the [Model Definition](#model-definition) section.
 
-During training Ludwig saves two sets of weights for the model, one that is the weights at the end of the epoch where the best performance on the validation measure was achieved and one that is the weights at the end of the latest epoch.
+During training Ludwig saves two sets of weights for the model, one that is the weights at the end of the epoch where the best performance on the validation metric was achieved and one that is the weights at the end of the latest epoch.
 The reason for keeping the second set is to be able to resume training in case the training process gets interrupted somehow.
 
 To resume training using the latest weights and the whole history of progress so far you have to specify the `--model_resume_path` argument.
@@ -925,7 +925,7 @@ In most machine learning tasks you want to predict only one target variable, but
 
 Instead of having `encoders`, output features have `decoders`, but most of them have only one decoder so you don't have to specify it.
 
-Decoders take the output of the combiner as input, process it further, for instance passing it through fully connected layers, and finally predict values and compute a loss and some measures (depending on the datatype different losses and measures apply).
+Decoders take the output of the combiner as input, process it further, for instance passing it through fully connected layers, and finally predict values and compute a loss and some metrics (depending on the datatype different losses and metrics apply).
 
 Decoders have additional parameters, in particular `loss` that allows you to specify a different loss to optimize for this specific decoder, for instance numerical features support both `mean_squared_error` and `mean_absolute_error` as losses.
 Details about the available decoders and losses alongside with the description of all parameters will be provided in the datatype-specific sections.
@@ -973,7 +973,7 @@ These are the available training parameters:
 - `batch_size` (default `128`): size of the batch used for training the model.
 - `eval_batch_size` (default `0`): size of the batch used for evaluating the model. If it is `0`, the same value of `batch_size` is used. This is usefult to speedup evaluation with a much bigger batch size than training, if enough memory is available, or to decrease the batch size when `sampled_softmax_cross_entropy` is used as loss for sequential and categorical features with big vocabulary sizes (evaluation needs to be performed on the full vocabulary, so a much smaller batch size may be needed to fit the activation tensors in memory).
 - `epochs` (default `100`): number of epochs the training process will run for.
-- `early_stop` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.
+- `early_stop` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation metric before the training is stopped.
 - `optimizer` (default `{type: adam, beta1: 0.9, beta2: 0.999, epsilon: 1e-08}`): which optimizer to use with the relative parameters. The available optimizers are: `sgd` (or `stochastic_gradient_descent`, `gd`, `gradient_descent`, they are all the same), `adam`, `adadelta`, `adagrad`, `adagradda`, `momentum`, `ftrl`, `proximalgd`, `proximaladagrad`, `rmsprop`. To know their parameters check [TensorFlow's optimizer documentation](https://www.tensorflow.org/api_docs/python/tf/train).
 - `learning_rate` (default `0.001`): the learning rate to use.
 - `decay` (default `false`): if to use exponential decay of the learning rate or not.
@@ -982,15 +982,15 @@ These are the available training parameters:
 - `staircase` (default `false`): decays the learning rate at discrete intervals.
 - `regularization_lambda` (default `0`): the lambda parameter used for adding a l2 regularization loss to the overall loss.
 - `dropout_rate` (default `0.0`): the probability to drop neurons in dropout. The `dropout_rate` is used throughout the whole model, but to decide which parts of the model will use it, use the `dropout` boolean parameter available in each encoder, combiner and decoder.
-- `reduce_learning_rate_on_plateau` (default `0`): if there's a validation set, how many times to reduce the learning rate when a plateau of validation measure is reached.
-- `reduce_learning_rate_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before reducing the learning rate.
+- `reduce_learning_rate_on_plateau` (default `0`): if there's a validation set, how many times to reduce the learning rate when a plateau of validation metric is reached.
+- `reduce_learning_rate_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation metric before reducing the learning rate.
 - `reduce_learning_rate_on_plateau_rate` (default `0.5`): if there's a validation set, the reduction rate of the learning rate.
-- `increase_batch_size_on_plateau` (default `0`): if there's a validation set, how many times to increase the batch size when a plateau of validation measure is reached.
-- `increase_batch_size_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before increasing the learning rate.
+- `increase_batch_size_on_plateau` (default `0`): if there's a validation set, how many times to increase the batch size when a plateau of validation metric is reached.
+- `increase_batch_size_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation metric before increasing the learning rate.
 - `increase_batch_size_on_plateau_rate` (default `2`): if there's a validation set, the increase rate of the batch size.
 - `increase_batch_size_on_plateau_max` (default `512`): if there's a validation set, the maximum value of batch size.
-- `validation_field` (default `combined`): when there is more than one output feature, which one to use for computing if there was an improvement on validation. The measure to use to determine if there was an improvement can be set with the `validation_measure` parameter. Different datatypes have different available measures, refer to the datatype-specific section for more details. `combined` indicates the use the combination of all features. For instance the combination of `combined` and `loss` as measure uses a decrease in the combined loss of all output features to check for improvement on validation, while `combined` and `accuracy` considers on how many datapoints the predictions for all output features were correct (but consider that for some features, for instance `numeric` there is no accuracy measure, so you should use `accuracy` only if all your output features have an accuracy measure).
-- `validation_measure:` (default `loss`): the measure to use to determine if there was an improvement. The measure is considered for the output feature specified in `validation_field`. Different datatypes have different available measures, refer to the datatype-specific section for more details.
+- `validation_field` (default `combined`): when there is more than one output feature, which one to use for computing if there was an improvement on validation. The metric to use to determine if there was an improvement can be set with the `validation_metric` parameter. Different datatypes have different available metrics, refer to the datatype-specific section for more details. `combined` indicates the use the combination of all features. For instance the combination of `combined` and `loss` as metric uses a decrease in the combined loss of all output features to check for improvement on validation, while `combined` and `accuracy` considers on how many datapoints the predictions for all output features were correct (but consider that for some features, for instance `numeric` there is no accuracy metric, so you should use `accuracy` only if all your output features have an accuracy metric).
+- `validation_metric:` (default `loss`): the metric to use to determine if there was an improvement. The metric is considered for the output feature specified in `validation_field`. Different datatypes have different available metrics, refer to the datatype-specific section for more details.
 - `bucketing_field` (default `null`): when not `null`, when creating batches, instead of shuffling randomly, the length along the last dimension of the matrix of the specified input feature is used for bucketing datapoints and then randomly shuffled datapoints from the same bin are sampled. Padding is trimmed to the longest datapoint in the batch. The specified feature should be either a `sequence` or `text` feature and the encoder encoding it has to be `rnn`. When used, bucketing improves speed of `rnn` encoding up to 1.5x, depending on the length distribution of the inputs.
 - `learning_rate_warmup_epochs` (default `1`): It's the number or training epochs where learning rate warmup will be used. It is calculated as ``described in [Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour](https://arxiv.org/abs/1706.02677). In the paper the authors suggest `6` epochs of warmup, that parameter is suggested for large datasets and big batches.
 
@@ -1124,10 +1124,10 @@ regularize: true
 threshold: 0.5
 ```
 
-### Binary Features Measures
+### Binary Features metrics
 
-The only measures that are calculated every epoch and are available for binary features are the `accuracy` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
+The only metrics that are calculated every epoch and are available for binary features are the `accuracy` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
 
 Numerical Features
 ------------------
@@ -1206,10 +1206,10 @@ initializer: null
 regularize: true
 ```
 
-### Numerical Features Measures
+### Numerical Features metrics
 
-The measures that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
+The metrics that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
 
 Category Features
 -----------------
@@ -1308,7 +1308,7 @@ These are the available parameters of a category output feature decoder
 - `dropout` (default `false`): determines if there should be a dropout layer after each layer.
 - `initializer` (default `null`): the initializer to use. If `null`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
 - `regularize` (default `true`): if `true` the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
-- `top_k` (default `3`): determines the parameter `k`, the number of categories to consider when computing the `top_k` measure. It computes accuracy but considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence.
+- `top_k` (default `3`): determines the parameter `k`, the number of categories to consider when computing the `top_k` metric. It computes accuracy but considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence.
 
 Example category feature entry (with default parameters) in the output features list:
 
@@ -1341,10 +1341,10 @@ regularize: true
 top_k: 3
 ```
 
-### Category Features Measures
+### Category Features metrics
 
-The measures that are calculated every epoch and are available for category features are `accuracy`, `top_k` (computes accuracy considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence) and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a category feature.
+The metrics that are calculated every epoch and are available for category features are `accuracy`, `top_k` (computes accuracy considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence) and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a category feature.
 
 Set Features
 ------------
@@ -1469,10 +1469,10 @@ regularize: true
 threshold: 0.5
 ```
 
-### Set Features Measures
+### Set Features metrics
 
-The measures that are calculated every epoch and are available for category features are `jaccard_index` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a set feature.
+The metrics that are calculated every epoch and are available for category features are `jaccard_index` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a set feature.
 
 Bag Features
 ------------
@@ -1492,9 +1492,9 @@ The parameters are the same used for set input features with the exception of `r
 
 There is no bag decoder available yet.
 
-### Bag Features Measures
+### Bag Features metrics
 
-As there is no decoder there is also no measure available yet for bag feature.
+As there is no decoder there is also no metric available yet for bag feature.
 
 Sequence Features
 -----------------
@@ -2205,10 +2205,10 @@ beam_width: 1
 attention_mechanism: null
 ```
 
-### Sequence Features Measures
+### Sequence Features metrics
 
-The measures that are calculated every epoch and are available for category features are `accuracy` (counts the number of datapoints where all the elements of the predicted sequence are correct over the number of all datapoints), `token_accuracy` (computes the number of elements in all the sequences that are correctly predicted over the number of all the elements in all the sequences), `last_accuracy` (accuracy considering only the last element of the sequence, it is useful for being sure special end-of-sequence tokens are generated or tagged), `edit_distance` (the levenshtein distance between the predicted and ground truth sequence), `perplexity` (the perplexity of the ground truth sequence according to the model) and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a sequence feature.
+The metrics that are calculated every epoch and are available for category features are `accuracy` (counts the number of datapoints where all the elements of the predicted sequence are correct over the number of all datapoints), `token_accuracy` (computes the number of elements in all the sequences that are correctly predicted over the number of all the elements in all the sequences), `last_accuracy` (accuracy considering only the last element of the sequence, it is useful for being sure special end-of-sequence tokens are generated or tagged), `edit_distance` (the levenshtein distance between the predicted and ground truth sequence), `perplexity` (the perplexity of the ground truth sequence according to the model) and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a sequence feature.
 
 Text Features
 -------------
@@ -2264,9 +2264,9 @@ The only difference is that you can specify an additional `level` parameter with
 The decoders are the same used for the [Sequence Features](#sequence-output-features-and-decoders).
 The only difference is that you can specify an additional `level` parameter with possible values `word` or `char` to force to use the text words or characters as inputs (by default the encoder will use `word`).
 
-### Text Features Measures
+### Text Features metrics
 
-The measures are the same used for the [Sequence Features](#sequence-features-measures).
+The metrics are the same used for the [Sequence Features](#sequence-features-metrics).
 
 
 Time Series Features
@@ -2286,9 +2286,9 @@ The only difference is that time series features don't have an embedding layer a
 
 There are no time series decoders at the moment (WIP), so time series cannot be used as output features.
 
-### Time Series Features Measures
+### Time Series Features metrics
 
-As no time series decoders are available at the moment, there are also no time series measures.
+As no time series decoders are available at the moment, there are also no time series metrics.
 
 Audio Features
 --------------
@@ -2341,9 +2341,9 @@ The only difference is that time series features don't have an embedding layer a
 
 There are no audio decoders at the moment (WIP), so audio cannot be used as output features.
 
-### Audio Features Measures
+### Audio Features metrics
 
-As no audio decoders are available at the moment, there are also no audio measures.
+As no audio decoders are available at the moment, there are also no audio metrics.
 
 
 Image Features
@@ -2487,9 +2487,9 @@ preprocessing:  # example pre-processing
 
 There are no image decoders at the moment (WIP), so image cannot be used as output features.
 
-### Image Features Measures
+### Image Features metrics
 
-As no image decoders are available at the moment, there are also no image measures.
+As no image decoders are available at the moment, there are also no image metrics.
 
 
 Date Features
@@ -2590,9 +2590,9 @@ regularize: true
 
 There are no date decoders at the moment (WIP), so date cannot be used as output features.
 
-### Date Features Measures
+### Date Features metrics
 
-As no date decoders are available at the moment, there are also no date measures.
+As no date decoders are available at the moment, there are also no date metrics.
 
 
 H3 Features
@@ -2739,9 +2739,9 @@ regularize: true
 
 There are no date decoders at the moment (WIP), so H3 cannot be used as output features.
 
-### H3 Features Measures
+### H3 Features metrics
 
-As no H3 decoders are available at the moment, there are also no date measures.
+As no H3 decoders are available at the moment, there are also no date metrics.
 
 Vector Features
 ---------------
@@ -2844,10 +2844,10 @@ regularize: true
 threshold: 0.5
 ```
 
-### Vector Features Measures
+### Vector Features metrics
 
-The measures that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
+The metrics that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
 
 
 Combiners
@@ -3084,7 +3084,7 @@ predictions = model.predict(dataset_df=dataframe)
 
 `predictions` will be a dataframe containing the prediction and confidence score / probability of all output features.
 
-If you want to compute also measures on the quality of the predictions you can run:
+If you want to compute also metrics on the quality of the predictions you can run:
 
 ```python
 predictions, test_stats = model.test(dataset_csv=csv_file_path)
@@ -3092,7 +3092,7 @@ predictions, test_stats = model.test(dataset_csv=csv_file_path)
 predictions, test_stats = model.test(dataset_df=dataframe)
 ```
 
-In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the measures and `test_statistics` will be a dictionary containing several measures of quality depending on the type of each output feature (e.g. `category` features will have an accuracy measure and a confusion matrix, among other measures, associated to them, while `numerical` features will have measures like mean squared loss and R2 among others).
+In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the metrics and `test_statistics` will be a dictionary containing several metrics of quality depending on the type of each output feature (e.g. `category` features will have an accuracy metric and a confusion matrix, among other metrics, associated to them, while `numerical` features will have metrics like mean squared loss and R2 among others).
 
 
 Visualizations
@@ -3236,7 +3236,7 @@ Learning Curves
 ### learning_curves
 
 This visualization uses the `training_statistics` and `model_names` parameters.
-For each model (in the aligned lists of `training_statistics` and `model_names`) and for each output feature and measure of the model, it produces a line plot showing how that measure changed over the course of the epochs of training on the training and validation sets.
+For each model (in the aligned lists of `training_statistics` and `model_names`) and for each output feature and metric of the model, it produces a line plot showing how that metric changed over the course of the epochs of training on the training and validation sets.
 
 Example command:
 
@@ -3339,7 +3339,7 @@ If the values of `subset` is `predictions`, then only datapoints where the the m
 
 This visualization uses the `top_k`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k` for the specified `field`.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line plot that shows the Hits@K metric (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k` for the specified `field`.
 
 Example command:
 ```
@@ -3355,19 +3355,19 @@ This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `
 `field` needs to be a category.
 For each model (in the aligned lists of `test_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes for the specified `field`.
 
-The first one show the measures on the `n` most frequent classes.
+The first one show the metrics on the `n` most frequent classes.
 
 ![Multiclass Multimetric top k](images/compare_classifiers_multiclass_multimetric_topk.png "Multiclass Multimetric most frequent classes")
 
-The second one shows the measures on the `n` classes where the model performs the best.
+The second one shows the metrics on the `n` classes where the model performs the best.
 
 ![Multiclass Multimetric best k](images/compare_classifiers_multiclass_multimetric_bestk.png "Multiclass Multimetric best classes")
 
-The third one shows the measures on the `n` classes where the model performs the worst.
+The third one shows the metrics on the `n` classes where the model performs the worst.
 
 ![Multiclass Multimetric worst k](images/compare_classifiers_multiclass_multimetric_worstk.png "Multiclass Multimetric worst classes")
 
-The fourth one shows the measures on all the classes, sorted by their frequency. This could become unreadable in case the number of classes is really high.
+The fourth one shows the metrics on all the classes, sorted by their frequency. This could become unreadable in case the number of classes is really high.
 
 ![Multiclass Multimetric sorted](images/compare_classifiers_multiclass_multimetric_sorted.png "Multiclass Multimetric sorted classes")
 

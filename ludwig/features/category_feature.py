@@ -30,8 +30,8 @@ from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import mean_confidence_penalty
 from ludwig.models.modules.loss_modules import sampled_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
-from ludwig.models.modules.measure_modules import accuracy as get_accuracy
-from ludwig.models.modules.measure_modules import hits_at_k as get_hits_at_k
+from ludwig.models.modules.metric_modules import accuracy as get_accuracy
+from ludwig.models.modules.metric_modules import hits_at_k as get_hits_at_k
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -188,26 +188,26 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
-    default_validation_measure = ACCURACY
+    default_validation_metric = ACCURACY
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (ACCURACY, {
             'output': CORRECT_PREDICTIONS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (HITS_AT_K, {
             'output': HITS_AT_K,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,
@@ -387,8 +387,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         return train_mean_loss, eval_loss
 
-    def _get_measures(self, targets, predictions, logits):
-        with tf.variable_scope('measures_{}'.format(self.feature_name)):
+    def _get_metrics(self, targets, predictions, logits):
+        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
             accuracy_val, correct_predictions = get_accuracy(
                 targets,
                 predictions,
@@ -438,9 +438,9 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         output_tensors[TOP_K_PREDICTIONS + '_' + self.feature_name] = top_k_predictions
         output_tensors[PROBABILITIES + '_' + self.feature_name] = probabilities
 
-        # ================ Measures ================
+        # ================ metrics ================
         correct_predictions, accuracy, hits_at_k, mean_hits_at_k = \
-            self._get_measures(targets, predictions, logits)
+            self._get_metrics(targets, predictions, logits)
 
         output_tensors[
             CORRECT_PREDICTIONS + '_' + self.feature_name

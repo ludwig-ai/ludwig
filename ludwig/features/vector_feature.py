@@ -28,11 +28,11 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
-from ludwig.models.modules.measure_modules import \
+from ludwig.models.modules.metric_modules import \
     absolute_error as get_absolute_error
-from ludwig.models.modules.measure_modules import error as get_error
-from ludwig.models.modules.measure_modules import r2 as get_r2
-from ludwig.models.modules.measure_modules import \
+from ludwig.models.modules.metric_modules import error as get_error
+from ludwig.models.modules.metric_modules import r2 as get_r2
+from ludwig.models.modules.metric_modules import \
     squared_error as get_squared_error
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
@@ -188,9 +188,9 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             name='{}_placeholder'.format(self.feature_name)
         )
 
-    def _get_measures(self, targets, predictions):
+    def _get_metrics(self, targets, predictions):
 
-        with tf.variable_scope('measures_{}'.format(self.feature_name)):
+        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
             error_val = get_error(
                 targets,
                 predictions,
@@ -282,8 +282,8 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         output_tensors[PREDICTIONS + '_' + feature_name] = predictions
 
-        # ================ Measures ============
-        error, squared_error, absolute_error, r2 = self._get_measures(
+        # ================ metrics ============
+        error, squared_error, absolute_error, r2 = self._get_metrics(
             targets,
             predictions
         )
@@ -353,38 +353,38 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
         return logits, self.vector_size, predictions
 
-    default_validation_measure = LOSS
+    default_validation_metric = LOSS
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (MEAN_SQUARED_ERROR, {
             'output': SQUARED_ERROR,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (MEAN_ABSOLUTE_ERROR, {
             'output': ABSOLUTE_ERROR,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (R2, {
             'output': R2,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (ERROR, {
             'output': ERROR,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,

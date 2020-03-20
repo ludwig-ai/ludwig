@@ -28,10 +28,10 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.loss_modules import seq2seq_sequence_loss
 from ludwig.models.modules.loss_modules import \
     sequence_sampled_softmax_cross_entropy
-from ludwig.models.modules.measure_modules import accuracy
-from ludwig.models.modules.measure_modules import edit_distance
-from ludwig.models.modules.measure_modules import masked_accuracy
-from ludwig.models.modules.measure_modules import perplexity
+from ludwig.models.modules.metric_modules import accuracy
+from ludwig.models.modules.metric_modules import edit_distance
+from ludwig.models.modules.metric_modules import masked_accuracy
+from ludwig.models.modules.metric_modules import perplexity
 from ludwig.models.modules.sequence_decoders import Generator
 from ludwig.models.modules.sequence_decoders import Tagger
 from ludwig.models.modules.sequence_encoders import BERT
@@ -322,13 +322,13 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             train_mean_loss,
         )
 
-        # ================ Measures ================
+        # ================ metrics ================
         (
             correct_last_predictions, last_accuracy,
             correct_overall_predictions, token_accuracy,
             correct_rowwise_predictions, rowwise_accuracy, edit_distance_val,
             mean_edit_distance, perplexity_val
-        ) = self.sequence_measures(
+        ) = self.sequence_metrics(
             targets,
             targets_sequence_length,
             last_targets,
@@ -440,7 +440,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             class_biases
         )
 
-    def sequence_measures(
+    def sequence_metrics(
             self,
             targets,
             targets_sequence_length,
@@ -450,7 +450,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             last_predictions,
             eval_loss
     ):
-        with tf.variable_scope('measures_{}'.format(self.feature_name)):
+        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
             (
                 token_accuracy_val,
                 overall_correct_predictions,
@@ -544,44 +544,44 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 )
         return train_mean_loss, eval_loss
 
-    default_validation_measure = LOSS
+    default_validation_metric = LOSS
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (ACCURACY, {
             'output': CORRECT_ROWWISE_PREDICTIONS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (TOKEN_ACCURACY, {
             'output': CORRECT_OVERALL_PREDICTIONS,
             'aggregation': SEQ_SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (LAST_ACCURACY, {
             'output': CORRECT_LAST_PREDICTIONS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PERPLEXITY, {
             'output': PERPLEXITY,
             'aggregation': AVG_EXP,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (EDIT_DISTANCE, {
             'output': EDIT_DISTANCE,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (LAST_PREDICTIONS, {
             'output': LAST_PREDICTIONS,

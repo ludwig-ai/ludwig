@@ -27,7 +27,7 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import mean_confidence_penalty
-from ludwig.models.modules.measure_modules import accuracy as get_accuracy
+from ludwig.models.modules.metric_modules import accuracy as get_accuracy
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -212,8 +212,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
         return train_mean_loss, train_loss
 
-    def _get_measures(self, targets, predictions):
-        with tf.variable_scope('measures_{}'.format(self.feature_name)):
+    def _get_metrics(self, targets, predictions):
+        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
             accuracy, correct_predictions = get_accuracy(
                 targets,
                 predictions,
@@ -250,8 +250,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         output_tensors[
             PROBABILITIES + '_' + self.feature_name] = probabilities
 
-        # ================ Measures ================
-        correct_predictions, accuracy = self._get_measures(targets, predictions)
+        # ================ metrics ================
+        correct_predictions, accuracy = self._get_metrics(targets, predictions)
 
         output_tensors[
             CORRECT_PREDICTIONS + '_' + self.feature_name] = correct_predictions
@@ -279,20 +279,20 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         )
         return train_mean_loss, eval_loss, output_tensors
 
-    default_validation_measure = ACCURACY
+    default_validation_metric = ACCURACY
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (ACCURACY, {
             'output': CORRECT_PREDICTIONS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,

@@ -30,7 +30,7 @@ We will prioritize new features depending on the feedback of the community, but 
 - image decoding (both image generation by deconvolution and pixel-wise classification for image segmentation).
 - time series decoding.
 - additional features types (point clouds, nested lists, multi-sentence documents, graphs, videos).
-- additional measures and losses.
+- additional metrics and losses.
 - additional data formatters and dataset-specific preprocessing scripts.
 
 We also want to address some of the current limitations:

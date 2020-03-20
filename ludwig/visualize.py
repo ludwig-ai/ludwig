@@ -680,10 +680,10 @@ def learning_curves(
         file_format='pdf',
         **kwargs
 ):
-    """Show how model measures change over training and validation data epochs.
+    """Show how model metrics change over training and validation data epochs.
 
-    For each model and for each output feature and measure of the model,
-    it produces a line plot showing how that measure changed over the course
+    For each model and for each output feature and metric of the model,
+    it produces a line plot showing how that metric changed over the course
     of the epochs of training on the training and validation sets.
 
     # Inputs
@@ -802,17 +802,17 @@ def compare_performance(
                 edit_distances.append(
                     test_stats_per_model[output_feature_name][EDIT_DISTANCE])
 
-        measures = []
-        measures_names = []
+        metrics = []
+        metrics_names = []
         if len(accuracies) > 0:
-            measures.append(accuracies)
-            measures_names.append(ACCURACY)
+            metrics.append(accuracies)
+            metrics_names.append(ACCURACY)
         if len(hits_at_ks) > 0:
-            measures.append(hits_at_ks)
-            measures_names.append(HITS_AT_K)
+            metrics.append(hits_at_ks)
+            metrics_names.append(HITS_AT_K)
         if len(edit_distances) > 0:
-            measures.append(edit_distances)
-            measures_names.append(EDIT_DISTANCE)
+            metrics.append(edit_distances)
+            metrics_names.append(EDIT_DISTANCE)
 
         filename = None
 
@@ -821,8 +821,8 @@ def compare_performance(
             os.makedirs(output_directory, exist_ok=True)
 
         visualization_utils.compare_classifiers_plot(
-            measures,
-            measures_names,
+            metrics,
+            metrics_names,
             model_names_list,
             title='Performance comparison on {}'.format(output_feature_name),
             filename=filename
@@ -1128,10 +1128,10 @@ def compare_classifiers_performance_changing_k(
         file_format='pdf',
         **kwargs
 ):
-    """Produce lineplot that show Hits@K measure while k goes from 1 to top_k.
+    """Produce lineplot that show Hits@K metric while k goes from 1 to top_k.
 
 
-    For each model it produces a line plot that shows the Hits@K measure
+    For each model it produces a line plot that shows the Hits@K metric
     (that counts a prediction as correct if the model produces it among the
     first k) while changing k from 1 to top_k for the specified output_feature_name.
 

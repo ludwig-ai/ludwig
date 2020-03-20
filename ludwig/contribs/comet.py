@@ -118,8 +118,8 @@ class Comet():
         logger.info("comet.train_epoch_end() called......")
         if self.cometml_experiment:
             for item_name in ["batch_size", "epoch", "steps", "last_improvement_epoch",
-                         "learning_rate", "best_valid_measure", "num_reductions_lr",
-                         "num_increases_bs", "train_stats", "vali_stats", "test_stats"]:
+                              "learning_rate", "best_valid_metric", "num_reductions_lr",
+                              "num_increases_bs", "train_stats", "vali_stats", "test_stats"]:
                 try:
                     item = getattr(progress_tracker, item_name)
                     if isinstance(item, dict):

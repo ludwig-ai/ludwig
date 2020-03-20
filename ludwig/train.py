@@ -35,7 +35,7 @@ from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
-from ludwig.models.modules.measure_modules import get_best_function
+from ludwig.models.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
@@ -147,7 +147,7 @@ def full_train(
     :param skip_save_model: Disables saving model weights
            and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure improves, but if the model is really big
+           the validation metric improves, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -371,33 +371,33 @@ def full_train(
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition['training']['validation_field']
-    validation_measure = model_definition['training']['validation_measure']
+    validation_metric = model_definition['training']['validation_metric']
     validation_field_result = train_valisest_stats[validation_field]
 
-    best_function = get_best_function(validation_measure)
+    best_function = get_best_function(validation_metric)
     # results of the model with highest validation test performance
     if is_on_master() and validation_set is not None:
-        epoch_best_vali_measure, best_vali_measure = best_function(
-            enumerate(validation_field_result[validation_measure]),
+        epoch_best_vali_metric, best_vali_metric = best_function(
+            enumerate(validation_field_result[validation_metric]),
             key=lambda pair: pair[1]
         )
         logger.info(
             'Best validation model epoch: {0}'.format(
-                epoch_best_vali_measure + 1)
+                epoch_best_vali_metric + 1)
         )
         logger.info(
             'Best validation model {0} on validation set {1}: {2}'.format(
-                validation_measure, validation_field, best_vali_measure
+                validation_metric, validation_field, best_vali_metric
             ))
         if test_set is not None:
-            best_vali_measure_epoch_test_measure = train_testset_stats[
-                validation_field][validation_measure][epoch_best_vali_measure]
+            best_vali_metric_epoch_test_metric = train_testset_stats[
+                validation_field][validation_metric][epoch_best_vali_metric]
 
             logger.info(
                 'Best validation model {0} on test set {1}: {2}'.format(
-                    validation_measure,
+                    validation_metric,
                     validation_field,
-                    best_vali_measure_epoch_test_measure
+                    best_vali_metric_epoch_test_metric
                 )
             )
         logger.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
@@ -449,7 +449,7 @@ def train(
     :param skip_save_model: Disables
                saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure imrpvoes, but if the model is really big
+           the validation metric imrpvoes, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -717,7 +717,7 @@ def cli(sys_argv):
         default=False,
         help='disables saving weights each time the model imrpoves. '
              'By default Ludwig saves  weights after each epoch '
-             'the validation measure imrpvoes, but  if the model is really big '
+             'the validation metric imrpvoes, but  if the model is really big '
              'that can be time consuming if you do not want to keep '
              'the weights and just find out what performance can a model get '
              'with a set of hyperparameters, use this parameter to skip it'

@@ -235,16 +235,16 @@ def print_test_results(test_stats):
         if (output_field != 'combined' or
                 (output_field == 'combined' and len(test_stats) > 2)):
             logger.info('\n===== {} ====='.format(output_field))
-            for measure in sorted(list(result)):
-                if measure != 'confusion_matrix' and measure != 'roc_curve':
-                    value = result[measure]
+            for metric in sorted(list(result)):
+                if metric != 'confusion_matrix' and metric != 'roc_curve':
+                    value = result[metric]
                     if isinstance(value, OrderedDict):
                         value_repr = repr_ordered_dict(value)
                     else:
-                        value_repr = pformat(result[measure], indent=2)
+                        value_repr = pformat(result[metric], indent=2)
                     logger.info(
                         '{0}: {1}'.format(
-                            measure,
+                            metric,
                             value_repr
                         )
                     )

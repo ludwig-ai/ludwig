@@ -30,8 +30,8 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.measure_modules import ErrorScore
-from ludwig.models.modules.measure_modules import R2Score
+from ludwig.models.modules.metric_modules import ErrorScore
+from ludwig.models.modules.metric_modules import R2Score
 from ludwig.models.modules.numerical_encoders import NumericalPassthroughEncoder
 from ludwig.utils.misc import set_default_value, get_from_registry
 from ludwig.utils.misc import set_default_values
@@ -155,7 +155,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         _ = self.overwrite_defaults(feature)
 
         self._setup_loss()
-        self._setup_measures()
+        self._setup_metrics()
 
         self.decoder = Dense(
             1,
@@ -201,25 +201,25 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss['type'])
             )
-        self.measure_functions.update(
+        self.metric_functions.update(
             {LOSS: self.eval_loss_function}
         )
 
-    def _setup_measures(self):
-        self.measure_functions.update(
+    def _setup_metrics(self):
+        self.metric_functions.update(
             {ERROR: ErrorScore(name='metric_error')}
         )
-        self.measure_functions.update(
+        self.metric_functions.update(
             {MEAN_SQUARED_ERROR: MeanSquaredErrorMetric(name='metric_mse')}
         )
-        self.measure_functions.update(
+        self.metric_functions.update(
             {MEAN_ABSOLUTE_ERROR: MeanAbsoluteErrorMetric(name='metric_mae')}
         )
-        self.measure_functions.update(
+        self.metric_functions.update(
             {R2: R2Score(name='metric_r2')}
         )
 
-    default_validation_measure = MEAN_SQUARED_ERROR
+    default_validation_metric = MEAN_SQUARED_ERROR
 
     @staticmethod
     def update_model_definition_with_metadata(

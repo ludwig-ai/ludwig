@@ -44,8 +44,8 @@ from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
 from ludwig.models.ecd import ECD, dynamic_length_encoders
-from ludwig.models.modules.measure_modules import get_improved_fun
-from ludwig.models.modules.measure_modules import get_initial_validation_value
+from ludwig.models.modules.metric_modules import get_improved_fun
+from ludwig.models.modules.metric_modules import get_initial_validation_value
 from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
 from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
@@ -92,7 +92,7 @@ class Model:
         self.debug = debug
         self.weights_save_path = None
         self.hyperparameters = {}
-        self.output_measures_cache = None
+        self.output_metrics_cache = None
 
         self.epochs = None
         self.received_sigint = False
@@ -149,13 +149,13 @@ class Model:
 
         print('Training loss (for one batch): %s' % float(loss))
 
-        # todo tf2: make sure tensorboard works for batch  and epoch level measures
-        # model.update_measures(targets, predictions)
+        # todo tf2: make sure tensorboard works for batch  and epoch level metrics
+        # model.update_metrics(targets, predictions)
 
     @tf.function
     def evaluation_step(self, model, inputs, targets):
         predictions = model(inputs, training=False)
-        model.update_measures(targets, predictions)
+        model.update_metrics(targets, predictions)
 
     @tf.function
     def predict_step(self, model, x):
@@ -211,13 +211,13 @@ class Model:
     #     return feed_dict
 
     @classmethod
-    def add_tensorboard_epoch_summary(cls, measures, prefix, train_writer, step):
+    def add_tensorboard_epoch_summary(cls, metrics, prefix, train_writer, step):
         if not train_writer:
             return
 
         # todo tf2: completed fix
         with train_writer.as_default():
-            for feature_name, output_feature in measures.items():
+            for feature_name, output_feature in metrics.items():
                 for metric in output_feature:
                     metric_tag = "{}/epoch_{}_{}".format(
                         feature_name, prefix, metric
@@ -235,7 +235,7 @@ class Model:
             validation_set=None,
             test_set=None,
             validation_field=None,
-            validation_measure=None,
+            validation_metric=None,
             save_path='model',
             regularization_lambda=0.0,
             epochs=100,
@@ -267,9 +267,9 @@ class Model:
         :param test_set: The test dataset
         :param validation_field: The first output feature, by default it is set
                as the same field of the first output feature.
-        :param validation_measure: Measure used on the validation field, it is
+        :param validation_metric: metric used on the validation field, it is
                accuracy by default
-        :type validation_measure:
+        :type validation_metric:
         :param save_path: The path to save the file
         :type save_path: filepath (str)
         :param regularization_lambda: Strength of the $L2$ regularization
@@ -291,7 +291,7 @@ class Model:
                a neuron in a given layer)
         :type dropout_rate: Float
         :param early_stop: How many epochs without any improvement in the
-               validation_measure triggers the algorithm to stop
+               validation_metric triggers the algorithm to stop
         :type early_stop: Integer
         :param reduce_learning_rate_on_plateau: Reduces the learning rate when
                the algorithm hits a plateau (i.e. the performance on the
@@ -322,7 +322,7 @@ class Model:
         :param skip_save_model: disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
-               the validation measure imrpvoes, but if the model is really big
+               the validation metric imrpvoes, but if the model is really big
                that can be time consuming if you do not want to keep
                the weights and just find out what performance can a model get
                with a set of hyperparameters, use this parameter to skip it,
@@ -358,7 +358,7 @@ class Model:
         should_validate = validation_set is not None and validation_set.size > 0
         if eval_batch_size < 1:
             eval_batch_size = batch_size
-        measures_names = self.get_measures_names(output_features)
+        metrics_names = self.get_metrics_names(output_features)
         if self.horovod:
             learning_rate *= self.horovod.size()
 
@@ -413,10 +413,10 @@ class Model:
             #    )
         else:
             (
-                train_measures,
-                vali_measures,
-                test_measures
-            ) = self.initialize_training_measures(output_features)
+                train_metrics,
+                vali_metrics,
+                test_metrics
+            ) = self.initialize_training_metrics(output_features)
 
             progress_tracker = ProgressTracker(
                 batch_size=batch_size,
@@ -424,14 +424,14 @@ class Model:
                 steps=0,
                 last_improvement_epoch=0,
                 learning_rate=learning_rate,
-                best_valid_measure=get_initial_validation_value(
-                    validation_measure
+                best_valid_metric=get_initial_validation_value(
+                    validation_metric
                 ),
                 num_reductions_lr=0,
                 num_increases_bs=0,
-                train_measures=train_measures,
-                vali_measures=vali_measures,
-                test_measures=test_measures
+                train_metrics=train_metrics,
+                vali_metrics=vali_metrics,
+                test_metrics=test_metrics
             )
 
         # todo tf2: reintroduce horovod
@@ -461,7 +461,7 @@ class Model:
             batcher.batch_size = progress_tracker.batch_size
 
             # Reset the metrics at the start of the next epoch
-            self.ecd.reset_measures()
+            self.ecd.reset_metrics()
 
             # ================ Train ================
             if is_on_master():
@@ -540,9 +540,9 @@ class Model:
 
             # todo tf2 remove when development done
             # template = f'Epoch {progress_tracker.epoch:d}:'
-            # for measure, measure_fn in output_feature.measure_functions.items():
-            #     if measure_fn is not None:  # todo tf2 test is needed only during development
-            #         template += f' {measure}: {measure_fn.result()}'
+            # for metric, metric_fn in output_feature.metric_functions.items():
+            #     if metric_fn is not None:  # todo tf2 test is needed only during development
+            #         template += f' {metric}: {metric_fn.result()}'
             #
             # print(template)
 
@@ -551,16 +551,16 @@ class Model:
             tables = OrderedDict()
             for output_feature_name, output_feature in output_features.items():
                 tables[output_feature_name] = [
-                    [output_feature_name] + measures_names[output_feature_name]
+                    [output_feature_name] + metrics_names[output_feature_name]
                 ]
             tables['combined'] = [['combined', LOSS, ACCURACY]]
 
-            # eval measures on train
+            # eval metrics on train
             # todo: tf2 add back relevant code as needed
             self.evaluation(
                 training_set,
                 'train',
-                progress_tracker.train_measures,
+                progress_tracker.train_metrics,
                 tables,
                 eval_batch_size,
                 bucketing_field
@@ -577,18 +577,18 @@ class Model:
             #     # been incremented before, so in order to write on the previous summary, we need
             #     # to use -1
             #     self.add_tensorboard_epoch_summary(
-            #         progress_tracker.train_measures,
+            #         progress_tracker.train_metrics,
             #         "training",
             #         train_writer,
             #         progress_tracker.epoch
             #     )
             #
             if validation_set is not None and validation_set.size > 0:
-                # eval measures on validation set
+                # eval metrics on validation set
                 self.evaluation(
                     validation_set,
                     'vali',
-                    progress_tracker.vali_measures,
+                    progress_tracker.vali_metrics,
                     tables,
                     eval_batch_size,
                     bucketing_field
@@ -599,18 +599,18 @@ class Model:
             #         # been incremented before, so in order to write on the previous summary, we need
             #         # to use -1
             #         self.add_tensorboard_epoch_summary(
-            #             progress_tracker.vali_measures,
+            #             progress_tracker.vali_metrics,
             #             "validation",
             #             train_writer,
             #             progress_tracker.epoch
             #         )
             #
             if test_set is not None and test_set.size > 0:
-                # eval measures on test set
+                # eval metrics on test set
                 self.evaluation(
                     test_set,
                     'test',
-                    progress_tracker.test_measures,
+                    progress_tracker.test_metrics,
                     tables,
                     eval_batch_size,
                     bucketing_field
@@ -621,7 +621,7 @@ class Model:
             #         # been incremented before, so in order to write on the previous summary, we need
             #         # to use -1
             #         self.add_tensorboard_epoch_summary(
-            #             progress_tracker.test_measures,
+            #             progress_tracker.test_metrics,
             #             "test",
             #             train_writer,
             #             progress_tracker.epoch
@@ -634,7 +634,7 @@ class Model:
                 logger.info('Took {time}'.format(
                     time=time_utils.strdelta(elapsed_time)))
 
-            # measure prints
+            # metric prints
             for output_feature, table in tables.items():
                 if (
                         output_feature != 'combined' or
@@ -655,7 +655,7 @@ class Model:
         #         should_break = self.check_progress_on_validation(
         #             progress_tracker,
         #             validation_field,
-        #             validation_measure,
+        #             validation_metric,
         #             session,
         #             model_weights_path,
         #             model_hyperparameters_path,
@@ -705,17 +705,17 @@ class Model:
         #     train_writer.close()
         #
         # return (
-        #     progress_tracker.train_measures,
-        #     progress_tracker.vali_measures,
-        #     progress_tracker.test_measures
+        #     progress_tracker.train_metrics,
+        #     progress_tracker.vali_metrics,
+        #     progress_tracker.test_metrics
         # )
-        fake_measures = OrderedDict([('y', OrderedDict([('loss', [9489.847173455057]),
-                                                        ('mean_squared_error', [9489.847173455057]),
-                                                        ('mean_absolute_error', [76.44962405086903]),
-                                                        ('r2', [0.00020098610875311863]),
-                                                        ('error', [-0.8305106002293275])])),
-                                     ('combined', {'loss': [9489.847173455057], 'accuracy': [0.0]})])
-        return (fake_measures, fake_measures, fake_measures)  # todo: tf2 debugging only
+        fake_metrics = OrderedDict([('y', OrderedDict([('loss', [9489.847173455057]),
+                                                       ('mean_squared_error', [9489.847173455057]),
+                                                       ('mean_absolute_error', [76.44962405086903]),
+                                                       ('r2', [0.00020098610875311863]),
+                                                       ('error', [-0.8305106002293275])])),
+                                    ('combined', {'loss': [9489.847173455057], 'accuracy': [0.0]})])
+        return (fake_metrics, fake_metrics, fake_metrics)  # todo: tf2 debugging only
 
     def train_online(
             self,
@@ -752,20 +752,20 @@ class Model:
 
         progress_bar.close()
 
-    def append_measures(self, dataset_name, results, measures_log, tables):
+    def append_metrics(self, dataset_name, results, metrics_log, tables):
         for output_feature in self.ecd.output_features:
             scores = [dataset_name]
 
-            for measure in measures_log[output_feature]:
-                score = results[output_feature][measure]
-                measures_log[output_feature][measure].append(score)
+            for metric in metrics_log[output_feature]:
+                score = results[output_feature][metric]
+                metrics_log[output_feature][metric].append(score)
                 scores.append(score)
 
             tables[output_feature].append(scores)
 
         # todo tf2: reintroduce combined
-        # measures['combined'][LOSS].append(results['combined'][LOSS])
-        # measures['combined'][ACCURACY].append(results['combined'][ACCURACY])
+        # metrics['combined'][LOSS].append(results['combined'][LOSS])
+        # metrics['combined'][ACCURACY].append(results['combined'][ACCURACY])
         # tables['combined'].append(
         #    [
         #        dataset_name,
@@ -774,7 +774,7 @@ class Model:
         #    ]
         # )
 
-        return measures_log, tables
+        return metrics_log, tables
 
     def batch_evaluation(
             self,
@@ -823,20 +823,20 @@ class Model:
             progress_bar.close()
 
         # if self.horovod:
-        #     output_measures, seq_set_size = self.merge_workers_outputs(
-        #         output_measures,
+        #     output_metrics, seq_set_size = self.merge_workers_outputs(
+        #         output_metrics,
         #         seq_set_size
         #     )
 
-        measures = self.ecd.get_measures()
-        self.ecd.reset_measures()
-        return measures
+        metrics = self.ecd.get_metrics()
+        self.ecd.reset_metrics()
+        return metrics
 
     def evaluation(
             self,
             dataset,
             dataset_name,
-            measures_log,
+            metrics_log,
             tables,
             batch_size=128,
             bucketing_field=None
@@ -848,23 +848,23 @@ class Model:
             name=dataset_name
         )
 
-        self.append_measures(dataset_name, results, measures_log, tables)
+        self.append_metrics(dataset_name, results, metrics_log, tables)
 
-        return measures_log, tables
+        return metrics_log, tables
 
-    def merge_workers_outputs(self, output_measures, seq_set_size):
+    def merge_workers_outputs(self, output_metrics, seq_set_size):
         # gather outputs from all workers
-        all_workers_output_measures = self.comm.allgather(output_measures)
+        all_workers_output_metrics = self.comm.allgather(output_metrics)
         all_workers_seq_set_size = self.comm.allgather(seq_set_size)
 
         # merge them into a single one
-        merged_output_measures = sum_dicts(
-            all_workers_output_measures,
+        merged_output_metrics = sum_dicts(
+            all_workers_output_metrics,
             dict_type=OrderedDict
         )
         merged_seq_set_size = sum_dicts(all_workers_seq_set_size)
 
-        return merged_output_measures, merged_seq_set_size
+        return merged_output_metrics, merged_seq_set_size
 
     def batch_collect_activations(
             self,
@@ -917,7 +917,7 @@ class Model:
             self,
             progress_tracker,
             validation_field,
-            validation_measure,
+            validation_metric,
             session, model_weights_path,
             model_hyperparameters_path,
             reduce_learning_rate_on_plateau,
@@ -932,15 +932,15 @@ class Model:
     ):
         should_break = False
         # record how long its been since an improvement
-        improved = get_improved_fun(validation_measure)
+        improved = get_improved_fun(validation_metric)
         if improved(
-                progress_tracker.vali_measures[validation_field][
-                    validation_measure][-1],
-                progress_tracker.best_valid_measure
+                progress_tracker.vali_metrics[validation_field][
+                    validation_metric][-1],
+                progress_tracker.best_valid_metric
         ):
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
-            progress_tracker.best_valid_measure = progress_tracker.vali_measures[
-                validation_field][validation_measure][-1]
+            progress_tracker.best_valid_metric = progress_tracker.vali_metrics[
+                validation_field][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
                     self.save_weights(session, model_weights_path)
@@ -950,7 +950,7 @@ class Model:
                     )
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
-                            validation_measure,
+                            validation_metric,
                             validation_field
                         )
                     )
@@ -963,7 +963,7 @@ class Model:
                 logger.info(
                     'Last improvement of {} on {} happened '
                     '{} epoch{} ago'.format(
-                        validation_measure,
+                        validation_metric,
                         validation_field,
                         progress_tracker.last_improvement,
                         '' if progress_tracker.last_improvement == 1 else 's'
@@ -1195,37 +1195,37 @@ class Model:
         )
         return progress_tracker
 
-    def initialize_training_measures(self, output_features):
-        train_measures = OrderedDict()
-        vali_measures = OrderedDict()
-        test_measures = OrderedDict()
+    def initialize_training_metrics(self, output_features):
+        train_metrics = OrderedDict()
+        vali_metrics = OrderedDict()
+        test_metrics = OrderedDict()
 
         for output_feature_name, output_feature in output_features.items():
-            train_measures[output_feature_name] = OrderedDict()
-            vali_measures[output_feature_name] = OrderedDict()
-            test_measures[output_feature_name] = OrderedDict()
-            for measure in output_feature.measure_functions:
-                train_measures[output_feature_name][measure] = []
-                vali_measures[output_feature_name][measure] = []
-                test_measures[output_feature_name][measure] = []
+            train_metrics[output_feature_name] = OrderedDict()
+            vali_metrics[output_feature_name] = OrderedDict()
+            test_metrics[output_feature_name] = OrderedDict()
+            for metric in output_feature.metric_functions:
+                train_metrics[output_feature_name][metric] = []
+                vali_metrics[output_feature_name][metric] = []
+                test_metrics[output_feature_name][metric] = []
 
-        for measures in [train_measures, vali_measures, test_measures]:
-            measures['combined'] = {
+        for metrics in [train_metrics, vali_metrics, test_metrics]:
+            metrics['combined'] = {
                 LOSS: [],
                 ACCURACY: []
             }
 
-        return train_measures, vali_measures, test_measures
+        return train_metrics, vali_metrics, test_metrics
 
-    def get_measures_names(self, output_features):
-        measures_names = {}
+    def get_metrics_names(self, output_features):
+        metrics_names = {}
         for output_feature_name, output_feature in output_features.items():
-            for measure in output_feature.measure_functions:
-                measures = measures_names.get(output_feature_name, [])
-                measures.append(measure)
-                measures_names[output_feature_name] = measures
-        measures_names['combined'] = [LOSS, ACCURACY]
-        return measures_names
+            for metric in output_feature.metric_functions:
+                metrics = metrics_names.get(output_feature_name, [])
+                metrics.append(metric)
+                metrics_names[output_feature_name] = metrics
+        metrics_names['combined'] = [LOSS, ACCURACY]
+        return metrics_names
 
     def initialize_batcher(
             self,
@@ -1404,13 +1404,13 @@ class ProgressTracker:
             batch_size,
             steps,
             last_improvement_epoch,
-            best_valid_measure,
+            best_valid_metric,
             learning_rate,
             num_reductions_lr,
             num_increases_bs,
-            train_measures,
-            vali_measures,
-            test_measures,
+            train_metrics,
+            vali_metrics,
+            test_metrics,
             last_improvement=0
     ):
         self.batch_size = batch_size
@@ -1419,12 +1419,12 @@ class ProgressTracker:
         self.last_improvement_epoch = last_improvement_epoch
         self.last_improvement = last_improvement
         self.learning_rate = learning_rate
-        self.best_valid_measure = best_valid_measure
+        self.best_valid_metric = best_valid_metric
         self.num_reductions_lr = num_reductions_lr
         self.num_increases_bs = num_increases_bs
-        self.train_measures = train_measures
-        self.vali_measures = vali_measures
-        self.test_measures = test_measures
+        self.train_metrics = train_metrics
+        self.vali_metrics = vali_metrics
+        self.test_metrics = test_metrics
 
     def save(self, filepath):
         save_json(filepath, self.__dict__)

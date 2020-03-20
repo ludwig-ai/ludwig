@@ -292,44 +292,44 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         )
         return train_mean_loss, eval_loss, output_tensors
 
-    default_validation_measure = LOSS
+    default_validation_metric = LOSS
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (ACCURACY, {
             'output': CORRECT_ROWWISE_PREDICTIONS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (TOKEN_ACCURACY, {
             'output': CORRECT_OVERALL_PREDICTIONS,
             'aggregation': SEQ_SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (LAST_ACCURACY, {
             'output': CORRECT_LAST_PREDICTIONS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PERPLEXITY, {
             'output': PERPLEXITY,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (EDIT_DISTANCE, {
             'output': EDIT_DISTANCE,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (LAST_PREDICTIONS, {
             'output': LAST_PREDICTIONS,

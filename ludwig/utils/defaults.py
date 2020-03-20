@@ -63,7 +63,7 @@ default_training_params = {
     'staircase': False,
     'gradient_clipping': None,
     'validation_field': 'combined',
-    'validation_measure': LOSS,
+    'validation_metric': LOSS,
     'bucketing_field': None,
     'learning_rate_warmup_epochs': 1
 }
@@ -212,10 +212,10 @@ def merge_with_defaults(model_definition):
 
     set_default_value(
         model_definition['training'],
-        'validation_measure',
+        'validation_metric',
 
         output_type_registry[model_definition['output_features'][0][
-            'type']].default_validation_measure
+            'type']].default_validation_metric
     )
 
     # ===== Training Optimizer =====

@@ -220,7 +220,7 @@ Those can be visualized by the `visualize` tool, which can also be used to compa
 ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
 ```
 
-will return a bar plot comparing the models on different measures:
+will return a bar plot comparing the models on different metrics:
 
 ![Performance Comparison](images/compare_performance.png "Performance Comparison")
 
