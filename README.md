@@ -87,7 +87,7 @@ More details in the [User Guide](https://uber.github.io/ludwig/user_guide/#spacy
 
 Image features extra packages can be installed with `pip install ludwig[image]` and include:
 
-scikit-image
+- scikit-image
 
 Audio features extra packages can be installed with `pip install ludwig[audio]` and include:
 

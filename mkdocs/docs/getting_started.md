@@ -88,7 +88,7 @@ More details in the [User Guide](user_guide.md#spacy-based-word-format-options).
 
 Image features extra packages can be installed with `pip install ludwig[image]` and include:
 
-scikit-image
+- scikit-image
 
 Audio features extra packages can be installed with `pip install ludwig[audio]` and include:
 
