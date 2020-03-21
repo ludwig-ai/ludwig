@@ -19,7 +19,7 @@ import tensorflow.compat.v1 as tf
 
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
-from ludwig.utils.misc import merge_dict
+from ludwig.utils.misc import merge_dict, get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 
@@ -66,6 +66,16 @@ class InputFeature(ABC, tf.keras.Model):
     def populate_defaults(input_feature):
         pass
 
+    @property
+    @abstractmethod
+    def encoder_registry(self):
+        pass
+
+    def initialize_encoder(self, encoder_parameters):
+        return get_from_registry(self.encoder, self.encoder_registry)(
+            **encoder_parameters
+        )
+
 
 class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
@@ -108,6 +118,16 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             # default_activity_regularizer=None,
             # default_weights_constraint=None,
             # default_bias_constraint=None,
+        )
+
+    @property
+    @abstractmethod
+    def decoder_registry(self):
+        pass
+
+    def initialize_decoder(self, decoder_parameters):
+        return get_from_registry(self.decoder, self.decoder_registry)(
+            **decoder_parameters
         )
 
     def train_loss(self, targets, predictions):

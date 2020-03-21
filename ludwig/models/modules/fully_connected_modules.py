@@ -44,6 +44,7 @@ class FCStack(Layer):
             # default_activity_regularizer=None,
             # default_weights_constraint=None,
             # default_bias_constraint=None,
+            **kwargs
     ):
         super(FCStack, self).__init__()
 
