@@ -26,14 +26,15 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.loss_modules import mean_confidence_penalty
+from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_with_logits
+from ludwig.models.modules.binary_encoders import BinaryPassthroughEncoder
 from ludwig.models.modules.metric_modules import accuracy as get_accuracy
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
 from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc import set_default_value, get_from_registry
 from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
@@ -66,42 +67,37 @@ class BinaryBaseFeature(BaseFeature):
 
 
 class BinaryInputFeature(BinaryBaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, encoder_obj=None):
+        BinaryBaseFeature.__init__(self, feature)
+        InputFeature.__init__(feature)
 
-        _ = self.overwrite_defaults(feature)
+        self.encoder = 'passthrough'
+        self.norm = None
+        self.dropout = False
 
-    def _get_input_placeholder(self):
-        return tf.placeholder(
-            tf.bool,
-            shape=[None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.feature_name)
+        encoder_parameters = self.overwrite_defaults(feature)
+
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.get_binary_encoder(encoder_parameters)
+
+    def get_binary_encoder(self, encoder_parameters):
+        return get_from_registry(self.encoder, binary_encoder_registry)(
+            **encoder_parameters
         )
 
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  placeholder: {0}'.format(placeholder))
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.bool
+        assert len(inputs.shape) == 1
 
-        feature_representation = tf.expand_dims(
-            tf.cast(placeholder, tf.float32), 1)
+        inputs_exp = inputs[:, tf.newaxis]
+        inputs_encoded = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
+        )
 
-        logger.debug('  feature_representation: {0}'.format(
-            feature_representation))
-
-        feature_representation = {
-            'name': self.feature_name,
-            'type': self.type,
-            'representation': feature_representation,
-            'size': 1,
-            'placeholder': placeholder
-        }
-        return feature_representation
+        return inputs_encoded
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -119,7 +115,8 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
 
 class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def __init__(self, feature):
-        super().__init__(feature)
+        BinaryBaseFeature.__init__(feature)
+        OutputFeature.__init__(self, feature)
 
         self.threshold = 0.5
 
@@ -134,92 +131,35 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
-    def _get_output_placeholder(self):
-        return tf.placeholder(
-            tf.bool,
-            [None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.feature_name)
+        self._setup_loss()
+        self._setup_metrics()
+
+        self.decoder = BinaryDecoder()
+
+    def predictions(
+            self,
+            inputs  # hidden
+    ):
+
+        predictions = self.decoder(input)
+
+        return predictions, inputs
+
+    def _setup_loss(self):
+
+        self.train_loss_function = binary_weighted_cross_entropy_with_logits()
+        self.eval_loss_function = None
+
+        self.metric_functions.update(
+            {LOSS: self.eval_loss_function}
         )
 
-    def _get_predictions(
-            self,
-            hidden,
-            hidden_size,
-            regularizer=None
-    ):
-        if not self.regularize:
-            regularizer = None
+    def _setup_metrics(self):
+        self.metric_functions.update(
+            {ACCURACY: lambda x, y: 0}
+        )
 
-        with tf.variable_scope('predictions_{}'.format(self.feature_name)):
-            initializer_obj = get_initializer(self.initializer)
-            weights = tf.get_variable(
-                'weights',
-                initializer=initializer_obj([hidden_size, 1]),
-                regularizer=regularizer
-            )
-            logger.debug('  regression_weights: {0}'.format(weights))
-
-            biases = tf.get_variable('biases', [1])
-            logger.debug('  regression_biases: {0}'.format(biases))
-
-            logits = tf.reshape(tf.matmul(hidden, weights) + biases, [-1])
-            logger.debug('  logits: {0}'.format(logits))
-
-            probabilities = tf.nn.sigmoid(
-                logits,
-                name='probabilities_{}'.format(
-                    self.feature_name)
-            )
-            predictions = tf.greater_equal(
-                probabilities,
-                self.threshold,
-                name='predictions_{}'.format(
-                    self.feature_name)
-            )
-        return predictions, probabilities, logits
-
-    def _get_loss(self, targets, logits, probabilities):
-        with tf.variable_scope('loss_{}'.format(self.feature_name)):
-            positive_class_weight = self.loss['positive_class_weight']
-            if not positive_class_weight > 0:
-                raise ValueError(
-                    'positive_class_weight is {}, but has to be > 0 to ensure '
-                    'that loss for positive labels '
-                    'p_label=1 * log(sigmoid(p_predict)) is > 0'.format(
-                        positive_class_weight))
-
-            train_loss = tf.nn.weighted_cross_entropy_with_logits(
-                targets=tf.cast(targets, tf.float32),
-                logits=logits,
-                pos_weight=positive_class_weight
-            )
-
-            if self.loss['robust_lambda'] > 0:
-                train_loss = ((1 - self.loss['robust_lambda']) * train_loss +
-                              self.loss['robust_lambda'] / 2)
-
-            train_mean_loss = tf.reduce_mean(
-                train_loss,
-                name='train_mean_loss_{}'.format(
-                    self.feature_name)
-            )
-
-            if self.loss['confidence_penalty'] > 0:
-                mean_penalty = mean_confidence_penalty(probabilities, 2)
-                train_mean_loss += (
-                        self.loss['confidence_penalty'] * mean_penalty
-                )
-
-        return train_mean_loss, train_loss
-
-    def _get_metrics(self, targets, predictions):
-        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
-            accuracy, correct_predictions = get_accuracy(
-                targets,
-                predictions,
-                self.feature_name
-            )
-        return correct_predictions, accuracy
+    default_validation_metric = ACCURACY
 
     def build_output(
             self,
@@ -430,3 +370,22 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
                 'reduce_dependencies': SUM
             }
         )
+
+binary_encoder_registry = {
+    'dense': FCStack,
+    'passthrough': BinaryPassthroughEncoder,
+    'null': BinaryPassthroughEncoder,
+    'none': BinaryPassthroughEncoder,
+    'None': BinaryPassthroughEncoder,
+    None: BinaryPassthroughEncoder
+}
+
+
+class BinaryDecoder(tf.keras.layers.Layer):
+
+    def __init__(self):
+        super().__init__()
+        self.dense = Dense(1)  # todo add initialization etc.
+
+    def call(self, inputs, **kwargs):
+        return tf.squeeze(self.dense(inputs))

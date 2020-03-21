@@ -18,6 +18,8 @@ import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
+from ludwig.models.modules.loss_modules import mean_confidence_penalty
+
 
 def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,
                                                class_weights,
@@ -296,6 +298,40 @@ def weighted_softmax_cross_entropy(logits, vector_labels, loss):
                 'labels_smoothing'],
             reduction=Reduction.NONE)
     return train_loss
+
+
+def binary_weighted_cross_entropy_with_logits(targets, logits,
+                                              positive_class_weight,
+                                              robust_lambda):
+    if not positive_class_weight > 0:
+        raise ValueError(
+            'positive_class_weight is {}, but has to be > 0 to ensure '
+            'that loss for positive labels '
+            'p_label=1 * log(sigmoid(p_predict)) is > 0'.format(
+                positive_class_weight))
+
+    train_loss = tf.nn.weighted_cross_entropy_with_logits(
+        targets=tf.cast(targets, tf.float32),
+        logits=logits,
+        pos_weight=positive_class_weight
+    )
+
+    if robust_lambda > 0:
+        train_loss = ((1 - robust_lambda) * train_loss +
+                      robust_lambda / 2)
+
+    train_mean_loss = tf.reduce_mean(
+        train_loss
+    )
+
+    # todo tf2: need to assess how to accommodate this functionality
+    # if self.loss['confidence_penalty'] > 0:
+    #     mean_penalty = mean_confidence_penalty(probabilities, 2)
+    #     train_mean_loss += (
+    #             self.loss['confidence_penalty'] * mean_penalty
+    #     )
+
+    return train_mean_loss
 
 
 def loss_multilabel(logits, vector_labels, loss):
