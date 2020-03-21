@@ -33,7 +33,7 @@ from ludwig.models.modules.metric_modules import ErrorScore
 from ludwig.models.modules.metric_modules import R2Score
 from ludwig.models.modules.numerical_decoders import Regressor
 from ludwig.models.modules.numerical_encoders import NumericalPassthroughEncoder
-from ludwig.utils.misc import set_default_value, get_from_registry
+from ludwig.utils.misc import set_default_value
 from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
@@ -109,12 +109,7 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.get_numerical_encoder(encoder_parameters)
-
-    def get_numerical_encoder(self, encoder_parameters):
-        return get_from_registry(self.encoder, numerical_encoder_registry)(
-            **encoder_parameters
-        )
+            self.encoder_obj = self.initialize_encoder(encoder_parameters)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -141,15 +136,14 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-
-numerical_encoder_registry = {
-    'dense': FCStack,
-    'passthrough': NumericalPassthroughEncoder,
-    'null': NumericalPassthroughEncoder,
-    'none': NumericalPassthroughEncoder,
-    'None': NumericalPassthroughEncoder,
-    None: NumericalPassthroughEncoder
-}
+    encoder_registry = {
+        'dense': FCStack,
+        'passthrough': NumericalPassthroughEncoder,
+        'null': NumericalPassthroughEncoder,
+        'none': NumericalPassthroughEncoder,
+        'None': NumericalPassthroughEncoder,
+        None: NumericalPassthroughEncoder
+    }
 
 
 class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
@@ -165,15 +159,10 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         decoder_parameters = self.overwrite_defaults(feature)
 
-        self.decoder_obj = self.get_numerical_decoder(decoder_parameters)
+        self.decoder_obj = self.initialize_decoder(decoder_parameters)
 
         self._setup_loss()
         self._setup_metrics()
-
-    def get_numerical_decoder(self, decoder_parameters):
-        return get_from_registry(self.decoder, numerical_decoder_registry)(
-            **decoder_parameters
-        )
 
     def predictions(
             self,
@@ -303,11 +292,10 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             }
         )
 
-
-numerical_decoder_registry = {
-    'regressor': Regressor,
-    'null': Regressor,
-    'none': Regressor,
-    'None': Regressor,
-    None: Regressor
-}
+    decoder_registry = {
+        'regressor': Regressor,
+        'null': Regressor,
+        'none': Regressor,
+        'None': Regressor,
+        None: Regressor
+    }

@@ -16,6 +16,8 @@
 # ==============================================================================
 import logging
 
+import tensorflow as tf
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Layer
 
 logger = logging.getLogger(__name__)
