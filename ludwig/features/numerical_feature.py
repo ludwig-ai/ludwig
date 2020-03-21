@@ -19,7 +19,6 @@ import os
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-from tensorflow.keras.layers import Dense
 from tensorflow.keras.losses import MeanAbsoluteError
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.metrics import MeanAbsoluteError as MeanAbsoluteErrorMetric
@@ -32,6 +31,7 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.metric_modules import ErrorScore
 from ludwig.models.modules.metric_modules import R2Score
+from ludwig.models.modules.numerical_decoders import Regressor
 from ludwig.models.modules.numerical_encoders import NumericalPassthroughEncoder
 from ludwig.utils.misc import set_default_value, get_from_registry
 from ludwig.utils.misc import set_default_values
@@ -142,29 +142,44 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
 
 
+numerical_encoder_registry = {
+    'dense': FCStack,
+    'passthrough': NumericalPassthroughEncoder,
+    'null': NumericalPassthroughEncoder,
+    'none': NumericalPassthroughEncoder,
+    'None': NumericalPassthroughEncoder,
+    None: NumericalPassthroughEncoder
+}
+
+
 class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def __init__(self, feature):
         NumericalBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
 
+        self.decoder = 'regressor'
         self.loss = {'type': MEAN_SQUARED_ERROR}
         self.clip = None
         self.initializer = None
         self.regularize = True
 
-        _ = self.overwrite_defaults(feature)
+        decoder_parameters = self.overwrite_defaults(feature)
+
+        self.decoder_obj = self.get_numerical_decoder(decoder_parameters)
 
         self._setup_loss()
         self._setup_metrics()
 
-        self.decoder = NumericalDecoder()
+    def get_numerical_decoder(self, decoder_parameters):
+        return get_from_registry(self.decoder, numerical_decoder_registry)(
+            **decoder_parameters
+        )
 
     def predictions(
             self,
             inputs,  # hidden
     ):
-
-        predictions = self.decoder(inputs)
+        predictions = self.decoder_obj(inputs)
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
@@ -289,21 +304,10 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         )
 
 
-numerical_encoder_registry = {
-    'dense': FCStack,
-    'passthrough': NumericalPassthroughEncoder,
-    'null': NumericalPassthroughEncoder,
-    'none': NumericalPassthroughEncoder,
-    'None': NumericalPassthroughEncoder,
-    None: NumericalPassthroughEncoder
+numerical_decoder_registry = {
+    'regressor': Regressor,
+    'null': Regressor,
+    'none': Regressor,
+    'None': Regressor,
+    None: Regressor
 }
-
-
-class NumericalDecoder(tf.keras.layers.Layer):
-
-    def __init__(self):
-        super().__init__()
-        self.dense = Dense(1)  # todo add initialization etc.
-
-    def call(self, inputs, **kwargs):
-        return tf.squeeze(self.dense(inputs))
