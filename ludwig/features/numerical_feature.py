@@ -157,10 +157,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-        self.decoder = Dense(
-            1,
-            # todo tf2: add initilization, regualrization etc.
-        )
+        self.decoder = NumericalDecoder()
 
     def predictions(
             self,
@@ -300,3 +297,13 @@ numerical_encoder_registry = {
     'None': NumericalPassthroughEncoder,
     None: NumericalPassthroughEncoder
 }
+
+
+class NumericalDecoder(tf.keras.layers.Layer):
+
+    def __init__(self):
+        super().__init__()
+        self.dense = Dense(1)  # todo add initialization etc.
+
+    def call(self, inputs, **kwargs):
+        return tf.squeeze(self.dense(inputs))
