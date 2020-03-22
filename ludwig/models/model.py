@@ -156,6 +156,7 @@ class Model:
     def evaluation_step(self, model, inputs, targets):
         predictions = model(inputs, training=False)
         model.update_metrics(targets, predictions)
+        return predictions
 
     @tf.function
     def predict_step(self, model, x):
@@ -789,6 +790,7 @@ class Model:
                 disable=is_progressbar_disabled()
             )
 
+        predictions = {}
         while not batcher.last_batch():
             batch = batcher.next_batch()
 
@@ -798,11 +800,19 @@ class Model:
             inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self.hyperparameters['input_features']}
             targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
 
-            self.evaluation_step(
+            (
+                preds
+            ) =self.evaluation_step(
                 self.ecd,
                 inputs,
                 targets
             )
+
+            # accumulate predictions from batch for each output feature
+            for of_name, of_preds in preds.items():
+                if of_name not in predictions:
+                    predictions[of_name] = []
+                predictions[of_name].append(of_preds)
 
             if is_on_master():
                 progress_bar.update(1)
@@ -816,9 +826,13 @@ class Model:
         #         seq_set_size
         #     )
 
+        # consolidate predictions from each batch to a single tensor
+        for of_name in predictions:
+            predictions[of_name] = tf.concat(predictions[of_name], axis=0)
+
         metrics = self.ecd.get_metrics()
         self.ecd.reset_metrics()
-        return metrics
+        return metrics, predictions
 
     def evaluation(
             self,
@@ -829,7 +843,10 @@ class Model:
             batch_size=128,
             bucketing_field=None
     ):
-        results = self.batch_evaluation(
+        (
+            results,
+            predictions
+         )= self.batch_evaluation(
             dataset,
             batch_size,
             bucketing_field=bucketing_field,
