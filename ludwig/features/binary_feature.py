@@ -20,6 +20,7 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow.compat.v1 as tf
+from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -31,6 +32,7 @@ from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_wit
 from ludwig.models.modules.binary_decoders import Regressor
 from ludwig.models.modules.binary_encoders import BinaryPassthroughEncoder
 from ludwig.models.modules.metric_modules import accuracy as get_accuracy
+from ludwig.models.modules.metric_modules import BWCEWLScore
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -84,10 +86,11 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
         else:
             self.encoder_obj = self.get_binary_encoder(encoder_parameters)
 
-    def get_binary_encoder(self, encoder_parameters):
-        return get_from_registry(self.encoder, binary_encoder_registry)(
-            **encoder_parameters
-        )
+
+    # def get_binary_encoder(self, encoder_parameters):
+    #     return get_from_registry(self.encoder, self.encoder_registry)(
+    #         **encoder_parameters
+    #     )
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -124,6 +127,8 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
     }
 
 
+
+
 class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def __init__(self, feature):
         BinaryBaseFeature.__init__(self, feature)
@@ -153,25 +158,45 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             inputs  # hidden
     ):
 
-        predictions = self.decoder(input)
+        predictions = self.decoder(inputs)
 
         return predictions, inputs
 
     def _setup_loss(self):
 
         self.train_loss_function = binary_weighted_cross_entropy_with_logits
-        self.eval_loss_function = None
+        self.eval_loss_function = BWCEWLScore(name='eval_loss')
 
         self.metric_functions.update(
             {LOSS: self.eval_loss_function}
         )
 
-    def _setup_metrics(self):
-        self.metric_functions.update(
-            {ACCURACY: lambda x, y: 0}
+    # customize call to loss function for binary output feature
+    def train_loss(self, targets, predictions, **kwargs):
+        return self.train_loss_function(
+            targets,
+            predictions,
+            **kwargs
         )
 
-    default_validation_metric = ACCURACY
+    def _setup_metrics(self):
+        self.metric_functions.update(
+            {ACCURACY: BinaryAccuracy(name='metric_accuracy')}
+        )
+
+    # customize for binary output
+    def update_metrics(self, targets, predictions):
+        for metric, metric_fn in self.metric_functions.items():
+            if metric == LOSS:
+                metric_fn.update_state(
+                    targets,
+                    predictions,
+                    positive_class_weight=self.loss['positive_class_weight'],
+                    robust_lambda=self.loss['robust_lambda']
+                )
+            else:
+                metric_fn.update_state(targets, predictions > self.threshold)
+
 
     def build_output(
             self,
@@ -382,7 +407,6 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
                 'reduce_dependencies': SUM
             }
         )
-
 
     decoder_registry = {
         'regressor': Regressor,

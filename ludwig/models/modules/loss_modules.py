@@ -300,8 +300,9 @@ def weighted_softmax_cross_entropy(logits, vector_labels, loss):
 
 
 def binary_weighted_cross_entropy_with_logits(targets, logits,
-                                              positive_class_weight,
-                                              robust_lambda):
+                                              positive_class_weight=1,
+                                              robust_lambda=0,
+                                              confidence_penalty=0):
     if not positive_class_weight > 0:
         raise ValueError(
             'positive_class_weight is {}, but has to be > 0 to ensure '

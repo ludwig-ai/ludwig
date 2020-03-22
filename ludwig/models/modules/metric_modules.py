@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
+from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_with_logits
 from ludwig.utils.tf_utils import to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
@@ -72,7 +73,6 @@ class R2Score(tf.keras.metrics.Metric):
 
 
 class ErrorScore(tf.keras.metrics.Metric):
-    # custom tf.keras.metrics class to compute r2 score from batches
     # See for additional info:
     #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
 
@@ -96,7 +96,39 @@ class ErrorScore(tf.keras.metrics.Metric):
     def result(self):
         return self.sum_error / self.N
 
+
+class BWCEWLScore(tf.keras.metrics.Metric):
+    # Binary Weighted Cross Entropy Weighted Logits Score Metric
+    # See for additional info:
+    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
+
+    # todo tf2 - convert to tensors?
+
+    def __init__(self, name='error_score'):
+        super(BWCEWLScore, self).__init__(name=name)
+        self._reset_states()
+
+    def _reset_states(self):
+        self.sum_loss = 0.0
+        self.N = 0
+
+    def reset_states(self):
+        self._reset_states()
+
+    def update_state(self, y, y_hat, **kwargs):
+        loss = binary_weighted_cross_entropy_with_logits(
+            y,
+            y_hat,
+            **kwargs
+        )
+        self.sum_loss += np.sum(loss)
+        self.N += y.shape[0]
+
+    def result(self):
+        return self.sum_loss / self.N
+
 # end of custom classes
+
 
 def get_improved_fun(metric):
     if metric in min_metrics:
