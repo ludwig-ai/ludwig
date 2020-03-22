@@ -143,7 +143,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         self.loss = {
             'robust_lambda': 0,
             'confidence_penalty': 0,
-            'positive_class_weight': 1
+            'positive_class_weight': 1,
+            'weight': 1
         }
 
         decoder_parameters = self.overwrite_defaults(feature)
@@ -171,7 +172,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             {LOSS: self.eval_loss_function}
         )
 
-    # customize call to loss function for binary output feature
+    # override super class OutputFeature method to customize binary feature
     def train_loss(self, targets, predictions, **kwargs):
         return self.train_loss_function(
             targets,
@@ -184,7 +185,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             {ACCURACY: BinaryAccuracy(name='metric_accuracy')}
         )
 
-    # customize for binary output
+    # override super class OutputFeature method to customize binary feature
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS:
@@ -398,6 +399,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
                 'weight': 1
             }
         )
+
+        set_default_value(output_feature[LOSS], 'robust_lambda', 0)
+        set_default_value(output_feature[LOSS], 'confidence_penalty', 0)
+        set_default_value(output_feature[LOSS], 'positive_class_weight', 1)
+        set_default_value(output_feature[LOSS], 'weight', 1)
+
         set_default_values(
             output_feature,
             {
