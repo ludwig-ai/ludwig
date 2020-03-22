@@ -16,6 +16,7 @@
 # ==============================================================================
 import logging
 
+import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
 logger = logging.getLogger(__name__)
@@ -34,4 +35,4 @@ class BinaryPassthroughEncoder(Layer):
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
         """
-        return inputs
+        return tf.cast(inputs, dtype=tf.float32)

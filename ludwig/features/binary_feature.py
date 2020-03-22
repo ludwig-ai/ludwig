@@ -73,7 +73,7 @@ class BinaryBaseFeature(BaseFeature):
 class BinaryInputFeature(BinaryBaseFeature, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         BinaryBaseFeature.__init__(self, feature)
-        InputFeature.__init__(feature)
+        InputFeature.__init__(self)
 
         self.encoder = 'passthrough'
         self.norm = None
@@ -87,10 +87,10 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
             self.encoder_obj = self.get_binary_encoder(encoder_parameters)
 
 
-    # def get_binary_encoder(self, encoder_parameters):
-    #     return get_from_registry(self.encoder, self.encoder_registry)(
-    #         **encoder_parameters
-    #     )
+    def get_binary_encoder(self, encoder_parameters):
+        return get_from_registry(self.encoder, self.encoder_registry)(
+            **encoder_parameters
+        )
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
