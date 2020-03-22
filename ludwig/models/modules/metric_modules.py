@@ -121,8 +121,8 @@ class BWCEWLScore(tf.keras.metrics.Metric):
             y_hat,
             **kwargs
         )
-        self.sum_loss += np.sum(loss)
-        self.N += y.shape[0]
+        self.sum_loss += loss
+        self.N += 1
 
     def result(self):
         return self.sum_loss / self.N
