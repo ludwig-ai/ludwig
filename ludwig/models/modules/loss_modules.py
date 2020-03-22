@@ -16,9 +16,8 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
-from tensorflow.python.ops.losses.losses_impl import Reduction
 
-from ludwig.models.modules.loss_modules import mean_confidence_penalty
+from tensorflow.python.ops.losses.losses_impl import Reduction
 
 
 def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,

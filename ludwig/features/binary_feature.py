@@ -25,8 +25,10 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
+from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_with_logits
+from ludwig.models.modules.binary_decoders import Regressor
 from ludwig.models.modules.binary_encoders import BinaryPassthroughEncoder
 from ludwig.models.modules.metric_modules import accuracy as get_accuracy
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -112,12 +114,22 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    encoder_registry = {
+        'dense': FCStack,
+        'passthrough': BinaryPassthroughEncoder,
+        'null': BinaryPassthroughEncoder,
+        'none': BinaryPassthroughEncoder,
+        'None': BinaryPassthroughEncoder,
+        None: BinaryPassthroughEncoder
+    }
+
 
 class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def __init__(self, feature):
-        BinaryBaseFeature.__init__(feature)
+        BinaryBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
 
+        self.decoder = 'regressor'
         self.threshold = 0.5
 
         self.initializer = None
@@ -129,12 +141,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             'positive_class_weight': 1
         }
 
-        _ = self.overwrite_defaults(feature)
+        decoder_parameters = self.overwrite_defaults(feature)
+
+        self.decoder = self.initialize_decoder(decoder_parameters)
 
         self._setup_loss()
         self._setup_metrics()
-
-        self.decoder = BinaryDecoder()
 
     def predictions(
             self,
@@ -147,7 +159,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     def _setup_loss(self):
 
-        self.train_loss_function = binary_weighted_cross_entropy_with_logits()
+        self.train_loss_function = binary_weighted_cross_entropy_with_logits
         self.eval_loss_function = None
 
         self.metric_functions.update(
@@ -371,21 +383,11 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             }
         )
 
-binary_encoder_registry = {
-    'dense': FCStack,
-    'passthrough': BinaryPassthroughEncoder,
-    'null': BinaryPassthroughEncoder,
-    'none': BinaryPassthroughEncoder,
-    'None': BinaryPassthroughEncoder,
-    None: BinaryPassthroughEncoder
-}
 
-
-class BinaryDecoder(tf.keras.layers.Layer):
-
-    def __init__(self):
-        super().__init__()
-        self.dense = Dense(1)  # todo add initialization etc.
-
-    def call(self, inputs, **kwargs):
-        return tf.squeeze(self.dense(inputs))
+    decoder_registry = {
+        'regressor': Regressor,
+        'null': Regressor,
+        'none': Regressor,
+        'None': Regressor,
+        None: Regressor
+    }
