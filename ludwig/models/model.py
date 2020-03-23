@@ -1019,14 +1019,14 @@ class Model:
             **kwargs
     ):
         # predict
-        predict_outputs = self.batch_evaluation(
+        eval_metrics, eval_predictions = self.batch_evaluation(
             dataset,
             batch_size,
             collect_predictions=True,
             only_predictions=not evaluate_performance
         )
 
-        return predict_outputs
+        return eval_metrics, eval_predictions
 
     def collect_activations(
             self,

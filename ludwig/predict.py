@@ -174,7 +174,7 @@ def predict(
     if is_on_master():
         print_boxed('PREDICT')
 
-    test_stats = model.predict(
+    test_stats, test_predictions = model.predict(
         dataset,
         batch_size,
         evaluate_performance=evaluate_performance,
