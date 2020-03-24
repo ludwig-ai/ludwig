@@ -167,7 +167,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         )
 
         # ================ Predictions ================
-        predictions = self.predictions(feature_hidden)
+        predictions = self.logits(feature_hidden)
 
         return predictions
 

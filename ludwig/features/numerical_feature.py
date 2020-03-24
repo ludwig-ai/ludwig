@@ -164,7 +164,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-    def predictions(
+    def logits(
             self,
             inputs,  # hidden
     ):
