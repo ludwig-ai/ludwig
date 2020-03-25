@@ -71,7 +71,7 @@ class ECD(tf.keras.Model):
 
         return output_logits
 
-    def predictions(self, inputs, output_features=None):
+    def predict(self, inputs, output_features=None):
 
         logits = self.call(inputs, training=False)
 

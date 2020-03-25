@@ -154,7 +154,7 @@ class Model:
 
     @tf.function
     def evaluation_step(self, model, inputs, targets):
-        predictions = model.predictions(inputs, output_features=None)
+        predictions = model.predict(inputs, output_features=None)
         model.update_metrics(targets, predictions)
         return predictions
 
