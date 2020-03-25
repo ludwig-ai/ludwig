@@ -811,8 +811,12 @@ class Model:
             # accumulate predictions from batch for each output feature
             for of_name, of_preds in preds.items():
                 if of_name not in predictions:
-                    predictions[of_name] = []
-                predictions[of_name].append(of_preds)
+                    predictions[of_name] = {}
+                for pred_name, pred_values in of_preds.items():
+                    if pred_name not in predictions[of_name]:
+                        predictions[of_name][pred_name] = [pred_values]
+                    else:
+                        predictions[of_name][pred_name].append(pred_values)
 
             if is_on_master():
                 progress_bar.update(1)
@@ -827,8 +831,9 @@ class Model:
         #     )
 
         # consolidate predictions from each batch to a single tensor
-        for of_name in predictions:
-            predictions[of_name] = tf.concat(predictions[of_name], axis=0)
+        for of_name, of_predictions in predictions.items():
+            for pred_name, pred_value_list in of_predictions.items():
+                predictions[of_name][pred_name] = tf.concat(pred_value_list, axis=0)
 
         metrics = self.ecd.get_metrics()
         self.ecd.reset_metrics()
