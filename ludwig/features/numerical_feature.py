@@ -170,6 +170,15 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     ):
         predictions = self.decoder_obj(inputs)
 
+        return predictions, inputs
+
+    def predict(
+            self,
+            inputs,  # hidden
+    ):
+
+        predictions = inputs
+
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
                 predictions = tf.clip_by_value(
@@ -189,7 +198,12 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                     )
                 )
 
-        return predictions, inputs
+
+        return {
+            self.feature_name: predictions
+        }
+
+
 
     def _setup_loss(self):
         if self.loss['type'] == 'mean_squared_error':

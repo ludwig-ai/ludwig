@@ -71,6 +71,25 @@ class ECD(tf.keras.Model):
 
         return output_logits
 
+    def predictions(self, inputs, output_features=None):
+
+        logits = self.call(inputs, training=False)
+
+        if output_features is None:
+            of_list = [k for k in logits]
+        elif isinstance(output_features, list):
+            of_list = output_features
+        else:
+            raise ValueError(
+                "'output_feature' must be None or list of output features"
+            )
+
+        for of_name in of_list:
+            predictions = self.output_features[of_name].predict(logits[of_name])
+
+        return predictions
+
+
     def train_loss(self, targets, predictions):
         train_loss = 0
         of_train_losses = {}
@@ -109,6 +128,7 @@ class ECD(tf.keras.Model):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
+
 
 
 def build_inputs(

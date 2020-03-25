@@ -163,6 +163,30 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
         return predictions, inputs
 
+    def predict(
+            self,
+            inputs  # hidden
+    ):
+        logits, _ = self.logits(input)
+
+        probabilities = tf.nn.sigmoid(
+            logits,
+            name='probabilities_{}'.format(
+                self.name)
+        )
+        predictions = tf.greater_equal(
+            probabilities,
+            self.threshold,
+            name='predictions_{}'.format(
+                self.name)
+        )
+
+        return {
+            'probabilities': probabilities,
+            'predictions': predictions
+        }
+
+
     def _setup_loss(self):
 
         self.train_loss_function = binary_weighted_cross_entropy_with_logits
