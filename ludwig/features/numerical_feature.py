@@ -172,7 +172,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         return predictions, inputs
 
-    def predict(
+    def predictions(
             self,
             inputs,  # hidden
     ):
