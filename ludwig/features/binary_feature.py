@@ -181,8 +181,11 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         )
 
         return {
-            'probabilities': probabilities,
-            'predictions': predictions
+            self.feature_name: {
+                'probabilities': probabilities,
+                'predictions': predictions,
+                'logits': inputs
+            }
         }
 
 
@@ -212,14 +215,15 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS:
-                metric_fn.update_state(
-                    targets,
-                    predictions,
-                    positive_class_weight=self.loss['positive_class_weight'],
-                    robust_lambda=self.loss['robust_lambda']
-                )
+                pass
+                # metric_fn.update_state(
+                #     targets,
+                #     predictions['probabilities'],
+                #     positive_class_weight=self.loss['positive_class_weight'],
+                #     robust_lambda=self.loss['robust_lambda']
+                # )
             else:
-                metric_fn.update_state(targets, predictions > self.threshold)
+                metric_fn.update_state(targets, predictions['predictions'])
 
     default_validation_metric = ACCURACY
 

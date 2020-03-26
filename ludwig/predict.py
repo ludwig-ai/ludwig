@@ -184,7 +184,7 @@ def predict(
 
     if evaluate_performance:
         calculate_overall_stats(
-            test_stats,
+            test_predictions,
             model_definition['output_features'],
             dataset,
             train_set_metadata

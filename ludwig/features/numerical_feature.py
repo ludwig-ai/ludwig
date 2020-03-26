@@ -200,7 +200,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
 
         return {
-            self.feature_name: {'predictions': predictions}
+            self.feature_name: {'predictions': predictions, 'logits': inputs}
         }
 
 

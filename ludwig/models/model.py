@@ -802,7 +802,7 @@ class Model:
 
             (
                 preds
-            ) =self.evaluation_step(
+            ) = self.evaluation_step(
                 self.ecd,
                 inputs,
                 targets
