@@ -426,7 +426,7 @@ class Model:
         # check if validation_field is valid
         valid_validation_field = False
         validation_output_feature_name = None
-        if validation_field is 'combined':
+        if validation_field == 'combined':
             valid_validation_field = True
             validation_output_feature_name = 'combined'
         else:
