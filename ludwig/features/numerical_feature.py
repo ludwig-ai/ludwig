@@ -234,6 +234,11 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             {R2: R2Score(name='metric_r2')}
         )
 
+    # override super class OutputFeature method to customize binary feature
+    def update_metrics(self, targets, predictions):
+        for metric in self.metric_functions.values():
+            metric.update_state(targets, predictions['predictions'])
+
     default_validation_metric = MEAN_SQUARED_ERROR
 
     @staticmethod

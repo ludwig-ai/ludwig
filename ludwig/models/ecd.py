@@ -112,7 +112,7 @@ class ECD(tf.keras.Model):
 
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
-            of_obj.update_metrics(targets[of_name], predictions[of_name]['predictions'])
+            of_obj.update_metrics(targets[of_name], predictions[of_name])
         self.eval_loss_metric.update_state(self.eval_loss(targets, predictions)[0])
 
     def get_metrics(self):
