@@ -104,7 +104,7 @@ class ECD(tf.keras.Model):
         eval_loss = 0
         of_eval_losses = {}
         for of_name, of_obj in self.output_features.items():
-            of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name])
+            of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name]['logits'])
             eval_loss += of_obj.loss['weight'] * of_eval_loss
             of_eval_losses[of_name] = of_eval_loss
         eval_loss += sum(self.losses)  # regularization / other losses
@@ -112,7 +112,7 @@ class ECD(tf.keras.Model):
 
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
-            of_obj.update_metrics(targets[of_name], predictions[of_name])
+            of_obj.update_metrics(targets[of_name], predictions[of_name]['predictions'])
         self.eval_loss_metric.update_state(self.eval_loss(targets, predictions)[0])
 
     def get_metrics(self):

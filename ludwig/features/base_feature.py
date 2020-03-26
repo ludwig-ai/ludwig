@@ -134,11 +134,11 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         return self.train_loss_function(targets, predictions)
 
     def eval_loss(self, targets, predictions):
-        return self.eval_loss_function(targets, predictions['logits'])
+        return self.eval_loss_function(targets, predictions)
 
     def update_metrics(self, targets, predictions):
         for metric in self.metric_functions.values():
-            metric.update_state(targets, predictions['predictions'])
+            metric.update_state(targets, predictions)
 
     def get_metrics(self):
         metric_vals = {}
