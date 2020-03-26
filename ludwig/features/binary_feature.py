@@ -215,13 +215,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS:
-                pass
-                # metric_fn.update_state(
-                #     targets,
-                #     predictions['probabilities'],
-                #     positive_class_weight=self.loss['positive_class_weight'],
-                #     robust_lambda=self.loss['robust_lambda']
-                # )
+                metric_fn.update_state(
+                    targets,
+                    predictions['logits'],
+                    positive_class_weight=self.loss['positive_class_weight'],
+                    robust_lambda=self.loss['robust_lambda']
+                )
             else:
                 metric_fn.update_state(targets, predictions['predictions'])
 
