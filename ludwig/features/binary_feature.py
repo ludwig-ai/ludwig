@@ -167,10 +167,9 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             self,
             inputs  # hidden
     ):
-        logits, _ = self.logits(input)
 
         probabilities = tf.nn.sigmoid(
-            logits,
+            inputs,
             name='probabilities_{}'.format(
                 self.name)
         )
