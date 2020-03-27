@@ -97,16 +97,17 @@ class ErrorScore(tf.keras.metrics.Metric):
         return self.sum_error / self.N
 
 
-class BWCEWLScore(tf.keras.metrics.Metric):
+class BWCEWLMetric(tf.keras.metrics.Metric):
     # Binary Weighted Cross Entropy Weighted Logits Score Metric
     # See for additional info:
     #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, name='error_score'):
-        super(BWCEWLScore, self).__init__(name=name)
+    def __init__(self, bwcew_loss_function= None, name='error_score'):
+        super(BWCEWLMetric, self).__init__(name=name)
 
+        self.bwcew_loss_function = bwcew_loss_function
 
         self._reset_states()
 
@@ -118,11 +119,7 @@ class BWCEWLScore(tf.keras.metrics.Metric):
         self._reset_states()
 
     def update_state(self, y, y_hat, **kwargs):
-        loss = binary_weighted_cross_entropy_with_logits(
-            y,
-            y_hat,
-            **kwargs
-        )
+        loss = self.bwcew_loss_function(y, y_hat)
         self.sum_loss += loss
         self.N += 1
 

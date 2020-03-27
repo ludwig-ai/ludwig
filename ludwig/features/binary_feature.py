@@ -29,7 +29,7 @@ from ludwig.models.modules.binary_decoders import Regressor
 from ludwig.models.modules.binary_encoders import BinaryPassthroughEncoder
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.loss_modules import BWCEWLoss
-from ludwig.models.modules.metric_modules import BWCEWLScore
+from ludwig.models.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -183,14 +183,22 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             positive_class_weight=self.loss['positive_class_weight'],
             robust_lambda=self.loss['robust_lambda']
         )
-        self.eval_loss_function = BWCEWLScore(name='eval_loss')
+        self.eval_loss_function = BWCEWLMetric(
+            bwcew_loss_function=self.train_loss_function,
+            name='eval_loss'
+        )
 
     def _setup_metrics(self):
         self.metric_functions.update(
             {ACCURACY: BinaryAccuracy(name='metric_accuracy')}
         )
         self.metric_functions.update(
-            {LOSS: self.eval_loss_function}
+            {
+                LOSS: BWCEWLMetric(
+                    bwcew_loss_function=self.train_loss_function,
+                    name='metric_bwcewl'
+                )
+             }
         )
 
     # override super class OutputFeature method to customize binary feature
