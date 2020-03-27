@@ -184,6 +184,8 @@ def predict(
 
     # combine predictions with the overall metrics
     for of_name in test_predictions:
+        # remove logits, not needed for overall stats
+        del test_predictions[of_name]['logits']
         test_stats[of_name] = {**test_stats[of_name], **test_predictions[of_name]}
 
     if evaluate_performance:

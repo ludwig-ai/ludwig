@@ -272,7 +272,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         name = output_feature['name']
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS]
+            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),

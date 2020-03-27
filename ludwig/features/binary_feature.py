@@ -310,7 +310,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         name = output_feature['name']
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS]
+            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
@@ -319,7 +319,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             del result[PREDICTIONS]
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = result[PROBABILITIES]
+            postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
