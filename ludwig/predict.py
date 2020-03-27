@@ -182,9 +182,13 @@ def predict(
         gpu_fraction=gpu_fraction
     )
 
+    # combine predictions with the overall metrics
+    for of_name in test_predictions:
+        test_stats[of_name] = {**test_stats[of_name], **test_predictions[of_name]}
+
     if evaluate_performance:
         calculate_overall_stats(
-            test_predictions,
+            test_stats,
             model_definition['output_features'],
             dataset,
             train_set_metadata
