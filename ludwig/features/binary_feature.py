@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -26,12 +25,10 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_with_logits
 from ludwig.models.modules.binary_decoders import Regressor
 from ludwig.models.modules.binary_encoders import BinaryPassthroughEncoder
-from ludwig.models.modules.metric_modules import accuracy as get_accuracy
+from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_with_logits
 from ludwig.models.modules.metric_modules import BWCEWLScore
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
@@ -86,7 +83,6 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
         else:
             self.encoder_obj = self.get_binary_encoder(encoder_parameters)
 
-
     def get_binary_encoder(self, encoder_parameters):
         return get_from_registry(self.encoder, self.encoder_registry)(
             **encoder_parameters
@@ -127,8 +123,6 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
     }
 
 
-
-
 class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def __init__(self, feature):
         BinaryBaseFeature.__init__(self, feature)
@@ -158,16 +152,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             self,
             inputs  # hidden
     ):
-
-        predictions = self.decoder(inputs)
-
-        return predictions, inputs
+        return self.decoder(inputs)
 
     def predictions(
             self,
             inputs  # hidden
     ):
-
         logits = inputs
 
         probabilities = tf.nn.sigmoid(
@@ -183,16 +173,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         )
 
         return {
-            self.feature_name: {
-                'probabilities': probabilities,
-                'predictions': predictions,
-                'logits': inputs
-            }
+            'probabilities': probabilities,
+            'predictions': predictions,
+            'logits': inputs
         }
 
-
     def _setup_loss(self):
-
         self.train_loss_function = binary_weighted_cross_entropy_with_logits
         self.eval_loss_function = BWCEWLScore(name='eval_loss')
 

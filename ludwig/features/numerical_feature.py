@@ -168,16 +168,14 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             self,
             inputs,  # hidden
     ):
-        predictions = self.decoder_obj(inputs)
-
-        return predictions, inputs
+        return self.decoder_obj(inputs)
 
     def predictions(
             self,
-            inputs,  # hidden
+            inputs,  # logits
     ):
-
-        predictions = inputs
+        logits = inputs
+        predictions = logits
 
         if self.clip is not None:
             if isinstance(self.clip, (list, tuple)) and len(self.clip) == 2:
@@ -198,10 +196,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                     )
                 )
 
-
-        return {
-            self.feature_name: {'predictions': predictions, 'logits': inputs}
-        }
+        return {'predictions': predictions, 'logits': logits}
 
 
 

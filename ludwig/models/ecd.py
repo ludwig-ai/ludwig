@@ -71,21 +71,45 @@ class ECD(tf.keras.Model):
 
         return output_logits
 
-    def predict(self, inputs, output_features=None):
+    def predictions(self, inputs, output_features=None):
+        # check validity of output_features
+        if output_features is None:
+            of_list = self.output_features
+        elif isinstance(output_features, str):
+            if output_features == 'all':
+                of_list = set(self.output_features.keys())
+            elif output_features in self.output_features:
+                of_list = [output_features]
+            else:
+                raise ValueError(
+                    "'output_features' {} is not a valid for this model. "
+                    "Available ones are: {}".format(
+                        output_features, set(self.output_features.keys())
+                    )
+                )
+        elif isinstance(output_features, list or set):
+            if output_features.issubset(self.output_features):
+                of_list = output_features
+            else:
+                raise ValueError(
+                    "'output_features' {} must be a subset of "
+                    "available features {}".format(
+                        output_features, set(self.output_features.keys())
+                    )
+                )
+        else:
+            raise ValueError(
+                "'output_features' must be None or a string or a list "
+                "of output features"
+            )
 
         logits = self.call(inputs, training=False)
 
-        if output_features is None:
-            of_list = [k for k in logits]
-        elif isinstance(output_features, list):
-            of_list = output_features
-        else:
-            raise ValueError(
-                "'output_feature' must be None or list of output features"
-            )
-
+        predictions = {}
         for of_name in of_list:
-            predictions = self.output_features[of_name].predictions(logits[of_name])
+            predictions[of_name] = self.output_features[of_name].predictions(
+                logits[of_name]
+            )
 
         return predictions
 
@@ -104,7 +128,9 @@ class ECD(tf.keras.Model):
         eval_loss = 0
         of_eval_losses = {}
         for of_name, of_obj in self.output_features.items():
-            of_eval_loss = of_obj.eval_loss(targets[of_name], predictions[of_name]['logits'])
+            of_eval_loss = of_obj.eval_loss(
+                targets[of_name], predictions[of_name]['logits']
+            )
             eval_loss += of_obj.loss['weight'] * of_eval_loss
             of_eval_losses[of_name] = of_eval_loss
         eval_loss += sum(self.losses)  # regularization / other losses
@@ -113,7 +139,9 @@ class ECD(tf.keras.Model):
     def update_metrics(self, targets, predictions):
         for of_name, of_obj in self.output_features.items():
             of_obj.update_metrics(targets[of_name], predictions[of_name])
-        self.eval_loss_metric.update_state(self.eval_loss(targets, predictions)[0])
+        self.eval_loss_metric.update_state(
+            self.eval_loss(targets, predictions)[0]
+        )
 
     def get_metrics(self):
         all_of_metrics = {}

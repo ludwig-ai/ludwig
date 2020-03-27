@@ -142,8 +142,8 @@ class Model:
     @tf.function
     def train_step(self, model, optimizer, inputs, targets):
         with tf.GradientTape() as tape:
-            predictions = model(inputs, training=True)
-            loss, _ = model.train_loss(targets, predictions)
+            logits = model(inputs, training=True)
+            loss, _ = model.train_loss(targets, logits)
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
@@ -154,7 +154,7 @@ class Model:
 
     @tf.function
     def evaluation_step(self, model, inputs, targets):
-        predictions = model.predict(inputs, output_features=None)
+        predictions = model.predictions(inputs, output_features=None)
         model.update_metrics(targets, predictions)
         return predictions
 

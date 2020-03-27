@@ -159,7 +159,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
     ):
         combiner_output, other_output_hidden = inputs
 
-        feature_hidden = self.prepare_decoder_inputs(
+        hidden = self.prepare_decoder_inputs(
             combiner_output,
             other_output_hidden,
             training=training,
@@ -167,9 +167,9 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         )
 
         # ================ Predictions ================
-        predictions = self.logits(feature_hidden)
+        logits = self.logits(hidden)
 
-        return predictions
+        return logits, hidden
 
     @property
     @abstractmethod
