@@ -118,7 +118,7 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
     def reset_states(self):
         self._reset_states()
 
-    def update_state(self, y, y_hat, **kwargs):
+    def update_state(self, y, y_hat):
         loss = self.bwcew_loss_function(y, y_hat)
         self.sum_loss += loss
         self.N += 1

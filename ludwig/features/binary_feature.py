@@ -201,15 +201,14 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
              }
         )
 
-    # override super class OutputFeature method to customize binary feature
+    # override super class OutputFeature method to account for
+    # metric/prediction value combinations
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS:
                 metric_fn.update_state(
                     targets,
-                    predictions['logits'],
-                    positive_class_weight=self.loss['positive_class_weight'],
-                    robust_lambda=self.loss['robust_lambda']
+                    predictions['logits']
                 )
             else:
                 metric_fn.update_state(targets, predictions['predictions'])
