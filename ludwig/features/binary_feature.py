@@ -185,21 +185,12 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         )
         self.eval_loss_function = BWCEWLScore(name='eval_loss')
 
-        self.metric_functions.update(
-            {LOSS: self.eval_loss_function}
-        )
-
-    # override super class OutputFeature method to customize binary feature
-    def train_loss(self, targets, predictions, **kwargs):
-        return self.train_loss_function(
-            targets,
-            predictions,
-            **kwargs
-        )
-
     def _setup_metrics(self):
         self.metric_functions.update(
             {ACCURACY: BinaryAccuracy(name='metric_accuracy')}
+        )
+        self.metric_functions.update(
+            {LOSS: self.eval_loss_function}
         )
 
     # override super class OutputFeature method to customize binary feature
