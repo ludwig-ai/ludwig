@@ -203,10 +203,10 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def _setup_loss(self):
         if self.loss['type'] == 'mean_squared_error':
             self.train_loss_function = MeanSquaredError()
-            self.eval_loss_function = tf.keras.metrics.MeanSquaredError(name='eval_loss')
+            self.eval_loss_function = MeanSquaredErrorMetric(name='eval_loss')
         elif self.loss['type'] == 'mean_absolute_error':
             self.train_loss_function = MeanAbsoluteError()
-            self.eval_loss_function = tf.keras.metrics.MeanAbsoluteError(name='eval_loss')
+            self.eval_loss_function = MeanSquaredErrorMetric(name='eval_loss')
         else:
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss['type'])
