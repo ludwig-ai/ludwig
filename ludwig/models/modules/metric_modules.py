@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
+from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.utils.tf_utils import to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
@@ -56,9 +57,9 @@ class R2Score(tf.keras.metrics.Metric):
 
     def update_state(self, y, y_hat):
         self.sum_y += np.sum(y)
-        self.sum_y_squared += np.sum(y**2)
+        self.sum_y_squared += np.sum(y ** 2)
         self.sum_y_hat += np.sum(y_hat)
-        self.sum_y_hat_squared += np.sum(y_hat**2)
+        self.sum_y_hat_squared += np.sum(y_hat ** 2)
         self.sum_y_y_hat += np.sum(y * y_hat)
         self.N += y.shape[0]
 
@@ -103,10 +104,20 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, bwcew_loss_function= None, name='error_score'):
+    def __init__(
+            self,
+            positive_class_weight=1,
+            robust_lambda=0,
+            confidence_penalty=0,
+            name='binary_cross_entropy_weighted_loss_metric'
+    ):
         super(BWCEWLMetric, self).__init__(name=name)
 
-        self.bwcew_loss_function = bwcew_loss_function
+        self.bwcew_loss_function = BWCEWLoss(
+            positive_class_weight=positive_class_weight,
+            robust_lambda=robust_lambda,
+            confidence_penalty=confidence_penalty
+        )
 
         self._reset_states()
 
@@ -124,6 +135,7 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
 
     def result(self):
         return self.sum_loss / self.N
+
 
 # end of custom classes
 

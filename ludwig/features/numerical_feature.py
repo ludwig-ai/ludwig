@@ -198,8 +198,6 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
         return {'predictions': predictions, 'logits': logits}
 
-
-
     def _setup_loss(self):
         if self.loss['type'] == 'mean_squared_error':
             self.train_loss_function = MeanSquaredError()
@@ -211,28 +209,21 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             raise ValueError(
                 'Unsupported loss type {}'.format(self.loss['type'])
             )
-        self.metric_functions.update(
-            {LOSS: self.eval_loss_function}
-        )
 
     def _setup_metrics(self):
-        self.metric_functions.update(
-            {ERROR: ErrorScore(name='metric_error')}
+        self.metric_functions[ERROR] = ErrorScore(name='metric_error')
+        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
+            name='metric_mse'
         )
-        self.metric_functions.update(
-            {MEAN_SQUARED_ERROR: MeanSquaredErrorMetric(name='metric_mse')}
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
+            name='metric_mae'
         )
-        self.metric_functions.update(
-            {MEAN_ABSOLUTE_ERROR: MeanAbsoluteErrorMetric(name='metric_mae')}
-        )
-        self.metric_functions.update(
-            {R2: R2Score(name='metric_r2')}
-        )
+        self.metric_functions[R2] = R2Score(name='metric_r2')
+        self.metric_functions[LOSS] = self.eval_loss_function
 
-    # override super class OutputFeature method to customize binary feature
-    def update_metrics(self, targets, predictions):
-        for metric in self.metric_functions.values():
-            metric.update_state(targets, predictions['predictions'])
+    # def update_metrics(self, targets, predictions):
+    #     for metric in self.metric_functions.values():
+    #         metric.update_state(targets, predictions['predictions'])
 
     default_validation_metric = MEAN_SQUARED_ERROR
 

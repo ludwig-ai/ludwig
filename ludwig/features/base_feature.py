@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 
 import tensorflow.compat.v1 as tf
 
+from ludwig.constants import LOSS
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.utils.misc import merge_dict, get_from_registry
@@ -137,8 +138,11 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         return self.eval_loss_function(targets, predictions)
 
     def update_metrics(self, targets, predictions):
-        for metric in self.metric_functions.values():
-            metric.update_state(targets, predictions)
+        for metric, metric_fn in self.metric_functions.items():
+            if metric == LOSS:
+                metric_fn.update_state(targets, predictions['logits'])
+            else:
+                metric_fn.update_state(targets, predictions['predictions'])
 
     def get_metrics(self):
         metric_vals = {}

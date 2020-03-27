@@ -185,34 +185,22 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             confidence_penalty=self.loss['confidence_penalty']
         )
         self.eval_loss_function = BWCEWLMetric(
-            bwcew_loss_function=self.train_loss_function,
+            positive_class_weight=self.loss['positive_class_weight'],
+            robust_lambda=self.loss['robust_lambda'],
+            confidence_penalty=self.loss['confidence_penalty'],
             name='eval_loss'
         )
 
     def _setup_metrics(self):
-        self.metric_functions.update(
-            {ACCURACY: BinaryAccuracy(name='metric_accuracy')}
-        )
-        self.metric_functions.update(
-            {
-                LOSS: BWCEWLMetric(
-                    bwcew_loss_function=self.train_loss_function,
-                    name='metric_bwcewl'
-                )
-             }
-        )
+        self.metric_functions[ACCURACY] = BinaryAccuracy(name='metric_accuracy')
+        self.metric_functions[LOSS] = self.eval_loss_function
 
-    # override super class OutputFeature method to account for
-    # metric/prediction value combinations
-    def update_metrics(self, targets, predictions):
-        for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS:
-                metric_fn.update_state(
-                    targets,
-                    predictions['logits']
-                )
-            else:
-                metric_fn.update_state(targets, predictions['predictions'])
+    # def update_metrics(self, targets, predictions):
+    #     for metric, metric_fn in self.metric_functions.items():
+    #         if metric == LOSS:
+    #             metric_fn.update_state(targets, predictions['logits'])
+    #         else:
+    #             metric_fn.update_state(targets, predictions['predictions'])
 
     default_validation_metric = ACCURACY
 
