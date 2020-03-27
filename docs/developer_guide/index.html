@@ -720,7 +720,11 @@
                 
                 <h2 id="codebase-structure">Codebase Structure<a class="headerlink" href="#codebase-structure" title="Permanent link">&para;</a></h2>
 <p>The codebase is organized in a modular, datatype / feature centric way so that adding a feature for a new datatype is pretty straightforward and requires isolated code changes. All the datatype specific logic lives in the corresponding feature module all of which are under <code>ludwig/features/</code>.</p>
-<p>Feature classes contain raw data preprocessing logic specific to each data type. All input (output) features implement <code>build_input</code> (<code>build_output</code>) method which is used to build encodings (decode outputs). Output features also contain datatype-specific logic to compute output measures such as loss, accuracy, etc.</p>
+<p>Feature classes contain raw data preprocessing logic specific to each data
+    type. All input (output) features implement <code>build_input</code> (<code>build_output</code>)
+    method which is used to build encodings (decode outputs). Output features
+    also contain datatype-specific logic to compute output metrics such as loss,
+    accuracy, etc.</p>
 <p>Encoders and decoders are modularized as well (they are under <code>ludwig/models/modules</code>) so that they can be used by multiple features. For example sequence encoders are shared among text, sequence, and timeseries features.</p>
 <p>Various model architecture components which can be reused are also split into dedicated modules, for example convolutional modules, fully connected modules, etc.</p>
 <p>Bulk of the training logic resides in <code>ludwig/models/model.py</code> which initializes a tensorflow session, feeds the data, and executes training.</p>

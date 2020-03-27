@@ -16,10 +16,10 @@ ludwig.visualize.learning_curves(
 ```
 
 
-Show how model measures change over training and validation data epochs.
+Show how model metrics change over training and validation data epochs.
 
-For each model and for each output feature and measure of the model,
-it produces a line plot showing how that measure changed over the course
+For each model and for each output feature and metric of the model,
+it produces a line plot showing how that metric changed over the course
 of the epochs of training on the training and validation sets.
 
 __Inputs__
@@ -224,10 +224,10 @@ ludwig.visualize.compare_classifiers_performance_changing_k(
 ```
 
 
-Produce lineplot that show Hits@K measure while k goes from 1 to top_k.
+Produce lineplot that show Hits@K metric while k goes from 1 to top_k.
 
 
-For each model it produces a line plot that shows the Hits@K measure
+For each model it produces a line plot that shows the Hits@K metric
 (that counts a prediction as correct if the model produces it among the
 first k) while changing k from 1 to top_k for the specified output_feature_name.
 

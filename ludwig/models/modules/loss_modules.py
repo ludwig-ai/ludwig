@@ -16,7 +16,55 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
+
 from tensorflow.python.ops.losses.losses_impl import Reduction
+
+
+#
+# Custom classes to support Tensorflow 2
+#
+class BWCEWLoss(tf.keras.losses.Loss):
+    def __init__(
+            self,
+            positive_class_weight=1,
+            robust_lambda=0,
+            confidence_penalty=0
+    ):
+        super(BWCEWLoss, self).__init__()
+
+        self.positive_class_weight = positive_class_weight
+        self.robust_lambda = robust_lambda
+        self.confidence_penalty = confidence_penalty
+
+    def call(self, y_true, y_pred):
+        logits = y_pred
+
+        # weighted cross entropy
+        train_loss = tf.nn.weighted_cross_entropy_with_logits(
+            targets=tf.cast(y_true, tf.float32),
+            logits=logits,
+            pos_weight=self.positive_class_weight
+        )
+
+        # robust lambda
+        if self.robust_lambda > 0:
+            train_loss = ((1 - self.robust_lambda) * train_loss +
+                          self.robust_lambda / 2)
+
+        train_mean_loss = tf.reduce_mean(
+            train_loss
+        )
+
+        # confidence penalty
+        if self.confidence_penalty > 0:
+            probabilities = tf.nn.sigmoid(logits)
+            mean_penalty = mean_confidence_penalty(probabilities, 2)
+            train_mean_loss += self.confidence_penalty * mean_penalty
+
+        return train_mean_loss
+
+
+# end of custom classes
 
 
 def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,
@@ -318,6 +366,22 @@ def loss_multilabel(logits, vector_labels, loss):
                 'labels_smoothing'],
             reduction=Reduction.NONE)
     return train_loss
+
+
+def absolute_loss(y, y_hat):
+    return tf.abs(tf.subtract(y, y_hat))
+
+
+def squared_loss(y, y_hat):
+    return tf.square(tf.subtract(y, y_hat))
+
+
+def mean_absolute_error(y, y_hat, weight=1.0):
+    return tf.reduce_mean(tf.multiply(absolute_loss(y, y_hat), weight))
+
+
+def mean_squared_error(y, y_hat, weight=1.0):
+    return tf.reduce_mean(tf.multiply(squared_loss(y, y_hat), weight))
 
 
 # todo tf2: fix this!

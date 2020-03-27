@@ -23,7 +23,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.util import nest
 
-from ludwig.models.modules.fully_connected_modules import fc_layer
+# from ludwig.models.modules.fully_connected_modules import fc_layer
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
@@ -250,20 +250,20 @@ def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,
                     sequence_length = tf.shape(encoder_outputs)[1]
                     encoder_outputs = tf.reshape(encoder_outputs,
                                                  [-1, encoder_outputs_size])
-                    encoder_outputs = fc_layer(encoder_outputs,
-                                               encoder_outputs.shape[-1],
-                                               state_size,
-                                               activation=None,
-                                               initializer=initializer)
+                    # encoder_outputs = fc_layer(encoder_outputs,
+                    #                           encoder_outputs.shape[-1],
+                    #                           state_size,
+                    #                           activation=None,
+                    #                           initializer=initializer)
                     encoder_outputs = tf.reshape(encoder_outputs,
                                                  [-1, sequence_length,
                                                   state_size])
-                else:
-                    encoder_outputs = fc_layer(encoder_outputs,
-                                               encoder_outputs.shape[-1],
-                                               state_size,
-                                               activation=None,
-                                               initializer=initializer)
+                # else:
+                #    encoder_outputs = fc_layer(encoder_outputs,
+                #                               encoder_outputs.shape[-1],
+                #                               state_size,
+                #                               activation=None,
+                #                               initializer=initializer)
 
         # ================ Targets sequence ================
         # Calculate the length of inputs and the batch size

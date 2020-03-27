@@ -97,7 +97,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
         return tf.placeholder(
             tf.int32,
             shape=[None, H3_VECTOR_LENGTH],
-            name=self.name
+            name=self.feature_name
         )
 
     def build_input(
@@ -120,7 +120,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
             feature_representation))
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': feature_representation,
             'size': feature_representation_size,
@@ -139,7 +139,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, TIED, None)
 
 
 h3_encoder_registry = {

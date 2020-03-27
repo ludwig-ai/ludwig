@@ -13,36 +13,149 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+import numpy as np
 import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
+from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.utils.tf_utils import to_sparse
 
-measures = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
-            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
-            PERPLEXITY}
+metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
+           MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
+           PERPLEXITY}
 
-max_measures = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
-min_measures = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
-                PERPLEXITY}
+max_metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD}
+min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
+               PERPLEXITY}
 
 
-def get_improved_fun(measure):
-    if measure in min_measures:
+#
+# Custom classes to support Tensorflow 2
+#
+class R2Score(tf.keras.metrics.Metric):
+    # custom tf.keras.metrics class to compute r2 score from batches
+    # See for additional info:
+    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
+
+    # todo tf2 - convert to tensors?
+
+    def __init__(self, name='r2_score'):
+        super(R2Score, self).__init__(name=name)
+        self._reset_states()
+
+    def _reset_states(self):
+        self.sum_y = 0.0
+        self.sum_y_squared = 0.0
+        self.sum_y_hat = 0.0
+        self.sum_y_hat_squared = 0.0
+        self.sum_y_y_hat = 0.0
+        self.N = 0
+
+    def reset_states(self):
+        self._reset_states()
+
+    def update_state(self, y, y_hat):
+        self.sum_y += np.sum(y)
+        self.sum_y_squared += np.sum(y ** 2)
+        self.sum_y_hat += np.sum(y_hat)
+        self.sum_y_hat_squared += np.sum(y_hat ** 2)
+        self.sum_y_y_hat += np.sum(y * y_hat)
+        self.N += y.shape[0]
+
+    def result(self):
+        y_bar = self.sum_y / self.N
+        tot_ss = self.sum_y_squared - 2.0 * y_bar * self.sum_y \
+                 + self.N * y_bar ** 2
+        res_ss = self.sum_y_squared - 2.0 * self.sum_y_y_hat \
+                 + self.sum_y_hat_squared
+        return 1.0 - res_ss / tot_ss
+
+
+class ErrorScore(tf.keras.metrics.Metric):
+    # See for additional info:
+    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
+
+    # todo tf2 - convert to tensors?
+
+    def __init__(self, name='error_score'):
+        super(ErrorScore, self).__init__(name=name)
+        self._reset_states()
+
+    def _reset_states(self):
+        self.sum_error = 0.0
+        self.N = 0
+
+    def reset_states(self):
+        self._reset_states()
+
+    def update_state(self, y, y_hat):
+        self.sum_error += np.sum(y - y_hat)
+        self.N += y.shape[0]
+
+    def result(self):
+        return self.sum_error / self.N
+
+
+class BWCEWLMetric(tf.keras.metrics.Metric):
+    # Binary Weighted Cross Entropy Weighted Logits Score Metric
+    # See for additional info:
+    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
+
+    # todo tf2 - convert to tensors?
+
+    def __init__(
+            self,
+            positive_class_weight=1,
+            robust_lambda=0,
+            confidence_penalty=0,
+            name='binary_cross_entropy_weighted_loss_metric'
+    ):
+        super(BWCEWLMetric, self).__init__(name=name)
+
+        self.bwcew_loss_function = BWCEWLoss(
+            positive_class_weight=positive_class_weight,
+            robust_lambda=robust_lambda,
+            confidence_penalty=confidence_penalty
+        )
+
+        self._reset_states()
+
+    def _reset_states(self):
+        self.sum_loss = 0.0
+        self.N = 0
+
+    def reset_states(self):
+        self._reset_states()
+
+    def update_state(self, y, y_hat):
+        loss = self.bwcew_loss_function(y, y_hat)
+        self.sum_loss += loss
+        self.N += 1
+
+    def result(self):
+        return self.sum_loss / self.N
+
+
+# end of custom classes
+
+
+def get_improved_fun(metric):
+    if metric in min_metrics:
         return lambda x, y: x < y
     else:
         return lambda x, y: x > y
 
 
-def get_initial_validation_value(measure):
-    if measure in min_measures:
+def get_initial_validation_value(metric):
+    if metric in min_metrics:
         return float('inf')
     else:
         return float('-inf')
 
 
-def get_best_function(measure):
-    if measure in min_measures:
+def get_best_function(metric):
+    if metric in min_metrics:
         return min
     else:
         return max

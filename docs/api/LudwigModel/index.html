@@ -861,8 +861,8 @@ constants like <code>logging.DEBUG</code> , <code>logging.INFO</code> and <code>
 
 
 <p>This function is used to predict the output variables given the input
-variables using the trained model and compute test statistics like
-performance measures, confusion matrices and the like.</p>
+    variables using the trained model and compute test statistics like
+    performance metrics, confusion matrices and the like.</p>
 <p><strong>Inputs</strong></p>
 <ul>
 <li><strong>data_df</strong> (DataFrame): dataframe containing data. Both input and
@@ -909,14 +909,14 @@ performance measures, confusion matrices and the like.</p>
      <code>class_three_probability</code>. (The UNK class is always present in
      categorical features).
      If the <code>return_type</code> is a dictionary, the first object
-     of the tuple will be a dictionary contaning one entry
-     for each output feature.
-     Each entry is itself a dictionary containing aligned
-     arrays of predictions and probabilities / scores.
-     The second object of the tuple is a dictionary that contains
-     the test statistics, with each key being the name of an output
-     feature and the values being dictionaries containing measures
-     names and their values.</li>
+    of the tuple will be a dictionary contaning one entry
+    for each output feature.
+    Each entry is itself a dictionary containing aligned
+    arrays of predictions and probabilities / scores.
+    The second object of the tuple is a dictionary that contains
+    the test statistics, with each key being the name of an output
+    feature and the values being dictionaries containing metrics
+    names and their values.</li>
 </ul>
 <hr />
 <h3 id="train">train<a class="headerlink" href="#train" title="Permanent link">&para;</a></h3>
@@ -1042,14 +1042,15 @@ specified dataset.</p>
    saving the description JSON file.</li>
 <li><strong>skip_save_training_statistics</strong> (bool, default: <code>False</code>): disables
    saving training statistics JSON file.</li>
-<li><strong>skip_save_model</strong> (bool, default: <code>False</code>): disables
-   saving model weights and hyperparameters each time the model
-   improves. By default Ludwig saves model weights after each epoch
-   the validation measure imrpvoes, but if the model is really big
-   that can be time consuming if you do not want to keep
-   the weights and just find out what performance can a model get
-   with a set of hyperparameters, use this parameter to skip it,
-   but the model will not be loadable later on.</li>
+<li><strong>skip_save_model</strong> (bool, default: <code>False</code>):
+    disables
+    saving model weights and hyperparameters each time the model
+    improves. By default Ludwig saves model weights after each epoch
+    the validation metric imrpvoes, but if the model is really big
+    that can be time consuming if you do not want to keep
+    the weights and just find out what performance can a model get
+    with a set of hyperparameters, use this parameter to skip it,
+    but the model will not be loadable later on.</li>
 <li><strong>skip_save_progress</strong> (bool, default: <code>False</code>): disables saving
    progress each epoch. By default Ludwig saves weights and stats
    after each epoch for enabling resuming of training, but if
@@ -1093,8 +1094,10 @@ resolved to user spiecified ones and <code>n</code> is an increasing number
 starting from 0 used to differentiate different runs.</p>
 <p><strong>Return</strong></p>
 <ul>
-<li><strong>return</strong> (dict): a dictionary containing training statistics for each
-output feature containing loss and measures values for each epoch.</li>
+    <li><strong>return</strong> (dict): a dictionary containing training
+        statistics for each
+        output feature containing loss and metrics values for each epoch.
+    </li>
 </ul>
 <hr />
 <h3 id="train_online">train_online<a class="headerlink" href="#train_online" title="Permanent link">&para;</a></h3>

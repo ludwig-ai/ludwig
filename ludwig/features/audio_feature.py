@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-from ludwig.constants import AUDIO, BACKFILL
+from ludwig.constants import AUDIO, BACKFILL, TIED
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import calculate_incr_mean
@@ -360,7 +360,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
     def _get_input_placeholder(self):
         return tf.placeholder(
             tf.float32, shape=[None, self.length, self.embedding_size],
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_input(
@@ -397,7 +397,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
         set_default_values(
             input_feature,
             {
-                'tied_weights': None,
+                TIED: None,
                 'preprocessing': {}
             }
         )

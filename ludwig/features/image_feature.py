@@ -364,7 +364,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         return tf.placeholder(
             tf.float32,
             shape=[None, self.height, self.width, self.num_channels],
-            name=self.name,
+            name=self.feature_name,
         )
 
     def build_input(
@@ -394,7 +394,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         )
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': feature_representation,
             'size': feature_representation_size,
@@ -414,7 +414,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'preprocessing', {})
 
 

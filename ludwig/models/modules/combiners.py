@@ -17,6 +17,7 @@
 import logging
 
 import tensorflow.compat.v1 as tf
+from tensorflow.keras.layers import concatenate
 
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.models.modules.fully_connected_modules import FCStack
@@ -32,9 +33,10 @@ from ludwig.utils.tf_utils import sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class ConcatCombiner:
+class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
+            input_features,
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
@@ -45,8 +47,11 @@ class ConcatCombiner:
             regularize=True,
             **kwargs
     ):
+        tf.keras.Model.__init__(self)
+
         self.fc_stack = None
 
+        # todo this may be redundant, check
         if fc_layers is None and \
                 num_fc_layers is not None:
             fc_layers = []
@@ -58,51 +63,39 @@ class ConcatCombiner:
                 layers=fc_layers,
                 num_layers=num_fc_layers,
                 default_fc_size=fc_size,
-                default_norm=norm,
                 default_activation=activation,
-                default_dropout=dropout,
-                default_initializer=initializer,
-                default_regularize=regularize
+                # default_use_bias=use_bias,
+                default_norm=norm,
+                # default_dropout_rate=dropout_rate,
+                default_weights_initializer=initializer,
+                # default_bias_initializer=bias_initializer,
+                default_weights_regularizer=regularize,
+                # default_bias_regularizer=bias_regularizer,
+                # default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
             )
 
-    def __call__(
+    def call(
             self,
-            feature_encodings,
-            regularizer,
-            dropout_rate,
-            is_training=True,
+            inputs,  # encoder outputs
+            training=None,
+            mask=None,
             **kwargs
     ):
-        representations = []
-        representations_size = 0
-        for fe_name, fe_properties in feature_encodings.items():
-            representations.append(fe_properties['representation'])
-            representations_size += fe_properties['size']
+        encoder_outputs = inputs
+        # ================ Concat ================
+        hidden = concatenate(encoder_outputs.values(), 1)
 
-        scope_name = 'concat_combiner'
-        with tf.variable_scope(scope_name):
-            # ================ Concat ================
-            hidden = tf.concat(representations, 1)
-            hidden_size = representations_size
+        # ================ Fully Connected ================
+        if self.fc_stack is not None:
+            hidden = self.fc_stack(
+                hidden,
+                training=training,
+                mask=mask
+            )
 
-            logger.debug('  concat_hidden: {0}'.format(hidden))
-
-            # ================ Fully Connected ================
-            if self.fc_stack is not None:
-                hidden = self.fc_stack(
-                    hidden,
-                    hidden_size,
-                    regularizer=regularizer,
-                    dropout_rate=dropout_rate,
-                    is_training=is_training
-                )
-
-                hidden_size = self.fc_stack.layers[-1]['fc_size']
-                logger.debug('  final_hidden: {0}'.format(hidden))
-
-            hidden = tf.identity(hidden, name=scope_name)
-
-        return hidden, hidden_size
+        return hidden
 
 
 class SequenceConcatCombiner:
@@ -168,7 +161,6 @@ class SequenceConcatCombiner:
                         # features have different lengths for some data points.
                         if fe_properties['representation'].shape[1] != \
                                 representation.shape[1]:
-
                             raise ValueError(
                                 'The sequence length of the input feature {} '
                                 'is {} and is different from the sequence '
@@ -307,7 +299,7 @@ class SequenceCombiner:
         return hidden, hidden_size
 
 
-def get_build_combiner(combiner_type):
+def get_combiner_class(combiner_type):
     return get_from_registry(
         combiner_type,
         combiner_registry

@@ -27,7 +27,7 @@ from pprint import pformat
 
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
-from ludwig.data.preprocessing import preprocess_for_prediction
+from ludwig.data.preprocessing import preprocess_for_prediction, COMBINED
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -39,7 +39,6 @@ from ludwig.utils.misc import get_from_registry, \
 from ludwig.utils.print_utils import logging_level_registry, repr_ordered_dict
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
-
 
 logger = logging.getLogger(__name__)
 
@@ -174,13 +173,20 @@ def predict(
         """
     if is_on_master():
         print_boxed('PREDICT')
-    test_stats = model.predict(
+
+    test_stats, test_predictions = model.predict(
         dataset,
         batch_size,
         evaluate_performance=evaluate_performance,
         gpus=gpus,
         gpu_fraction=gpu_fraction
     )
+
+    # combine predictions with the overall metrics
+    for of_name in test_predictions:
+        # remove logits, not needed for overall stats
+        del test_predictions[of_name]['logits']
+        test_stats[of_name] = {**test_stats[of_name], **test_predictions[of_name]}
 
     if evaluate_performance:
         calculate_overall_stats(
@@ -232,19 +238,19 @@ def save_test_statistics(test_stats, experiment_dir_name):
 
 def print_test_results(test_stats):
     for output_field, result in test_stats.items():
-        if (output_field != 'combined' or
-                (output_field == 'combined' and len(test_stats) > 2)):
+        if (output_field != COMBINED or
+                (output_field == COMBINED and len(test_stats) > 2)):
             logger.info('\n===== {} ====='.format(output_field))
-            for measure in sorted(list(result)):
-                if measure != 'confusion_matrix' and measure != 'roc_curve':
-                    value = result[measure]
+            for metric in sorted(list(result)):
+                if metric != 'confusion_matrix' and metric != 'roc_curve':
+                    value = result[metric]
                     if isinstance(value, OrderedDict):
                         value_repr = repr_ordered_dict(value)
                     else:
-                        value_repr = pformat(result[measure], indent=2)
+                        value_repr = pformat(result[metric], indent=2)
                     logger.info(
                         '{0}: {1}'.format(
-                            measure,
+                            metric,
                             value_repr
                         )
                     )

@@ -689,29 +689,48 @@
                   <h1>Visualization</h1>
                 
                 <h3 id="learning_curves">learning_curves<a class="headerlink" href="#learning_curves" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">learning_curves</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+        class="o">.</span><span class="n">visualize</span><span
+        class="o">.</span><span class="n">learning_curves</span><span class="p">(</span>
   <span class="n">train_stats_per_model</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span
+            class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span
+            class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</pre></div>
+</pre>
+</div>
 
 
-<p>Show how model measures change over training and validation data epochs.</p>
-<p>For each model and for each output feature and measure of the model,
-it produces a line plot showing how that measure changed over the course
-of the epochs of training on the training and validation sets.</p>
-<p><strong>Inputs</strong></p>
-<ul>
-<li><strong>train_stats_per_model</strong> (list): List containing train statistics per model</li>
-<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted
-   and for which is provided ground truth</li>
-<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+                <p>Show how model metrics change over training and validation
+                    data epochs.</p>
+                <p>For each model and for each output feature and metric of the
+                    model,
+                    it produces a line plot showing how that metric changed over
+                    the course
+                    of the epochs of training on the training and validation
+                    sets.</p>
+                <p><strong>Inputs</strong></p>
+                <ul>
+                    <li><strong>train_stats_per_model</strong> (list): List
+                        containing train statistics per model
+                    </li>
+                    <li><strong>output_feature_name</strong> (string): Name of
+                        the output feature that is predicted
+                        and for which is provided ground truth
+                    </li>
+                    <li><strong>model_names</strong> (list, default: None): List
+                        of the names of the models to use as labels.
+                    </li>
+                    <li><strong>output_directory</strong> (string, default:
+                        None): Directory where to save plots.
+                        If not specified, plots will be displayed in a window
+                    </li>
+                    <li><strong>file_format</strong> (string, default: 'pdf'):
+                        File format of output plots - pdf or png
+                    </li>
 </ul>
 <p><strong>Return</strong></p>
 <ul>
@@ -860,25 +879,43 @@ subset parameters.</p>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">top_k</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span
+            class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span
+            class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</pre></div>
+</pre>
+</div>
 
 
-<p>Produce lineplot that show Hits@K measure while k goes from 1 to top_k.</p>
-<p>For each model it produces a line plot that shows the Hits@K measure
-(that counts a prediction as correct if the model produces it among the
-first k) while changing k from 1 to top_k for the specified output_feature_name.</p>
-<p><strong>Inputs</strong></p>
-<ul>
-<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
-<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
-<li><strong>top_k</strong> (int): Number of elements in the ranklist to consider</li>
-<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
-     If labels in dataset are higher than this number, "rare" label</li>
-<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
+                <p>Produce lineplot that show Hits@K metric while k goes from 1
+                    to top_k.</p>
+                <p>For each model it produces a line plot that shows the Hits@K
+                    metric
+                    (that counts a prediction as correct if the model produces
+                    it among the
+                    first k) while changing k from 1 to top_k for the specified
+                    output_feature_name.</p>
+                <p><strong>Inputs</strong></p>
+                <ul>
+                    <li><strong>probabilities_per_model</strong> (list): List of
+                        model probabilities
+                    </li>
+                    <li><strong>ground_truth</strong> (ndarray): NumPy Array
+                        containing ground truth data
+                    </li>
+                    <li><strong>top_k</strong> (int): Number of elements in the
+                        ranklist to consider
+                    </li>
+                    <li><strong>labels_limit</strong> (int): Maximum numbers of
+                        labels.
+                        If labels in dataset are higher than this number, "rare"
+                        label
+                    </li>
+                    <li><strong>model_names</strong> (list, default: None): List
+                        of the names of the models to use as labels.
+                    </li>
 <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
      If not specified, plots will be displayed in a window</li>
 <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>

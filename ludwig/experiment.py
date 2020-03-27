@@ -256,7 +256,7 @@ def full_experiment(
     :param skip_save_model: Disables
                saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure improves, but if the model is really big
+           the validation metric improves, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -383,8 +383,6 @@ def full_experiment(
                 )
             if not skip_save_test_statistics:
                 save_test_statistics(test_results, experiment_dir_name)
-
-    model.close_session()
 
     if is_on_master():
         logger.info('\nFinished: {0}_{1}'.format(
@@ -749,7 +747,7 @@ def cli(sys_argv):
         help='disables saving model weights and hyperparameters each time '
              'the model improves. '
              'By default Ludwig saves model weights after each epoch '
-             'the validation measure imprvoes, but if the model is really big '
+             'the validation metric imprvoes, but if the model is really big '
              'that can be time consuming if you do not want to keep '
              'the weights and just find out what performance can a model get '
              'with a set of hyperparameters, use this parameter to skip it,'

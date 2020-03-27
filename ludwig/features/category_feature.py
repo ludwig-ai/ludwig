@@ -30,8 +30,8 @@ from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import mean_confidence_penalty
 from ludwig.models.modules.loss_modules import sampled_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
-from ludwig.models.modules.measure_modules import accuracy as get_accuracy
-from ludwig.models.modules.measure_modules import hits_at_k as get_hits_at_k
+from ludwig.models.modules.metric_modules import accuracy as get_accuracy
+from ludwig.models.modules.metric_modules import hits_at_k as get_hits_at_k
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -139,7 +139,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
         return tf.placeholder(
             tf.int32,
             shape=[None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def build_input(
@@ -163,7 +163,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
             embedded))
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': embedded,
             'size': embedding_size,
@@ -173,7 +173,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, TIED, None)
 
 
 class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
@@ -188,26 +188,26 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
-    default_validation_measure = ACCURACY
+    default_validation_metric = ACCURACY
 
     output_config = OrderedDict([
         (LOSS, {
             'output': EVAL_LOSS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (ACCURACY, {
             'output': CORRECT_PREDICTIONS,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (HITS_AT_K, {
             'output': HITS_AT_K,
             'aggregation': SUM,
             'value': 0,
-            'type': MEASURE
+            'type': METRIC
         }),
         (PREDICTIONS, {
             'output': PREDICTIONS,
@@ -227,7 +227,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         return tf.placeholder(
             tf.int64,
             [None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.name)
+            name='{}_placeholder'.format(self.feature_name)
         )
 
     def _get_predictions(
@@ -239,7 +239,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         if not self.regularize:
             regularizer = None
 
-        with tf.variable_scope('predictions_{}'.format(self.name)):
+        with tf.variable_scope('predictions_{}'.format(self.feature_name)):
             initializer_obj = get_initializer(self.initializer)
             weights = tf.get_variable(
                 'weights',
@@ -259,12 +259,12 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
             probabilities = tf.nn.softmax(
                 logits,
-                name='probabilities_{}'.format(self.name)
+                name='probabilities_{}'.format(self.feature_name)
             )
             predictions = tf.argmax(
                 logits,
                 -1,
-                name='predictions_{}'.format(self.name)
+                name='predictions_{}'.format(self.feature_name)
             )
 
             with tf.device('/cpu:0'):
@@ -272,7 +272,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     logits,
                     k=self.top_k,
                     sorted=True,
-                    name='top_k_predictions_{}'.format(self.name)
+                    name='top_k_predictions_{}'.format(self.feature_name)
                 )
 
         return (
@@ -293,7 +293,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             class_weights,
             class_biases
     ):
-        with tf.variable_scope('loss_{}'.format(self.name)):
+        with tf.variable_scope('loss_{}'.format(self.feature_name)):
             if ('class_similarities' in self.loss and
                     self.loss['class_similarities'] is not None):
 
@@ -328,18 +328,18 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                 class_similarities = tf.constant(
                     class_similarities,
                     dtype=tf.float32,
-                    name='class_similarities_{}'.format(self.name)
+                    name='class_similarities_{}'.format(self.feature_name)
                 )
                 vector_labels = tf.gather(
                     class_similarities,
                     targets,
-                    name='vector_labels_{}'.format(self.name)
+                    name='vector_labels_{}'.format(self.feature_name)
                 )
             else:
                 vector_labels = tf.one_hot(
                     targets,
                     self.num_classes,
-                    name='vector_labels_{}'.format(self.name)
+                    name='vector_labels_{}'.format(self.feature_name)
                 )
 
             if self.loss['type'] == SAMPLED_SOFTMAX_CROSS_ENTROPY:
@@ -373,7 +373,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
             train_mean_loss = tf.reduce_mean(
                 train_loss,
-                name='train_mean_loss_{}'.format(self.name)
+                name='train_mean_loss_{}'.format(self.feature_name)
             )
 
             if self.loss['confidence_penalty'] > 0:
@@ -387,18 +387,18 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         return train_mean_loss, eval_loss
 
-    def _get_measures(self, targets, predictions, logits):
-        with tf.variable_scope('measures_{}'.format(self.name)):
+    def _get_metrics(self, targets, predictions, logits):
+        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
             accuracy_val, correct_predictions = get_accuracy(
                 targets,
                 predictions,
-                self.name
+                self.feature_name
             )
             hits_at_k_val, mean_hits_at_k = get_hits_at_k(
                 targets,
                 logits,
                 self.top_k,
-                self.name
+                self.feature_name
             )
 
         return correct_predictions, accuracy_val, hits_at_k_val, mean_hits_at_k
@@ -416,7 +416,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         # ================ Placeholder ================
         targets = self._get_output_placeholder()
-        output_tensors[self.name] = targets
+        output_tensors[self.feature_name] = targets
         logger.debug('  targets_placeholder: {0}'.format(targets))
 
         # ================ Predictions ================
@@ -434,28 +434,28 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             class_biases
         ) = outs
 
-        output_tensors[PREDICTIONS + '_' + self.name] = predictions
-        output_tensors[TOP_K_PREDICTIONS + '_' + self.name] = top_k_predictions
-        output_tensors[PROBABILITIES + '_' + self.name] = probabilities
+        output_tensors[PREDICTIONS + '_' + self.feature_name] = predictions
+        output_tensors[TOP_K_PREDICTIONS + '_' + self.feature_name] = top_k_predictions
+        output_tensors[PROBABILITIES + '_' + self.feature_name] = probabilities
 
-        # ================ Measures ================
+        # ================ metrics ================
         correct_predictions, accuracy, hits_at_k, mean_hits_at_k = \
-            self._get_measures(targets, predictions, logits)
+            self._get_metrics(targets, predictions, logits)
 
         output_tensors[
-            CORRECT_PREDICTIONS + '_' + self.name
+            CORRECT_PREDICTIONS + '_' + self.feature_name
             ] = correct_predictions
-        output_tensors[ACCURACY + '_' + self.name] = accuracy
-        output_tensors[HITS_AT_K + '_' + self.name] = hits_at_k
-        output_tensors[MEAN_HITS_AT_K + '_' + self.name] = mean_hits_at_k
+        output_tensors[ACCURACY + '_' + self.feature_name] = accuracy
+        output_tensors[HITS_AT_K + '_' + self.feature_name] = hits_at_k
+        output_tensors[MEAN_HITS_AT_K + '_' + self.feature_name] = mean_hits_at_k
 
         if 'sampled' not in self.loss['type']:
             tf.summary.scalar(
-                'batch_train_accuracy_{}'.format(self.name),
+                'batch_train_accuracy_{}'.format(self.feature_name),
                 accuracy
             )
             tf.summary.scalar(
-                'batch_train_mean_hits_at_k_{}'.format(self.name),
+                'batch_train_mean_hits_at_k_{}'.format(self.feature_name),
                 mean_hits_at_k
             )
 
@@ -469,11 +469,11 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             class_biases
         )
 
-        output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
-        output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
+        output_tensors[EVAL_LOSS + '_' + self.feature_name] = eval_loss
+        output_tensors[TRAIN_MEAN_LOSS + '_' + self.feature_name] = train_mean_loss
 
         tf.summary.scalar(
-            'batch_train_mean_loss_{}'.format(self.name),
+            'batch_train_mean_loss_{}'.format(self.feature_name),
             train_mean_loss
         )
 
