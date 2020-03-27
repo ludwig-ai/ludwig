@@ -18,7 +18,6 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
-from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_with_logits
 from ludwig.utils.tf_utils import to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,

@@ -345,41 +345,6 @@ def weighted_softmax_cross_entropy(logits, vector_labels, loss):
     return train_loss
 
 
-def binary_weighted_cross_entropy_with_logits(targets, logits,
-                                              positive_class_weight=1,
-                                              robust_lambda=0,
-                                              confidence_penalty=0):
-    if not positive_class_weight > 0:
-        raise ValueError(
-            'positive_class_weight is {}, but has to be > 0 to ensure '
-            'that loss for positive labels '
-            'p_label=1 * log(sigmoid(p_predict)) is > 0'.format(
-                positive_class_weight))
-
-    train_loss = tf.nn.weighted_cross_entropy_with_logits(
-        targets=tf.cast(targets, tf.float32),
-        logits=logits,
-        pos_weight=positive_class_weight
-    )
-
-    if robust_lambda > 0:
-        train_loss = ((1 - robust_lambda) * train_loss +
-                      robust_lambda / 2)
-
-    train_mean_loss = tf.reduce_mean(
-        train_loss
-    )
-
-    # todo tf2: need to assess how to accommodate this functionality
-    # if self.loss['confidence_penalty'] > 0:
-    #     mean_penalty = mean_confidence_penalty(probabilities, 2)
-    #     train_mean_loss += (
-    #             self.loss['confidence_penalty'] * mean_penalty
-    #     )
-
-    return train_mean_loss
-
-
 def loss_multilabel(logits, vector_labels, loss):
     # input: `logits` and `labels` must have the same shape `[batch_size, num_classes]`
     # output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
