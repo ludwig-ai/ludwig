@@ -16,8 +16,54 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
+from tensorflow.keras.losses import Loss
 
 from tensorflow.python.ops.losses.losses_impl import Reduction
+
+#
+# Custom classes to support Tensorflow 2
+#
+class BWCEWLoss(tf.keras.losses.Loss):
+    def __init__(
+        self,
+        positive_class_weight=1,
+        robust_lambda=0
+    ):
+        super(BWCEWLoss, self).__init__()
+
+        self.positive_class_weight = positive_class_weight
+        self.robust_lambda = robust_lambda
+
+    def call(self, y_true, y_pred):
+
+        train_loss = tf.nn.weighted_cross_entropy_with_logits(
+            targets=tf.cast(y_true, tf.float32),
+            logits=y_pred,
+            pos_weight=self.positive_class_weight
+        )
+
+        if self.robust_lambda > 0:
+            train_loss = ((1 - self.robust_lambda) * train_loss +
+                          self.robust_lambda / 2)
+
+        train_mean_loss = tf.reduce_mean(
+            train_loss
+        )
+
+        # todo tf2: need to assess how to accommodate this functionality
+        # if self.loss['confidence_penalty'] > 0:
+        #     mean_penalty = mean_confidence_penalty(probabilities, 2)
+        #     train_mean_loss += (
+        #             self.loss['confidence_penalty'] * mean_penalty
+        #     )
+
+        return train_mean_loss
+
+
+# end of custom classes
+
+
+
 
 
 def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,

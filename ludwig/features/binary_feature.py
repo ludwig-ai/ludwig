@@ -28,7 +28,7 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.binary_decoders import Regressor
 from ludwig.models.modules.binary_encoders import BinaryPassthroughEncoder
 from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.loss_modules import binary_weighted_cross_entropy_with_logits
+from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.metric_modules import BWCEWLScore
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
@@ -179,7 +179,10 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         }
 
     def _setup_loss(self):
-        self.train_loss_function = binary_weighted_cross_entropy_with_logits
+        self.train_loss_function = BWCEWLoss(
+            positive_class_weight=self.loss['positive_class_weight'],
+            robust_lambda=self.loss['robust_lambda']
+        )
         self.eval_loss_function = BWCEWLScore(name='eval_loss')
 
         self.metric_functions.update(

@@ -106,6 +106,8 @@ class BWCEWLScore(tf.keras.metrics.Metric):
 
     def __init__(self, name='error_score'):
         super(BWCEWLScore, self).__init__(name=name)
+
+
         self._reset_states()
 
     def _reset_states(self):
