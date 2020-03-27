@@ -181,7 +181,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     def _setup_loss(self):
         self.train_loss_function = BWCEWLoss(
             positive_class_weight=self.loss['positive_class_weight'],
-            robust_lambda=self.loss['robust_lambda']
+            robust_lambda=self.loss['robust_lambda'],
+            confidence_penalty=self.loss['confidence_penalty']
         )
         self.eval_loss_function = BWCEWLMetric(
             bwcew_loss_function=self.train_loss_function,
