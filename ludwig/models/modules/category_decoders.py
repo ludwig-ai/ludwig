@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 
 class Regressor(Layer):
 
-    def __init__(self, **kwargs):
+    def __init__(self, num_classes=None, **kwargs):
         super().__init__()
-        self.dense = Dense(4)  # todo add initialization etc.  Hard coded for debugging
+        self.dense = Dense(num_classes)  # todo add initialization etc.
 
     def call(self, inputs, **kwargs):
         return tf.squeeze(self.dense(inputs))

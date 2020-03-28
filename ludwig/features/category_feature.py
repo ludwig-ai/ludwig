@@ -227,6 +227,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
         self.decoder = 'regressor'
         decoder_parameters = self.overwrite_defaults(feature)
+        decoder_parameters.update({'num_classes': self.num_classes})
 
         self.decoder_obj = self.initialize_decoder(decoder_parameters)
 
