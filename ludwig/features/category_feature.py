@@ -27,6 +27,10 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.embedding_modules import Embed
 from ludwig.models.modules.initializer_modules import get_initializer
+from ludwig.models.modules.category_decoders import Regressor
+from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
+from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
+from ludwig.models.modules.category_encoders import CategoricalPassthroughEncoder
 from ludwig.models.modules.loss_modules import mean_confidence_penalty
 from ludwig.models.modules.loss_modules import sampled_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
@@ -98,8 +102,9 @@ class CategoryBaseFeature(BaseFeature):
 
 
 class CategoryInputFeature(CategoryBaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, encoder_obj=None):
+        CategoryBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
 
         self.vocab = []
 
@@ -112,19 +117,42 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
         self.initializer = None
         self.regularize = True
 
-        _ = self.overwrite_defaults(feature)
 
-        self.embed = Embed(
-            vocab=self.vocab,
-            embedding_size=self.embedding_size,
-            representation=self.representation,
-            embeddings_trainable=self.embeddings_trainable,
-            pretrained_embeddings=self.pretrained_embeddings,
-            embeddings_on_cpu=self.embeddings_on_cpu,
-            dropout=self.dropout,
-            initializer=self.initializer,
-            regularize=self.regularize
+        # _ = self.overwrite_defaults(feature)
+        #
+        # self.embed = Embed(
+        #     vocab=self.vocab,
+        #     embedding_size=self.embedding_size,
+        #     representation=self.representation,
+        #     embeddings_trainable=self.embeddings_trainable,
+        #     pretrained_embeddings=self.pretrained_embeddings,
+        #     embeddings_on_cpu=self.embeddings_on_cpu,
+        #     dropout=self.dropout,
+        #     initializer=self.initializer,
+        #     regularize=self.regularize
+        # )
+
+        self.encoder = self.representation
+        encoder_parameters = self.overwrite_defaults(feature)
+
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(encoder_parameters)
+
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
+               inputs.dtype == tf.int32 or inputs.dtype == tf.float64
+        assert len(inputs.shape) == 1
+
+        inputs_exp = inputs[:, tf.newaxis]
+        inputs_encoded = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
         )
+
+        return inputs_encoded
+
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -175,10 +203,21 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    encoder_registry = {
+        'dense': CategoricalEmbedEncoder,
+        'sparse': CategoricalSparseEncoder,
+        'passthrough': CategoricalPassthroughEncoder,
+        'null': CategoricalPassthroughEncoder,
+        'none': CategoricalPassthroughEncoder,
+        'None': CategoricalPassthroughEncoder,
+        None: CategoricalPassthroughEncoder
+    }
+
 
 class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     def __init__(self, feature):
-        super().__init__(feature)
+        CategoryBaseFeature.__init__(self, feature)
+        OutputFeature.__init__(self, feature)
 
         self.loss = {'type': SOFTMAX_CROSS_ENTROPY}
         self.num_classes = 0
@@ -186,7 +225,27 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         self.initializer = None
         self.regularize = True
 
-        _ = self.overwrite_defaults(feature)
+        self.decoder = 'regressor'
+        decoder_parameters = self.overwrite_defaults(feature)
+
+        self.decoder_obj = self.initialize_decoder(decoder_parameters)
+
+        self._setup_loss()
+        self._setup_metrics()
+
+
+    def logits(
+            self,
+            inputs,  # hidden
+    ):
+        return self.decoder_obj(inputs)
+
+
+    def _setup_loss(self):
+        pass
+
+    def _setup_metrics(self):
+        pass
 
     default_validation_metric = ACCURACY
 
@@ -714,3 +773,11 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                 'reduce_dependencies': SUM
             }
         )
+
+    decoder_registry = {
+        'regressor': Regressor,
+        'null': Regressor,
+        'none': Regressor,
+        'None': Regressor,
+        None: Regressor
+    }
