@@ -259,7 +259,20 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     ):
         logits = inputs
 
+        probabilities = tf.nn.softmax(
+            logits,
+            name='probabilities_{}'.format(self.feature_name)
+        )
+
+        predictions = tf.argmax(
+            logits,
+            -1,
+            name='predictions_{}'.format(self.feature_name)
+        )
+
         return {
+            'predictions': predictions,
+            'probabilities': probabilities,
             'logits': logits
         }
 
@@ -281,39 +294,39 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
     default_validation_metric = LOSS
 
-    output_config = OrderedDict([
-        (LOSS, {
-            'output': EVAL_LOSS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (ACCURACY, {
-            'output': CORRECT_PREDICTIONS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (HITS_AT_K, {
-            'output': HITS_AT_K,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (PREDICTIONS, {
-            'output': PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        }),
-        (PROBABILITIES, {
-            'output': PROBABILITIES,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        })
-    ])
-
+    # output_config = OrderedDict([
+    #     (LOSS, {
+    #         'output': EVAL_LOSS,
+    #         'aggregation': SUM,
+    #         'value': 0,
+    #         'type': METRIC
+    #     }),
+    #     (ACCURACY, {
+    #         'output': CORRECT_PREDICTIONS,
+    #         'aggregation': SUM,
+    #         'value': 0,
+    #         'type': METRIC
+    #     }),
+    #     (HITS_AT_K, {
+    #         'output': HITS_AT_K,
+    #         'aggregation': SUM,
+    #         'value': 0,
+    #         'type': METRIC
+    #     }),
+    #     (PREDICTIONS, {
+    #         'output': PREDICTIONS,
+    #         'aggregation': APPEND,
+    #         'value': [],
+    #         'type': PREDICTION
+    #     }),
+    #     (PROBABILITIES, {
+    #         'output': PROBABILITIES,
+    #         'aggregation': APPEND,
+    #         'value': [],
+    #         'type': PREDICTION
+    #     })
+    # ])
+    #
     # def _get_output_placeholder(self):
     #     return tf.placeholder(
     #         tf.int64,
