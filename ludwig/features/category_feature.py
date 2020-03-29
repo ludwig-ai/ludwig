@@ -34,6 +34,8 @@ from ludwig.models.modules.category_encoders import CategoricalPassthroughEncode
 from ludwig.models.modules.loss_modules import mean_confidence_penalty
 from ludwig.models.modules.loss_modules import sampled_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import accuracy as get_accuracy
 from ludwig.models.modules.metric_modules import hits_at_k as get_hits_at_k
 from ludwig.utils.math_utils import int_type
@@ -241,14 +243,33 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     ):
         return self.decoder_obj(inputs)
 
+    def predictions(
+            self,
+            inputs, # logits
+    ):
+        logits = inputs
+
+        return {
+            'logits': logits
+        }
 
     def _setup_loss(self):
-        pass
+        self.train_loss_function = SoftmaxCrossEntropyLoss(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='train_loss'
+        )
+
+        self.eval_loss_function = SoftmaxCrossEntropyMetric(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='eva_loss'
+        )
 
     def _setup_metrics(self):
-        pass
+        self.metric_functions[LOSS] = self.eval_loss_function
 
-    default_validation_metric = ACCURACY
+    default_validation_metric = LOSS
 
     output_config = OrderedDict([
         (LOSS, {

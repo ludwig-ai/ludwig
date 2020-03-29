@@ -63,6 +63,30 @@ class BWCEWLoss(tf.keras.losses.Loss):
 
         return train_mean_loss
 
+class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
+    def __init__(
+            self,
+            num_classes=0,
+            feature_loss=None,
+            name=None
+    ):
+        super(SoftmaxCrossEntropyLoss, self).__init__(name=name)
+        self.num_classes = num_classes
+        self.feature_loss = feature_loss
+
+    def call(self, y, y_pred):
+        vector_labels = tf.one_hot(
+            tf.cast(y, dtype=tf.int32),
+            self.num_classes
+        )
+
+        loss = weighted_softmax_cross_entropy(
+            y_pred,
+            vector_labels,
+            self.feature_loss
+        )
+
+        return loss
 
 # end of custom classes
 
