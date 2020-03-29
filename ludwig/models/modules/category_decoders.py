@@ -23,7 +23,7 @@ from tensorflow.keras.layers import Layer
 logger = logging.getLogger(__name__)
 
 
-class Regressor(Layer):
+class Classifier(Layer):
 
     def __init__(self, num_classes=None, **kwargs):
         super().__init__()

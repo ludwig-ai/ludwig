@@ -91,11 +91,13 @@ class CategoricalEmbedEncoder(Layer):
 
         embedded, embedding_size = self.embed(
             tf.cast(inputs, dtype=tf.int32),
-            None,   # testing...need regularizer
+            None,   # todo tf2 need regularizer
             self.dropout,
             self.embeddings_trainable
         )
 
+        # todo tf2: remove tf.squeeze() after Embed() update to return correct
+        #           dimension
         embedded = tf.squeeze(embedded)
 
         return tf.cast(embedded, dtype=tf.float32)

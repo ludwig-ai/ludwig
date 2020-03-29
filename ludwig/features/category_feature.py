@@ -28,7 +28,7 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.embedding_modules import Embed
 from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.category_decoders import Regressor
+from ludwig.models.modules.category_decoders import Classifier
 from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
 from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
 from ludwig.models.modules.category_encoders import CategoricalPassthroughEncoder
@@ -156,7 +156,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
-               inputs.dtype == tf.int32 or inputs.dtype == tf.float64
+               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
         assert len(inputs.shape) == 1
 
         inputs_exp = inputs[:, tf.newaxis]
@@ -238,7 +238,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         self.initializer = None
         self.regularize = True
 
-        self.decoder = 'regressor'
+        self.decoder = 'classifier'
         decoder_parameters = self.overwrite_defaults(feature)
         decoder_parameters.update({'num_classes': self.num_classes})
 
@@ -825,9 +825,9 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         )
 
     decoder_registry = {
-        'regressor': Regressor,
-        'null': Regressor,
-        'none': Regressor,
-        'None': Regressor,
-        None: Regressor
+        'classifier': Classifier,
+        'null': Classifier,
+        'none': Classifier,
+        'None': Classifier,
+        None: Classifier
     }
