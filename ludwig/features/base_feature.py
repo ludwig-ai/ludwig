@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 
 import tensorflow.compat.v1 as tf
 
@@ -87,7 +88,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         self.loss = None
         self.train_loss_function = None
         self.eval_loss_function = None
-        self.metric_functions = {}
+        self.metric_functions = OrderedDict()
 
         self.reduce_input = None
         self.reduce_dependencies = None

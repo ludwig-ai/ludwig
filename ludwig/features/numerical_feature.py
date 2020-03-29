@@ -211,6 +211,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             )
 
     def _setup_metrics(self):
+        self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ERROR] = ErrorScore(name='metric_error')
         self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
             name='metric_mse'
@@ -219,7 +220,6 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             name='metric_mae'
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
-        self.metric_functions[LOSS] = self.eval_loss_function
 
     # def update_metrics(self, targets, predictions):
     #     for metric in self.metric_functions.values():
