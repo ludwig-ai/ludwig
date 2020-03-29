@@ -20,6 +20,7 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow.compat.v1 as tf
+from tensorflow.keras.metrics import Accuracy
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -269,6 +270,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             -1,
             name='predictions_{}'.format(self.feature_name)
         )
+        predictions = tf.cast(predictions, dtype=tf.int32)
 
         return {
             'predictions': predictions,
@@ -286,11 +288,14 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         self.eval_loss_function = SoftmaxCrossEntropyMetric(
             num_classes=self.num_classes,
             feature_loss=self.loss,
-            name='eva_loss'
+            name='eval_loss'
         )
 
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[ACCURACY] = Accuracy(
+            name='metric_accuracy'
+        )
 
     default_validation_metric = LOSS
 
