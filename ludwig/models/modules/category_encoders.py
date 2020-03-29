@@ -18,6 +18,7 @@ import logging
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
+from ludwig.models.modules.embedding_modules import Embed
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +43,26 @@ class CategoricalEmbedEncoder(Layer):
 
     def __init__(
             self,
+            input_feature_obj=None,
             **kwargs
     ):
         super(CategoricalEmbedEncoder, self).__init__()
+
+        self.input_feature_obj = input_feature_obj
+
+        self.embed = Embed(
+            vocab=input_feature_obj.vocab,
+            embedding_size=input_feature_obj.embedding_size,
+            representation=input_feature_obj.representation,
+            embeddings_trainable=input_feature_obj.embeddings_trainable,
+            pretrained_embeddings=input_feature_obj.pretrained_embeddings,
+            embeddings_on_cpu=input_feature_obj.embeddings_on_cpu,
+            dropout=input_feature_obj.dropout,
+            initializer=input_feature_obj.initializer,
+            regularize=input_feature_obj.regularize
+        )
+
+        pass
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -53,6 +71,8 @@ class CategoricalEmbedEncoder(Layer):
 
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
+
+
         return tf.cast(inputs, dtype=tf.float32)
 
 class CategoricalSparseEncoder(Layer):

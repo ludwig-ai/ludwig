@@ -136,6 +136,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
 
         self.encoder = self.representation
         encoder_parameters = self.overwrite_defaults(feature)
+        encoder_parameters.update({'input_feature_obj': self})
 
         if encoder_obj:
             self.encoder_obj = encoder_obj
