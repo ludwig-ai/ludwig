@@ -85,7 +85,10 @@ class ConcatCombiner(tf.keras.Model):
     ):
         encoder_outputs = inputs
         # ================ Concat ================
-        hidden = concatenate(encoder_outputs.values(), 1)
+        if len(encoder_outputs) > 1:
+            hidden = concatenate(encoder_outputs.values(), 1)
+        else:
+            hidden = list(encoder_outputs.values())[0]
 
         # ================ Fully Connected ================
         if self.fc_stack is not None:
