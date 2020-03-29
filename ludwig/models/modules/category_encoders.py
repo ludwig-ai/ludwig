@@ -43,23 +43,40 @@ class CategoricalEmbedEncoder(Layer):
 
     def __init__(
             self,
-            input_feature_obj=None,
+            vocab=None,
+            embedding_size=None,
+            representation=None,
+            embeddings_trainable=None,
+            pretrained_embeddings=None,
+            embeddings_on_cpu=None,
+            dropout=None,
+            initializer=None,
+            regularize=None,
             **kwargs
     ):
         super(CategoricalEmbedEncoder, self).__init__()
 
-        self.input_feature_obj = input_feature_obj
+        self.vocab = vocab
+        self.embedding_size = embedding_size
+        self.representation = representation
+        self.embeddings_trainable = embeddings_trainable
+        self.pretrained_embeddings = pretrained_embeddings
+        self.embeddings_on_cpu = embeddings_on_cpu
+        self.dropout = dropout
+        self.initializer = initializer
+        self.regularize = regularize
+
 
         self.embed = Embed(
-            vocab=input_feature_obj.vocab,
-            embedding_size=input_feature_obj.embedding_size,
-            representation=input_feature_obj.representation,
-            embeddings_trainable=input_feature_obj.embeddings_trainable,
-            pretrained_embeddings=input_feature_obj.pretrained_embeddings,
-            embeddings_on_cpu=input_feature_obj.embeddings_on_cpu,
-            dropout=input_feature_obj.dropout,
-            initializer=input_feature_obj.initializer,
-            regularize=input_feature_obj.regularize
+            vocab=self.vocab,
+            embedding_size=self.embedding_size,
+            representation=self.representation,
+            embeddings_trainable=self.embeddings_trainable,
+            pretrained_embeddings=self.pretrained_embeddings,
+            embeddings_on_cpu=self.embeddings_on_cpu,
+            dropout=self.dropout,
+            initializer=self.initializer,
+            regularize=self.regularize
         )
 
         pass
@@ -72,8 +89,16 @@ class CategoricalEmbedEncoder(Layer):
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
 
+        embedded, embedding_size = self.embed(
+            tf.cast(inputs, dtype=tf.int32),
+            None,   # testing...need regularizer
+            self.dropout,
+            self.embeddings_trainable
+        )
 
-        return tf.cast(inputs, dtype=tf.float32)
+        embedded = tf.squeeze(embedded)
+
+        return tf.cast(embedded, dtype=tf.float32)
 
 class CategoricalSparseEncoder(Layer):
 

@@ -136,7 +136,16 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
 
         self.encoder = self.representation
         encoder_parameters = self.overwrite_defaults(feature)
-        encoder_parameters.update({'input_feature_obj': self})
+        # encoder_parameters.update({'input_feature_obj': self})
+        encoder_parameters.update({'vocab': self.vocab})
+        encoder_parameters.update({'embedding_size': self.embedding_size})
+        encoder_parameters.update({'representation': self.representation})
+        encoder_parameters.update({'embeddings_trainable': self.embeddings_trainable})
+        encoder_parameters.update({'pretrained_embeddings': self.pretrained_embeddings})
+        encoder_parameters.update({'embeddings_on_cpu': self.embeddings_on_cpu})
+        encoder_parameters.update({'dropout': self.dropout})
+        encoder_parameters.update({'initializer': self.initializer})
+        encoder_parameters.update({'regularize': self.regularize})
 
         if encoder_obj:
             self.encoder_obj = encoder_obj
