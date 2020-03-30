@@ -297,7 +297,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             name='metric_accuracy'
         )
 
-    default_validation_metric = LOSS
+    default_validation_metric = ACCURACY
 
     # output_config = OrderedDict([
     #     (LOSS, {
