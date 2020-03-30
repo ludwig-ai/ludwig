@@ -112,6 +112,8 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
         self.vocab = []
 
         self.embedding_size = 50
+        # todo tf2: change name from 'representation' to 'encoder`
+        #           update documentation
         self.representation = 'dense'
         self.embeddings_trainable = True
         self.pretrained_embeddings = None
@@ -134,6 +136,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
         #     initializer=self.initializer,
         #     regularize=self.regularize
         # )
+
 
         self.encoder = self.representation
         encoder_parameters = self.overwrite_defaults(feature)
