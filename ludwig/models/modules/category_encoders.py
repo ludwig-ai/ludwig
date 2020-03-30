@@ -100,7 +100,7 @@ class CategoricalEmbedEncoder(Layer):
         #           dimension
         embedded = tf.squeeze(embedded)
 
-        return tf.cast(embedded, dtype=tf.float32)
+        return embedded
 
 class CategoricalSparseEncoder(Layer):
 
