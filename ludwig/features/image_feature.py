@@ -29,6 +29,7 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
+from ludwig.models.modules.image_encoders import ImageTestEncoder
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
@@ -339,8 +340,9 @@ class ImageBaseFeature(BaseFeature):
 
 
 class ImageInputFeature(ImageBaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, encoder_obj=None):
+        ImageBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
 
         self.height = 0
         self.width = 0
@@ -351,22 +353,23 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
 
         encoder_parameters = self.overwrite_defaults(feature)
 
-        self.encoder_obj = self.get_image_encoder(encoder_parameters)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(encoder_parameters)
 
-    def get_image_encoder(self, encoder_parameters):
-        return get_from_registry(
-            self.encoder, image_encoder_registry)(
-            **encoder_parameters
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.uint8
+        # assert len(inputs.shape) == 1
+
+        inputs_encoded = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
 
-    def _get_input_placeholder(self):
-        # None dimension is for dealing with variable batch size
-        return tf.placeholder(
-            tf.float32,
-            shape=[None, self.height, self.width, self.num_channels],
-            name=self.feature_name,
-        )
+        return inputs_encoded
 
+    # keep this here for now until it's refactored
     def build_input(
             self,
             regularizer,
@@ -417,11 +420,11 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'preprocessing', {})
 
-
-image_encoder_registry = {
-    'stacked_cnn': Stacked2DCNN,
-    'resnet': ResNetEncoder
-}
+    encoder_registry = {
+        'stacked_cnn': ImageTestEncoder,
+        'resnet': ImageTestEncoder,
+        None: ImageTestEncoder
+    }
 
 image_scaling_registry = {
     'pixel_normalization': lambda x: x * 1.0 / 255,

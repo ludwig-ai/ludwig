@@ -14,9 +14,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import tensorflow as tf
+from tensorflow.keras.layers import Layer
+
 from ludwig.models.modules.convolutional_modules import flatten, ConvStack2D, \
     ResNet, get_resnet_block_sizes
 from ludwig.models.modules.fully_connected_modules import FCStack
+
+# ImageTestEncoder is just for end-to-end testing, will remove this
+class ImageTestEncoder(Layer):
+
+    def __init__(
+            self,
+            **kwargs
+    ):
+        super(ImageTestEncoder, self).__init__()
+
+    def call(self, inputs, training=None, mask=None):
+        """
+            :param inputs: The inputs fed into the encoder.
+                   Shape: [batch x height x width x channels], type tf.uint8
+        """
+
+        # use FCStack only for now as it is already implemented and 
+        # ConvStack2D is not
+        fc_stack = FCStack(
+            layers=[
+                {'fc_size': 10}
+            ]
+        )
+
+        inputs = tf.cast(inputs, tf.float32)
+        # flatten the image
+        inputs = tf.reshape(inputs, [inputs.shape[0], -1])
+        outputs = fc_stack(inputs)
+
+        return outputs
 
 
 class Stacked2DCNN:
