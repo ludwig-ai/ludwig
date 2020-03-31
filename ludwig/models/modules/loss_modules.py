@@ -83,10 +83,41 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         loss = weighted_softmax_cross_entropy(
             y_pred,
             vector_labels,
-            self.feature_loss
+            **self.feature_loss
         )
 
         return loss
+
+# todo partial implementation
+class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
+    def __init__(
+            self,
+            num_classes=0,
+            feature_loss=None,
+            name=None
+    ):
+        super(SampledSoftmaxCrossEntropyLoss, self).__init__(name=name)
+        self.num_classes = num_classes
+        self.feature_loss = feature_loss
+
+    def call(self, y, y_pred):
+        vector_labels = tf.one_hot(
+            tf.cast(y, dtype=tf.int32),
+            self.num_classes
+        )
+
+        loss = sampled_softmax_cross_entropy(
+            output_placeholder,
+            feature_hidden,
+            y_pred,
+            vector_labels,
+            class_biases,
+            self.num_classes,
+            **self.feature_loss
+        )
+
+        return loss
+
 
 # end of custom classes
 
@@ -191,61 +222,71 @@ def cross_entropy_sequence_loss(logits, targets, sequence_length):
         return losses
 
 
-def sampled_softmax_cross_entropy(output_placeholder, feature_hidden, logits,
-                                  vector_labels, class_weights,
-                                  class_biases, loss, num_classes):
+def sampled_softmax_cross_entropy(
+        output_placeholder,
+        feature_hidden,
+        logits,
+        vector_labels,
+        class_biases,
+        num_classes,
+        class_weights=1,
+        sampler=None,
+        negative_samples=0,
+        class_counts=0,
+        distortion=1,
+        unique=False,
+        labels_smoothing=0
+):
     output_exp = tf.cast(tf.expand_dims(output_placeholder, -1), tf.int64)
-    if loss['sampler'] == 'fixed_unigram':
+    if sampler == 'fixed_unigram':
         sampled_values = tf.nn.fixed_unigram_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
-            num_sampled=loss['negative_samples'],
-            unique=loss['unique'],
+            num_sampled=negative_samples,
+            unique=unique,
             range_max=num_classes,
-            unigrams=loss['class_counts'],
-            distortion=loss['distortion']
+            unigrams=class_counts,
+            distortion=distortion
         )
-    elif loss['sampler'] == 'uniform':
+    elif sampler == 'uniform':
         sampled_values = tf.nn.uniform_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
-            num_sampled=loss['negative_samples'],
-            unique=loss['unique'],
+            num_sampled=negative_samples,
+            unique=unique,
             range_max=num_classes
         )
-    elif loss['sampler'] == 'log_uniform':
+    elif sampler == 'log_uniform':
         sampled_values = tf.nn.log_uniform_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
-            num_sampled=loss['negative_samples'],
-            unique=loss['unique'],
+            num_sampled=negative_samples,
+            unique=unique,
             range_max=num_classes
         )
-    elif loss['sampler'] == 'learned_unigram':
+    elif sampler == 'learned_unigram':
         sampled_values = tf.nn.fixed_unigram_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
-            num_sampled=loss['negative_samples'],
-            unique=loss['unique'],
+            num_sampled=negative_samples,
+            unique=unique,
             range_max=num_classes,
-            unigrams=loss['class_counts'],
-            distortion=loss['distortion']
+            unigrams=class_counts,
+            distortion=distortion
         )
     else:
-        raise ValueError('Unsupported sampler {}'.format(loss['sampler']))
+        raise ValueError('Unsupported sampler {}'.format(sampler))
 
     train_loss = tf.nn.sampled_softmax_loss(weights=tf.transpose(class_weights),
                                             biases=class_biases,
                                             labels=output_exp,
                                             inputs=feature_hidden,
-                                            num_sampled=loss[
-                                                'negative_samples'],
+                                            num_sampled=negative_samples,
                                             num_classes=num_classes,
                                             sampled_values=sampled_values)
     eval_loss = tf.losses.softmax_cross_entropy(onehot_labels=vector_labels,
                                                 logits=logits,
-                                                label_smoothing=loss[
-                                                    'labels_smoothing'],
+                                                label_smoothing=labels_smoothing,
                                                 reduction=Reduction.NONE)
     return train_loss, eval_loss
 
@@ -351,21 +392,26 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
     return train_loss, eval_loss
 
 
-def weighted_softmax_cross_entropy(logits, vector_labels, loss):
-    use_class_weights = not isinstance(loss['class_weights'], (int, float))
+def weighted_softmax_cross_entropy(
+        logits,
+        vector_labels,
+        class_weights=1,
+        labels_smoothing=0,
+        **kwargs
+):
+    use_class_weights = not isinstance(class_weights, (int, float))
     if use_class_weights:
         train_loss = softmax_cross_entropy_with_class_weighting(
             logits,
             vector_labels,
-            loss['class_weights'],
-            loss['labels_smoothing']
+            class_weights,
+            labels_smoothing
         )
     else:
         train_loss = tf.losses.softmax_cross_entropy(
             onehot_labels=vector_labels,
             logits=logits,
-            label_smoothing=loss[
-                'labels_smoothing'],
+            label_smoothing=labels_smoothing,
             reduction=Reduction.NONE)
     return train_loss
 
