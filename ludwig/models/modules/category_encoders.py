@@ -45,7 +45,6 @@ class CategoricalEmbedEncoder(Layer):
             self,
             vocab=None,
             embedding_size=None,
-            representation=None,
             embeddings_trainable=None,
             pretrained_embeddings=None,
             embeddings_on_cpu=None,
@@ -58,7 +57,6 @@ class CategoricalEmbedEncoder(Layer):
 
         self.vocab = vocab
         self.embedding_size = embedding_size
-        self.representation = representation
         self.embeddings_trainable = embeddings_trainable
         self.pretrained_embeddings = pretrained_embeddings
         self.embeddings_on_cpu = embeddings_on_cpu
@@ -70,7 +68,7 @@ class CategoricalEmbedEncoder(Layer):
         self.embed = Embed(
             vocab=self.vocab,
             embedding_size=self.embedding_size,
-            representation=self.representation,
+            representation='dense',
             embeddings_trainable=self.embeddings_trainable,
             pretrained_embeddings=self.pretrained_embeddings,
             embeddings_on_cpu=self.embeddings_on_cpu,
@@ -79,7 +77,6 @@ class CategoricalEmbedEncoder(Layer):
             regularize=self.regularize
         )
 
-        pass
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -106,14 +103,58 @@ class CategoricalSparseEncoder(Layer):
 
     def __init__(
             self,
+            vocab=None,
+            embedding_size=None,
+            embeddings_trainable=None,
+            pretrained_embeddings=None,
+            embeddings_on_cpu=None,
+            dropout=None,
+            initializer=None,
+            regularize=None,
             **kwargs
     ):
         super(CategoricalSparseEncoder, self).__init__()
+
+        self.vocab = vocab
+        self.embedding_size = embedding_size
+        self.embeddings_trainable = embeddings_trainable
+        self.pretrained_embeddings = pretrained_embeddings
+        self.embeddings_on_cpu = embeddings_on_cpu
+        self.dropout = dropout
+        self.initializer = initializer
+        self.regularize = regularize
+
+
+        self.embed = Embed(
+            vocab=self.vocab,
+            embedding_size=self.embedding_size,
+            representation='sparse',
+            embeddings_trainable=self.embeddings_trainable,
+            pretrained_embeddings=self.pretrained_embeddings,
+            embeddings_on_cpu=self.embeddings_on_cpu,
+            dropout=self.dropout,
+            initializer=self.initializer,
+            regularize=self.regularize
+        )
+
 
     def call(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.int32
-            :param return: one-hot encoding, shape [batch x number classes], type tf.int32
+
+            :param return: embeddings of shape [batch x embed size], type tf.float32
         """
-        return inputs
+
+        embedded, embedding_size = self.embed(
+            tf.cast(inputs, dtype=tf.int32),
+            None,   # todo tf2 need regularizer
+            self.dropout,
+            self.embeddings_trainable
+        )
+
+        # todo tf2: remove tf.squeeze() after Embed() update to return correct
+        #           dimension
+        embedded = tf.squeeze(embedded)
+
+        return embedded
