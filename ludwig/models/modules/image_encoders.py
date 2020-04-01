@@ -30,24 +30,24 @@ class ImageTestEncoder(Layer):
     ):
         super(ImageTestEncoder, self).__init__()
 
+        # use FCStack only for now as it is already implemented and 
+        # ConvStack2D is not
+        self.fc_stack = FCStack(
+            layers=[
+                {'fc_size': 10}
+            ]
+        )
+
     def call(self, inputs, training=None, mask=None):
         """
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x height x width x channels], type tf.uint8
         """
 
-        # use FCStack only for now as it is already implemented and 
-        # ConvStack2D is not
-        fc_stack = FCStack(
-            layers=[
-                {'fc_size': 10}
-            ]
-        )
-
         inputs = tf.cast(inputs, tf.float32)
         # flatten the image
         inputs = tf.reshape(inputs, [inputs.shape[0], -1])
-        outputs = fc_stack(inputs)
+        outputs = self.fc_stack(inputs)
 
         return outputs
 
