@@ -36,6 +36,7 @@ from ludwig.models.modules.loss_modules import mean_confidence_penalty
 from ludwig.models.modules.loss_modules import sampled_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import accuracy as get_accuracy
 from ludwig.models.modules.metric_modules import hits_at_k as get_hits_at_k
@@ -282,11 +283,23 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         }
 
     def _setup_loss(self):
-        self.train_loss_function = SoftmaxCrossEntropyLoss(
-            num_classes=self.num_classes,
-            feature_loss=self.loss,
-            name='train_loss'
-        )
+        if self.loss['type'] == 'softmax_cross_entropy':
+            self.train_loss_function = SoftmaxCrossEntropyLoss(
+                num_classes=self.num_classes,
+                feature_loss=self.loss,
+                name='train_loss'
+            )
+        elif self.loss['type'] == 'sampled_softmax_cross_entropy':
+            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
+                num_classes=self.num_classes,
+                feature_loss=self.loss,
+                name='train_loss'
+            )
+        else:
+            raise ValueError(
+                "Invalid loss type specified.  Value values are "
+                "'softmax_cross_entropy' or 'sampled_softmax_cross_entropy'"
+            )
 
         self.eval_loss_function = SoftmaxCrossEntropyMetric(
             num_classes=self.num_classes,
