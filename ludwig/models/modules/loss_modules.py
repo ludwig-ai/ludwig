@@ -88,15 +88,18 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
         return loss
 
-# todo partial implementation
+# todo tf2: work-in-progress partial implementation
 class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,
+            decoder_obj=None,
             num_classes=0,
             feature_loss=None,
             name=None
     ):
         super(SampledSoftmaxCrossEntropyLoss, self).__init__(name=name)
+
+        self.decoder_obj = decoder_obj
         self.num_classes = num_classes
         self.feature_loss = feature_loss
 
@@ -106,13 +109,15 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
             self.num_classes
         )
 
-        loss = sampled_softmax_cross_entropy(
-            output_placeholder,
-            feature_hidden,
+        decoder_weights = self.decoder_obj.get_weights()[0]
+        decoder_biases = self.decoder_obj.get_weights()[1]
+
+        loss, _ = sampled_softmax_cross_entropy(
+            y,
             y_pred,
-            vector_labels,
-            class_biases,
-            self.num_classes,
+            num_classes=self.num_classes,
+            decoder_weights=decoder_weights,
+            decoder_biases=decoder_biases,
             **self.feature_loss
         )
 
@@ -223,21 +228,23 @@ def cross_entropy_sequence_loss(logits, targets, sequence_length):
 
 
 def sampled_softmax_cross_entropy(
-        output_placeholder,
-        feature_hidden,
-        logits,
         vector_labels,
-        class_biases,
-        num_classes,
-        class_weights=1,
+        logits,
+        num_classes=1,
+        decoder_weights=None,
+        decoder_biases=None,
         sampler=None,
         negative_samples=0,
         class_counts=0,
         distortion=1,
         unique=False,
-        labels_smoothing=0
+        labels_smoothing=0,
+        **kwargs
 ):
-    output_exp = tf.cast(tf.expand_dims(output_placeholder, -1), tf.int64)
+    output_exp = tf.cast(
+        tf.expand_dims(vector_labels, -1),
+        tf.int64
+    )
     if sampler == 'fixed_unigram':
         sampled_values = tf.nn.fixed_unigram_candidate_sampler(
             true_classes=output_exp,
@@ -277,10 +284,10 @@ def sampled_softmax_cross_entropy(
     else:
         raise ValueError('Unsupported sampler {}'.format(sampler))
 
-    train_loss = tf.nn.sampled_softmax_loss(weights=tf.transpose(class_weights),
-                                            biases=class_biases,
+    train_loss = tf.nn.sampled_softmax_loss(weights=tf.transpose(decoder_weights),
+                                            biases=decoder_biases,
                                             labels=output_exp,
-                                            inputs=feature_hidden,
+                                            inputs=logits,
                                             num_sampled=negative_samples,
                                             num_classes=num_classes,
                                             sampled_values=sampled_values)

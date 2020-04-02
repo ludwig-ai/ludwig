@@ -291,14 +291,16 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             )
         elif self.loss['type'] == 'sampled_softmax_cross_entropy':
             self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
+                decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
                 name='train_loss'
             )
         else:
             raise ValueError(
-                "Invalid loss type specified.  Value values are "
-                "'softmax_cross_entropy' or 'sampled_softmax_cross_entropy'"
+                "Loss type {} is not supported. Valid values are "
+                "'softmax_cross_entropy' or "
+                "'sampled_softmax_cross_entropy'".format(self.loss['type'])
             )
 
         self.eval_loss_function = SoftmaxCrossEntropyMetric(
