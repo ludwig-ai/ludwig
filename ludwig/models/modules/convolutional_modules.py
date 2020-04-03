@@ -23,61 +23,43 @@ from ludwig.models.modules.initializer_modules import get_initializer
 logger = logging.getLogger(__name__)
 
 
-def conv_1d(inputs, weights, biases,
-            stride=1, padding='SAME',
-            activation='relu', norm=None,
-            dropout=False, dropout_rate=None,
-            is_training=True):
-    hidden = tf.nn.conv1d(tf.cast(inputs, tf.float32), weights,
-                          stride=stride,
-                          padding=padding) + biases
-
+def conv(
+    inputs,
+    weights,
+    biases,
+    strides=1,
+    padding='SAME',
+    activation='relu',
+    norm=None,
+    dropout=False,
+    dropout_rate=None,
+    is_training=True
+):
+    hidden = tf.nn.convolution(
+        inputs, 
+        weights, 
+        padding=padding,
+        strides=strides
+    )
+    
+    hidden = tf.math.add(hidden, biases)
+    
     if norm is not None:
         if norm == 'batch':
-            hidden = tf.layers.batch_normalization(
-                hidden,
-                training=is_training
-            )
+            hidden = tf.keras.layers.BatchNormalization()(hidden, is_training)
         elif norm == 'layer':
-            # todo remplace with addons
-            hidden = tfa.layers.layer_norm(hidden)
-
+            hidden = tf.keras.layers.LayerNormalization()(hidden)
+            
     if activation:
         hidden = getattr(tf.nn, activation)(hidden)
-
+        
     if dropout and dropout_rate is not None:
-        hidden = tf.layers.dropout(hidden, rate=dropout_rate,
-                                   training=is_training)
+        hidden = tf.keras.layers.Dropout(dropout_rate)(
+            hidden, 
+            training=is_training,
+        )
 
     return hidden
-
-
-def conv_2d(inputs, weights, biases,
-            stride=1, padding='SAME',
-            activation='relu', norm=None,
-            dropout=False, dropout_rate=None,
-            is_training=True):
-    hidden = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1],
-                          padding=padding) + biases
-
-    if norm is not None:
-        if norm == 'batch':
-            hidden = tf.layers.batch_normalization(
-                hidden,
-                training=is_training
-            )
-        elif norm == 'layer':
-            hidden = tfa.layers.layer_norm(hidden)
-
-    if activation:
-        hidden = getattr(tf.nn, activation)(hidden)
-
-    if dropout and dropout_rate is not None:
-        hidden = tf.layers.dropout(hidden, rate=dropout_rate,
-                                   training=is_training)
-
-    return hidden
-
 
 def conv_layer(inputs, kernel_shape, biases_shape,
                stride=1, padding='SAME', activation='relu', norm=None,
