@@ -114,10 +114,11 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
         loss, _ = sampled_softmax_cross_entropy(
             y,
-            y_pred,
+            y_pred['logits'],
             num_classes=self.num_classes,
             decoder_weights=decoder_weights,
             decoder_biases=decoder_biases,
+            last_hidden=y_pred['last_hidden'],
             **self.feature_loss
         )
 
@@ -233,6 +234,7 @@ def sampled_softmax_cross_entropy(
         num_classes=1,
         decoder_weights=None,
         decoder_biases=None,
+        last_hidden=None,
         sampler=None,
         negative_samples=0,
         class_counts=0,
@@ -287,15 +289,21 @@ def sampled_softmax_cross_entropy(
     train_loss = tf.nn.sampled_softmax_loss(weights=tf.transpose(decoder_weights),
                                             biases=decoder_biases,
                                             labels=output_exp,
-                                            inputs=logits,
+                                            inputs=last_hidden,
                                             num_sampled=negative_samples,
                                             num_classes=num_classes,
                                             sampled_values=sampled_values)
-    eval_loss = tf.losses.softmax_cross_entropy(onehot_labels=vector_labels,
-                                                logits=logits,
-                                                label_smoothing=labels_smoothing,
-                                                reduction=Reduction.NONE)
-    return train_loss, eval_loss
+
+    # todo tf2 need to determine how to handle this, possible in separate function
+    # eval_loss = tf.losses.softmax_cross_entropy(
+    #     onehot_labels=tf.cast(
+    #         tf.cast(tf.one_hot(vector_labels, num_classes, axis=-1), dtype=tf.int16)
+    #     ),
+    #     logits=logits,
+    #     label_smoothing=labels_smoothing,
+    #     reduction=Reduction.NONE
+    # )
+    return train_loss, None #, eval_loss todo tf2 clean-up code
 
 
 def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
