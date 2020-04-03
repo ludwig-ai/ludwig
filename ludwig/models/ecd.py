@@ -66,8 +66,10 @@ class ECD(tf.keras.Model):
                 training=training,
                 mask=mask
             )
-            output_logits[output_feature_name] = decoder_logits
-            output_last_hidden[output_feature_name] = decoder_last_hidden
+            output_logits[output_feature_name] = {}
+            output_logits[output_feature_name]['logits'] = decoder_logits
+            output_logits[output_feature_name]['last_hidden'] = decoder_last_hidden
+            #output_last_hidden[output_feature_name] = decoder_last_hidden  #todo tf2 do we need this long-term give the above
 
         return output_logits
 
