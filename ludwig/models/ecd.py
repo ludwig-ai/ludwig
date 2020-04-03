@@ -131,7 +131,7 @@ class ECD(tf.keras.Model):
         of_eval_losses = {}
         for of_name, of_obj in self.output_features.items():
             of_eval_loss = of_obj.eval_loss(
-                targets[of_name], predictions[of_name]['logits']
+                targets[of_name], predictions[of_name]
             )
             eval_loss += of_obj.loss['weight'] * of_eval_loss
             of_eval_losses[of_name] = of_eval_loss

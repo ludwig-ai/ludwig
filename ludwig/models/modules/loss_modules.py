@@ -81,7 +81,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         )
 
         loss = weighted_softmax_cross_entropy(
-            y_pred,
+            y_pred['logits'],
             vector_labels,
             **self.feature_loss
         )
