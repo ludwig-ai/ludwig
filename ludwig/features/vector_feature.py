@@ -176,7 +176,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         self.type = VECTOR
         self.vector_size = 0
 
-        self.loss = {'type': MEAN_SQUARED_ERROR}
+        self.loss = {TYPE: MEAN_SQUARED_ERROR}
         self.softmax = False
 
         _ = self.overwrite_defaults(feature)
@@ -212,17 +212,17 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
     def vector_loss(self, targets, predictions, logits):
         with tf.variable_scope('loss_{}'.format(self.feature_name)):
-            if self.loss['type'] == MEAN_SQUARED_ERROR:
+            if self.loss[TYPE] == MEAN_SQUARED_ERROR:
                 train_loss = tf.reduce_sum(
                     get_squared_error(targets, predictions, self.feature_name), axis=1
                 )
 
-            elif self.loss['type'] == MEAN_ABSOLUTE_ERROR:
+            elif self.loss[TYPE] == MEAN_ABSOLUTE_ERROR:
                 train_loss = tf.reduce_sum(
                     get_absolute_error(targets, predictions, self.feature_name), axis=1
                 )
 
-            elif self.loss['type'] == SOFTMAX_CROSS_ENTROPY:
+            elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
                 train_loss = weighted_softmax_cross_entropy(
                     logits,
                     targets,

@@ -262,7 +262,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             self,
             inputs, # logits
     ):
-        logits = inputs['logits']
+        logits = inputs[LOGITS]
 
         probabilities = tf.nn.softmax(
             logits,
@@ -279,7 +279,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         return {
             'predictions': predictions,
             'probabilities': probabilities,
-            'logits': logits
+            LOGITS: logits
         }
 
     def _setup_loss(self):

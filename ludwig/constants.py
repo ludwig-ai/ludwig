@@ -72,8 +72,12 @@ BACKFILL = 'backfill'
 
 METRIC = 'metric'
 PREDICTION = 'prediction'
+LOGITS = 'logits'
+FINAL_HIDDEN = 'final_hidden'
 
 SUM = 'sum'
 APPEND = 'append'
 SEQ_SUM = 'seq_sum'
 AVG_EXP = 'avg_exp'
+
+TYPE = 'type'

@@ -19,6 +19,8 @@ import tensorflow_addons as tfa
 
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
+from ludwig.constants import *
+
 
 #
 # Custom classes to support Tensorflow 2
@@ -81,7 +83,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         )
 
         loss = weighted_softmax_cross_entropy(
-            y_pred['logits'],
+            y_pred[LOGITS],
             vector_labels,
             **self.feature_loss
         )
@@ -114,11 +116,11 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
         loss, _ = sampled_softmax_cross_entropy(
             y,
-            y_pred['logits'],
+            y_pred[LOGITS],
             num_classes=self.num_classes,
             decoder_weights=decoder_weights,
             decoder_biases=decoder_biases,
-            last_hidden=y_pred['last_hidden'],
+            last_hidden=y_pred[FINAL_HIDDEN],
             **self.feature_loss
         )
 

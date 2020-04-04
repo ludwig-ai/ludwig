@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import tensorflow as tf
 
-from ludwig.constants import TIED, LOSS, COMBINED
+from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, FINAL_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.models.modules.combiners import get_combiner_class
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -28,8 +28,8 @@ class ECD(tf.keras.Model):
         )
 
         # ================ Combiner ================
-        logger.debug('- Combiner {}'.format(combiner_def['type']))
-        combiner_class = get_combiner_class(combiner_def['type'])
+        logger.debug('- Combiner {}'.format(combiner_def[TYPE]))
+        combiner_class = get_combiner_class(combiner_def[TYPE])
         self.combiner = combiner_class(
             self.input_features,
             **combiner_def,
@@ -67,8 +67,8 @@ class ECD(tf.keras.Model):
                 mask=mask
             )
             output_logits[output_feature_name] = {}
-            output_logits[output_feature_name]['logits'] = decoder_logits
-            output_logits[output_feature_name]['last_hidden'] = decoder_last_hidden
+            output_logits[output_feature_name][LOGITS] = decoder_logits
+            output_logits[output_feature_name][FINAL_HIDDEN] = decoder_last_hidden
             #output_last_hidden[output_feature_name] = decoder_last_hidden  #todo tf2 do we need this long-term give the above
 
         return output_logits
@@ -178,7 +178,7 @@ def build_inputs(
 
 def build_single_input(input_feature_def, other_input_features, **kwargs):
     logger.debug('- Input {} feature {}'.format(
-        input_feature_def['type'],
+        input_feature_def[TYPE],
         input_feature_def['name']
     ))
 
@@ -190,7 +190,7 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
             encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
 
     input_feature_class = get_from_registry(
-        input_feature_def['type'],
+        input_feature_def[TYPE],
         input_type_registry
     )
     input_feature_obj = input_feature_class(input_feature_def, encoder_obj)
@@ -231,12 +231,12 @@ def build_single_output(
         **kwargs
 ):
     logger.debug('- Output {} feature {}'.format(
-        output_feature_def['type'],
+        output_feature_def[TYPE],
         output_feature_def['name']
     ))
 
     output_feature_class = get_from_registry(
-        output_feature_def['type'],
+        output_feature_def[TYPE],
         output_type_registry
     )
     output_feature_obj = output_feature_class(output_feature_def)

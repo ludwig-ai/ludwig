@@ -353,7 +353,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         output_tensors[EDIT_DISTANCE + '_' + feature_name] = edit_distance_val
         output_tensors[PERPLEXITY + '_' + feature_name] = perplexity_val
 
-        if 'sampled' not in self.loss['type']:
+        if 'sampled' not in self.loss[TYPE]:
             tf.summary.scalar(
                 'batch_train_last_accuracy_{}'.format(feature_name),
                 last_accuracy
@@ -508,7 +508,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             )
         loss = self.loss
         with tf.variable_scope('loss_{}'.format(self.feature_name)):
-            if loss['type'] == 'softmax_cross_entropy':
+            if loss[TYPE] == 'softmax_cross_entropy':
                 train_loss = seq2seq_sequence_loss(
                     targets,
                     targets_sequence_length,
@@ -520,7 +520,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 )
                 eval_loss = train_loss
 
-            elif loss['type'] == 'sampled_softmax_cross_entropy':
+            elif loss[TYPE] == 'sampled_softmax_cross_entropy':
                 train_loss, eval_loss = sequence_sampled_softmax_cross_entropy(
                     targets,
                     targets_sequence_length,
@@ -540,7 +540,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 train_mean_loss = None
                 eval_loss = None
                 raise ValueError(
-                    'Unsupported loss type {}'.format(loss['type'])
+                    'Unsupported loss type {}'.format(loss[TYPE])
                 )
         return train_mean_loss, eval_loss
 
@@ -705,7 +705,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                     'for feature {}'.format(output_feature['name'])
                 )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             output_feature[LOSS]['class_counts'] = [
                 feature_metadata['str2freq'][cls]
                 for cls in feature_metadata['idx2str']
@@ -834,7 +834,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                           'class_similarities_temperature', 0)
         set_default_value(output_feature[LOSS], 'weight', 1)
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             set_default_value(output_feature[LOSS], 'sampler', 'log_uniform')
             set_default_value(output_feature[LOSS], 'negative_samples', 25)
             set_default_value(output_feature[LOSS], 'distortion', 0.75)

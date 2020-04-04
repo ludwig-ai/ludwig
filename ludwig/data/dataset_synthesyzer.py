@@ -96,7 +96,7 @@ def build_feature_parameters(features):
     feature_parameters = {}
     for feature in features:
         fearure_builder_function = get_from_registry(
-            feature['type'],
+            feature[TYPE],
             parameters_builders_registry
         )
 
@@ -136,12 +136,12 @@ def generate_datapoint(features):
     datapoint = []
     for feature in features:
         if ('cycle' in feature and feature['cycle'] is True and
-                feature['type'] in cyclers_registry):
-            cycler_function = cyclers_registry[feature['type']]
+                feature[TYPE] in cyclers_registry):
+            cycler_function = cyclers_registry[feature[TYPE]]
             feature_value = cycler_function(feature)
         else:
             generator_function = get_from_registry(
-                feature['type'],
+                feature[TYPE],
                 generators_registry
             )
             feature_value = generator_function(feature)

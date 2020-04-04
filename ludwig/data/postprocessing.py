@@ -16,6 +16,7 @@
 # ==============================================================================
 import pandas as pd
 
+from ludwig.constants import TYPE
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.utils.misc import get_from_registry
@@ -29,7 +30,7 @@ def postprocess_results(
         skip_save_unprocessed_output=False,
 ):
     feature = get_from_registry(
-        output_feature['type'], output_type_registry
+        output_feature[TYPE], output_type_registry
     )
     return feature.postprocess_results(
         output_feature,
@@ -76,7 +77,7 @@ def postprocess_df(
     data_for_df = {}
     for output_feature in output_features:
         output_feature_name = output_feature['name']
-        output_feature_type = output_feature['type']
+        output_feature_type = output_feature[TYPE]
         output_feature_dict = postprocessed_output[output_feature_name]
         for key_val in output_feature_dict.items():
             output_subgroup_name, output_type_value = key_val
