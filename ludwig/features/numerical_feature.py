@@ -39,14 +39,15 @@ from ludwig.utils.misc import set_default_values
 logger = logging.getLogger(__name__)
 
 # custom class to handle how Ludwig stores predictions
-class MSE(MeanSquaredError):
+class MSELoss(MeanSquaredError):
     def __init__(self, **kwargs):
-        super(MSE, self).__init__(**kwargs)
+        super(MSELoss, self).__init__(**kwargs)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
         logits = y_pred['logits']
         loss = super().__call__(y_true, logits, sample_weight=sample_weight)
         return loss
+
 
 
 class NumericalBaseFeature(BaseFeature):
@@ -210,7 +211,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
     def _setup_loss(self):
         if self.loss['type'] == 'mean_squared_error':
-            self.train_loss_function = MSE()
+            self.train_loss_function = MSELoss()
             self.eval_loss_function = MeanSquaredErrorMetric(name='eval_loss')
         elif self.loss['type'] == 'mean_absolute_error':
             self.train_loss_function = MeanAbsoluteError()
