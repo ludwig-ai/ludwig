@@ -25,7 +25,7 @@ import uuid
 import numpy as np
 import yaml
 
-from ludwig.constants import VECTOR
+from ludwig.constants import VECTOR, TYPE
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc import get_from_registry
