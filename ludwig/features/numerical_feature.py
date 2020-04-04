@@ -48,7 +48,14 @@ class MSELoss(MeanSquaredError):
         loss = super().__call__(y_true, logits, sample_weight=sample_weight)
         return loss
 
+class MSEMetric(MeanSquaredErrorMetric):
+    def __init__(self, **kwargs):
+        super(MSEMetric, self).__init__(**kwargs)
 
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred['predictions'], sample_weight=sample_weight
+        )
 
 class NumericalBaseFeature(BaseFeature):
     def __init__(self, feature):
@@ -212,7 +219,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def _setup_loss(self):
         if self.loss['type'] == 'mean_squared_error':
             self.train_loss_function = MSELoss()
-            self.eval_loss_function = MeanSquaredErrorMetric(name='eval_loss')
+            self.eval_loss_function = MSEMetric(name='eval_loss')
         elif self.loss['type'] == 'mean_absolute_error':
             self.train_loss_function = MeanAbsoluteError()
             self.eval_loss_function = MeanSquaredErrorMetric(name='eval_loss')
