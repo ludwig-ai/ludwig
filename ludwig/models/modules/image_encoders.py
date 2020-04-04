@@ -21,38 +21,8 @@ from ludwig.models.modules.convolutional_modules import flatten, ConvStack2D, \
     ResNet, get_resnet_block_sizes
 from ludwig.models.modules.fully_connected_modules import FCStack
 
-# ImageTestEncoder is just for end-to-end testing, will remove this
-class ImageTestEncoder(Layer):
 
-    def __init__(
-            self,
-            **kwargs
-    ):
-        super(ImageTestEncoder, self).__init__()
-
-        # use FCStack only for now as it is already implemented and 
-        # ConvStack2D is not
-        self.fc_stack = FCStack(
-            layers=[
-                {'fc_size': 10}
-            ]
-        )
-
-    def call(self, inputs, training=None, mask=None):
-        """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x height x width x channels], type tf.uint8
-        """
-
-        inputs = tf.cast(inputs, tf.float32)
-        # flatten the image
-        inputs = tf.reshape(inputs, [inputs.shape[0], -1])
-        outputs = self.fc_stack(inputs)
-
-        return outputs
-
-
-class Stacked2DCNN:
+class Stacked2DCNN(Layer):
     def __init__(
             self,
             conv_layers=None,
@@ -72,6 +42,8 @@ class Stacked2DCNN:
             initializer=None,
             **kwargs
     ):
+        super(Stacked2DCNN, self).__init__()
+
         self.conv_stack_2d = ConvStack2D(
             layers=conv_layers,
             num_layers=num_conv_layers,
@@ -97,33 +69,26 @@ class Stacked2DCNN:
             default_initializer=initializer
         )
 
-    def __call__(
-            self,
-            input_image,
-            regularizer,
-            dropout,
-            is_training
-    ):
+    def call(self, inputs, training=None, mask=None):
+        """
+            :param inputs: The inputs fed into the encoder.
+                    Shape: [batch x height x width x channels], type tf.uint8
+        """
+        inputs = tf.cast(inputs, tf.float32)
+
         # ================ Conv Layers ================
         hidden = self.conv_stack_2d(
-            input_image,
-            regularizer,
-            dropout,
-            is_training=is_training
+            inputs,
+            # regularizer,
+            dropout_rate=0.1,
+            # is_training=is_training
         )
-        hidden, hidden_size = flatten(hidden)
+        hidden = tf.reshape(hidden, [hidden.shape[0], -1])
 
         # ================ Fully Connected ================
-        hidden = self.fc_stack(
-            hidden,
-            hidden_size,
-            regularizer,
-            dropout,
-            is_training=is_training
-        )
-        hidden_size = hidden.shape.as_list()[-1]
+        outputs = self.fc_stack(hidden)
 
-        return hidden, hidden_size
+        return outputs
 
 
 class ResNetEncoder:

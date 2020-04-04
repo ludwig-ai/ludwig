@@ -421,9 +421,9 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         set_default_value(input_feature, 'preprocessing', {})
 
     encoder_registry = {
-        'stacked_cnn': ImageTestEncoder,
-        'resnet': ImageTestEncoder,
-        None: ImageTestEncoder
+        'stacked_cnn': Stacked2DCNN,
+        'resnet': ResNetEncoder,
+        None: Stacked2DCNN
     }
 
 image_scaling_registry = {

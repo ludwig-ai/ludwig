@@ -498,7 +498,7 @@ class ConvStack2D:
             default_stride=2,
             default_pool_stride=None,
             default_norm=None,
-            default_dropout=False,
+            default_dropout=True,
             default_initializer=None,
             default_regularize=True
     ):
@@ -544,60 +544,91 @@ class ConvStack2D:
     def __call__(
             self,
             input_image,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            regularizer=None,
+            dropout_rate=0
     ):
         num_layers = len(self.layers)
         hidden = input_image
-        prev_num_filters = int(input_image.shape[-1])
         for i in range(num_layers):
             layer = self.layers[i]
-            with tf.variable_scope('conv_{}'.format(i)):
-                # Convolution Layer
-                filter_shape = [
-                    layer['filter_size'],
-                    layer['filter_size'],
-                    prev_num_filters,
-                    layer['num_filters']
-                ]
-                layer_output = conv_2d_layer(hidden, filter_shape,
-                                             [layer['num_filters']],
-                                             stride=layer['stride'],
-                                             padding='SAME',
-                                             activation=layer['activation'],
-                                             norm=layer['norm'],
-                                             dropout=layer['dropout'],
-                                             dropout_rate=dropout_rate,
-                                             regularizer=regularizer if layer[
-                                                 'regularize'] else None,
-                                             initializer=layer['initializer'],
-                                             is_training=is_training)
-                prev_num_filters = layer['num_filters']
-                logger.debug('  conv_{}: {}'.format(i, layer_output))
 
-                # Pooling
-                if layer['pool_size'] is not None:
-                    pool_size = layer['pool_size']
-                    pool_kernel_size = [1, pool_size, pool_size, 1]
-                    pool_stride = layer['pool_stride']
-                    if pool_stride is not None:
-                        pool_kernel_stride = [1, pool_size, pool_size, 1]
-                    else:
-                        pool_kernel_stride = [1, pool_stride, pool_stride, 1]
-                    layer_output = tf.nn.max_pool(
-                        layer_output,
-                        ksize=pool_kernel_size,
-                        strides=pool_kernel_stride,
-                        padding='SAME',
-                        name='pool_{}'.format(i)
-                    )
+            # TODO add filter size tuples
+            # TODO provide regularization penalty
+            # TODO provide bias and activity regularizers
+            # TODO add initializers
 
-                    logger.debug('  pool_{}: {}'.format(
-                        i, layer_output))
+            conv_layer = tf.keras.layers.Conv2D(
+                layer['num_filters'],
+                layer['filter_size'],
+                kernel_regularizer=regularizer if layer['regularize'] else None,
+            )
+            hidden = conv_layer(hidden)
 
-            hidden = layer_output
-            logger.debug('  hidden: {0}'.format(hidden))
+            if layer['dropout'] and dropout_rate > 0:
+                hidden = tf.nn.dropout(hidden, rate=dropout_rate)
+
+            if layer['pool_size'] is not None:
+                pool_size = layer['pool_size']
+                pool_kernel_size = [1, pool_size, pool_size, 1]
+                pool_stride = layer['pool_stride']
+                if pool_stride is not None:
+                    pool_kernel_stride = [1, pool_size, pool_size, 1]
+                else:
+                    pool_kernel_stride = [1, pool_stride, pool_stride, 1]
+                
+                hidden = tf.nn.max_pool(
+                    hidden,
+                    ksize=pool_kernel_size,
+                    strides=pool_kernel_stride,
+                    padding='SAME'
+                )
+
+
+            # with tf.variable_scope('conv_{}'.format(i)):
+            #     # Convolution Layer
+            #     filter_shape = [
+            #         layer['filter_size'],
+            #         layer['filter_size'],
+            #         prev_num_filters,
+            #         layer['num_filters']
+            #     ]
+            #     layer_output = conv_2d_layer(hidden, filter_shape,
+            #                                  [layer['num_filters']],
+            #                                  stride=layer['stride'],
+            #                                  padding='SAME',
+            #                                  activation=layer['activation'],
+            #                                  norm=layer['norm'],
+            #                                  dropout=layer['dropout'],
+            #                                  dropout_rate=dropout_rate,
+            #                                  regularizer=regularizer if layer[
+            #                                      'regularize'] else None,
+            #                                  initializer=layer['initializer'],
+            #                                  is_training=is_training)
+            #     prev_num_filters = layer['num_filters']
+            #     logger.debug('  conv_{}: {}'.format(i, layer_output))
+
+            #     # Pooling
+            #     if layer['pool_size'] is not None:
+            #         pool_size = layer['pool_size']
+            #         pool_kernel_size = [1, pool_size, pool_size, 1]
+            #         pool_stride = layer['pool_stride']
+            #         if pool_stride is not None:
+            #             pool_kernel_stride = [1, pool_size, pool_size, 1]
+            #         else:
+            #             pool_kernel_stride = [1, pool_stride, pool_stride, 1]
+            #         layer_output = tf.nn.max_pool(
+            #             layer_output,
+            #             ksize=pool_kernel_size,
+            #             strides=pool_kernel_stride,
+            #             padding='SAME',
+            #             name='pool_{}'.format(i)
+            #         )
+
+            #         logger.debug('  pool_{}: {}'.format(
+            #             i, layer_output))
+
+            # hidden = layer_output
+            # logger.debug('  hidden: {0}'.format(hidden))
 
         return hidden
 
