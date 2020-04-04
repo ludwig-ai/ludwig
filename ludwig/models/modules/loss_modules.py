@@ -39,7 +39,7 @@ class BWCEWLoss(tf.keras.losses.Loss):
         self.confidence_penalty = confidence_penalty
 
     def call(self, y_true, y_pred):
-        logits = y_pred
+        logits = y_pred[LOGITS]
 
         # weighted cross entropy
         train_loss = tf.nn.weighted_cross_entropy_with_logits(
