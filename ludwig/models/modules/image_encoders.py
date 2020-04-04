@@ -79,9 +79,7 @@ class Stacked2DCNN(Layer):
         # ================ Conv Layers ================
         hidden = self.conv_stack_2d(
             inputs,
-            # regularizer,
             dropout_rate=0.1,
-            # is_training=is_training
         )
         hidden = tf.reshape(hidden, [hidden.shape[0], -1])
 
