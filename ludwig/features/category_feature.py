@@ -757,7 +757,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             del result[PREDICTIONS]
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES]
+            probs = result[PROBABILITIES].numpy()
             prob = np.amax(probs, axis=1)
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob
