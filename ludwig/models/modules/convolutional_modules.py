@@ -18,6 +18,11 @@ import logging
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
 
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import MaxPool2D
+
 from ludwig.models.modules.initializer_modules import get_initializer
 
 logger = logging.getLogger(__name__)
@@ -493,12 +498,12 @@ class ConvStack2D:
             num_layers=None,
             default_filter_size=3,
             default_num_filters=256,
-            default_pool_size=2,
+            default_pool_size=(2, 2),
             default_activation='relu',
             default_stride=2,
-            default_pool_stride=None,
+            default_pool_strides=None,
             default_norm=None,
-            default_dropout=False,
+            default_droupout_rate=0,
             default_initializer=None,
             default_regularize=True
     ):
@@ -506,7 +511,7 @@ class ConvStack2D:
             if num_layers is None:
                 self.layers = [
                     {'num_filters': 32},
-                    {'num_filters': 64, 'dropout': True},
+                    {'num_filters': 64},
                 ]
             else:
                 self.layers = []
@@ -530,58 +535,57 @@ class ConvStack2D:
                 layer['activation'] = default_activation
             if 'stride' not in layer:
                 layer['stride'] = default_stride
-            if 'pool_stride' not in layer:
-                layer['pool_stride'] = default_pool_stride
+            if 'pool_strides' not in layer:
+                layer['pool_strides'] = default_pool_strides
             if 'norm' not in layer:
                 layer['norm'] = default_norm
-            if 'dropout' not in layer:
-                layer['dropout'] = default_dropout
+            if 'dropout_rate' not in layer:
+                layer['dropout_rate'] = default_droupout_rate
             if 'initializer' not in layer:
                 layer['initializer'] = default_initializer
             if 'regularize' not in layer:
                 layer['regularize'] = default_regularize
 
+        self.stack = []
+
+        for i, layer in enumerate(self.layers):
+            with tf.variable_scope('conv_' + str(i)):
+                # TODO add filter size tuples
+                # TODO provide regularization penalty
+                # TODO provide regularizers
+                # TODO add initializers
+                self.stack.append(
+                    Conv2D(
+                        layer['num_filters'],
+                        layer['filter_size'],
+                        # kernel_regularizer=regularizer if layer['regularize'] else None,
+                    )
+                )
+
+                self.stack.append(Activation(layer['activation']))
+
+                if layer['dropout_rate'] > 0:
+                    self.stack.append(Dropout(layer['dropout_rate']))
+                
+                if layer['pool_size'] is not None:
+                    self.stack.append(
+                        MaxPool2D(
+                            pool_size=layer['pool_size'],
+                            strides=layer['pool_strides']
+                        )
+                    )
+
     def __call__(
             self,
-            input_image,
+            inputs,
+            training=None,
             regularizer=None,
             dropout_rate=0
     ):
-        num_layers = len(self.layers)
-        hidden = input_image
-        for i in range(num_layers):
-            layer = self.layers[i]
+        hidden = inputs
 
-            # TODO add filter size tuples
-            # TODO provide regularization penalty
-            # TODO provide bias and activity regularizers
-            # TODO add initializers
-
-            conv_layer = tf.keras.layers.Conv2D(
-                layer['num_filters'],
-                layer['filter_size'],
-                kernel_regularizer=regularizer if layer['regularize'] else None,
-            )
-            hidden = conv_layer(hidden)
-
-            if layer['dropout'] and dropout_rate > 0:
-                hidden = tf.nn.dropout(hidden, rate=dropout_rate)
-
-            if layer['pool_size'] is not None:
-                pool_size = layer['pool_size']
-                pool_kernel_size = [1, pool_size, pool_size, 1]
-                pool_stride = layer['pool_stride']
-                if pool_stride is not None:
-                    pool_kernel_stride = [1, pool_size, pool_size, 1]
-                else:
-                    pool_kernel_stride = [1, pool_stride, pool_stride, 1]
-                
-                hidden = tf.nn.max_pool(
-                    hidden,
-                    ksize=pool_kernel_size,
-                    strides=pool_kernel_stride,
-                    padding='SAME'
-                )
+        for layer in self.stack:
+            hidden = layer(hidden, training=training)
 
         return hidden
 

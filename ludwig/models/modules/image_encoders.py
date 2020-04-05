@@ -31,13 +31,13 @@ class Stacked2DCNN(Layer):
             num_filters=32,
             pool_size=2,
             stride=1,
-            pool_stride=2,
+            pool_strides=(2, 2),
             fc_layers=None,
             num_fc_layers=1,
             fc_size=128,
             norm=None,
             activation='relu',
-            dropout=True,
+            droupout_rate=0,
             regularize=True,
             initializer=None,
             **kwargs
@@ -52,9 +52,9 @@ class Stacked2DCNN(Layer):
             default_pool_size=pool_size,
             default_activation=activation,
             default_stride=stride,
-            default_pool_stride=pool_stride,
+            default_pool_strides=pool_strides,
             default_norm=norm,
-            default_dropout=dropout,
+            default_droupout_rate=droupout_rate,
             default_regularize=regularize,
             default_initializer=initializer
         )
@@ -64,7 +64,7 @@ class Stacked2DCNN(Layer):
             default_fc_size=fc_size,
             default_activation=activation,
             default_norm=norm,
-            default_dropout=dropout,
+            default_dropout_rate=droupout_rate,
             default_regularize=regularize,
             default_initializer=initializer
         )
