@@ -18,6 +18,7 @@ import logging
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
 
+from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Dropout
@@ -490,8 +491,8 @@ class StackParallelConv1D:
         return hidden
 
 
-class ConvStack2D:
-
+class ConvStack2D(Layer):
+    
     def __init__(
             self,
             layers=None,
@@ -507,6 +508,8 @@ class ConvStack2D:
             default_initializer=None,
             default_regularize=True
     ):
+        super(ConvStack2D, self).__init__()
+        
         if layers is None:
             if num_layers is None:
                 self.layers = [
@@ -575,13 +578,7 @@ class ConvStack2D:
                         )
                     )
 
-    def __call__(
-            self,
-            inputs,
-            training=None,
-            regularizer=None,
-            dropout_rate=0
-    ):
+    def call(self, inputs, training=None, mask=None):
         hidden = inputs
 
         for layer in self.stack:
