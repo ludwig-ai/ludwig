@@ -18,10 +18,12 @@ import logging
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
 
-from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import MaxPool2D
 
 from ludwig.models.modules.initializer_modules import get_initializer
@@ -564,6 +566,12 @@ class ConvStack2D(Layer):
                         # kernel_regularizer=regularizer if layer['regularize'] else None,
                     )
                 )
+
+                if layer['norm']:
+                    if layer['norm'] == 'batch':
+                        self.stack.append(BatchNormalization())
+                    if layer['norm'] == 'layer':
+                        self.stack.append(LayerNormalization())
 
                 self.stack.append(Activation(layer['activation']))
 
