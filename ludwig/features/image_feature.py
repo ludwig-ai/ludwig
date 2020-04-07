@@ -29,7 +29,6 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
-from ludwig.models.modules.image_encoders import ImageTestEncoder
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
@@ -421,9 +420,9 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         set_default_value(input_feature, 'preprocessing', {})
 
     encoder_registry = {
-        'stacked_cnn': ImageTestEncoder,
-        'resnet': ImageTestEncoder,
-        None: ImageTestEncoder
+        'stacked_cnn': Stacked2DCNN,
+        'resnet': ResNetEncoder,
+        None: Stacked2DCNN
     }
 
 image_scaling_registry = {

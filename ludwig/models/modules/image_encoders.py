@@ -21,38 +21,8 @@ from ludwig.models.modules.convolutional_modules import flatten, ConvStack2D, \
     ResNet, get_resnet_block_sizes
 from ludwig.models.modules.fully_connected_modules import FCStack
 
-# ImageTestEncoder is just for end-to-end testing, will remove this
-class ImageTestEncoder(Layer):
 
-    def __init__(
-            self,
-            **kwargs
-    ):
-        super(ImageTestEncoder, self).__init__()
-
-        # use FCStack only for now as it is already implemented and 
-        # ConvStack2D is not
-        self.fc_stack = FCStack(
-            layers=[
-                {'fc_size': 10}
-            ]
-        )
-
-    def call(self, inputs, training=None, mask=None):
-        """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x height x width x channels], type tf.uint8
-        """
-
-        inputs = tf.cast(inputs, tf.float32)
-        # flatten the image
-        inputs = tf.reshape(inputs, [inputs.shape[0], -1])
-        outputs = self.fc_stack(inputs)
-
-        return outputs
-
-
-class Stacked2DCNN:
+class Stacked2DCNN(Layer):
     def __init__(
             self,
             conv_layers=None,
@@ -61,17 +31,19 @@ class Stacked2DCNN:
             num_filters=32,
             pool_size=2,
             stride=1,
-            pool_stride=2,
+            pool_strides=(2, 2),
             fc_layers=None,
             num_fc_layers=1,
             fc_size=128,
             norm=None,
             activation='relu',
-            dropout=True,
+            droupout_rate=0,
             regularize=True,
             initializer=None,
             **kwargs
     ):
+        super(Stacked2DCNN, self).__init__()
+
         self.conv_stack_2d = ConvStack2D(
             layers=conv_layers,
             num_layers=num_conv_layers,
@@ -80,9 +52,9 @@ class Stacked2DCNN:
             default_pool_size=pool_size,
             default_activation=activation,
             default_stride=stride,
-            default_pool_stride=pool_stride,
+            default_pool_strides=pool_strides,
             default_norm=norm,
-            default_dropout=dropout,
+            default_droupout_rate=droupout_rate,
             default_regularize=regularize,
             default_initializer=initializer
         )
@@ -92,38 +64,29 @@ class Stacked2DCNN:
             default_fc_size=fc_size,
             default_activation=activation,
             default_norm=norm,
-            default_dropout=dropout,
+            default_dropout_rate=droupout_rate,
             default_regularize=regularize,
             default_initializer=initializer
         )
 
-    def __call__(
-            self,
-            input_image,
-            regularizer,
-            dropout,
-            is_training
-    ):
+    def call(self, inputs, training=None, mask=None):
+        """
+            :param inputs: The inputs fed into the encoder.
+                    Shape: [batch x height x width x channels], type tf.uint8
+        """
+        inputs = tf.cast(inputs, tf.float32)
+
         # ================ Conv Layers ================
         hidden = self.conv_stack_2d(
-            input_image,
-            regularizer,
-            dropout,
-            is_training=is_training
+            inputs,
+            training,
         )
-        hidden, hidden_size = flatten(hidden)
+        hidden = tf.reshape(hidden, [hidden.shape[0], -1])
 
         # ================ Fully Connected ================
-        hidden = self.fc_stack(
-            hidden,
-            hidden_size,
-            regularizer,
-            dropout,
-            is_training=is_training
-        )
-        hidden_size = hidden.shape.as_list()[-1]
+        outputs = self.fc_stack(hidden)
 
-        return hidden, hidden_size
+        return outputs
 
 
 class ResNetEncoder:

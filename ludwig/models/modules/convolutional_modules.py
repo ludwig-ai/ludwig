@@ -18,6 +18,14 @@ import logging
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
 
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import LayerNormalization
+from tensorflow.keras.layers import MaxPool2D
+
 from ludwig.models.modules.initializer_modules import get_initializer
 
 logger = logging.getLogger(__name__)
@@ -485,28 +493,30 @@ class StackParallelConv1D:
         return hidden
 
 
-class ConvStack2D:
-
+class ConvStack2D(Layer):
+    
     def __init__(
             self,
             layers=None,
             num_layers=None,
             default_filter_size=3,
             default_num_filters=256,
-            default_pool_size=2,
+            default_pool_size=(2, 2),
             default_activation='relu',
             default_stride=2,
-            default_pool_stride=None,
+            default_pool_strides=None,
             default_norm=None,
-            default_dropout=False,
+            default_droupout_rate=0,
             default_initializer=None,
             default_regularize=True
     ):
+        super(ConvStack2D, self).__init__()
+        
         if layers is None:
             if num_layers is None:
                 self.layers = [
                     {'num_filters': 32},
-                    {'num_filters': 64, 'dropout': True},
+                    {'num_filters': 64},
                 ]
             else:
                 self.layers = []
@@ -530,74 +540,57 @@ class ConvStack2D:
                 layer['activation'] = default_activation
             if 'stride' not in layer:
                 layer['stride'] = default_stride
-            if 'pool_stride' not in layer:
-                layer['pool_stride'] = default_pool_stride
+            if 'pool_strides' not in layer:
+                layer['pool_strides'] = default_pool_strides
             if 'norm' not in layer:
                 layer['norm'] = default_norm
-            if 'dropout' not in layer:
-                layer['dropout'] = default_dropout
+            if 'dropout_rate' not in layer:
+                layer['dropout_rate'] = default_droupout_rate
             if 'initializer' not in layer:
                 layer['initializer'] = default_initializer
             if 'regularize' not in layer:
                 layer['regularize'] = default_regularize
 
-    def __call__(
-            self,
-            input_image,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        num_layers = len(self.layers)
-        hidden = input_image
-        prev_num_filters = int(input_image.shape[-1])
-        for i in range(num_layers):
-            layer = self.layers[i]
-            with tf.variable_scope('conv_{}'.format(i)):
-                # Convolution Layer
-                filter_shape = [
-                    layer['filter_size'],
-                    layer['filter_size'],
-                    prev_num_filters,
-                    layer['num_filters']
-                ]
-                layer_output = conv_2d_layer(hidden, filter_shape,
-                                             [layer['num_filters']],
-                                             stride=layer['stride'],
-                                             padding='SAME',
-                                             activation=layer['activation'],
-                                             norm=layer['norm'],
-                                             dropout=layer['dropout'],
-                                             dropout_rate=dropout_rate,
-                                             regularizer=regularizer if layer[
-                                                 'regularize'] else None,
-                                             initializer=layer['initializer'],
-                                             is_training=is_training)
-                prev_num_filters = layer['num_filters']
-                logger.debug('  conv_{}: {}'.format(i, layer_output))
+        self.stack = []
 
-                # Pooling
+        for i, layer in enumerate(self.layers):
+            with tf.variable_scope('conv_' + str(i)):
+                # TODO add filter size tuples
+                # TODO provide regularization penalty
+                # TODO provide regularizers
+                # TODO add initializers
+                self.stack.append(
+                    Conv2D(
+                        layer['num_filters'],
+                        layer['filter_size'],
+                        # kernel_regularizer=regularizer if layer['regularize'] else None,
+                    )
+                )
+
+                if layer['norm']:
+                    if layer['norm'] == 'batch':
+                        self.stack.append(BatchNormalization())
+                    if layer['norm'] == 'layer':
+                        self.stack.append(LayerNormalization())
+
+                self.stack.append(Activation(layer['activation']))
+
+                if layer['dropout_rate'] > 0:
+                    self.stack.append(Dropout(layer['dropout_rate']))
+                
                 if layer['pool_size'] is not None:
-                    pool_size = layer['pool_size']
-                    pool_kernel_size = [1, pool_size, pool_size, 1]
-                    pool_stride = layer['pool_stride']
-                    if pool_stride is not None:
-                        pool_kernel_stride = [1, pool_size, pool_size, 1]
-                    else:
-                        pool_kernel_stride = [1, pool_stride, pool_stride, 1]
-                    layer_output = tf.nn.max_pool(
-                        layer_output,
-                        ksize=pool_kernel_size,
-                        strides=pool_kernel_stride,
-                        padding='SAME',
-                        name='pool_{}'.format(i)
+                    self.stack.append(
+                        MaxPool2D(
+                            pool_size=layer['pool_size'],
+                            strides=layer['pool_strides']
+                        )
                     )
 
-                    logger.debug('  pool_{}: {}'.format(
-                        i, layer_output))
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
 
-            hidden = layer_output
-            logger.debug('  hidden: {0}'.format(hidden))
+        for layer in self.stack:
+            hidden = layer(hidden, training=training)
 
         return hidden
 
