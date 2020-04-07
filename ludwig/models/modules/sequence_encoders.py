@@ -48,8 +48,6 @@ def check_fc_layers(fc_layer, num_fc_layer):
         )
     return fc_layers, num_fc_layers
 
-def embed()
-
 class PassthroughEncoder:
 
     def __init__(
@@ -423,7 +421,7 @@ class ParallelCNN(object):
             )
 
 
-        fc_layers,num_fc_layers = check_fc_layers.(fc_layers,num_fc_layers)
+        fc_layers,num_fc_layers = check_fc_layers(fc_layers,num_fc_layers)
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
@@ -750,7 +748,7 @@ class StackedCNN:
                 'num_conv_layers'
             )
 
-        fc_layers,num_fc_layers = check_fc_layers.(fc_layers,num_fc_layers)
+        fc_layers,num_fc_layers = check_fc_layers(fc_layers,num_fc_layers)
 
         self.reduce_output = reduce_output
         self.should_embed = should_embed
@@ -1071,7 +1069,7 @@ class StackedParallelCNN:
             )
 
 
-        fc_layers,num_fc_layers = check_fc_layers.(fc_layers,num_fc_layers)
+        fc_layers,num_fc_layers = check_fc_layers(fc_layers,num_fc_layers)
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
