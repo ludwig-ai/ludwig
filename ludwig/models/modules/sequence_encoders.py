@@ -30,6 +30,25 @@ from ludwig.models.modules.reduction_modules import reduce_sequence
 
 logger = logging.getLogger(__name__)
 
+def check_fc_layers(fc_layer, num_fc_layer):
+    # The user is expected to provide fc_layers or num_fc_layers
+    # The following logic handles the case where the user either provides
+    # both or neither.
+    if fc_layer is None and num_fc_layer is None:
+        # use default layers with varying filter sizes
+        fc_layers = [
+            {'fc_size': 512},
+            {'fc_size': 256}
+        ]
+        num_fc_layers = 2
+    elif fc_layer is not None and num_fc_layer is not None:
+        raise ValueError(
+            'Invalid layer parametrization, use either fc_layers or '
+            'num_fc_layers only. Not both.'
+        )
+    return fc_layers, num_fc_layers
+
+def embed()
 
 class PassthroughEncoder:
 
@@ -403,25 +422,12 @@ class ParallelCNN(object):
                 ' num_conv_layers'
             )
 
-        # The user is expected to provide fc_layers or num_fc_layers
-        # The following logic handles the case where the user either provides
-        # both or neither.
-        if fc_layers is None and num_fc_layers is None:
-            # use default layers with varying filter sizes
-            fc_layers = [
-                {'fc_size': 512},
-                {'fc_size': 256}
-            ]
-            num_fc_layers = 2
-        elif fc_layers is not None and num_fc_layers is not None:
-            raise ValueError(
-                'Invalid layer parametrization, use either fc_layers or '
-                'num_fc_layers only. Not both.'
-            )
 
+        fc_layers,num_fc_layers = check_fc_layers.(fc_layers,num_fc_layers)
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
             self.embed_sequence = EmbedSequence(
                 vocab,
@@ -528,6 +534,8 @@ class ParallelCNN(object):
             hidden_size = hidden.shape.as_list()[-1]
 
         return hidden, hidden_size
+
+
 
 
 class StackedCNN:
@@ -742,21 +750,7 @@ class StackedCNN:
                 'num_conv_layers'
             )
 
-        # The user is expected to provide fc_layers or num_fc_layers
-        # The following logic handles the case where the user either provides
-        # both or neither.
-        if fc_layers is None and num_fc_layers is None:
-            # use default layers with varying filter sizes
-            fc_layers = [
-                {'fc_size': 512},
-                {'fc_size': 256}
-            ]
-            num_fc_layers = 2
-        elif fc_layers is not None and num_fc_layers is not None:
-            raise ValueError(
-                'Invalid layer parametrization, use either fc_layers or '
-                'num_fc_layers only. Not both.'
-            )
+        fc_layers,num_fc_layers = check_fc_layers.(fc_layers,num_fc_layers)
 
         self.reduce_output = reduce_output
         self.should_embed = should_embed
@@ -1076,22 +1070,8 @@ class StackedParallelCNN:
                 ' num_stacked_layers'
             )
 
-        # The user is expected to provide fc_layers or num_fc_layers
-        # The following logic handles the case where the user either provides
-        # both or neither.
-        if fc_layers is None and num_fc_layers is None:
-            # use default layers with varying filter sizes
-            fc_layers = [
-                {'fc_size': 512},
-                {'fc_size': 256}
-            ]
-            num_fc_layers = 2
-        elif fc_layers is not None and num_fc_layers is not None:
-            raise ValueError(
-                'Invalid layer parametrization, use either fc_layers or '
-                'num_fc_layers only. Not both.'
-            )
 
+        fc_layers,num_fc_layers = check_fc_layers.(fc_layers,num_fc_layers)
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
