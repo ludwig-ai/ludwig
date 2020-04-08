@@ -36,7 +36,7 @@ import tensorflow.compat.v1 as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED
+from ludwig.constants import LOSS, COMBINED, TYPE
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
@@ -122,7 +122,7 @@ class Model:
         # todo tf2: reintroduce optimizer parameters
         # todo tf2: reintroduce learning scheduler in different form most likely
         self.optimizer_function = get_optimizer_fun_tf2(
-            self.hyperparameters['training']['optimizer']['type']
+            self.hyperparameters['training']['optimizer'][TYPE]
         )
 
         # todo tf2: reintroduce tensorboard tracking and summaries
@@ -1271,7 +1271,7 @@ class Model:
                 trim_side = bucketing_feature['preprocessing']['padding']
             else:
                 trim_side = self.hyperparameters['preprocessing'][
-                    bucketing_feature['type']]['padding']
+                    bucketing_feature[TYPE]]['padding']
 
             batcher = BucketedBatcher(
                 dataset,

@@ -25,7 +25,7 @@ import uuid
 import numpy as np
 import yaml
 
-from ludwig.constants import VECTOR
+from ludwig.constants import VECTOR, TYPE
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc import get_from_registry
@@ -96,7 +96,7 @@ def build_feature_parameters(features):
     feature_parameters = {}
     for feature in features:
         fearure_builder_function = get_from_registry(
-            feature['type'],
+            feature[TYPE],
             parameters_builders_registry
         )
 
@@ -136,12 +136,12 @@ def generate_datapoint(features):
     datapoint = []
     for feature in features:
         if ('cycle' in feature and feature['cycle'] is True and
-                feature['type'] in cyclers_registry):
-            cycler_function = cyclers_registry[feature['type']]
+                feature[TYPE] in cyclers_registry):
+            cycler_function = cyclers_registry[feature[TYPE]]
             feature_value = cycler_function(feature)
         else:
             generator_function = get_from_registry(
-                feature['type'],
+                feature[TYPE],
                 generators_registry
             )
             feature_value = generator_function(feature)

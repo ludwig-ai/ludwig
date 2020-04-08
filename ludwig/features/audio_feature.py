@@ -87,7 +87,7 @@ class AudioBaseFeature(BaseFeature):
 
     @staticmethod
     def _get_feature_dim(audio_feature_dict, sampling_rate_in_hz):
-        feature_type = audio_feature_dict['type']
+        feature_type = audio_feature_dict[TYPE]
 
         if feature_type == 'raw':
             feature_dim = 1
@@ -127,7 +127,7 @@ class AudioBaseFeature(BaseFeature):
             )
             sys.exit(-1)
 
-        feature_type = audio_feature_dict['type']
+        feature_type = audio_feature_dict[TYPE]
         audio, sampling_rate_in_hz = soundfile.read(filepath)
         AudioBaseFeature._update(audio_stats, audio, sampling_rate_in_hz)
 
@@ -236,7 +236,7 @@ class AudioBaseFeature(BaseFeature):
             raise ValueError(
                 'audio_feature dictionary has to be present in preprocessing '
                 'for audio.')
-        if not 'type' in preprocessing_parameters['audio_feature']:
+        if not TYPE in preprocessing_parameters['audio_feature']:
             raise ValueError(
                 'type has to be present in audio_feature dictionary '
                 'for audio.')
@@ -315,7 +315,7 @@ class AudioBaseFeature(BaseFeature):
             sampling_rate_in_hz,
             audio_length_limit_in_s
     ):
-        feature_type = audio_feature_dict['type']
+        feature_type = audio_feature_dict[TYPE]
         audio_length_limit_in_samp = (
                 audio_length_limit_in_s * sampling_rate_in_hz
         )

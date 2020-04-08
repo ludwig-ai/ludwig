@@ -19,6 +19,7 @@ import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.models.modules.loss_modules import BWCEWLoss
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.utils.tf_utils import to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
@@ -135,6 +136,24 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
 
     def result(self):
         return self.sum_loss / self.N
+
+
+class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
+    def __init__(
+            self,
+            num_classes=0,
+            feature_loss=None,
+            name='softmax_cross_entropy_metric'
+    ):
+        super(SoftmaxCrossEntropyMetric, self).__init__(name=name)
+
+        self.softmax_cross_entropy_function = SoftmaxCrossEntropyLoss(
+            num_classes=num_classes,
+            feature_loss=feature_loss
+        )
+
+    def update_state(self, y, y_hat):
+        super().update_state(self.softmax_cross_entropy_function(y, y_hat))
 
 
 # end of custom classes

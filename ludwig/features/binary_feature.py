@@ -158,7 +158,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             self,
             inputs  # hidden
     ):
-        logits = inputs
+        logits = inputs[LOGITS]
 
         probabilities = tf.nn.sigmoid(
             logits,
@@ -173,9 +173,9 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         )
 
         return {
-            'probabilities': probabilities,
-            'predictions': predictions,
-            'logits': inputs
+            PROBABILITIES: probabilities,
+            PREDICTIONS: predictions,
+            LOGITS: logits
         }
 
     def _setup_loss(self):
@@ -198,7 +198,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     # def update_metrics(self, targets, predictions):
     #     for metric, metric_fn in self.metric_functions.items():
     #         if metric == LOSS:
-    #             metric_fn.update_state(targets, predictions['logits'])
+    #             metric_fn.update_state(targets, predictions[LOGITS])
     #         else:
     #             metric_fn.update_state(targets, predictions['predictions'])
 

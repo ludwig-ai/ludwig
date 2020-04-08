@@ -219,13 +219,13 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
 
     def _get_loss(self, targets, predictions):
         with tf.variable_scope('loss_{}'.format(self.feature_name)):
-            if self.loss['type'] == 'mean_squared_error':
+            if self.loss[TYPE] == 'mean_squared_error':
                 train_loss = tf.losses.mean_squared_error(
                     labels=targets,
                     predictions=predictions,
                     reduction=Reduction.NONE
                 )
-            elif self.loss['type'] == 'mean_absolute_error':
+            elif self.loss[TYPE] == 'mean_absolute_error':
                 train_loss = tf.losses.absolute_difference(
                     labels=targets,
                     predictions=predictions,
@@ -235,7 +235,7 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
                 train_loss = None
                 train_mean_loss = None
                 raise ValueError(
-                    'Unsupported loss type {}'.format(self.loss['type'])
+                    'Unsupported loss type {}'.format(self.loss[TYPE])
                 )
             train_mean_loss = tf.reduce_mean(
                 train_loss,
@@ -300,7 +300,7 @@ class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):
         output_tensors[ABSOLUTE_ERROR + '_' + self.feature_name] = absolute_error_val
         output_tensors[R2 + '_' + self.feature_name] = r2_val
 
-        if 'sampled' not in self.loss['type']:
+        if 'sampled' not in self.loss[TYPE]:
             tf.summary.scalar(
                 'batch_train_mean_squared_error_{}'.format(self.feature_name),
                 tf.reduce_mean(squared_error)

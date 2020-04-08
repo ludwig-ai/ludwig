@@ -196,7 +196,7 @@ def merge_with_defaults(model_definition):
                             model_definition['output_features']]:
             raise ValueError('Stratify must be in output features')
         if ([x for x in model_definition['output_features'] if
-             x['name'] == stratify][0]['type']
+             x['name'] == stratify][0][TYPE]
                 not in [BINARY, CATEGORY]):
             raise ValueError('Stratify feature must be binary or category')
     # ===== Model =====
@@ -215,18 +215,18 @@ def merge_with_defaults(model_definition):
         'validation_metric',
 
         output_type_registry[model_definition['output_features'][0][
-            'type']].default_validation_metric
+            TYPE]].default_validation_metric
     )
 
     # ===== Training Optimizer =====
     optimizer = model_definition['training']['optimizer']
-    default_optimizer_params = get_default_optimizer_params(optimizer['type'])
+    default_optimizer_params = get_default_optimizer_params(optimizer[TYPE])
     for param in default_optimizer_params:
         set_default_value(optimizer, param, default_optimizer_params[param])
 
     # ===== Input Features =====
     for input_feature in model_definition['input_features']:
-        get_from_registry(input_feature['type'],
+        get_from_registry(input_feature[TYPE],
                           input_type_registry).populate_defaults(input_feature)
 
     # ===== Output features =====

@@ -38,6 +38,46 @@ from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
 
+# custom class to handle how Ludwig stores predictions
+class MSELoss(MeanSquaredError):
+    def __init__(self, **kwargs):
+        super(MSELoss, self).__init__(**kwargs)
+
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        logits = y_pred[LOGITS]
+        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        return loss
+
+
+class MSEMetric(MeanSquaredErrorMetric):
+    def __init__(self, **kwargs):
+        super(MSEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred['predictions'], sample_weight=sample_weight
+        )
+
+
+class MAELoss(MeanAbsoluteError):
+    def __init__(self, **kwargs):
+        super(MAELoss, self).__init__(**kwargs)
+
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        logits = y_pred[LOGITS]
+        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        return loss
+
+
+class MAEMetric(MeanAbsoluteErrorMetric):
+    def __init__(self, **kwargs):
+        super(MAEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred['predictions'], sample_weight=sample_weight
+        )
+
 
 class NumericalBaseFeature(BaseFeature):
     def __init__(self, feature):
@@ -174,7 +214,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             self,
             inputs,  # logits
     ):
-        logits = inputs
+        logits = inputs[LOGITS]
         predictions = logits
 
         if self.clip is not None:
@@ -196,18 +236,18 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
                     )
                 )
 
-        return {'predictions': predictions, 'logits': logits}
+        return {PREDICTIONS: predictions, LOGITS: logits}
 
     def _setup_loss(self):
-        if self.loss['type'] == 'mean_squared_error':
-            self.train_loss_function = MeanSquaredError()
-            self.eval_loss_function = MeanSquaredErrorMetric(name='eval_loss')
-        elif self.loss['type'] == 'mean_absolute_error':
-            self.train_loss_function = MeanAbsoluteError()
-            self.eval_loss_function = MeanSquaredErrorMetric(name='eval_loss')
+        if self.loss[TYPE] == 'mean_squared_error':
+            self.train_loss_function = MSELoss()
+            self.eval_loss_function = MSEMetric(name='eval_loss')
+        elif self.loss[TYPE] == 'mean_absolute_error':
+            self.train_loss_function = MAELoss()
+            self.eval_loss_function = MAEMetric(name='eval_loss')
         else:
             raise ValueError(
-                'Unsupported loss type {}'.format(self.loss['type'])
+                'Unsupported loss type {}'.format(self.loss[TYPE])
             )
 
     def _setup_metrics(self):
@@ -284,7 +324,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             LOSS,
             {'type': 'mean_squared_error', 'weight': 1}
         )
-        set_default_value(output_feature[LOSS], 'type', 'mean_squared_error')
+        set_default_value(output_feature[LOSS], TYPE, 'mean_squared_error')
         set_default_value(output_feature[LOSS], 'weight', 1)
 
         set_default_values(

@@ -28,6 +28,7 @@ from pprint import pformat
 import yaml
 
 from ludwig.contrib import contrib_command
+from ludwig.constants import *
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
@@ -526,7 +527,7 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
     # model_definition = merge_with_defaults(model_definition)
     for input_feature in model_definition['input_features']:
         feature = get_from_registry(
-            input_feature['type'],
+            input_feature[TYPE],
             input_type_registry
         )
         feature.populate_defaults(input_feature)
@@ -539,7 +540,7 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
     # populate output features fields depending on data
     for output_feature in model_definition['output_features']:
         feature = get_from_registry(
-            output_feature['type'],
+            output_feature[TYPE],
             output_type_registry
         )
         feature.populate_defaults(output_feature)

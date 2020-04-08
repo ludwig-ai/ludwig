@@ -26,6 +26,7 @@ from collections import OrderedDict
 from pprint import pformat
 
 from ludwig.contrib import contrib_command
+from ludwig.constants import LOGITS, TYPE
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_prediction, COMBINED
 from ludwig.features.feature_registries import output_type_registry
@@ -185,7 +186,7 @@ def predict(
     # combine predictions with the overall metrics
     for of_name in test_predictions:
         # remove logits, not needed for overall stats
-        del test_predictions[of_name]['logits']
+        del test_predictions[of_name][LOGITS]
         test_stats[of_name] = {**test_stats[of_name], **test_predictions[of_name]}
 
     if evaluate_performance:
@@ -203,7 +204,7 @@ def calculate_overall_stats(test_stats, output_features, dataset,
                             train_set_metadata):
     for output_feature in output_features:
         feature = get_from_registry(
-            output_feature['type'],
+            output_feature[TYPE],
             output_type_registry
         )
         feature.calculate_overall_stats(
