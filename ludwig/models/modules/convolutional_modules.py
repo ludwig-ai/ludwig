@@ -493,6 +493,50 @@ class StackParallelConv1D:
         return hidden
 
 
+class ConvLayer2D(Layer):
+    
+    def __init__(
+            self,
+            num_filters=256,
+            filter_size=3,
+            norm=None,
+            activation='relu',
+            dropout_rate=0,
+            pool_size=(2, 2),
+            pool_strides=None,
+    ):
+        super(ConvLayer2D, self).__init__()
+
+        # TODO add filter size tuples
+        # TODO provide regularization penalty
+        # TODO provide regularizers
+        # TODO add initializers
+
+        self.layers = [Conv2D(num_filters, filter_size)]
+        
+        if norm == 'batch':
+            self.layers.append(BatchNormalization())
+        elif norm == 'layer':
+            self.layers.append(LayerNormalization())
+
+        self.layers.append(Activation(activation))
+
+        if dropout_rate > 0:
+            self.layers.append(Dropout(dropout_rate))
+        
+        if pool_size is not None:
+            self.layers.append(
+                MaxPool2D(pool_size=pool_size, strides=pool_strides)
+            )
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden
+
 class ConvStack2D(Layer):
     
     def __init__(
@@ -555,36 +599,18 @@ class ConvStack2D(Layer):
 
         for i, layer in enumerate(self.layers):
             with tf.variable_scope('conv_' + str(i)):
-                # TODO add filter size tuples
-                # TODO provide regularization penalty
-                # TODO provide regularizers
-                # TODO add initializers
+                
                 self.stack.append(
-                    Conv2D(
-                        layer['num_filters'],
-                        layer['filter_size'],
-                        # kernel_regularizer=regularizer if layer['regularize'] else None,
+                    ConvLayer2D(
+                        num_filters=layer['num_filters'],
+                        filter_size=layer['filter_size'],
+                        norm=layer['norm'],
+                        activation=layer['activation'],
+                        dropout_rate=layer['dropout_rate'],
+                        pool_size=layer['pool_size'],
+                        pool_strides=layer['pool_strides'],
                     )
                 )
-
-                if layer['norm']:
-                    if layer['norm'] == 'batch':
-                        self.stack.append(BatchNormalization())
-                    if layer['norm'] == 'layer':
-                        self.stack.append(LayerNormalization())
-
-                self.stack.append(Activation(layer['activation']))
-
-                if layer['dropout_rate'] > 0:
-                    self.stack.append(Dropout(layer['dropout_rate']))
-                
-                if layer['pool_size'] is not None:
-                    self.stack.append(
-                        MaxPool2D(
-                            pool_size=layer['pool_size'],
-                            strides=layer['pool_strides']
-                        )
-                    )
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
