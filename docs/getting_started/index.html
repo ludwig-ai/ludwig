@@ -602,7 +602,9 @@ We divided them as different extras so that users could install only the ones th
 
 <p>More details in the <a href="../user_guide/#spacy-based-word-format-options">User Guide</a>.</p>
 <p>Image features extra packages can be installed with <code>pip install ludwig[image]</code> and include:</p>
-<p>scikit-image</p>
+<ul>
+    <li>scikit-image</li>
+</ul>
 <p>Audio features extra packages can be installed with <code>pip install ludwig[audio]</code> and include:</p>
 <ul>
 <li>soundfile</li>
@@ -621,7 +623,13 @@ We divided them as different extras so that users could install only the ones th
 </ul>
 <p>Any combination of extra packages can be installed at the same time with <code>pip install ludwig[extra1,extra2,...]</code> like for instance <code>pip install ludwig[text,viz]</code>.
 The full set of dependencies can be installed with <code>pip install ludwig[full]</code>.</p>
-<p>Beware that the <code>tensorflow</code> package contained in the <code>requirements.txt</code> file is the GPU version which works only on machines without a GPU and reverts back to CPU computation. If you prefer to install the CPU version, uninstall <code>tensorflow-gpu</code> and replace it with <code>tensorflow</code> after having installed <code>ludwig</code>, being careful at matching the version ludwig requires, as shown in <code>requirements.txt</code>.</p>
+                <p>Beware that the <code>tensorflow</code> package contained in
+                    the <code>requirements.txt</code> file is the CPU version.
+                    If you prefer to install the GPU version, uninstall <code>tensorflow</code>
+                    and replace it with <code>tensorflow=gpu</code> after having
+                    installed <code>ludwig</code>, being careful at matching the
+                    version ludwig requires, as shown in
+                    <code>requirements.txt</code>.</p>
 <p>If you want to train Ludwig models in a distributed way, you need to also install the <code>horovod</code> and the <code>mpi4py</code> packages.
 Please follow the instructions on <a href="https://github.com/uber/horovod">Horovod's repository</a> to install it.</p>
 <h2 id="basic-principles">Basic Principles<a class="headerlink" href="#basic-principles" title="Permanent link">&para;</a></h2>

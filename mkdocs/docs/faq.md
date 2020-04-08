@@ -47,17 +47,25 @@ Feel free to reach out to us and ask as there are tasks for all levels of experi
 
 ## Who are the authors of Ludwig?
 
-- [Piero Molino](http://w4nderlu.st) is the main architect and maintainer
-- Yaroslav Dudin is a key contributor
-- Sai Sumanth Miryala contributed all the testing, logging and helped polishing.
+- [Piero Molino](http://w4nderlu.st) (Uber) is the main architect and maintainer
+- Yaroslav Dudin (Uber) is a key contributor
+- Sai Sumanth Miryala (Uber) contributed all the testing, logging and helped polishing.
 
 
-## Who else helped developing Ludwig?
+## Who else helped developing Ludwig? Who are the main contributors?
 
-- Yi Shi who implemented the time series encoding
-- Ankit Jain who implemented the bag feature encoding
-- Pranav Subramani who contributed documentation
-- Alex Sergeev and Felipe Petroski Such who helped with distributed training
+- Yi Shi (Uber) who implemented the time series encoding
+- Ankit Jain (Uber) who implemented the bag feature encoding
+- Pranav Subramani (Uber) who contributed documentation
+- Alex Sergeev (Uber) and Felipe Petroski Such (Uber) who helped with distributed training
+- Doug Blank (Comet ML) who contributed the Comte ML integration
+- Patrick Von Platen (Hugging Face) who contributed the audio feature
+- John Wahba (Stripe), who contributed the serving functionality
+- Ivaylo Stefanov (Strypes), who contributed a substantial improvement to the visualization capabilities
+- Carlo Grisetti (DS Group), who contributed improvements on the tracking of metrics during training
+- Travis Addair (Uber), who helped with updating the Horovod integration
+- Chris Van Pelt (Weights and Biases) and Boris Dayma (Weights and Biases) who contributed the Weights and Biases integration
+- Jim Thompson (Freddie Mac) who contributed the K-Fold cross validation functionality
 - Emidio Torre helped with the initial design of the landing page
 
 ## How can I cite Ludwig?
