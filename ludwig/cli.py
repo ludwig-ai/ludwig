@@ -35,6 +35,8 @@ class CLI(object):
       representation
     - collect_activations - For each datapoint, there exists a corresponding
       tensor representation which are collected through this method
+    - hyperopt - Hyperparameter search for optimal parameters 
+      with a given stratey and parameters
     """
 
     def __init__(self):
@@ -93,6 +95,11 @@ Available sub-commands:
         ludwig.contrib.contrib_command("visualize", *sys.argv)
         visualize.cli(sys.argv[2:])
 
+    def hyperopt(self):
+        from ludwig import hyperopt
+        ludwig.contrib.contrib_command("visualize", *sys.argv)
+        hyperopt.cli(sys.argv[2:])
+        
     def collect_weights(self):
         from ludwig import collect
         ludwig.contrib.contrib_command("collect_weights", *sys.argv)
