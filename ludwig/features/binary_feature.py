@@ -25,6 +25,7 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
+from feature_utils import postprocess_outputs
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import mean_confidence_penalty
 from ludwig.models.modules.measure_modules import accuracy as get_accuracy
@@ -385,27 +386,13 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             experiment_dir_name,
             skip_save_unprocessed_output=False,
     ):
-        postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
-        name = output_feature['name']
-
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS]
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PREDICTIONS),
-                    result[PREDICTIONS]
+        postprocessed = postprocess_outputs(
+                output_feature,
+                result,
+                metadata,
+                experiment_dir_name,
+                skip_save_unprocessed_output=False
                 )
-            del result[PREDICTIONS]
-
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = result[PROBABILITIES]
-            if not skip_save_unprocessed_output:
-                np.save(
-                    npy_filename.format(name, PROBABILITIES),
-                    result[PROBABILITIES]
-                )
-            del result[PROBABILITIES]
 
         return postprocessed
 
