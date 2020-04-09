@@ -135,13 +135,17 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
 
         self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
 
-    def get_sequence_encoder(self, encoder_parameters):
-        return get_from_registry(
-            self.encoder, sequence_encoder_registry)(
-            **encoder_parameters
-        )
+    def call(self, inputs, training=None, mask=None):
+        pass
 
     # todo tf2 code clean up
+    # def get_sequence_encoder(self, encoder_parameters):
+    #     return get_from_registry(
+    #         self.encoder, sequence_encoder_registry)(
+    #         **encoder_parameters
+    #     )
+    #
+    #
     # def _get_input_placeholder(self):
     #     # None dimension is for dealing with variable batch size
     #     return tf.placeholder(
@@ -233,6 +237,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         _ = self.overwrite_defaults(feature)
 
         self.decoder_obj = self.get_sequence_decoder(feature)
+
+    def _setup_loss(self):
+        pass
+
+    def _setup_metrics(self):
+        pass
 
     # todo tf2 code clean up
     # def get_sequence_decoder(self, decoder_parameters):
@@ -545,6 +555,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
     #                 'Unsupported loss type {}'.format(loss[TYPE])
     #             )
     #     return train_mean_loss, eval_loss
+
+    def logits(self, inputs):
+        pass
+
+    def predictions(self, inputs):
+        pass
 
     default_validation_metric = LOSS
 
