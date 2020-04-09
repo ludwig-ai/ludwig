@@ -26,6 +26,39 @@ from tensorflow.keras.layers import LayerNormalization
 logger = logging.getLogger(__name__)
 
 
+class FCLayer(Layer):
+
+    def __init__(
+            self,
+            fc_size=256,
+            norm=None,
+            activation='relu',
+            dropout_rate=0,
+    ):
+        super(FCLayer, self).__init__()
+
+        # TODO add initializer and regularizer
+        self.layers = [Dense(fc_size)]
+
+        if norm == 'batch':
+            self.layers.append(BatchNormalization())
+        elif norm == 'layer':
+            self.layers.append(LayerNormalization())
+
+        self.layers.append(Activation(activation))
+
+        if dropout_rate > 0:
+            self.layers.append(Dropout(dropout_rate))
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden
+
+
 class FCStack(Layer):
 
     def __init__(
@@ -73,24 +106,14 @@ class FCStack(Layer):
 
         for i, layer in enumerate(self.layers):
             with tf.variable_scope('fc_' + str(i)):
-                self.stack.append(Dense(
-                    layer['fc_size'],
-                    # kernel_initializer=layer['weights_initializer'],
-                    # kernel_regularizer=layer['weights_regularizer'],
-                ))
-
-                if layer['norm']:
-                    if layer['norm'] == 'batch':
-                        self.stack.append(BatchNormalization())
-                    if layer['norm'] == 'layer':
-                        self.stack.append(LayerNormalization())
-
-                self.stack.append(Activation(layer['activation']))
-
-                if layer['dropout_rate'] > 0:
-                    self.stack.append(Dropout(layer['dropout_rate']))
-
-                # logger.debug('  fc_{}: {}'.format(i, hidden))
+                self.stack.append(
+                    FCLayer(
+                        fc_size=layer['fc_size'],
+                        norm=layer['norm'],
+                        activation=layer['activation'],
+                        dropout_rate=layer['dropout_rate']
+                    )
+                )
 
     def build(
             self,
