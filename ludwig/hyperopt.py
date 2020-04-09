@@ -87,12 +87,14 @@ def hyperopt(
     # merge with default model definition to set defaults
     if model_definition_file is not None:
         with open(model_definition_file, "r") as def_file:
-            model_definition = merge_with_defaults(yaml.safe_load(def_file))
-    else:
-        model_definition = merge_with_defaults(model_definition)
+            model_definition = yaml.safe_load(def_file)
 
     if HYPEROPT not in model_definition:
-        raise ValueError("Hyperopt Section not present in Model Definition")
+        raise ValueError(
+            "Hyperopt Section not present in Model Definition"
+        )
+
+    model_definition = merge_with_defaults(model_definition)
 
     hyperopt_params = model_definition["hyperopt"]
     update_hyperopt_params_with_defaults(hyperopt_params)
