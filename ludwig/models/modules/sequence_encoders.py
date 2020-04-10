@@ -101,7 +101,7 @@ class SequenceEmbedEncoder(Layer):
             regularize=True,
             reduce_output='sum',
             regularizer=None,
-            dropout_rate=0
+            dropout_rate=0,
             **kwargs
     ):
         """
@@ -199,7 +199,7 @@ class SequenceEmbedEncoder(Layer):
 
     def call(
             self,
-            input_sequence
+            input_sequence,
             is_training=True
     ):
         """
@@ -213,14 +213,14 @@ class SequenceEmbedEncoder(Layer):
         # ================ Embeddings ================
         embedded_sequence, embedding_size = self.embed_sequence(
             input_sequence,
-            regularizer,
-            dropout_rate,
+            self.regularizer,
+            self.dropout_rate,
             is_training=True
         )
 
         hidden = reduce_sequence(embedded_sequence, self.reduce_output)
 
-        return hidden, embedding_size
+        return hidden   #, embedding_size # todo tf2 code cleanup
 
 
 class ParallelCNN(object):
