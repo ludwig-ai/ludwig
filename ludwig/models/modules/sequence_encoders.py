@@ -183,7 +183,10 @@ class SequenceEmbedEncoder(Layer):
             :type dropout_rate: Tensor
 
         """
+        super(SequenceEmbedEncoder, self).__init__()
         self.reduce_output = reduce_output
+        self.regularizer = regularizer
+        self.dropout_rate = dropout_rate
 
         self.embed_sequence = EmbedSequence(
             vocab,
