@@ -17,7 +17,6 @@ import logging
 
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
-
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
@@ -494,12 +493,24 @@ class StackParallelConv1D:
 
 
 class ConvLayer2D(Layer):
-    
+
     def __init__(
             self,
             num_filters=256,
             filter_size=3,
+            strides=(1, 1),
+            padding='valid',
+            dilation_rate=(1, 1),
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
             dropout_rate=0,
             pool_size=(2, 2),
@@ -507,23 +518,36 @@ class ConvLayer2D(Layer):
     ):
         super(ConvLayer2D, self).__init__()
 
-        # TODO add filter size tuples
-        # TODO provide regularization penalty
-        # TODO provide regularizers
-        # TODO add initializers
+        self.layers = []
 
-        self.layers = [Conv2D(num_filters, filter_size)]
-        
+        self.layers.append(Conv2D(
+            filters=num_filters,
+            kernel_size=filter_size,
+            strides=strides,
+            padding=padding,
+            dilation_rate=dilation_rate,
+            use_bias=use_bias,
+            weights_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            weights_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            # weights_constraint=None,
+            # bias_constraint=None,
+        ))
+
+        if norm and norm_params is None:
+            norm_params = {}
         if norm == 'batch':
-            self.layers.append(BatchNormalization())
+            self.layers.append(BatchNormalization(**norm_params))
         elif norm == 'layer':
-            self.layers.append(LayerNormalization())
+            self.layers.append(LayerNormalization(**norm_params))
 
         self.layers.append(Activation(activation))
 
         if dropout_rate > 0:
             self.layers.append(Dropout(dropout_rate))
-        
+
         if pool_size is not None:
             self.layers.append(
                 MaxPool2D(pool_size=pool_size, strides=pool_strides)
@@ -537,25 +561,35 @@ class ConvLayer2D(Layer):
 
         return hidden
 
+
 class ConvStack2D(Layer):
-    
+
     def __init__(
             self,
             layers=None,
             num_layers=None,
-            default_filter_size=3,
             default_num_filters=256,
-            default_pool_size=(2, 2),
-            default_activation='relu',
-            default_stride=2,
-            default_pool_strides=None,
+            default_filter_size=3,
+            default_strides=(1, 1),
+            default_padding='valid',
+            default_dilation_rate=(1, 1),
+            default_use_bias=True,
+            default_weights_initializer='glorot_uniform',
+            default_bias_initializer='zeros',
+            default_weights_regularizer=None,
+            default_bias_regularizer=None,
+            default_activity_regularizer=None,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
             default_norm=None,
-            default_droupout_rate=0,
-            default_initializer=None,
-            default_regularize=True
+            default_norm_params=None,
+            default_activation='relu',
+            default_dropout_rate=0,
+            default_pool_size=(2, 2),
+            default_pool_strides=None,
     ):
         super(ConvStack2D, self).__init__()
-        
+
         if layers is None:
             if num_layers is None:
                 self.layers = [
@@ -578,33 +612,62 @@ class ConvStack2D(Layer):
                 layer['num_filters'] = default_num_filters
             if 'filter_size' not in layer:
                 layer['filter_size'] = default_filter_size
-            if 'pool_size' not in layer:
-                layer['pool_size'] = default_pool_size
-            if 'activation' not in layer:
-                layer['activation'] = default_activation
-            if 'stride' not in layer:
-                layer['stride'] = default_stride
-            if 'pool_strides' not in layer:
-                layer['pool_strides'] = default_pool_strides
+            if 'strides' not in layer:
+                layer['strides'] = default_strides
+            if 'padding' not in layer:
+                layer['padding'] = default_padding
+            if 'dilation_rate' not in layer:
+                layer['dilation_rate'] = default_dilation_rate
+            if 'use_bias' not in layer:
+                layer['use_bias'] = default_use_bias
+            if 'weights_initializer' not in layer:
+                layer['weights_initializer'] = default_weights_initializer
+            if 'bias_initializer' not in layer:
+                layer['bias_initializer'] = default_bias_initializer
+            if 'weights_regularizer' not in layer:
+                layer['weights_regularizer'] = default_weights_regularizer
+            if 'bias_regularizer' not in layer:
+                layer['bias_regularizer'] = default_bias_regularizer
+            if 'activity_regularizer' not in layer:
+                layer['activity_regularizer'] = default_activity_regularizer
+            # if 'weights_constraint' not in layer:
+            #     layer['weights_constraint'] = default_weights_constraint
+            # if 'bias_constraint' not in layer:
+            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
+            if 'norm_params' not in layer:
+                layer['norm_params'] = default_norm_params
+            if 'activation' not in layer:
+                layer['activation'] = default_activation
             if 'dropout_rate' not in layer:
-                layer['dropout_rate'] = default_droupout_rate
-            if 'initializer' not in layer:
-                layer['initializer'] = default_initializer
-            if 'regularize' not in layer:
-                layer['regularize'] = default_regularize
+                layer['dropout_rate'] = default_dropout_rate
+            if 'pool_size' not in layer:
+                layer['pool_size'] = default_pool_size
+            if 'pool_strides' not in layer:
+                layer['pool_strides'] = default_pool_strides
 
         self.stack = []
 
         for i, layer in enumerate(self.layers):
             with tf.variable_scope('conv_' + str(i)):
-                
                 self.stack.append(
                     ConvLayer2D(
                         num_filters=layer['num_filters'],
                         filter_size=layer['filter_size'],
+                        strides=layer['strides'],
+                        padding=layer['padding'],
+                        dilation_rate=layer['dilation_rate'],
+                        use_bias=layer['use_bias'],
+                        weights_initializer=layer['weights_initializer'],
+                        bias_initializer=layer['bias_initializer'],
+                        weights_regularizer=layer['weights_regularizer'],
+                        bias_regularizer=layer['bias_regularizer'],
+                        activity_regularizer=layer['activity_regularizer'],
+                        # weights_constraint=layer['weights_constraint'],
+                        # bias_constraint=layer['bias_constraint'],
                         norm=layer['norm'],
+                        norm_params=layer['norm_params'],
                         activation=layer['activation'],
                         dropout_rate=layer['dropout_rate'],
                         pool_size=layer['pool_size'],
