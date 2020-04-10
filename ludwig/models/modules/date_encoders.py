@@ -31,14 +31,21 @@ class DateEmbed:
             self,
             embedding_size=10,
             embeddings_on_cpu=False,
-            dropout=False,
             fc_layers=None,
             num_fc_layers=0,
             fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            initializer=None,
-            regularize=True,
+            dropout_rate=0,
             **kwargs
     ):
         """
@@ -82,11 +89,18 @@ class DateEmbed:
         self.year_fc = FCStack(
             num_layers=1,
             default_fc_size=1,
-            default_activation=None,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=None,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=None,
+            default_activation=None,
+            default_dropout_rate=dropout_rate,
         )
         self.embed_month = Embed(
             [str(i) for i in range(12)],
@@ -95,9 +109,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_day = Embed(
             [str(i) for i in range(31)],
@@ -106,9 +120,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_weekday = Embed(
             [str(i) for i in range(7)],
@@ -117,9 +131,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_yearday = Embed(
             [str(i) for i in range(366)],
@@ -128,9 +142,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_hour = Embed(
             [str(i) for i in range(24)],
@@ -139,9 +153,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_minute = Embed(
             [str(i) for i in range(60)],
@@ -150,9 +164,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_second = Embed(
             [str(i) for i in range(60)],
@@ -161,19 +175,26 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
     def __call__(
@@ -289,14 +310,21 @@ class DateWave:
 
     def __init__(
             self,
-            dropout=False,
             fc_layers=None,
             num_fc_layers=0,
-            fc_size=8,
+            fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            initializer=None,
-            regularize=True,
+            dropout_rate=0,
             **kwargs
     ):
         """
@@ -340,21 +368,35 @@ class DateWave:
         self.year_fc = FCStack(
             num_layers=1,
             default_fc_size=1,
-            default_activation=None,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=None,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=None,
+            default_activation=None,
+            default_dropout_rate=dropout_rate,
         )
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
     def __call__(

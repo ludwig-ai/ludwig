@@ -16,7 +16,6 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
-
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
 from ludwig.constants import *
@@ -120,7 +119,7 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
             num_classes=self.num_classes,
             decoder_weights=decoder_weights,
             decoder_biases=decoder_biases,
-            last_hidden=y_pred[FINAL_HIDDEN],
+            last_hidden=y_pred[LAST_HIDDEN],
             **self.feature_loss
         )
 

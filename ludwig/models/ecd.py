@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import tensorflow as tf
 
-from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, FINAL_HIDDEN
+from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, output_type_registry
 from ludwig.models.modules.combiners import get_combiner_class
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -68,8 +68,8 @@ class ECD(tf.keras.Model):
             )
             output_logits[output_feature_name] = {}
             output_logits[output_feature_name][LOGITS] = decoder_logits
-            output_logits[output_feature_name][FINAL_HIDDEN] = decoder_last_hidden
-            #output_last_hidden[output_feature_name] = decoder_last_hidden  #todo tf2 do we need this long-term give the above
+            output_logits[output_feature_name][LAST_HIDDEN] = decoder_last_hidden
+            output_last_hidden[output_feature_name] = decoder_last_hidden
 
         return output_logits
 
