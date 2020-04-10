@@ -166,8 +166,3 @@ class FCStack(Layer):
         for layer in self.stack:
             hidden = layer(hidden, training=training)
         return hidden
-
-    def compute_output_shape(self, input_shape):
-        if self.stack:
-            return self.stack[-1].compute_output_shape(input_shape)
-        return input_shape
