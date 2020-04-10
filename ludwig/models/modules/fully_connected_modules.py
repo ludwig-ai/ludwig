@@ -125,6 +125,10 @@ class FCStack(Layer):
                 layer['bias_regularizer'] = default_bias_regularizer
             if 'activity_regularizer' not in layer:
                 layer['activity_regularizer'] = default_activity_regularizer
+            # if 'weights_constraint' not in layer:
+            #     layer['weights_constraint'] = default_weights_constraint
+            # if 'bias_constraint' not in layer:
+            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
             if 'norm_params' not in layer:
