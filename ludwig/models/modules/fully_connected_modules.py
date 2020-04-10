@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Dense
@@ -31,19 +30,41 @@ class FCLayer(Layer):
     def __init__(
             self,
             fc_size=256,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
             dropout_rate=0,
     ):
         super(FCLayer, self).__init__()
 
-        # TODO add initializer and regularizer
-        self.layers = [Dense(fc_size)]
+        self.layers = []
 
+        self.layers.append(Dense(
+            units=fc_size,
+            use_bias=use_bias,
+            kernel_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            # weights_constraint=weights_constraint,
+            # bias_constraint=bias_constraint,
+        ))
+
+        if norm and norm_params is None:
+            norm_params = {}
         if norm == 'batch':
-            self.layers.append(BatchNormalization())
+            self.layers.append(BatchNormalization(**norm_params))
         elif norm == 'layer':
-            self.layers.append(LayerNormalization())
+            self.layers.append(LayerNormalization(**norm_params))
 
         self.layers.append(Activation(activation))
 
@@ -66,17 +87,18 @@ class FCStack(Layer):
             layers=None,
             num_layers=1,
             default_fc_size=256,
-            default_activation='relu',
             default_use_bias=True,
-            default_norm=None,
-            default_dropout_rate=0,
             default_weights_initializer='glorot_uniform',
             default_bias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
-            # default_activity_regularizer=None,
+            default_activity_regularizer=None,
             # default_weights_constraint=None,
             # default_bias_constraint=None,
+            default_norm=None,
+            default_norm_params=None,
+            default_activation='relu',
+            default_dropout_rate=0,
             **kwargs
     ):
         super(FCStack, self).__init__()
@@ -91,29 +113,47 @@ class FCStack(Layer):
         for layer in self.layers:
             if 'fc_size' not in layer:
                 layer['fc_size'] = default_fc_size
-            if 'activation' not in layer:
-                layer['activation'] = default_activation
-            if 'norm' not in layer:
-                layer['norm'] = default_norm
-            if 'dropout_rate' not in layer:
-                layer['dropout_rate'] = default_dropout_rate
+            if 'use_bias' not in layer:
+                layer['use_bias'] = default_use_bias
             if 'weights_initializer' not in layer:
                 layer['weights_initializer'] = default_weights_initializer
+            if 'bias_initializer' not in layer:
+                layer['bias_initializer'] = default_bias_initializer
             if 'weights_regularizer ' not in layer:
-                layer['weights_regularizer '] = default_weights_regularizer
+                layer['weights_regularizer'] = default_weights_regularizer
+            if 'bias_regularizer' not in layer:
+                layer['bias_regularizer'] = default_bias_regularizer
+            if 'activity_regularizer' not in layer:
+                layer['activity_regularizer'] = default_activity_regularizer
+            if 'norm' not in layer:
+                layer['norm'] = default_norm
+            if 'norm_params' not in layer:
+                layer['norm_params'] = default_norm_params
+            if 'activation' not in layer:
+                layer['activation'] = default_activation
+            if 'dropout_rate' not in layer:
+                layer['dropout_rate'] = default_dropout_rate
 
         self.stack = []
 
         for i, layer in enumerate(self.layers):
-            with tf.variable_scope('fc_' + str(i)):
-                self.stack.append(
-                    FCLayer(
-                        fc_size=layer['fc_size'],
-                        norm=layer['norm'],
-                        activation=layer['activation'],
-                        dropout_rate=layer['dropout_rate']
-                    )
+            self.stack.append(
+                FCLayer(
+                    fc_size=layer['fc_size'],
+                    use_bias=layer['use_bias'],
+                    weights_initializer=layer['weights_initializer'],
+                    bias_initializer=layer['bias_initializer'],
+                    weights_regularizer=layer['weights_regularizer'],
+                    bias_regularizer=layer['bias_regularizer'],
+                    activity_regularizer=layer['activity_regularizer'],
+                    # weights_constraint=layer['weights_constraint'],
+                    # bias_constraint=layer['bias_constraint'],
+                    norm=layer['norm'],
+                    norm_params=layer['norm_params'],
+                    activation=layer['activation'],
+                    dropout_rate=layer['dropout_rate'],
                 )
+            )
 
     def build(
             self,

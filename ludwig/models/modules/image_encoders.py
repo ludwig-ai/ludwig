@@ -35,11 +35,18 @@ class Stacked2DCNN(Layer):
             fc_layers=None,
             num_fc_layers=1,
             fc_size=128,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            droupout_rate=0,
-            regularize=True,
-            initializer=None,
+            dropout_rate=0,
             **kwargs
     ):
         super(Stacked2DCNN, self).__init__()
@@ -54,19 +61,26 @@ class Stacked2DCNN(Layer):
             default_stride=stride,
             default_pool_strides=pool_strides,
             default_norm=norm,
-            default_droupout_rate=droupout_rate,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_droupout_rate=dropout_rate,
+            default_regularize=weights_regularizer,
+            default_initializer=weights_initializer
         )
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout_rate=droupout_rate,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
     def call(self, inputs, training=None, mask=None):
@@ -103,11 +117,18 @@ class ResNetEncoder:
             fc_layers=None,
             num_fc_layers=1,
             fc_size=256,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            dropout=False,
-            regularize=True,
-            initializer=None,
+            dropout_rate=0,
             **kwargs
     ):
         if resnet_size < 50:
@@ -135,11 +156,18 @@ class ResNetEncoder:
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
     def __call__(

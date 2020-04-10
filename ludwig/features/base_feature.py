@@ -97,11 +97,18 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         self.fc_layers = None
         self.num_fc_layers = 0
         self.fc_size = 256
-        self.activation = 'relu'
+        self.use_bias = True
+        self.weights_initializer = 'glorot_uniform'
+        self.bias_initializer = 'zeros'
+        self.weights_regularizer = None
+        self.bias_regularizer = None
+        self.activity_regularizer = None
+        # self.weights_constraint=None
+        # self.bias_constraint=None
         self.norm = None
-        self.dropout = False
-        self.regularize = True
-        self.initializer = None
+        self.norm_params = None
+        self.activation = 'relu'
+        self.dropout_rate = 0
 
         self.overwrite_defaults(feature)
 
@@ -109,17 +116,18 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,
             default_fc_size=self.fc_size,
-            default_activation=self.activation,
-            default_use_bias=True,
+            default_use_bias=self.use_bias,
+            default_weights_initializer=self.weights_initializer,
+            default_bias_initializer=self.bias_initializer,
+            default_weights_regularizer=self.weights_regularizer,
+            default_bias_regularizer=self.bias_regularizer,
+            default_activity_regularizer=self.activity_regularizer,
+            # default_weights_constraint=self.weights_constraint,
+            # default_bias_constraint=self.bias_constraint,
             default_norm=self.norm,
-            # default_dropout_rate=self.dropout_rate,
-            default_weights_initializer=self.initializer,
-            # default_bias_initializer='zeros',
-            # default_weights_regularizer=None,
-            # default_bias_regularizer=None,
-            # default_activity_regularizer=None,
-            # default_weights_constraint=None,
-            # default_bias_constraint=None,
+            default_norm_params=self.norm_params,
+            default_activation=self.activation,
+            default_dropout_rate=self.dropout_rate,
         )
 
     @property

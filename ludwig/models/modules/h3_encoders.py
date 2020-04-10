@@ -35,11 +35,18 @@ class H3Embed:
             fc_layers=None,
             num_fc_layers=0,
             fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            dropout=False,
-            initializer=None,
-            regularize=True,
+            dropout_rate=0,
             reduce_output='sum',
             **kwargs
     ):
@@ -92,9 +99,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_edge = Embed(
             [str(i) for i in range(7)],
@@ -104,9 +111,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_resolution = Embed(
             [str(i) for i in range(16)],
@@ -116,9 +123,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_base_cell = Embed(
             [str(i) for i in range(122)],
@@ -128,9 +135,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
         self.embed_cells = Embed(
             [str(i) for i in range(8)],
@@ -140,20 +147,27 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer
         )
 
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
     def __call__(
@@ -256,11 +270,18 @@ class H3WeightedSum:
             fc_layers=None,
             num_fc_layers=0,
             fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            dropout=False,
-            initializer=None,
-            regularize=True,
+            dropout_rate=0,
             **kwargs
     ):
         """
@@ -306,27 +327,34 @@ class H3WeightedSum:
         self.h3_embed = H3Embed(
             embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize,
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer,
             reduce_output=None,
         )
 
         self.weights = tf.get_variable(
             'weights',
             [19, 1],
-            initializer=initializer
+            initializer=weights_initializer
         )
 
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
     def __call__(
