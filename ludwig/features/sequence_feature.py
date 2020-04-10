@@ -36,7 +36,7 @@ from ludwig.models.modules.sequence_decoders import Generator
 from ludwig.models.modules.sequence_decoders import Tagger
 from ludwig.models.modules.sequence_encoders import BERT
 from ludwig.models.modules.sequence_encoders import CNNRNN, SequencePassthroughEncoder
-from ludwig.models.modules.sequence_encoders import EmbedEncoder
+from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import StackedCNN
@@ -211,6 +211,21 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
+
+    sequence_encoder_registry = {
+        'stacked_cnn': StackedCNN,
+        'parallel_cnn': ParallelCNN,
+        'stacked_parallel_cnn': StackedParallelCNN,
+        'rnn': RNN,
+        'cnnrnn': CNNRNN,
+        'embed': SequenceEmbedEncoder,
+        'bert': BERT,
+        'passthrough': SequencePassthroughEncoder,
+        'null': SequencePassthroughEncoder,
+        'none': SequencePassthroughEncoder,
+        'None': SequencePassthroughEncoder,
+        None: SequencePassthroughEncoder
+    }
 
 
 class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
@@ -873,23 +888,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-
-sequence_encoder_registry = {
-    'stacked_cnn': StackedCNN,
-    'parallel_cnn': ParallelCNN,
-    'stacked_parallel_cnn': StackedParallelCNN,
-    'rnn': RNN,
-    'cnnrnn': CNNRNN,
-    'embed': EmbedEncoder,
-    'bert': BERT,
-    'passthrough': SequencePassthroughEncoder,
-    'null': SequencePassthroughEncoder,
-    'none': SequencePassthroughEncoder,
-    'None': SequencePassthroughEncoder,
-    None: SequencePassthroughEncoder
-}
-
-sequence_decoder_registry = {
-    'generator': Generator,
-    'tagger': Tagger
-}
+    sequence_decoder_registry = {
+        'generator': Generator,
+        'tagger': Tagger
+    }

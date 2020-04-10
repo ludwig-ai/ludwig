@@ -20,6 +20,7 @@ import re
 import sys
 
 import tensorflow.compat.v1 as tf
+from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.convolutional_modules import ConvStack1D, \
     StackParallelConv1D, ParallelConv1D
@@ -31,11 +32,13 @@ from ludwig.models.modules.reduction_modules import reduce_sequence
 logger = logging.getLogger(__name__)
 
 
-class SequencePassthroughEncoder:
+class SequencePassthroughEncoder(Layer):
 
     def __init__(
             self,
             reduce_output=None,
+            regularizer=None,
+            dropout_rate=0,
             **kwargs
     ):
         """
@@ -47,25 +50,27 @@ class SequencePassthroughEncoder:
                    first dimension) and `None` or `null` (which does not reduce
                    and returns the full tensor).
             :type reduce_output: str
-        """
-        self.reduce_output = reduce_output
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
 
-    def __call__(
+        """
+        super(SequencePassthroughEncoder, self).__init__()
+        self.reduce_output = reduce_output
+        self.dropout_rate = dropout_rate
+        self.regularizer = regularizer
+
+    def call(
             self,
             input_sequence,
-            regularizer,
-            dropout_rate,
             is_training=True
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
             :param is_training: Tesnor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
@@ -74,14 +79,14 @@ class SequencePassthroughEncoder:
         while len(input_sequence.shape) < 3:
             input_sequence = tf.expand_dims(
                 input_sequence, -1)
-        hidden_size = input_sequence.shape[-1]
+        # hidden_size = input_sequence.shape[-1] # todo tf2 clean up
 
         hidden = reduce_sequence(input_sequence, self.reduce_output)
 
-        return hidden, hidden_size
+        return hidden
 
 
-class EmbedEncoder:
+class SequenceEmbedEncoder(Layer):
 
     def __init__(
             self,
@@ -95,6 +100,8 @@ class EmbedEncoder:
             initializer=None,
             regularize=True,
             reduce_output='sum',
+            regularizer=None,
+            dropout_rate=0
             **kwargs
     ):
         """
@@ -169,6 +176,12 @@ class EmbedEncoder:
                    first dimension) and `None` or `null` (which does not reduce
                    and returns the full tensor).
             :type reduce_output: str
+            :param regularizer: The regularizer to use for the weights
+                   of the encoder.
+            :type regularizer:
+            :param dropout_rate: Tensor (tf.float) of the probability of dropout
+            :type dropout_rate: Tensor
+
         """
         self.reduce_output = reduce_output
 
@@ -184,22 +197,15 @@ class EmbedEncoder:
             regularize=regularize
         )
 
-    def __call__(
+    def call(
             self,
-            input_sequence,
-            regularizer,
-            dropout_rate,
+            input_sequence
             is_training=True
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
             :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
             :param is_training: Tesnor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
