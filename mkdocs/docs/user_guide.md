@@ -3538,9 +3538,9 @@ It needs to be an integer, to figure out the association between classes and int
 
 ### roc_curves_from_test_statistics
 
-This visualization uses the `field`, `test_statistics` and `model_names` parameters.
-`field` needs to be binary feature.
-This visualization produces a line chart plotting the roc curves for the specified `field`.
+This visualization uses the `output_feature_name`, `test_statistics` and `model_names` parameters.
+`output_feature_name` needs to be binary feature.
+This visualization produces a line chart plotting the roc curves for the specified `output_feature_name`.
 
 ![ROC Curves from Prediction Statistics](images/roc_curves_from_test_statistics.png "ROC Curves from Prediction Statistics")
 
