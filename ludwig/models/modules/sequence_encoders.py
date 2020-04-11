@@ -65,7 +65,8 @@ class SequencePassthroughEncoder(Layer):
     def call(
             self,
             input_sequence,
-            is_training=True
+            training=True,
+            mask=None    #todo tf2 needed?
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
@@ -204,22 +205,22 @@ class SequenceEmbedEncoder(Layer):
             self,
             input_sequence,
             training=True,
-            mask=None
+            mask=None   # todo tf2 do we need?
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
             :type input_sequence: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
+            :param training: Tesnor (tf.bool) specifying if in training mode
                    (important for dropout)
-            :type is_training: Tensor
+            :type training: Tensor
         """
         # ================ Embeddings ================
         embedded_sequence, embedding_size = self.embed_sequence(
             input_sequence,
             self.regularizer,
             self.dropout_rate,
-            is_training=True
+            is_training=training
         )
 
         hidden = reduce_sequence(embedded_sequence, self.reduce_output)
