@@ -260,13 +260,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         _ = self.overwrite_defaults(feature)
 
-        self.decoder_obj = self.get_sequence_decoder(feature)
-
-    def get_sequence_decoder(self, decoder_parameters):
-        return get_from_registry(
-            self.decoder, self.decoder_registry)(
-            **decoder_parameters
-        )
+        self.decoder_obj = self.initialize_decoder(feature)
 
     def _setup_loss(self):
         pass
