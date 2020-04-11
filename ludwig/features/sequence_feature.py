@@ -125,25 +125,41 @@ class SequenceBaseFeature(BaseFeature):
 
 
 class SequenceInputFeature(SequenceBaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, encoder_obj=None):
+        SequenceBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
 
         self.encoder = 'parallel_cnn'
         self.length = 0
 
         encoder_parameters = self.overwrite_defaults(feature)
 
-        self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
+
+    def get_sequence_encoder(self, encoder_parameters):
+        return get_from_registry(
+            self.encoder, self.encoder_registry)(
+            **encoder_parameters
+        )
+
 
     def call(self, inputs, training=None, mask=None):
-        pass
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
+               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+        assert len(inputs.shape) == 2
+
+        inputs_exp = tf.cast(inputs[:, tf.newaxis], dtype=tf.int32)
+        inputs_encoded = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
+        )
+
+        return inputs_encoded
 
     # todo tf2 code clean up
-    # def get_sequence_encoder(self, encoder_parameters):
-    #     return get_from_registry(
-    #         self.encoder, sequence_encoder_registry)(
-    #         **encoder_parameters
-    #     )
     #
     #
     # def _get_input_placeholder(self):
@@ -212,7 +228,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'encoder', 'parallel_cnn')
 
-    sequence_encoder_registry = {
+    encoder_registry = {
         'stacked_cnn': StackedCNN,
         'parallel_cnn': ParallelCNN,
         'stacked_parallel_cnn': StackedParallelCNN,
@@ -888,7 +904,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
-    sequence_decoder_registry = {
+    decoder_registry = {
         'generator': Generator,
         'tagger': Tagger
     }

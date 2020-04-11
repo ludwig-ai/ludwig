@@ -203,7 +203,8 @@ class SequenceEmbedEncoder(Layer):
     def call(
             self,
             input_sequence,
-            is_training=True
+            training=True,
+            mask=None
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
