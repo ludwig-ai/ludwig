@@ -1,14 +1,12 @@
 
 
 
-
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      <meta http-equiv="x-ua-compatible" content="ie=edge">
       
         <meta name="description" content="Deep learning toolbox">
       
@@ -18,37 +16,18 @@
       
         <meta name="author" content="Piero Molino">
       
-      
-        <meta name="lang:clipboard.copy" content="Copy to clipboard">
-      
-        <meta name="lang:clipboard.copied" content="Copied to clipboard">
-      
-        <meta name="lang:search.language" content="en">
-      
-        <meta name="lang:search.pipeline.stopwords" content="True">
-      
-        <meta name="lang:search.pipeline.trimmer" content="True">
-      
-        <meta name="lang:search.result.none" content="No matching documents">
-      
-        <meta name="lang:search.result.one" content="1 matching document">
-      
-        <meta name="lang:search.result.other" content="# matching documents">
-      
-        <meta name="lang:search.tokenizer" content="[\s\-]+">
-      
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta name="generator" content="mkdocs-1.1, mkdocs-material-4.6.3">
+      <meta content="mkdocs-1.1, mkdocs-material-5.0.2" name="generator">
     
     
       
         <title>User Guide - Ludwig</title>
-      
-    
-    
-      <link rel="stylesheet" href="../assets/stylesheets/application.adb8469c.css">
-      
-        <link rel="stylesheet" href="../assets/stylesheets/application-palette.a8b3c06d.css">
+
+
+      <link href="../assets/stylesheets/main.07c9fbf5.min.css" rel="stylesheet">
+
+      <link href="../assets/stylesheets/palette.ecd4686e.min.css"
+            rel="stylesheet">
       
       
         
@@ -57,16 +36,19 @@
       
     
     
-      <script src="../assets/javascripts/modernizr.86422ebf.js"></script>
-    
     
       
         <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      <style>body, input {
+          font-family: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif
+      }
+
+      code, kbd, pre {
+          font-family: "Roboto Mono", SFMono-Regular, Consolas, Menlo, monospace
+      }</style>
       
     
-    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
     
     
       <link rel="stylesheet" href="../stylesheets/extra.css">
@@ -78,37 +60,37 @@
     
     
   </head>
-  
-    
-    
-    <body dir="ltr" data-md-color-primary="grey" data-md-color-accent="grey">
-  
-    <svg class="md-svg">
-      <defs>
-        
-        
-          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
-        
-      </defs>
-    </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-    
-      <a href="#command-line-interface" tabindex="0" class="md-skip">
-        Skip to content
+
+
+  <body dir="ltr" data-md-color-primary="grey" data-md-color-accent="grey">
+
+  <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer"
+         autocomplete="off">
+  <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search"
+         autocomplete="off">
+  <label class="md-overlay" for="__drawer"></label>
+  <div data-md-component="skip">
+
+
+      <a class="md-skip" href="#command-line-interface">
+          Skip to content
       </a>
-    
-    
-      <header class="md-header" data-md-component="header">
-    <nav class="md-header-nav md-grid">
-        <div class="md-flex">
-            <div class="md-flex__cell md-flex__cell--shrink">
-                <a class="md-header-nav__button md-logo"
-                   href="https://uber.github.io/ludwig/" title="Ludwig">
-                    <img src="../images/ludwig_logo.svg" style="height:1.4rem;">
-                </a>
-            </div>
+
+  </div>
+  <div data-md-component="announce">
+
+  </div>
+
+  <header class="md-header" data-md-component="header">
+      <nav class="md-header-nav md-grid">
+          <div class="md-flex">
+              <div class="md-flex__cell md-flex__cell--shrink">
+                  <a class="md-header-nav__button md-logo"
+                     href="https://uber.github.io/ludwig/" title="Ludwig">
+                      <img src="../images/ludwig_logo.svg"
+                           style="height:1.4rem;">
+                  </a>
+              </div>
             <div class="md-flex__cell md-flex__cell--shrink">
                 <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
             </div>
@@ -129,21 +111,35 @@
 <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
-      <label class="md-icon md-search__icon" for="__search"></label>
-      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
-        &#xE5CD;
-      </button>
-    </form>
+      <form class="md-search__form" name="search">
+          <input aria-label="Search" autocapitalize="off" autocomplete="off"
+                 autocorrect="off" class="md-search__input"
+                 data-md-component="search-query" data-md-state="active"
+                 name="query" placeholder="Search" spellcheck="false"
+                 type="text">
+          <label class="md-search__icon md-icon" for="__search">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
+              </svg>
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
+              </svg>
+          </label>
+          <button aria-label="Clear" class="md-search__icon md-icon"
+                  data-md-component="search-reset" tabindex="-1" type="reset">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+              </svg>
+          </button>
+      </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
-          <div class="md-search-result__meta">
-            Type to start searching
+          <div class="md-search-result" data-md-component="search-result">
+              <div class="md-search-result__meta">
+                  Type to start searching
+              </div>
+              <ol class="md-search-result__list"></ol>
           </div>
-          <ol class="md-search-result__list"></ol>
-        </div>
       </div>
     </div>
   </div>
@@ -154,68 +150,63 @@
             
             <div class="md-flex__cell md-flex__cell--shrink">
                 <div class="md-header-nav__source">
-                    
 
+                    <a class="md-source" href="https://github.com/uber/ludwig/"
+                       title="Go to repository">
+                        <div class="md-source__icon md-icon">
 
-  
-
-<a href="https://github.com/uber/ludwig/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
-  <div class="md-source__repository">
-    uber/ludwig
-  </div>
-</a>
+                            <svg viewBox="0 0 448 512"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
+                            </svg>
+                        </div>
+                        <div class="md-source__repository">
+                            uber/ludwig
+                        </div>
+                    </a>
                 </div>
             </div>
-            
-        </div>
-    </nav>
-</header>
-    
-    <div class="md-container">
-      
-        
-      
-      
-      <main class="md-main" role="main">
-        <div class="md-main__inner md-grid" data-md-component="container">
-          
-            
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" data-md-level="0">
-    <label class="md-nav__title md-nav__title--site" for="__drawer">
-        <a class="md-nav__button md-logo" href="https://uber.github.io/ludwig/"
-           title="Ludwig">
-            <img src="../images/ludwig_logo.svg" style="width: 10rem">
+
+          </div>
+      </nav>
+  </header>
+
+  <div class="md-container" data-md-component="container">
+
+
+      <main class="md-main" data-md-component="main">
+          <div class="md-main__inner md-grid">
+
+
+              <div class="md-sidebar md-sidebar--primary"
+                   data-md-component="navigation">
+                  <div class="md-sidebar__scrollwrap">
+                      <div class="md-sidebar__inner">
+                          <nav class="md-nav md-nav--primary" data-md-level="0">
+                              <label class="md-nav__title md-nav__title--site"
+                                     for="__drawer">
+                                  <a class="md-nav__button md-logo"
+                                     href="https://uber.github.io/ludwig/"
+                                     title="Ludwig">
+                                      <img src="../images/ludwig_logo.svg"
+                                           style="width: 10rem">
         </a>
     </label>
     
     <div class="md-nav__source">
-        
 
+        <a class="md-source" href="https://github.com/uber/ludwig/"
+           title="Go to repository">
+            <div class="md-source__icon md-icon">
 
-  
-
-<a href="https://github.com/uber/ludwig/" title="Go to repository" class="md-source" data-md-source="github">
-  
-    <div class="md-source__icon">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <use xlink:href="#__github" width="24" height="24"></use>
-      </svg>
-    </div>
-  
-  <div class="md-source__repository">
-    uber/ludwig
-  </div>
-</a>
+                <svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
+                </svg>
+            </div>
+            <div class="md-source__repository">
+                uber/ludwig
+            </div>
+        </a>
     </div>
     
     <ul class="md-nav__list" data-md-scrollfix>
@@ -264,42 +255,52 @@
 
 
   <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc"
+             type="checkbox">
+
+
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        User Guide
+          User Guide
+          <span class="md-nav__icon md-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
+                  d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z"/></svg>
+        </span>
       </label>
     
     <a href="./" title="User Guide" class="md-nav__link md-nav__link--active">
       User Guide
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#command-line-interface" class="md-nav__link">
-    Command Line Interface
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#train" class="md-nav__link">
-    train
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+
+      <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+
+
+          <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
+                d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+      </span>
+              Table of contents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+
+              <li class="md-nav__item">
+                  <a href="#command-line-interface" class="md-nav__link">
+                      Command Line Interface
+                  </a>
+
+                  <nav aria-label="Command Line Interface" class="md-nav">
+                      <ul class="md-nav__list">
+
+                          <li class="md-nav__item">
+                              <a href="#train" class="md-nav__link">
+                                  train
+                              </a>
+
+                          </li>
+
+                          <li class="md-nav__item">
   <a href="#predict" class="md-nav__link">
     predict
   </a>
@@ -345,26 +346,26 @@
   <a href="#serve" class="md-nav__link">
     serve
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-curl" class="md-nav__link">
-    Example curl
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#file" class="md-nav__link">
-    File
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="serve" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#example-curl" class="md-nav__link">
+                              Example curl
+                          </a>
+
+                          <nav aria-label="Example curl" class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#file" class="md-nav__link">
+                                          File
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#text" class="md-nav__link">
     Text
   </a>
@@ -397,18 +398,18 @@
   <a href="#data-preprocessing" class="md-nav__link">
     Data Preprocessing
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#csv-format" class="md-nav__link">
-    CSV Format
-  </a>
-  
-</li>
-        
-      </ul>
+
+            <nav aria-label="Data Preprocessing" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#csv-format" class="md-nav__link">
+                            CSV Format
+                        </a>
+
+                    </li>
+
+                </ul>
     </nav>
   
 </li>
@@ -424,18 +425,18 @@
   <a href="#model-definition" class="md-nav__link">
     Model Definition
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#input-features" class="md-nav__link">
-    Input features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+            <nav aria-label="Model Definition" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#input-features" class="md-nav__link">
+                            Input features
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
   <a href="#combiner" class="md-nav__link">
     Combiner
   </a>
@@ -446,18 +447,18 @@
   <a href="#output-features" class="md-nav__link">
     Output Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#multi-task-learning" class="md-nav__link">
-    Multi-task Learning
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Output Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#multi-task-learning" class="md-nav__link">
+                              Multi-task Learning
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#output-features-dependencies" class="md-nav__link">
     Output Features Dependencies
   </a>
@@ -473,18 +474,18 @@
   <a href="#training" class="md-nav__link">
     Training
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#optimizers-details" class="md-nav__link">
-    Optimizers details
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Training" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#optimizers-details" class="md-nav__link">
+                              Optimizers details
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -500,18 +501,19 @@
   <a href="#binary-features" class="md-nav__link">
     Binary Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#binary-features-preprocessing" class="md-nav__link">
-    Binary Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Binary Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#binary-features-preprocessing"
+                             class="md-nav__link">
+                              Binary Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#binary-input-features-and-encoders" class="md-nav__link">
     Binary Input Features and Encoders
   </a>
@@ -541,18 +543,19 @@
   <a href="#numerical-features" class="md-nav__link">
     Numerical Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#numerical-features-preprocessing" class="md-nav__link">
-    Numerical Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Numerical Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#numerical-features-preprocessing"
+                             class="md-nav__link">
+                              Numerical Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#numerical-input-features-and-encoders" class="md-nav__link">
     Numerical Input Features and Encoders
   </a>
@@ -582,18 +585,19 @@
   <a href="#category-features" class="md-nav__link">
     Category Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#category-features-preprocessing" class="md-nav__link">
-    Category Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Category Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#category-features-preprocessing"
+                             class="md-nav__link">
+                              Category Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#category-input-features-and-encoders" class="md-nav__link">
     Category Input Features and Encoders
   </a>
@@ -623,18 +627,19 @@
   <a href="#set-features" class="md-nav__link">
     Set Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#set-features-preprocessing" class="md-nav__link">
-    Set Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Set Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#set-features-preprocessing"
+                             class="md-nav__link">
+                              Set Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#set-input-features-and-encoders" class="md-nav__link">
     Set Input Features and Encoders
   </a>
@@ -664,18 +669,19 @@
   <a href="#bag-features" class="md-nav__link">
     Bag Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#bag-features-preprocessing" class="md-nav__link">
-    Bag Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Bag Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#bag-features-preprocessing"
+                             class="md-nav__link">
+                              Bag Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#bag-input-features-and-encoders" class="md-nav__link">
     Bag Input Features and Encoders
   </a>
@@ -705,33 +711,36 @@
   <a href="#sequence-features" class="md-nav__link">
     Sequence Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sequence-features-preprocessing" class="md-nav__link">
-    Sequence Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Sequence Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#sequence-features-preprocessing"
+                             class="md-nav__link">
+                              Sequence Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#sequence-input-features-and-encoders" class="md-nav__link">
     Sequence Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#embed-encoder" class="md-nav__link">
-    Embed Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="Sequence Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#embed-encoder"
+                                         class="md-nav__link">
+                                          Embed Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#parallel-cnn-encoder" class="md-nav__link">
     Parallel CNN Encoder
   </a>
@@ -789,18 +798,19 @@
   <a href="#sequence-output-features-and-decoders" class="md-nav__link">
     Sequence Output Features and Decoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#tagger-decoder" class="md-nav__link">
-    Tagger Decoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Sequence Output Features and Decoders"
+                   class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#tagger-decoder" class="md-nav__link">
+                              Tagger Decoder
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#generator-decoder" class="md-nav__link">
     Generator Decoder
   </a>
@@ -828,26 +838,29 @@
   <a href="#text-features" class="md-nav__link">
     Text Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#text-features-preprocessing" class="md-nav__link">
-    Text Features Preprocessing
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#spacy-based-word-format-options" class="md-nav__link">
-    spaCy based word format options
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Text Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#text-features-preprocessing"
+                             class="md-nav__link">
+                              Text Features Preprocessing
+                          </a>
+
+                          <nav aria-label="Text Features Preprocessing"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#spacy-based-word-format-options"
+                                         class="md-nav__link">
+                                          spaCy based word format options
+                                      </a>
+
+                                  </li>
+
+                              </ul>
     </nav>
   
 </li>
@@ -882,18 +895,19 @@
   <a href="#time-series-features" class="md-nav__link">
     Time Series Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#time-series-features-preprocessing" class="md-nav__link">
-    Time Series Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Time Series Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#time-series-features-preprocessing"
+                             class="md-nav__link">
+                              Time Series Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#time-series-input-features-and-encoders" class="md-nav__link">
     Time Series Input Features and Encoders
   </a>
@@ -923,18 +937,19 @@
   <a href="#audio-features" class="md-nav__link">
     Audio Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#audio-features-preprocessing" class="md-nav__link">
-    Audio Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Audio Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#audio-features-preprocessing"
+                             class="md-nav__link">
+                              Audio Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#audio-input-features-and-encoders" class="md-nav__link">
     Audio Input Features and Encoders
   </a>
@@ -964,33 +979,36 @@
   <a href="#image-features" class="md-nav__link">
     Image Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#image-features-preprocessing" class="md-nav__link">
-    Image Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Image Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#image-features-preprocessing"
+                             class="md-nav__link">
+                              Image Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#image-input-features-and-encoders" class="md-nav__link">
     Image Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#convolutional-stack-encoder" class="md-nav__link">
-    Convolutional Stack Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="Image Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#convolutional-stack-encoder"
+                                         class="md-nav__link">
+                                          Convolutional Stack Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#resnet-encoder" class="md-nav__link">
     ResNet Encoder
   </a>
@@ -1025,33 +1043,36 @@
   <a href="#date-features" class="md-nav__link">
     Date Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#date-features-preprocessing" class="md-nav__link">
-    Date Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Date Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#date-features-preprocessing"
+                             class="md-nav__link">
+                              Date Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#date-input-features-and-encoders" class="md-nav__link">
     Date Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#embed-encoder_1" class="md-nav__link">
-    Embed Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="Date Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#embed-encoder_1"
+                                         class="md-nav__link">
+                                          Embed Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#wave-encoder" class="md-nav__link">
     Wave Encoder
   </a>
@@ -1086,33 +1107,36 @@
   <a href="#h3-features" class="md-nav__link">
     H3 Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#h3-features-preprocessing" class="md-nav__link">
-    H3 Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="H3 Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#h3-features-preprocessing"
+                             class="md-nav__link">
+                              H3 Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#h3-input-features-and-encoders" class="md-nav__link">
     H3 Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#embed-encoder_2" class="md-nav__link">
-    Embed Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="H3 Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#embed-encoder_2"
+                                         class="md-nav__link">
+                                          Embed Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#weighted-sum-embed-encoder" class="md-nav__link">
     Weighted Sum Embed Encoder
   </a>
@@ -1154,33 +1178,36 @@
   <a href="#vector-features" class="md-nav__link">
     Vector Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#vector-feature-preprocessing" class="md-nav__link">
-    Vector Feature Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Vector Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#vector-feature-preprocessing"
+                             class="md-nav__link">
+                              Vector Feature Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#vector-feature-encoders" class="md-nav__link">
     Vector Feature Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dense-encoder" class="md-nav__link">
-    Dense Encoder
-  </a>
-  
-</li>
-        
-      </ul>
+
+                          <nav aria-label="Vector Feature Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#dense-encoder"
+                                         class="md-nav__link">
+                                          Dense Encoder
+                                      </a>
+
+                                  </li>
+
+                              </ul>
     </nav>
   
 </li>
@@ -1208,18 +1235,18 @@
   <a href="#combiners" class="md-nav__link">
     Combiners
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#concat-combiner" class="md-nav__link">
-    Concat Combiner
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Combiners" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#concat-combiner" class="md-nav__link">
+                              Concat Combiner
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#sequence-concat-combiner" class="md-nav__link">
     Sequence Concat Combiner
   </a>
@@ -1261,18 +1288,18 @@
   <a href="#programmatic-api" class="md-nav__link">
     Programmatic API
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#training-a-model" class="md-nav__link">
-    Training a Model
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+            <nav aria-label="Programmatic API" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#training-a-model" class="md-nav__link">
+                            Training a Model
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
   <a href="#loading-a-pre-trained-model" class="md-nav__link">
     Loading a Pre-trained Model
   </a>
@@ -1295,26 +1322,27 @@
   <a href="#visualizations" class="md-nav__link">
     Visualizations
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#learning-curves" class="md-nav__link">
-    Learning Curves
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#learning_curves" class="md-nav__link">
-    learning_curves
-  </a>
-  
-</li>
-        
-      </ul>
+
+            <nav aria-label="Visualizations" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#learning-curves" class="md-nav__link">
+                            Learning Curves
+                        </a>
+
+                        <nav aria-label="Learning Curves" class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a href="#learning_curves"
+                                       class="md-nav__link">
+                                        learning_curves
+                                    </a>
+
+                                </li>
+
+                            </ul>
     </nav>
   
 </li>
@@ -1323,18 +1351,18 @@
   <a href="#confusion-matrix" class="md-nav__link">
     Confusion Matrix
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#confusion_matrix" class="md-nav__link">
-    confusion_matrix
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Confusion Matrix" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#confusion_matrix" class="md-nav__link">
+                              confusion_matrix
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -1343,18 +1371,18 @@
   <a href="#compare-performance" class="md-nav__link">
     Compare Performance
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#compare_performance" class="md-nav__link">
-    compare_performance
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Compare Performance" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#compare_performance" class="md-nav__link">
+                              compare_performance
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#compare_classifiers_performance_from_prob" class="md-nav__link">
     compare_classifiers_performance_from_prob
   </a>
@@ -1398,18 +1426,19 @@
   <a href="#compare-classifier-predictions" class="md-nav__link">
     Compare Classifier Predictions
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_predictions" class="md-nav__link">
-    compare_classifiers_predictions
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Compare Classifier Predictions" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#compare_classifiers_predictions"
+                             class="md-nav__link">
+                              compare_classifiers_predictions
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#compare_classifiers_predictions_distribution" class="md-nav__link">
     compare_classifiers_predictions_distribution
   </a>
@@ -1425,18 +1454,19 @@
   <a href="#confidence_thresholding" class="md-nav__link">
     Confidence_Thresholding
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_1" class="md-nav__link">
-    confidence_thresholding
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Confidence_Thresholding" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#confidence_thresholding_1"
+                             class="md-nav__link">
+                              confidence_thresholding
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
     confidence_thresholding_data_vs_acc
   </a>
@@ -1480,18 +1510,19 @@
   <a href="#binary-threshold-vs-metric" class="md-nav__link">
     Binary Threshold vs. Metric
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#binary_threshold_vs_metric" class="md-nav__link">
-    binary_threshold_vs_metric
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Binary Threshold vs. Metric" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#binary_threshold_vs_metric"
+                             class="md-nav__link">
+                              binary_threshold_vs_metric
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -1500,18 +1531,18 @@
   <a href="#roc-curves" class="md-nav__link">
     ROC Curves
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#roc_curves" class="md-nav__link">
-    roc_curves
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="ROC Curves" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#roc_curves" class="md-nav__link">
+                              roc_curves
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#roc_curves_from_test_statistics" class="md-nav__link">
     roc_curves_from_test_statistics
   </a>
@@ -1527,18 +1558,18 @@
   <a href="#calibration-plot" class="md-nav__link">
     Calibration Plot
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calibration_1_vs_all" class="md-nav__link">
-    calibration_1_vs_all
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Calibration Plot" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#calibration_1_vs_all" class="md-nav__link">
+                              calibration_1_vs_all
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#calibration_multiclass" class="md-nav__link">
     calibration_multiclass
   </a>
@@ -1554,18 +1585,18 @@
   <a href="#class-frequency-vs-f1-score" class="md-nav__link">
     Class Frequency vs. F1 score
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#frequency_vs_f1" class="md-nav__link">
-    frequency_vs_f1
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Class Frequency vs. F1 score" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#frequency_vs_f1" class="md-nav__link">
+                              frequency_vs_f1
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -1574,10 +1605,6 @@
     </nav>
   
 </li>
-      
-      
-      
-      
       
     </ul>
   
@@ -1604,25 +1631,29 @@
 
 
   <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
-    
-    <label class="md-nav__link" for="nav-6">
-      API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-6">
-        API
+
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" id="nav-6"
+             type="checkbox">
+
+      <label class="md-nav__link" for="nav-6">
+          API
+          <span class="md-nav__icon md-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
+                d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
+      </span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
+      <nav aria-label="API" class="md-nav" data-md-level="1">
+          <label class="md-nav__title" for="nav-6">
+        <span class="md-nav__icon md-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
+                  d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+        </span>
+              API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
 
 
-  <li class="md-nav__item">
+              <li class="md-nav__item">
     <a href="../api/LudwigModel/" title="LudwigModel" class="md-nav__link">
       LudwigModel
     </a>
@@ -1668,30 +1699,39 @@
               <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#command-line-interface" class="md-nav__link">
-    Command Line Interface
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#train" class="md-nav__link">
-    train
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                      <nav aria-label="Table of contents"
+                           class="md-nav md-nav--secondary">
+
+
+                          <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
+                d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
+      </span>
+                              Table of contents
+                          </label>
+                          <ul class="md-nav__list" data-md-scrollfix>
+
+                              <li class="md-nav__item">
+                                  <a href="#command-line-interface"
+                                     class="md-nav__link">
+                                      Command Line Interface
+                                  </a>
+
+                                  <nav aria-label="Command Line Interface"
+                                       class="md-nav">
+                                      <ul class="md-nav__list">
+
+                                          <li class="md-nav__item">
+                                              <a href="#train"
+                                                 class="md-nav__link">
+                                                  train
+                                              </a>
+
+                                          </li>
+
+                                          <li class="md-nav__item">
   <a href="#predict" class="md-nav__link">
     predict
   </a>
@@ -1737,26 +1777,26 @@
   <a href="#serve" class="md-nav__link">
     serve
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-curl" class="md-nav__link">
-    Example curl
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#file" class="md-nav__link">
-    File
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="serve" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#example-curl" class="md-nav__link">
+                              Example curl
+                          </a>
+
+                          <nav aria-label="Example curl" class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#file" class="md-nav__link">
+                                          File
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#text" class="md-nav__link">
     Text
   </a>
@@ -1789,18 +1829,18 @@
   <a href="#data-preprocessing" class="md-nav__link">
     Data Preprocessing
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#csv-format" class="md-nav__link">
-    CSV Format
-  </a>
-  
-</li>
-        
-      </ul>
+
+            <nav aria-label="Data Preprocessing" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#csv-format" class="md-nav__link">
+                            CSV Format
+                        </a>
+
+                    </li>
+
+                </ul>
     </nav>
   
 </li>
@@ -1816,18 +1856,18 @@
   <a href="#model-definition" class="md-nav__link">
     Model Definition
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#input-features" class="md-nav__link">
-    Input features
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+            <nav aria-label="Model Definition" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#input-features" class="md-nav__link">
+                            Input features
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
   <a href="#combiner" class="md-nav__link">
     Combiner
   </a>
@@ -1838,18 +1878,18 @@
   <a href="#output-features" class="md-nav__link">
     Output Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#multi-task-learning" class="md-nav__link">
-    Multi-task Learning
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Output Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#multi-task-learning" class="md-nav__link">
+                              Multi-task Learning
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#output-features-dependencies" class="md-nav__link">
     Output Features Dependencies
   </a>
@@ -1865,18 +1905,18 @@
   <a href="#training" class="md-nav__link">
     Training
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#optimizers-details" class="md-nav__link">
-    Optimizers details
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Training" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#optimizers-details" class="md-nav__link">
+                              Optimizers details
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -1892,18 +1932,19 @@
   <a href="#binary-features" class="md-nav__link">
     Binary Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#binary-features-preprocessing" class="md-nav__link">
-    Binary Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Binary Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#binary-features-preprocessing"
+                             class="md-nav__link">
+                              Binary Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#binary-input-features-and-encoders" class="md-nav__link">
     Binary Input Features and Encoders
   </a>
@@ -1933,18 +1974,19 @@
   <a href="#numerical-features" class="md-nav__link">
     Numerical Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#numerical-features-preprocessing" class="md-nav__link">
-    Numerical Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Numerical Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#numerical-features-preprocessing"
+                             class="md-nav__link">
+                              Numerical Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#numerical-input-features-and-encoders" class="md-nav__link">
     Numerical Input Features and Encoders
   </a>
@@ -1974,18 +2016,19 @@
   <a href="#category-features" class="md-nav__link">
     Category Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#category-features-preprocessing" class="md-nav__link">
-    Category Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Category Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#category-features-preprocessing"
+                             class="md-nav__link">
+                              Category Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#category-input-features-and-encoders" class="md-nav__link">
     Category Input Features and Encoders
   </a>
@@ -2015,18 +2058,19 @@
   <a href="#set-features" class="md-nav__link">
     Set Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#set-features-preprocessing" class="md-nav__link">
-    Set Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Set Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#set-features-preprocessing"
+                             class="md-nav__link">
+                              Set Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#set-input-features-and-encoders" class="md-nav__link">
     Set Input Features and Encoders
   </a>
@@ -2056,18 +2100,19 @@
   <a href="#bag-features" class="md-nav__link">
     Bag Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#bag-features-preprocessing" class="md-nav__link">
-    Bag Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Bag Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#bag-features-preprocessing"
+                             class="md-nav__link">
+                              Bag Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#bag-input-features-and-encoders" class="md-nav__link">
     Bag Input Features and Encoders
   </a>
@@ -2097,33 +2142,36 @@
   <a href="#sequence-features" class="md-nav__link">
     Sequence Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#sequence-features-preprocessing" class="md-nav__link">
-    Sequence Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Sequence Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#sequence-features-preprocessing"
+                             class="md-nav__link">
+                              Sequence Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#sequence-input-features-and-encoders" class="md-nav__link">
     Sequence Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#embed-encoder" class="md-nav__link">
-    Embed Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="Sequence Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#embed-encoder"
+                                         class="md-nav__link">
+                                          Embed Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#parallel-cnn-encoder" class="md-nav__link">
     Parallel CNN Encoder
   </a>
@@ -2181,18 +2229,19 @@
   <a href="#sequence-output-features-and-decoders" class="md-nav__link">
     Sequence Output Features and Decoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#tagger-decoder" class="md-nav__link">
-    Tagger Decoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Sequence Output Features and Decoders"
+                   class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#tagger-decoder" class="md-nav__link">
+                              Tagger Decoder
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#generator-decoder" class="md-nav__link">
     Generator Decoder
   </a>
@@ -2220,26 +2269,29 @@
   <a href="#text-features" class="md-nav__link">
     Text Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#text-features-preprocessing" class="md-nav__link">
-    Text Features Preprocessing
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#spacy-based-word-format-options" class="md-nav__link">
-    spaCy based word format options
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Text Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#text-features-preprocessing"
+                             class="md-nav__link">
+                              Text Features Preprocessing
+                          </a>
+
+                          <nav aria-label="Text Features Preprocessing"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#spacy-based-word-format-options"
+                                         class="md-nav__link">
+                                          spaCy based word format options
+                                      </a>
+
+                                  </li>
+
+                              </ul>
     </nav>
   
 </li>
@@ -2274,18 +2326,19 @@
   <a href="#time-series-features" class="md-nav__link">
     Time Series Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#time-series-features-preprocessing" class="md-nav__link">
-    Time Series Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Time Series Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#time-series-features-preprocessing"
+                             class="md-nav__link">
+                              Time Series Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#time-series-input-features-and-encoders" class="md-nav__link">
     Time Series Input Features and Encoders
   </a>
@@ -2315,18 +2368,19 @@
   <a href="#audio-features" class="md-nav__link">
     Audio Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#audio-features-preprocessing" class="md-nav__link">
-    Audio Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Audio Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#audio-features-preprocessing"
+                             class="md-nav__link">
+                              Audio Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#audio-input-features-and-encoders" class="md-nav__link">
     Audio Input Features and Encoders
   </a>
@@ -2356,33 +2410,36 @@
   <a href="#image-features" class="md-nav__link">
     Image Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#image-features-preprocessing" class="md-nav__link">
-    Image Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Image Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#image-features-preprocessing"
+                             class="md-nav__link">
+                              Image Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#image-input-features-and-encoders" class="md-nav__link">
     Image Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#convolutional-stack-encoder" class="md-nav__link">
-    Convolutional Stack Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="Image Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#convolutional-stack-encoder"
+                                         class="md-nav__link">
+                                          Convolutional Stack Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#resnet-encoder" class="md-nav__link">
     ResNet Encoder
   </a>
@@ -2417,33 +2474,36 @@
   <a href="#date-features" class="md-nav__link">
     Date Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#date-features-preprocessing" class="md-nav__link">
-    Date Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Date Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#date-features-preprocessing"
+                             class="md-nav__link">
+                              Date Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#date-input-features-and-encoders" class="md-nav__link">
     Date Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#embed-encoder_1" class="md-nav__link">
-    Embed Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="Date Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#embed-encoder_1"
+                                         class="md-nav__link">
+                                          Embed Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#wave-encoder" class="md-nav__link">
     Wave Encoder
   </a>
@@ -2478,33 +2538,36 @@
   <a href="#h3-features" class="md-nav__link">
     H3 Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#h3-features-preprocessing" class="md-nav__link">
-    H3 Features Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="H3 Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#h3-features-preprocessing"
+                             class="md-nav__link">
+                              H3 Features Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#h3-input-features-and-encoders" class="md-nav__link">
     H3 Input Features and Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#embed-encoder_2" class="md-nav__link">
-    Embed Encoder
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+                          <nav aria-label="H3 Input Features and Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#embed-encoder_2"
+                                         class="md-nav__link">
+                                          Embed Encoder
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#weighted-sum-embed-encoder" class="md-nav__link">
     Weighted Sum Embed Encoder
   </a>
@@ -2546,33 +2609,36 @@
   <a href="#vector-features" class="md-nav__link">
     Vector Features
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#vector-feature-preprocessing" class="md-nav__link">
-    Vector Feature Preprocessing
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Vector Features" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#vector-feature-preprocessing"
+                             class="md-nav__link">
+                              Vector Feature Preprocessing
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#vector-feature-encoders" class="md-nav__link">
     Vector Feature Encoders
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dense-encoder" class="md-nav__link">
-    Dense Encoder
-  </a>
-  
-</li>
-        
-      </ul>
+
+                          <nav aria-label="Vector Feature Encoders"
+                               class="md-nav">
+                              <ul class="md-nav__list">
+
+                                  <li class="md-nav__item">
+                                      <a href="#dense-encoder"
+                                         class="md-nav__link">
+                                          Dense Encoder
+                                      </a>
+
+                                  </li>
+
+                              </ul>
     </nav>
   
 </li>
@@ -2600,18 +2666,18 @@
   <a href="#combiners" class="md-nav__link">
     Combiners
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#concat-combiner" class="md-nav__link">
-    Concat Combiner
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Combiners" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#concat-combiner" class="md-nav__link">
+                              Concat Combiner
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#sequence-concat-combiner" class="md-nav__link">
     Sequence Concat Combiner
   </a>
@@ -2653,18 +2719,18 @@
   <a href="#programmatic-api" class="md-nav__link">
     Programmatic API
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#training-a-model" class="md-nav__link">
-    Training a Model
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+            <nav aria-label="Programmatic API" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#training-a-model" class="md-nav__link">
+                            Training a Model
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
   <a href="#loading-a-pre-trained-model" class="md-nav__link">
     Loading a Pre-trained Model
   </a>
@@ -2687,26 +2753,27 @@
   <a href="#visualizations" class="md-nav__link">
     Visualizations
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#learning-curves" class="md-nav__link">
-    Learning Curves
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#learning_curves" class="md-nav__link">
-    learning_curves
-  </a>
-  
-</li>
-        
-      </ul>
+
+            <nav aria-label="Visualizations" class="md-nav">
+                <ul class="md-nav__list">
+
+                    <li class="md-nav__item">
+                        <a href="#learning-curves" class="md-nav__link">
+                            Learning Curves
+                        </a>
+
+                        <nav aria-label="Learning Curves" class="md-nav">
+                            <ul class="md-nav__list">
+
+                                <li class="md-nav__item">
+                                    <a href="#learning_curves"
+                                       class="md-nav__link">
+                                        learning_curves
+                                    </a>
+
+                                </li>
+
+                            </ul>
     </nav>
   
 </li>
@@ -2715,18 +2782,18 @@
   <a href="#confusion-matrix" class="md-nav__link">
     Confusion Matrix
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#confusion_matrix" class="md-nav__link">
-    confusion_matrix
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Confusion Matrix" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#confusion_matrix" class="md-nav__link">
+                              confusion_matrix
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -2735,18 +2802,18 @@
   <a href="#compare-performance" class="md-nav__link">
     Compare Performance
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#compare_performance" class="md-nav__link">
-    compare_performance
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Compare Performance" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#compare_performance" class="md-nav__link">
+                              compare_performance
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#compare_classifiers_performance_from_prob" class="md-nav__link">
     compare_classifiers_performance_from_prob
   </a>
@@ -2790,18 +2857,19 @@
   <a href="#compare-classifier-predictions" class="md-nav__link">
     Compare Classifier Predictions
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_predictions" class="md-nav__link">
-    compare_classifiers_predictions
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Compare Classifier Predictions" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#compare_classifiers_predictions"
+                             class="md-nav__link">
+                              compare_classifiers_predictions
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#compare_classifiers_predictions_distribution" class="md-nav__link">
     compare_classifiers_predictions_distribution
   </a>
@@ -2817,18 +2885,19 @@
   <a href="#confidence_thresholding" class="md-nav__link">
     Confidence_Thresholding
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_1" class="md-nav__link">
-    confidence_thresholding
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Confidence_Thresholding" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#confidence_thresholding_1"
+                             class="md-nav__link">
+                              confidence_thresholding
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
     confidence_thresholding_data_vs_acc
   </a>
@@ -2872,18 +2941,19 @@
   <a href="#binary-threshold-vs-metric" class="md-nav__link">
     Binary Threshold vs. Metric
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#binary_threshold_vs_metric" class="md-nav__link">
-    binary_threshold_vs_metric
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Binary Threshold vs. Metric" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#binary_threshold_vs_metric"
+                             class="md-nav__link">
+                              binary_threshold_vs_metric
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -2892,18 +2962,18 @@
   <a href="#roc-curves" class="md-nav__link">
     ROC Curves
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#roc_curves" class="md-nav__link">
-    roc_curves
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="ROC Curves" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#roc_curves" class="md-nav__link">
+                              roc_curves
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#roc_curves_from_test_statistics" class="md-nav__link">
     roc_curves_from_test_statistics
   </a>
@@ -2919,18 +2989,18 @@
   <a href="#calibration-plot" class="md-nav__link">
     Calibration Plot
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#calibration_1_vs_all" class="md-nav__link">
-    calibration_1_vs_all
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
+
+              <nav aria-label="Calibration Plot" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#calibration_1_vs_all" class="md-nav__link">
+                              calibration_1_vs_all
+                          </a>
+
+                      </li>
+
+                      <li class="md-nav__item">
   <a href="#calibration_multiclass" class="md-nav__link">
     calibration_multiclass
   </a>
@@ -2946,18 +3016,18 @@
   <a href="#class-frequency-vs-f1-score" class="md-nav__link">
     Class Frequency vs. F1 score
   </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#frequency_vs_f1" class="md-nav__link">
-    frequency_vs_f1
-  </a>
-  
-</li>
-        
-      </ul>
+
+              <nav aria-label="Class Frequency vs. F1 score" class="md-nav">
+                  <ul class="md-nav__list">
+
+                      <li class="md-nav__item">
+                          <a href="#frequency_vs_f1" class="md-nav__link">
+                              frequency_vs_f1
+                          </a>
+
+                      </li>
+
+                  </ul>
     </nav>
   
 </li>
@@ -2966,10 +3036,6 @@
     </nav>
   
 </li>
-      
-      
-      
-      
       
     </ul>
   
@@ -2980,20 +3046,29 @@
             
           
           <div class="md-content">
-            <article class="md-content__inner md-typeset">
-              
-                
-                  <a href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/user_guide.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
-                
-                
+              <article class="md-content__inner md-typeset">
+
+
+                  <a class="md-content__button md-icon"
+                     href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/user_guide.md"
+                     title="Edit this page">
+                      <svg viewBox="0 0 24 24"
+                           xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
+                      </svg>
+                  </a>
+
+
                   <h1>User Guide</h1>
-                
-                <h2 id="command-line-interface">Command Line Interface<a class="headerlink" href="#command-line-interface" title="Permanent link">&para;</a></h2>
-<p>Ludwig provides six command line interface entry points</p>
-<ul>
-<li>train</li>
-<li>predict</li>
-<li>test</li>
+
+                  <h2 id="command-line-interface">Command Line Interface<a
+                          class="headerlink" href="#command-line-interface"
+                          title="Permanent link">&para;</a></h2>
+                  <p>Ludwig provides six command line interface entry points</p>
+                  <ul>
+                      <li>train</li>
+                      <li>predict</li>
+                      <li>test</li>
 <li>experiment</li>
 <li>visualize</li>
 <li>collect_weights</li>
@@ -3131,9 +3206,13 @@ This allows for a few possible input data scenarios:</p>
 <p>you can provide separate UTF-8 encoded train, validation and test CSVs (<code>--data_train_csv</code>, <code>--data_validation_csv</code>, <code>--data_test_csv</code>).</p>
 </li>
 <li>
-<p>the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (<code>--data_train_hdf5</code>, <code>--data_validation_hdf5</code>, <code>--data_test_hdf5</code>), with the only difference that you need to specify only one JSON file (<code>--metadata_json</code>) instead of three.
-The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure does not improve for a a certain amount of epochs.
-The test set is optional too.</p>
+<p>the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (<code>--data_train_hdf5</code>, <code>--data_validation_hdf5</code>, <code>--data_test_hdf5</code>), with the only difference that you need to specify only one JSON file (<code>--metadata_json</code>)
+    instead of three.
+    The validation set is optional, but if absent the training wil continue
+    until the end of the training epochs, while when there's a validation set
+    the default behavior is to perform early stopping after the validation
+    measure does not improve for a certain amount of epochs.
+    The test set is optional too.</p>
 </li>
 </ul>
 <p>Other optional arguments are <code>--output_directory</code>, <code>--experiment_name</code> and <code>--model name</code>.
@@ -3690,25 +3769,63 @@ The column name is added to the JSON file, with an associated dictionary contain
 3. the mapping from string to frequency (<code>str2freq</code>)
 4. the size of the set of all tokens (<code>vocab_size</code>)
 4. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
-<p><code>Set</code> features are transformed into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
-Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
-The column name is added to the JSON file, with an associated dictionary containing
-1. the mapping from integer to string (<code>idx2str</code>)
-2. the mapping from string to id (<code>str2idx</code>)
-3. the mapping from string to frequency (<code>str2freq</code>)
-4. the maximum size of all sets (<code>max_set_size</code>)
-5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
+                  <p><code>Set</code> features are transformed into a binary
+                      (int8 actually) valued matrix of size <code>n x l</code>
+                      (where <code>n</code> is the size of the dataset and
+                      <code>l</code> is the minimum of the size of the biggest
+                      set and a <code>max_size</code> parameter) and added to
+                      HDF5 with a key that reflects the name of column in the
+                      CSV.
+                      The way sets are mapped into integers consists in first
+                      using a formatter to map from strings to sequences of set
+                      items (by default this is done by splitting on spaces).
+                      Then a dictionary of all the different set item strings
+                      present in the column of the CSV is collected, then they
+                      are ranked by frequency and an increasing integer ID is
+                      assigned to them from the most frequent to the most rare
+                      (with 0 being assigned to <code>&lt;PAD&gt;</code> used
+                      for padding and 1 assigned to <code>&lt;UNK&gt;</code>
+                      item).
+                      The column name is added to the JSON file, with an
+                      associated dictionary containing
+                      1. the mapping from integer to string
+                      (<code>idx2str</code>)
+                      2. the mapping from string to id (<code>str2idx</code>)
+                      3. the mapping from string to frequency
+                      (<code>str2freq</code>)
+                      4. the maximum size of all sets (<code>max_set_size</code>)
+                      5. additional preprocessing information (by default how to
+                      fill missing values and what token to use to fill missing
+                      values)</p>
 <p><code>Bag</code> features are treated in the same way of set features, with the only difference being that the matrix had float values (frequencies).</p>
-<p><code>Sequence</code> features are transformed into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
-Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
-The column name is added to the JSON file, with an associated dictionary containing
-1. the mapping from integer to string (<code>idx2str</code>)
-2. the mapping from string to id (<code>str2idx</code>)
-3. the mapping from string to frequency (<code>str2freq</code>)
-4. the maximum length of all sequences (<code>sequence_length_limit</code>)
-5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
+                  <p><code>Sequence</code> features are transformed into an
+                      integer valued matrix of size <code>n x l</code> (where
+                      <code>n</code> is the size of the dataset and
+                      <code>l</code> is the minimum of the length of the longest
+                      sequence and a <code>sequence_length_limit</code>
+                      parameter) and added to HDF5 with a key that reflects the
+                      name of column in the CSV.
+                      The way sets are mapped into integers consists in first
+                      using a formatter to map from strings to sequences of
+                      tokens (by default this is done by splitting on spaces).
+                      Then a dictionary of all the different token strings
+                      present in the column of the CSV is collected, then they
+                      are ranked by frequency and an increasing integer ID is
+                      assigned to them from the most frequent to the most rare
+                      (with 0 being assigned to <code>&lt;PAD&gt;</code> used
+                      for padding and 1 assigned to <code>&lt;UNK&gt;</code>
+                      item).
+                      The column name is added to the JSON file, with an
+                      associated dictionary containing
+                      1. the mapping from integer to string
+                      (<code>idx2str</code>)
+                      2. the mapping from string to id (<code>str2idx</code>)
+                      3. the mapping from string to frequency
+                      (<code>str2freq</code>)
+                      4. the maximum length of all sequences (<code>sequence_length_limit</code>)
+                      5. additional preprocessing information (by default how to
+                      fill missing values and what token to use to fill missing
+                      values)</p>
 <p><code>Text</code> features are treated in the same way of sequence features, with a couple differences.
 Two different formatting/splitting happen, one that splits at every character and one that uses a spaCy based tokenizer (and removes stopwords) are used, and two different key are added to the HDF5 file, one containing the matrix of characters and one containing the matrix of words.
 The same thing happens in the JSON file, where there are dictionaries for mapping characters to integers (and the inverse) and words to integers (and their inverse).
@@ -4199,15 +4316,34 @@ There is only one decoder available for category features and it is a (potential
 You can set either of them as <code>validation_measure</code> in the <code>training</code> section of the model definition if you set the <code>validation_field</code> to be the name of a category feature.</p>
 <h3 id="set-features">Set Features<a class="headerlink" href="#set-features" title="Permanent link">&para;</a></h3>
 <h4 id="set-features-preprocessing">Set Features Preprocessing<a class="headerlink" href="#set-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Set features are transformed into a binary (int8 actually) valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the size of the biggest set and a <code>max_size</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
-Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
-The column name is added to the JSON file, with an associated dictionary containing
-1. the mapping from integer to string (<code>idx2str</code>)
-2. the mapping from string to id (<code>str2idx</code>)
-3. the mapping from string to frequency (<code>str2freq</code>)
-4. the maximum size of all sets (<code>max_set_size</code>)
-5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
+                  <p>Set features are transformed into a binary (int8 actually)
+                      valued matrix of size <code>n x l</code> (where
+                      <code>n</code> is the size of the dataset and
+                      <code>l</code> is the minimum of the size of the biggest
+                      set and a <code>max_size</code> parameter) and added to
+                      HDF5 with a key that reflects the name of column in the
+                      CSV.
+                      The way sets are mapped into integers consists in first
+                      using a formatter to map from strings to sequences of set
+                      items (by default this is done by splitting on spaces).
+                      Then a dictionary of all the different set item strings
+                      present in the column of the CSV is collected, then they
+                      are ranked by frequency and an increasing integer ID is
+                      assigned to them from the most frequent to the most rare
+                      (with 0 being assigned to <code>&lt;PAD&gt;</code> used
+                      for padding and 1 assigned to <code>&lt;UNK&gt;</code>
+                      item).
+                      The column name is added to the JSON file, with an
+                      associated dictionary containing
+                      1. the mapping from integer to string
+                      (<code>idx2str</code>)
+                      2. the mapping from string to id (<code>str2idx</code>)
+                      3. the mapping from string to frequency
+                      (<code>str2freq</code>)
+                      4. the maximum size of all sets (<code>max_set_size</code>)
+                      5. additional preprocessing information (by default how to
+                      fill missing values and what token to use to fill missing
+                      values)</p>
 <p>The parameters available for preprocessing arehe parameters available for preprocessing are</p>
 <ul>
 <li><code>missing_value_strategy</code> (default <code>fill_with_const</code>): what strategy to follow when there's a missing value in a binary column. The value should be one of <code>fill_with_const</code> (replaces the missing value with a specific value specified with the <code>fill_value</code> parameter), <code>fill_with_mode</code> (replaces the missing values with the most frequent value in the column), <code>fill_with_mean</code> (replaces the missing values with the mean of the values in the column), <code>backfill</code> (replaces the missing values with the next valid value).</li>
@@ -4326,15 +4462,34 @@ Inputs are of size <code>b</code> while outputs are of size <code>b x h</code> w
 <p>As there is no decoder there is also no measure available yet for bag feature.</p>
 <h3 id="sequence-features">Sequence Features<a class="headerlink" href="#sequence-features" title="Permanent link">&para;</a></h3>
 <h4 id="sequence-features-preprocessing">Sequence Features Preprocessing<a class="headerlink" href="#sequence-features-preprocessing" title="Permanent link">&para;</a></h4>
-<p>Sequence features are transformed into an integer valued matrix of size <code>n x l</code> (where <code>n</code> is the size of the dataset and <code>l</code> is the minimum of the length of the longest sequence and a <code>sequence_length_limit</code> parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
-The way sequences are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
-Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to <code>&lt;PAD&gt;</code> used for padding and 1 assigned to <code>&lt;UNK&gt;</code> item).
-The column name is added to the JSON file, with an associated dictionary containing
-1. the mapping from integer to string (<code>idx2str</code>)
-2. the mapping from string to id (<code>str2idx</code>)
-3. the mapping from string to frequency (<code>str2freq</code>)
-4. the maximum length of all sequences (<code>sequence_length_limit</code>)
-5. additional preprocessing information (by default how to fill missing values and what token to use to fill missing values)</p>
+                  <p>Sequence features are transformed into an integer valued
+                      matrix of size <code>n x l</code> (where <code>n</code> is
+                      the size of the dataset and <code>l</code> is the minimum
+                      of the length of the longest sequence and a <code>sequence_length_limit</code>
+                      parameter) and added to HDF5 with a key that reflects the
+                      name of column in the CSV.
+                      The way sequences are mapped into integers consists in
+                      first using a formatter to map from strings to sequences
+                      of tokens (by default this is done by splitting on
+                      spaces).
+                      Then a dictionary of all the different token strings
+                      present in the column of the CSV is collected, then they
+                      are ranked by frequency and an increasing integer ID is
+                      assigned to them from the most frequent to the most rare
+                      (with 0 being assigned to <code>&lt;PAD&gt;</code> used
+                      for padding and 1 assigned to <code>&lt;UNK&gt;</code>
+                      item).
+                      The column name is added to the JSON file, with an
+                      associated dictionary containing
+                      1. the mapping from integer to string
+                      (<code>idx2str</code>)
+                      2. the mapping from string to id (<code>str2idx</code>)
+                      3. the mapping from string to frequency
+                      (<code>str2freq</code>)
+                      4. the maximum length of all sequences (<code>sequence_length_limit</code>)
+                      5. additional preprocessing information (by default how to
+                      fill missing values and what token to use to fill missing
+                      values)</p>
 <p>The parameters available for preprocessing are</p>
 <ul>
 <li><code>missing_value_strategy</code> (default <code>fill_with_const</code>): what strategy to follow when there's a missing value in a binary column. The value should be one of <code>fill_with_const</code> (replaces the missing value with a specific value specified with the <code>fill_value</code> parameter), <code>fill_with_mode</code> (replaces the missing values with the most frequent value in the column), <code>fill_with_mean</code> (replaces the missing values with the mean of the values in the column), <code>backfill</code> (replaces the missing values with the next valid value).</li>
@@ -4721,7 +4876,16 @@ If you want to output the full <code>b x s x h</code> where <code>h</code> is th
 <li><code>num_filters</code> (default <code>256</code>): if a <code>num_filters</code> is not already specified in <code>conv_layers</code> this is the default <code>num_filters</code> that will be used for each layer. It indicates the number of filters, and by consequence the output channels of the 1d convolution.</li>
 <li><code>pool_size</code> (default <code>null</code>): if a <code>pool_size</code> is not already specified in <code>conv_layers</code> this is the default <code>pool_size</code> that will be used for each layer. It indicates the size of the max pooling that will be performed along the <code>s</code> sequence dimension after the convolution operation.</li>
 <li><code>num_rec_layers</code> (default <code>1</code>): the number of stacked recurrent layers.</li>
-<li><code>cell_type</code> (default <code>rnn</code>): the type of recurrent cell to use. Available values are: <code>rnn</code>, <code>lstm</code>, <code>lstm_block</code>, <code>lstm</code>, <code>ln</code>, <code>lstm_cudnn</code>, <code>gru</code>, <code>gru_block</code>, <code>gru_cudnn</code>. For reference about the differences between the cells please refer to <a href="https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell">TensorFlow's documentstion</a>. We suggest to use the <code>block</code> variants on CPU and the <code>cudnn</code> variants on GPU because of their increased speed.</li>
+    <li><code>cell_type</code> (default <code>rnn</code>): the type of recurrent
+        cell to use. Available values are: <code>rnn</code>, <code>lstm</code>,
+        <code>lstm_block</code>, <code>lstm</code>, <code>ln</code>, <code>lstm_cudnn</code>,
+        <code>gru</code>, <code>gru_block</code>, <code>gru_cudnn</code>. For
+        reference about the differences between the cells please refer to <a
+                href="https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell">TensorFlow's
+            documentation</a>. We suggest to use the <code>block</code> variants
+        on CPU and the <code>cudnn</code> variants on GPU because of their
+        increased speed.
+    </li>
 <li><code>state_size</code> (default <code>256</code>): the size of the state of the rnn.</li>
 <li><code>bidirectional</code> (default <code>false</code>): if <code>true</code> two recurrent networks will perform encoding in the forward and backward direction and their outputs will be concatenated.</li>
 <li><code>dropout</code> (default <code>false</code>): determines if there should be a dropout layer between <code>conv_layers</code> and before returning the encoder output.</li>
@@ -4888,58 +5052,59 @@ Output
 <li><code>regularize</code> (default <code>true</code>): if <code>true</code> the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the <code>regularization_lambda</code> in <code>training</code> is greater than 0).</li>
 </ul>
 <p>Example sequence feature entry using a tagger decoder (with default parameters) in the output features list:</p>
-<div class="codehilite"><pre><span></span><code><span
-        class="nt">name</span><span class="p">:</span> <span
-        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+                  <div class="codehilite"><pre><span></span><code><span
+                          class="nt">name</span><span class="p">:</span> <span
+                          class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
 <span class="nt">type</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">sequence</span>
+                              class="l l-Scalar l-Scalar-Plain">sequence</span>
 <span class="nt">decoder</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">tagger</span>
+                              class="l l-Scalar l-Scalar-Plain">tagger</span>
 <span class="nt">reduce_inputs</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">dependencies</span><span class="p">:</span> <span
-            class="p p-Indicator">[]</span>
+                              class="p p-Indicator">[]</span>
 <span class="nt">reduce_dependencies</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">sum</span>
+                              class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">loss</span><span class="p">:</span>
     <span class="nt">type</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+                              class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
     <span class="nt">confidence_penalty</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">robust_lambda</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">class_weights</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">1</span>
+                              class="l l-Scalar l-Scalar-Plain">1</span>
     <span class="nt">class_similarities</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
     <span class="nt">class_similarities_temperature</span><span
-            class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="p">:</span> <span
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">labels_smoothing</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">negative_samples</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">sampler</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
     <span class="nt">distortion</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">1</span>
+                              class="l l-Scalar l-Scalar-Plain">1</span>
     <span class="nt">unique</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">false</span>
+                              class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="nt">fc_layers</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">num_fc_layers</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="nt">fc_size</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">256</span>
+                              class="l l-Scalar l-Scalar-Plain">256</span>
 <span class="nt">activation</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">relu</span>
+                              class="l l-Scalar l-Scalar-Plain">relu</span>
 <span class="nt">norm</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">dropout</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">false</span>
+                              class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="nt">initializer</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">regularize</span><span class="p">:</span> <span
-            class="l l-Scalar l-Scalar-Plain">true</span>
+                              class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 
 
@@ -4950,7 +5115,7 @@ By default a generator expects a <code>b x h</code> shaped input tensor, where <
 The <code>h</code> vectors are (after an optional stack of fully connected layers) fed into the rnn generator.
 One exception is when the generator uses attention, as in that case the expected size of the input tensor is <code>b x s x h</code>, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner.
 If a <code>b x h</code> input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.</p>
-<div class="codehilite"><pre><span></span><code>                            Output     Output
+                  <div class="codehilite"><pre><span></span><code>                            Output     Output
                                1  +-+    ... +--+    END
                                ^    |     ^     |     ^
 +--------+   +---------+       |    |     |     |     |
@@ -4960,206 +5125,210 @@ If a <code>b x h</code> input is provided to a generator decoder using an rnn wi
 +--------+   +---------+       |    |     |     |     |
                               GO    +-----+     +-----+
 </code></pre>
-</div>
+                  </div>
 
 
-                <p>These are the available parameters of a tagger decoder:</p>
-                <ul>
-                    <li><code>fc_layers</code> (default <code>null</code>): it
-                        is a list of dictionaries containing the parameters of
-                        all the fully connected layers. The length of the list
-                        determines the number of stacked fully connected layers
-                        and the content of each dictionary determines the
-                        parameters for a specific layer. The available
-                        parameters for each layer are: <code>fc_size</code>,
-                        <code>norm</code>, <code>activation</code>, <code>dropout</code>,
-                        <code>initializer</code> and <code>regularize</code>. If
-                        any of those values is missing from the dictionary, the
-                        default one specified as a parameter of the decoder will
-                        be used instead.
-                    </li>
-                    <li><code>num_fc_layers</code> (default 0): this is the
-                        number of stacked fully connected layers that the input
-                        to the feature passes through. Their output is projected
-                        in the feature's output space.
-                    </li>
-                    <li><code>fc_size</code> (default <code>256</code>): if a
-                        <code>fc_size</code> is not already specified in <code>fc_layers</code>
-                        this is the default <code>fc_size</code> that will be
-                        used for each layer. It indicates the size of the output
-                        of a fully connected layer.
-                    </li>
-                    <li><code>activation</code> (default <code>relu</code>): if
-                        an <code>activation</code> is not already specified in
-                        <code>fc_layers</code> this is the default <code>activation</code>
-                        that will be used for each layer. It indicates the
-                        activation function applied to the output.
-                    </li>
-                    <li><code>norm</code> (default <code>null</code>): if a
-                        <code>norm</code> is not already specified in <code>fc_layers</code>
-                        this is the default <code>norm</code> that will be used
-                        for each layer. It indicates the norm of the output and
-                        it can be <code>null</code>, <code>batch</code> or
-                        <code>layer</code>.
-                    </li>
-                    <li><code>dropout</code> (default <code>false</code>):
-                        determines if there should be a dropout layer after each
-                        layer.
-                    </li>
-                    <li><code>initializer</code> (default <code>null</code>):
-                        the initializer to use. If <code>null</code>, the
-                        default initialized of each variable is used (<code>glorot_uniform</code>
-                        in most cases). Options are: <code>constant</code>,
-                        <code>identity</code>, <code>zeros</code>,
-                        <code>ones</code>, <code>orthogonal</code>,
-                        <code>normal</code>, <code>uniform</code>, <code>truncated_normal</code>,
-                        <code>variance_scaling</code>,
-                        <code>glorot_normal</code>, <code>glorot_uniform</code>,
-                        <code>xavier_normal</code>, <code>xavier_uniform</code>,
-                        <code>he_normal</code>, <code>he_uniform</code>, <code>lecun_normal</code>,
-                        <code>lecun_uniform</code>. Alternatively it is possible
-                        to specify a dictionary with a key <code>type</code>
-                        that identifies the type of initializer and other keys
-                        for its parameters, e.g. <code>{type: normal, mean: 0,
-                            stddev: 0}</code>. To know the parameters of each
-                        initializer, please refer to <a
-                                href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's
-                            documentation</a>.
-                    </li>
-                    <li><code>regularize</code> (default <code>true</code>): if
-                        <code>true</code> the weights of the layers are added to
-                        the set of weights that get regularized by a
-                        regularization loss (if the
-                        <code>regularization_lambda</code> in
-                        <code>training</code> is greater than 0).
-                    </li>
-                    <li><code>cell_type</code> (default <code>rnn</code>): the
-                        type of recurrent cell to use. Available values are:
-                        <code>rnn</code>, <code>lstm</code>,
-                        <code>lstm_block</code>, <code>lstm</code>,
-                        <code>ln</code>, <code>lstm_cudnn</code>,
-                        <code>gru</code>, <code>gru_block</code>, <code>gru_cudnn</code>.
-                        For reference about the differences between the cells
-                        please refer to <a
-                                href="https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell">TensorFlow's
-                            documentstion</a>. We suggest to use the
-                        <code>block</code> variants on CPU and the
-                        <code>cudnn</code> variants on GPU because of their
-                        increased speed.
-                    </li>
-                    <li><code>state_size</code> (default <code>256</code>): the
-                        size of the state of the rnn.
-                    </li>
-                    <li><code>tied_embeddings</code> (default <code>null</code>):
-                        if <code>null</code> the embeddings of the targets are
-                        initialized randomly, while if the values is the name of
-                        an input feature, the embeddings of that input feature
-                        will be used as embeddings of the target. The <code>vocabulary_size</code>
-                        of that input feature has to be the same of the output
-                        feature one and it has to have an embedding matrix
-                        (binary and numerical features will not have one, for
-                        instance). In this case the <code>embedding_size</code>
-                        will be the same as the <code>state_size</code>. This is
-                        useful for implementing autoencoders where the encoding
-                        and decoding part of the model share parameters.
-                    </li>
-                    <li><code>embedding_size</code> (default 256): if <code>tied_target_embeddings</code>
-                        is <code>false</code>, the input embeddings and the
-                        weights of the softmax_cross_entropy weights before the
-                        softmax_cross_entropy are not tied together and can have
-                        different sizes, this parameter describes the size of
-                        the embeddings of the inputs of the generator.
-                    </li>
-                    <li><code>beam_width</code> (default <code>1</code>):
-                        sampling from the rnn generator is performed using beam
-                        search. By default, with a beam of one, only a greedy
-                        sequence using always the most probably next token is
-                        generated, but the beam size can be increased. This
-                        usually leads to better performance at the expense of
-                        more computation and slower generation.
-                    </li>
-                    <li><code>attention_mechanism</code> (default
-                        <code>null</code>): the recurrent generator may use an
-                        attention mechanism. The available ones are <code>bahdanau</code>
-                        and <code>luong</code> (for more information refer to <a
-                                href="https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention">TensorFlow's
-                            documentation</a>). When <code>attention</code> is
-                        not <code>null</code> the expected size of the input
-                        tensor is <code>b x s x h</code>, which is the output of
-                        a sequence, text or timeseries input feature without
-                        reduced outputs or the output of a sequence-based
-                        combiner. If a <code>b x h</code> input is provided to a
-                        generator decoder using an rnn with attention instead,
-                        an error will be raised during model building.
-                    </li>
-                </ul>
-                <p>Example sequence feature entry using a generator decoder
-                    (with default parameters) in the output features list:</p>
-                <div class="codehilite"><pre><span></span><code><span
-                        class="nt">name</span><span class="p">:</span> <span
-                        class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
+                  <p>These are the available parameters of a tagger decoder:</p>
+                  <ul>
+                      <li><code>fc_layers</code> (default <code>null</code>): it
+                          is a list of dictionaries containing the parameters of
+                          all the fully connected layers. The length of the list
+                          determines the number of stacked fully connected
+                          layers and the content of each dictionary determines
+                          the parameters for a specific layer. The available
+                          parameters for each layer are: <code>fc_size</code>,
+                          <code>norm</code>, <code>activation</code>, <code>dropout</code>,
+                          <code>initializer</code> and <code>regularize</code>.
+                          If any of those values is missing from the dictionary,
+                          the default one specified as a parameter of the
+                          decoder will be used instead.
+                      </li>
+                      <li><code>num_fc_layers</code> (default 0): this is the
+                          number of stacked fully connected layers that the
+                          input to the feature passes through. Their output is
+                          projected in the feature's output space.
+                      </li>
+                      <li><code>fc_size</code> (default <code>256</code>): if a
+                          <code>fc_size</code> is not already specified in
+                          <code>fc_layers</code> this is the default <code>fc_size</code>
+                          that will be used for each layer. It indicates the
+                          size of the output of a fully connected layer.
+                      </li>
+                      <li><code>activation</code> (default <code>relu</code>):
+                          if an <code>activation</code> is not already specified
+                          in <code>fc_layers</code> this is the default <code>activation</code>
+                          that will be used for each layer. It indicates the
+                          activation function applied to the output.
+                      </li>
+                      <li><code>norm</code> (default <code>null</code>): if a
+                          <code>norm</code> is not already specified in <code>fc_layers</code>
+                          this is the default <code>norm</code> that will be
+                          used for each layer. It indicates the norm of the
+                          output and it can be <code>null</code>,
+                          <code>batch</code> or <code>layer</code>.
+                      </li>
+                      <li><code>dropout</code> (default <code>false</code>):
+                          determines if there should be a dropout layer after
+                          each layer.
+                      </li>
+                      <li><code>initializer</code> (default <code>null</code>):
+                          the initializer to use. If <code>null</code>, the
+                          default initialized of each variable is used (<code>glorot_uniform</code>
+                          in most cases). Options are: <code>constant</code>,
+                          <code>identity</code>, <code>zeros</code>,
+                          <code>ones</code>, <code>orthogonal</code>, <code>normal</code>,
+                          <code>uniform</code>, <code>truncated_normal</code>,
+                          <code>variance_scaling</code>,
+                          <code>glorot_normal</code>,
+                          <code>glorot_uniform</code>,
+                          <code>xavier_normal</code>,
+                          <code>xavier_uniform</code>, <code>he_normal</code>,
+                          <code>he_uniform</code>, <code>lecun_normal</code>,
+                          <code>lecun_uniform</code>. Alternatively it is
+                          possible to specify a dictionary with a key
+                          <code>type</code> that identifies the type of
+                          initializer and other keys for its parameters, e.g.
+                          <code>{type: normal, mean: 0, stddev: 0}</code>. To
+                          know the parameters of each initializer, please refer
+                          to
+                          <a href="https://www.tensorflow.org/api_docs/python/tf/keras/initializers">TensorFlow's
+                              documentation</a>.
+                      </li>
+                      <li><code>regularize</code> (default <code>true</code>):
+                          if <code>true</code> the weights of the layers are
+                          added to the set of weights that get regularized by a
+                          regularization loss (if the <code>regularization_lambda</code>
+                          in <code>training</code> is greater than 0).
+                      </li>
+                      <li><code>cell_type</code> (default <code>rnn</code>): the
+                          type of recurrent cell to use. Available values are:
+                          <code>rnn</code>, <code>lstm</code>,
+                          <code>lstm_block</code>, <code>lstm</code>,
+                          <code>ln</code>, <code>lstm_cudnn</code>,
+                          <code>gru</code>, <code>gru_block</code>, <code>gru_cudnn</code>.
+                          For reference about the differences between the cells
+                          please refer to <a
+                                  href="https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell">TensorFlow's
+                              documentation</a>. We suggest to use the <code>block</code>
+                          variants on CPU and the <code>cudnn</code> variants on
+                          GPU because of their increased speed.
+                      </li>
+                      <li><code>state_size</code> (default <code>256</code>):
+                          the size of the state of the rnn.
+                      </li>
+                      <li><code>tied_embeddings</code> (default
+                          <code>null</code>): if <code>null</code> the
+                          embeddings of the targets are initialized randomly,
+                          while if the values is the name of an input feature,
+                          the embeddings of that input feature will be used as
+                          embeddings of the target. The
+                          <code>vocabulary_size</code> of that input feature has
+                          to be the same of the output feature one and it has to
+                          have an embedding matrix (binary and numerical
+                          features will not have one, for instance). In this
+                          case the <code>embedding_size</code> will be the same
+                          as the <code>state_size</code>. This is useful for
+                          implementing autoencoders where the encoding and
+                          decoding part of the model share parameters.
+                      </li>
+                      <li><code>embedding_size</code> (default 256): if <code>tied_target_embeddings</code>
+                          is <code>false</code>, the input embeddings and the
+                          weights of the softmax_cross_entropy weights before
+                          the softmax_cross_entropy are not tied together and
+                          can have different sizes, this parameter describes the
+                          size of the embeddings of the inputs of the generator.
+                      </li>
+                      <li><code>beam_width</code> (default <code>1</code>):
+                          sampling from the rnn generator is performed using
+                          beam search. By default, with a beam of one, only a
+                          greedy sequence using always the most probably next
+                          token is generated, but the beam size can be
+                          increased. This usually leads to better performance at
+                          the expense of more computation and slower generation.
+                      </li>
+                      <li><code>attention_mechanism</code> (default
+                          <code>null</code>): the recurrent generator may use an
+                          attention mechanism. The available ones are <code>bahdanau</code>
+                          and <code>luong</code> (for more information refer to
+                          <a href="https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention">TensorFlow's
+                              documentation</a>). When <code>attention</code> is
+                          not <code>null</code> the expected size of the input
+                          tensor is <code>b x s x h</code>, which is the output
+                          of a sequence, text or timeseries input feature
+                          without reduced outputs or the output of a
+                          sequence-based combiner. If a <code>b x h</code> input
+                          is provided to a generator decoder using an rnn with
+                          attention instead, an error will be raised during
+                          model building.
+                      </li>
+                  </ul>
+                  <p>Example sequence feature entry using a generator decoder
+                      (with default parameters) in the output features list:</p>
+                  <div class="codehilite"><pre><span></span><code><span
+                          class="nt">name</span><span class="p">:</span> <span
+                          class="l l-Scalar l-Scalar-Plain">sequence_csv_column_name</span>
 <span class="nt">type</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">sequence</span>
+                              class="l l-Scalar l-Scalar-Plain">sequence</span>
 <span class="nt">decoder</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">generator</span>
+                              class="l l-Scalar l-Scalar-Plain">generator</span>
 <span class="nt">reduce_inputs</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">sum</span>
+                              class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">dependencies</span><span class="p">:</span> <span
-                            class="p p-Indicator">[]</span>
+                              class="p p-Indicator">[]</span>
 <span class="nt">reduce_dependencies</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">sum</span>
+                              class="l l-Scalar l-Scalar-Plain">sum</span>
 <span class="nt">loss</span><span class="p">:</span>
     <span class="nt">type</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
+                              class="l l-Scalar l-Scalar-Plain">softmax_cross_entropy</span>
     <span class="nt">confidence_penalty</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">robust_lambda</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">class_weights</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">1</span>
+                              class="l l-Scalar l-Scalar-Plain">1</span>
     <span class="nt">class_similarities</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
     <span class="nt">class_similarities_temperature</span><span
-                            class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="p">:</span> <span
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">labels_smoothing</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">negative_samples</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
     <span class="nt">sampler</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
     <span class="nt">distortion</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">1</span>
+                              class="l l-Scalar l-Scalar-Plain">1</span>
     <span class="nt">unique</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">false</span>
+                              class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="nt">fc_layers</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">num_fc_layers</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">0</span>
+                              class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="nt">fc_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">256</span>
+                              class="l l-Scalar l-Scalar-Plain">256</span>
 <span class="nt">activation</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">relu</span>
+                              class="l l-Scalar l-Scalar-Plain">relu</span>
 <span class="nt">norm</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">dropout</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">false</span>
+                              class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="nt">initializer</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="nt">regularize</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">true</span>
+                              class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="nt">cell_type</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">rnn</span>
+                              class="l l-Scalar l-Scalar-Plain">rnn</span>
 <span class="nt">state_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">256</span>
+                              class="l l-Scalar l-Scalar-Plain">256</span>
 <span class="nt">tied_target_embeddings</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">true</span>
+                              class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="nt">embedding_size</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">256</span>
+                              class="l l-Scalar l-Scalar-Plain">256</span>
 <span class="nt">beam_width</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">1</span>
+                              class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="nt">attention_mechanism</span><span class="p">:</span> <span
-                            class="l l-Scalar l-Scalar-Plain">null</span>
+                              class="l l-Scalar l-Scalar-Plain">null</span>
 </code></pre></div>
 
 
@@ -6211,9 +6380,15 @@ If <code>field</code> is a category feature, <code>positive_label</code> indicat
 It needs to be an integer, to figure out the association between classes and integers check the <code>ground_truth_metadata</code> JSON file.</p>
 <p><img alt="ROC Curves" src="../images/roc_curves.png" title="ROC Curves" /></p>
 <h4 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink" href="#roc_curves_from_test_statistics" title="Permanent link">&para;</a></h4>
-<p>This visualization uses the <code>field</code>, <code>test_statistics</code> and <code>model_names</code> parameters.
-<code>field</code> needs to be binary feature.
-This visualization produces a line chart plotting the roc curves for the specified <code>field</code>.</p>
+                  <p>This visualization uses the
+                      <code>output_feature_name</code>,
+                      <code>test_statistics</code> and <code>model_names</code>
+                      parameters.
+                      <code>output_feature_name</code> needs to be binary
+                      feature.
+                      This visualization produces a line chart plotting the roc
+                      curves for the specified <code>output_feature_name</code>.
+                  </p>
 <p><img alt="ROC Curves from Prediction Statistics" src="../images/roc_curves_from_test_statistics.png" title="ROC Curves from Prediction Statistics" /></p>
 <h3 id="calibration-plot">Calibration Plot<a class="headerlink" href="#calibration-plot" title="Permanent link">&para;</a></h3>
 <h4 id="calibration_1_vs_all">calibration_1_vs_all<a class="headerlink" href="#calibration_1_vs_all" title="Permanent link">&para;</a></h4>
@@ -6244,17 +6419,9 @@ The classes on the x axis are sorted by f1 score.</p>
 <p><img alt="Frequency vs F1 sorted by F1" src="../images/freq_vs_f1_sorted_f1.png" title="Frequency vs F1 sorted by F1" /></p>
 <p>The second plot has the same structure of the first one, but the axes are flipped and the classes on the x axis are sorted by frequency.</p>
 <p><img alt="Frequency vs F1 sorted by Frequency" src="../images/freq_vs_f1_sorted_freq.png" title="Frequency vs F1 sorted by Frequency" /></p>
-                
-                  
-                
-                
-              
-              
-                
 
 
-              
-            </article>
+              </article>
           </div>
         </div>
       </main>
@@ -6336,19 +6503,38 @@ The classes on the x axis are sorted by f1 score.</p>
             </div>
 
             <!-- Social links -->
-            
-            
-            
+
+
         </div>
     </div>
 </footer>
-      
-    </div>
-    
-      <script src="../assets/javascripts/application.c33a9706.js"></script>
-      
-      <script>app.initialize({version:"1.1",url:{base:".."}})</script>
-      
-    
+
+  </div>
+
+  <script src="../assets/javascripts/vendor.36cbf620.min.js"></script>
+  <script src="../assets/javascripts/bundle.00c583dd.min.js"></script>
+  <script id="__lang" type="application/json">{
+      "clipboard.copy": "Copy to clipboard",
+      "clipboard.copied": "Copied to clipboard",
+      "search.config.lang": "en",
+      "search.config.pipeline": "trimmer, stopWordFilter",
+      "search.config.separator": "[\\s\\-]+",
+      "search.result.placeholder": "Type to start searching",
+      "search.result.none": "No matching documents",
+      "search.result.one": "1 matching document",
+      "search.result.other": "# matching documents"
+  }</script>
+
+  <script>
+      app = initialize({
+          base: "..",
+          features: [],
+          search: Object.assign({
+              worker: "../assets/javascripts/worker/search.7f7c8775.min.js"
+          }, typeof search !== "undefined" && search)
+      })
+  </script>
+
+
   </body>
 </html>
