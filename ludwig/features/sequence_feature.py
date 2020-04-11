@@ -269,6 +269,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         self.decoder_obj = self.get_sequence_decoder(feature)
 
+    def get_sequence_decoder(self, decoder_parameters):
+        return get_from_registry(
+            self.decoder, self.decoder_registry)(
+            **decoder_parameters
+        )
+
     def _setup_loss(self):
         pass
 
@@ -276,12 +282,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         pass
 
     # todo tf2 code clean up
-    # def get_sequence_decoder(self, decoder_parameters):
-    #     return get_from_registry(
-    #         self.decoder, sequence_decoder_registry)(
-    #         **decoder_parameters
-    #     )
-    #
     # def _get_output_placeholder(self):
     #     # None dimension is for dealing with variable batch size
     #     return tf.placeholder(
