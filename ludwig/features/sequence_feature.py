@@ -35,11 +35,12 @@ from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
 from ludwig.models.modules.metric_modules import perplexity
-from ludwig.models.modules.sequence_decoders import Generator
-from ludwig.models.modules.sequence_decoders import Tagger
-from ludwig.models.modules.sequence_encoders import BERT
-from ludwig.models.modules.sequence_encoders import CNNRNN, SequencePassthroughEncoder
+from ludwig.models.modules.sequence_decoders import SequenceGeneratorDecoder
+from ludwig.models.modules.sequence_decoders import SequenceTaggerDecoder
+from ludwig.models.modules.sequence_encoders import SequencePassthroughEncoder
 from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
+from ludwig.models.modules.sequence_encoders import BERT
+from ludwig.models.modules.sequence_encoders import CNNRNN
 from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import StackedCNN
@@ -155,6 +156,37 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
 
         return inputs_encoded
 
+    @staticmethod
+    def update_model_definition_with_metadata(
+            input_feature,
+            feature_metadata,
+            *args,
+            **kwargs
+    ):
+        input_feature['vocab'] = feature_metadata['idx2str']
+        input_feature['length'] = feature_metadata['max_sequence_length']
+
+    @staticmethod
+    def populate_defaults(input_feature):
+        set_default_value(input_feature, TIED, None)
+        set_default_value(input_feature, 'encoder', 'parallel_cnn')
+
+    encoder_registry = {
+        'stacked_cnn': StackedCNN,
+        'parallel_cnn': ParallelCNN,
+        'stacked_parallel_cnn': StackedParallelCNN,
+        'rnn': RNN,
+        'cnnrnn': CNNRNN,
+        'embed': SequenceEmbedEncoder,
+        'bert': BERT,
+        'passthrough': SequencePassthroughEncoder,
+        'null': SequencePassthroughEncoder,
+        'none': SequencePassthroughEncoder,
+        'None': SequencePassthroughEncoder,
+        None: SequencePassthroughEncoder
+    }
+
+
     # todo tf2 code clean up
     #
     #
@@ -209,35 +241,6 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
     #     }
     #     return feature_representation
 
-    @staticmethod
-    def update_model_definition_with_metadata(
-            input_feature,
-            feature_metadata,
-            *args,
-            **kwargs
-    ):
-        input_feature['vocab'] = feature_metadata['idx2str']
-        input_feature['length'] = feature_metadata['max_sequence_length']
-
-    @staticmethod
-    def populate_defaults(input_feature):
-        set_default_value(input_feature, TIED, None)
-        set_default_value(input_feature, 'encoder', 'parallel_cnn')
-
-    encoder_registry = {
-        'stacked_cnn': StackedCNN,
-        'parallel_cnn': ParallelCNN,
-        'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': RNN,
-        'cnnrnn': CNNRNN,
-        'embed': SequenceEmbedEncoder,
-        'bert': BERT,
-        'passthrough': SequencePassthroughEncoder,
-        'null': SequencePassthroughEncoder,
-        'none': SequencePassthroughEncoder,
-        'None': SequencePassthroughEncoder,
-        None: SequencePassthroughEncoder
-    }
 
 
 class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
@@ -558,8 +561,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         set_default_value(output_feature, 'reduce_dependencies', SUM)
 
     decoder_registry = {
-        'generator': Generator,
-        'tagger': Tagger
+        'generator': SequenceGeneratorDecoder,
+        'tagger': SequenceTaggerDecoder
     }
 
 

@@ -16,6 +16,7 @@
 import logging
 
 import tensorflow.compat.v1 as tf
+from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.attention_modules import \
     feed_forward_memory_attention
@@ -26,7 +27,7 @@ from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 logger = logging.getLogger(__name__)
 
 
-class Generator:
+class SequenceGeneratorDecoder(Layer):
     def __init__(
             self,
             cell_type='rnn',
@@ -131,7 +132,7 @@ class Generator:
                eval_logits, train_logits, class_weights, class_biases
 
 
-class Tagger:
+class SequenceTaggerDecoder(Layer):
     def __init__(
             self,
             initializer=None,
