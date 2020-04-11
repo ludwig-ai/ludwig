@@ -137,14 +137,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
-
-    def get_sequence_encoder(self, encoder_parameters):
-        return get_from_registry(
-            self.encoder, self.encoder_registry)(
-            **encoder_parameters
-        )
-
+            self.encoder_obj = self.initialize_encoder(encoder_parameters)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
