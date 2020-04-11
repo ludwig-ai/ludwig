@@ -28,6 +28,9 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.loss_modules import seq2seq_sequence_loss
 from ludwig.models.modules.loss_modules import \
     sequence_sampled_softmax_cross_entropy
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
@@ -258,12 +261,39 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         }
         self.num_classes = 0
 
-        _ = self.overwrite_defaults(feature)
+        decoder_parameters = self.overwrite_defaults(feature)
 
-        self.decoder_obj = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder(decoder_parameters)
+
+        self._setup_loss()
+        self._setup_metrics()
 
     def _setup_loss(self):
-        pass
+        if self.loss['type'] == 'softmax_cross_entropy':
+            self.train_loss_function = SoftmaxCrossEntropyLoss(
+                num_classes=self.num_classes,
+                feature_loss=self.loss,
+                name='train_loss'
+            )
+        elif self.loss['type'] == 'sampled_softmax_cross_entropy':
+            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
+                decoder_obj=self.decoder_obj,
+                num_classes=self.num_classes,
+                feature_loss=self.loss,
+                name='train_loss'
+            )
+        else:
+            raise ValueError(
+                "Loss type {} is not supported. Valid values are "
+                "'softmax_cross_entropy' or "
+                "'sampled_softmax_cross_entropy'".format(self.loss['type'])
+            )
+
+        self.eval_loss_function = SoftmaxCrossEntropyMetric(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='eval_loss'
+        )
 
     def _setup_metrics(self):
         pass
