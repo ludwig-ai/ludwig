@@ -152,7 +152,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
                inputs.dtype == tf.int32 or inputs.dtype == tf.int64
         assert len(inputs.shape) == 2
 
-        inputs_exp = tf.cast(inputs[:, tf.newaxis], dtype=tf.int32)
+        inputs_exp = tf.cast(inputs, dtype=tf.int32)
         inputs_encoded = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )
