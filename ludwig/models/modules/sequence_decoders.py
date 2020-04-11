@@ -39,8 +39,13 @@ class SequenceGeneratorDecoder(Layer):
             tied_embeddings=None,
             initializer=None,
             regularize=True,
+            is_timeseries=False,
+            num_classes=0,
             **kwargs
     ):
+        super().__init__()
+
+
         self.cell_type = cell_type
         self.state_size = state_size
         self.embedding_size = embedding_size
@@ -50,16 +55,23 @@ class SequenceGeneratorDecoder(Layer):
         self.tied_embeddings = tied_embeddings
         self.initializer = initializer
         self.regularize = regularize
+        self.is_timeseries = is_timeseries
+        self.num_classes = num_classes
 
-    def __call__(
+
+
+    def call(
             self,
-            output_feature,
-            targets,
             hidden,
-            hidden_size,
-            regularizer,
-            is_timeseries=False
+            **kwargs
+#            output_feature,
+#            targets,
+#            hidden,
+#            hidden_size,
+#            regularizer,
+
     ):
+
         if len(hidden.shape) != 3 and self.attention_mechanism is not None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
@@ -68,41 +80,43 @@ class SequenceGeneratorDecoder(Layer):
                 'and flatten to False if those parameters apply.'
                 'Also make sure theat reduce_input of {} output feature is None,'.format(
                     len(hidden.shape), self.attention_mechanism,
-                    output_feature['name']))
+                    self.output_feature))
         if len(hidden.shape) != 2 and self.attention_mechanism is None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
                 'when attention mechanism is {}. '
                 'Consider setting reduce_input of {} output feature to a value different from None.'.format(
                     len(hidden.shape), self.attention_mechanism,
-                    output_feature['name']))
+                    self.output_feature))
 
-        if is_timeseries:
+        tied_embeddings_tensor = None
+        # todo tf2  determine how to handle following
+        # if self.tied_embeddings is not None:
+        #     try:
+        #         tied_embeddings_tensor = tf.get_default_graph().get_tensor_by_name(
+        #             '{}/embeddings:0'.format(self.tied_embeddings))
+        #     except:
+        #         raise ValueError(
+        #             'An error occurred while obtaining embeddings from the feature {} '
+        #             'to use as tied weights in the generator decoder of feature {}. '
+        #             '{} does not exists or does not have an embedding weights.v'
+        #             'Please check the spelling of the feature name '
+        #             'in the tied_embeddings field and '
+        #             'be sure its type is not binary, numerical or timeseries.'.format(
+        #                 self.tied_embeddings,
+        #                 output_feature['name'],
+        #                 self.tied_embeddings
+        #             )
+        #         )
+
+
+        if self.is_timeseries:
             vocab_size = 1
         else:
-            vocab_size = output_feature['num_classes']
+            vocab_size = self.num_classes
 
         if not self.regularize:
             regularizer = None
-
-        tied_embeddings_tensor = None
-        if self.tied_embeddings is not None:
-            try:
-                tied_embeddings_tensor = tf.get_default_graph().get_tensor_by_name(
-                    '{}/embeddings:0'.format(self.tied_embeddings))
-            except:
-                raise ValueError(
-                    'An error occurred while obtaining embeddings from the feature {} '
-                    'to use as tied weights in the generator decoder of feature {}. '
-                    '{} does not exists or does not have an embedding weights.v'
-                    'Please check the spelling of the feature name '
-                    'in the tied_embeddings field and '
-                    'be sure its type is not binary, numerical or timeseries.'.format(
-                        self.tied_embeddings,
-                        output_feature['name'],
-                        self.tied_embeddings
-                    )
-                )
 
         predictions_sequence, predictions_sequence_scores, \
         predictions_sequence_length_with_eos, \
@@ -118,7 +132,7 @@ class SequenceGeneratorDecoder(Layer):
             beam_width=self.beam_width,
             num_layers=self.num_layers,
             attention_mechanism=self.attention_mechanism,
-            is_timeseries=is_timeseries,
+            is_timeseries=self.is_timeseries,
             embeddings=tied_embeddings_tensor,
             initializer=self.initializer,
             regularizer=regularizer
