@@ -131,11 +131,13 @@ a footnote-ref::before {
 }
 
 .md-typeset table:not([class]) th {
-    background-color: #2b2c2f;
+    background-color: #202124;
+    font-weight: bold;
 }
 
 table, th, td {
     border: 1px solid #888;
+    background-color: #2b2c2f;
 }
 
 button[data-md-color-primary="grey"] {
