@@ -6,48 +6,39 @@
     <!-- Link to previous and/or next page -->
     {% if page.previous_page or page.next_page %}
     <div class="md-footer-nav">
-        <nav class="md-footer-nav__inner md-grid">
-
-            <!-- Link to previous page -->
+        <nav aria-label="{{ lang.t('footer.title') }}"
+             class="md-footer-nav__inner md-grid">
             {% if page.previous_page %}
-            <a class="md-flex md-footer-nav__link md-footer-nav__link--prev"
-               href="{{ page.previous_page.url | url }}"
-               rel="prev"
-               title="{{ page.previous_page.title }}">
-                <div class="md-flex__cell md-flex__cell--shrink">
-                    <i class="md-icon md-icon--arrow-back
-                    md-footer-nav__button"></i>
+            <a class="md-footer-nav__link md-footer-nav__link--prev"
+               href="{{ page.previous_page.url | url }}" rel="prev"
+               title="{{ page.previous_page.title | striptags }}">
+                <div class="md-footer-nav__button md-icon">
+                    {% include ".icons/material/arrow-left.svg" %}
                 </div>
-                <div class="md-flex__cell md-flex__cell--stretch
-                  md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  {{ lang.t("footer.previous") }}
-                </span>
-                {{ page.previous_page.title }}
-              </span>
+                <div class="md-footer-nav__title">
+                    <div class="md-ellipsis">
+                 <span class="md-footer-nav__direction">
+                   {{ lang.t("footer.previous") }}
+                 </span>
+                        {{ page.previous_page.title }}
+                    </div>
                 </div>
             </a>
             {% endif %}
-
-            <!-- Link to next page -->
             {% if page.next_page %}
-            <a class="md-flex md-footer-nav__link md-footer-nav__link--next"
-               href="{{ page.next_page.url | url }}"
-               rel="next"
-               title="{{ page.next_page.title }}">
-                <div class="md-flex__cell md-flex__cell--stretch
-                  md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  {{ lang.t("footer.next") }}
-                </span>
-                {{ page.next_page.title }}
-              </span>
+            <a class="md-footer-nav__link md-footer-nav__link--next"
+               href="{{ page.next_page.url | url }}" rel="next"
+               title="{{ page.next_page.title | striptags }}">
+                <div class="md-footer-nav__title">
+                    <div class="md-ellipsis">
+                 <span class="md-footer-nav__direction">
+                   {{ lang.t("footer.next") }}
+                 </span>
+                        {{ page.next_page.title }}
+                    </div>
                 </div>
-                <div class="md-flex__cell md-flex__cell--shrink">
-                    <i class="md-icon md-icon--arrow-forward
-                    md-footer-nav__button"></i>
+                <div class="md-footer-nav__button md-icon">
+                    {% include ".icons/material/arrow-right.svg" %}
                 </div>
             </a>
             {% endif %}

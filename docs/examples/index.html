@@ -15,30 +15,24 @@
       
       
         <meta name="author" content="Piero Molino">
-      
+
       <link rel="shortcut icon" href="../favicon.ico">
       <meta content="mkdocs-1.1, mkdocs-material-5.0.2" name="generator">
-    
-    
-      
-        <title>Examples - Ludwig</title>
+
+
+      <title>Examples - Ludwig</title>
 
 
       <link href="../assets/stylesheets/main.07c9fbf5.min.css" rel="stylesheet">
 
       <link href="../assets/stylesheets/palette.ecd4686e.min.css"
             rel="stylesheet">
-      
-      
-        
-        
-        <meta name="theme-color" content="#757575">
-      
-    
-    
-    
-      
-        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+
+
+      <meta name="theme-color" content="#757575">
+
+
+      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
       <style>body, input {
           font-family: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif
@@ -47,27 +41,22 @@
       code, kbd, pre {
           font-family: "Roboto Mono", SFMono-Regular, Consolas, Menlo, monospace
       }</style>
-      
-    
-    
-    
+
+
       <link rel="stylesheet" href="../stylesheets/extra.css">
-    
+
       <link rel="stylesheet" href="../stylesheets/monokai.css">
-    
-    
-      
-    
-    
+
+
   </head>
 
 
-  <body dir="ltr" data-md-color-primary="grey" data-md-color-accent="grey">
+  <body data-md-color-accent="grey" data-md-color-primary="grey" dir="ltr">
 
-  <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer"
-         autocomplete="off">
-  <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search"
-         autocomplete="off">
+  <input autocomplete="off" class="md-toggle" data-md-toggle="drawer"
+         id="__drawer" type="checkbox">
+  <input autocomplete="off" class="md-toggle" data-md-toggle="search"
+         id="__search" type="checkbox">
   <label class="md-overlay" for="__drawer"></label>
   <div data-md-component="skip">
 
@@ -82,92 +71,102 @@
   </div>
 
   <header class="md-header" data-md-component="header">
-      <nav class="md-header-nav md-grid">
-          <div class="md-flex">
-              <div class="md-flex__cell md-flex__cell--shrink">
-                  <a class="md-header-nav__button md-logo"
-                     href="https://uber.github.io/ludwig/" title="Ludwig">
-                      <img src="../images/ludwig_logo.svg"
-                           style="height:1.4rem;">
-                  </a>
+      <nav aria-label="Header" class="md-header-nav md-grid">
+          <a aria-label="Ludwig" class="md-header-nav__button md-logo"
+             href="https://uber.github.io/ludwig/" title="Ludwig">
+
+              <img alt="logo" src="../images/ludwig_logo.svg"
+                   style="height:1rem;width:4rem;">
+
+          </a>
+          <label class="md-header-nav__button md-icon" for="__drawer">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
+              </svg>
+          </label>
+          <div class="md-header-nav__title" data-md-component="header-title">
+
+              <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            Ludwig
+          </span>
+                  <span class="md-header-nav__topic md-ellipsis">
+            
+              Examples
+            
+          </span>
               </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-                <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
-            </div>
-            <div class="md-flex__cell md-flex__cell--stretch">
-                <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
-                    
-                    <span class="md-header-nav__topic">
-                    Examples
-                    </span>
-                    
-                </div>
-            </div>
-            <div class="md-flex__cell md-flex__cell--shrink">
-                
-                
-                <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-                
-<div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-      <form class="md-search__form" name="search">
-          <input aria-label="Search" autocapitalize="off" autocomplete="off"
-                 autocorrect="off" class="md-search__input"
-                 data-md-component="search-query" data-md-state="active"
-                 name="query" placeholder="Search" spellcheck="false"
-                 type="text">
-          <label class="md-search__icon md-icon" for="__search">
+
+          </div>
+
+          <label class="md-header-nav__button md-icon" for="__search">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
               </svg>
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
-              </svg>
           </label>
-          <button aria-label="Clear" class="md-search__icon md-icon"
-                  data-md-component="search-reset" tabindex="-1" type="reset">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-              </svg>
-          </button>
-      </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
-          <div class="md-search-result" data-md-component="search-result">
-              <div class="md-search-result__meta">
-                  Type to start searching
+
+          <div class="md-search" data-md-component="search" role="dialog">
+              <label class="md-search__overlay" for="__search"></label>
+              <div class="md-search__inner" role="search">
+                  <form class="md-search__form" name="search">
+                      <input aria-label="Search" autocapitalize="off"
+                             autocomplete="off" autocorrect="off"
+                             class="md-search__input"
+                             data-md-component="search-query"
+                             data-md-state="active" name="query"
+                             placeholder="Search" spellcheck="false"
+                             type="text">
+                      <label class="md-search__icon md-icon" for="__search">
+                          <svg viewBox="0 0 24 24"
+                               xmlns="http://www.w3.org/2000/svg">
+                              <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
+                          </svg>
+                          <svg viewBox="0 0 24 24"
+                               xmlns="http://www.w3.org/2000/svg">
+                              <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
+                          </svg>
+                      </label>
+                      <button aria-label="Clear" class="md-search__icon md-icon"
+                              data-md-component="search-reset" tabindex="-1"
+                              type="reset">
+                          <svg viewBox="0 0 24 24"
+                               xmlns="http://www.w3.org/2000/svg">
+                              <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                          </svg>
+                      </button>
+                  </form>
+                  <div class="md-search__output">
+                      <div class="md-search__scrollwrap" data-md-scrollfix>
+                          <div class="md-search-result"
+                               data-md-component="search-result">
+                              <div class="md-search-result__meta">
+                                  Type to start searching
+                              </div>
+                              <ol class="md-search-result__list"></ol>
+                          </div>
+                      </div>
+                  </div>
               </div>
-              <ol class="md-search-result__list"></ol>
           </div>
-      </div>
-    </div>
-  </div>
-</div>
-                
-                
-            </div>
-            
-            <div class="md-flex__cell md-flex__cell--shrink">
-                <div class="md-header-nav__source">
 
-                    <a class="md-source" href="https://github.com/uber/ludwig/"
-                       title="Go to repository">
-                        <div class="md-source__icon md-icon">
 
-                            <svg viewBox="0 0 448 512"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
-                            </svg>
-                        </div>
-                        <div class="md-source__repository">
-                            uber/ludwig
-                        </div>
-                    </a>
-                </div>
-            </div>
+          <div class="md-header-nav__source">
 
+              <a class="md-source" href="https://github.com/uber/ludwig/"
+                 title="Go to repository">
+                  <div class="md-source__icon md-icon">
+
+                      <svg viewBox="0 0 448 512"
+                           xmlns="http://www.w3.org/2000/svg">
+                          <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
+                      </svg>
+                  </div>
+                  <div class="md-source__repository">
+                      uber/ludwig
+                  </div>
+              </a>
           </div>
+
       </nav>
   </header>
 
@@ -182,32 +181,37 @@
                    data-md-component="navigation">
                   <div class="md-sidebar__scrollwrap">
                       <div class="md-sidebar__inner">
-                          <nav class="md-nav md-nav--primary" data-md-level="0">
-                              <label class="md-nav__title md-nav__title--site"
-                                     for="__drawer">
-                                  <a class="md-nav__button md-logo"
+                          <nav aria-label="Navigation"
+                               class="md-nav md-nav--primary"
+                               data-md-level="0">
+                              <label class="md-nav__title" for="__drawer">
+                                  <a aria-label="Ludwig"
+                                     class="md-nav__button md-logo"
                                      href="https://uber.github.io/ludwig/"
                                      title="Ludwig">
-                                      <img src="../images/ludwig_logo.svg"
-                                           style="width: 10rem">
-        </a>
-    </label>
-    
-    <div class="md-nav__source">
+                                      <img alt="logo"
+                                           src="../images/ludwig_logo.svg"
+                                           style="width:10rem;height:auto;">
+                                  </a>
+                              </label>
 
-        <a class="md-source" href="https://github.com/uber/ludwig/"
-           title="Go to repository">
-            <div class="md-source__icon md-icon">
+                              <div class="md-nav__source">
 
-                <svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
-                </svg>
-            </div>
-            <div class="md-source__repository">
-                uber/ludwig
-            </div>
-        </a>
-    </div>
+                                  <a class="md-source"
+                                     href="https://github.com/uber/ludwig/"
+                                     title="Go to repository">
+                                      <div class="md-source__icon md-icon">
+
+                                          <svg viewBox="0 0 448 512"
+                                               xmlns="http://www.w3.org/2000/svg">
+                                              <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
+                                          </svg>
+                                      </div>
+                                      <div class="md-source__repository">
+                                          uber/ludwig
+                                      </div>
+                                  </a>
+                              </div>
     
     <ul class="md-nav__list" data-md-scrollfix>
         
@@ -234,63 +238,60 @@
     </a>
   </li>
 
-        
-        
-        
-        
 
-  
+        <li class="md-nav__item md-nav__item--active">
 
-
-  <li class="md-nav__item md-nav__item--active">
-
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" id="__toc"
-             type="checkbox">
+            <input class="md-nav__toggle md-toggle" data-md-toggle="toc"
+                   id="__toc" type="checkbox">
 
 
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-          Examples
-          <span class="md-nav__icon md-icon">
+            <label class="md-nav__link md-nav__link--active" for="__toc">
+                Examples
+                <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z"/></svg>
         </span>
-      </label>
-    
-    <a href="./" title="Examples" class="md-nav__link md-nav__link--active">
-      Examples
-    </a>
+            </label>
+
+            <a href="./" title="Examples"
+               class="md-nav__link md-nav__link--active">
+                Examples
+            </a>
 
 
-      <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+            <nav aria-label="Table of contents"
+                 class="md-nav md-nav--secondary">
 
 
-          <label class="md-nav__title" for="__toc">
+                <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-              Table of contents
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
+                    Table of contents
+                </label>
+                <ul class="md-nav__list" data-md-scrollfix>
 
-              <li class="md-nav__item">
-                  <a href="#text-classification" class="md-nav__link">
-                      Text Classification
-                  </a>
+                    <li class="md-nav__item">
+                        <a class="md-nav__link" href="#text-classification">
+                            Text Classification
+                        </a>
 
-              </li>
+                    </li>
 
-              <li class="md-nav__item">
-  <a href="#named-entity-recognition-tagging" class="md-nav__link">
-    Named Entity Recognition Tagging
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#natural-language-understanding" class="md-nav__link">
-    Natural Language Understanding
-  </a>
+                    <li class="md-nav__item">
+                        <a href="#named-entity-recognition-tagging"
+                           class="md-nav__link">
+                            Named Entity Recognition Tagging
+                        </a>
+
+                    </li>
+
+                    <li class="md-nav__item">
+                        <a href="#natural-language-understanding"
+                           class="md-nav__link">
+                            Natural Language Understanding
+                        </a>
   
 </li>
       
@@ -321,34 +322,38 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#image-classification-mnist" class="md-nav__link">
-    Image Classification (MNIST)
-  </a>
-
-            <nav aria-label="Image Classification (MNIST)" class="md-nav">
-                <ul class="md-nav__list">
 
                     <li class="md-nav__item">
-                        <a href="#download-the-mnist-dataset"
+                        <a href="#image-classification-mnist"
                            class="md-nav__link">
-                            Download the MNIST dataset.
+                            Image Classification (MNIST)
                         </a>
 
-                    </li>
+                        <nav aria-label="Image Classification (MNIST)"
+                             class="md-nav">
+                            <ul class="md-nav__list">
 
-                    <li class="md-nav__item">
-  <a href="#create-train-and-test-csvs" class="md-nav__link">
-    Create train and test CSVs.
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#train-a-model" class="md-nav__link">
-    Train a model.
-  </a>
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link"
+                                       href="#download-the-mnist-dataset">
+                                        Download the MNIST dataset.
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a href="#create-train-and-test-csvs"
+                                       class="md-nav__link">
+                                        Create train and test CSVs.
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a href="#train-a-model"
+                                       class="md-nav__link">
+                                        Train a model.
+                                    </a>
   
 </li>
         
@@ -377,34 +382,38 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#spoken-digit-speech-recognition" class="md-nav__link">
-    Spoken Digit Speech Recognition
-  </a>
-
-            <nav aria-label="Spoken Digit Speech Recognition" class="md-nav">
-                <ul class="md-nav__list">
 
                     <li class="md-nav__item">
-                        <a href="#download-the-free-spoken-digit-dataset"
+                        <a href="#spoken-digit-speech-recognition"
                            class="md-nav__link">
-                            Download the free spoken digit dataset.
+                            Spoken Digit Speech Recognition
                         </a>
 
-                    </li>
+                        <nav aria-label="Spoken Digit Speech Recognition"
+                             class="md-nav">
+                            <ul class="md-nav__list">
 
-                    <li class="md-nav__item">
-  <a href="#create-an-experiment-csv" class="md-nav__link">
-    Create an experiment CSV.
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#train-a-model_1" class="md-nav__link">
-    Train a model.
-  </a>
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link"
+                                       href="#download-the-free-spoken-digit-dataset">
+                                        Download the free spoken digit dataset.
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a href="#create-an-experiment-csv"
+                                       class="md-nav__link">
+                                        Create an experiment CSV.
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a href="#train-a-model_1"
+                                       class="md-nav__link">
+                                        Train a model.
+                                    </a>
   
 </li>
         
@@ -506,48 +515,39 @@
     </a>
   </li>
 
-        
-        
-        
-        
 
+        <li class="md-nav__item md-nav__item--nested">
 
-  <li class="md-nav__item md-nav__item--nested">
+            <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6"
+                   id="nav-6" type="checkbox">
 
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6" id="nav-6"
-             type="checkbox">
-
-      <label class="md-nav__link" for="nav-6">
-          API
-          <span class="md-nav__icon md-icon">
+            <label class="md-nav__link" for="nav-6">
+                API
+                <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
       </span>
-      </label>
-      <nav aria-label="API" class="md-nav" data-md-level="1">
-          <label class="md-nav__title" for="nav-6">
+            </label>
+            <nav aria-label="API" class="md-nav" data-md-level="1">
+                <label class="md-nav__title" for="nav-6">
         <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
         </span>
-              API
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
+                    API
+                </label>
+                <ul class="md-nav__list" data-md-scrollfix>
 
 
-              <li class="md-nav__item">
-    <a href="../api/LudwigModel/" title="LudwigModel" class="md-nav__link">
-      LudwigModel
-    </a>
-  </li>
-
-        
-          
-          
-          
+                    <li class="md-nav__item">
+                        <a href="../api/LudwigModel/" title="LudwigModel"
+                           class="md-nav__link">
+                            LudwigModel
+                        </a>
+                    </li>
 
 
-  <li class="md-nav__item">
+                    <li class="md-nav__item">
     <a href="../api/visualization/" title="Visualization" class="md-nav__link">
       Visualization
     </a>
@@ -580,40 +580,42 @@
             
               <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
                 <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
+                    <div class="md-sidebar__inner">
 
-                      <nav aria-label="Table of contents"
-                           class="md-nav md-nav--secondary">
+                        <nav aria-label="Table of contents"
+                             class="md-nav md-nav--secondary">
 
 
-                          <label class="md-nav__title" for="__toc">
+                            <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-                              Table of contents
-                          </label>
-                          <ul class="md-nav__list" data-md-scrollfix>
+                                Table of contents
+                            </label>
+                            <ul class="md-nav__list" data-md-scrollfix>
 
-                              <li class="md-nav__item">
-                                  <a href="#text-classification"
-                                     class="md-nav__link">
-                                      Text Classification
-                                  </a>
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link"
+                                       href="#text-classification">
+                                        Text Classification
+                                    </a>
 
-                              </li>
+                                </li>
 
-                              <li class="md-nav__item">
-  <a href="#named-entity-recognition-tagging" class="md-nav__link">
-    Named Entity Recognition Tagging
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#natural-language-understanding" class="md-nav__link">
-    Natural Language Understanding
-  </a>
+                                <li class="md-nav__item">
+                                    <a href="#named-entity-recognition-tagging"
+                                       class="md-nav__link">
+                                        Named Entity Recognition Tagging
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a href="#natural-language-understanding"
+                                       class="md-nav__link">
+                                        Natural Language Understanding
+                                    </a>
   
 </li>
       
@@ -644,34 +646,38 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#image-classification-mnist" class="md-nav__link">
-    Image Classification (MNIST)
-  </a>
 
-            <nav aria-label="Image Classification (MNIST)" class="md-nav">
-                <ul class="md-nav__list">
+                                <li class="md-nav__item">
+                                    <a href="#image-classification-mnist"
+                                       class="md-nav__link">
+                                        Image Classification (MNIST)
+                                    </a>
 
-                    <li class="md-nav__item">
-                        <a href="#download-the-mnist-dataset"
-                           class="md-nav__link">
-                            Download the MNIST dataset.
-                        </a>
+                                    <nav aria-label="Image Classification (MNIST)"
+                                         class="md-nav">
+                                        <ul class="md-nav__list">
 
-                    </li>
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link"
+                                                   href="#download-the-mnist-dataset">
+                                                    Download the MNIST dataset.
+                                                </a>
 
-                    <li class="md-nav__item">
-  <a href="#create-train-and-test-csvs" class="md-nav__link">
-    Create train and test CSVs.
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#train-a-model" class="md-nav__link">
-    Train a model.
-  </a>
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a href="#create-train-and-test-csvs"
+                                                   class="md-nav__link">
+                                                    Create train and test CSVs.
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a href="#train-a-model"
+                                                   class="md-nav__link">
+                                                    Train a model.
+                                                </a>
   
 </li>
         
@@ -700,34 +706,39 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#spoken-digit-speech-recognition" class="md-nav__link">
-    Spoken Digit Speech Recognition
-  </a>
 
-            <nav aria-label="Spoken Digit Speech Recognition" class="md-nav">
-                <ul class="md-nav__list">
+                                <li class="md-nav__item">
+                                    <a href="#spoken-digit-speech-recognition"
+                                       class="md-nav__link">
+                                        Spoken Digit Speech Recognition
+                                    </a>
 
-                    <li class="md-nav__item">
-                        <a href="#download-the-free-spoken-digit-dataset"
-                           class="md-nav__link">
-                            Download the free spoken digit dataset.
-                        </a>
+                                    <nav aria-label="Spoken Digit Speech Recognition"
+                                         class="md-nav">
+                                        <ul class="md-nav__list">
 
-                    </li>
+                                            <li class="md-nav__item">
+                                                <a class="md-nav__link"
+                                                   href="#download-the-free-spoken-digit-dataset">
+                                                    Download the free spoken
+                                                    digit dataset.
+                                                </a>
 
-                    <li class="md-nav__item">
-  <a href="#create-an-experiment-csv" class="md-nav__link">
-    Create an experiment CSV.
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#train-a-model_1" class="md-nav__link">
-    Train a model.
-  </a>
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a href="#create-an-experiment-csv"
+                                                   class="md-nav__link">
+                                                    Create an experiment CSV.
+                                                </a>
+
+                                            </li>
+
+                                            <li class="md-nav__item">
+                                                <a href="#train-a-model_1"
+                                                   class="md-nav__link">
+                                                    Train a model.
+                                                </a>
   
 </li>
         
@@ -805,55 +816,58 @@
                   </div>
                 </div>
               </div>
-            
-          
-          <div class="md-content">
-              <article class="md-content__inner md-typeset">
 
 
-                  <a class="md-content__button md-icon"
-                     href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/examples.md"
-                     title="Edit this page">
-                      <svg viewBox="0 0 24 24"
-                           xmlns="http://www.w3.org/2000/svg">
-                          <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
-                      </svg>
-                  </a>
+              <div class="md-content">
+                  <article class="md-content__inner md-typeset">
 
 
-                  <h1>Examples</h1>
+                      <a class="md-content__button md-icon"
+                         href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/examples.md"
+                         title="Edit this page">
+                          <svg viewBox="0 0 24 24"
+                               xmlns="http://www.w3.org/2000/svg">
+                              <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
+                          </svg>
+                      </a>
 
-                  <p>This section contains several examples of how to build
-                      models with Ludwig for a variety of tasks.
-                      For each task we show an example dataset and a sample
-                      model definition that can be used to train a model from
-                      that data.</p>
-                  <h2 id="text-classification">Text Classification<a
-                          class="headerlink" href="#text-classification"
-                          title="Permanent link">&para;</a></h2>
-                  <p>This example shows how to build a text classifier with
-                      Ludwig.
-                      It can be performed using the <a
-                              href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip">Reuters-21578</a>
-                      dataset, in particular the version available on <a
-                              href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/">CMU's
-                          Text Analytics course website</a>.
-                      Other datasets available on the same webpage, like <a
-                              href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/ohsumed-allcats-6.zip">OHSUMED</a>,
-                      is a well-known medical abstracts dataset, and <a
-                              href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/epinions.zip">Epinions.com</a>,
-                      a dataset of product reviews, can be used too as the name
-                      of the columns is the same.</p>
-<table>
-<thead>
-<tr>
-<th>text</th>
-<th>class</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Toronto  Feb 26 - Standard Trustco said it expects earnings in 1987 to increase at least 15...</td>
+
+                      <h1>Examples</h1>
+
+                      <p>This section contains several examples of how to build
+                          models with Ludwig for a variety of tasks.
+                          For each task we show an example dataset and a sample
+                          model definition that can be used to train a model
+                          from that data.</p>
+                      <h2 id="text-classification">Text Classification<a
+                              class="headerlink" href="#text-classification"
+                              title="Permanent link">&para;</a></h2>
+                      <p>This example shows how to build a text classifier with
+                          Ludwig.
+                          It can be performed using the <a
+                                  href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/reuters-allcats-6.zip">Reuters-21578</a>
+                          dataset, in particular the version available on <a
+                                  href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/">CMU's
+                              Text Analytics course website</a>.
+                          Other datasets available on the same webpage, like <a
+                                  href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/ohsumed-allcats-6.zip">OHSUMED</a>,
+                          is a well-known medical abstracts dataset, and <a
+                                  href="http://boston.lti.cs.cmu.edu/classes/95-865-K/HW/HW2/epinions.zip">Epinions.com</a>,
+                          a dataset of product reviews, can be used too as the
+                          name of the columns is the same.</p>
+                      <table>
+                          <thead>
+                          <tr>
+                              <th>text</th>
+                              <th>class</th>
+                          </tr>
+                          </thead>
+                          <tbody>
+                          <tr>
+                              <td>Toronto Feb 26 - Standard Trustco said it
+                                  expects earnings in 1987 to increase at least
+                                  15...
+                              </td>
 <td>earnings</td>
 </tr>
 <tr>
@@ -2250,18 +2264,24 @@ df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
 
 <span class="nt">combiner</span><span class="p">:</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">concat</span>
-    <span class="nt">num_fc_layers</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-    <span class="nt">fc_size</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">48</span>
+    <span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">concat</span>
+    <span class="nt">num_fc_layers</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">1</span>
+    <span class="nt">fc_size</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">48</span>
 
 <span class="nt">output_features</span><span class="p">:</span>
   <span class="p p-Indicator">-</span>
-    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">fraud_label</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">binary</span>
-</code></pre></div>
+    <span class="nt">name</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">fraud_label</span>
+    <span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">binary</span>
+</code></pre>
+</div>
 
 
-              </article>
+                  </article>
           </div>
         </div>
       </main>
@@ -2272,50 +2292,45 @@ df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
 <footer class="md-footer">
 
     <!-- Link to previous and/or next page -->
-    
-    <div class="md-footer-nav">
-        <nav class="md-footer-nav__inner md-grid">
 
-            <!-- Link to previous page -->
-            
-            <a class="md-flex md-footer-nav__link md-footer-nav__link--prev"
-               href="../getting_started/"
-               rel="prev"
+    <div class="md-footer-nav">
+        <nav aria-label="Footer"
+             class="md-footer-nav__inner md-grid">
+
+            <a class="md-footer-nav__link md-footer-nav__link--prev"
+               href="../getting_started/" rel="prev"
                title="Getting Started">
-                <div class="md-flex__cell md-flex__cell--shrink">
-                    <i class="md-icon md-icon--arrow-back
-                    md-footer-nav__button"></i>
+                <div class="md-footer-nav__button md-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
+                    </svg>
                 </div>
-                <div class="md-flex__cell md-flex__cell--stretch
-                  md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Getting Started
-              </span>
+                <div class="md-footer-nav__title">
+                    <div class="md-ellipsis">
+                 <span class="md-footer-nav__direction">
+                   Previous
+                 </span>
+                        Getting Started
+                    </div>
                 </div>
             </a>
-            
 
-            <!-- Link to next page -->
-            
-            <a class="md-flex md-footer-nav__link md-footer-nav__link--next"
-               href="../user_guide/"
-               rel="next"
+
+            <a class="md-footer-nav__link md-footer-nav__link--next"
+               href="../user_guide/" rel="next"
                title="User Guide">
-                <div class="md-flex__cell md-flex__cell--stretch
-                  md-footer-nav__title">
-              <span class="md-flex__ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                User Guide
-              </span>
+                <div class="md-footer-nav__title">
+                    <div class="md-ellipsis">
+                 <span class="md-footer-nav__direction">
+                   Next
+                 </span>
+                        User Guide
+                    </div>
                 </div>
-                <div class="md-flex__cell md-flex__cell--shrink">
-                    <i class="md-icon md-icon--arrow-forward
-                    md-footer-nav__button"></i>
+                <div class="md-footer-nav__button md-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"/>
+                    </svg>
                 </div>
             </a>
             
