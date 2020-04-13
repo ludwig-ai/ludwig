@@ -35,4 +35,4 @@ class BinaryPassthroughEncoder(Layer):
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
         """
-        return tf.cast(inputs, dtype=tf.float32)
+        return {'encoder_output': tf.cast(inputs, dtype=tf.float32)}

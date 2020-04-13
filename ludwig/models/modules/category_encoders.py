@@ -36,7 +36,7 @@ class CategoricalPassthroughEncoder(Layer):
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.int32
         """
-        return inputs
+        return {'encoder_output': inputs}
 
 
 class CategoricalEmbedEncoder(Layer):
@@ -97,7 +97,7 @@ class CategoricalEmbedEncoder(Layer):
         #           dimension
         embedded = tf.squeeze(embedded)
 
-        return embedded
+        return {'encoder_output': embedded}
 
 class CategoricalSparseEncoder(Layer):
 
@@ -157,4 +157,4 @@ class CategoricalSparseEncoder(Layer):
         #           dimension
         embedded = tf.squeeze(embedded)
 
-        return embedded
+        return {'encoder_output': embedded}
