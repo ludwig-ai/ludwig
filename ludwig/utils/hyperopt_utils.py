@@ -25,7 +25,7 @@ from ludwig.utils.misc import get_from_registry, set_default_values, set_default
 logger = logging.getLogger(__name__)
 
 
-class HyperoptStrategy((ABC)):
+class HyperoptStrategy(ABC):
     def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
         self.goal = goal  # useful for bayesian stratiegy
         self.parameters = parameters
@@ -45,6 +45,11 @@ class HyperoptStrategy((ABC)):
         # Given the results of previous computation, it updates
         # the strategy (not needed for stateless strategies like "grid"
         # and random, but will be needed by bayesian)
+        pass
+
+    @abstractmethod
+    def finished(self):
+        # Should return true when all samples have been sampled
         pass
 
 
@@ -70,6 +75,9 @@ class RandomStrategy(HyperoptStrategy):
         # actual implementation ...
         pass
 
+    def finished(self):
+        pass
+
 
 class GridStrategy(HyperoptStrategy):
     def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
@@ -87,8 +95,11 @@ class GridStrategy(HyperoptStrategy):
         # actual implementation ...
         pass
 
+    def finished(self):
+        pass
 
-class HyperoptExecutor((ABC)):
+
+class HyperoptExecutor(ABC):
     def __init__(
             self,
             hyperopt_strategy: HyperoptStrategy,
@@ -101,7 +112,7 @@ class HyperoptExecutor((ABC)):
         self.metric = metric
         self.split = split
 
-    def get_metric(self, training_results):
+    def get_metric_score(self, training_results):
         return training_results[self.split][self.output_feature][self.metric]
 
     def sort_hyperopt_results(self, hyperopt_results):
@@ -159,12 +170,10 @@ class SerialExecutor(HyperoptExecutor):
             output_feature: str,
             measure: str,
             split: str,
-            other_params
     ) -> None:
         HyperoptExecutor.__init__(
             self, hyperopt_strategy, output_feature, measure, split
         )
-        self.other_params = other_params
 
     def execute(
             self,
@@ -184,8 +193,8 @@ class SerialExecutor(HyperoptExecutor):
             train_set_metadata_json=None,
             experiment_name="hyperopt",
             model_name="run",
-            model_load_path=None,
-            model_resume_path=None,
+            # model_load_path=None,
+            # model_resume_path=None,
             skip_save_training_description=False,
             skip_save_training_statistics=False,
             skip_save_model=False,
@@ -204,34 +213,81 @@ class SerialExecutor(HyperoptExecutor):
             **kwargs
     ):
         hyperopt_results = []
-        sampled_parameters = self.hyperopt_strategy.sample()
+        while not self.hyperopt_strategy.finished():
+            sampled_parameters = self.hyperopt_strategy.sample()
 
-        for parameters in sampled_parameters:
-            model_definition = substitute_parameters(
-                model_definition, parameters
-            )
+            for parameters in sampled_parameters:
+                model_definition = substitute_parameters(
+                    model_definition, parameters
+                )
 
-            # TODO:Train model with Sampled parameters and function params & get `train_stats`.
-            # Collect training and validation losses and measures & append it to `results`
-            training_results = None
-            metric_val = self.get_metric(training_results)
+                # TODO:Train model with Sampled parameters and function params & get `train_stats`.
+                # Collect training and validation losses and measures & append it to `results`
+                training_results = None
+                metric_val = self.get_metric_score(training_results)
 
-            hyperopt_results.append({
-                'parameters': parameters,
-                'metric_val': metric_val,
-                'training_results': training_results
-            })
+                hyperopt_results.append({
+                    'parameters': parameters,
+                    'metric_val': metric_val,
+                    'training_results': training_results
+                })
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
 
         return hyperopt_results
 
 
-class ParallelExecutor:
-    def __init__(self, **kwargs):
-        pass
+class ParallelExecutor(HyperoptExecutor):
+    def __init__(
+            self,
+            hyperopt_strategy: HyperoptStrategy,
+            output_feature: str,
+            measure: str,
+            split: str,
+            num_workers: int = 2,
+    ) -> None:
+        HyperoptExecutor.__init__(
+            self, hyperopt_strategy, output_feature, measure, split
+        )
+        self.num_workers = num_workers
 
-    def __call__(self, **kwargs):
+    def execute(
+            self,
+            model_definition,
+            data_df=None,
+            data_train_df=None,
+            data_validation_df=None,
+            data_test_df=None,
+            data_csv=None,
+            data_train_csv=None,
+            data_validation_csv=None,
+            data_test_csv=None,
+            data_hdf5=None,
+            data_train_hdf5=None,
+            data_validation_hdf5=None,
+            data_test_hdf5=None,
+            train_set_metadata_json=None,
+            experiment_name="hyperopt",
+            model_name="run",
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,
+            skip_save_test_predictions=False,
+            skip_save_test_statistics=False,
+            output_directory="results",
+            gpus=None,
+            gpu_fraction=1.0,
+            use_horovod=False,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
+    ):
         pass
 
 
@@ -258,6 +314,7 @@ executor_registry = {
 }
 
 
+# TODO this function should read the default parameters from the strategies and executors
 def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, STRATEGY, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
