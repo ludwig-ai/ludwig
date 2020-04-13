@@ -15,14 +15,48 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import math
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from random import random
+from typing import Any, Dict, List
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc import get_from_registry, set_default_values, set_default_value
+from ludwig.utils.misc import get_from_registry, set_default_values, \
+    set_default_value
 
 logger = logging.getLogger(__name__)
+
+
+def int_sampling_function(low, high, **kwargs):
+    return random.uniform(low, high)
+
+
+def flaot_sampling_function(low, high, scale='linear', base=None):
+    if scale == 'linear':
+        sample = random.uniform(low, high)
+    elif scale == 'log':
+        if base:
+            sample = math.pow(base, random.uniform(low, high))
+        else:
+            sample = math.exp(random.uniform(math.log(low), math.log(high)))
+    else:
+        raise ValueError(
+            'The scale parameter of the float sampling function is "{}". '
+            'Available ones are: {"linear", "log"}'
+        )
+    return sample
+
+
+def category_sampling_function(values):
+    return random.sample(values)
+
+
+sampling_functions_registry = {
+    'int': int_sampling_function,
+    'float': flaot_sampling_function,
+    'category': category_sampling_function,
+}
 
 
 class HyperoptStrategy(ABC):
@@ -36,6 +70,22 @@ class HyperoptStrategy(ABC):
         # Define `build_hyperopt_strategy` which would take paramters as inputs
         pass
 
+    def sample_batch(self, batch_size: int = 1) -> List[Dict[str, Any]]:
+        samples = []
+        for _ in range(batch_size):
+            try:
+                samples.append(self.sample())
+            except IndexError:
+                # Logic: is samples is empty it means that we encoutnered
+                # the IndexError the first time we called self.sample()
+                # so we should raise the exception. If samples is not empty
+                # we should just return it, even if it will contain
+                # less samples than the specified batch_size.
+                # This is fine as from now on finished() will return True.
+                if not samples:
+                    raise IndexError
+        return samples
+
     @abstractmethod
     def update(
             self,
@@ -48,7 +98,7 @@ class HyperoptStrategy(ABC):
         pass
 
     @abstractmethod
-    def finished(self):
+    def finished(self) -> bool:
         # Should return true when all samples have been sampled
         pass
 
@@ -62,21 +112,37 @@ class RandomStrategy(HyperoptStrategy):
     ) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
         self.num_samples = num_samples
+        self.samples = self._determine_samples()
+        self.sampled_so_far = 0
+
+    def _determine_samples(self):
+        samples = []
+        for _ in range(self.num_samples):
+            sample = {}
+            for hp_name, hp_params in self.parameters.items():
+                sampling_function = get_from_registry(
+                    hp_params['type'], sampling_functions_registry
+                )
+                sample[hp_name] = sampling_function(**hp_params)
+            samples.append(sample)
+        return samples
 
     def sample(self) -> Dict[str, Any]:
-        # actual implementation ...
-        pass
+        if self.sampled_so_far >= len(self.samples):
+            raise IndexError()
+        sample = self.samples[self.sampled_so_far]
+        self.sampled_so_far += 1
+        return sample
 
     def update(
             self,
             sampled_parameters: Dict[str, Any],
             statistics: Dict[str, Any]
     ):
-        # actual implementation ...
         pass
 
-    def finished(self):
-        pass
+    def finished(self) -> bool:
+        return self.sampled_so_far >= len(self.samples)
 
 
 class GridStrategy(HyperoptStrategy):
@@ -95,7 +161,7 @@ class GridStrategy(HyperoptStrategy):
         # actual implementation ...
         pass
 
-    def finished(self):
+    def finished(self) -> bool:
         pass
 
 
@@ -214,15 +280,17 @@ class SerialExecutor(HyperoptExecutor):
     ):
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
-            sampled_parameters = self.hyperopt_strategy.sample()
+            sampled_parameters = self.hyperopt_strategy.sample_batch()
 
             for parameters in sampled_parameters:
                 model_definition = substitute_parameters(
                     model_definition, parameters
                 )
 
-                # TODO:Train model with Sampled parameters and function params & get `train_stats`.
-                # Collect training and validation losses and measures & append it to `results`
+                # TODO:Train model with Sampled parameters and function params
+                #  & get `train_stats`.
+                # Collect training and validation losses and measures
+                # & append it to `results`
                 training_results = None
                 metric_val = self.get_metric_score(training_results)
 
@@ -314,7 +382,7 @@ executor_registry = {
 }
 
 
-# TODO this function should read the default parameters from the strategies and executors
+# TODO this function should read default parameters from strategies / executors
 def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, STRATEGY, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
