@@ -60,7 +60,7 @@ def read_csv(data_fp, header=0, nrows=None, skiprows=None):
     """
 
     separator = ','
-    with open(data_fp, 'r') as csvfile:
+    with open(data_fp, 'r', encoding="utf8") as csvfile:
         try:
             dialect = csv.Sniffer().sniff(csvfile.read(1024 * 100),
                                           delimiters=[',', '\t', '|'])
