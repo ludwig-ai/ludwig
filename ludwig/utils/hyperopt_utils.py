@@ -14,13 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import copy
 import logging
 import math
+import random
 from abc import ABC, abstractmethod
-from random import random
 from typing import Any, Dict, List
 
-from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE
+from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, VALIDATION, MAXIMIZE
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_from_registry, set_default_values, \
     set_default_value
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def int_sampling_function(low, high, **kwargs):
-    return random.uniform(low, high)
+    return random.randint(low, high)
 
 
 def flaot_sampling_function(low, high, scale='linear', base=None):
@@ -108,7 +109,8 @@ class RandomStrategy(HyperoptStrategy):
             self,
             goal: str,
             parameters: Dict[str, Any],
-            num_samples=10
+            num_samples=10,
+            **kwargs
     ) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
         self.num_samples = num_samples
@@ -146,7 +148,7 @@ class RandomStrategy(HyperoptStrategy):
 
 
 class GridStrategy(HyperoptStrategy):
-    def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
+    def __init__(self, goal: str, parameters: Dict[str, Any], **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
 
     def sample(self) -> Dict[str, Any]:
@@ -184,8 +186,8 @@ class HyperoptExecutor(ABC):
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
             hyperopt_results,
-            key=lambda hp_res: hp_res['metric_val'],
-            reverse=self.hyperopt_strategy.goal == MINIMIZE
+            key=lambda hp_res: hp_res['metric_score'],
+            reverse=self.hyperopt_strategy.goal == MAXIMIZE
         )
 
     @abstractmethod
@@ -236,6 +238,7 @@ class SerialExecutor(HyperoptExecutor):
             output_feature: str,
             measure: str,
             split: str,
+            **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
             self, hyperopt_strategy, output_feature, measure, split
@@ -283,20 +286,51 @@ class SerialExecutor(HyperoptExecutor):
             sampled_parameters = self.hyperopt_strategy.sample_batch()
 
             for parameters in sampled_parameters:
-                model_definition = substitute_parameters(
-                    model_definition, parameters
+                modified_model_definition = substitute_parameters(
+                    copy.deepcopy(model_definition), parameters
                 )
 
                 # TODO:Train model with Sampled parameters and function params
                 #  & get `train_stats`.
                 # Collect training and validation losses and measures
                 # & append it to `results`
-                training_results = None
-                metric_val = self.get_metric_score(training_results)
+                training_results = {
+                    'training': {
+                        'combined': {
+                            'loss': random.uniform(0.1, 2.0)
+                        },
+                        self.output_feature: {
+                            'loss': random.uniform(0.1, 2.0),
+                            'accuracy': random.uniform(0.0, 1.0),
+                            'mean_squared_error': random.uniform(0.0, 1000),
+                        }
+                    },
+                    'validation': {
+                        'combined': {
+                            'loss': random.uniform(0.1, 2.0)
+                        },
+                        self.output_feature: {
+                            'loss': random.uniform(0.1, 2.0),
+                            'accuracy': random.uniform(0.0, 1.0),
+                            'mean_squared_error': random.uniform(0.0, 1000),
+                        }
+                    },
+                    'test': {
+                        'combined': {
+                            'loss': random.uniform(0.1, 2.0)
+                        },
+                        self.output_feature: {
+                            'loss': random.uniform(0.1, 2.0),
+                            'accuracy': random.uniform(0.0, 1.0),
+                            'mean_squared_error': random.uniform(0.0, 1000),
+                        }
+                    }
+                }
+                metric_score = self.get_metric_score(training_results)
 
                 hyperopt_results.append({
                     'parameters': parameters,
-                    'metric_val': metric_val,
+                    'metric_score': metric_score,
                     'training_results': training_results
                 })
 
@@ -313,6 +347,7 @@ class ParallelExecutor(HyperoptExecutor):
             measure: str,
             split: str,
             num_workers: int = 2,
+            **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
             self, hyperopt_strategy, output_feature, measure, split
@@ -386,6 +421,10 @@ executor_registry = {
 def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, STRATEGY, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
+    set_default_value(hyperopt_params, 'split', VALIDATION)
+    set_default_value(hyperopt_params, 'output_feature', COMBINED)
+    set_default_value(hyperopt_params, 'metric', LOSS)
+    set_default_value(hyperopt_params, 'goal', MINIMIZE)
 
     set_default_values(
         hyperopt_params[STRATEGY],

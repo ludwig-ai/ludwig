@@ -103,16 +103,17 @@ def hyperopt(
     strategy = hyperopt_params["strategy"]
     executor = hyperopt_params["executor"]
     parameters = hyperopt_params["parameters"]
+    split = hyperopt_params["split"]
     output_feature = hyperopt_params["output_feature"]
     metric = hyperopt_params["metric"]
-    split = hyperopt_params["split"]
+    goal = hyperopt_params["goal"]
 
     ######################
     # check validity of output_feature / metric/ split combination
     ######################
     if split == TRAINING:
-        if not (data_train_df or data_train_csv or data_train_hdf5) or (
-                model_definition['preprocessing']['split'][0] <= 0):
+        if not (data_train_df or data_train_csv or data_train_hdf5) and (
+                model_definition['preprocessing']['split_probabilities'][0] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -124,16 +125,16 @@ def hyperopt(
                 data_validation_df or
                 data_validation_csv or
                 data_validation_hdf5
-        ) or (model_definition['preprocessing']['split'][1] <= 0):
+        ) and (model_definition['preprocessing']['split_probabilities'][1] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
-                'or the plit amount specified in the preprocessing section '
+                'or the split amount specified in the preprocessing section '
                 'of the model definition is not greater than 0'.format(split)
             )
     elif split == TEST:
-        if not (data_test_df or data_test_csv or data_test_hdf5) or (
-                model_definition['preprocessing']['split'][2] <= 0):
+        if not (data_test_df or data_test_csv or data_test_hdf5) and (
+                model_definition['preprocessing']['split_probabilities'][2] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -194,7 +195,7 @@ def hyperopt(
 
     hyperopt_strategy = get_build_hyperopt_strategy(
         strategy["type"]
-    )(parameters, **strategy)
+    )(goal, parameters, **strategy)
     hyperopt_executor = get_build_hyperopt_executor(
         executor["type"]
     )(hyperopt_strategy, output_feature, metric, split, **executor)
