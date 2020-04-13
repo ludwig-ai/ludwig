@@ -20,6 +20,7 @@ import os
 
 import h5py
 import numpy as np
+import pandas as pd
 import yaml
 
 from ludwig.constants import *
@@ -47,7 +48,6 @@ from ludwig.utils.misc import set_random_seed
 logger = logging.getLogger(__name__)
 
 DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
-
 
 def build_dataset(
         dataset_csv,
@@ -158,16 +158,14 @@ def build_data(
             preprocessing_parameters = global_preprocessing_parameters[
                 feature['type']
             ]
-        handle_missing_values(
-            dataset_df,
-            feature,
-            preprocessing_parameters
-        )
+
+        handle_missing_values(dataset_df, feature, preprocessing_parameters)
+
         if feature['name'] not in train_set_metadata:
             train_set_metadata[feature['name']] = {}
-        train_set_metadata[
-            feature['name']
-        ]['preprocessing'] = preprocessing_parameters
+
+        train_set_metadata[feature['name']]['preprocessing'] = preprocessing_parameters
+
         add_feature_data(
             feature,
             dataset_df,
@@ -175,8 +173,27 @@ def build_data(
             train_set_metadata,
             preprocessing_parameters
         )
+
+    # drop None values after feature preprocessing
+    drop_na_subset = drop_na_features(train_set_metadata)
+
+    if drop_na_subset:
+        breakpoint()
+        data_dict = pd.DataFrame(data_dict).dropna(subset=drop_na_subset).to_dict()
+        breakpoint()
+
     return data_dict
 
+def drop_na_features(train_set_metadata):
+    subset = []
+
+    for (feature_name, feature_metadata) in train_set_metadata.items():
+        missing_value_strategy = feature_metadata.get('preprocessing', {}).get('missing_value_strategy')
+
+        if missing_value_strategy == DROP_NA:
+            subset.append(feature_name)
+    
+    return subset
 
 def handle_missing_values(dataset_df, feature, preprocessing_parameters):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
@@ -202,6 +219,8 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
         dataset_df[feature['name']] = dataset_df[feature['name']].fillna(
             method=missing_value_strategy,
         )
+    elif missing_value_strategy == DROP_NA:
+        logger.info('Going to drop N/A rows for the column "%s"...' % feature['name'])
     else:
         raise ValueError('Invalid missing value strategy')
 

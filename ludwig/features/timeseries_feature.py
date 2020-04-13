@@ -35,8 +35,49 @@ from ludwig.utils.strings_utils import tokenizer_registry
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
+def add_timeseries_matrix_profile(column, seq_length):
+    """
+    Computing matrix profile with window size :seq_length and preparing timeseries embeddings then
+    :param column: Column data array
+    :param seq_length: length of an array of preceeding column values to use
+    """
 
+    import stumpy
+
+    try:
+        # stumpy needs np float
+        old_data = np.array(column, dtype=np.floating)
+    except ValueError:
+        raise Exception('Can\'t convert column to float')
+
+    try:
+        mp = stumpy.stump(old_data, m=seq_length, ignore_trivial=False)
+    except TypeError as e:
+        print('Type issue in stumpy:')
+        raise e
+    except ValueError as e:
+        print('Seq_length issue in stumpy')
+        raise e
+
+    window_pad_length = seq_length - 1
+
+    backfill_with = mp[:, 0][0]
+
+    # let's fill previous None values with first matrix profile value `backfill_with`
+    window_pad = np.array([backfill_with] * window_pad_length)
+    matrix_profile = np.concatenate([window_pad, mp[:, 0]]).tolist()
+
+    if np.isnan(matrix_profile).any():
+        raise Exception('Matrix profile for the column contains NaN values. Try to increase the dataset size')
+
+    # because we have `seq_length` window then our `window_pad_length` indexes will be null
+    window_data = [None] * window_pad_length
+    for index in range(window_pad_length, len(column)):
+        window_data.append(' '.join(
+            str(j) for j in matrix_profile[index - window_pad_length: index + 1]
+        ))
+
+    return window_data
 
 class TimeseriesBaseFeature(BaseFeature):
     def __init__(self, feature):
@@ -84,7 +125,14 @@ class TimeseriesBaseFeature(BaseFeature):
         max_length = 0
         ts_vectors = []
         for ts in timeseries:
-            ts_vector = np.array(tokenizer(ts)).astype(np.float32)
+            # ts could be None
+            if ts:
+                tokenized = tokenizer(ts)
+            else:
+                tokenized = [padding_value]
+
+            ts_vector = np.array(tokenized).astype(np.float32)
+
             ts_vectors.append(ts_vector)
             if len(ts_vector) > max_length:
                 max_length = len(ts_vector)
@@ -97,29 +145,51 @@ class TimeseriesBaseFeature(BaseFeature):
                     length_limit
                 )
             )
-        max_length = length_limit
+            max_length = length_limit
+
         timeseries_matrix = np.full(
             (len(timeseries), max_length),
             padding_value,
             dtype=np.float32
         )
+
         for i, vector in enumerate(ts_vectors):
             limit = min(vector.shape[0], max_length)
+
             if padding == 'right':
                 timeseries_matrix[i, :limit] = vector[:limit]
             else:  # if padding == 'left
                 timeseries_matrix[i, max_length - limit:] = vector[:limit]
+
         return timeseries_matrix
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters):
+        drop_first_n = 0
+        max_timeseries_length = metadata.get('max_timeseries_length', 1)
+
+        if preprocessing_parameters.get('matrix_profile'):
+            seq_length = preprocessing_parameters.get('matrix_profile', {}).get('window_size')
+
+            if seq_length:
+                column = add_timeseries_matrix_profile(column, seq_length)
+                # rows from range(0, seq_length - 1) indexes are None
+                drop_first_n = seq_length - 1
+
+                if max_timeseries_length < seq_length:
+                    max_timeseries_length = seq_length
+
         timeseries_data = TimeseriesBaseFeature.build_matrix(
             column,
             preprocessing_parameters['tokenizer'],
-            metadata['max_timeseries_length'],
+            max_timeseries_length,
             preprocessing_parameters['padding_value'],
-            preprocessing_parameters['padding'])
-        return timeseries_data
+            preprocessing_parameters['padding']
+        )
+
+        metadata['max_timeseries_length'] = max_timeseries_length
+
+        return timeseries_data, drop_first_n
 
     @staticmethod
     def add_feature_data(
@@ -129,12 +199,17 @@ class TimeseriesBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        timeseries_data = TimeseriesBaseFeature.feature_data(
+        timeseries_data, drop_first_n = TimeseriesBaseFeature.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters
         )
-        data[feature['name']] = timeseries_data
+
+        if drop_first_n:
+            # we need this to drop rows then in `handle_missing_value`
+            data[feature['name']] = [None] * drop_first_n + timeseries_data[drop_first_n:].tolist()
+        else:
+            data[feature['name']] = timeseries_data
 
 
 class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):

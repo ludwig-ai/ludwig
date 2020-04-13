@@ -17,6 +17,9 @@ with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
 
 extra_requirements = {}
 
+with open(path.join(here, 'requirements_timeseries.txt'), encoding='utf-8') as f:
+    extra_requirements['timeseries'] = [line.strip() for line in f if line]
+
 with open(path.join(here, 'requirements_audio.txt'), encoding='utf-8') as f:
     extra_requirements['audio'] = [line.strip() for line in f if line]
 
@@ -45,7 +48,7 @@ with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
 
 setup(
     name='ludwig',
-    version='0.3.0-a.1',
+    version='0.3.0-a.2',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
