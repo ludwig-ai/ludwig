@@ -24,12 +24,14 @@ import sys
 
 import yaml
 
-from ludwig.constants import HYPEROPT
+from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, VALIDATION, MEASURE
 from ludwig.contrib import contrib_command
+from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.hyperopt_utils import get_build_hyperopt_strategy, get_build_hyperopt_executor, \
     update_hyperopt_params_with_defaults
+from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
@@ -104,6 +106,91 @@ def hyperopt(
     output_feature = hyperopt_params["output_feature"]
     metric = hyperopt_params["metric"]
     split = hyperopt_params["split"]
+
+    ######################
+    # check validity of output_feature / metric/ split combination
+    ######################
+    if split == TRAINING:
+        if not (data_train_df or data_train_csv or data_train_hdf5) or (
+                model_definition['preprocessing']['split'][0] <= 0):
+            raise ValueError(
+                'The data for the specified split for hyperopt "{}" '
+                'was not provided, '
+                'or the plit amount specified in the preprocessing section '
+                'of the model definition is not greater than 0'.format(split)
+            )
+    elif split == VALIDATION:
+        if not (
+                data_validation_df or
+                data_validation_csv or
+                data_validation_hdf5
+        ) or (model_definition['preprocessing']['split'][1] <= 0):
+            raise ValueError(
+                'The data for the specified split for hyperopt "{}" '
+                'was not provided, '
+                'or the plit amount specified in the preprocessing section '
+                'of the model definition is not greater than 0'.format(split)
+            )
+    elif split == TEST:
+        if not (data_test_df or data_test_csv or data_test_hdf5) or (
+                model_definition['preprocessing']['split'][2] <= 0):
+            raise ValueError(
+                'The data for the specified split for hyperopt "{}" '
+                'was not provided, '
+                'or the plit amount specified in the preprocessing section '
+                'of the model definition is not greater than 0'.format(split)
+            )
+    else:
+        raise ValueError(
+            'unrecognized hyperopt split "{}". '
+            'Please provide one of: {}'.format(
+                split, {TRAINING, VALIDATION, TEST}
+            )
+        )
+    if output_feature == COMBINED:
+        if metric != LOSS:
+            raise ValueError(
+                'The only valid metric for "combined" output feature is "loss"'
+            )
+    else:
+        output_feature_names = set(
+            of['name'] for of in model_definition['output_features']
+        )
+        if output_feature not in output_feature_names:
+            raise ValueError(
+                'The output feature specified for hyperopt "{}" '
+                'cannot be found in the model definition. '
+                'Available ones are: {} and "combined"'.format(
+                    output_feature, output_feature_names
+                )
+            )
+
+        output_feature_type = None
+        for of in model_definition['output_features']:
+            if of['name'] == output_feature:
+                output_feature_type = of['type']
+        feature_class = get_from_registry(
+            output_feature_type,
+            output_type_registry
+        )
+        available_metrics = set(
+            key for key, val in feature_class.output_config.items()
+            if val['type'] == MEASURE
+        )
+        if metric not in available_metrics:
+            # TODO allow users to specify also metrics from the overall
+            #  and per class metrics from the trainign stats and in general
+            #  and potprocessed metric
+            raise ValueError(
+                'The specified metric for hyperopt "{}" is not a valid metric '
+                'for the specified output feature "{}" of type "{}". '
+                'Available metrics are: {}'.format(
+                    metric,
+                    output_feature,
+                    output_feature_type,
+                    available_metrics
+                )
+            )
 
     hyperopt_strategy = get_build_hyperopt_strategy(
         strategy["type"]

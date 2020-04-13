@@ -82,6 +82,7 @@ VALIDATION = 'validation'
 TEST = 'test'
 SPLIT = 'split'
 FULL = 'full'
+COMBINED = 'combined'
 
 HYPEROPT = 'hyperopt'
 STRATEGY = 'strategy'
