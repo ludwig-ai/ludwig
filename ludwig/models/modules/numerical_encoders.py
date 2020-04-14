@@ -34,4 +34,4 @@ class NumericalPassthroughEncoder(Layer):
             :param inputs: The inputs fed into the encoder.
                    Shape: [batch x 1], type tf.float32
         """
-        return inputs
+        return {'encoder_output': inputs}
