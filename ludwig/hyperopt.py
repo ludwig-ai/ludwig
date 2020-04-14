@@ -125,7 +125,7 @@ def hyperopt(
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
-                'or the plit amount specified in the preprocessing section '
+                'or the split amount specified in the preprocessing section '
                 'of the model definition is not greater than 0'.format(split)
             )
     elif split == VALIDATION:
@@ -146,7 +146,7 @@ def hyperopt(
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
-                'or the plit amount specified in the preprocessing section '
+                'or the split amount specified in the preprocessing section '
                 'of the model definition is not greater than 0'.format(split)
             )
     else:
