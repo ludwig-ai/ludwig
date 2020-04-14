@@ -1185,6 +1185,7 @@ def bar_plot(
 def hyperopt_report(
         hyperparameters,
         hyperopt_results_df,
+        metric,
         filename_template
 ):
     for hp_name, hp_params in hyperparameters.items():
@@ -1192,21 +1193,21 @@ def hyperopt_report(
             hyperopt_int_plot(
                 hyperopt_results_df,
                 hp_name,
-                'metric_score',
+                metric,
                 filename_template.format(hp_name) if filename_template else None
             )
         elif hp_params['type'] == 'float':
             hyperopt_float_plot(
                 hyperopt_results_df,
                 hp_name,
-                'metric_score',
+                metric,
                 filename_template.format(hp_name) if filename_template else None
             )
         elif hp_params['type'] == 'category':
             hyperopt_category_plot(
                 hyperopt_results_df,
                 hp_name,
-                'metric_score',
+                metric,
                 filename_template.format(hp_name) if filename_template else None
             )
 
@@ -1225,7 +1226,7 @@ def hyperopt_report(
 
     hyperopt_pair_plot(
         hyperopt_results_df,
-        'metric_score',
+        metric,
         filename_template.format('pair_plot') if filename_template else None
     )
 
@@ -1233,7 +1234,7 @@ def hyperopt_report(
 def hyperopt_int_plot(
         hyperopt_results_df,
         hp_name,
-        score_name,
+        metric,
         filename,
         log_scale=True
 ):
@@ -1241,7 +1242,7 @@ def hyperopt_int_plot(
     plt.figure()
     seaborn_figure = sns.lmplot(
         x=hp_name,
-        y=score_name,
+        y=metric,
         data=hyperopt_results_df,
         fit_reg=False
     )
@@ -1257,7 +1258,7 @@ def hyperopt_int_plot(
 def hyperopt_float_plot(
         hyperopt_results_df,
         hp_name,
-        score_name,
+        metric,
         filename,
         log_scale=True
 ):
@@ -1265,11 +1266,11 @@ def hyperopt_float_plot(
     plt.figure()
     seaborn_figure = sns.lmplot(
         x=hp_name,
-        y=score_name,
+        y=metric,
         data=hyperopt_results_df,
         fit_reg=False
     )
-    seaborn_figure.set(ylabel=score_name)
+    seaborn_figure.set(ylabel=metric)
     if log_scale:
         seaborn_figure.set(yscale="log")
     plt.tight_layout()
@@ -1282,7 +1283,7 @@ def hyperopt_float_plot(
 def hyperopt_category_plot(
         hyperopt_results_df,
         hp_name,
-        score_name,
+        metric,
         filename,
         log_scale=True
 ):
@@ -1290,11 +1291,11 @@ def hyperopt_category_plot(
     plt.figure()
     seaborn_figure = sns.violinplot(
         x=hp_name,
-        y=score_name,
+        y=metric,
         data=hyperopt_results_df,
         fit_reg=False
     )
-    seaborn_figure.set(ylabel=score_name)
+    seaborn_figure.set(ylabel=metric)
     sns.despine()
     if log_scale:
         seaborn_figure.set(yscale="log")
@@ -1307,11 +1308,11 @@ def hyperopt_category_plot(
 
 def hyperopt_pair_plot(
         hyperopt_results_df,
-        score_name,
+        metric,
         filename
 ):
     params = sorted(list(hyperopt_results_df.keys()))
-    params.remove(score_name)
+    params.remove(metric)
     num_param = len(params)
 
     sns.set_style('white')
@@ -1325,13 +1326,14 @@ def hyperopt_pair_plot(
                 heatmap = hyperopt_results_df.pivot_table(
                     index=param1,
                     columns=param2,
-                    values=score_name,
+                    values=metric,
                     aggfunc='mean'
                 )
                 sns.heatmap(
                     heatmap,
                     linewidths=1,
                     cmap="viridis",
+                    cbar_kws={'label': metric},
                     ax=ax,
                 )
 

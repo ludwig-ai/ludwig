@@ -3081,15 +3081,21 @@ def hyperopt_report_cli(
         hyperopt_stats['hyperopt_config']['parameters'],
         hyperopt_results_to_dataframe(
             hyperopt_stats['hyperopt_results'],
-            hyperopt_stats['hyperopt_config']['parameters']
+            hyperopt_stats['hyperopt_config']['parameters'],
+            hyperopt_stats['hyperopt_config']['metric']
         ),
+        metric=hyperopt_stats['hyperopt_config']['metric'],
         filename_template=filename_template_path
     )
 
 
-def hyperopt_results_to_dataframe(hyperopt_results, hyperopt_parameters):
+def hyperopt_results_to_dataframe(
+        hyperopt_results,
+        hyperopt_parameters,
+        metric
+):
     df = pd.DataFrame(
-        [{'metric_score': res['metric_score'], **res['parameters']}
+        [{metric: res['metric_score'], **res['parameters']}
          for res in hyperopt_results]
     )
     df = df.astype(
