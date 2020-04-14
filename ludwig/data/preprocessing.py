@@ -142,7 +142,9 @@ def build_data(
         train_set_metadata,
         global_preprocessing_parameters
 ):
+    dataset_df.reset_index(drop=True, inplace=True)
     data_dict = {}
+
     for feature in features:
         add_feature_data = get_from_registry(
             feature['type'],
@@ -179,6 +181,8 @@ def build_data(
     if subset:
         dataset_df = dataset_df[subset['from']:subset['to']]
 
+    # we need this to understand to which row prediction is
+    train_set_metadata['dataset_index'] = dataset_df.index
     return data_dict, dataset_df
 
 # a bit hacky way because of compatibility
@@ -203,7 +207,6 @@ def slice_data_dict(data_dict, data_len, train_set_metadata):
 
             if feature_drop_n_last_rows > drop_n_last_rows:
                 drop_n_last_rows = feature_drop_n_last_rows
-
     
     original_subset = {
         'from': 0,
