@@ -24,6 +24,7 @@ from collections import Counter
 from sys import platform
 
 import numpy as np
+import pandas as pd
 
 import ludwig.contrib
 from ludwig.constants import TRAINING, VALIDATION
@@ -50,6 +51,9 @@ except ImportError:
         'pip install ludwig[viz]'
     )
     sys.exit(-1)
+
+INT_QUANTILES = 10
+FLOAT_QUANTILES = 10
 
 
 # plt.rc('xtick', labelsize='x-large')
@@ -1206,12 +1210,24 @@ def hyperopt_report(
                 filename_template.format(hp_name) if filename_template else None
             )
 
-    # TODO WIP
-    # hyperopt_pair_plot(
-    #     hyperopt_results_df,
-    #     'metric_score',
-    #     filename_template.format('pair_plot') if filename_template else None
-    # )
+    # quantize float and int columns
+    for hp_name, hp_params in hyperparameters.items():
+        if hp_params['type'] == 'int':
+            num_distinct_values = len(hyperopt_results_df[hp_name].unique())
+            if num_distinct_values > INT_QUANTILES:
+                hyperopt_results_df[hp_name] = pd.qcut(
+                    hyperopt_results_df[hp_name], q=INT_QUANTILES, precision=0
+                )
+        elif hp_params['type'] == 'float':
+            hyperopt_results_df[hp_name] = pd.qcut(
+                hyperopt_results_df[hp_name], q=FLOAT_QUANTILES, precision=3
+            )
+
+    hyperopt_pair_plot(
+        hyperopt_results_df,
+        'metric_score',
+        filename_template.format('pair_plot') if filename_template else None
+    )
 
 
 def hyperopt_int_plot(
@@ -1270,6 +1286,7 @@ def hyperopt_category_plot(
         filename,
         log_scale=True
 ):
+    sns.set_style('whitegrid')
     plt.figure()
     seaborn_figure = sns.violinplot(
         x=hp_name,
@@ -1288,32 +1305,37 @@ def hyperopt_category_plot(
         plt.show()
 
 
-# TODO WIP
 def hyperopt_pair_plot(
         hyperopt_results_df,
         score_name,
         filename
 ):
-    params = list(hyperopt_results_df.keys())
+    params = sorted(list(hyperopt_results_df.keys()))
     params.remove(score_name)
     num_param = len(params)
-    pairs_params = {(param1, param2) for param1 in params for param2 in params}
 
-    fig = plt.figure()
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    for i, param_pair in enumerate(pairs_params):
-        ax = fig.add_subplot(num_param, num_param, i + 1)
+    sns.set_style('white')
+    fig = plt.figure(figsize=(20, 20))
+    gs = fig.add_gridspec(num_param, num_param)
 
-        # heatmap = hyperopt_results_df.pivot_table(
-        #        param_pair[0], param_pair[1], score_name, aggfunc='max'
-        # )
+    for i, param1 in enumerate(params):
+        for j, param2 in enumerate(params):
+            if i != j:
+                ax = fig.add_subplot(gs[i, j])
+                heatmap = hyperopt_results_df.pivot_table(
+                    index=param1,
+                    columns=param2,
+                    values=score_name,
+                    aggfunc='mean'
+                )
+                sns.heatmap(
+                    heatmap,
+                    linewidths=1,
+                    cmap="viridis",
+                    ax=ax,
+                )
 
-        plt.hist2d(
-            hyperopt_results_df[score_name][param_pair[0]],
-            hyperopt_results_df[score_name][param_pair[1]],
-            bins=30,
-            cmap='Blues'
-        )
+    plt.tight_layout(pad=5)
 
     if filename:
         plt.savefig(filename)
