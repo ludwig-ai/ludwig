@@ -861,7 +861,6 @@ def calibration_plot(
                         i] if algorithm_names is not None and i < len(
                         algorithm_names) else '')
 
-
     ticks = np.linspace(0.0, 1.0, num=11)
     plt.xlim([-0.05, 1.05])
     plt.xticks(ticks)
@@ -1173,6 +1172,149 @@ def bar_plot(
 
     plt.tight_layout()
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
+
+
+def hyperopt_report(
+        hyperparameters,
+        hyperopt_results_df,
+        filename_template
+):
+    for hp_name, hp_params in hyperparameters.items():
+        if hp_params['type'] == 'int':
+            hyperopt_int_plot(
+                hyperopt_results_df,
+                hp_name,
+                'metric_score',
+                filename_template.format(hp_name) if filename_template else None
+            )
+        elif hp_params['type'] == 'float':
+            hyperopt_float_plot(
+                hyperopt_results_df,
+                hp_name,
+                'metric_score',
+                filename_template.format(hp_name) if filename_template else None
+            )
+        elif hp_params['type'] == 'category':
+            hyperopt_category_plot(
+                hyperopt_results_df,
+                hp_name,
+                'metric_score',
+                filename_template.format(hp_name) if filename_template else None
+            )
+
+    # TODO WIP
+    # hyperopt_pair_plot(
+    #     hyperopt_results_df,
+    #     'metric_score',
+    #     filename_template.format('pair_plot') if filename_template else None
+    # )
+
+
+def hyperopt_int_plot(
+        hyperopt_results_df,
+        hp_name,
+        score_name,
+        filename,
+        log_scale=True
+):
+    sns.set_style('whitegrid')
+    plt.figure()
+    seaborn_figure = sns.lmplot(
+        x=hp_name,
+        y=score_name,
+        data=hyperopt_results_df,
+        fit_reg=False
+    )
+    if log_scale:
+        seaborn_figure.set(yscale="log")
+    plt.tight_layout()
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
+
+
+def hyperopt_float_plot(
+        hyperopt_results_df,
+        hp_name,
+        score_name,
+        filename,
+        log_scale=True
+):
+    sns.set_style('whitegrid')
+    plt.figure()
+    seaborn_figure = sns.lmplot(
+        x=hp_name,
+        y=score_name,
+        data=hyperopt_results_df,
+        fit_reg=False
+    )
+    seaborn_figure.set(ylabel=score_name)
+    if log_scale:
+        seaborn_figure.set(yscale="log")
+    plt.tight_layout()
+    if filename:
+        seaborn_figure.savefig(filename)
+    else:
+        seaborn_figure.show()
+
+
+def hyperopt_category_plot(
+        hyperopt_results_df,
+        hp_name,
+        score_name,
+        filename,
+        log_scale=True
+):
+    plt.figure()
+    seaborn_figure = sns.violinplot(
+        x=hp_name,
+        y=score_name,
+        data=hyperopt_results_df,
+        fit_reg=False
+    )
+    seaborn_figure.set(ylabel=score_name)
+    sns.despine()
+    if log_scale:
+        seaborn_figure.set(yscale="log")
+    plt.tight_layout()
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
+
+
+# TODO WIP
+def hyperopt_pair_plot(
+        hyperopt_results_df,
+        score_name,
+        filename
+):
+    params = list(hyperopt_results_df.keys())
+    params.remove(score_name)
+    num_param = len(params)
+    pairs_params = {(param1, param2) for param1 in params for param2 in params}
+
+    fig = plt.figure()
+    fig.subplots_adjust(hspace=0.4, wspace=0.4)
+    for i, param_pair in enumerate(pairs_params):
+        ax = fig.add_subplot(num_param, num_param, i + 1)
+
+        # heatmap = hyperopt_results_df.pivot_table(
+        #        param_pair[0], param_pair[1], score_name, aggfunc='max'
+        # )
+
+        plt.hist2d(
+            hyperopt_results_df[score_name][param_pair[0]],
+            hyperopt_results_df[score_name][param_pair[1]],
+            bins=30,
+            cmap='Blues'
+        )
+
     if filename:
         plt.savefig(filename)
     else:
