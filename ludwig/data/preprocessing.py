@@ -175,7 +175,7 @@ def build_data(
         )
 
     # drop None values after feature preprocessing
-    subset = slice_data_subset(dataset_df, data_dict, train_set_metadata)
+    subset = slice_data_dict(data_dict, len(dataset_df), train_set_metadata)
 
     if subset:
         dataset_df = dataset_df[subset['from']:subset['to']]
@@ -183,18 +183,18 @@ def build_data(
     return data_dict, dataset_df
 
 # a bit hacky way because of compatibility
-def slice_data_subset(dataset_df, data_dict, train_set_metadata):
-    data_len = len(dataset_df)
+def slice_data_dict(data_dict, data_len, train_set_metadata):
     drop_n_first_rows = 0
     drop_n_last_rows = 0
 
     for (feature_name, feature_metadata) in train_set_metadata.items():
         missing_value_strategy = feature_metadata.get('preprocessing', {}).get('missing_value_strategy')
 
-        if missing_value_strategy == DROP_ROWS:
+        if missing_value_strategy == DROP_ROW:
             feature_drop_n_first_rows = feature_metadata.get('preprocessing', {}).get('drop_n_first_rows', 0)
             feature_drop_n_last_rows = feature_metadata.get('preprocessing', {}).get('drop_n_last_rows', 0)
 
+            # removing the maximum described rows
             if feature_drop_n_first_rows > drop_n_first_rows:
                 drop_n_first_rows = feature_drop_n_first_rows
 
@@ -214,7 +214,7 @@ def slice_data_subset(dataset_df, data_dict, train_set_metadata):
     if drop_n_last_rows:
         new_subset['to'] = data_len - drop_n_last_rows 
 
-    # do nothing. Return the same subset
+    # do nothing
     if new_subset.items() == original_subset.items():
         return None
 
@@ -250,10 +250,10 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
         dataset_df[feature['name']] = dataset_df[feature['name']].fillna(
             method=missing_value_strategy,
         )
-    elif missing_value_strategy == DROP_ROWS:
-        pass
+    elif missing_value_strategy == DROP_ROW:
+        dataset_df.dropna(subset=[feature['name']], inplace=True)
     else:
-        raise ValueError('Invalid missing value strategy')
+        raise ValueError('Invalid missing value strategy: %s' % missing_value_strategy)
 
 
 def get_split(

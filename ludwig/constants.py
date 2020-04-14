@@ -67,7 +67,7 @@ LENGTHS = 'lengths'
 FILL_WITH_CONST = 'fill_with_const'
 FILL_WITH_MODE = 'fill_with_mode'
 FILL_WITH_MEAN = 'fill_with_mean'
-DROP_ROWS = 'drop_rows'
+DROP_ROW = 'drop_row'
 BACKFILL = 'backfill'
 
 MEASURE = 'measure'
