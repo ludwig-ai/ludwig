@@ -89,7 +89,7 @@ def build_dataset_df(
             global_preprocessing_parameters
         )
 
-    data_val = build_data(
+    data_val, dataset_df = build_data(
         dataset_df,
         features,
         train_set_metadata,
@@ -175,25 +175,56 @@ def build_data(
         )
 
     # drop None values after feature preprocessing
-    drop_na_subset = drop_na_features(train_set_metadata)
+    subset = slice_data_subset(dataset_df, data_dict, train_set_metadata)
 
-    if drop_na_subset:
-        breakpoint()
-        data_dict = pd.DataFrame(data_dict).dropna(subset=drop_na_subset).to_dict()
-        breakpoint()
+    if subset:
+        dataset_df = dataset_df[subset['from']:subset['to']]
 
-    return data_dict
+    return data_dict, dataset_df
 
-def drop_na_features(train_set_metadata):
-    subset = []
+# a bit hacky way because of compatibility
+def slice_data_subset(dataset_df, data_dict, train_set_metadata):
+    data_len = len(dataset_df)
+    drop_n_first_rows = 0
+    drop_n_last_rows = 0
 
     for (feature_name, feature_metadata) in train_set_metadata.items():
         missing_value_strategy = feature_metadata.get('preprocessing', {}).get('missing_value_strategy')
 
-        if missing_value_strategy == DROP_NA:
-            subset.append(feature_name)
+        if missing_value_strategy == DROP_ROWS:
+            feature_drop_n_first_rows = feature_metadata.get('preprocessing', {}).get('drop_n_first_rows', 0)
+            feature_drop_n_last_rows = feature_metadata.get('preprocessing', {}).get('drop_n_last_rows', 0)
+
+            if feature_drop_n_first_rows > drop_n_first_rows:
+                drop_n_first_rows = feature_drop_n_first_rows
+
+            if feature_drop_n_last_rows > drop_n_last_rows:
+                drop_n_last_rows = feature_drop_n_last_rows
     
-    return subset
+    original_subset = {
+        'from': 0,
+        'to': data_len
+    }
+
+    new_subset = dict(original_subset)
+
+    if drop_n_first_rows:
+        new_subset['from'] = drop_n_first_rows
+
+    if drop_n_last_rows:
+        new_subset['to'] = data_len - drop_n_last_rows 
+
+    # do nothing. Return the same subset
+    if new_subset.items() == original_subset.items():
+        return None
+
+    logger.info('Slicing subset from:to [%s:%s]...' % (new_subset['from'], new_subset['to']))
+
+    # slice the subset of rows from the dict keys
+    for (k, v) in data_dict.items():
+        data_dict[k] = v[new_subset['from']:new_subset['to']]
+
+    return new_subset
 
 def handle_missing_values(dataset_df, feature, preprocessing_parameters):
     missing_value_strategy = preprocessing_parameters['missing_value_strategy']
@@ -219,8 +250,8 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
         dataset_df[feature['name']] = dataset_df[feature['name']].fillna(
             method=missing_value_strategy,
         )
-    elif missing_value_strategy == DROP_NA:
-        logger.info('Going to drop N/A rows for the column "%s"...' % feature['name'])
+    elif missing_value_strategy == DROP_ROWS:
+        pass
     else:
         raise ValueError('Invalid missing value strategy')
 

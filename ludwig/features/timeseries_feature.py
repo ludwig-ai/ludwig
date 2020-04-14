@@ -205,11 +205,8 @@ class TimeseriesBaseFeature(BaseFeature):
             preprocessing_parameters
         )
 
-        if drop_first_n:
-            # we need this to drop rows then in `handle_missing_value`
-            data[feature['name']] = [None] * drop_first_n + timeseries_data[drop_first_n:].tolist()
-        else:
-            data[feature['name']] = timeseries_data
+        preprocessing_parameters['drop_n_first_rows'] = drop_first_n
+        data[feature['name']] = timeseries_data
 
 
 class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
