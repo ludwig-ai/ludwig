@@ -158,14 +158,15 @@ class SequenceTaggerDecoder(Layer):
         self.regularize = regularize
         self.attention = attention
 
-    def __call__(
+    def call(
             self,
-            output_feature,
-            targets,
             hidden,
-            hidden_size,
-            regularizer,
-            is_timeseries=False
+            **kwargs
+            # output_feature,
+            # targets,
+            # hidden_size,
+            # regularizer,
+            # is_timeseries=False
     ):
         logger.debug('  hidden shape: {0}'.format(hidden.shape))
         if len(hidden.shape) != 3:
@@ -215,20 +216,20 @@ class SequenceTaggerDecoder(Layer):
         )
         logger.debug('  logits: {0}'.format(logits))
 
-        if is_timeseries:
-            probabilities_sequence = tf.zeros_like(logits)
-            predictions_sequence = tf.reshape(logits, [-1, sequence_length])
-        else:
-            probabilities_sequence = tf.nn.softmax(
-                logits,
-                name='probabilities_{}'.format(output_feature['name'])
-            )
-            predictions_sequence = tf.argmax(
-                logits,
-                -1,
-                name='predictions_{}'.format(output_feature['name']),
-                output_type=tf.int32
-            )
+        # if is_timeseries:
+        #     probabilities_sequence = tf.zeros_like(logits)
+        #     predictions_sequence = tf.reshape(logits, [-1, sequence_length])
+        # else:
+        #     probabilities_sequence = tf.nn.softmax(
+        #         logits,
+        #         name='probabilities_{}'.format(output_feature['name'])
+        #     )
+        #     predictions_sequence = tf.argmax(
+        #         logits,
+        #         -1,
+        #         name='predictions_{}'.format(output_feature['name']),
+        #         output_type=tf.int32
+        #     )
 
         predictions_sequence_length = sequence_length_3D(hidden)
 
