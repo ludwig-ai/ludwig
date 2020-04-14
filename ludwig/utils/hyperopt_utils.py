@@ -33,7 +33,7 @@ def int_sampling_function(low, high, **kwargs):
     return random.randint(low, high)
 
 
-def flaot_sampling_function(low, high, scale='linear', base=None):
+def flaot_sampling_function(low, high, scale='linear', base=None, **kwargs):
     if scale == 'linear':
         sample = random.uniform(low, high)
     elif scale == 'log':
@@ -49,8 +49,8 @@ def flaot_sampling_function(low, high, scale='linear', base=None):
     return sample
 
 
-def category_sampling_function(values):
-    return random.sample(values)
+def category_sampling_function(values, **kwargs):
+    return random.sample(values, 1)[0]
 
 
 sampling_functions_registry = {
