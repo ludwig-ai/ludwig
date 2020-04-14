@@ -387,6 +387,9 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.predict')
+
     set_on_master(args.use_horovod)
 
     if is_on_master():

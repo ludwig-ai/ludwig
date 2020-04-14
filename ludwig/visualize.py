@@ -3260,6 +3260,8 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.visualize')
 
     try:
         vis_func = visualizations_registry[args.visualization]
