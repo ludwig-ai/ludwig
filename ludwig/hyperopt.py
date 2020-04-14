@@ -277,7 +277,7 @@ def print_hyperopt_results(hyperopt_results):
 def save_hyperopt_stats(hyperopt_stats, hyperopt_dir_name):
     hyperopt_stats_fn = os.path.join(
         hyperopt_dir_name,
-        'htperopt_statistics.json'
+        'hyperopt_statistics.json'
     )
     save_json(hyperopt_stats_fn, hyperopt_stats)
 
