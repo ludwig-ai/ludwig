@@ -19,6 +19,8 @@ import logging
 import math
 import os
 import random
+import itertools
+import numpy as np
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
@@ -37,7 +39,7 @@ def int_sampling_function(low, high, **kwargs):
     return random.randint(low, high)
 
 
-def flaot_sampling_function(low, high, scale='linear', base=None, **kwargs):
+def float_sampling_function(low, high, scale='linear', base=None, **kwargs):
     if scale == 'linear':
         sample = random.uniform(low, high)
     elif scale == 'log':
@@ -57,10 +59,40 @@ def category_sampling_function(values, **kwargs):
     return random.sample(values, 1)[0]
 
 
+def int_grid_function(low, high, steps=2, **kwargs):
+    return np.linspace(low, high, num=steps, dtype=int)
+
+
+def float_grid_function(low, high, steps=2, scale='linear', base=None, **kwargs):
+    if scale == 'linear':
+        samples = np.linspace(low, high, num=steps)
+    elif scale == 'log':
+        if base:
+            samples = np.logspace(low, high, num=steps, base=base)
+        else:
+            samples = np.geomspace(low, high, num=steps)
+    else:
+        raise ValueError(
+            'The scale parameter of the float grid function is "{}". '
+            'Available ones are: {"linear", "log"}'
+        )
+    return samples
+
+
+def category_grid_function(values, **kwargs):
+    return values
+
+
 sampling_functions_registry = {
     'int': int_sampling_function,
-    'float': flaot_sampling_function,
+    'float': float_sampling_function,
     'category': category_sampling_function,
+}
+
+grid_functions_registry = {
+    'int': int_grid_function,
+    'float': float_grid_function,
+    'category': category_grid_function
 }
 
 
@@ -154,10 +186,32 @@ class RandomStrategy(HyperoptStrategy):
 class GridStrategy(HyperoptStrategy):
     def __init__(self, goal: str, parameters: Dict[str, Any], **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
+        self.search_space = self._create_search_space()
+        self.samples = self._get_grids()
+        self.sampled_so_far = 0
+
+    def _create_search_space(self):
+        search_space = {}
+        for hp_name, hp_params in self.parameters.items():
+            grid_function = get_from_registry(
+                hp_params['type'], grid_functions_registry
+            )
+            search_space[hp_name] = grid_function(**hp_params)
+        return search_space
+
+    def _get_grids(self):
+        hp_params = sorted(self.search_space)
+        grids = [dict(zip(hp_params, prod)) for prod in itertools.product(
+            *(self.search_space[hp_name] for hp_name in hp_params))]
+
+        return grids
 
     def sample(self) -> Dict[str, Any]:
-        # actual implementation ...
-        pass
+        if self.sampled_so_far >= len(self.samples):
+            raise IndexError()
+        sample = self.samples[self.sampled_so_far]
+        self.sampled_so_far += 1
+        return sample
 
     def update(
             self,
@@ -168,7 +222,7 @@ class GridStrategy(HyperoptStrategy):
         pass
 
     def finished(self) -> bool:
-        pass
+        return self.sampled_so_far >= len(self.samples)
 
 
 class HyperoptExecutor(ABC):
