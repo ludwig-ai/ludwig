@@ -187,11 +187,15 @@ def slice_data_dict(data_dict, data_len, train_set_metadata):
     drop_n_last_rows = 0
 
     for (feature_name, feature_metadata) in train_set_metadata.items():
-        missing_value_strategy = feature_metadata.get('preprocessing', {}).get('missing_value_strategy')
+        if not isinstance(feature_metadata, dict):
+            continue
+
+        preprocessing = feature_metadata.get('preprocessing', {})
+        missing_value_strategy = preprocessing.get('missing_value_strategy')
 
         if missing_value_strategy == DROP_ROW:
-            feature_drop_n_first_rows = feature_metadata.get('preprocessing', {}).get('drop_n_first_rows', 0)
-            feature_drop_n_last_rows = feature_metadata.get('preprocessing', {}).get('drop_n_last_rows', 0)
+            feature_drop_n_first_rows = preprocessing.get('drop_n_first_rows', 0)
+            feature_drop_n_last_rows = preprocessing.get('drop_n_last_rows', 0)
 
             # removing the maximum described rows
             if feature_drop_n_first_rows > drop_n_first_rows:
@@ -199,6 +203,7 @@ def slice_data_dict(data_dict, data_len, train_set_metadata):
 
             if feature_drop_n_last_rows > drop_n_last_rows:
                 drop_n_last_rows = feature_drop_n_last_rows
+
     
     original_subset = {
         'from': 0,
