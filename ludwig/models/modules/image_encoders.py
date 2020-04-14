@@ -123,7 +123,7 @@ class Stacked2DCNN(Layer):
         # ================ Fully Connected ================
         outputs = self.fc_stack(hidden)
 
-        return outputs
+        return {'encoder_output': outputs}
 
 
 class ResNetEncoder:
