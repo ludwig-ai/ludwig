@@ -17,11 +17,15 @@
 import copy
 import logging
 import math
+import os
 import random
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, VALIDATION, MAXIMIZE
+from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, VALIDATION, MAXIMIZE, TRAINING, TEST
+from ludwig.data.postprocessing import postprocess
+from ludwig.predict import predict, print_test_results, save_prediction_outputs, save_test_statistics
+from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_from_registry, set_default_values, \
     set_default_value
@@ -180,8 +184,8 @@ class HyperoptExecutor(ABC):
         self.metric = metric
         self.split = split
 
-    def get_metric_score(self, training_results):
-        return training_results[self.split][self.output_feature][self.metric]
+    def get_metric_score(self, eval_stats):
+        return eval_stats[self.output_feature][self.metric]
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
@@ -290,48 +294,50 @@ class SerialExecutor(HyperoptExecutor):
                     copy.deepcopy(model_definition), parameters
                 )
 
-                # TODO:Train model with Sampled parameters and function params
-                #  & get `train_stats`.
-                # Collect training and validation losses and measures
-                # & append it to `results`
-                training_results = {
-                    'training': {
-                        'combined': {
-                            'loss': random.uniform(0.1, 2.0)
-                        },
-                        self.output_feature: {
-                            'loss': random.uniform(0.1, 2.0),
-                            'accuracy': random.uniform(0.0, 1.0),
-                            'mean_squared_error': random.uniform(0.0, 1000),
-                        }
-                    },
-                    'validation': {
-                        'combined': {
-                            'loss': random.uniform(0.1, 2.0)
-                        },
-                        self.output_feature: {
-                            'loss': random.uniform(0.1, 2.0),
-                            'accuracy': random.uniform(0.0, 1.0),
-                            'mean_squared_error': random.uniform(0.0, 1000),
-                        }
-                    },
-                    'test': {
-                        'combined': {
-                            'loss': random.uniform(0.1, 2.0)
-                        },
-                        self.output_feature: {
-                            'loss': random.uniform(0.1, 2.0),
-                            'accuracy': random.uniform(0.0, 1.0),
-                            'mean_squared_error': random.uniform(0.0, 1000),
-                        }
-                    }
-                }
-                metric_score = self.get_metric_score(training_results)
+                train_stats, eval_stats = train_and_eval_on_split(
+                    modified_model_definition,
+                    eval_split=self.split,
+                    data_df=data_df,
+                    data_train_df=data_train_df,
+                    data_validation_df=data_validation_df,
+                    data_test_df=data_test_df,
+                    data_csv=data_csv,
+                    data_train_csv=data_train_csv,
+                    data_validation_csv=data_validation_csv,
+                    data_test_csv=data_test_csv,
+                    data_hdf5=data_hdf5,
+                    data_train_hdf5=data_train_hdf5,
+                    data_validation_hdf5=data_validation_hdf5,
+                    data_test_hdf5=data_test_hdf5,
+                    train_set_metadata_json=train_set_metadata_json,
+                    experiment_name=experiment_name,
+                    model_name=model_name,
+                    # model_load_path=model_load_path,
+                    # model_resume_path=model_resume_path,
+                    skip_save_training_description=skip_save_training_description,
+                    skip_save_training_statistics=skip_save_training_statistics,
+                    skip_save_model=skip_save_model,
+                    skip_save_progress=skip_save_progress,
+                    skip_save_log=skip_save_log,
+                    skip_save_processed_input=skip_save_processed_input,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output,
+                    skip_save_test_predictions=skip_save_test_predictions,
+                    skip_save_test_statistics=skip_save_test_statistics,
+                    output_directory=output_directory,
+                    gpus=gpus,
+                    gpu_fraction=gpu_fraction,
+                    use_horovod=use_horovod,
+                    random_seed=random_seed,
+                    debug=debug,
+                )
+                # eval_stats = random_eval_stats(self.output_feature)
+                metric_score = self.get_metric_score(eval_stats)
 
                 hyperopt_results.append({
                     'parameters': parameters,
                     'metric_score': metric_score,
-                    'training_results': training_results
+                    'training_stats': train_stats,
+                    'eval_stats': eval_stats
                 })
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
@@ -495,3 +501,174 @@ def substitute_parameters(model_definition, parameters):
     set_values(model_definition["preprocessing"],
                "preprocessing", parameters_dict)
     return model_definition
+
+
+# TODo this is duplicate code from experiment,
+#  reorganize experiment to avoid having to do this
+def train_and_eval_on_split(
+        model_definition,
+        eval_split=VALIDATION,
+        data_df=None,
+        data_train_df=None,
+        data_validation_df=None,
+        data_test_df=None,
+        data_csv=None,
+        data_train_csv=None,
+        data_validation_csv=None,
+        data_test_csv=None,
+        data_hdf5=None,
+        data_train_hdf5=None,
+        data_validation_hdf5=None,
+        data_test_hdf5=None,
+        train_set_metadata_json=None,
+        experiment_name="hyperopt",
+        model_name="run",
+        # model_load_path=None,
+        # model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
+        skip_save_processed_input=False,
+        skip_save_unprocessed_output=False,
+        skip_save_test_predictions=False,
+        skip_save_test_statistics=False,
+        output_directory="results",
+        gpus=None,
+        gpu_fraction=1.0,
+        use_horovod=False,
+        random_seed=default_random_seed,
+        debug=False,
+):
+    # Collect training and validation losses and measures
+    # & append it to `results`
+    # ludwig_model = LudwigModel(modified_model_definition)
+    (
+        model,
+        preprocessed_data,
+        experiment_dir_name,
+        train_stats,
+        model_definition
+    ) = full_train(
+        model_definition=model_definition,
+        data_df=data_df,
+        data_train_df=data_train_df,
+        data_validation_df=data_validation_df,
+        data_test_df=data_test_df,
+        data_csv=data_csv,
+        data_train_csv=data_train_csv,
+        data_validation_csv=data_validation_csv,
+        data_test_csv=data_test_csv,
+        data_hdf5=data_hdf5,
+        data_train_hdf5=data_train_hdf5,
+        data_validation_hdf5=data_validation_hdf5,
+        data_test_hdf5=data_test_hdf5,
+        train_set_metadata_json=train_set_metadata_json,
+        experiment_name=experiment_name,
+        model_name=model_name,
+        # model_load_path=model_load_path,
+        # model_resume_path=model_resume_path,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
+        skip_save_processed_input=skip_save_processed_input,
+        output_directory=output_directory,
+        gpus=gpus,
+        gpu_fraction=gpu_fraction,
+        use_horovod=use_horovod,
+        random_seed=random_seed,
+        debug=debug,
+    )
+    (training_set,
+     validation_set,
+     test_set,
+     train_set_metadata) = preprocessed_data
+    if model_definition[TRAINING]['eval_batch_size'] > 0:
+        batch_size = model_definition[TRAINING]['eval_batch_size']
+    else:
+        batch_size = model_definition[TRAINING]['batch_size']
+
+    eval_set = validation_set
+    if eval_split == TRAINING:
+        eval_set = training_set
+    elif eval_split == VALIDATION:
+        eval_set = validation_set
+    elif eval_split == TEST:
+        eval_set = test_set
+
+    test_results = predict(
+        eval_set,
+        train_set_metadata,
+        model,
+        model_definition,
+        batch_size,
+        evaluate_performance=True,
+        gpus=gpus,
+        gpu_fraction=gpu_fraction,
+        debug=debug
+    )
+    if not (
+            skip_save_unprocessed_output and
+            skip_save_test_predictions and
+            skip_save_test_statistics
+    ):
+        if not os.path.exists(experiment_dir_name):
+            os.makedirs(experiment_dir_name)
+
+    # postprocess
+    postprocessed_output = postprocess(
+        test_results,
+        model_definition['output_features'],
+        train_set_metadata,
+        experiment_dir_name,
+        skip_save_unprocessed_output
+    )
+
+    print_test_results(test_results)
+    if not skip_save_test_predictions:
+        save_prediction_outputs(
+            postprocessed_output,
+            experiment_dir_name
+        )
+    if not skip_save_test_statistics:
+        save_test_statistics(test_results, experiment_dir_name)
+    return train_stats, test_results
+
+
+def random_eval_stats(output_feature):
+    eval_stats = {
+        'training': {
+            'combined': {
+                'loss': random.uniform(0.1, 2.0)
+            },
+            output_feature: {
+                'loss': random.uniform(0.1, 2.0),
+                'accuracy': random.uniform(0.0, 1.0),
+                'mean_squared_error': random.uniform(0.0, 1000),
+            }
+        },
+        'validation': {
+            'combined': {
+                'loss': random.uniform(0.1, 2.0)
+            },
+            output_feature: {
+                'loss': random.uniform(0.1, 2.0),
+                'accuracy': random.uniform(0.0, 1.0),
+                'mean_squared_error': random.uniform(0.0, 1000),
+            }
+        },
+        'test': {
+            'combined': {
+                'loss': random.uniform(0.1, 2.0)
+            },
+            output_feature: {
+                'loss': random.uniform(0.1, 2.0),
+                'accuracy': random.uniform(0.0, 1.0),
+                'mean_squared_error': random.uniform(0.0, 1000),
+            }
+        }
+    }
+    return eval_stats
