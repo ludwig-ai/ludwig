@@ -20,7 +20,9 @@ from __future__ import print_function
 
 import argparse
 import logging
+import os
 import sys
+from pprint import pformat
 
 import yaml
 
@@ -28,6 +30,7 @@ from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, VALIDATIO
 from ludwig.contrib import contrib_command
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
+from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.hyperopt_utils import get_build_hyperopt_strategy, get_build_hyperopt_executor, \
     update_hyperopt_params_with_defaults
@@ -66,6 +69,7 @@ def hyperopt(
         skip_save_unprocessed_output=True,
         skip_save_test_predictions=True,
         skip_save_test_statistics=True,
+        skip_save_hyperopt_statistics=False,
         output_directory="results",
         gpus=None,
         gpu_fraction=1.0,
@@ -97,16 +101,20 @@ def hyperopt(
             "Hyperopt Section not present in Model Definition"
         )
 
-    hyperopt_params = model_definition["hyperopt"]
-    update_hyperopt_params_with_defaults(hyperopt_params)
+    hyperopt_config = model_definition["hyperopt"]
+    update_hyperopt_params_with_defaults(hyperopt_config)
 
-    strategy = hyperopt_params["strategy"]
-    executor = hyperopt_params["executor"]
-    parameters = hyperopt_params["parameters"]
-    split = hyperopt_params["split"]
-    output_feature = hyperopt_params["output_feature"]
-    metric = hyperopt_params["metric"]
-    goal = hyperopt_params["goal"]
+    # print hyperopt config
+    logger.info(pformat(hyperopt_config, indent=4))
+    logger.info('\n')
+
+    strategy = hyperopt_config["strategy"]
+    executor = hyperopt_config["executor"]
+    parameters = hyperopt_config["parameters"]
+    split = hyperopt_config["split"]
+    output_feature = hyperopt_config["output_feature"]
+    metric = hyperopt_config["metric"]
+    goal = hyperopt_config["goal"]
 
     ######################
     # check validity of output_feature / metric/ split combination
@@ -200,7 +208,7 @@ def hyperopt(
         executor["type"]
     )(hyperopt_strategy, output_feature, metric, split, **executor)
 
-    results = hyperopt_executor.execute(
+    hyperopt_results = hyperopt_executor.execute(
         model_definition,
         data_df=data_df,
         data_train_df=data_train_df,
@@ -237,14 +245,59 @@ def hyperopt(
         **kwargs
     )
 
-    return results
+    if is_on_master():
+        print_hyperopt_results(hyperopt_results)
+
+        if not skip_save_hyperopt_statistics:
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+
+            hyperopt_stats = {
+                'hyperopt_config': hyperopt_config,
+                'hyperopt_results': hyperopt_results
+            }
+
+            save_hyperopt_stats(hyperopt_stats, output_directory)
+            logger.info('Hyperopt stats saved to: {}'.format(output_directory))
+
+    logger.info('Finished hyperopt')
+
+    return hyperopt_results
+
+
+def print_hyperopt_results(hyperopt_results):
+    logger.info("Hyeropt results:")
+    for hyperopt_result in hyperopt_results:
+        logger.info('score: {:.6f} | parameters: {}'.format(
+            hyperopt_result['metric_score'], hyperopt_result['parameters']
+        ))
+    logger.info("")
+
+
+def save_hyperopt_stats(hyperopt_stats, hyperopt_dir_name):
+    hyperopt_stats_fn = os.path.join(
+        hyperopt_dir_name,
+        'htperopt_statistics.json'
+    )
+    save_json(hyperopt_stats_fn, hyperopt_stats)
 
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description="This script searches for Optimal Hyperparameters",
+        description="This script searches for optimal Hyperparameters",
         prog="ludwig hyperopt",
         usage="%(prog)s [options]",
+    )
+
+    # -------------------
+    # Hyperopt parameters
+    # -------------------
+    parser.add_argument(
+        "-sshs",
+        "--skip_save_hyperopt_statistics",
+        help="skips saving hyperopt statistics file",
+        action="store_true",
+        default=False,
     )
 
     # ----------------------------
@@ -437,8 +490,12 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
-    logging.getLogger("ludwig").setLevel(
-        logging_level_registry[args.logging_level])
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
+    global logger
+    logger = logging.getLogger('ludwig.hyperopt')
+
     set_on_master(args.use_horovod)
 
     if is_on_master():
