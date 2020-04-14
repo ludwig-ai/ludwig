@@ -1186,7 +1186,8 @@ def hyperopt_report(
         hyperparameters,
         hyperopt_results_df,
         metric,
-        filename_template
+        filename_template,
+        float_precision=3
 ):
     for hp_name, hp_params in hyperparameters.items():
         if hp_params['type'] == 'int':
@@ -1217,11 +1218,15 @@ def hyperopt_report(
             num_distinct_values = len(hyperopt_results_df[hp_name].unique())
             if num_distinct_values > INT_QUANTILES:
                 hyperopt_results_df[hp_name] = pd.qcut(
-                    hyperopt_results_df[hp_name], q=INT_QUANTILES, precision=0
+                    hyperopt_results_df[hp_name],
+                    q=INT_QUANTILES,
+                    precision=0
                 )
         elif hp_params['type'] == 'float':
             hyperopt_results_df[hp_name] = pd.qcut(
-                hyperopt_results_df[hp_name], q=FLOAT_QUANTILES, precision=3
+                hyperopt_results_df[hp_name],
+                q=FLOAT_QUANTILES,
+                precision=float_precision
             )
 
     hyperopt_pair_plot(
