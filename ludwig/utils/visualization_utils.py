@@ -1226,7 +1226,8 @@ def hyperopt_report(
             hyperopt_results_df[hp_name] = pd.qcut(
                 hyperopt_results_df[hp_name],
                 q=FLOAT_QUANTILES,
-                precision=float_precision
+                precision=float_precision,
+                duplicates='drop',
             )
 
     hyperopt_pair_plot(
