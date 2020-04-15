@@ -15,14 +15,15 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import itertools
 import logging
 import math
 import os
 import random
-import itertools
-import numpy as np
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
+
+import numpy as np
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, VALIDATION, MAXIMIZE, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess
