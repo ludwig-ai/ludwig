@@ -20,6 +20,8 @@ import logging
 import math
 import os
 import random
+import signal
+import multiprocessing
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
@@ -415,6 +417,23 @@ class ParallelExecutor(HyperoptExecutor):
         )
         self.num_workers = num_workers
 
+    @staticmethod
+    def init_worker():
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    def _train_and_eval_model(self, hyperopt_dict):
+
+        parameters = hyperopt_dict['parameters']
+        train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
+        metric_score = self.get_metric_score(eval_stats)
+
+        return {
+            'parameters': parameters,
+            'metric_score': metric_score,
+            'training_stats': train_stats,
+            'eval_stats': eval_stats
+        }
+
     def execute(
             self,
             model_definition,
@@ -452,7 +471,63 @@ class ParallelExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ):
-        pass
+        hyperopt_parameters = []
+        while not self.hyperopt_strategy.finished():
+            sampled_parameters = self.hyperopt_strategy.sample_batch()
+
+            for parameters in sampled_parameters:
+                modified_model_definition = substitute_parameters(
+                    copy.deepcopy(model_definition), parameters
+                )
+
+                hyperopt_parameters.append(
+                    {
+                        'parameters': parameters,
+                        'model_definition': modified_model_definition,
+                        'eval_split': self.split,
+                        'data_df': data_df,
+                        'data_train_df': data_train_df,
+                        'data_validation_df': data_validation_df,
+                        'data_test_df': data_test_df,
+                        'data_csv': data_csv,
+                        'data_train_csv': data_train_csv,
+                        'data_validation_csv': data_validation_csv,
+                        'data_test_csv': data_test_csv,
+                        'data_hdf5': data_hdf5,
+                        'data_train_hdf5': data_train_hdf5,
+                        'data_validation_hdf5': data_validation_hdf5,
+                        'data_test_hdf5': data_test_hdf5,
+                        'train_set_metadata_json': train_set_metadata_json,
+                        'experiment_name': experiment_name,
+                        'model_name': model_name,
+                        # model_load_path:model_load_path,
+                        # model_resume_path:model_resume_path,
+                        'skip_save_training_description': skip_save_training_description,
+                        'skip_save_training_statistics': skip_save_training_statistics,
+                        'skip_save_model': skip_save_model,
+                        'skip_save_progress': skip_save_progress,
+                        'skip_save_log': skip_save_log,
+                        'skip_save_processed_input': skip_save_processed_input,
+                        'skip_save_unprocessed_output': skip_save_unprocessed_output,
+                        'skip_save_test_predictions': skip_save_test_predictions,
+                        'skip_save_test_statistics': skip_save_test_statistics,
+                        'output_directory': output_directory,
+                        'gpus': gpus,
+                        'gpu_fraction': gpu_fraction,
+                        'use_horovod': use_horovod,
+                        'random_seed': random_seed,
+                        'debug': debug,
+                    }
+                )
+
+        pool = multiprocessing.Pool(
+            self.num_workers, ParallelExecutor.init_worker)
+
+        hyperopt_results = pool.map(
+            self._train_and_eval_model, hyperopt_parameters)
+        
+        hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
+        return hyperopt_results
 
 
 def get_build_hyperopt_strategy(strategy_type):
@@ -595,6 +670,7 @@ def train_and_eval_on_split(
         use_horovod=False,
         random_seed=default_random_seed,
         debug=False,
+        **kwargs
 ):
     # Collect training and validation losses and measures
     # & append it to `results`
