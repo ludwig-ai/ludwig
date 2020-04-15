@@ -1349,3 +1349,12 @@ def hyperopt_pair_plot(
         plt.savefig(filename)
     else:
         plt.show()
+
+
+def hyperopt_hiplot(
+        hyperopt_df,
+        filename,
+):
+    import hiplot as hip
+    experiment = hip.Experiment.from_dataframe(hyperopt_df)
+    experiment.to_html(filename)

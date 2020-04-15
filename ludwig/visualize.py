@@ -3061,7 +3061,7 @@ def hyperopt_report_cli(
         **kwargs
 ):
     """
-     Produces a report about hyperparameter optimization
+    Produces a report about hyperparameter optimization
     creating one graph per hyperparameter to show the distribution of results.
     
     :param hyperopt_stats_path: path to the hyperopt results JSON file 
@@ -3086,6 +3086,37 @@ def hyperopt_report_cli(
         ),
         metric=hyperopt_stats['hyperopt_config']['metric'],
         filename_template=filename_template_path
+    )
+
+
+def hyperopt_hiplot_cli(
+        hyperopt_stats_path,
+        output_directory=None,
+        **kwargs
+):
+    """
+    Produces a parallel coordinate plot about hyperparameter optimization
+    creating one HTML file and optionally a CSV file to be read by hiplot
+
+    :param hyperopt_stats_path: path to the hyperopt results JSON file
+    :param output_directory: path where to save the output plots
+    :return:
+    """
+    filename = 'hyperopt_hiplot.html'
+    filename_path = generate_filename_template_path(
+        output_directory,
+        filename
+    )
+
+    hyperopt_stats = load_json(hyperopt_stats_path)
+    hyperopt_df = hyperopt_results_to_dataframe(
+        hyperopt_stats['hyperopt_results'],
+        hyperopt_stats['hyperopt_config']['parameters'],
+        hyperopt_stats['hyperopt_config']['metric']
+    )
+    visualization_utils.hyperopt_hiplot(
+        hyperopt_df,
+        filename=filename_path,
     )
 
 
@@ -3151,7 +3182,9 @@ visualizations_registry = {
     'learning_curves':
         learning_curves_cli,
     'hyperopt_report':
-        hyperopt_report_cli
+        hyperopt_report_cli,
+    'hyperopt_hiplot':
+        hyperopt_hiplot_cli
 }
 
 
