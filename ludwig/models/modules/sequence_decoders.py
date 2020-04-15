@@ -154,6 +154,7 @@ class SequenceTaggerDecoder(Layer):
             attention=False,
             **kwargs
     ):
+        super(SequenceTaggerDecoder, self).__init__()
         self.initializer = initializer
         self.regularize = regularize
         self.attention = attention
@@ -176,11 +177,11 @@ class SequenceTaggerDecoder(Layer):
                 'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
                     len(hidden.shape)))
 
-        if is_timeseries:
-            output_feature['num_classes'] = 1
-
-        if not self.regularize:
-            regularizer = None
+        # if is_timeseries:
+        #     output_feature['num_classes'] = 1
+        #
+        # if not self.regularize:
+        #     regularizer = None
 
         sequence_length = tf.shape(hidden)[1]
 
