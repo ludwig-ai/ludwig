@@ -152,12 +152,16 @@ class SequenceTaggerDecoder(Layer):
             initializer=None,
             regularize=True,
             attention=False,
+            num_classes=0,
+            loss=None,
             **kwargs
     ):
         super(SequenceTaggerDecoder, self).__init__()
         self.initializer = initializer
         self.regularize = regularize
         self.attention = attention
+        self.num_classes = num_classes
+        self.class_weigths = loss['class_weights']
 
     def call(
             self,
@@ -185,35 +189,35 @@ class SequenceTaggerDecoder(Layer):
 
         sequence_length = tf.shape(hidden)[1]
 
-        if self.attention:
-            hidden, hidden_size = feed_forward_memory_attention(
-                hidden,
-                hidden,
-                hidden_size
-            )
-        targets_sequence_length = sequence_length_2D(targets)
-
-        initializer_obj = get_initializer(self.initializer)
-        class_weights = tf.get_variable(
-            'weights',
-            initializer=initializer_obj(
-                [hidden_size, output_feature['num_classes']]),
-            regularizer=regularizer
-        )
-        logger.debug('  weights: {0}'.format(class_weights))
+        # if self.attention:
+        #     hidden, hidden_size = feed_forward_memory_attention(
+        #         hidden,
+        #         hidden,
+        #         hidden_size
+        #     )
+        # targets_sequence_length = sequence_length_2D(targets)
+        #
+        # initializer_obj = get_initializer(self.initializer)
+        # class_weights = tf.get_variable(
+        #     'weights',
+        #     initializer=initializer_obj(
+        #         [hidden_size, self.num_classes]),
+        #     regularizer=regularizer
+        # )
+        # logger.debug('  weights: {0}'.format(class_weights))
 
         class_biases = tf.get_variable(
             'biases',
-            [output_feature['num_classes']]
+            [self.num_classes]
         )
         logger.debug('  biases: {0}'.format(class_biases))
 
         hidden_reshape = tf.reshape(hidden, [-1, hidden_size])
         logits_to_reshape = tf.matmul(hidden_reshape,
-                                      class_weights) + class_biases
+                                      self.class_weights) + class_biases
         logits = tf.reshape(
             logits_to_reshape,
-            [-1, sequence_length, output_feature['num_classes']]
+            [-1, sequence_length, self.num_classes]
         )
         logger.debug('  logits: {0}'.format(logits))
 

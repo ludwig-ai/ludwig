@@ -264,10 +264,9 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         }
         self.num_classes = 0
 
-        decoder_parameters = self.overwrite_defaults(feature)
-        decoder_parameters.update({'num_classes': self.num_classes})
+        self.overwrite_defaults(feature)
 
-        self.decoder_obj = self.initialize_decoder(decoder_parameters)
+        self.decoder_obj = self.initialize_decoder(feature)
 
         self._setup_loss()
         self._setup_metrics()
