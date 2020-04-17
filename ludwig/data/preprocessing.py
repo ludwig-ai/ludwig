@@ -181,8 +181,6 @@ def build_data(
     if subset:
         dataset_df = dataset_df[subset['from']:subset['to']]
 
-    # we need this to understand to which row prediction is
-    train_set_metadata['dataset_index'] = dataset_df.index
     return data_dict, dataset_df
 
 # a bit hacky way because of compatibility
