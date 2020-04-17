@@ -119,7 +119,7 @@ class FCStack(Layer):
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
                 layer['bias_initializer'] = default_bias_initializer
-            if 'weights_regularizer ' not in layer:
+            if 'weights_regularizer' not in layer:
                 layer['weights_regularizer'] = default_weights_regularizer
             if 'bias_regularizer' not in layer:
                 layer['bias_regularizer'] = default_bias_regularizer
