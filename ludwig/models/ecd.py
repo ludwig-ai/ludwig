@@ -123,6 +123,7 @@ class ECD(tf.keras.Model):
             of_train_loss = of_obj.train_loss(targets[of_name], predictions[of_name])
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
+        # TODO add parameter for how much regularization
         train_loss += sum(self.losses)  # regularization / other losses
         return train_loss, of_train_losses
 
