@@ -97,9 +97,7 @@ class SequenceEmbedEncoder(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
-            dropout=False,
             initializer=None,
-            regularize=True,
             reduce_output='sum',
             regularizer=None,
             dropout_rate=0,
@@ -187,8 +185,6 @@ class SequenceEmbedEncoder(Layer):
         super(SequenceEmbedEncoder, self).__init__()
 
         self.reduce_output = reduce_output
-        self.regularizer = regularizer
-        self.dropout_rate = dropout_rate
 
         self.embed_sequence = EmbedSequence(
             vocab,
@@ -197,9 +193,9 @@ class SequenceEmbedEncoder(Layer):
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
+            dropout_rate=dropout_rate,
             initializer=initializer,
-            regularize=regularize
+            regularizer=regularizer
         )
 
     def call(
@@ -219,9 +215,7 @@ class SequenceEmbedEncoder(Layer):
         # ================ Embeddings ================
         embedded_sequence, embedding_size = self.embed_sequence(
             input_sequence,
-            self.regularizer,
-            self.dropout_rate,
-            is_training=training
+            training=training
         )
 
         hidden = reduce_sequence(embedded_sequence, self.reduce_output)

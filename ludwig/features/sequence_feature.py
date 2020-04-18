@@ -144,7 +144,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(encoder_parameters)
+            self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
