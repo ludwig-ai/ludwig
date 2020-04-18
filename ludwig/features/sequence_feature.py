@@ -153,11 +153,11 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        inputs_encoded = self.encoder_obj(
+        encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )
 
-        return inputs_encoded
+        return {'encoder_output': encoder_output}
 
     @staticmethod
     def update_model_definition_with_metadata(

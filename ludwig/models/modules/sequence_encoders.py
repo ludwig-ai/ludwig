@@ -84,7 +84,7 @@ class SequencePassthroughEncoder(Layer):
 
         hidden = reduce_sequence(input_sequence, self.reduce_output)
 
-        return {'encoder_output': hidden}
+        return hidden
 
 
 class SequenceEmbedEncoder(Layer):
@@ -226,7 +226,7 @@ class SequenceEmbedEncoder(Layer):
 
         hidden = reduce_sequence(embedded_sequence, self.reduce_output)
 
-        return {'output_encoder': hidden}  #, embedding_size # todo tf2 code cleanup
+        return hidden  #, embedding_size # todo tf2 code cleanup
 
 
 class ParallelCNN(object):
