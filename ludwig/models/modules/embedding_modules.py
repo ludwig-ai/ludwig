@@ -39,7 +39,8 @@ def embedding_matrix(
     if representation == 'dense':
         if pretrained_embeddings is not None and pretrained_embeddings is not False:
             embeddings_matrix = load_pretrained_embeddings(
-                pretrained_embeddings, vocab)
+                pretrained_embeddings, vocab
+            )
             if embeddings_matrix.shape[-1] != embedding_size:
                 raise ValueError(
                     'The size of the pretrained embeddings is {}, '
