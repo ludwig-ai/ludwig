@@ -16,7 +16,7 @@
 import logging
 
 import tensorflow.compat.v1 as tf
-from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Layer, Dense
 
 from ludwig.models.modules.attention_modules import \
     feed_forward_memory_attention
@@ -160,8 +160,10 @@ class SequenceTaggerDecoder(Layer):
         self.initializer = initializer
         self.regularize = regularize
         self.attention = attention
-        self.num_classes = num_classes
-        self.class_weigths = loss['class_weights']
+        self.class_weights = loss['class_weights']
+
+        # todo tf2 add other required parameters for Dense layer
+        self.decoder_layer = Dense(num_classes)
 
     def call(
             self,
@@ -181,13 +183,22 @@ class SequenceTaggerDecoder(Layer):
                 'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
                     len(hidden.shape)))
 
+        logits = self.decoder_layer(hidden)
+
+        # todo tf2 adapt to support timeseries
+
         # if is_timeseries:
         #     output_feature['num_classes'] = 1
         #
         # if not self.regularize:
         #     regularizer = None
 
-        sequence_length = tf.shape(hidden)[1]
+        return logits
+
+
+
+        # todo tf2 clean-up obsolete code
+        # sequence_length = tf.shape(hidden)[1]
 
         # if self.attention:
         #     hidden, hidden_size = feed_forward_memory_attention(
@@ -206,20 +217,20 @@ class SequenceTaggerDecoder(Layer):
         # )
         # logger.debug('  weights: {0}'.format(class_weights))
 
-        class_biases = tf.get_variable(
-            'biases',
-            [self.num_classes]
-        )
-        logger.debug('  biases: {0}'.format(class_biases))
-
-        hidden_reshape = tf.reshape(hidden, [-1, hidden_size])
-        logits_to_reshape = tf.matmul(hidden_reshape,
-                                      self.class_weights) + class_biases
-        logits = tf.reshape(
-            logits_to_reshape,
-            [-1, sequence_length, self.num_classes]
-        )
-        logger.debug('  logits: {0}'.format(logits))
+        # class_biases = tf.get_variable(
+        #     'biases',
+        #     [self.num_classes]
+        # )
+        # logger.debug('  biases: {0}'.format(class_biases))
+        #
+        # hidden_reshape = tf.reshape(hidden, [-1, hidden_size])
+        # logits_to_reshape = tf.matmul(hidden_reshape,
+        #                               self.class_weights) + class_biases
+        # logits = tf.reshape(
+        #     logits_to_reshape,
+        #     [-1, sequence_length, self.num_classes]
+        # )
+        # logger.debug('  logits: {0}'.format(logits))
 
         # if is_timeseries:
         #     probabilities_sequence = tf.zeros_like(logits)
@@ -236,9 +247,5 @@ class SequenceTaggerDecoder(Layer):
         #         output_type=tf.int32
         #     )
 
-        predictions_sequence_length = sequence_length_3D(hidden)
+        # predictions_sequence_length = sequence_length_3D(hidden)
 
-        return predictions_sequence, probabilities_sequence, \
-               predictions_sequence_length, \
-               probabilities_sequence, targets_sequence_length, \
-               logits, hidden, class_weights, class_biases

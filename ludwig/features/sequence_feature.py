@@ -30,7 +30,9 @@ from ludwig.models.modules.loss_modules import \
     sequence_sampled_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.models.modules.loss_modules import LudwigSequenceLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
+from ludwig.models.modules.metric_modules import LudwigSequenceLossMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
@@ -273,11 +275,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _setup_loss(self):
         if self.loss['type'] == 'softmax_cross_entropy':
-            self.train_loss_function = SoftmaxCrossEntropyLoss(
-                num_classes=self.num_classes,
-                feature_loss=self.loss,
-                name='train_loss'
-            )
+            self.train_loss_function = LudwigSequenceLoss()
         elif self.loss['type'] == 'sampled_softmax_cross_entropy':
             self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
@@ -292,14 +290,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss['type'])
             )
 
-        self.eval_loss_function = SoftmaxCrossEntropyMetric(
-            num_classes=self.num_classes,
-            feature_loss=self.loss,
-            name='eval_loss'
-        )
+        self.eval_loss_function = LudwigSequenceLossMetric()
 
     def _setup_metrics(self):
-        pass
+        self.metric_functions[LOSS] = self.eval_loss_function
 
     def logits(
             self,
@@ -311,7 +305,47 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             self,
             inputs   # logits
     ):
-        pass
+
+        logits = inputs[LOGITS]
+
+        probabilities= tf.nn.softmax(
+            logits,
+            name='probabilities_{}'.format(self.name)
+        )
+        predictions = tf.argmax(
+            logits,
+            -1,
+            name='predictions_{}'.format(self.name),
+            output_type=tf.int32
+        )
+
+        if self.decoder == 'generator':
+            additional = 1  # because of eos symbol
+        elif self.decoder == 'tagger':
+            additional = 0
+        else:
+            additional = 0
+
+        # predictions_sequence_length = predictions.shape[1]
+        # last_predictions = tf.gather_nd(
+        #     predictions,
+        #     tf.stack(
+        #         [tf.range(tf.shape(predictions)[0]),
+        #          tf.maximum(
+        #              predictions_sequence_length - 1 - additional,
+        #              0
+        #          )],
+        #         axis=1
+        #     )
+        # )
+
+        return {
+            PREDICTIONS: predictions,
+            # LAST_PREDICTIONS: last_predictions,
+            PROBABILITIES: probabilities,
+            LOGITS: logits
+        }
+
 
     default_validation_metric = LOSS
 
