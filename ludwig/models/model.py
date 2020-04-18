@@ -140,10 +140,11 @@ class Model:
 
     # todo: tf2 proof-of-concept code
     @tf.function
-    def train_step(self, model, optimizer, inputs, targets):
+    def train_step(self, model, optimizer, inputs, targets,
+                   regularization_lambda=0.0):
         with tf.GradientTape() as tape:
             logits = model(inputs, training=True)
-            loss, _ = model.train_loss(targets, logits)
+            loss, _ = model.train_loss(targets, logits, regularization_lambda)
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
@@ -483,7 +484,8 @@ class Model:
                     self.ecd,
                     self.optimizer_function,
                     inputs,
-                    targets
+                    targets,
+                    regularization_lambda
                 )
 
                 # todo: tf2 add back relevant code
@@ -718,6 +720,7 @@ class Model:
             self,
             dataset,
             batch_size=128,
+            regularization_lambda=0.0,
             bucketing_field=None,
             gpus=None,
             gpu_fraction=1
@@ -742,7 +745,8 @@ class Model:
             self.train_step(
                 self.optimizer_function,
                 inputs,
-                targets
+                targets,
+                regularization_lambda
             )
 
             progress_bar.update(1)
