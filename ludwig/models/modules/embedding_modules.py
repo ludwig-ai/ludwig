@@ -126,8 +126,8 @@ class Embed(Layer):
             )
 
         if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)()
-            self.add_loss(regularizer_obj(self.embeddings))
+            regularizer_obj = tf.keras.regularizers.get(regularizer)
+            self.add_loss(lambda: regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)
@@ -140,7 +140,7 @@ class Embed(Layer):
         )
 
         if self.dropout:
-            embedded = self.dropout(embedded)
+            embedded = self.dropout(embedded, training=training)
 
         return embedded
 
@@ -209,7 +209,7 @@ class EmbedWeighted(Layer):
         embedded_reduced = tf.reduce_sum(weighted_embedded, 1)
 
         if self.dropout:
-            embedded_reduced = self.dropout(embedded_reduced)
+            embedded_reduced = self.dropout(embedded_reduced, training=training)
 
         return embedded_reduced
 
@@ -283,7 +283,7 @@ class EmbedSparse(Layer):
         )
 
         if self.dropout:
-            embedded_reduced = self.dropout(embedded_reduced)
+            embedded_reduced = self.dropout(embedded_reduced, training=training)
 
         return embedded_reduced
 
@@ -340,12 +340,15 @@ class EmbedSequence(Layer):
             inputs, training=None, mask=None
         )
 
-        # TODO use tf2 mechanism for macking
+        # TODO use tf2 mechanism for masking
         if mask:
             mask_matrix = tf.cast(
                 tf.expand_dims(tf.sign(tf.abs(inputs)), -1),
                 dtype=tf.float32
             )
             embedded = tf.multiply(embedded, mask_matrix)
+
+        if self.dropout:
+            embedded = self.dropout(embedded, training=training)
 
         return embedded
