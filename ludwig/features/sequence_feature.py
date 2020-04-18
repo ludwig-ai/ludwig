@@ -326,18 +326,18 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         else:
             additional = 0
 
-        # predictions_sequence_length = predictions.shape[1]
-        # last_predictions = tf.gather_nd(
-        #     predictions,
-        #     tf.stack(
-        #         [tf.range(tf.shape(predictions)[0]),
-        #          tf.maximum(
-        #              predictions_sequence_length - 1 - additional,
-        #              0
-        #          )],
-        #         axis=1
-        #     )
-        # )
+        predictions_sequence_length = predictions.shape[1]
+        last_predictions = tf.gather_nd(
+            predictions,
+            tf.stack(
+                [tf.range(tf.shape(predictions)[0]),
+                 tf.maximum(
+                     predictions_sequence_length - 1 - additional,
+                     0
+                 )],
+                axis=1
+            )
+        )
 
         return {
             PREDICTIONS: predictions,
