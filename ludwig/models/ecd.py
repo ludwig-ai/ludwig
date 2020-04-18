@@ -46,7 +46,6 @@ class ECD(tf.keras.Model):
         self.eval_loss_metric = tf.keras.metrics.Mean()
 
     def call(self, inputs, training=None, mask=None):
-        # todo: tf2 proof-of-concept code
         # inputs is a dict feature_name -> tensor / ndarray
         assert inputs.keys() == self.input_features.keys()
 
@@ -116,14 +115,14 @@ class ECD(tf.keras.Model):
         return predictions
 
 
-    def train_loss(self, targets, predictions):
+    def train_loss(self, targets, predictions, regularization_lambda=0.0):
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
             of_train_loss = of_obj.train_loss(targets[of_name], predictions[of_name])
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
-        train_loss += sum(self.losses)  # regularization / other losses
+        train_loss += regularization_lambda * sum(self.losses)  # regularization / other losses
         return train_loss, of_train_losses
 
     def eval_loss(self, targets, predictions):

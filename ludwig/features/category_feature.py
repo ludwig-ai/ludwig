@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -26,20 +25,13 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.embedding_modules import Embed
-from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.category_decoders import Classifier
 from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
-from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
 from ludwig.models.modules.category_encoders import CategoricalPassthroughEncoder
-from ludwig.models.modules.loss_modules import mean_confidence_penalty
-from ludwig.models.modules.loss_modules import sampled_softmax_cross_entropy
-from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
-from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
-from ludwig.models.modules.metric_modules import accuracy as get_accuracy
-from ludwig.models.modules.metric_modules import hits_at_k as get_hits_at_k
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -106,56 +98,16 @@ class CategoryBaseFeature(BaseFeature):
 
 
 class CategoryInputFeature(CategoryBaseFeature, InputFeature):
+    encoder = 'dense'
+
     def __init__(self, feature, encoder_obj=None):
         CategoryBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
-
-        self.vocab = []
-
-        self.embedding_size = 50
-        # todo tf2: change name from 'representation' to 'encoder`
-        #           update documentation
-        self.representation = 'dense'
-        self.embeddings_trainable = True
-        self.pretrained_embeddings = None
-        self.embeddings_on_cpu = False
-        self.dropout = False
-        self.initializer = None
-        self.regularize = True
-
-
-        # _ = self.overwrite_defaults(feature)
-        #
-        # self.embed = Embed(
-        #     vocab=self.vocab,
-        #     embedding_size=self.embedding_size,
-        #     representation=self.representation,
-        #     embeddings_trainable=self.embeddings_trainable,
-        #     pretrained_embeddings=self.pretrained_embeddings,
-        #     embeddings_on_cpu=self.embeddings_on_cpu,
-        #     dropout=self.dropout,
-        #     initializer=self.initializer,
-        #     regularize=self.regularize
-        # )
-
-
-        self.encoder = self.representation
-        encoder_parameters = self.overwrite_defaults(feature)
-        # encoder_parameters.update({'input_feature_obj': self})
-        encoder_parameters.update({'vocab': self.vocab})
-        encoder_parameters.update({'embedding_size': self.embedding_size})
-        encoder_parameters.update({'representation': self.representation})
-        encoder_parameters.update({'embeddings_trainable': self.embeddings_trainable})
-        encoder_parameters.update({'pretrained_embeddings': self.pretrained_embeddings})
-        encoder_parameters.update({'embeddings_on_cpu': self.embeddings_on_cpu})
-        encoder_parameters.update({'dropout': self.dropout})
-        encoder_parameters.update({'initializer': self.initializer})
-        encoder_parameters.update({'regularize': self.regularize})
-
+        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(encoder_parameters)
+            self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -163,13 +115,13 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
                inputs.dtype == tf.int32 or inputs.dtype == tf.int64
         assert len(inputs.shape) == 1
 
-        inputs_exp = inputs[:, tf.newaxis]
-        inputs_encoded = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
+        if inputs.dtype == tf.int8 or inputs.dtype == tf.int16:
+            inputs = tf.cast(inputs, tf.int32)
+        encoder_output = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
 
-        return inputs_encoded
-
+        return {'encoder_output': encoder_output}
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -251,7 +203,6 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-
     def logits(
             self,
             inputs,  # hidden
@@ -260,7 +211,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
     def predictions(
             self,
-            inputs, # logits
+            inputs,  # logits
     ):
         logits = inputs[LOGITS]
 

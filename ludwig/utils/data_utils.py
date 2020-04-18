@@ -184,7 +184,8 @@ def load_pretrained_embeddings(embeddings_path, vocab):
             embeddings_vectors.append(embeddings[word])
         else:
             embeddings_vectors.append(
-                avg_embedding + np.random.uniform(-0.01, 0.01, embeddings_size))
+                avg_embedding + np.random.uniform(-0.01, 0.01, embeddings_size)
+            )
     embeddings_matrix = np.stack(embeddings_vectors)
 
     # let's help the garbage collector free some memory

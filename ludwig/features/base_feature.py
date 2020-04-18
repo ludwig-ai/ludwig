@@ -34,7 +34,8 @@ class BaseFeature:
         self.type = None
 
     def overwrite_defaults(self, feature):
-        attributes = self.__dict__.keys()
+        attributes = set(self.__dict__.keys())
+        attributes.update(self.__class__.__dict__.keys())
 
         remaining_dict = dict(feature)
 
