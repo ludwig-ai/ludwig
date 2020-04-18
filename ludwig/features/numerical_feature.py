@@ -37,7 +37,7 @@ from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
 
-
+# TODO TF2 can we eliminate use of these customer wrapper classes?
 # custom class to handle how Ludwig stores predictions
 class MSELoss(MeanSquaredError):
     def __init__(self, **kwargs):
