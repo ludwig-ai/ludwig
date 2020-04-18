@@ -472,6 +472,21 @@ class ParallelExecutor(HyperoptExecutor):
             **kwargs
     ):
         hyperopt_parameters = []
+
+        if gpus is not None:
+            if isinstance(gpus, int):
+                gpus = str(gpus)
+            gpus = gpus.strip()
+            total_gpus = len(gpus.split(','))
+
+            if total_gpus < self.num_workers:
+                fraction = total_gpus / self.num_workers
+                if fraction < 1:
+                    if fraction < gpu_fraction:
+                        logger.warning(
+                            'WARNING: Setting `gpu_fraction` to {}'.format(fraction))
+                        gpu_fraction = fraction
+
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
 
