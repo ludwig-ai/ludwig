@@ -185,6 +185,7 @@ class SequenceTaggerDecoder(Layer):
         logits = self.decoder_layer(hidden)
 
         # todo tf2 adapt to support timeseries
+        # todo tf2 support attention
 
         # if is_timeseries:
         #     output_feature['num_classes'] = 1
