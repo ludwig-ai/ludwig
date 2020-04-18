@@ -30,9 +30,9 @@ from ludwig.models.modules.loss_modules import \
     sequence_sampled_softmax_cross_entropy
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-from ludwig.models.modules.loss_modules import LudwigSequenceLoss
+from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
-from ludwig.models.modules.metric_modules import LudwigSequenceLossMetric
+from ludwig.models.modules.metric_modules import SequenceLossMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
@@ -276,7 +276,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _setup_loss(self):
         if self.loss['type'] == 'softmax_cross_entropy':
-            self.train_loss_function = LudwigSequenceLoss()
+            self.train_loss_function = SequenceLoss()
         elif self.loss['type'] == 'sampled_softmax_cross_entropy':
             self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
@@ -291,7 +291,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 "'sampled_softmax_cross_entropy'".format(self.loss['type'])
             )
 
-        self.eval_loss_function = LudwigSequenceLossMetric()
+        self.eval_loss_function = SequenceLossMetric()
 
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function

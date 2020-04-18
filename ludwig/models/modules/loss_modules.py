@@ -16,7 +16,7 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
-from tensorflow_addons.seq2seq import SequenceLoss
+from tensorflow_addons.seq2seq import SequenceLoss as TfaSequenceLoss
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
 from ludwig.constants import *
@@ -127,10 +127,10 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         return loss
 
 
-class LudwigSequenceLoss(tf.keras.losses.Loss):
+class SequenceLoss(tf.keras.losses.Loss):
     def __init__(self, name=None, **kwargs):
-        super(LudwigSequenceLoss, self).__init__(name=name)
-        self.loss_function = SequenceLoss()
+        super(SequenceLoss, self).__init__(name=name)
+        self.loss_function = TfaSequenceLoss()
 
     def call(self, y_true, y_pred):
         # todo tf2: need to figure out how to deal with weights

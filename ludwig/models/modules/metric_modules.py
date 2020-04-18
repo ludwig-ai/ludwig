@@ -20,7 +20,7 @@ import tensorflow.compat.v1 as tf
 from ludwig.constants import *
 from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.models.modules.loss_modules import LudwigSequenceLoss
+from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.utils.tf_utils import to_sparse
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
@@ -157,11 +157,11 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
         super().update_state(self.softmax_cross_entropy_function(y, y_hat))
 
 
-class LudwigSequenceLossMetric(tf.keras.metrics.Mean):
+class SequenceLossMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
-        super(LudwigSequenceLossMetric, self).__init__(name=name)
+        super(SequenceLossMetric, self).__init__(name=name)
 
-        self.loss_function = LudwigSequenceLoss()
+        self.loss_function = SequenceLoss()
 
     def update_state(self, y, y_hat):
         loss = self.loss_function(y, y_hat)
