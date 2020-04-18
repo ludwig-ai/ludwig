@@ -34,6 +34,7 @@ from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import SequenceLossMetric
 from ludwig.models.modules.metric_modules import SequenceAccuracyMetric
+from ludwig.models.modules.metric_modules import PerplexityMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
@@ -191,62 +192,6 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
     }
 
 
-    # todo tf2 code clean up
-    #
-    #
-    # def _get_input_placeholder(self):
-    #     # None dimension is for dealing with variable batch size
-    #     return tf.placeholder(
-    #         tf.int32,
-    #         shape=[None, None],
-    #         name='{}_placeholder'.format(self.feature_name)
-    #     )
-    #
-    # def build_input(
-    #         self,
-    #         regularizer,
-    #         dropout_rate,
-    #         is_training=False,
-    #         **kwargs
-    # ):
-    #     placeholder = self._get_input_placeholder()
-    #     logger.debug('  placeholder: {0}'.format(placeholder))
-    #
-    #     return self.build_sequence_input(
-    #         placeholder,
-    #         self.encoder_obj,
-    #         regularizer,
-    #         dropout_rate,
-    #         is_training=is_training
-    #     )
-    #
-    # def build_sequence_input(
-    #         self,
-    #         placeholder,
-    #         encoder,
-    #         regularizer,
-    #         dropout_rate,
-    #         is_training
-    # ):
-    #     feature_representation, feature_representation_size = encoder(
-    #         placeholder,
-    #         regularizer=regularizer,
-    #         dropout_rate=dropout_rate,
-    #         is_training=is_training
-    #     )
-    #     logger.debug('  feature_representation: {0}'.format(
-    #         feature_representation))
-    #
-    #     feature_representation = {
-    #         'type': self.type,
-    #         'representation': feature_representation,
-    #         'size': feature_representation_size,
-    #         'placeholder': placeholder
-    #     }
-    #     return feature_representation
-
-
-
 class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
     def __init__(self, feature):
         super().__init__(feature)
@@ -297,11 +242,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = SequenceAccuracyMetric()
+        self.metric_functions[PERPLEXITY] = PerplexityMetric()
 
     # over ride super class OutputFeature.update_metrics() method
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS:
+            if metric == LOSS or metric == PERPLEXITY:
                 metric_fn.update_state(targets, predictions)
             elif metric == ACCURACY:
                 metric_fn.update_state(targets, predictions[LAST_PREDICTIONS])

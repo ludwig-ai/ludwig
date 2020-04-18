@@ -195,6 +195,20 @@ class SequenceAccuracyMetric(tf.keras.metrics.Accuracy):
 
         super().update_state(last_targets, y_pred)
 
+
+class PerplexityMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super(PerplexityMetric, self).__init__(name=name)
+        self.loss_function = SequenceLoss()
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        loss = self.loss_function(y_true, y_pred)
+        super().update_state(loss)
+
+    def result(self):
+        mean = super().result()
+        return np.exp(mean)
+
 # end of custom classes
 
 
