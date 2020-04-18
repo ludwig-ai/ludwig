@@ -142,7 +142,6 @@ def build_data(
         train_set_metadata,
         global_preprocessing_parameters
 ):
-    dataset_df.reset_index(drop=True, inplace=True)
     data_dict = {}
 
     for feature in features:
