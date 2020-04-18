@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.embedding_modules import Embed
@@ -117,11 +116,6 @@ class CategoricalSparseEncoder(Layer):
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
         embedded = self.embed(
-            tf.cast(inputs, dtype=tf.int32), training=None, mask=None
+            inputs, training=None, mask=None
         )
-
-        # todo tf2: remove tf.squeeze() after Embed() update to return correct
-        #           dimension
-        embedded = tf.squeeze(embedded)
-
         return embedded

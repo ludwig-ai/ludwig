@@ -98,13 +98,12 @@ class CategoryBaseFeature(BaseFeature):
 
 
 class CategoryInputFeature(CategoryBaseFeature, InputFeature):
+    encoder = 'dense'
+
     def __init__(self, feature, encoder_obj=None):
         CategoryBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
-
-        self.vocab = []
-        self.encoder = 'dense'
-
+        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -123,7 +122,6 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
         )
 
         return {'encoder_output': encoder_output}
-
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -205,7 +203,6 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         self._setup_loss()
         self._setup_metrics()
 
-
     def logits(
             self,
             inputs,  # hidden
@@ -214,7 +211,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
     def predictions(
             self,
-            inputs, # logits
+            inputs,  # logits
     ):
         logits = inputs[LOGITS]
 
