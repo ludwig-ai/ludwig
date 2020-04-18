@@ -33,7 +33,7 @@ from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import SequenceLossMetric
-from ludwig.models.modules.metric_modules import SequenceAccuracyMetric
+from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.models.modules.metric_modules import PerplexityMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
@@ -241,7 +241,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[ACCURACY] = SequenceAccuracyMetric()
+        self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
         self.metric_functions[PERPLEXITY] = PerplexityMetric()
 
     # over ride super class OutputFeature.update_metrics() method
@@ -249,7 +249,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS or metric == PERPLEXITY:
                 metric_fn.update_state(targets, predictions)
-            elif metric == ACCURACY:
+            elif metric == LAST_ACCURACY:
                 metric_fn.update_state(targets, predictions[LAST_PREDICTIONS])
             else:
                 metric_fn.update_state(targets, predictions[PREDICTIONS])

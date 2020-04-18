@@ -169,12 +169,12 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
         super().update_state(loss)
 
 
-class SequenceAccuracyMetric(tf.keras.metrics.Accuracy):
+class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     """
     Sequence accuracy based on last token in the sequence
     """
     def __init__(self, name=None):
-        super(SequenceAccuracyMetric, self).__init__(name=name)
+        super(SequenceLastAccuracyMetric, self).__init__(name=name)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         # TODO TF2 account for weights
