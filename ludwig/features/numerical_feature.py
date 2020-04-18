@@ -28,15 +28,15 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.models.modules.generic_decoders import Regressor
+from ludwig.models.modules.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.models.modules.metric_modules import ErrorScore
 from ludwig.models.modules.metric_modules import R2Score
-from ludwig.models.modules.numerical_decoders import Regressor
-from ludwig.models.modules.numerical_encoders import NumericalPassthroughEncoder
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
+
 
 # custom class to handle how Ludwig stores predictions
 class MSELoss(MeanSquaredError):
@@ -80,15 +80,15 @@ class MAEMetric(MeanAbsoluteErrorMetric):
 
 
 class NumericalBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = NUMERICAL
-
+    type = NUMERICAL
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0,
         'normalization': None
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -136,20 +136,16 @@ class NumericalBaseFeature(BaseFeature):
 
 
 class NumericalInputFeature(NumericalBaseFeature, InputFeature):
+    encoder = 'passthrough'
+
     def __init__(self, feature, encoder_obj=None):
         NumericalBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
-
-        self.encoder = 'passthrough'
-        self.norm = None
-        self.dropout = False
-
-        encoder_parameters = self.overwrite_defaults(feature)
-
+        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(encoder_parameters)
+            self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -177,30 +173,25 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     encoder_registry = {
-        'dense': FCStack,
-        'passthrough': NumericalPassthroughEncoder,
-        'null': NumericalPassthroughEncoder,
-        'none': NumericalPassthroughEncoder,
-        'None': NumericalPassthroughEncoder,
-        None: NumericalPassthroughEncoder
+        'dense': DenseEncoder,
+        'passthrough': PassthroughEncoder,
+        'null': PassthroughEncoder,
+        'none': PassthroughEncoder,
+        'None': PassthroughEncoder,
+        None: PassthroughEncoder
     }
 
 
 class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
+    decoder = 'regressor'
+    loss = {'type': MEAN_SQUARED_ERROR}
+    clip = None
+
     def __init__(self, feature):
         NumericalBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
-
-        self.decoder = 'regressor'
-        self.loss = {'type': MEAN_SQUARED_ERROR}
-        self.clip = None
-        self.initializer = None
-        self.regularize = True
-
-        decoder_parameters = self.overwrite_defaults(feature)
-
-        self.decoder_obj = self.initialize_decoder(decoder_parameters)
-
+        self.overwrite_defaults(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 

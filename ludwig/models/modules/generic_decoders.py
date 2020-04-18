@@ -25,9 +25,26 @@ logger = logging.getLogger(__name__)
 
 class Regressor(Layer):
 
-    def __init__(self, **kwargs):
+    def __init__(
+            self,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            **kwargs
+    ):
         super().__init__()
-        self.dense = Dense(1)  # todo add initialization etc.
+        self.dense = Dense(
+            1,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
 
     def call(self, inputs, **kwargs):
         return tf.squeeze(self.dense(inputs))

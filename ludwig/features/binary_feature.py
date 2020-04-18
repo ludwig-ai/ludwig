@@ -25,9 +25,8 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.binary_decoders import Regressor
-from ludwig.models.modules.binary_encoders import BinaryPassthroughEncoder
-from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.models.modules.generic_decoders import Regressor
+from ludwig.models.modules.generic_encoders import PassthroughEncoder, DenseEncoder
 from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -42,14 +41,14 @@ logger = logging.getLogger(__name__)
 
 
 class BinaryBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = BINARY
-
+    type = BINARY
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -68,20 +67,18 @@ class BinaryBaseFeature(BaseFeature):
 
 
 class BinaryInputFeature(BinaryBaseFeature, InputFeature):
+    encoder = 'passthrough'
+    norm = None
+    dropout = False
+
     def __init__(self, feature, encoder_obj=None):
         BinaryBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
-
-        self.encoder = 'passthrough'
-        self.norm = None
-        self.dropout = False
-
-        encoder_parameters = self.overwrite_defaults(feature)
-
+        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.get_binary_encoder(encoder_parameters)
+            self.encoder_obj = self.get_binary_encoder(feature)
 
     def get_binary_encoder(self, encoder_parameters):
         return get_from_registry(self.encoder, self.encoder_registry)(
@@ -93,12 +90,13 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
         assert inputs.dtype == tf.bool
         assert len(inputs.shape) == 1
 
+        inputs = tf.cast(inputs, dtype=tf.float32)
         inputs_exp = inputs[:, tf.newaxis]
-        inputs_encoded = self.encoder_obj(
+        encoder_outputs = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )
 
-        return inputs_encoded
+        return encoder_outputs
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -114,37 +112,30 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     encoder_registry = {
-        'dense': FCStack,
-        'passthrough': BinaryPassthroughEncoder,
-        'null': BinaryPassthroughEncoder,
-        'none': BinaryPassthroughEncoder,
-        'None': BinaryPassthroughEncoder,
-        None: BinaryPassthroughEncoder
+        'dense': DenseEncoder,
+        'passthrough': PassthroughEncoder,
+        'null': PassthroughEncoder,
+        'none': PassthroughEncoder,
+        'None': PassthroughEncoder,
+        None: PassthroughEncoder
     }
 
 
 class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
+    decoder = 'regressor'
+    loss = {
+        'robust_lambda': 0,
+        'confidence_penalty': 0,
+        'positive_class_weight': 1,
+        'weight': 1
+    }
+    threshold = 0.5
+
     def __init__(self, feature):
         BinaryBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
-
-        self.decoder = 'regressor'
-        self.threshold = 0.5
-
-        self.initializer = None
-        self.regularize = True
-
-        self.loss = {
-            'robust_lambda': 0,
-            'confidence_penalty': 0,
-            'positive_class_weight': 1,
-            'weight': 1
-        }
-
-        decoder_parameters = self.overwrite_defaults(feature)
-
-        self.decoder = self.initialize_decoder(decoder_parameters)
-
+        self.overwrite_defaults(feature)
+        self.decoder = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
