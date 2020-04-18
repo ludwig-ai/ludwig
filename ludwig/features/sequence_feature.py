@@ -63,6 +63,8 @@ logger = logging.getLogger(__name__)
 
 
 class SequenceBaseFeature(BaseFeature):
+    type = SEQUENCE
+
     def __init__(self, feature):
         super().__init__(feature)
         self.type = SEQUENCE
@@ -134,6 +136,8 @@ class SequenceBaseFeature(BaseFeature):
 
 
 class SequenceInputFeature(SequenceBaseFeature, InputFeature):
+    encoder = 'embed'
+
     def __init__(self, feature, encoder_obj=None):
         SequenceBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
@@ -193,6 +197,9 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
 
 
 class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
+    decoder = 'tagger'
+    loss = {'type': SOFTMAX_CROSS_ENTROPY}
+
     def __init__(self, feature):
         super().__init__(feature)
         self.type = SEQUENCE
