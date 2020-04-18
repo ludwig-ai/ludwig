@@ -22,7 +22,6 @@ from ludwig.models.modules.attention_modules import \
     feed_forward_memory_attention
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.recurrent_modules import recurrent_decoder
-from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 logger = logging.getLogger(__name__)
 

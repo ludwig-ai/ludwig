@@ -55,6 +55,7 @@ from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
@@ -326,7 +327,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         else:
             additional = 0
 
-        predictions_sequence_length = predictions.shape[1]
+        predictions_sequence_length = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
             predictions,
             tf.stack(
@@ -341,7 +342,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         return {
             PREDICTIONS: predictions,
-            # LAST_PREDICTIONS: last_predictions,
+            LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
             LOGITS: logits
         }
