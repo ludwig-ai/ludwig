@@ -515,7 +515,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             del result[LAST_PREDICTIONS]
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES]
+            probs = result[PROBABILITIES].numpy()
             if probs is not None:
 
                 if len(probs) > 0 and isinstance(probs[0], list):
