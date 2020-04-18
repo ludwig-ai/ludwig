@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # coding=utf-8
 # Copyright (c) 2019 Uber Technologies, Inc.
 #
@@ -13,10 +14,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
+
+from tensorflow.keras.layers import Layer
+
 from ludwig.models.modules.fully_connected_modules import FCStack
 
+logger = logging.getLogger(__name__)
 
-class DenseEncoder:
+
+class PassthroughEncoder(Layer):
+
+    def __init__(
+            self,
+            **kwargs
+    ):
+        super(PassthroughEncoder, self).__init__()
+
+    def call(self, inputs, training=None, mask=None):
+        """
+            :param inputs: The inputs fed into the encoder.
+                   Shape: [batch x 1], type tf.float32
+        """
+        return {'encoder_output': inputs}
+
+
+class DenseEncoder(Layer):
 
     def __init__(
             self,
@@ -35,7 +58,9 @@ class DenseEncoder:
             norm_params=None,
             activation='relu',
             dropout_rate=0,
+            **kwargs
     ):
+        super(DenseEncoder, self).__init__()
         self.fc_stack = FCStack(
             layers=layers,
             num_layers=num_layers,
@@ -54,11 +79,9 @@ class DenseEncoder:
             default_dropout_rate=dropout_rate,
         )
 
-    def __call__(self, inputs, training=None):
-        return self.fc_stack(inputs, training=training)
-
-    def get_last_dimension(self):
-        if self.fc_stack.layers:
-            return self.fc_stack.layers[-1]['fc_size']
-        else:
-            return None
+    def call(self, inputs, training=None, mask=None):
+        """
+            :param inputs: The inputs fed into the encoder.
+                   Shape: [batch x 1], type tf.float32
+        """
+        return {'encoder_output': self.fc_stack(inputs)}

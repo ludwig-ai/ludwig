@@ -27,8 +27,8 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.category_decoders import Classifier
 from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
-from ludwig.models.modules.category_encoders import CategoricalPassthroughEncoder
 from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
+from ludwig.models.modules.generic_encoders import PassthroughEncoder
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
@@ -44,16 +44,16 @@ logger = logging.getLogger(__name__)
 
 
 class CategoryBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = CATEGORY
-
+    type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -132,42 +132,6 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     ):
         input_feature['vocab'] = feature_metadata['idx2str']
 
-    # def _get_input_placeholder(self):
-    #     return tf.placeholder(
-    #         tf.int32,
-    #         shape=[None],  # None is for dealing with variable batch size
-    #         name='{}_placeholder'.format(self.feature_name)
-    #     )
-    #
-    # def build_input(
-    #         self,
-    #         regularizer,
-    #         dropout_rate,
-    #         is_training=False,
-    #         **kwargs
-    # ):
-    #     placeholder = self._get_input_placeholder()
-    #     logger.debug('  placeholder: {0}'.format(placeholder))
-    #
-    #     # ================ Embeddings ================
-    #     embedded, embedding_size = self.embed(
-    #         placeholder,
-    #         regularizer,
-    #         dropout_rate,
-    #         is_training=is_training
-    #     )
-    #     logger.debug('  feature_representation: {0}'.format(
-    #         embedded))
-    #
-    #     feature_representation = {
-    #         'name': self.feature_name,
-    #         'type': self.type,
-    #         'representation': embedded,
-    #         'size': embedding_size,
-    #         'placeholder': placeholder
-    #     }
-    #     return feature_representation
-
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
@@ -175,31 +139,25 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     encoder_registry = {
         'dense': CategoricalEmbedEncoder,
         'sparse': CategoricalSparseEncoder,
-        'passthrough': CategoricalPassthroughEncoder,
-        'null': CategoricalPassthroughEncoder,
-        'none': CategoricalPassthroughEncoder,
-        'None': CategoricalPassthroughEncoder,
-        None: CategoricalPassthroughEncoder
+        'passthrough': PassthroughEncoder,
+        'null': PassthroughEncoder,
+        'none': PassthroughEncoder,
+        'None': PassthroughEncoder,
+        None: PassthroughEncoder
     }
 
 
 class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
+    decoder = 'classifier'
+    num_classes = 0
+    loss = {'type': SOFTMAX_CROSS_ENTROPY}
+    top_k = 3
+
     def __init__(self, feature):
         CategoryBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
-
-        self.loss = {'type': SOFTMAX_CROSS_ENTROPY}
-        self.num_classes = 0
-        self.top_k = 3
-        self.initializer = None
-        self.regularize = True
-
-        self.decoder = 'classifier'
-        decoder_parameters = self.overwrite_defaults(feature)
-        decoder_parameters.update({'num_classes': self.num_classes})
-
-        self.decoder_obj = self.initialize_decoder(decoder_parameters)
-
+        self.overwrite_defaults(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
@@ -228,8 +186,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         predictions = tf.cast(predictions, dtype=tf.int32)
 
         return {
-            'predictions': predictions,
-            'probabilities': probabilities,
+            PREDICTIONS: predictions,
+            PROBABILITIES: probabilities,
             LOGITS: logits
         }
 
@@ -268,100 +226,6 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
 
     default_validation_metric = ACCURACY
 
-    # output_config = OrderedDict([
-    #     (LOSS, {
-    #         'output': EVAL_LOSS,
-    #         'aggregation': SUM,
-    #         'value': 0,
-    #         'type': METRIC
-    #     }),
-    #     (ACCURACY, {
-    #         'output': CORRECT_PREDICTIONS,
-    #         'aggregation': SUM,
-    #         'value': 0,
-    #         'type': METRIC
-    #     }),
-    #     (HITS_AT_K, {
-    #         'output': HITS_AT_K,
-    #         'aggregation': SUM,
-    #         'value': 0,
-    #         'type': METRIC
-    #     }),
-    #     (PREDICTIONS, {
-    #         'output': PREDICTIONS,
-    #         'aggregation': APPEND,
-    #         'value': [],
-    #         'type': PREDICTION
-    #     }),
-    #     (PROBABILITIES, {
-    #         'output': PROBABILITIES,
-    #         'aggregation': APPEND,
-    #         'value': [],
-    #         'type': PREDICTION
-    #     })
-    # ])
-    #
-    # def _get_output_placeholder(self):
-    #     return tf.placeholder(
-    #         tf.int64,
-    #         [None],  # None is for dealing with variable batch size
-    #         name='{}_placeholder'.format(self.feature_name)
-    #     )
-    #
-    # def _get_predictions(
-    #         self,
-    #         hidden,
-    #         hidden_size,
-    #         regularizer=None
-    # ):
-    #     if not self.regularize:
-    #         regularizer = None
-    #
-    #     with tf.variable_scope('predictions_{}'.format(self.feature_name)):
-    #         initializer_obj = get_initializer(self.initializer)
-    #         weights = tf.get_variable(
-    #             'weights',
-    #             initializer=initializer_obj([hidden_size, self.num_classes]),
-    #             regularizer=regularizer
-    #         )
-    #         logger.debug('  class_weights: {0}'.format(weights))
-    #
-    #         biases = tf.get_variable(
-    #             'biases',
-    #             [self.num_classes]
-    #         )
-    #         logger.debug('  class_biases: {0}'.format(biases))
-    #
-    #         logits = tf.matmul(hidden, weights) + biases
-    #         logger.debug('  logits: {0}'.format(logits))
-    #
-    #         probabilities = tf.nn.softmax(
-    #             logits,
-    #             name='probabilities_{}'.format(self.feature_name)
-    #         )
-    #         predictions = tf.argmax(
-    #             logits,
-    #             -1,
-    #             name='predictions_{}'.format(self.feature_name)
-    #         )
-    #
-    #         with tf.device('/cpu:0'):
-    #             top_k_predictions = tf.nn.top_k(
-    #                 logits,
-    #                 k=self.top_k,
-    #                 sorted=True,
-    #                 name='top_k_predictions_{}'.format(self.feature_name)
-    #             )
-    #
-    #     return (
-    #         predictions,
-    #         top_k_predictions,
-    #         probabilities,
-    #         logits,
-    #         weights,
-    #         biases
-    #     )
-    #
     # def _get_loss(
     #         self,
     #         targets,

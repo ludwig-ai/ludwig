@@ -23,22 +23,6 @@ from ludwig.models.modules.embedding_modules import Embed
 logger = logging.getLogger(__name__)
 
 
-class CategoricalPassthroughEncoder(Layer):
-
-    def __init__(
-            self,
-            **kwargs
-    ):
-        super(CategoricalPassthroughEncoder, self).__init__()
-
-    def call(self, inputs, training=None, mask=None):
-        """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
-        """
-        return inputs
-
-
 class CategoricalEmbedEncoder(Layer):
 
     def __init__(

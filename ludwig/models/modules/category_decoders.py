@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 
-import tensorflow as tf
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Layer
 
@@ -25,9 +24,27 @@ logger = logging.getLogger(__name__)
 
 class Classifier(Layer):
 
-    def __init__(self, num_classes=None, **kwargs):
+    def __init__(
+            self,
+            num_classes,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            **kwargs
+    ):
         super().__init__()
-        self.dense = Dense(num_classes)  # todo add initialization etc.
+        self.dense = Dense(
+            num_classes,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
 
     def call(self, inputs, **kwargs):
-        return tf.squeeze(self.dense(inputs))
+        return self.dense(inputs)

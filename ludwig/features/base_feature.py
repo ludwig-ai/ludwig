@@ -37,8 +37,6 @@ class BaseFeature:
         attributes = set(self.__dict__.keys())
         attributes.update(self.__class__.__dict__.keys())
 
-        remaining_dict = dict(feature)
-
         for k in feature.keys():
             if k in attributes:
                 if (isinstance(feature[k], dict) and hasattr(self, k)
@@ -47,9 +45,6 @@ class BaseFeature:
                                                 feature[k]))
                 else:
                     setattr(self, k, feature[k])
-                del remaining_dict[k]
-
-        return remaining_dict
 
 
 class InputFeature(ABC, tf.keras.Model):
@@ -350,7 +345,6 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
         :param combiner_output: output tensor of the combiner
         :param other_output_features: output tensors from other features
-        :param kwargs:
         :return: tensor
         """
         feature_hidden = combiner_output
