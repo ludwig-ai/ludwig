@@ -22,6 +22,7 @@ from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.utils.tf_utils import to_sparse
+from ludwig.utils.tf_utils import sequence_length_2D
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
@@ -167,6 +168,32 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
         loss = self.loss_function(y, y_hat)
         super().update_state(loss)
 
+
+class SequenceAccuracyMetric(tf.keras.metrics.Accuracy):
+    """
+    Sequence accuracy based on last token in the sequence
+    """
+    def __init__(self, name=None):
+        super(SequenceAccuracyMetric, self).__init__(name=name)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        # TODO TF2 account for weights
+        targets_sequence_length = sequence_length_2D(
+            tf.convert_to_tensor(y_true, dtype=tf.int32)
+        )
+        last_targets = tf.gather_nd(
+            y_true,
+            tf.stack(
+                [tf.range(tf.shape(y_true)[0]),
+                 tf.maximum(
+                     targets_sequence_length - 1,
+                     0
+                 )],
+                axis=1
+            )
+        )
+
+        super().update_state(last_targets, y_pred)
 
 # end of custom classes
 

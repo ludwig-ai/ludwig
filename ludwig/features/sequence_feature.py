@@ -33,6 +33,7 @@ from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import SequenceLossMetric
+from ludwig.models.modules.metric_modules import SequenceAccuracyMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
@@ -55,7 +56,7 @@ from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
-from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
+from ludwig.utils.tf_utils import sequence_length_2D
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +296,17 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[ACCURACY] = SequenceAccuracyMetric()
+
+    # over ride super class OutputFeature.update_metrics() method
+    def update_metrics(self, targets, predictions):
+        for metric, metric_fn in self.metric_functions.items():
+            if metric == LOSS:
+                metric_fn.update_state(targets, predictions)
+            elif metric == ACCURACY:
+                metric_fn.update_state(targets, predictions[LAST_PREDICTIONS])
+            else:
+                metric_fn.update_state(targets, predictions[PREDICTIONS])
 
     def logits(
             self,
