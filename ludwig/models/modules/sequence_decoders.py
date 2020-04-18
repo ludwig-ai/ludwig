@@ -182,6 +182,7 @@ class SequenceTaggerDecoder(Layer):
                 'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
                     len(hidden.shape)))
 
+        # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.decoder_layer(hidden)
 
         # todo tf2 adapt to support timeseries
@@ -193,6 +194,7 @@ class SequenceTaggerDecoder(Layer):
         # if not self.regularize:
         #     regularizer = None
 
+        # logits shape [batch_size, sequence_length, vocab_size]
         return logits
 
 
