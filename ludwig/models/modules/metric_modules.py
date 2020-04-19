@@ -216,7 +216,20 @@ class EditDistanceMetric(tf.keras.metrics.Mean):
         super(EditDistanceMetric, self).__init__(name=name)
 
     def update_state(self, y_true, y_pred):
-        pass
+        # y_true: shape [batch_size, sequence_size]
+        # y_pred: shape [batch_size, sequence_size]
+
+        prediction_dtype = y_pred.dtype
+        prediction_sequence_length = sequence_length_2D(y_pred)
+        y_true_tensor = tf.convert_to_tensor(y_true, dtype=prediction_dtype)
+        target_sequence_length = sequence_length_2D(y_true_tensor)
+        edit_distance_val, _ = edit_distance(
+            y_true_tensor,
+            target_sequence_length,
+            y_pred,
+            prediction_sequence_length
+        )
+        super().update_state(edit_distance_val)
 
 
 # end of custom classes
@@ -308,19 +321,15 @@ def hits_at_k(targets, predictions_logits, top_k, output_feature_name):
 
 
 def edit_distance(targets, target_seq_length, predictions_sequence,
-                  predictions_seq_length, output_feature_name):
+                  predictions_seq_length):
     predicts = to_sparse(predictions_sequence,
                          predictions_seq_length,
                          tf.shape(predictions_sequence)[1])
     labels = to_sparse(targets,
                        target_seq_length,
                        tf.shape(targets)[1])
-    edit_distance = tf.edit_distance(predicts, labels,
-                                     name='edit_distance_{}'.format(
-                                         output_feature_name))
-    mean_edit_distance = tf.reduce_mean(edit_distance,
-                                        name='mean_edit_distance_{}'.format(
-                                            output_feature_name))
+    edit_distance = tf.edit_distance(predicts, labels)
+    mean_edit_distance = tf.reduce_mean(edit_distance)
     return edit_distance, mean_edit_distance
 
 

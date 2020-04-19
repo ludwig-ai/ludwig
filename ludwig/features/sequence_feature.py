@@ -35,6 +35,7 @@ from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import SequenceLossMetric
 from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.models.modules.metric_modules import PerplexityMetric
+from ludwig.models.modules.metric_modules import EditDistanceMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
@@ -221,6 +222,13 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         self.decoder_obj = self.initialize_decoder(feature)
 
+        # determine required tf dtype to represent sequence encoded values
+        max_base2_exponent = np.int(np.ceil(np.log2(self.num_classes - 1)))
+        if max_base2_exponent <= 32:
+            self._prediction_dtype = tf.int32
+        else:
+            self._prediction_dtype = tf.int64
+
         self._setup_loss()
         self._setup_metrics()
 
@@ -247,6 +255,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
         self.metric_functions[PERPLEXITY] = PerplexityMetric()
+        self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
 
     # over ride super class OutputFeature.update_metrics() method
     def update_metrics(self, targets, predictions):
@@ -279,7 +288,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             logits,
             -1,
             name='predictions_{}'.format(self.name),
-            output_type=tf.int32
+            output_type=self._prediction_dtype
         )
 
         if self.decoder == 'generator':
