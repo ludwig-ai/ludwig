@@ -40,10 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImageBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = IMAGE
-
+    type = IMAGE
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
@@ -51,6 +48,9 @@ class ImageBaseFeature(BaseFeature):
         'scaling': 'pixel_normalization',
         'num_processes': 1
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -154,8 +154,8 @@ class ImageBaseFeature(BaseFeature):
 
     @staticmethod
     def _finalize_preprocessing_parameters(
-        preprocessing_parameters,
-        first_image_path
+            preprocessing_parameters,
+            first_image_path
     ):
         """
         Helper method to determine the height, width and number of channels for
@@ -313,7 +313,7 @@ class ImageBaseFeature(BaseFeature):
             # image just use this faster shortcut, bypassing multiprocessing.Pool.map
             else:
                 logger.warning(
-                        'No process pool initialized. Using one process for preprocessing images'
+                    'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])
                 data[feature['name']] = np.array([img])
@@ -339,23 +339,20 @@ class ImageBaseFeature(BaseFeature):
 
 
 class ImageInputFeature(ImageBaseFeature, InputFeature):
+    height = 0
+    width = 0
+    num_channels = 0
+    scaling = 'pixel_normalization'
+    encoder = 'stacked_cnn'
+
     def __init__(self, feature, encoder_obj=None):
         ImageBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
-
-        self.height = 0
-        self.width = 0
-        self.num_channels = 0
-        self.scaling = 'pixel_normalization'
-
-        self.encoder = 'stacked_cnn'
-
-        encoder_parameters = self.overwrite_defaults(feature)
-
+        self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.initialize_encoder(encoder_parameters)
+            self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -424,6 +421,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         'resnet': ResNetEncoder,
         None: Stacked2DCNN
     }
+
 
 image_scaling_registry = {
     'pixel_normalization': lambda x: x * 1.0 / 255,
