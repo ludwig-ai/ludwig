@@ -24,6 +24,7 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import MaxPool2D
+from tensorflow.keras.layers import ZeroPadding2D
 
 from ludwig.models.modules.initializer_modules import get_initializer
 
@@ -492,6 +493,38 @@ class StackParallelConv1D:
         return hidden
 
 
+class ConvLayer2DFixedPadding(Layer):
+
+    def __init__(
+            self,
+            num_filters=256,
+            filter_size=3,
+            strides=1,
+    ):
+        super(ConvLayer2DFixedPadding, self).__init__()
+
+        self.layers = []
+
+        if strides > 1:
+            self.layers.append(ZeroPadding2D(padding=((filter_size - 1) // 2)))
+
+        self.layers.append(
+            ConvLayer2D(
+                num_filters=num_filters,
+                filter_size=filter_size,
+                strides=strides,
+            )
+        )
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden
+
+
 class ConvLayer2D(Layer):
 
     def __init__(
@@ -515,26 +548,11 @@ class ConvLayer2D(Layer):
             dropout_rate=0,
             pool_size=(2, 2),
             pool_strides=None,
+            convolution_first=True
     ):
         super(ConvLayer2D, self).__init__()
 
         self.layers = []
-
-        self.layers.append(Conv2D(
-            filters=num_filters,
-            kernel_size=filter_size,
-            strides=strides,
-            padding=padding,
-            dilation_rate=dilation_rate,
-            use_bias=use_bias,
-            weights_initializer=weights_initializer,
-            bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
-            bias_regularizer=bias_regularizer,
-            activity_regularizer=activity_regularizer,
-            # weights_constraint=None,
-            # bias_constraint=None,
-        ))
 
         if norm and norm_params is None:
             norm_params = {}
@@ -552,6 +570,29 @@ class ConvLayer2D(Layer):
             self.layers.append(
                 MaxPool2D(pool_size=pool_size, strides=pool_strides)
             )
+
+        conv_layer_idx = 0
+        if not convolution_first:
+            conv_layer_idx = len(self.layers)
+
+        self.layers.insert(
+            conv_layer_idx,
+            Conv2D(
+                filters=num_filters,
+                kernel_size=filter_size,
+                strides=strides,
+                padding=padding,
+                dilation_rate=dilation_rate,
+                use_bias=use_bias,
+                kernel_initializer=weights_initializer,
+                bias_initializer=bias_initializer,
+                kernel_regularizer=weights_regularizer,
+                bias_regularizer=bias_regularizer,
+                activity_regularizer=activity_regularizer,
+                # weights_constraint=None,
+                # bias_constraint=None,
+            )
+        )
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
