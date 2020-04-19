@@ -410,12 +410,14 @@ class ParallelExecutor(HyperoptExecutor):
             measure: str,
             split: str,
             num_workers: int = 2,
+            epsilon: int = 0.01,
             **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
             self, hyperopt_strategy, output_feature, measure, split
         )
         self.num_workers = num_workers
+        self.epsilon = epsilon
         self.queue = None
 
     @staticmethod
@@ -488,7 +490,6 @@ class ParallelExecutor(HyperoptExecutor):
             **kwargs
     ):
         hyperopt_parameters = []
-        epsilon = 0.01
 
         if gpus is not None:
             if isinstance(gpus, int):
@@ -498,7 +499,7 @@ class ParallelExecutor(HyperoptExecutor):
             total_gpus = len(gpu_ids)
 
             if total_gpus < self.num_workers:
-                fraction = (total_gpus / self.num_workers) - epsilon
+                fraction = (total_gpus / self.num_workers) - self.epsilon
                 if fraction < gpu_fraction:
                     logger.warning(
                         'WARNING: Setting `gpu_fraction` to {}'.format(fraction))
