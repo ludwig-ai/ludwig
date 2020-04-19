@@ -416,17 +416,33 @@ class ParallelExecutor(HyperoptExecutor):
             self, hyperopt_strategy, output_feature, measure, split
         )
         self.num_workers = num_workers
+        self.queue = None
 
     @staticmethod
     def init_worker():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     def _train_and_eval_model(self, hyperopt_dict):
-
         parameters = hyperopt_dict['parameters']
         train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
         metric_score = self.get_metric_score(eval_stats)
 
+        return {
+            'parameters': parameters,
+            'metric_score': metric_score,
+            'training_stats': train_stats,
+            'eval_stats': eval_stats
+        }
+
+    def _train_and_eval_model_gpu(self, hyperopt_dict):
+        gpu_id = self.queue.get()
+        try:
+            parameters = hyperopt_dict['parameters']
+            train_stats, eval_stats = train_and_eval_on_split(
+                **hyperopt_dict, gpus=gpu_id)
+            metric_score = self.get_metric_score(eval_stats)
+        finally:
+            self.queue.put(gpu_id)
         return {
             'parameters': parameters,
             'metric_score': metric_score,
@@ -472,20 +488,28 @@ class ParallelExecutor(HyperoptExecutor):
             **kwargs
     ):
         hyperopt_parameters = []
+        epsilon = 0.01
 
         if gpus is not None:
             if isinstance(gpus, int):
                 gpus = str(gpus)
             gpus = gpus.strip()
-            total_gpus = len(gpus.split(','))
+            gpu_ids = gpus.split(',')
+            total_gpus = len(gpu_ids)
 
             if total_gpus < self.num_workers:
-                fraction = total_gpus / self.num_workers
-                if fraction < 1:
-                    if fraction < gpu_fraction:
-                        logger.warning(
-                            'WARNING: Setting `gpu_fraction` to {}'.format(fraction))
-                        gpu_fraction = fraction
+                fraction = (total_gpus / self.num_workers) - epsilon
+                if fraction < gpu_fraction:
+                    logger.warning(
+                        'WARNING: Setting `gpu_fraction` to {}'.format(fraction))
+                    gpu_fraction = fraction
+
+            process_per_gpu = int(1 / gpu_fraction)
+            self.queue = multiprocessing.Queue()
+
+            for gpu_id in range(gpu_ids):
+                for _ in range(process_per_gpu):
+                    self.queue.put(gpu_id)
 
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
@@ -538,9 +562,13 @@ class ParallelExecutor(HyperoptExecutor):
         pool = multiprocessing.Pool(
             self.num_workers, ParallelExecutor.init_worker)
 
-        hyperopt_results = pool.map(
-            self._train_and_eval_model, hyperopt_parameters)
-        
+        if gpus is not None:
+            hyperopt_results = pool.map(
+                self._train_and_eval_model_gpu, hyperopt_parameters)
+        else:
+            hyperopt_results = pool.map(
+                self._train_and_eval_model, hyperopt_parameters)
+
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
         return hyperopt_results
 
