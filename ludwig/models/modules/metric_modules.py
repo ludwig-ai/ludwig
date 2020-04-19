@@ -22,7 +22,7 @@ from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.utils.tf_utils import to_sparse
-from ludwig.utils.tf_utils import sequence_length_2D
+from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
@@ -169,6 +169,8 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
         super().update_state(loss)
 
 
+
+
 class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     """
     Sequence accuracy based on last token in the sequence
@@ -208,6 +210,14 @@ class PerplexityMetric(tf.keras.metrics.Mean):
     def result(self):
         mean = super().result()
         return np.exp(mean)
+
+class EditDistanceMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super(EditDistanceMetric, self).__init__(name=name)
+
+    def update_state(self, y_true, y_pred):
+        pass
+
 
 # end of custom classes
 
