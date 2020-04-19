@@ -222,13 +222,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         self.decoder_obj = self.initialize_decoder(feature)
 
-        # determine required tf dtype to represent sequence encoded values
-        max_base2_exponent = np.int(np.ceil(np.log2(self.num_classes - 1)))
-        if max_base2_exponent <= 32:
-            self._prediction_dtype = tf.int32
-        else:
-            self._prediction_dtype = tf.int64
-
         self._setup_loss()
         self._setup_metrics()
 
@@ -280,7 +273,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         logits = inputs[LOGITS]
 
-        probabilities= tf.nn.softmax(
+        probabilities = tf.nn.softmax(
             logits,
             name='probabilities_{}'.format(self.name)
         )
@@ -288,7 +281,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             logits,
             -1,
             name='predictions_{}'.format(self.name),
-            output_type=self._prediction_dtype
+            output_type=tf.int64
         )
 
         if self.decoder == 'generator':

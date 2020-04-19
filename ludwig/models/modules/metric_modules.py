@@ -169,8 +169,6 @@ class SequenceLossMetric(tf.keras.metrics.Mean):
         super().update_state(loss)
 
 
-
-
 class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     """
     Sequence accuracy based on last token in the sequence
@@ -181,7 +179,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     def update_state(self, y_true, y_pred, sample_weight=None):
         # TODO TF2 account for weights
         targets_sequence_length = sequence_length_2D(
-            tf.convert_to_tensor(y_true, dtype=tf.int32)
+            tf.convert_to_tensor(y_true, dtype=tf.int64)
         )
         last_targets = tf.gather_nd(
             y_true,
@@ -194,6 +192,8 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
                 axis=1
             )
         )
+
+        last_targets = tf.cast(last_targets, dtype=tf.int64)
 
         super().update_state(last_targets, y_pred)
 
@@ -210,6 +210,7 @@ class PerplexityMetric(tf.keras.metrics.Mean):
     def result(self):
         mean = super().result()
         return np.exp(mean)
+
 
 class EditDistanceMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):

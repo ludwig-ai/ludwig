@@ -136,6 +136,7 @@ class SequenceLoss(tf.keras.losses.Loss):
     def call(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
         # y_pred: shape [batch_size, sequence_size, num_classes]
+
         # get sequence lengths from targets
         targets_sequence_length = sequence_length_2D(
             tf.convert_to_tensor(y_true, dtype=tf.int32)
@@ -150,7 +151,7 @@ class SequenceLoss(tf.keras.losses.Loss):
 
         # compute loss based on valid time steps
         loss = self.loss_function(
-            tf.convert_to_tensor(y_true, dtype=tf.int32),
+            tf.convert_to_tensor(y_true, dtype=tf.int64),
             y_pred[LOGITS],
             sample_weight=sample_mask
         )
