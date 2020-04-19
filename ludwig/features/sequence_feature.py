@@ -142,10 +142,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         SequenceBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
 
-        self.encoder = 'parallel_cnn'
-        self.length = 0
-
-        encoder_parameters = self.overwrite_defaults(feature)
+        self.overwrite_defaults(feature)
 
         if encoder_obj:
             self.encoder_obj = encoder_obj

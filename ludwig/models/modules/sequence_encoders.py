@@ -201,16 +201,16 @@ class SequenceEmbedEncoder(Layer):
     def call(
             self,
             input_sequence,
-            training=True,
+            training=None,
             mask=None   # todo tf2 do we need?
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
             :type input_sequence: Tensor
-            :param training: Tesnor (tf.bool) specifying if in training mode
+            :param training: specifying if in training mode
                    (important for dropout)
-            :type training: Tensor
+            :type training: Boolean
         """
         # ================ Embeddings ================
         embedded_sequence, embedding_size = self.embed_sequence(

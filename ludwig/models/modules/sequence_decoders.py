@@ -159,7 +159,6 @@ class SequenceTaggerDecoder(Layer):
         self.initializer = initializer
         self.regularize = regularize
         self.attention = attention
-        self.class_weights = loss['class_weights']
 
         # todo tf2 add other required parameters for Dense layer
         self.decoder_layer = Dense(num_classes)
