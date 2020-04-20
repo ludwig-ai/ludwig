@@ -75,7 +75,7 @@ class Stacked2DCNN(Layer):
             default_dilation_rate=dilation_rate,
             default_use_bias=conv_use_bias,
             default_weights_initializer=conv_weights_initializer,
-            default_bias_initializer=conv_bias_initializer,
+            defaultbias_initializer=conv_bias_initializer,
             default_weights_regularizer=conv_weights_regularizer,
             default_bias_regularizer=conv_bias_regularizer,
             default_activity_regularizer=conv_activity_regularizer,

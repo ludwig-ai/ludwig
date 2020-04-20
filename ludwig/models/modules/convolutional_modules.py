@@ -17,6 +17,8 @@ import logging
 
 import tensorflow.compat.v1 as tf
 from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import AveragePooling1D
+from tensorflow.keras.layers import AveragePooling2D
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import Conv2D
@@ -50,8 +52,10 @@ class ConvLayer1D(Layer):
             norm_params=None,
             activation='relu',
             dropout_rate=0,
-            pool_size=(2, 2),
+            pool_function='max',
+            pool_size=2,
             pool_strides=None,
+            pool_padding='valid',
     ):
         super(ConvLayer1D, self).__init__()
 
@@ -86,12 +90,12 @@ class ConvLayer1D(Layer):
             self.layers.append(Dropout(dropout_rate))
 
         if pool_size is not None:
-            # todo tf2: add padding parameter and type (max or average)
-            self.layers.append(
-                MaxPool1D(
-                    pool_size=pool_size, strides=pool_strides, padding='valid'
-                )
-            )
+            pool = MaxPool1D
+            if pool_function in {'average', 'avg', 'mean'}:
+                pool = AveragePooling1D
+            self.layers.append(pool(
+                pool_size=pool_size, strides=pool_strides, padding=pool_padding
+            ))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -125,8 +129,10 @@ class ConvStack1D(Layer):
             default_norm_params=None,
             default_activation='relu',
             default_dropout_rate=0,
+            default_pool_function='max',
             default_pool_size=2,
             default_pool_strides=None,
+            default_pool_padding='valid',
             **kwargs
     ):
         super(ConvStack1D, self).__init__()
@@ -188,10 +194,14 @@ class ConvStack1D(Layer):
                 layer['activation'] = default_activation
             if 'dropout_rate' not in layer:
                 layer['dropout_rate'] = default_dropout_rate
+            if 'pool_function' not in layer:
+                layer['pool_function'] = default_pool_function
             if 'pool_size' not in layer:
                 layer['pool_size'] = default_pool_size
             if 'pool_strides' not in layer:
                 layer['pool_strides'] = default_pool_strides
+            if 'pool_padding' not in layer:
+                layer['pool_padding'] = default_pool_padding
 
         self.stack = []
 
@@ -216,8 +226,10 @@ class ConvStack1D(Layer):
                         norm_params=layer['norm_params'],
                         activation=layer['activation'],
                         dropout_rate=layer['dropout_rate'],
+                        pool_function=layer['pool_function'],
                         pool_size=layer['pool_size'],
                         pool_strides=layer['pool_strides'],
+                        pool_padding=layer['pool_padding'],
                     )
                 )
 
@@ -252,8 +264,10 @@ class ParallelConv1D(Layer):
             default_norm_params=None,
             default_activation='relu',
             default_dropout_rate=0,
+            default_pool_function='max',
             default_pool_size=None,
             default_pool_strides=None,
+            default_pool_padding='valid',
             **kwargs
     ):
         super(ParallelConv1D, self).__init__()
@@ -303,10 +317,14 @@ class ParallelConv1D(Layer):
                 layer['activation'] = default_activation
             if 'dropout_rate' not in layer:
                 layer['dropout_rate'] = default_dropout_rate
+            if 'pool_function' not in layer:
+                layer['pool_function'] = default_pool_function
             if 'pool_size' not in layer:
                 layer['pool_size'] = default_pool_size
             if 'pool_strides' not in layer:
                 layer['pool_strides'] = default_pool_strides
+            if 'pool_padding' not in layer:
+                layer['pool_padding'] = default_pool_padding
 
         self.parallel_layers = []
 
@@ -331,8 +349,10 @@ class ParallelConv1D(Layer):
                         norm_params=layer['norm_params'],
                         activation=layer['activation'],
                         dropout_rate=layer['dropout_rate'],
+                        pool_function=layer['pool_function'],
                         pool_size=layer['pool_size'],
                         pool_strides=layer['pool_strides'],
+                        pool_padding=layer['pool_padding'],
                     )
                 )
 
@@ -369,8 +389,10 @@ class StackParallelConv1D(Layer):
             default_norm_params=None,
             default_activation='relu',
             default_dropout_rate=0,
+            default_pool_function='max',
             default_pool_size=None,
             default_pool_strides=None,
+            default_pool_padding='valid',
             **kwargs
     ):
         super(StackParallelConv1D, self).__init__()
@@ -437,6 +459,8 @@ class StackParallelConv1D(Layer):
                     layer['activation'] = default_activation
                 if 'dropout_rate' not in layer:
                     layer['dropout_rate'] = default_dropout_rate
+                if 'pool_function' not in layer:
+                    layer['pool_function'] = default_pool_function
                 if 'pool_size' not in layer:
                     if i == len(self.stacked_parallel_layers) - 1:
                         layer['pool_size'] = default_pool_size
@@ -444,6 +468,8 @@ class StackParallelConv1D(Layer):
                         layer['pool_size'] = None
                 if 'pool_strides' not in layer:
                     layer['pool_strides'] = default_pool_strides
+                if 'pool_padding' not in layer:
+                    layer['pool_padding'] = default_pool_padding
 
         self.stack = []
 
@@ -469,8 +495,10 @@ class StackParallelConv1D(Layer):
                         norm_params=layer['norm_params'],
                         activation=layer['activation'],
                         dropout_rate=layer['dropout_rate'],
+                        pool_function=layer['pool_function'],
                         pool_size=layer['pool_size'],
                         pool_strides=layer['pool_strides'],
+                        pool_padding=layer['pool_padding'],
                     )
                 )
 
@@ -504,8 +532,10 @@ class ConvLayer2D(Layer):
             norm_params=None,
             activation='relu',
             dropout_rate=0,
+            pool_function='max',
             pool_size=(2, 2),
             pool_strides=None,
+            pool_padding='valid',
     ):
         super(ConvLayer2D, self).__init__()
 
@@ -540,10 +570,12 @@ class ConvLayer2D(Layer):
             self.layers.append(Dropout(dropout_rate))
 
         if pool_size is not None:
-            # todo tf2: add padding parameter and type (max or average)
-            self.layers.append(
-                MaxPool2D(pool_size=pool_size, strides=pool_strides)
-            )
+            pool = MaxPool2D
+            if pool_function in {'average', 'avg', 'mean'}:
+                pool = AveragePooling2D
+            self.layers.append(pool(
+                pool_size=pool_size, strides=pool_strides, padding=pool_padding
+            ))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -567,7 +599,7 @@ class ConvStack2D(Layer):
             default_dilation_rate=(1, 1),
             default_use_bias=True,
             default_weights_initializer='glorot_uniform',
-            default_bias_initializer='zeros',
+            defaultbias_initializer='zeros',
             default_weights_regularizer=None,
             default_bias_regularizer=None,
             default_activity_regularizer=None,
@@ -577,8 +609,10 @@ class ConvStack2D(Layer):
             default_norm_params=None,
             default_activation='relu',
             default_dropout_rate=0,
+            default_pool_function='max',
             default_pool_size=(2, 2),
             default_pool_strides=None,
+            default_pool_padding='valid',
     ):
         super(ConvStack2D, self).__init__()
 
@@ -615,7 +649,7 @@ class ConvStack2D(Layer):
             if 'weights_initializer' not in layer:
                 layer['weights_initializer'] = default_weights_initializer
             if 'bias_initializer' not in layer:
-                layer['bias_initializer'] = default_bias_initializer
+                layer['bias_initializer'] = defaultbias_initializer
             if 'weights_regularizer' not in layer:
                 layer['weights_regularizer'] = default_weights_regularizer
             if 'bias_regularizer' not in layer:
@@ -634,10 +668,14 @@ class ConvStack2D(Layer):
                 layer['activation'] = default_activation
             if 'dropout_rate' not in layer:
                 layer['dropout_rate'] = default_dropout_rate
+            if 'pool_function' not in layer:
+                layer['pool_function'] = default_pool_function
             if 'pool_size' not in layer:
                 layer['pool_size'] = default_pool_size
             if 'pool_strides' not in layer:
                 layer['pool_strides'] = default_pool_strides
+            if 'pool_padding' not in layer:
+                layer['pool_padding'] = default_pool_padding
 
         self.stack = []
 
@@ -662,8 +700,10 @@ class ConvStack2D(Layer):
                         norm_params=layer['norm_params'],
                         activation=layer['activation'],
                         dropout_rate=layer['dropout_rate'],
+                        pool_function=layer['pool_function'],
                         pool_size=layer['pool_size'],
                         pool_strides=layer['pool_strides'],
+                        pool_padding=layer['pool_padding'],
                     )
                 )
 
