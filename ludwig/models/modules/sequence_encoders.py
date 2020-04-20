@@ -88,9 +88,9 @@ class SequenceEmbedEncoder(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
             initializer=None,
-            reduce_output='sum',
             regularizer=None,
             dropout_rate=0,
+            reduce_output='sum',
             **kwargs
     ):
         """
@@ -210,7 +210,7 @@ class SequenceEmbedEncoder(Layer):
 
         hidden = reduce_sequence(embedded_sequence, self.reduce_output)
 
-        return hidden  #, embedding_size # todo tf2 code cleanup
+        return hidden
 
 
 class ParallelCNN(object):
