@@ -20,7 +20,9 @@ import tensorflow.compat.v1 as tf
 from ludwig.constants import *
 from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.utils.tf_utils import to_sparse
+from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
@@ -156,6 +158,98 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
         super().update_state(self.softmax_cross_entropy_function(y, y_hat))
 
 
+class SequenceLossMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super(SequenceLossMetric, self).__init__(name=name)
+
+        self.loss_function = SequenceLoss()
+
+    def update_state(self, y, y_hat):
+        loss = self.loss_function(y, y_hat)
+        super().update_state(loss)
+
+
+class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
+    """
+    Sequence accuracy based on last token in the sequence
+    """
+    def __init__(self, name=None):
+        super(SequenceLastAccuracyMetric, self).__init__(name=name)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        # TODO TF2 account for weights
+        targets_sequence_length = sequence_length_2D(
+            tf.convert_to_tensor(y_true, dtype=tf.int64)
+        )
+        last_targets = tf.gather_nd(
+            y_true,
+            tf.stack(
+                [tf.range(tf.shape(y_true)[0]),
+                 tf.maximum(
+                     targets_sequence_length - 1,
+                     0
+                 )],
+                axis=1
+            )
+        )
+
+        last_targets = tf.cast(last_targets, dtype=tf.int64)
+
+        super().update_state(last_targets, y_pred)
+
+
+class PerplexityMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super(PerplexityMetric, self).__init__(name=name)
+        self.loss_function = SequenceLoss()
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        loss = self.loss_function(y_true, y_pred)
+        super().update_state(loss)
+
+    def result(self):
+        mean = super().result()
+        return np.exp(mean)
+
+
+class EditDistanceMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super(EditDistanceMetric, self).__init__(name=name)
+
+    def update_state(self, y_true, y_pred):
+        # y_true: shape [batch_size, sequence_size]
+        # y_pred: shape [batch_size, sequence_size]
+
+        prediction_dtype = y_pred.dtype
+        prediction_sequence_length = sequence_length_2D(y_pred)
+        y_true_tensor = tf.convert_to_tensor(y_true, dtype=prediction_dtype)
+        target_sequence_length = sequence_length_2D(y_true_tensor)
+        edit_distance_val, _ = edit_distance(
+            y_true_tensor,
+            target_sequence_length,
+            y_pred,
+            prediction_sequence_length
+        )
+        super().update_state(edit_distance_val)
+
+
+class TokenAccuracyMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super(TokenAccuracyMetric, self).__init__(name=name)
+
+    def update_state(self, y_true, y_pred):
+        # y_true: shape [batch_size, sequence_size]
+        # y_pred: shape [batch_size, sequence_size]
+
+        prediction_dtype = y_pred.dtype
+        prediction_sequence_length = sequence_length_2D(y_pred)
+        y_true_tensor = tf.convert_to_tensor(y_true, dtype=prediction_dtype)
+        target_sequence_length = sequence_length_2D(y_true_tensor)
+        _, masked_corrected_predictions, _, _ = \
+            masked_accuracy(y_true, y_pred, target_sequence_length)
+
+        super().update_state(masked_corrected_predictions)
+
 # end of custom classes
 
 
@@ -189,9 +283,8 @@ def accuracy(targets, predictions, output_feature_name):
         name='accuracy_{}'.format(output_feature_name))
     return accuracy, correct_predictions
 
-
-def masked_accuracy(targets, predictions, sequence_lengths,
-                    output_feature_name):
+# TODO TF2 refactor to better adapt for TF2 port
+def masked_accuracy(targets, predictions, sequence_lengths):
     truncated_predictions = predictions[:, :targets.shape[1]]
     paddings = tf.stack([[0, 0], [0, tf.shape(targets)[1] -
                                   tf.shape(
@@ -201,9 +294,7 @@ def masked_accuracy(targets, predictions, sequence_lengths,
                                           name='ptp')
 
     correct_predictions = tf.equal(padded_truncated_predictions,
-                                   targets,
-                                   name='overall_correct_predictions_{}'.format(
-                                       output_feature_name))
+                                   targets)
 
     mask = tf.sequence_mask(sequence_lengths,
                             maxlen=correct_predictions.shape[1],
@@ -212,8 +303,7 @@ def masked_accuracy(targets, predictions, sequence_lengths,
     filtered_out, masked_correct_predictions = tf.dynamic_partition(
         correct_predictions, mask, 2)
     token_accuracy = tf.reduce_mean(
-        tf.cast(masked_correct_predictions, tf.float32),
-        name='token_accuracy_{}'.format(output_feature_name))
+        tf.cast(masked_correct_predictions, tf.float32))
 
     one_masked_correct_prediction = 1.0 - tf.cast(mask,
                                                   tf.float32) + (
@@ -223,12 +313,8 @@ def masked_accuracy(targets, predictions, sequence_lengths,
                                         tf.float32))
     rowwise_correct_predictions = tf.reduce_prod(
         one_masked_correct_prediction,
-        axis=-1,
-        name='rowwise_correct_predictions_{}'.format(
-            output_feature_name))
-    rowwise_accuracy = tf.reduce_mean(rowwise_correct_predictions,
-                                      name='rowwise_accuracy_{}'.format(
-                                          output_feature_name))
+        axis=-1)
+    rowwise_accuracy = tf.reduce_mean(rowwise_correct_predictions)
 
     return token_accuracy, masked_correct_predictions, rowwise_accuracy, rowwise_correct_predictions
 
@@ -245,19 +331,15 @@ def hits_at_k(targets, predictions_logits, top_k, output_feature_name):
 
 
 def edit_distance(targets, target_seq_length, predictions_sequence,
-                  predictions_seq_length, output_feature_name):
+                  predictions_seq_length):
     predicts = to_sparse(predictions_sequence,
                          predictions_seq_length,
                          tf.shape(predictions_sequence)[1])
     labels = to_sparse(targets,
                        target_seq_length,
                        tf.shape(targets)[1])
-    edit_distance = tf.edit_distance(predicts, labels,
-                                     name='edit_distance_{}'.format(
-                                         output_feature_name))
-    mean_edit_distance = tf.reduce_mean(edit_distance,
-                                        name='mean_edit_distance_{}'.format(
-                                            output_feature_name))
+    edit_distance = tf.edit_distance(predicts, labels)
+    mean_edit_distance = tf.reduce_mean(edit_distance)
     return edit_distance, mean_edit_distance
 
 

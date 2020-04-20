@@ -16,9 +16,11 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
+from tensorflow_addons.seq2seq import SequenceLoss as TfaSequenceLoss
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
 from ludwig.constants import *
+from ludwig.utils.tf_utils import sequence_length_2D
 
 
 #
@@ -124,6 +126,37 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         )
 
         return loss
+
+
+class SequenceLoss(tf.keras.losses.Loss):
+    def __init__(self, name=None, **kwargs):
+        super(SequenceLoss, self).__init__(name=name)
+        self.loss_function = TfaSequenceLoss()
+
+    def call(self, y_true, y_pred):
+        # y_true: shape [batch_size, sequence_size]
+        # y_pred: shape [batch_size, sequence_size, num_classes]
+
+        # get sequence lengths from targets
+        targets_sequence_length = sequence_length_2D(
+            tf.convert_to_tensor(y_true, dtype=tf.int32)
+        )
+
+        # create a 1/0 mask to account for only valid time steps in targets
+        sample_mask = tf.cast(
+            # boolean mask shape [batch_size, sequence_size]
+            tf.sequence_mask(targets_sequence_length),
+            dtype=tf.float32
+        )
+
+        # compute loss based on valid time steps
+        loss = self.loss_function(
+            tf.convert_to_tensor(y_true, dtype=tf.int64),
+            y_pred[LOGITS],
+            sample_weight=sample_mask
+        )
+        return loss  # vector of shape [batch_size,]
+
 
 
 # end of custom classes
