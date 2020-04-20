@@ -500,6 +500,12 @@ class ConvLayer2DFixedPadding(Layer):
             num_filters=256,
             filter_size=3,
             strides=1,
+            norm=None,
+            norm_params=None,
+            activation='relu',
+            dropout_rate=0,
+            pool_size=(2, 2),
+            convolution_first=True
     ):
         super(ConvLayer2DFixedPadding, self).__init__()
 
@@ -513,6 +519,12 @@ class ConvLayer2DFixedPadding(Layer):
                 num_filters=num_filters,
                 filter_size=filter_size,
                 strides=strides,
+                norm=norm,
+                norm_params=norm_params,
+                activation=activation,
+                dropout_rate=dropout_rate,
+                pool_size=pool_size,
+                convolution_first=convolution_first
             )
         )
 
@@ -823,6 +835,45 @@ def get_resnet_block_sizes(resnet_size):
 ################################################################################
 # ResNet block definitions.
 ################################################################################
+class ResNetBlock(Layer):
+
+    def __init__(
+            self,
+            num_filters,
+            projection_shortcut,
+            strides,
+            regularizer=None,
+            batch_norm_momentum=0.9,
+            batch_norm_epsilon=0.001
+    ):
+        super(ResNetBlock, self).__init__()
+
+        self.layers = [
+            ConvLayer2DFixedPadding(
+                num_filters=num_filters,
+                filter_size=3,
+                strides=strides,
+                norm='batch',
+                norm_params={
+                    'momentum': batch_norm_momentum,
+                    'epsilon': batch_norm_epsilon,
+                },
+                activation='relu',
+                dropout_rate=0,
+                pool_size=None,
+                convolution_first=False,
+            )
+        ]
+
+    def call(self, inputs, training=None, mask=None):
+        shortcut = inputs
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden + shortcut
+
 def resnet_block(inputs, filters, is_training, projection_shortcut, strides,
                  regularizer=None, batch_norm_momentum=0.9,
                  batch_norm_epsilon=0.001):
