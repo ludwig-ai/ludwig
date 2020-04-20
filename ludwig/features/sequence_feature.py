@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -25,35 +24,25 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.loss_modules import seq2seq_sequence_loss
-from ludwig.models.modules.loss_modules import \
-    sequence_sampled_softmax_cross_entropy
-from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
-from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
-from ludwig.models.modules.metric_modules import SequenceLossMetric
-from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
-from ludwig.models.modules.metric_modules import PerplexityMetric
 from ludwig.models.modules.metric_modules import EditDistanceMetric
+from ludwig.models.modules.metric_modules import PerplexityMetric
+from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
+from ludwig.models.modules.metric_modules import SequenceLossMetric
 from ludwig.models.modules.metric_modules import TokenAccuracyMetric
-from ludwig.models.modules.metric_modules import accuracy
-from ludwig.models.modules.metric_modules import edit_distance
-from ludwig.models.modules.metric_modules import masked_accuracy
-from ludwig.models.modules.metric_modules import perplexity
 from ludwig.models.modules.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.models.modules.sequence_decoders import SequenceTaggerDecoder
-from ludwig.models.modules.sequence_encoders import SequencePassthroughEncoder
-from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
 from ludwig.models.modules.sequence_encoders import BERT
 from ludwig.models.modules.sequence_encoders import CNNRNN
 from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
+from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
+from ludwig.models.modules.sequence_encoders import SequencePassthroughEncoder
 from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
-from ludwig.utils.misc import get_from_registry
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
@@ -67,10 +56,6 @@ logger = logging.getLogger(__name__)
 class SequenceBaseFeature(BaseFeature):
     type = SEQUENCE
 
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = SEQUENCE
-
     preprocessing_defaults = {
         'sequence_length_limit': 256,
         'most_common': 20000,
@@ -83,6 +68,9 @@ class SequenceBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -143,9 +131,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         SequenceBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
-
         self.overwrite_defaults(feature)
-
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
