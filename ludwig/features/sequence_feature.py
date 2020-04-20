@@ -36,6 +36,7 @@ from ludwig.models.modules.metric_modules import SequenceLossMetric
 from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.models.modules.metric_modules import PerplexityMetric
 from ludwig.models.modules.metric_modules import EditDistanceMetric
+from ludwig.models.modules.metric_modules import TokenAccuracyMetric
 from ludwig.models.modules.metric_modules import accuracy
 from ludwig.models.modules.metric_modules import edit_distance
 from ludwig.models.modules.metric_modules import masked_accuracy
@@ -246,6 +247,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
         self.metric_functions[PERPLEXITY] = PerplexityMetric()
         self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
