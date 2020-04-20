@@ -16,182 +16,121 @@
 import logging
 
 import tensorflow.compat.v1 as tf
-import tensorflow_addons as tfa
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import LayerNormalization
+from tensorflow.keras.layers import MaxPool1D
 from tensorflow.keras.layers import MaxPool2D
-
-from ludwig.models.modules.initializer_modules import get_initializer
 
 logger = logging.getLogger(__name__)
 
 
-def conv_1d(inputs, weights, biases,
-            stride=1, padding='SAME',
-            activation='relu', norm=None,
-            dropout=False, dropout_rate=None,
-            is_training=True):
-    hidden = tf.nn.conv1d(tf.cast(inputs, tf.float32), weights,
-                          stride=stride,
-                          padding=padding) + biases
+class ConvLayer1D(Layer):
 
-    if norm is not None:
+    def __init__(
+            self,
+            num_filters=256,
+            filter_size=3,
+            strides=1,
+            padding='same',
+            dilation_rate=1,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
+            norm=None,
+            norm_params=None,
+            activation='relu',
+            dropout_rate=0,
+            pool_size=(2, 2),
+            pool_strides=None,
+    ):
+        super(ConvLayer1D, self).__init__()
+
+        self.layers = []
+
+        self.layers.append(Conv1D(
+            filters=num_filters,
+            kernel_size=filter_size,
+            strides=strides,
+            padding=padding,
+            dilation_rate=dilation_rate,
+            use_bias=use_bias,
+            weights_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            weights_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            # weights_constraint=None,
+            # bias_constraint=None,
+        ))
+
+        if norm and norm_params is None:
+            norm_params = {}
         if norm == 'batch':
-            hidden = tf.layers.batch_normalization(
-                hidden,
-                training=is_training
-            )
+            self.layers.append(BatchNormalization(**norm_params))
         elif norm == 'layer':
-            # todo remplace with addons
-            hidden = tfa.layers.layer_norm(hidden)
+            self.layers.append(LayerNormalization(**norm_params))
 
-    if activation:
-        hidden = getattr(tf.nn, activation)(hidden)
+        self.layers.append(Activation(activation))
 
-    if dropout and dropout_rate is not None:
-        hidden = tf.layers.dropout(hidden, rate=dropout_rate,
-                                   training=is_training)
+        if dropout_rate > 0:
+            self.layers.append(Dropout(dropout_rate))
 
-    return hidden
-
-
-def conv_2d(inputs, weights, biases,
-            stride=1, padding='SAME',
-            activation='relu', norm=None,
-            dropout=False, dropout_rate=None,
-            is_training=True):
-    hidden = tf.nn.conv2d(inputs, weights, strides=[1, stride, stride, 1],
-                          padding=padding) + biases
-
-    if norm is not None:
-        if norm == 'batch':
-            hidden = tf.layers.batch_normalization(
-                hidden,
-                training=is_training
+        if pool_size is not None:
+            # todo tf2: add padding parameter and type (max or average)
+            self.layers.append(
+                MaxPool1D(
+                    pool_size=pool_size, strides=pool_strides, padding='valid'
+                )
             )
-        elif norm == 'layer':
-            hidden = tfa.layers.layer_norm(hidden)
 
-    if activation:
-        hidden = getattr(tf.nn, activation)(hidden)
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
 
-    if dropout and dropout_rate is not None:
-        hidden = tf.layers.dropout(hidden, rate=dropout_rate,
-                                   training=is_training)
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
 
-    return hidden
+        return hidden
 
 
-def conv_layer(inputs, kernel_shape, biases_shape,
-               stride=1, padding='SAME', activation='relu', norm=None,
-               dropout=False, dropout_rate=None, regularizer=None,
-               initializer=None,
-               dimensions=2, is_training=True):
-    if initializer is not None:
-        initializer_obj = get_initializer(initializer)
-        weights = tf.get_variable(
-            'weights',
-            initializer=initializer_obj(kernel_shape),
-            regularizer=regularizer
-        )
-    else:
-        if activation == 'relu':
-            initializer = get_initializer('he_uniform')
-        elif activation == 'sigmoid' or activation == 'tanh':
-            initializer = get_initializer('glorot_uniform')
-        # if initializer is None, tensorFlow seems to be using
-        # a glorot uniform initializer
-        weights = tf.get_variable(
-            'weights',
-            kernel_shape,
-            regularizer=regularizer,
-            initializer=initializer
-        )
-    logger.debug('  conv_weights: {0}'.format(weights))
-
-    biases = tf.get_variable('biases', biases_shape,
-                             initializer=tf.constant_initializer(0.01))
-    logger.debug('  conv_biases: {0}'.format(biases))
-
-    if dimensions == 1:
-        return conv_1d(inputs, weights, biases,
-                       stride=stride,
-                       padding=padding,
-                       activation=activation,
-                       norm=norm,
-                       dropout=dropout,
-                       dropout_rate=dropout_rate,
-                       is_training=is_training)
-    elif dimensions == 2:
-        return conv_2d(inputs, weights, biases,
-                       stride=stride,
-                       padding=padding,
-                       activation=activation,
-                       norm=norm,
-                       dropout=dropout,
-                       dropout_rate=dropout_rate,
-                       is_training=is_training)
-    else:
-        raise Exception('Unsupported number of dimensions', dimensions)
-
-
-def conv_1d_layer(inputs, kernel_shape, biases_shape, stride=1, padding='SAME',
-                  activation='relu', norm=None,
-                  dropout=False, dropout_rate=None, regularizer=None,
-                  initializer=None, is_training=True):
-    return conv_layer(inputs, kernel_shape, biases_shape, stride=stride,
-                      padding=padding, activation=activation,
-                      norm=norm, dropout=dropout, dropout_rate=dropout_rate,
-                      regularizer=regularizer,
-                      initializer=initializer,
-                      dimensions=1, is_training=is_training)
-
-
-def conv_2d_layer(inputs, kernel_shape, biases_shape, stride=1, padding='SAME',
-                  activation='relu', norm=None,
-                  dropout=False, dropout_rate=None, regularizer=None,
-                  initializer=None, is_training=True):
-    return conv_layer(inputs, kernel_shape, biases_shape, stride=stride,
-                      padding=padding, activation=activation,
-                      norm=norm, dropout=dropout, dropout_rate=dropout_rate,
-                      regularizer=regularizer,
-                      initializer=initializer,
-                      dimensions=2, is_training=is_training)
-
-
-def flatten(hidden, skip_first=True):
-    hidden_size = 1
-    # if hidden is activation, the first dimension is the batch_size
-    start = 1 if skip_first else 0
-    for x in hidden.shape[start:]:
-        if x is not None:
-            hidden_size *= x
-    hidden = tf.reshape(hidden, [-1, hidden_size], name='flatten')
-    logger.debug('  flatten hidden: {0}'.format(hidden))
-    return hidden, hidden_size
-
-
-class ConvStack1D:
+class ConvStack1D(Layer):
 
     def __init__(
             self,
             layers=None,
             num_layers=None,
+            default_num_filters=256,
             default_filter_size=3,
-            default_num_filters=64,
-            default_pool_size=None,
-            default_activation='relu',
+            default_strides=1,
+            default_padding='same',
+            default_dilation_rate=1,
+            default_use_bias=True,
+            default_weights_initializer='glorot_uniform',
+            default_bias_initializer='zeros',
+            default_weights_regularizer=None,
+            default_bias_regularizer=None,
+            default_activity_regularizer=None,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
             default_norm=None,
-            default_stride=1,
-            default_pool_stride=1,
-            default_dropout=False,
-            default_initializer=None,
-            default_regularize=True
+            default_norm_params=None,
+            default_activation='relu',
+            default_dropout_rate=0,
+            default_pool_size=2,
+            default_pool_strides=None,
+            **kwargs
     ):
+        super(ConvStack1D, self).__init__()
+
         if layers is None:
             if num_layers is None:
                 self.layers = [
@@ -209,100 +148,116 @@ class ConvStack1D:
                         'filter_size': default_filter_size,
                         'num_filters': default_num_filters,
                         'pool_size': default_pool_size,
-                        'pool_stride': default_pool_stride}
+                        'pool_strides': default_pool_strides}
                     )
         else:
             self.layers = layers
 
         for layer in self.layers:
-            if 'filter_size' not in layer:
-                layer['filter_size'] = default_filter_size
             if 'num_filters' not in layer:
                 layer['num_filters'] = default_num_filters
-            if 'activation' not in layer:
-                layer['activation'] = default_activation
+            if 'filter_size' not in layer:
+                layer['filter_size'] = default_filter_size
+            if 'strides' not in layer:
+                layer['strides'] = default_strides
+            if 'padding' not in layer:
+                layer['padding'] = default_padding
+            if 'dilation_rate' not in layer:
+                layer['dilation_rate'] = default_dilation_rate
+            if 'use_bias' not in layer:
+                layer['use_bias'] = default_use_bias
+            if 'weights_initializer' not in layer:
+                layer['weights_initializer'] = default_weights_initializer
+            if 'bias_initializer' not in layer:
+                layer['bias_initializer'] = default_bias_initializer
+            if 'weights_regularizer' not in layer:
+                layer['weights_regularizer'] = default_weights_regularizer
+            if 'bias_regularizer' not in layer:
+                layer['bias_regularizer'] = default_bias_regularizer
+            if 'activity_regularizer' not in layer:
+                layer['activity_regularizer'] = default_activity_regularizer
+            # if 'weights_constraint' not in layer:
+            #     layer['weights_constraint'] = default_weights_constraint
+            # if 'bias_constraint' not in layer:
+            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
-            if 'stride' not in layer:
-                layer['stride'] = default_stride
-            if 'pool_stride' not in layer:
-                layer['pool_stride'] = default_pool_stride
-            if 'dropout' not in layer:
-                layer['dropout'] = default_dropout
-            if 'initializer' not in layer:
-                layer['initializer'] = default_initializer
-            if 'regularize' not in layer:
-                layer['regularize'] = default_regularize
+            if 'norm_params' not in layer:
+                layer['norm_params'] = default_norm_params
+            if 'activation' not in layer:
+                layer['activation'] = default_activation
+            if 'dropout_rate' not in layer:
+                layer['dropout_rate'] = default_dropout_rate
+            if 'pool_size' not in layer:
+                layer['pool_size'] = default_pool_size
+            if 'pool_strides' not in layer:
+                layer['pool_strides'] = default_pool_strides
 
-    def __call__(
-            self,
-            input_sequence,
-            input_size,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        hidden = input_sequence
-        prev_num_filters = input_size
-        num_conv_layers = len(self.layers)
+        self.stack = []
 
-        for i in range(num_conv_layers):
-            layer = self.layers[i]
-            with tf.variable_scope('conv_{}'.format(i)):
-                # Convolution Layer
-                filter_shape = [
-                    layer['filter_size'],
-                    prev_num_filters,
-                    layer['num_filters']
-                ]
-                layer_output = conv_1d_layer(hidden, filter_shape,
-                                             [layer['num_filters']],
-                                             stride=layer['stride'],
-                                             padding='SAME',
-                                             activation=layer['activation'],
-                                             norm=layer['norm'],
-                                             dropout=layer['dropout'],
-                                             dropout_rate=dropout_rate,
-                                             regularizer=regularizer if layer[
-                                                 'regularize'] else None,
-                                             is_training=is_training)
-                prev_num_filters = layer['num_filters']
-                logger.debug('  conv_{}: {}'.format(i, layer_output))
-
-                # Pooling
-                if layer['pool_size'] is not None:
-                    layer_output = tf.layers.max_pooling1d(
-                        layer_output,
+        for i, layer in enumerate(self.layers):
+            with tf.variable_scope('conv_' + str(i)):
+                self.stack.append(
+                    ConvLayer1D(
+                        num_filters=layer['num_filters'],
+                        filter_size=layer['filter_size'],
+                        strides=layer['strides'],
+                        padding=layer['padding'],
+                        dilation_rate=layer['dilation_rate'],
+                        use_bias=layer['use_bias'],
+                        weights_initializer=layer['weights_initializer'],
+                        bias_initializer=layer['bias_initializer'],
+                        weights_regularizer=layer['weights_regularizer'],
+                        bias_regularizer=layer['bias_regularizer'],
+                        activity_regularizer=layer['activity_regularizer'],
+                        # weights_constraint=layer['weights_constraint'],
+                        # bias_constraint=layer['bias_constraint'],
+                        norm=layer['norm'],
+                        norm_params=layer['norm_params'],
+                        activation=layer['activation'],
+                        dropout_rate=layer['dropout_rate'],
                         pool_size=layer['pool_size'],
-                        strides=layer['pool_stride'],
-                        padding='VALID',
-                        name='pool_{}'.format(layer['filter_size'])
+                        pool_strides=layer['pool_strides'],
                     )
-                    logger.debug('  pool_{}: {}'.format(
-                        i, layer_output))
+                )
 
-            hidden = layer_output
-            logger.debug('  hidden: {0}'.format(hidden))
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.stack:
+            hidden = layer(hidden, training=training)
 
         return hidden
 
 
-class ParallelConv1D:
+class ParallelConv1D(Layer):
 
     def __init__(
             self,
             layers=None,
-            default_filter_size=3,
             default_num_filters=256,
-            default_pool_size=None,
-            default_activation='relu',
+            default_filter_size=3,
+            default_strides=1,
+            default_padding='same',
+            default_dilation_rate=1,
+            default_use_bias=True,
+            default_weights_initializer='glorot_uniform',
+            default_bias_initializer='zeros',
+            default_weights_regularizer=None,
+            default_bias_regularizer=None,
+            default_activity_regularizer=None,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
             default_norm=None,
-            default_stride=1,
-            default_pool_stride=1,
-            default_dropout=False,
-            default_initializer=None,
-            default_regularize=True
+            default_norm_params=None,
+            default_activation='relu',
+            default_dropout_rate=0,
+            default_pool_size=None,
+            default_pool_strides=None,
+            **kwargs
     ):
+        super(ParallelConv1D, self).__init__()
+
         if layers is None:
             self.layers = [
                 {'filter_size': 2},
@@ -312,104 +267,114 @@ class ParallelConv1D:
             ]
         else:
             self.layers = layers
-        for layer in layers:
-            if 'filter_size' not in layer:
-                layer['filter_size'] = default_filter_size
+
+        for layer in self.layers:
             if 'num_filters' not in layer:
                 layer['num_filters'] = default_num_filters
-            if 'pool_size' not in layer:
-                layer['pool_size'] = default_pool_size
-            if 'activation' not in layer:
-                layer['activation'] = default_activation
+            if 'filter_size' not in layer:
+                layer['filter_size'] = default_filter_size
+            if 'strides' not in layer:
+                layer['strides'] = default_strides
+            if 'padding' not in layer:
+                layer['padding'] = default_padding
+            if 'dilation_rate' not in layer:
+                layer['dilation_rate'] = default_dilation_rate
+            if 'use_bias' not in layer:
+                layer['use_bias'] = default_use_bias
+            if 'weights_initializer' not in layer:
+                layer['weights_initializer'] = default_weights_initializer
+            if 'bias_initializer' not in layer:
+                layer['bias_initializer'] = default_bias_initializer
+            if 'weights_regularizer' not in layer:
+                layer['weights_regularizer'] = default_weights_regularizer
+            if 'bias_regularizer' not in layer:
+                layer['bias_regularizer'] = default_bias_regularizer
+            if 'activity_regularizer' not in layer:
+                layer['activity_regularizer'] = default_activity_regularizer
+            # if 'weights_constraint' not in layer:
+            #     layer['weights_constraint'] = default_weights_constraint
+            # if 'bias_constraint' not in layer:
+            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
-            if 'stride' not in layer:
-                layer['stride'] = default_stride
-            if 'pool_stride' not in layer:
-                layer['pool_stride'] = default_pool_stride
-            if 'dropout' not in layer:
-                layer['dropout'] = default_dropout
-            if 'initializer' not in layer:
-                layer['initializer'] = default_initializer
-            if 'regularize' not in layer:
-                layer['regularize'] = default_regularize
+            if 'norm_params' not in layer:
+                layer['norm_params'] = default_norm_params
+            if 'activation' not in layer:
+                layer['activation'] = default_activation
+            if 'dropout_rate' not in layer:
+                layer['dropout_rate'] = default_dropout_rate
+            if 'pool_size' not in layer:
+                layer['pool_size'] = default_pool_size
+            if 'pool_strides' not in layer:
+                layer['pool_strides'] = default_pool_strides
 
-    def __call__(
-            self,
-            input_layer,
-            input_size,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        hidden = input_layer
-        prev_output_size = input_size
-        parallel_conv_layers = []
+        self.parallel_layers = []
 
         for i, layer in enumerate(self.layers):
-            with tf.variable_scope(
-                    'conv_{}_fs{}'.format(i, layer['filter_size'])):
-                # Convolution Layer
-                filter_shape = [
-                    layer['filter_size'],
-                    prev_output_size,
-                    layer['num_filters']
-                ]
-                layer_output = conv_1d_layer(hidden, filter_shape,
-                                             [layer['num_filters']],
-                                             stride=layer['stride'],
-                                             padding='SAME',
-                                             activation=layer['activation'],
-                                             norm=layer['norm'],
-                                             dropout=layer['dropout'],
-                                             dropout_rate=dropout_rate,
-                                             regularizer=regularizer if layer[
-                                                 'regularize'] else None,
-                                             is_training=is_training)
-
-                logger.debug('  conv_{}_fs{}: {}'.format(
-                    i,
-                    layer['filter_size'],
-                    layer_output)
+            with tf.variable_scope('conv_' + str(i)):
+                self.parallel_layers.append(
+                    ConvLayer1D(
+                        num_filters=layer['num_filters'],
+                        filter_size=layer['filter_size'],
+                        strides=layer['strides'],
+                        padding=layer['padding'],
+                        dilation_rate=layer['dilation_rate'],
+                        use_bias=layer['use_bias'],
+                        weights_initializer=layer['weights_initializer'],
+                        bias_initializer=layer['bias_initializer'],
+                        weights_regularizer=layer['weights_regularizer'],
+                        bias_regularizer=layer['bias_regularizer'],
+                        activity_regularizer=layer['activity_regularizer'],
+                        # weights_constraint=layer['weights_constraint'],
+                        # bias_constraint=layer['bias_constraint'],
+                        norm=layer['norm'],
+                        norm_params=layer['norm_params'],
+                        activation=layer['activation'],
+                        dropout_rate=layer['dropout_rate'],
+                        pool_size=layer['pool_size'],
+                        pool_strides=layer['pool_strides'],
+                    )
                 )
 
-                # Pooling
-                if layer['pool_size'] is not None:
-                    layer_output = tf.layers.max_pooling1d(
-                        layer_output,
-                        pool_size=layer['pool_size'],
-                        strides=layer['pool_stride'],
-                        padding='VALID',
-                        name='pool_{}'.format(layer['filter_size'])
-                    )
-                    logger.debug('  pool_{}_fs{}: {}'.format(
-                        i,
-                        layer['filter_size'],
-                        layer_output
-                    ))
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+        hiddens = []
 
-                parallel_conv_layers.append(layer_output)
+        for layer in self.parallel_layers:
+            hiddens.append(layer(hidden, training=training))
+        hidden = tf.concat(hiddens, 2)
 
-        hidden = tf.concat(parallel_conv_layers, 2)
         return hidden
 
 
-class StackParallelConv1D:
+class StackParallelConv1D(Layer):
 
     def __init__(
             self,
             stacked_layers=None,
-            default_filter_size=3,
             default_num_filters=64,
-            default_pool_size=None,
-            default_activation='relu',
+            default_filter_size=3,
+            default_strides=1,
+            default_padding='same',
+            default_dilation_rate=1,
+            default_use_bias=True,
+            default_weights_initializer='glorot_uniform',
+            default_bias_initializer='zeros',
+            default_weights_regularizer=None,
+            default_bias_regularizer=None,
+            default_activity_regularizer=None,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
             default_norm=None,
-            default_stride=1,
-            default_pool_stride=1,
-            default_dropout=False,
-            default_initializer=None,
-            default_regularize=True
+            default_norm_params=None,
+            default_activation='relu',
+            default_dropout_rate=0,
+            default_pool_size=None,
+            default_pool_strides=None,
+            **kwargs
     ):
+        super(StackParallelConv1D, self).__init__()
+
         if stacked_layers is None:
             self.stacked_parallel_layers = [
                 [
@@ -438,56 +403,82 @@ class StackParallelConv1D:
         for i, parallel_layers in enumerate(self.stacked_parallel_layers):
             for j in range(len(parallel_layers)):
                 layer = parallel_layers[j]
-                if 'filter_size' not in layer:
-                    layer['filter_size'] = default_filter_size
                 if 'num_filters' not in layer:
                     layer['num_filters'] = default_num_filters
-                if 'pool_size' not in layer:
-                    layer['pool_size'] = default_pool_size
-                if 'activation' not in layer:
-                    layer['activation'] = default_activation
+                if 'filter_size' not in layer:
+                    layer['filter_size'] = default_filter_size
+                if 'strides' not in layer:
+                    layer['strides'] = default_strides
+                if 'padding' not in layer:
+                    layer['padding'] = default_padding
+                if 'dilation_rate' not in layer:
+                    layer['dilation_rate'] = default_dilation_rate
+                if 'use_bias' not in layer:
+                    layer['use_bias'] = default_use_bias
+                if 'weights_initializer' not in layer:
+                    layer['weights_initializer'] = default_weights_initializer
+                if 'bias_initializer' not in layer:
+                    layer['bias_initializer'] = default_bias_initializer
+                if 'weights_regularizer' not in layer:
+                    layer['weights_regularizer'] = default_weights_regularizer
+                if 'bias_regularizer' not in layer:
+                    layer['bias_regularizer'] = default_bias_regularizer
+                if 'activity_regularizer' not in layer:
+                    layer['activity_regularizer'] = default_activity_regularizer
+                # if 'weights_constraint' not in layer:
+                #     layer['weights_constraint'] = default_weights_constraint
+                # if 'bias_constraint' not in layer:
+                #     layer['bias_constraint'] = default_bias_constraint
                 if 'norm' not in layer:
                     layer['norm'] = default_norm
-                if 'stride' not in layer:
-                    layer['stride'] = default_stride
-                if 'pool_stride' not in layer:
-                    layer['pool_stride'] = default_pool_stride
-                if i == len(self.stacked_parallel_layers) - 1:
-                    layer['pool'] = False
-                if 'dropout' not in layer:
-                    layer['dropout'] = default_dropout
-                if 'initializer' not in layer:
-                    layer['initializer'] = default_initializer
-                if 'regularize' not in layer:
-                    layer['regularize'] = default_regularize
+                if 'norm_params' not in layer:
+                    layer['norm_params'] = default_norm_params
+                if 'activation' not in layer:
+                    layer['activation'] = default_activation
+                if 'dropout_rate' not in layer:
+                    layer['dropout_rate'] = default_dropout_rate
+                if 'pool_size' not in layer:
+                    if i == len(self.stacked_parallel_layers) - 1:
+                        layer['pool_size'] = default_pool_size
+                    else:
+                        layer['pool_size'] = None
+                if 'pool_strides' not in layer:
+                    layer['pool_strides'] = default_pool_strides
 
-    def __call__(
-            self,
-            input_layer,
-            input_size,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        hidden = input_layer
-        prev_num_filters = input_size
+        self.stack = []
 
-        for i in range(len(self.stacked_parallel_layers)):
-            parallel_conv_layers = self.stacked_parallel_layers[i]
+        for i, parallel_layers in enumerate(self.stacked_parallel_layers):
             with tf.variable_scope('parallel_conv_{}'.format(i)):
-                parallel_conv_1d = ParallelConv1D(parallel_conv_layers)
-                hidden = parallel_conv_1d(
-                    hidden,
-                    prev_num_filters,
-                    regularizer=regularizer,
-                    dropout_rate=dropout_rate,
-                    is_training=is_training
+                self.stack.append(
+                    ParallelConv1D(
+                        layers=parallel_layers,
+                        num_filters=layer['num_filters'],
+                        filter_size=layer['filter_size'],
+                        strides=layer['strides'],
+                        padding=layer['padding'],
+                        dilation_rate=layer['dilation_rate'],
+                        use_bias=layer['use_bias'],
+                        weights_initializer=layer['weights_initializer'],
+                        bias_initializer=layer['bias_initializer'],
+                        weights_regularizer=layer['weights_regularizer'],
+                        bias_regularizer=layer['bias_regularizer'],
+                        activity_regularizer=layer['activity_regularizer'],
+                        # weights_constraint=layer['weights_constraint'],
+                        # bias_constraint=layer['bias_constraint'],
+                        norm=layer['norm'],
+                        norm_params=layer['norm_params'],
+                        activation=layer['activation'],
+                        dropout_rate=layer['dropout_rate'],
+                        pool_size=layer['pool_size'],
+                        pool_strides=layer['pool_strides'],
+                    )
                 )
-                logger.debug('  hidden: {}'.format(hidden))
 
-            prev_num_filters = 0
-            for layer in parallel_conv_layers:
-                prev_num_filters += layer['num_filters']
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.stack:
+            hidden = layer(hidden, training=training)
 
         return hidden
 
@@ -549,6 +540,7 @@ class ConvLayer2D(Layer):
             self.layers.append(Dropout(dropout_rate))
 
         if pool_size is not None:
+            # todo tf2: add padding parameter and type (max or average)
             self.layers.append(
                 MaxPool2D(pool_size=pool_size, strides=pool_strides)
             )
