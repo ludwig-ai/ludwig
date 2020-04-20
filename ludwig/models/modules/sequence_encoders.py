@@ -57,7 +57,7 @@ class SequencePassthroughEncoder(Layer):
             self,
             input_sequence,
             training=True,
-            mask=None    #todo tf2 needed?
+            mask=None  # todo tf2 needed?
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
@@ -87,8 +87,8 @@ class SequenceEmbedEncoder(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
-            initializer=None,
-            regularizer=None,
+            weights_initializer=None,
+            weights_regularizer=None,
             dropout_rate=0,
             reduce_output='sum',
             **kwargs
@@ -138,7 +138,7 @@ class SequenceEmbedEncoder(Layer):
             :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
             :type dropout: Boolean
-            :param initializer: the initializer to use. If `None`, the default
+            :param weights_initializer: the initializer to use. If `None`, the default
                    initialized of each variable is used (`glorot_uniform`
                    in most cases). Options are: `constant`, `identity`, `zeros`,
                     `ones`, `orthogonal`, `normal`, `uniform`,
@@ -151,7 +151,7 @@ class SequenceEmbedEncoder(Layer):
                     `{type: normal, mean: 0, stddev: 0}`.
                     To know the parameters of each initializer, please refer to
                     TensorFlow's documentation.
-            :type initializer: str
+            :type weights_initializer: str
             :param regularize: if `True` the embedding wieghts are added to
                    the set of weights that get reularized by a regularization
                    loss (if the `regularization_lambda` in `training`
@@ -165,9 +165,9 @@ class SequenceEmbedEncoder(Layer):
                    first dimension) and `None` or `null` (which does not reduce
                    and returns the full tensor).
             :type reduce_output: str
-            :param regularizer: The regularizer to use for the weights
+            :param weights_regularizer: The regularizer to use for the weights
                    of the encoder.
-            :type regularizer:
+            :type weights_regularizer:
             :param dropout_rate: Tensor (tf.float) of the probability of dropout
             :type dropout_rate: Tensor
 
@@ -184,15 +184,15 @@ class SequenceEmbedEncoder(Layer):
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=initializer,
-            regularizer=regularizer
+            initializer=weights_initializer,
+            regularizer=weights_regularizer
         )
 
     def call(
             self,
             input_sequence,
             training=None,
-            mask=None   # todo tf2 do we need?
+            mask=None  # todo tf2 do we need?
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.
@@ -213,7 +213,7 @@ class SequenceEmbedEncoder(Layer):
         return hidden
 
 
-class ParallelCNN(object):
+class ParallelCNN(Layer):
 
     def __init__(
             self,
@@ -382,6 +382,7 @@ class ParallelCNN(object):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
+        super(ParallelCNN, self).__init__()
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -433,21 +434,28 @@ class ParallelCNN(object):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout=dropout_rate,
+                dropout_rate=dropout_rate,
                 initializer=weights_initializer,
-                regularize=weights_regularizer
+                regularizer=weights_regularizer
             )
 
         self.parallel_conv_1d = ParallelConv1D(
             layers=self.conv_layers,
-            default_filter_size=filter_size,
             default_num_filters=num_filters,
-            default_pool_size=pool_size,
-            default_activation=activation,
+            default_filter_size=filter_size,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
             default_norm=norm,
-            default_dropout=dropout_rate,
-            default_initializer=weights_initializer,
-            default_regularize=weights_regularizer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
+            default_pool_size=pool_size,
         )
 
         self.fc_stack = FCStack(
@@ -468,76 +476,55 @@ class ParallelCNN(object):
             default_dropout_rate=dropout_rate,
         )
 
-    def __call__(
+    def call(
             self,
-            input_sequence,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            inputs,
+            training=None,
+            mask=None
     ):
         """
-            :param input_sequence: The input sequence fed into the encoder.
-                   Shape: [batch x sequence length], type tf.int32
-            :type input_sequence: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
+            :param inputs: The input sequence fed into the encoder.
+                   Shape: [batch x sequence length], type tf.int
+            :type inputs: Tensor
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_input_sequence, embedding_size = self.embed_sequence(
-                input_sequence,
-                regularizer,
-                dropout_rate,
-                is_training=True
+            embedded_input_sequence = self.embed_sequence(
+                inputs,
+                training=training,
+                mask=mask
             )
         else:
-            embedded_input_sequence = input_sequence
+            embedded_input_sequence = inputs
             while len(embedded_input_sequence.shape) < 3:
                 embedded_input_sequence = tf.expand_dims(
-                    embedded_input_sequence, -1)
-            embedding_size = embedded_input_sequence.shape[-1]
+                    embedded_input_sequence, -1
+                )
 
         # shape=(?, sequence_length, embedding_size)
         hidden = embedded_input_sequence
-        logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Conv Layers ================
         hidden = self.parallel_conv_1d(
             hidden,
-            embedding_size,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
-        hidden_size = sum(
-            [conv_layer['num_filters'] for conv_layer in self.conv_layers]
-        )
-        logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
             hidden = reduce_sequence(hidden, self.reduce_output)
 
             # ================ FC Layers ================
-            hidden_size = hidden.shape.as_list()[-1]
-            logger.debug('  flatten hidden: {0}'.format(hidden))
-
             hidden = self.fc_stack(
                 hidden,
-                hidden_size,
-                regularizer=regularizer,
-                dropout_rate=dropout_rate,
-                is_training=is_training
+                training=training,
+                mask=mask
             )
-            hidden_size = hidden.shape.as_list()[-1]
 
-        return hidden, hidden_size
+        return hidden
 
 
 class StackedCNN:
