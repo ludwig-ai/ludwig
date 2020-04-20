@@ -440,8 +440,8 @@ class ParallelExecutor(HyperoptExecutor):
         gpu_id = self.queue.get()
         try:
             parameters = hyperopt_dict['parameters']
-            train_stats, eval_stats = train_and_eval_on_split(
-                **hyperopt_dict, gpus=gpu_id)
+            hyperopt_dict["gpus"] = gpu_id
+            train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
             metric_score = self.get_metric_score(eval_stats)
         finally:
             self.queue.put(gpu_id)
@@ -506,9 +506,11 @@ class ParallelExecutor(HyperoptExecutor):
                     gpu_fraction = fraction
 
             process_per_gpu = int(1 / gpu_fraction)
-            self.queue = multiprocessing.Queue()
 
-            for gpu_id in range(gpu_ids):
+            manager = multiprocessing.Manager()
+            self.queue = manager.Queue()
+
+            for gpu_id in gpu_ids:
                 for _ in range(process_per_gpu):
                     self.queue.put(gpu_id)
 
