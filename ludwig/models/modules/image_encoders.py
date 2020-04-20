@@ -15,9 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import tensorflow as tf
+from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.convolutional_modules import flatten, ConvStack2D, \
+from ludwig.models.modules.convolutional_modules import ConvStack2D, \
     ResNet, get_resnet_block_sizes
 from ludwig.models.modules.fully_connected_modules import FCStack
 
@@ -175,6 +176,7 @@ class ResNetEncoder:
             batch_norm_momentum,
             batch_norm_epsilon
         )
+        self.flatten = Flatten()
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -207,15 +209,13 @@ class ResNetEncoder:
             dropout,
             is_training=is_training
         )
-        hidden, hidden_size = flatten(hidden)
+        hidden = self.flatten(hidden)
 
         # ================ Fully Connected ================
         hidden = self.fc_stack(
             hidden,
-            hidden_size,
-            regularizer,
-            dropout,
-            is_training=is_training
+            training=is_training,
+            mask=None
         )
         hidden_size = hidden.shape.as_list()[-1]
 
