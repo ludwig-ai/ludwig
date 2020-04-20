@@ -37,8 +37,6 @@ class SequencePassthroughEncoder(Layer):
     def __init__(
             self,
             reduce_output=None,
-            regularizer=None,
-            dropout_rate=0,
             **kwargs
     ):
         """
@@ -50,17 +48,10 @@ class SequencePassthroughEncoder(Layer):
                    first dimension) and `None` or `null` (which does not reduce
                    and returns the full tensor).
             :type reduce_output: str
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
 
         """
         super(SequencePassthroughEncoder, self).__init__()
         self.reduce_output = reduce_output
-        self.dropout_rate = dropout_rate
-        self.regularizer = regularizer
 
     def call(
             self,
@@ -79,9 +70,8 @@ class SequencePassthroughEncoder(Layer):
         input_sequence = tf.cast(input_sequence, tf.float32)
         while len(input_sequence.shape) < 3:
             input_sequence = tf.expand_dims(
-                input_sequence, -1)
-        # hidden_size = input_sequence.shape[-1] # todo tf2 clean up
-
+                input_sequence, -1
+            )
         hidden = reduce_sequence(input_sequence, self.reduce_output)
 
         return hidden
