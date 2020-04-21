@@ -79,7 +79,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
     def call(self, y, y_pred):
         vector_labels = tf.one_hot(
-            tf.cast(y, dtype=tf.int32),
+            tf.cast(y, dtype=tf.int64),
             self.num_classes
         )
 
@@ -108,7 +108,7 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 
     def call(self, y, y_pred):
         vector_labels = tf.one_hot(
-            tf.cast(y, dtype=tf.int32),
+            tf.cast(y, dtype=tf.int64),
             self.num_classes
         )
 
@@ -156,8 +156,6 @@ class SequenceLoss(tf.keras.losses.Loss):
             sample_weight=sample_mask
         )
         return loss  # vector of shape [batch_size,]
-
-
 
 # end of custom classes
 
