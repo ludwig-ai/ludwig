@@ -250,6 +250,20 @@ class TokenAccuracyMetric(tf.keras.metrics.Mean):
 
         super().update_state(masked_corrected_predictions)
 
+
+class CategoryAccuracy(tf.keras.metrics.Accuracy):
+    def __init__(self, name=None):
+        super(CategoryAccuracy, self).__init__(name=name)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        # make sure y_true is tf.int64
+        super().update_state(
+            tf.cast(y_true, dtype=tf.int64),
+            y_pred,
+            sample_weight=sample_weight
+        )
+
+
 # end of custom classes
 
 
