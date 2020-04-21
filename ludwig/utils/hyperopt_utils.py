@@ -24,6 +24,7 @@ import signal
 import multiprocessing
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
+import psutil
 
 import numpy as np
 
@@ -492,6 +493,15 @@ class ParallelExecutor(HyperoptExecutor):
         hyperopt_parameters = []
 
         if gpus is not None:
+
+            num_available_cpus = psutil.cpu_count(logical=False)
+            if self.num_workers > num_available_cpus:
+                logger.warning(
+                    'WARNING: Setting num_workers to less '
+                    'or equal to num of available cpus: {} is suggested'.format(
+                        num_available_cpus)
+                )
+
             if isinstance(gpus, int):
                 gpus = str(gpus)
             gpus = gpus.strip()
