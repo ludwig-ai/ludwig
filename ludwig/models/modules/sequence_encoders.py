@@ -36,7 +36,6 @@ class SequencePassthroughEncoder(Layer):
 
     def __init__(
             self,
-            reduce_output=None,
             **kwargs
     ):
         """
@@ -51,14 +50,8 @@ class SequencePassthroughEncoder(Layer):
 
         """
         super(SequencePassthroughEncoder, self).__init__()
-        self.reduce_output = reduce_output
 
-    def call(
-            self,
-            input_sequence,
-            training=True,
-            mask=None  # todo tf2 needed?
-    ):
+    def call(self, inputs, training=True, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
@@ -67,14 +60,7 @@ class SequencePassthroughEncoder(Layer):
                    (important for dropout)
             :type is_training: Tensor
         """
-        input_sequence = tf.cast(input_sequence, tf.float32)
-        while len(input_sequence.shape) < 3:
-            input_sequence = tf.expand_dims(
-                input_sequence, -1
-            )
-        hidden = reduce_sequence(input_sequence, self.reduce_output)
-
-        return hidden
+        return inputs
 
 
 class SequenceEmbedEncoder(Layer):
@@ -188,23 +174,18 @@ class SequenceEmbedEncoder(Layer):
             regularizer=weights_regularizer
         )
 
-    def call(
-            self,
-            input_sequence,
-            training=None,
-            mask=None  # todo tf2 do we need?
-    ):
+    def call(self, inputs, training=None, mask=None):
         """
-            :param input_sequence: The input sequence fed into the encoder.
+            :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
-            :type input_sequence: Tensor
+            :type inputs: Tensor
             :param training: specifying if in training mode
                    (important for dropout)
             :type training: Boolean
         """
         # ================ Embeddings ================
         embedded_sequence, embedding_size = self.embed_sequence(
-            input_sequence,
+            inputs,
             training=training
         )
 
@@ -228,6 +209,7 @@ class ParallelCNN(Layer):
             num_conv_layers=None,
             filter_size=3,
             num_filters=256,
+            pool_function='max',
             pool_size=None,
             fc_layers=None,
             num_fc_layers=None,
@@ -455,7 +437,9 @@ class ParallelCNN(Layer):
             default_norm_params=norm_params,
             default_activation=activation,
             default_dropout_rate=dropout_rate,
+            default_pool_function=pool_function,
             default_pool_size=pool_size,
+            default_pool_padding='same',
         )
 
         self.fc_stack = FCStack(
@@ -476,12 +460,7 @@ class ParallelCNN(Layer):
             default_dropout_rate=dropout_rate,
         )
 
-    def call(
-            self,
-            inputs,
-            training=None,
-            mask=None
-    ):
+    def call(self, inputs, training=None, mask=None):
         """
             :param inputs: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int
@@ -527,7 +506,7 @@ class ParallelCNN(Layer):
         return hidden
 
 
-class StackedCNN:
+class StackedCNN(Layer):
 
     def __init__(
             self,
@@ -540,9 +519,15 @@ class StackedCNN:
             embeddings_on_cpu=False,
             conv_layers=None,
             num_conv_layers=None,
-            filter_size=5,
             num_filters=256,
+            filter_size=5,
+            strides=1,
+            padding='same',
+            dilation_rate=1,
+            pool_function='max',
             pool_size=None,
+            pool_strides=None,
+            pool_padding='valid',
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
@@ -697,6 +682,8 @@ class StackedCNN:
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
+        super(StackedCNN, self).__init__()
+
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
             self.conv_layers = conv_layers
@@ -773,21 +760,34 @@ class StackedCNN:
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout=dropout_rate,
+                dropout_rate=dropout_rate,
                 initializer=weights_initializer,
-                regularize=weights_regularizer
+                regularizer=weights_regularizer
             )
 
         self.conv_stack_1d = ConvStack1D(
             layers=self.conv_layers,
-            default_filter_size=filter_size,
             default_num_filters=num_filters,
-            default_activation=activation,
+            default_filter_size=filter_size,
+            default_strides=strides,
+            default_padding=padding,
+            default_dilation_rate=dilation_rate,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
             default_norm=norm,
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
+            default_pool_function=pool_function,
             default_pool_size=pool_size,
-            default_dropout=dropout_rate,
-            default_initializer=weights_regularizer,
-            default_regularize=weights_regularizer
+            default_pool_strides=pool_strides,
+            default_pool_padding=pool_padding,
         )
 
         self.fc_stack = FCStack(
@@ -808,13 +808,7 @@ class StackedCNN:
             default_dropout_rate=dropout_rate,
         )
 
-    def __call__(
-            self,
-            input_sequence,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
+    def call(self, inputs, training=None, mask=None):
         """
             :param input_sequence: The input sequence fed into the encoder.
                    Shape: [batch x sequence length], type tf.int32
@@ -830,52 +824,41 @@ class StackedCNN:
         """
         # ================ Embeddings ================
         if self.should_embed:
-            embedded_input_sequence, self.embedding_size = self.embed_sequence(
-                input_sequence,
-                regularizer,
-                dropout_rate,
-                is_training=True
+            embedded_input_sequence = self.embed_sequence(
+                inputs,
+                training=training,
+                mask=mask
             )
         else:
-            embedded_input_sequence = input_sequence
+            embedded_input_sequence = inputs
             while len(embedded_input_sequence.shape) < 3:
                 embedded_input_sequence = tf.expand_dims(
-                    embedded_input_sequence, -1)
-            self.embedding_size = embedded_input_sequence.shape[-1]
+                    embedded_input_sequence, -1
+                )
 
+        # shape=(?, sequence_length, embedding_size)
         hidden = embedded_input_sequence
-        logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Conv Layers ================
         with tf.variable_scope('stack_conv'):
             hidden = self.conv_stack_1d(
                 hidden,
-                self.embedding_size,
-                regularizer=regularizer,
-                dropout_rate=dropout_rate,
-                is_training=is_training
+                training=training,
+                mask=mask
             )
-        hidden_size = self.conv_layers[-1]['num_filters']
-        logger.debug('  hidden: {0}'.format(hidden))
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
             hidden = reduce_sequence(hidden, self.reduce_output)
 
             # ================ FC Layers ================
-            hidden_size = hidden.shape.as_list()[-1]
-            logger.debug('  flatten hidden: {0}'.format(hidden))
-
             hidden = self.fc_stack(
                 hidden,
-                hidden_size,
-                regularizer=regularizer,
-                dropout_rate=dropout_rate,
-                is_training=is_training
+                training=training,
+                mask=mask
             )
-            hidden_size = hidden.shape.as_list()[-1]
 
-        return hidden, hidden_size
+        return hidden
 
 
 class StackedParallelCNN:
