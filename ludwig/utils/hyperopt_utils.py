@@ -501,9 +501,28 @@ class ParallelExecutor(HyperoptExecutor):
             if total_gpus < self.num_workers:
                 fraction = (total_gpus / self.num_workers) - self.epsilon
                 if fraction < gpu_fraction:
+                    if fraction > 0.5:
+                        if gpu_fraction != 1:
+                            logger.warning(
+                                'WARNING: Setting gpu_fraction to 1 as the gpus '
+                                'would be underutilized for the parallel processes.'
+                            )
+                        gpu_fraction = 1
+                    else:
+                        logger.warning(
+                            'WARNING: Setting gpu_fraction to {} '
+                            'as the available gpus is {} and the num of workers '
+                            'selected is {}'.format(
+                                fraction, total_gpus, self.num_workers)
+                        )
+                        gpu_fraction = fraction
+                else:
                     logger.warning(
-                        'WARNING: Setting `gpu_fraction` to {}'.format(fraction))
-                    gpu_fraction = fraction
+                        'WARNING: gpu_fraction could be increased to {} '
+                        'as the available gpus is {} and the num of workers '
+                        'being set is {}'.format(
+                            fraction, total_gpus, self.num_workers)
+                    )
 
             process_per_gpu = int(1 / gpu_fraction)
 
