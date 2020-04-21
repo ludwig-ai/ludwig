@@ -19,6 +19,7 @@ import logging
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
 from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, LSTMStateTuple
+from tensorflow.keras.layers import SimpleRNN, GRU, LSTM, Bidirectional, Layer
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.util import nest
@@ -26,9 +27,82 @@ from tensorflow.python.util import nest
 # from ludwig.models.modules.fully_connected_modules import fc_layer
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.reduction_modules import reduce_sequence
+from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
 logger = logging.getLogger(__name__)
+
+rnn_layers_registry = {
+    'rnn': SimpleRNN,
+    'gru': GRU,
+    'lstm': LSTM,
+}
+
+
+class RecurrentStack(Layer):
+    def __init__(
+            self,
+            state_size=256,
+            cell_type='rnn',
+            num_layers=1,
+            bidirectional=False,
+            activation='tanh',
+            recurrent_activation='sigmoid',
+            use_bias=True,
+            unit_forget_bias=True,
+            weights_initializer='glorot_uniform',
+            recurrent_initializer='orthogonal',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            recurrent_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # kernel_constraint=kernel_constraint,
+            # recurrent_constraint=recurrent_constraint,
+            # bias_constraint=bias_constraint,
+            dropout=0.0,
+            recurrent_dropout=0.0,
+            **kwargs
+    ):
+        super(RecurrentStack, self).__init__()
+
+        rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
+        self.layers = []
+
+        for _ in range(num_layers):
+            layer = rnn_layer_class(
+                units=state_size,
+                activation=activation,
+                recurrent_activation=recurrent_activation,
+                use_bias=use_bias,
+                kernel_initializer=weights_initializer,
+                recurrent_initializer=recurrent_initializer,
+                bias_initializer=bias_initializer,
+                unit_forget_bias=unit_forget_bias,
+                kernel_regularizer=weights_regularizer,
+                recurrent_regularizer=recurrent_regularizer,
+                bias_regularizer=bias_regularizer,
+                activity_regularizer=activity_regularizer,
+                # kernel_constraint=weights_constraint,
+                # recurrent_constraint=recurrent_constraint,
+                # bias_constraint=bias_constraint,
+                dropout=dropout,
+                recurrent_dropout=recurrent_dropout,
+                return_sequences=True,
+            )
+
+            if bidirectional:
+                layer = Bidirectional(layer)
+
+            self.layers.append(layer)
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden
 
 
 def get_cell_fun(cell_type):
@@ -129,101 +203,6 @@ class BasicDecoder(tfa.seq2seq.BasicDecoder):
         outputs = BasicDecoderOutput(cell_outputs, sample_ids,
                                      projection_inputs)
         return (outputs, next_state, next_inputs, finished)
-
-
-class RecurrentStack:
-    def __init__(
-            self,
-            state_size=256,
-            cell_type='rnn',
-            num_layers=1,
-            bidirectional=False,
-            dropout=False,
-            regularize=True,
-            reduce_output='last',
-            **kwargs
-    ):
-        self.state_size = state_size
-        self.cell_type = cell_type
-        self.num_layers = num_layers
-        self.bidirectional = bidirectional
-        self.dropout = dropout
-        self.regularize = regularize
-        self.reduce_output = reduce_output
-
-    def __call__(
-            self,
-            input_sequence,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        if not self.regularize:
-            regularizer = None
-
-        # Calculate the length of input_sequence and the batch size
-        sequence_length = sequence_length_3D(input_sequence)
-
-        # RNN cell
-        cell_fn = get_cell_fun(self.cell_type)
-
-        # initial state
-        # init_state = tf.get_variable(
-        #   'init_state',
-        #   [1, state_size],
-        #   initializer=tf.constant_initializer(0.0),
-        # )
-        # init_state = tf.tile(init_state, [batch_size, 1])
-
-        # main RNN operation
-        with tf.variable_scope('rnn_stack', reuse=tf.AUTO_REUSE,
-                               regularizer=regularizer) as vs:
-            if self.bidirectional:
-                # forward direction cell
-                fw_cell = lambda state_size: cell_fn(state_size)
-                bw_cell = lambda state_size: cell_fn(state_size)
-                fw_cells = [fw_cell(self.state_size) for _ in
-                            range(self.num_layers)]
-                bw_cells = [bw_cell(self.state_size) for _ in
-                            range(self.num_layers)]
-                rnn_outputs, final_state_fw, final_state_bw = tfa.rnn.stack_bidirectional_dynamic_rnn(
-                    cells_fw=fw_cells,
-                    cells_bw=bw_cells,
-                    dtype=tf.float32,
-                    sequence_length=sequence_length,
-                    inputs=input_sequence
-                )
-
-            else:
-                cell = lambda state_size: cell_fn(state_size)
-                cells = MultiRNNCell(
-                    [cell(self.state_size) for _ in range(self.num_layers)],
-                    state_is_tuple=True)
-                rnn_outputs, final_state = tf.nn.dynamic_rnn(
-                    cells,
-                    input_sequence,
-                    sequence_length=sequence_length,
-                    dtype=tf.float32)
-                # initial_state=init_state)
-
-            for v in tf.global_variables():
-                if v.name.startswith(vs.name):
-                    logger.debug('  {}: {}'.format(v.name, v))
-            logger.debug('  rnn_outputs: {0}'.format(rnn_outputs))
-
-            rnn_output = reduce_sequence(rnn_outputs, self.reduce_output)
-            logger.debug('  reduced_rnn_output: {0}'.format(rnn_output))
-
-        # dropout
-        if self.dropout and dropout_rate is not None:
-            rnn_output = tf.layers.dropout(
-                rnn_output,
-                rate=dropout_rate,
-                training=is_training
-            )
-            logger.debug('  dropout_rnn: {0}'.format(rnn_output))
-
-        return rnn_output, rnn_output.shape.as_list()[-1]
 
 
 def recurrent_decoder(encoder_outputs, targets, max_sequence_length, vocab_size,

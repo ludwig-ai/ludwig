@@ -18,7 +18,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.convolutional_modules import ConvStack2D, \
+from ludwig.models.modules.convolutional_modules import Conv2DStack, \
     ResNet, get_resnet_block_sizes
 from ludwig.models.modules.fully_connected_modules import FCStack
 
@@ -66,7 +66,7 @@ class Stacked2DCNN(Layer):
     ):
         super(Stacked2DCNN, self).__init__()
 
-        self.conv_stack_2d = ConvStack2D(
+        self.conv_stack_2d = Conv2DStack(
             layers=conv_layers,
             num_layers=num_conv_layers,
             default_num_filters=num_filters,

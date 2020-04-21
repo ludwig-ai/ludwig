@@ -31,7 +31,7 @@ from tensorflow.keras.layers import MaxPool2D
 logger = logging.getLogger(__name__)
 
 
-class ConvLayer1D(Layer):
+class Conv1DLayer(Layer):
 
     def __init__(
             self,
@@ -57,7 +57,7 @@ class ConvLayer1D(Layer):
             pool_strides=None,
             pool_padding='valid',
     ):
-        super(ConvLayer1D, self).__init__()
+        super(Conv1DLayer, self).__init__()
 
         self.layers = []
 
@@ -106,7 +106,7 @@ class ConvLayer1D(Layer):
         return hidden
 
 
-class ConvStack1D(Layer):
+class Conv1DStack(Layer):
 
     def __init__(
             self,
@@ -135,7 +135,7 @@ class ConvStack1D(Layer):
             default_pool_padding='valid',
             **kwargs
     ):
-        super(ConvStack1D, self).__init__()
+        super(Conv1DStack, self).__init__()
 
         if layers is None:
             if num_layers is None:
@@ -208,7 +208,7 @@ class ConvStack1D(Layer):
         for i, layer in enumerate(self.layers):
             with tf.variable_scope('conv_' + str(i)):
                 self.stack.append(
-                    ConvLayer1D(
+                    Conv1DLayer(
                         num_filters=layer['num_filters'],
                         filter_size=layer['filter_size'],
                         strides=layer['strides'],
@@ -331,7 +331,7 @@ class ParallelConv1D(Layer):
         for i, layer in enumerate(self.layers):
             with tf.variable_scope('conv_' + str(i)):
                 self.parallel_layers.append(
-                    ConvLayer1D(
+                    Conv1DLayer(
                         num_filters=layer['num_filters'],
                         filter_size=layer['filter_size'],
                         strides=layer['strides'],
@@ -367,7 +367,7 @@ class ParallelConv1D(Layer):
         return hidden
 
 
-class StackParallelConv1D(Layer):
+class ParallelConv1DStack(Layer):
 
     def __init__(
             self,
@@ -395,7 +395,7 @@ class StackParallelConv1D(Layer):
             default_pool_padding='valid',
             **kwargs
     ):
-        super(StackParallelConv1D, self).__init__()
+        super(ParallelConv1DStack, self).__init__()
 
         if stacked_layers is None:
             self.stacked_parallel_layers = [
@@ -511,7 +511,7 @@ class StackParallelConv1D(Layer):
         return hidden
 
 
-class ConvLayer2D(Layer):
+class Conv2DLayer(Layer):
 
     def __init__(
             self,
@@ -537,7 +537,7 @@ class ConvLayer2D(Layer):
             pool_strides=None,
             pool_padding='valid',
     ):
-        super(ConvLayer2D, self).__init__()
+        super(Conv2DLayer, self).__init__()
 
         self.layers = []
 
@@ -586,7 +586,7 @@ class ConvLayer2D(Layer):
         return hidden
 
 
-class ConvStack2D(Layer):
+class Conv2DStack(Layer):
 
     def __init__(
             self,
@@ -614,7 +614,7 @@ class ConvStack2D(Layer):
             default_pool_strides=None,
             default_pool_padding='valid',
     ):
-        super(ConvStack2D, self).__init__()
+        super(Conv2DStack, self).__init__()
 
         if layers is None:
             if num_layers is None:
@@ -682,7 +682,7 @@ class ConvStack2D(Layer):
         for i, layer in enumerate(self.layers):
             with tf.variable_scope('conv_' + str(i)):
                 self.stack.append(
-                    ConvLayer2D(
+                    Conv2DLayer(
                         num_filters=layer['num_filters'],
                         filter_size=layer['filter_size'],
                         strides=layer['strides'],
