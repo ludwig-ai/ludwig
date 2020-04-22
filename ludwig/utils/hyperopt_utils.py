@@ -495,10 +495,18 @@ class ParallelExecutor(HyperoptExecutor):
         if gpus is not None:
 
             num_available_cpus = psutil.cpu_count(logical=False)
+
+            if num_available_cpus is None:
+                num_available_cpus = psutil.cpu_count()
+                logger.warning(
+                    'WARNING: Couldn\'t get the number of physical cores '
+                    'from the OS, using the logical cores instead.'
+                )
+
             if self.num_workers > num_available_cpus:
                 logger.warning(
                     'WARNING: Setting num_workers to less '
-                    'or equal to num of available cpus: {} is suggested'.format(
+                    'or equal to number of available cpus: {} is suggested'.format(
                         num_available_cpus)
                 )
 
