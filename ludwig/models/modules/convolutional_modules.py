@@ -132,7 +132,7 @@ class Conv1DStack(Layer):
             default_pool_function='max',
             default_pool_size=2,
             default_pool_strides=None,
-            default_pool_padding='valid',
+            default_pool_padding='same',
             **kwargs
     ):
         super(Conv1DStack, self).__init__()
@@ -238,6 +238,17 @@ class Conv1DStack(Layer):
 
         for layer in self.stack:
             hidden = layer(hidden, training=training)
+
+        if hidden.shape[1] == 0:
+            raise ValueError(
+                'The output of the conv stack has the second dimension '
+                '(length of the sequence) equal to 0. '
+                'This means that the compination of filter_size, padding, '
+                'stride, pool_size, pool_padding and pool_stride is reduces '
+                'the sequence length more than is possible. '
+                'Try using "same" padding and reducing or eliminating stride '
+                'and pool.'
+            )
 
         return hidden
 
