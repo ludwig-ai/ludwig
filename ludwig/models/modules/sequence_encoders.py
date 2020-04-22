@@ -1225,7 +1225,7 @@ class RNN(Layer):
             dropout=0.0,
             recurrent_dropout=0.0,
             fc_layers=None,
-            num_fc_layers=None,
+            num_fc_layers=0,
             fc_size=256,
             use_bias=True,
             weights_initializer='glorot_uniform',

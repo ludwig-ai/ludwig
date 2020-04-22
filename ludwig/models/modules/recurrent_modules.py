@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import collections
+import inspect
 import logging
 
 import tensorflow.compat.v1 as tf
@@ -69,27 +70,32 @@ class RecurrentStack(Layer):
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
         self.layers = []
 
+        rnn_params = {
+            'units': state_size,
+            'activation': activation,
+            'recurrent_activation': recurrent_activation,
+            'use_bias': use_bias,
+            'kernel_initializer': weights_initializer,
+            'recurrent_initializer': recurrent_initializer,
+            'bias_initializer': bias_initializer,
+            'unit_forget_bias': unit_forget_bias,
+            'kernel_regularizer': weights_regularizer,
+            'recurrent_regularizer': recurrent_regularizer,
+            'bias_regularizer': bias_regularizer,
+            'activity_regularizer': activity_regularizer,
+            # 'kernel_constraint': weights_constraint,
+            # 'recurrent_constraint': recurrent_constraint,
+            # 'bias_constraint': bias_constraint,
+            'dropout': dropout,
+            'recurrent_dropout': recurrent_dropout,
+            'return_sequences': True,
+        }
+        signature = inspect.signature(rnn_layer_class.__init__)
+        valid_args = set(signature.parameters.keys())
+        rnn_params = {k: v for k, v in rnn_params.items() if k in valid_args}
+
         for _ in range(num_layers):
-            layer = rnn_layer_class(
-                units=state_size,
-                activation=activation,
-                recurrent_activation=recurrent_activation,
-                use_bias=use_bias,
-                kernel_initializer=weights_initializer,
-                recurrent_initializer=recurrent_initializer,
-                bias_initializer=bias_initializer,
-                unit_forget_bias=unit_forget_bias,
-                kernel_regularizer=weights_regularizer,
-                recurrent_regularizer=recurrent_regularizer,
-                bias_regularizer=bias_regularizer,
-                activity_regularizer=activity_regularizer,
-                # kernel_constraint=weights_constraint,
-                # recurrent_constraint=recurrent_constraint,
-                # bias_constraint=bias_constraint,
-                dropout=dropout,
-                recurrent_dropout=recurrent_dropout,
-                return_sequences=True,
-            )
+            layer = rnn_layer_class(**rnn_params)
 
             if bidirectional:
                 layer = Bidirectional(layer)
