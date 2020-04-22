@@ -20,8 +20,11 @@ import logging
 import math
 import os
 import random
+import signal
+import multiprocessing
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
+import psutil
 
 import numpy as np
 
@@ -408,12 +411,47 @@ class ParallelExecutor(HyperoptExecutor):
             measure: str,
             split: str,
             num_workers: int = 2,
+            epsilon: int = 0.01,
             **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
             self, hyperopt_strategy, output_feature, measure, split
         )
         self.num_workers = num_workers
+        self.epsilon = epsilon
+        self.queue = None
+
+    @staticmethod
+    def init_worker():
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    def _train_and_eval_model(self, hyperopt_dict):
+        parameters = hyperopt_dict['parameters']
+        train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
+        metric_score = self.get_metric_score(eval_stats)
+
+        return {
+            'parameters': parameters,
+            'metric_score': metric_score,
+            'training_stats': train_stats,
+            'eval_stats': eval_stats
+        }
+
+    def _train_and_eval_model_gpu(self, hyperopt_dict):
+        gpu_id = self.queue.get()
+        try:
+            parameters = hyperopt_dict['parameters']
+            hyperopt_dict["gpus"] = gpu_id
+            train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
+            metric_score = self.get_metric_score(eval_stats)
+        finally:
+            self.queue.put(gpu_id)
+        return {
+            'parameters': parameters,
+            'metric_score': metric_score,
+            'training_stats': train_stats,
+            'eval_stats': eval_stats
+        }
 
     def execute(
             self,
@@ -452,7 +490,127 @@ class ParallelExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ):
-        pass
+        hyperopt_parameters = []
+
+        if gpus is not None:
+
+            num_available_cpus = psutil.cpu_count(logical=False)
+
+            if num_available_cpus is None:
+                num_available_cpus = psutil.cpu_count()
+                logger.warning(
+                    'WARNING: Couldn\'t get the number of physical cores '
+                    'from the OS, using the logical cores instead.'
+                )
+
+            if self.num_workers > num_available_cpus:
+                logger.warning(
+                    'WARNING: Setting num_workers to less '
+                    'or equal to number of available cpus: {} is suggested'.format(
+                        num_available_cpus)
+                )
+
+            if isinstance(gpus, int):
+                gpus = str(gpus)
+            gpus = gpus.strip()
+            gpu_ids = gpus.split(',')
+            total_gpus = len(gpu_ids)
+
+            if total_gpus < self.num_workers:
+                fraction = (total_gpus / self.num_workers) - self.epsilon
+                if fraction < gpu_fraction:
+                    if fraction > 0.5:
+                        if gpu_fraction != 1:
+                            logger.warning(
+                                'WARNING: Setting gpu_fraction to 1 as the gpus '
+                                'would be underutilized for the parallel processes.'
+                            )
+                        gpu_fraction = 1
+                    else:
+                        logger.warning(
+                            'WARNING: Setting gpu_fraction to {} '
+                            'as the available gpus is {} and the num of workers '
+                            'selected is {}'.format(
+                                fraction, total_gpus, self.num_workers)
+                        )
+                        gpu_fraction = fraction
+                else:
+                    logger.warning(
+                        'WARNING: gpu_fraction could be increased to {} '
+                        'as the available gpus is {} and the num of workers '
+                        'being set is {}'.format(
+                            fraction, total_gpus, self.num_workers)
+                    )
+
+            process_per_gpu = int(1 / gpu_fraction)
+
+            manager = multiprocessing.Manager()
+            self.queue = manager.Queue()
+
+            for gpu_id in gpu_ids:
+                for _ in range(process_per_gpu):
+                    self.queue.put(gpu_id)
+
+        while not self.hyperopt_strategy.finished():
+            sampled_parameters = self.hyperopt_strategy.sample_batch()
+
+            for parameters in sampled_parameters:
+                modified_model_definition = substitute_parameters(
+                    copy.deepcopy(model_definition), parameters
+                )
+
+                hyperopt_parameters.append(
+                    {
+                        'parameters': parameters,
+                        'model_definition': modified_model_definition,
+                        'eval_split': self.split,
+                        'data_df': data_df,
+                        'data_train_df': data_train_df,
+                        'data_validation_df': data_validation_df,
+                        'data_test_df': data_test_df,
+                        'data_csv': data_csv,
+                        'data_train_csv': data_train_csv,
+                        'data_validation_csv': data_validation_csv,
+                        'data_test_csv': data_test_csv,
+                        'data_hdf5': data_hdf5,
+                        'data_train_hdf5': data_train_hdf5,
+                        'data_validation_hdf5': data_validation_hdf5,
+                        'data_test_hdf5': data_test_hdf5,
+                        'train_set_metadata_json': train_set_metadata_json,
+                        'experiment_name': experiment_name,
+                        'model_name': model_name,
+                        # model_load_path:model_load_path,
+                        # model_resume_path:model_resume_path,
+                        'skip_save_training_description': skip_save_training_description,
+                        'skip_save_training_statistics': skip_save_training_statistics,
+                        'skip_save_model': skip_save_model,
+                        'skip_save_progress': skip_save_progress,
+                        'skip_save_log': skip_save_log,
+                        'skip_save_processed_input': skip_save_processed_input,
+                        'skip_save_unprocessed_output': skip_save_unprocessed_output,
+                        'skip_save_test_predictions': skip_save_test_predictions,
+                        'skip_save_test_statistics': skip_save_test_statistics,
+                        'output_directory': output_directory,
+                        'gpus': gpus,
+                        'gpu_fraction': gpu_fraction,
+                        'use_horovod': use_horovod,
+                        'random_seed': random_seed,
+                        'debug': debug,
+                    }
+                )
+
+        pool = multiprocessing.Pool(
+            self.num_workers, ParallelExecutor.init_worker)
+
+        if gpus is not None:
+            hyperopt_results = pool.map(
+                self._train_and_eval_model_gpu, hyperopt_parameters)
+        else:
+            hyperopt_results = pool.map(
+                self._train_and_eval_model, hyperopt_parameters)
+
+        hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
+        return hyperopt_results
 
 
 def get_build_hyperopt_strategy(strategy_type):
@@ -595,6 +753,7 @@ def train_and_eval_on_split(
         use_horovod=False,
         random_seed=default_random_seed,
         debug=False,
+        **kwargs
 ):
     # Collect training and validation losses and measures
     # & append it to `results`
