@@ -475,32 +475,7 @@ class ParallelConv1DStack(Layer):
 
         for i, parallel_layers in enumerate(self.stacked_parallel_layers):
             with tf.variable_scope('parallel_conv_{}'.format(i)):
-                self.stack.append(
-                    ParallelConv1D(
-                        layers=parallel_layers,
-                        num_filters=layer['num_filters'],
-                        filter_size=layer['filter_size'],
-                        strides=layer['strides'],
-                        padding=layer['padding'],
-                        dilation_rate=layer['dilation_rate'],
-                        use_bias=layer['use_bias'],
-                        weights_initializer=layer['weights_initializer'],
-                        bias_initializer=layer['bias_initializer'],
-                        weights_regularizer=layer['weights_regularizer'],
-                        bias_regularizer=layer['bias_regularizer'],
-                        activity_regularizer=layer['activity_regularizer'],
-                        # weights_constraint=layer['weights_constraint'],
-                        # bias_constraint=layer['bias_constraint'],
-                        norm=layer['norm'],
-                        norm_params=layer['norm_params'],
-                        activation=layer['activation'],
-                        dropout_rate=layer['dropout_rate'],
-                        pool_function=layer['pool_function'],
-                        pool_size=layer['pool_size'],
-                        pool_strides=layer['pool_strides'],
-                        pool_padding=layer['pool_padding'],
-                    )
-                )
+                self.stack.append(ParallelConv1D(layers=parallel_layers))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
