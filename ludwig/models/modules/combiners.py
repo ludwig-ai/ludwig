@@ -22,11 +22,11 @@ from tensorflow.keras.layers import concatenate
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
-from ludwig.models.modules.sequence_encoders import CNNRNN
 from ludwig.models.modules.sequence_encoders import ParallelCNN
-from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import StackedCNN
+from ludwig.models.modules.sequence_encoders import StackedCNNRNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
+from ludwig.models.modules.sequence_encoders import StackedRNN
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
@@ -327,6 +327,6 @@ sequence_encoder_registry = {
     'stacked_cnn': StackedCNN,
     'parallel_cnn': ParallelCNN,
     'stacked_parallel_cnn': StackedParallelCNN,
-    'rnn': RNN,
-    'cnnrnn': CNNRNN
+    'rnn': StackedRNN,
+    'cnnrnn': StackedCNNRNN
 }

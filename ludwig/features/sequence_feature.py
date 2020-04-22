@@ -34,13 +34,13 @@ from ludwig.models.modules.metric_modules import TokenAccuracyMetric
 from ludwig.models.modules.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.models.modules.sequence_decoders import SequenceTaggerDecoder
 from ludwig.models.modules.sequence_encoders import BERT
-from ludwig.models.modules.sequence_encoders import CNNRNN
 from ludwig.models.modules.sequence_encoders import ParallelCNN
-from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
 from ludwig.models.modules.sequence_encoders import SequencePassthroughEncoder
 from ludwig.models.modules.sequence_encoders import StackedCNN
+from ludwig.models.modules.sequence_encoders import StackedCNNRNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
+from ludwig.models.modules.sequence_encoders import StackedRNN
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc import set_default_value
@@ -169,8 +169,8 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         'stacked_cnn': StackedCNN,
         'parallel_cnn': ParallelCNN,
         'stacked_parallel_cnn': StackedParallelCNN,
-        'rnn': RNN,
-        'cnnrnn': CNNRNN,
+        'rnn': StackedRNN,
+        'cnnrnn': StackedCNNRNN,
         'embed': SequenceEmbedEncoder,
         'bert': BERT,
         'passthrough': SequencePassthroughEncoder,

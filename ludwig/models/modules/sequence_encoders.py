@@ -1201,7 +1201,7 @@ class StackedParallelCNN(Layer):
         return hidden
 
 
-class RNN(Layer):
+class StackedRNN(Layer):
 
     def __init__(
             self,
@@ -1365,7 +1365,7 @@ class RNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(RNN, self).__init__()
+        super(StackedRNN, self).__init__()
 
         self.reduce_output = reduce_output
         self.should_embed = should_embed
@@ -1473,7 +1473,7 @@ class RNN(Layer):
         return hidden
 
 
-class CNNRNN(Layer):
+class StackedCNNRNN(Layer):
 
     def __init__(
             self,
@@ -1616,7 +1616,7 @@ class CNNRNN(Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(CNNRNN, self).__init__()
+        super(StackedCNNRNN, self).__init__()
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
