@@ -68,12 +68,12 @@ class Conv1DLayer(Layer):
             padding=padding,
             dilation_rate=dilation_rate,
             use_bias=use_bias,
-            weights_initializer=weights_initializer,
+            kernel_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
+            kernel_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            # weights_constraint=None,
+            # kernel_constraint=None,
             # bias_constraint=None,
         ))
 
