@@ -16,6 +16,7 @@
 import logging
 
 import tensorflow.compat.v1 as tf
+from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import AveragePooling1D
 from tensorflow.keras.layers import AveragePooling2D
@@ -27,6 +28,9 @@ from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import MaxPool1D
 from tensorflow.keras.layers import MaxPool2D
+from tensorflow.keras.layers import ZeroPadding2D
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -517,6 +521,205 @@ class ParallelConv1DStack(Layer):
             )
 
         return hidden
+
+
+class Conv2DLayerFixedPadding(Layer):
+
+    def __init__(
+            self,
+            num_filters=256,
+            filter_size=3,
+            strides=1,
+            weights_regularizer=None
+    ):
+        super(Conv2DLayerFixedPadding, self).__init__()
+
+        self.layers = []
+
+        if strides > 1:
+            self.layers.append(ZeroPadding2D(padding=((filter_size - 1) // 2)))
+
+        self.layers.append(
+            Conv2D(
+                filters=num_filters,
+                kernel_size=filter_size,
+                strides=strides,
+                padding=('SAME' if strides == 1 else 'VALID'),
+                use_bias=False,
+                weights_initializer=VarianceScaling(),
+                weights_regularizer=weights_regularizer,
+            )
+        )
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden
+
+
+class ResNetBlock(Layer):
+
+    def __init__(
+            self,
+            num_filters,
+            filter_size,
+            strides,
+            weights_regularizer=None,
+            batch_norm_momentum=0.9,
+            batch_norm_epsilon=0.001,
+            projection_shortcut=None
+    ):
+        super(ResNetBlock, self).__init__()
+
+        self.projection_shortcut = projection_shortcut
+
+        self.norm1 = BatchNormalization(
+            axis=3,
+            center=True,
+            scale=True,
+            fused=True,
+            momentum=batch_norm_momentum,
+            epsilon=batch_norm_epsilon
+        )
+
+        self.activation1 = Activation('relu')
+
+        self.conv1 = Conv2DLayerFixedPadding(
+            num_filters=num_filters,
+            filter_size=filter_size,
+            strides=strides,
+            weights_regularizer=weights_regularizer
+        )
+
+        self.norm2 = BatchNormalization(
+            axis=3,
+            center=True,
+            scale=True,
+            fused=True,
+            momentum=batch_norm_momentum,
+            epsilon=batch_norm_epsilon
+        )
+
+        self.activation2 = Activation('relu')
+
+        self.conv2 = Conv2DLayerFixedPadding(
+            num_filters=num_filters,
+            filter_size=filter_size,
+            strides=strides,
+            weights_regularizer=weights_regularizer
+        )
+
+    def call(self, inputs, training=None, mask=None):
+        shortcut = inputs
+
+        hidden = self.norm1(inputs, training=training)
+        hidden = self.activation1(hidden, training=training)
+
+        # The projection shortcut should come after the first batch norm and
+        # ReLU since it performs a 1x1 convolution.
+        if self.projection_shortcut is not None:
+            shortcut = self.projection_shortcut(hidden, training=training)
+
+        hidden = self.conv1(hidden, training=training)
+        hidden = self.norm2(hidden, training=training)
+        hidden = self.activation2(hidden, training=training)
+        hidden = self.conv2(hidden, training=training)
+
+        return hidden + shortcut
+
+
+class ResNetBottleneckBlock(Layer):
+
+    def __init__(
+            self,
+            num_filters,
+            strides,
+            weights_regularizer=None,
+            batch_norm_momentum=0.9,
+            batch_norm_epsilon=0.001,
+            projection_shortcut=None
+    ):
+        super(ResNetBottleneckBlock, self).__init__()
+
+        self.projection_shortcut = projection_shortcut
+
+        self.norm1 = BatchNormalization(
+            axis=3,
+            center=True,
+            scale=True,
+            fused=True,
+            momentum=batch_norm_momentum,
+            epsilon=batch_norm_epsilon
+        )
+
+        self.activation1 = Activation('relu')
+
+        self.conv1 = Conv2DLayerFixedPadding(
+            num_filters=num_filters,
+            filter_size=1,
+            strides=1,
+            weights_regularizer=weights_regularizer
+        )
+
+        self.norm2 = BatchNormalization(
+            axis=3,
+            center=True,
+            scale=True,
+            fused=True,
+            momentum=batch_norm_momentum,
+            epsilon=batch_norm_epsilon
+        )
+
+        self.activation2 = Activation('relu')
+
+        self.conv2 = Conv2DLayerFixedPadding(
+            num_filters=num_filters,
+            filter_size=3,
+            strides=strides,
+            weights_regularizer=weights_regularizer
+        )
+
+        self.norm3 = BatchNormalization(
+            axis=3,
+            center=True,
+            scale=True,
+            fused=True,
+            momentum=batch_norm_momentum,
+            epsilon=batch_norm_epsilon
+        )
+
+        self.activation3 = Activation('relu')
+
+        self.conv3 = Conv2DLayerFixedPadding(
+            num_filters=4*num_filters,
+            filter_size=1,
+            strides=1,
+            weights_regularizer=weights_regularizer
+        )
+
+    def call(self, inputs, training=None, mask=None):
+        shortcut = inputs
+
+        hidden = self.norm1(inputs, training=training)
+        hidden = self.activation1(hidden, training=training)
+
+        # The projection shortcut should come after the first batch norm and
+        # ReLU since it performs a 1x1 convolution.
+        if self.projection_shortcut is not None:
+            shortcut = self.projection_shortcut(hidden, training=training)
+
+        hidden = self.conv1(hidden, training=training)
+        hidden = self.norm2(hidden, training=training)
+        hidden = self.activation2(hidden, training=training)
+        hidden = self.conv2(hidden, training=training)
+        hidden = self.norm3(hidden, training=training)
+        hidden = self.activation3(hidden, training=training)
+        hidden = self.conv3(hidden, training=training)
+
+        return hidden + shortcut
 
 
 class Conv2DLayer(Layer):
