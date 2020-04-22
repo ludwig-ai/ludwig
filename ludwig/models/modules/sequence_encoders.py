@@ -535,7 +535,7 @@ class StackedCNN(Layer):
             pool_function='max',
             pool_size=None,
             pool_strides=None,
-            pool_padding='valid',
+            pool_padding='same',
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
@@ -1473,7 +1473,7 @@ class RNN(Layer):
         return hidden
 
 
-class CNNRNN:
+class CNNRNN(Layer):
 
     def __init__(
             self,
@@ -1496,7 +1496,7 @@ class CNNRNN:
             pool_function='max',
             pool_size=2,
             pool_strides=None,
-            pool_padding='valid',
+            pool_padding='same',
             num_rec_layers=1,
             state_size=256,
             cell_type='rnn',
@@ -1510,7 +1510,7 @@ class CNNRNN:
             dropout=0.0,
             recurrent_dropout=0.0,
             fc_layers=None,
-            num_fc_layers=None,
+            num_fc_layers=0,
             fc_size=256,
             use_bias=True,
             weights_initializer='glorot_uniform',
@@ -1616,6 +1616,8 @@ class CNNRNN:
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
+        super(CNNRNN, self).__init__()
+
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
             self.conv_layers = conv_layers
