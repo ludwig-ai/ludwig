@@ -337,8 +337,8 @@ class EmbedSequence(Layer):
             self.dropout = None
 
     def call(self, inputs, training=None, mask=None):
-        embedded = self.embed(
-            inputs, training=None, mask=None
+        embedded = tf.nn.embedding_lookup(
+            self.embeddings, inputs, name='embeddings_lookup'
         )
 
         # TODO use tf2 mechanism for masking
