@@ -151,6 +151,8 @@ class SequenceLoss(tf.keras.losses.Loss):
                 ],
                 dtype=y_pred.dtype)
             y_pred = tf.concat([y_pred, pad], axis=1)
+            # obtain mask from y_true
+            mask = tf.cast(tf.greater(y_true, 0), tf.float32)
         elif y_pred.shape[1] > y_true.shape[1]:
             pad = tf.zeros(
                 [
@@ -160,9 +162,11 @@ class SequenceLoss(tf.keras.losses.Loss):
                 dtype=y_true.dtype
             )
             y_true = tf.concat([y_true, pad], axis=1)
-
-        # obtain mask from y_true
-        mask = tf.cast(tf.greater(y_true, 0), tf.float32)
+            # obtain mask from y_pred
+            mask = tf.cast(tf.reduce_any(tf.not_equal(y_pred, 0.0), 2), tf.float32)
+        else:
+            # obtain mask from y_true
+            mask = tf.cast(tf.greater(y_true, 0), tf.float32)
 
         # compute loss based on valid time steps
         loss = self.loss_function(y_true, y_pred, sample_weight=mask)
