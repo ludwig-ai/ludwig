@@ -29,7 +29,8 @@ from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import MaxPool1D
 from tensorflow.keras.layers import MaxPool2D
 from tensorflow.keras.layers import ZeroPadding2D
-
+from tensorflow import math
+from tensorflow import squeeze
 
 
 logger = logging.getLogger(__name__)
@@ -546,8 +547,8 @@ class Conv2DLayerFixedPadding(Layer):
                 strides=strides,
                 padding=('SAME' if strides == 1 else 'VALID'),
                 use_bias=False,
-                weights_initializer=VarianceScaling(),
-                weights_regularizer=weights_regularizer,
+                kernel_initializer=VarianceScaling(),
+                # kernel_regularizer=weights_regularizer,
             )
         )
 
@@ -722,6 +723,152 @@ class ResNetBottleneckBlock(Layer):
         return hidden + shortcut
 
 
+class ResNetBlockLayer(Layer):
+    def __init__(
+        self,
+        num_filters,
+        is_bottleneck,
+        block_fn,
+        num_blocks,
+        strides,
+        weights_regularizer=None,
+        batch_norm_momentum=0.9,
+        batch_norm_epsilon=0.001
+    ):
+        super(ResNetBlockLayer, self).__init__()
+        # Bottleneck blocks end with 4x the number of filters as they start with
+        num_filters_out = num_filters * 4 if is_bottleneck else num_filters
+
+        projection_shortcut = Conv2DLayerFixedPadding(
+            num_filters=num_filters_out,
+            filter_size=1,
+            strides=strides,
+            weights_regularizer=weights_regularizer
+        )
+
+        self.layers = [
+            block_fn(
+                num_filters,
+                strides,
+                weights_regularizer=weights_regularizer,
+                batch_norm_momentum=batch_norm_momentum,
+                batch_norm_epsilon=batch_norm_epsilon,
+                projection_shortcut=projection_shortcut
+            )
+        ]
+
+        for _ in range(1, num_blocks):
+            self.layers.append(
+                block_fn(
+                    num_filters,
+                    1,
+                    weights_regularizer=weights_regularizer,
+                    batch_norm_momentum=batch_norm_momentum,
+                    batch_norm_epsilon=batch_norm_epsilon
+                )
+            )
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden
+
+
+class ResNet2(Layer):
+    def __init__(
+        self,
+        resnet_size,
+        is_bottleneck,
+        num_filters,
+        filter_size,
+        conv_stride,
+        first_pool_size,
+        first_pool_stride,
+        block_sizes,
+        block_strides,
+        weights_regularizer=None,
+        batch_norm_momentum=0.9,
+        batch_norm_epsilon=0.001
+    ):
+        super(ResNet2, self).__init__()
+        self.resnet_size = resnet_size
+
+        self.is_bottleneck = is_bottleneck
+        if is_bottleneck:
+            self.block_fn = ResNetBottleneckBlock
+        else:
+            self.block_fn = ResNetBlock
+
+        self.num_filters = num_filters
+        self.filter_size = filter_size
+        self.conv_stride = conv_stride
+        self.first_pool_size = first_pool_size
+        self.first_pool_stride = first_pool_stride
+        self.block_sizes = block_sizes
+        self.block_strides = block_strides
+        self.pre_activation = True
+        self.batch_norm_momentum = batch_norm_momentum
+        self.batch_norm_epsilon = batch_norm_epsilon
+
+        self.layers = [
+            Conv2DLayerFixedPadding(
+                num_filters=num_filters,
+                filter_size=filter_size,
+                strides=conv_stride,
+                weights_regularizer=weights_regularizer
+            )
+        ]
+        if first_pool_size:
+            self.layers.append(
+                MaxPool2D(
+                    pool_size=first_pool_size,
+                    strides=first_pool_stride,
+                    padding='same'
+                )
+            )
+        for i, num_blocks in enumerate(self.block_sizes):
+            num_filters = self.num_filters * (2 ** i)
+            self.layers.append(
+                ResNetBlockLayer(
+                    num_filters,
+                    is_bottleneck,
+                    self.block_fn,
+                    num_blocks,
+                    self.block_sizes[i],
+                    weights_regularizer=weights_regularizer,
+                    batch_norm_momentum=batch_norm_momentum,
+                    batch_norm_epsilon=batch_norm_epsilon
+                )
+            )
+        if self.pre_activation:
+            self.layers.append(
+                BatchNormalization(
+                    axis=3,
+                    center=True,
+                    scale=True,
+                    fused=True,
+                    momentum=batch_norm_momentum,
+                    epsilon=batch_norm_epsilon
+                )
+            )
+            self.layers.append(Activation('relu'))
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        axes = [1, 2]
+        hidden = math.reduce_mean(hidden, axes)
+        # hidden = squeeze(hidden, axes)
+
+        return hidden
+
+
 class Conv2DLayer(Layer):
 
     def __init__(
@@ -759,9 +906,9 @@ class Conv2DLayer(Layer):
             padding=padding,
             dilation_rate=dilation_rate,
             use_bias=use_bias,
-            weights_initializer=weights_initializer,
+            kernel_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            weights_regularizer=weights_regularizer,
+            kernel_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
             # weights_constraint=None,
@@ -1292,5 +1439,5 @@ class ResNet(object):
             inputs = tf.reduce_mean(inputs, axes, keepdims=True)
             inputs = tf.identity(inputs, 'final_reduce_mean')
 
-            inputs = tf.squeeze(inputs, axes)
+            # inputs = tf.squeeze(inputs, axes)
             return inputs

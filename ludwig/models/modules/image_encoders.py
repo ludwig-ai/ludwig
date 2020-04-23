@@ -20,6 +20,7 @@ from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.convolutional_modules import Conv2DStack, \
     ResNet, get_resnet_block_sizes
+from ludwig.models.modules.convolutional_modules import ResNet2
 from ludwig.models.modules.fully_connected_modules import FCStack
 
 
@@ -127,7 +128,7 @@ class Stacked2DCNN(Layer):
         return {'encoder_output': outputs}
 
 
-class ResNetEncoder:
+class ResNetEncoder(Layer):
     def __init__(
             self,
             resnet_size=50,
@@ -155,6 +156,8 @@ class ResNetEncoder:
             dropout_rate=0,
             **kwargs
     ):
+        super(ResNetEncoder, self).__init__()
+
         if resnet_size < 50:
             bottleneck = False
         else:
@@ -163,7 +166,7 @@ class ResNetEncoder:
         block_sizes = get_resnet_block_sizes(resnet_size)
         block_strides = [1, 2, 2, 2][:len(block_sizes)]
 
-        self.resnet = ResNet(
+        self.resnet = ResNet2(
             resnet_size,
             bottleneck,
             num_filters,
@@ -176,7 +179,6 @@ class ResNetEncoder:
             batch_norm_momentum,
             batch_norm_epsilon
         )
-        self.flatten = Flatten()
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -187,36 +189,21 @@ class ResNetEncoder:
             default_weights_regularizer=weights_regularizer,
             default_bias_regularizer=bias_regularizer,
             default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
+            # default_weights_constraint=fc_weights_constraint,
+            # default_bias_constraint=fc_bias_constraint,
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
             default_dropout_rate=dropout_rate,
         )
 
-    def __call__(
-            self,
-            input_image,
-            regularizer,
-            dropout,
-            is_training
-    ):
+    def call(self, inputs, training=None, mask=None):
+        inputs = tf.cast(inputs, tf.float32)
         # ================ Conv Layers ================
-        hidden = self.resnet(
-            input_image,
-            regularizer,
-            dropout,
-            is_training=is_training
-        )
-        hidden = self.flatten(hidden)
+        hidden = self.resnet(inputs, training)
+        hidden = tf.reshape(hidden, [hidden.shape[0], -1])
 
         # ================ Fully Connected ================
-        hidden = self.fc_stack(
-            hidden,
-            training=is_training,
-            mask=None
-        )
-        hidden_size = hidden.shape.as_list()[-1]
+        outputs = self.fc_stack(hidden)
 
-        return hidden, hidden_size
+        return {'encoder_output': outputs}
