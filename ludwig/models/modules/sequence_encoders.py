@@ -19,7 +19,7 @@ import logging
 import re
 import sys
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.convolutional_modules import Conv1DStack, \
@@ -844,12 +844,11 @@ class StackedCNN(Layer):
         hidden = embedded_sequence
 
         # ================ Conv Layers ================
-        with tf.variable_scope('conv1d_stack'):
-            hidden = self.conv1d_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+        hidden = self.conv1d_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1180,12 +1179,11 @@ class StackedParallelCNN(Layer):
         hidden = embedded_sequence
 
         # ================ Conv Layers ================
-        with tf.variable_scope('parallel_conv1d_stack'):
-            hidden = self.parallel_conv1d_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+        hidden = self.parallel_conv1d_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1452,12 +1450,11 @@ class StackedRNN(Layer):
         hidden = embedded_sequence
 
         # ================ Recurrent Layers ================
-        with tf.variable_scope('recurrent_stack'):
-            hidden = self.recurrent_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+        hidden = self.recurrent_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
@@ -1749,20 +1746,18 @@ class StackedCNNRNN(Layer):
         hidden = embedded_sequence
 
         # ================ Conv Layers ================
-        with tf.variable_scope('conv1d_stack'):
-            hidden = self.conv1d_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+        hidden = self.conv1d_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
 
         # ================ Recurrent Layers ================
-        with tf.variable_scope('recurrent_stack'):
-            hidden = self.recurrent_stack(
-                hidden,
-                training=training,
-                mask=mask
-            )
+        hidden = self.recurrent_stack(
+            hidden,
+            training=training,
+            mask=mask
+        )
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
