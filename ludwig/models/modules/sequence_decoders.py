@@ -148,105 +148,52 @@ class SequenceGeneratorDecoder(Layer):
 class SequenceTaggerDecoder(Layer):
     def __init__(
             self,
-            initializer=None,
-            regularize=True,
+            num_classes,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
             attention=False,
-            num_classes=0,
-            loss=None,
+            is_timeseries=False,
             **kwargs
     ):
         super(SequenceTaggerDecoder, self).__init__()
-        self.initializer = initializer
-        self.regularize = regularize
         self.attention = attention
 
-        # todo tf2 add other required parameters for Dense layer
-        self.decoder_layer = Dense(num_classes)
+        if is_timeseries:
+            num_classes = 1
+
+        self.decoder_layer = Dense(
+            units=num_classes,
+            use_bias=use_bias,
+            kernel_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
 
     def call(
             self,
-            hidden,
-            **kwargs
-            # output_feature,
-            # targets,
-            # hidden_size,
-            # regularizer,
-            # is_timeseries=False
+            inputs,
+            training=None,
+            mask=None
     ):
-        logger.debug('  hidden shape: {0}'.format(hidden.shape))
-        if len(hidden.shape) != 3:
+        if len(inputs.shape) != 3:
             raise ValueError(
                 'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
                 'when using a tagger sequential decoder. '
                 'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
-                    len(hidden.shape)))
+                    len(inputs.shape)))
 
         # hidden shape [batch_size, sequence_length, hidden_size]
-        logits = self.decoder_layer(hidden)
+        logits = self.decoder_layer(inputs)
 
-        # todo tf2 adapt to support timeseries
-        # todo tf2 support attention
-
-        # if is_timeseries:
-        #     output_feature['num_classes'] = 1
-        #
-        # if not self.regularize:
-        #     regularizer = None
+        # TODO tf2 add feed forward attention
 
         # logits shape [batch_size, sequence_length, vocab_size]
         return logits
 
-
-
-        # todo tf2 clean-up obsolete code
-        # sequence_length = tf.shape(hidden)[1]
-
-        # if self.attention:
-        #     hidden, hidden_size = feed_forward_memory_attention(
-        #         hidden,
-        #         hidden,
-        #         hidden_size
-        #     )
-        # targets_sequence_length = sequence_length_2D(targets)
-        #
-        # initializer_obj = get_initializer(self.initializer)
-        # class_weights = tf.get_variable(
-        #     'weights',
-        #     initializer=initializer_obj(
-        #         [hidden_size, self.num_classes]),
-        #     regularizer=regularizer
-        # )
-        # logger.debug('  weights: {0}'.format(class_weights))
-
-        # class_biases = tf.get_variable(
-        #     'biases',
-        #     [self.num_classes]
-        # )
-        # logger.debug('  biases: {0}'.format(class_biases))
-        #
-        # hidden_reshape = tf.reshape(hidden, [-1, hidden_size])
-        # logits_to_reshape = tf.matmul(hidden_reshape,
-        #                               self.class_weights) + class_biases
-        # logits = tf.reshape(
-        #     logits_to_reshape,
-        #     [-1, sequence_length, self.num_classes]
-        # )
-        # logger.debug('  logits: {0}'.format(logits))
-
-        # if is_timeseries:
-        #     probabilities_sequence = tf.zeros_like(logits)
-        #     predictions_sequence = tf.reshape(logits, [-1, sequence_length])
-        # else:
-        #     probabilities_sequence = tf.nn.softmax(
-        #         logits,
-        #         name='probabilities_{}'.format(output_feature['name'])
-        #     )
-        #     predictions_sequence = tf.argmax(
-        #         logits,
-        #         -1,
-        #         name='predictions_{}'.format(output_feature['name']),
-        #         output_type=tf.int32
-        #     )
-
-        # predictions_sequence_length = sequence_length_3D(hidden)
 

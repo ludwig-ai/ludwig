@@ -16,11 +16,10 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
-from tensorflow_addons.seq2seq import SequenceLoss as TfaSequenceLoss
 from tensorflow.python.ops.losses.losses_impl import Reduction
+from tensorflow_addons.seq2seq import SequenceLoss as TfaSequenceLoss
 
 from ludwig.constants import *
-from ludwig.utils.tf_utils import sequence_length_2D
 
 
 #
@@ -66,6 +65,7 @@ class BWCEWLoss(tf.keras.losses.Loss):
 
         return train_mean_loss
 
+
 class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,
@@ -90,6 +90,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         )
 
         return loss
+
 
 # todo tf2: work-in-progress partial implementation
 class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
@@ -137,25 +138,36 @@ class SequenceLoss(tf.keras.losses.Loss):
         # y_true: shape [batch_size, sequence_size]
         # y_pred: shape [batch_size, sequence_size, num_classes]
 
-        # get sequence lengths from targets
-        targets_sequence_length = sequence_length_2D(
-            tf.convert_to_tensor(y_true, dtype=tf.int32)
-        )
+        y_pred = y_pred[LOGITS]
+        y_true = tf.convert_to_tensor(y_true, dtype=tf.int64)
 
-        # create a 1/0 mask to account for only valid time steps in targets
-        sample_mask = tf.cast(
-            # boolean mask shape [batch_size, sequence_size]
-            tf.sequence_mask(targets_sequence_length),
-            dtype=tf.float32
-        )
+        # pad the shorter sequence
+        if y_true.shape[1] > y_pred.shape[1]:
+            pad = tf.zeros(
+                [
+                    y_pred.shape[0],
+                    y_true.shape[1] - y_pred.shape[1],
+                    y_pred.shape[2]
+                ],
+                dtype=y_pred.dtype)
+            y_pred = tf.concat([y_pred, pad], axis=1)
+        elif y_pred.shape[1] > y_true.shape[1]:
+            pad = tf.zeros(
+                [
+                    y_true.shape[0],
+                    y_pred.shape[1] - y_true.shape[1],
+                ],
+                dtype=y_true.dtype
+            )
+            y_true = tf.concat([y_true, pad], axis=1)
+
+        # obtain mask from y_true
+        mask = tf.cast(tf.greater(y_true, 0), tf.float32)
 
         # compute loss based on valid time steps
-        loss = self.loss_function(
-            tf.convert_to_tensor(y_true, dtype=tf.int64),
-            y_pred[LOGITS],
-            sample_weight=sample_mask
-        )
+        loss = self.loss_function(y_true, y_pred, sample_weight=mask)
         return loss  # vector of shape [batch_size,]
+
 
 # end of custom classes
 
@@ -335,7 +347,7 @@ def sampled_softmax_cross_entropy(
     #     label_smoothing=labels_smoothing,
     #     reduction=Reduction.NONE
     # )
-    return train_loss, None #, eval_loss todo tf2 clean-up code
+    return train_loss, None  # , eval_loss todo tf2 clean-up code
 
 
 def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
