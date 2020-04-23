@@ -166,44 +166,44 @@ class ResNetEncoder(Layer):
         block_sizes = get_resnet_block_sizes(resnet_size)
         block_strides = [1, 2, 2, 2][:len(block_sizes)]
 
-        self.resnet = ResNet2(
-            resnet_size,
-            bottleneck,
-            num_filters,
-            kernel_size,
-            conv_stride,
-            first_pool_size,
-            first_pool_stride,
-            block_sizes,
-            block_strides,
-            batch_norm_momentum,
-            batch_norm_epsilon
-        )
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=fc_weights_constraint,
-            # default_bias_constraint=fc_bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout_rate=dropout_rate,
-        )
+        self.layers = [
+            ResNet2(
+                resnet_size,
+                bottleneck,
+                num_filters,
+                kernel_size,
+                conv_stride,
+                first_pool_size,
+                first_pool_stride,
+                block_sizes,
+                block_strides,
+                batch_norm_momentum,
+                batch_norm_epsilon
+            ),
+            Flatten(),
+            FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=fc_weights_constraint,
+                # default_bias_constraint=fc_bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
+        ]
 
     def call(self, inputs, training=None, mask=None):
-        inputs = tf.cast(inputs, tf.float32)
-        # ================ Conv Layers ================
-        hidden = self.resnet(inputs, training)
-        hidden = tf.reshape(hidden, [hidden.shape[0], -1])
+        hidden = tf.cast(inputs, tf.float32)
 
-        # ================ Fully Connected ================
-        outputs = self.fc_stack(hidden)
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
 
-        return {'encoder_output': outputs}
+        return {'encoder_output': hidden}

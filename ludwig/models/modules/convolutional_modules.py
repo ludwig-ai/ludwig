@@ -796,11 +796,9 @@ class ResNet2(Layer):
         super(ResNet2, self).__init__()
         self.resnet_size = resnet_size
 
-        self.is_bottleneck = is_bottleneck
+        block_class = ResNetBlock
         if is_bottleneck:
-            self.block_fn = ResNetBottleneckBlock
-        else:
-            self.block_fn = ResNetBlock
+            block_class = ResNetBottleneckBlock
 
         self.num_filters = num_filters
         self.filter_size = filter_size
@@ -835,7 +833,7 @@ class ResNet2(Layer):
                 ResNetBlockLayer(
                     num_filters,
                     is_bottleneck,
-                    self.block_fn,
+                    block_class,
                     num_blocks,
                     self.block_sizes[i],
                     weights_regularizer=weights_regularizer,
