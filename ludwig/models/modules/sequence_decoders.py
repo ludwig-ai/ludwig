@@ -148,33 +148,29 @@ class SequenceGeneratorDecoder(Layer):
 class SequenceTaggerDecoder(Layer):
     def __init__(
             self,
-            initializer=None,
+            num_classes,
             use_bias=True,
-            kernel_initializer='glorot_uniform',
+            weights_initializer='glorot_uniform',
             bias_initializer='zeros',
-            kernel_regularizer=None,
+            weights_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
             attention=False,
-            num_classes=0,
-            is_timeseries=None,
+            is_timeseries=False,
             **kwargs
     ):
         super(SequenceTaggerDecoder, self).__init__()
-        self.initializer = initializer
         self.attention = attention
 
         if is_timeseries:
-            units = 1
-        else:
-            units = num_classes
+            num_classes = 1
 
         self.decoder_layer = Dense(
-            units,
+            units=num_classes,
             use_bias=use_bias,
-            kernel_initializer=kernel_initializer,
+            kernel_initializer=weights_initializer,
             bias_initializer=bias_initializer,
-            kernel_regularizer=kernel_regularizer,
+            kernel_regularizer=weights_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
@@ -185,7 +181,6 @@ class SequenceTaggerDecoder(Layer):
             training=None,
             mask=None
     ):
-        logger.debug('  hidden shape: {0}'.format(inputs.shape))
         if len(inputs.shape) != 3:
             raise ValueError(
                 'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
