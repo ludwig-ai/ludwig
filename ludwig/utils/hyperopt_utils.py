@@ -24,7 +24,6 @@ import random
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-import fiber
 import numpy as np
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, VALIDATION, MAXIMIZE, TRAINING, TEST
@@ -468,6 +467,7 @@ class FiberExecutor(HyperoptExecutor):
             fiber_backend: str = "local",
             **kwargs
     ) -> None:
+        import fiber
         HyperoptExecutor.__init__(
             self, hyperopt_strategy, output_feature, measure, split
         )
