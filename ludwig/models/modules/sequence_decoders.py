@@ -97,16 +97,15 @@ class SequenceGeneratorDecoder(Layer):
                 'If you are using a sequential encoder or combiner consider setting reduce_output to None '
                 'and flatten to False if those parameters apply.'
                 'Also make sure theat reduce_input of {} output feature is None,'.format(
-                    len(hidden.shape), self.attention_mechanism,
+                    len(inputs.shape), self.attention_mechanism,
                     self.output_feature))
         if len(inputs.shape) != 2 and self.attention_mechanism is None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
                 'when attention mechanism is {}. '
                 'Consider setting reduce_input of {} output feature to a value different from None.'.format(
-                    len(hidden.shape), self.attention_mechanism,
+                    len(inputs.shape), self.attention_mechanism,
                     self.output_feature))
-
 
         decoder_embeddings = self.embeddings_dec(inputs)
 
