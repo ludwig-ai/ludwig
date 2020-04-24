@@ -47,10 +47,12 @@ class TextBaseFeature(BaseFeature):
         'char_vocab_file': None,
         'char_sequence_length_limit': 1024,
         'char_most_common': 70,
+        'char_pretrained_model_name_or_path': None,
         'word_tokenizer': 'space_punct',
         'word_vocab_file': None,
         'word_sequence_length_limit': 256,
         'word_most_common': 20000,
+        'word_pretrained_model_name_or_path': None,
         'padding_symbol': PADDING_SYMBOL,
         'unknown_symbol': UNKNOWN_SYMBOL,
         'padding': 'right',
@@ -72,7 +74,10 @@ class TextBaseFeature(BaseFeature):
             num_most_frequent=preprocessing_parameters['char_most_common'],
             lowercase=preprocessing_parameters['lowercase'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
-            padding_symbol=preprocessing_parameters['padding_symbol']
+            padding_symbol=preprocessing_parameters['padding_symbol'],
+            pretrained_model_name_or_path=preprocessing_parameters[
+                'char_pretrained_model_name_or_path'
+            ],
         )
         (
             word_idx2str,
@@ -87,6 +92,9 @@ class TextBaseFeature(BaseFeature):
             vocab_file=preprocessing_parameters['word_vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
+            pretrained_model_name_or_path=preprocessing_parameters[
+                'word_pretrained_model_name_or_path'
+            ],
         )
         return (
             char_idx2str,
@@ -141,7 +149,7 @@ class TextBaseFeature(BaseFeature):
             sequences=column,
             inverse_vocabulary=metadata['char_str2idx'],
             tokenizer_type=preprocessing_parameters['char_tokenizer'],
-            length_limit=metadata['char_max_sequence_length'],
+            max_length=metadata['char_max_sequence_length'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             padding=preprocessing_parameters['padding'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
@@ -149,18 +157,24 @@ class TextBaseFeature(BaseFeature):
             tokenizer_vocab_file=preprocessing_parameters[
                 'char_vocab_file'
             ],
+            pretrained_model_name_or_path=preprocessing_parameters[
+                'pretrained_model_name_or_path'
+            ]
         )
         word_data = build_sequence_matrix(
             sequences=column,
             inverse_vocabulary=metadata['word_str2idx'],
             tokenizer_type=preprocessing_parameters['word_tokenizer'],
-            length_limit=metadata['word_max_sequence_length'],
+            max_length=metadata['word_max_sequence_length'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
             padding=preprocessing_parameters['padding'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             lowercase=preprocessing_parameters['lowercase'],
-            tokenizer_vocab_file=preprocessing_parameters[
-                'word_vocab_file'
+            # tokenizer_vocab_file=preprocessing_parameters[
+            #    'word_vocab_file'
+            # ],
+            pretrained_model_name_or_path=preprocessing_parameters[
+                'pretrained_model_name_or_path'
             ],
         )
 
