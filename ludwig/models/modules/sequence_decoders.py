@@ -14,9 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import numpy as np
 
 import tensorflow.compat.v1 as tf
-from tensorflow.keras.layers import Layer, Dense
+from tensorflow.keras.layers import Layer, Dense, Embedding, LSTMCell
+import tensorflow_addons as tfa
 
 from ludwig.models.modules.attention_modules import \
     feed_forward_memory_attention
@@ -42,8 +44,7 @@ class SequenceGeneratorDecoder(Layer):
             num_classes=0,
             **kwargs
     ):
-        super().__init__()
-
+        super(SequenceGeneratorDecoder, self).__init__()
 
         self.cell_type = cell_type
         self.state_size = state_size
@@ -57,21 +58,39 @@ class SequenceGeneratorDecoder(Layer):
         self.is_timeseries = is_timeseries
         self.num_classes = num_classes
 
+        # prototopye code
+        self.embeddings_dec = Embedding(num_classes, embedding_size)
+        self.sampler = tfa.seq2seq.sampler.TrainingSampler()
+        self.decoder_cell = LSTMCell(state_size)
+        self.output_layer = Dense(num_classes)
+        self.decoder = \
+            tfa.seq2seq.basic_decoder.BasicDecoder(self.decoder_cell,
+                                                    self.sampler,
+                                                    output_layer=self.output_layer)
 
+    # def build_initial_state1(self, batch_size, encoder_state=None):
+    #     initial_state = self.decoder_cell.get_initial_state(
+    #         inputs=encoder_state,
+    #         batch_size=batch_size,
+    #         dtype=tf.float32
+    #     )
+    #     return initial_state
+
+    def build_sequence_lengths(self, batch_size):
+        return np.ones((batch_size,)).astype(np.int32) * self.num_classes
+
+    def build_initial_state(self, batch_size, state_size):
+        zero_state = tf.zeros([batch_size, state_size], dtype=tf.float32)
+        return [zero_state, zero_state]
 
     def call(
             self,
-            hidden,
-            **kwargs
-#            output_feature,
-#            targets,
-#            hidden,
-#            hidden_size,
-#            regularizer,
-
+            inputs,
+            training=None,
+            mask=None
     ):
-
-        if len(hidden.shape) != 3 and self.attention_mechanism is not None:
+        #print(">>>debug", inputs.shape)
+        if len(inputs.shape) != 3 and self.attention_mechanism is not None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
                 'when attention mechanism is {}. '
@@ -80,7 +99,7 @@ class SequenceGeneratorDecoder(Layer):
                 'Also make sure theat reduce_input of {} output feature is None,'.format(
                     len(hidden.shape), self.attention_mechanism,
                     self.output_feature))
-        if len(hidden.shape) != 2 and self.attention_mechanism is None:
+        if len(inputs.shape) != 2 and self.attention_mechanism is None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
                 'when attention mechanism is {}. '
@@ -88,7 +107,23 @@ class SequenceGeneratorDecoder(Layer):
                     len(hidden.shape), self.attention_mechanism,
                     self.output_feature))
 
-        tied_embeddings_tensor = None
+
+        decoder_embeddings = self.embeddings_dec(inputs)
+
+        sequence_lengths = self.build_sequence_lengths(inputs.shape[0])
+
+        initial_state = self.build_initial_state(inputs.shape[0],
+                                                 self.state_size)
+
+        final_outputs, final_state, final_sequence_lengths = self.decoder(
+            decoder_embeddings, initial_state=initial_state,
+            sequence_length=sequence_lengths)
+
+        return final_outputs.rnn_output, final_outputs, final_state, final_sequence_lengths
+
+
+        # TODO TF2 clean up after port
+        # tied_embeddings_tensor = None
         # todo tf2  determine how to handle following
         # if self.tied_embeddings is not None:
         #     try:
@@ -109,40 +144,40 @@ class SequenceGeneratorDecoder(Layer):
         #         )
 
 
-        if self.is_timeseries:
-            vocab_size = 1
-        else:
-            vocab_size = self.num_classes
-
-        if not self.regularize:
-            regularizer = None
-
-        predictions_sequence, predictions_sequence_scores, \
-        predictions_sequence_length_with_eos, \
-        targets_sequence_length_with_eos, eval_logits, train_logits, \
-        class_weights, class_biases = recurrent_decoder(
-            hidden,
-            targets,
-            output_feature['max_sequence_length'],
-            vocab_size,
-            cell_type=self.cell_type,
-            state_size=self.state_size,
-            embedding_size=self.embedding_size,
-            beam_width=self.beam_width,
-            num_layers=self.num_layers,
-            attention_mechanism=self.attention_mechanism,
-            is_timeseries=self.is_timeseries,
-            embeddings=tied_embeddings_tensor,
-            initializer=self.initializer,
-            regularizer=regularizer
-        )
-
-        probabilities_target_sequence = tf.nn.softmax(eval_logits)
-
-        return predictions_sequence, predictions_sequence_scores, \
-               predictions_sequence_length_with_eos, \
-               probabilities_target_sequence, targets_sequence_length_with_eos, \
-               eval_logits, train_logits, class_weights, class_biases
+        # if self.is_timeseries:
+        #     vocab_size = 1
+        # else:
+        #     vocab_size = self.num_classes
+        #
+        # if not self.regularize:
+        #     regularizer = None
+        #
+        # predictions_sequence, predictions_sequence_scores, \
+        # predictions_sequence_length_with_eos, \
+        # targets_sequence_length_with_eos, eval_logits, train_logits, \
+        # class_weights, class_biases = recurrent_decoder(
+        #     hidden,
+        #     targets,
+        #     output_feature['max_sequence_length'],
+        #     vocab_size,
+        #     cell_type=self.cell_type,
+        #     state_size=self.state_size,
+        #     embedding_size=self.embedding_size,
+        #     beam_width=self.beam_width,
+        #     num_layers=self.num_layers,
+        #     attention_mechanism=self.attention_mechanism,
+        #     is_timeseries=self.is_timeseries,
+        #     embeddings=tied_embeddings_tensor,
+        #     initializer=self.initializer,
+        #     regularizer=regularizer
+        # )
+        #
+        # probabilities_target_sequence = tf.nn.softmax(eval_logits)
+        #
+        # return predictions_sequence, predictions_sequence_scores, \
+        #        predictions_sequence_length_with_eos, \
+        #        probabilities_target_sequence, targets_sequence_length_with_eos, \
+        #        eval_logits, train_logits, class_weights, class_biases
 
 
 class SequenceTaggerDecoder(Layer):
