@@ -18,7 +18,7 @@ import logging
 import os
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -40,7 +40,7 @@ from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedCNNRNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
 from ludwig.models.modules.sequence_encoders import StackedRNN
-from ludwig.models.modules.text_encoders import DistilBERTEncoder
+from ludwig.models.modules.text_encoders import DistilBERTEncoder, BERTEncoder
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc import set_default_value
@@ -188,7 +188,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         'cnnrnn': StackedCNNRNN,
         'embed': SequenceEmbedEncoder,
 
-        # 'bert': BERTEncoder,
+        'bert': BERTEncoder,
         # 'gpt': GPTEncoder,
         # 'gpt2': GPT2Encoder,
         # 'transformerxl': TransformerXLEncoder,
