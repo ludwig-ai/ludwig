@@ -58,7 +58,7 @@ class SequenceGeneratorDecoder(Layer):
         self.regularize = regularize
         self.is_timeseries = is_timeseries
         self.num_classes = num_classes
-        self.max_seuquence_length = max_sequence_length
+        self.max_sequence_length = max_sequence_length
 
         self.embeddings_dec = Embedding(num_classes, embedding_size)
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
@@ -79,7 +79,7 @@ class SequenceGeneratorDecoder(Layer):
     #     return initial_state
 
     def build_sequence_lengths(self, batch_size):
-        return np.ones((batch_size,)).astype(np.int32) * self.max_seuquence_length
+        return np.ones((batch_size,)).astype(np.int32) * self.max_sequence_length
 
     def build_initial_state(self, batch_size, state_size):
         zero_state = tf.zeros([batch_size, state_size], dtype=tf.float32)
