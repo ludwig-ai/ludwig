@@ -93,8 +93,8 @@ class SequenceGeneratorDecoder(Layer):
     #     )
     #     return initial_state
 
-    def build_sequence_lengths(self, batch_size):
-        return np.ones((batch_size,)).astype(np.int32) * self.max_sequence_length
+    def build_sequence_lengths(self, batch_size, max_sequence_length):
+        return np.ones((batch_size,)).astype(np.int32) * max_sequence_length
 
     def build_initial_state(self, batch_size, state_size):
         zero_state = tf.zeros([batch_size, state_size], dtype=tf.float32)
@@ -125,7 +125,8 @@ class SequenceGeneratorDecoder(Layer):
 
         decoder_embeddings = self.embeddings_dec(inputs)
 
-        sequence_lengths = self.build_sequence_lengths(inputs.shape[0])
+        sequence_lengths = self.build_sequence_lengths(inputs.shape[0],
+                                                       self.max_sequence_length)
 
         initial_state = self.build_initial_state(inputs.shape[0],
                                                  self.state_size)
