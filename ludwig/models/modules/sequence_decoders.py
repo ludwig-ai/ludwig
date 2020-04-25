@@ -43,6 +43,12 @@ class SequenceGeneratorDecoder(Layer):
             regularize=True,
             is_timeseries=False,
             max_sequence_length=0,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
             **kwargs
     ):
         super(SequenceGeneratorDecoder, self).__init__()
@@ -63,7 +69,16 @@ class SequenceGeneratorDecoder(Layer):
         self.embeddings_dec = Embedding(num_classes, embedding_size)
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
         self.decoder_cell = LSTMCell(state_size)
-        self.projection_layer = Dense(num_classes)
+        self.projection_layer = Dense(
+            units=num_classes,
+            use_bias=use_bias,
+            kernel_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
+
         self.decoder = \
             tfa.seq2seq.basic_decoder.BasicDecoder(self.decoder_cell,
                                                     self.sampler,
