@@ -70,7 +70,7 @@ def int_grid_function(low: int, high: int, steps=None, **kwargs):
     return samples.tolist()
 
 
-def float_grid_function(low, high, steps, scale='linear', base=None, **kwargs):
+def float_grid_function(low, high, steps=None, scale='linear', base=None, **kwargs):
     if steps is None:
         steps = int(high - low + 1)
     if scale == 'linear':
