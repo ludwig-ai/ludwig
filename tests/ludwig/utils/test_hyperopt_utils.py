@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import pytest
-import numpy as np
+
 from ludwig.utils.hyperopt_utils import GridStrategy, RandomStrategy
 
 
@@ -40,11 +40,11 @@ HYPEROPT_PARAMS = {
         },
         "expected_search_space": {
             'training.learning_rate': [0.0001, 0.001, 0.01, 0.1],
-            'combiner.num_fc_layers': [0, 4],
+            'combiner.num_fc_layers': [0, 1, 2, 3, 4],
             'utterance.cell_type': ['rnn', 'gru', 'lstm']
         },
         "goal": "minimize",
-        "expected_len_grids": 24,
+        "expected_len_grids": 60,
         "num_samples": 10
     },
     "test_2": {
@@ -83,18 +83,22 @@ def test_grid_strategy(key):
 
     grid_strategy = GridStrategy(goal=goal, parameters=grid_strategy_params)
 
-    search_space_dict = {}
-
-    for key, values in grid_strategy.search_space.items():
-        if isinstance(values, np.ndarray):
-            values = values.tolist()
-        search_space_dict[key] = values
-
     actual_params_keys = grid_strategy.sample().keys()
-    expected_params_keys = search_space_dict.keys()
+    expected_params_keys = grid_strategy_params.keys()
+
+    for sample in grid_strategy.samples:
+        for param in actual_params_keys:
+            value = sample[param]
+            param_type = grid_strategy_params[param]["type"]
+            if param_type == "int" or param_type == "float":
+                low = grid_strategy_params[param]["low"]
+                high = grid_strategy_params[param]["high"]
+                assert value >= low and value <= high
+            else:
+                assert value in set(grid_strategy_params[param]["values"])
 
     assert actual_params_keys == expected_params_keys
-    assert search_space_dict == hyperopt_test_params["expected_search_space"]
+    assert grid_strategy.search_space == hyperopt_test_params["expected_search_space"]
     assert len(
         grid_strategy.samples) == hyperopt_test_params["expected_len_grids"]
 
@@ -111,7 +115,18 @@ def test_random_strategy(key):
         goal=goal, parameters=random_strategy_params, num_samples=num_samples)
 
     actual_params_keys = random_strategy.sample().keys()
-    expected_params_keys = hyperopt_test_params["params"].keys()
+    expected_params_keys = random_strategy_params.keys()
+
+    for sample in random_strategy.samples:
+        for param in actual_params_keys:
+            value = sample[param]
+            param_type = random_strategy_params[param]["type"]
+            if param_type == "int" or param_type == "float":
+                low = random_strategy_params[param]["low"]
+                high = random_strategy_params[param]["high"]
+                assert value >= low and value <= high
+            else:
+                assert value in set(random_strategy_params[param]["values"])
 
     assert actual_params_keys == expected_params_keys
     assert len(random_strategy.samples) == num_samples

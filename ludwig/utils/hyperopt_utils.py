@@ -63,11 +63,16 @@ def category_sampling_function(values, **kwargs):
     return random.sample(values, 1)[0]
 
 
-def int_grid_function(low, high, steps=2, **kwargs):
-    return np.linspace(low, high, num=steps, dtype=int)
+def int_grid_function(low: int, high: int, steps=None, **kwargs):
+    if steps is None:
+        steps = high - low + 1
+    samples = np.linspace(low, high, num=steps, dtype=int)
+    return samples.tolist()
 
 
-def float_grid_function(low, high, steps=2, scale='linear', base=None, **kwargs):
+def float_grid_function(low, high, steps, scale='linear', base=None, **kwargs):
+    if steps is None:
+        steps = int(high - low + 1)
     if scale == 'linear':
         samples = np.linspace(low, high, num=steps)
     elif scale == 'log':
@@ -80,7 +85,7 @@ def float_grid_function(low, high, steps=2, scale='linear', base=None, **kwargs)
             'The scale parameter of the float grid function is "{}". '
             'Available ones are: {"linear", "log"}'
         )
-    return samples
+    return samples.tolist()
 
 
 def category_grid_function(values, **kwargs):
