@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 class SequenceGeneratorDecoder(Layer):
     def __init__(
             self,
+            num_classes,
             cell_type='rnn',
             state_size=256,
             embedding_size=64,
@@ -41,7 +42,7 @@ class SequenceGeneratorDecoder(Layer):
             initializer=None,
             regularize=True,
             is_timeseries=False,
-            num_classes=0,
+            max_sequence_length=0,
             **kwargs
     ):
         super(SequenceGeneratorDecoder, self).__init__()
@@ -57,6 +58,7 @@ class SequenceGeneratorDecoder(Layer):
         self.regularize = regularize
         self.is_timeseries = is_timeseries
         self.num_classes = num_classes
+        self.max_seuquence_length = max_sequence_length
 
         self.embeddings_dec = Embedding(num_classes, embedding_size)
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
@@ -77,8 +79,7 @@ class SequenceGeneratorDecoder(Layer):
     #     return initial_state
 
     def build_sequence_lengths(self, batch_size):
-        # todo tf2 use of self.num_classes is a placeholder, need to confirm correct approach
-        return np.ones((batch_size,)).astype(np.int32) * self.num_classes
+        return np.ones((batch_size,)).astype(np.int32) * self.max_seuquence_length
 
     def build_initial_state(self, batch_size, state_size):
         zero_state = tf.zeros([batch_size, state_size], dtype=tf.float32)
