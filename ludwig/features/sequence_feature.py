@@ -253,7 +253,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             inputs  # hidden
     ):
         logits = self.decoder_obj(inputs)
-        return logits[0]
+        return logits
 
     def predictions(
             self,

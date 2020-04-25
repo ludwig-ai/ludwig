@@ -58,16 +58,16 @@ class SequenceGeneratorDecoder(Layer):
         self.is_timeseries = is_timeseries
         self.num_classes = num_classes
 
-        # prototopye code
         self.embeddings_dec = Embedding(num_classes, embedding_size)
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
         self.decoder_cell = LSTMCell(state_size)
-        self.output_layer = Dense(num_classes)
+        self.projection_layer = Dense(num_classes)
         self.decoder = \
             tfa.seq2seq.basic_decoder.BasicDecoder(self.decoder_cell,
                                                     self.sampler,
-                                                    output_layer=self.output_layer)
+                                                    output_layer=self.projection_layer)
 
+    # todo tf2: remove if not needed
     # def build_initial_state1(self, batch_size, encoder_state=None):
     #     initial_state = self.decoder_cell.get_initial_state(
     #         inputs=encoder_state,
@@ -77,6 +77,7 @@ class SequenceGeneratorDecoder(Layer):
     #     return initial_state
 
     def build_sequence_lengths(self, batch_size):
+        # todo tf2 use of self.num_classes is a placeholder, need to confirm correct approach
         return np.ones((batch_size,)).astype(np.int32) * self.num_classes
 
     def build_initial_state(self, batch_size, state_size):
@@ -89,7 +90,6 @@ class SequenceGeneratorDecoder(Layer):
             training=None,
             mask=None
     ):
-        #print(">>>debug", inputs.shape)
         if len(inputs.shape) != 3 and self.attention_mechanism is not None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
@@ -118,7 +118,7 @@ class SequenceGeneratorDecoder(Layer):
             decoder_embeddings, initial_state=initial_state,
             sequence_length=sequence_lengths)
 
-        return final_outputs.rnn_output, final_outputs, final_state, final_sequence_lengths
+        return final_outputs.rnn_output  # todo tf2 in case we need, final_outputs, final_state, final_sequence_lengths
 
 
         # TODO TF2 clean up after port
