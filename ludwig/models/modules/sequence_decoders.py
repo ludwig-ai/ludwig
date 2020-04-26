@@ -66,7 +66,7 @@ class SequenceGeneratorDecoder(Layer):
         self.num_classes = num_classes
         self.max_sequence_length = max_sequence_length
 
-        if self.is_timeseries:
+        if is_timeseries:
             self.vocab_size = 1
         else:
             self.vocab_size = self.num_classes
@@ -74,14 +74,20 @@ class SequenceGeneratorDecoder(Layer):
         self.embeddings_dec = Embedding(num_classes, embedding_size)
         self.decoder_cell = LSTMCell(state_size)
 
-        if self.attention_mechanism == 'bahdanau':
+        if attention_mechanism == 'bahdanau':
             pass
-        elif self.attention_mechanism == 'luong':
-            pass
+        elif attention_mechanism == 'luong':
+            self.attention_mechanism = tfa.seq2seq.LuongAttention(
+                state_size,
+                None,
+                memory_sequence_length=max_sequence_length
+            )
         else:
             raise ValueError(
                 "Attention specificaiton '{}' is invalid.  Valid values are "
                 "'bahdanau' or 'luong'.".format(self.attention_mechanism))
+
+
 
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
 
@@ -129,16 +135,14 @@ class SequenceGeneratorDecoder(Layer):
                 'when attention mechanism is {}. '
                 'If you are using a sequential encoder or combiner consider setting reduce_output to None '
                 'and flatten to False if those parameters apply.'
-                'Also make sure theat reduce_input of {} output feature is None,'.format(
-                    len(inputs.shape), self.attention_mechanism,
-                    self.output_feature))
+                'Also make sure theat reduce_input of output feature is None,'.format(
+                    len(inputs.shape), self.attention_mechanism)
         if len(inputs.shape) != 2 and self.attention_mechanism is None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
                 'when attention mechanism is {}. '
-                'Consider setting reduce_input of {} output feature to a value different from None.'.format(
-                    len(inputs.shape), self.attention_mechanism,
-                    self.output_feature))
+                'Consider setting reduce_input of output feature to a value different from None.'.format(
+                    len(inputs.shape), self.attention_mechanism)
 
         decoder_embeddings = self.embeddings_dec(inputs)
 
