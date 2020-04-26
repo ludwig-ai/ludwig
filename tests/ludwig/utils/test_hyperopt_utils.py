@@ -20,7 +20,7 @@ from ludwig.utils.hyperopt_utils import GridStrategy, RandomStrategy
 
 HYPEROPT_PARAMS = {
     "test_1": {
-        "params": {
+        "parameters": {
             "training.learning_rate": {
                 "type": "float",
                 "low": 0.0001,
@@ -30,7 +30,7 @@ HYPEROPT_PARAMS = {
             },
             "combiner.num_fc_layers": {
                 "type": "int",
-                "low": 0,
+                "low": 1,
                 "high": 4
             },
             "utterance.cell_type": {
@@ -40,15 +40,15 @@ HYPEROPT_PARAMS = {
         },
         "expected_search_space": {
             "training.learning_rate": [0.0001, 0.001, 0.01, 0.1],
-            "combiner.num_fc_layers": [0, 1, 2, 3, 4],
+            "combiner.num_fc_layers": [1, 2, 3, 4],
             "utterance.cell_type": ["rnn", "gru", "lstm"]
         },
         "goal": "minimize",
-        "expected_len_grids": 60,
+        "expected_len_grids": 48,
         "num_samples": 10
     },
     "test_2": {
-        "params": {
+        "parameters": {
             "training.learning_rate": {
                 "type": "float",
                 "low": 0.001,
@@ -79,7 +79,7 @@ def test_grid_strategy(key):
 
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     goal = hyperopt_test_params["goal"]
-    grid_strategy_params = hyperopt_test_params["params"]
+    grid_strategy_params = hyperopt_test_params["parameters"]
 
     grid_strategy = GridStrategy(goal=goal, parameters=grid_strategy_params)
 
@@ -108,7 +108,7 @@ def test_random_strategy(key):
 
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     goal = hyperopt_test_params["goal"]
-    random_strategy_params = hyperopt_test_params["params"]
+    random_strategy_params = hyperopt_test_params["parameters"]
     num_samples = hyperopt_test_params["num_samples"]
 
     random_strategy = RandomStrategy(

@@ -44,7 +44,7 @@ HYPEROPT_CONFIG = {
         },
         "combiner.num_fc_layers": {
             "type": "int",
-            "low": 0,
+            "low": 1,
             "high": 4
         },
         "utterance.cell_type": {
