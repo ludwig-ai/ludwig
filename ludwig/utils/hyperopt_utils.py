@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import copy
+import functools
 import itertools
 import logging
 import math
@@ -613,6 +614,128 @@ class ParallelExecutor(HyperoptExecutor):
         return hyperopt_results
 
 
+class FiberExecutor(HyperoptExecutor):
+    def __init__(
+            self,
+            hyperopt_strategy: HyperoptStrategy,
+            output_feature: str,
+            measure: str,
+            split: str,
+            num_workers: int = 2,
+            fiber_backend: str = "local",
+            **kwargs
+    ) -> None:
+        import fiber
+        HyperoptExecutor.__init__(
+            self, hyperopt_strategy, output_feature, measure, split
+        )
+        fiber.init(backend=fiber_backend)
+        self.pool = fiber.Pool(num_workers)
+
+    def execute(
+            self,
+            model_definition,
+            data_df=None,
+            data_train_df=None,
+            data_validation_df=None,
+            data_test_df=None,
+            data_csv=None,
+            data_train_csv=None,
+            data_validation_csv=None,
+            data_test_csv=None,
+            data_hdf5=None,
+            data_train_hdf5=None,
+            data_validation_hdf5=None,
+            data_test_hdf5=None,
+            train_set_metadata_json=None,
+            experiment_name="hyperopt",
+            model_name="run",
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,
+            skip_save_test_predictions=False,
+            skip_save_test_statistics=False,
+            output_directory="results",
+            gpus=None,
+            gpu_fraction=1.0,
+            use_horovod=False,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
+    ):
+        train_func = functools.partial(
+            train_and_eval_on_split,
+            eval_split=self.split,
+            data_df=data_df,
+            data_train_df=data_train_df,
+            data_validation_df=data_validation_df,
+            data_test_df=data_test_df,
+            data_csv=data_csv,
+            data_train_csv=data_train_csv,
+            data_validation_csv=data_validation_csv,
+            data_test_csv=data_test_csv,
+            data_hdf5=data_hdf5,
+            data_train_hdf5=data_train_hdf5,
+            data_validation_hdf5=data_validation_hdf5,
+            data_test_hdf5=data_test_hdf5,
+            train_set_metadata_json=train_set_metadata_json,
+            experiment_name=experiment_name,
+            model_name=model_name,
+            # model_load_path=model_load_path,
+            # model_resume_path=model_resume_path,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_test_predictions=skip_save_test_predictions,
+            skip_save_test_statistics=skip_save_test_statistics,
+            output_directory=output_directory,
+            gpus=gpus,
+            gpu_fraction=gpu_fraction,
+            use_horovod=use_horovod,
+            random_seed=random_seed,
+            debug=debug,
+        )
+
+        hyperopt_results = []
+        while not self.hyperopt_strategy.finished():
+            sampled_parameters = self.hyperopt_strategy.sample_batch()
+
+            stats_batch = self.pool.map(
+                train_func,
+                [
+                    substitute_parameters(
+                        copy.deepcopy(model_definition),parameters
+                    )
+                    for parameters in sampled_parameters
+                ]
+            )
+
+            for stats, parameters in zip(stats_batch, sampled_parameters):
+                train_stats, eval_stats = stats
+                metric_score = self.get_metric_score(eval_stats)
+
+                hyperopt_results.append({
+                    'parameters': parameters,
+                    'metric_score': metric_score,
+                    'training_stats': train_stats,
+                    'eval_stats': eval_stats
+                })
+
+        hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
+
+        return hyperopt_results
+
+
 def get_build_hyperopt_strategy(strategy_type):
     return get_from_registry(
         strategy_type, strategy_registry
@@ -632,7 +755,8 @@ strategy_registry = {
 
 executor_registry = {
     "serial": SerialExecutor,
-    "parallel": ParallelExecutor
+    "parallel": ParallelExecutor,
+    "fiber": FiberExecutor,
 }
 
 
