@@ -66,9 +66,26 @@ class SequenceGeneratorDecoder(Layer):
         self.num_classes = num_classes
         self.max_sequence_length = max_sequence_length
 
+        if self.is_timeseries:
+            self.vocab_size = 1
+        else:
+            self.vocab_size = self.num_classes
+
         self.embeddings_dec = Embedding(num_classes, embedding_size)
-        self.sampler = tfa.seq2seq.sampler.TrainingSampler()
         self.decoder_cell = LSTMCell(state_size)
+
+        if self.attention_mechanism == 'bahdanau':
+            pass
+        elif self.attention_mechanism == 'luong':
+            pass
+        else:
+            raise ValueError(
+                "Attention specificaiton '{}' is invalid.  Valid values are "
+                "'bahdanau' or 'luong'.".format(self.attention_mechanism))
+
+        self.sampler = tfa.seq2seq.sampler.TrainingSampler()
+
+
         self.projection_layer = Dense(
             units=num_classes,
             use_bias=use_bias,
