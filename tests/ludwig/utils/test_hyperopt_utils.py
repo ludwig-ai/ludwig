@@ -39,9 +39,9 @@ HYPEROPT_PARAMS = {
             }
         },
         "expected_search_space": {
-            'training.learning_rate': [0.0001, 0.001, 0.01, 0.1],
-            'combiner.num_fc_layers': [0, 1, 2, 3, 4],
-            'utterance.cell_type': ['rnn', 'gru', 'lstm']
+            "training.learning_rate": [0.0001, 0.001, 0.01, 0.1],
+            "combiner.num_fc_layers": [0, 1, 2, 3, 4],
+            "utterance.cell_type": ["rnn", "gru", "lstm"]
         },
         "goal": "minimize",
         "expected_len_grids": 60,
@@ -74,7 +74,7 @@ HYPEROPT_PARAMS = {
 }
 
 
-@pytest.mark.parametrize('key', ['test_1', "test_2"])
+@pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_grid_strategy(key):
 
     hyperopt_test_params = HYPEROPT_PARAMS[key]
@@ -103,7 +103,7 @@ def test_grid_strategy(key):
         grid_strategy.samples) == hyperopt_test_params["expected_len_grids"]
 
 
-@pytest.mark.parametrize('key', ['test_1', "test_2"])
+@pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_random_strategy(key):
 
     hyperopt_test_params = HYPEROPT_PARAMS[key]
