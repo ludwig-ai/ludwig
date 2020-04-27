@@ -743,12 +743,12 @@ utterance.cell_type:
 ```
 
 Each hyperopt strategy can work for minimizing or maximizing a measure or a loss of any of the output features (as Ludwig supports more than one) on any of the splits.
+Additional Parameters that could be added to `hyperopt` root key is:
 
-hyperopt:
-  output_feature: combined  # this is the default, but can be the name of any output feature
-  measure: loss  # but can be anything returned by the training
-  split: validation  # can also be training or test
-  goal: minimize  # or maximize
+- `output_feature` - combined(default). It could be the name of any output feature
+- `measure` - loss(deafult). It could be anything returned by the training
+- `split` - validation(default). It could also be training or test
+- `goal` - minimize(default). It could be maximize as well
 
 
 #### Full example
