@@ -24,7 +24,6 @@ from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
@@ -56,7 +55,11 @@ HYPEROPT_CONFIG = {
 }
 
 
-EXECUTORS = [{"type": "serial"}, {"type": "parallel", "num_workers": 4}]
+EXECUTORS = [
+    {"type": "serial"},
+    {"type": "parallel", "num_workers": 4},
+    {"type": "fiber", "num_workers": 4},
+]
 
 
 def test_hyperopt_executor(csv_filename):
