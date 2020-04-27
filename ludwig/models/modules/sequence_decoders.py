@@ -79,9 +79,9 @@ class SequenceGeneratorDecoder(Layer):
                 pass
             elif attention_mechanism == 'luong':
                 self.attention_mechanism = tfa.seq2seq.LuongAttention(
-                    state_size
-                    # None,  # todo tf2: confirm on need
-                    #memory_sequence_length=max_sequence_length  # todo tf2: confirm inputs or output seq length
+                    state_size,
+                    None,  # todo tf2: confirm on need
+                    memory_sequence_length=max_sequence_length  # todo tf2: confirm inputs or output seq length
                 )
             else:
                 raise ValueError(
@@ -123,15 +123,13 @@ class SequenceGeneratorDecoder(Layer):
         return np.ones((batch_size,)).astype(np.int32) * max_sequence_length
 
     def build_initial_state(self, batch_size):
-        initial_state = self.attention_mechanism.initial_state(batch_size, tf.float32)
-        attention_wrapper_state = tfa.seq2seq.AttentionWrapperState(
-            self.decoder_cell,
-            None, #self.attention_mechanism,
-            None,
-            None,
-            initial_state
+        initial_state = self.decoder_cell.get_initial_state(
+            batch_size=batch_size, dtype=tf.float32
         )
-        return attention_wrapper_state
+        # todo tf2:  need to confirm this is correct construct
+        zero_state = tf.zeros([batch_size, self.state_size])
+        initial_state = initial_state.clone(cell_state=[zero_state, zero_state])
+        return initial_state
 
 
     def call(
