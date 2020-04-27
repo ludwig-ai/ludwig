@@ -8,6 +8,7 @@ Ludwig provides six command line interface entry points
 - test
 - experiment
 - visualize
+- hyperopt
 - collect_weights
 - collect_activations
 - serve
@@ -527,6 +528,286 @@ optional arguments:
 
 As the `--visualization` parameters suggests, there is a vast number of visualizations readily available.
 Each of them requires a different subset of this command's arguments, so they will be described one by one in the [Visualizations](#visualizations) section.
+
+hyperopt
+---------
+This command lets you perform an hyper-parameter search with a given strategy and parameters.
+You can call it with:
+
+```
+ludwig hyperopt [options]
+```
+
+or with
+
+```
+python -m ludwig.hyperopt [options]
+```
+
+from within Ludwig's main directory.
+
+These are the available arguments:
+
+```
+usage: ludwig hyperopt [options]
+
+This script trains and tests a model with sampled hyperparameters with a given strategy and parameters
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --output_directory OUTPUT_DIRECTORY
+                        directory that contains the results
+  --experiment_name EXPERIMENT_NAME
+                        experiment name
+  --model_name MODEL_NAME
+                        name for the model
+  --data_csv DATA_CSV   input data CSV file. If it has a split column, it will
+                        be used for splitting (0: train, 1: validation, 2:
+                        test), otherwise the dataset will be randomly split
+  --data_train_csv DATA_TRAIN_CSV
+                        input train data CSV file
+  --data_validation_csv DATA_VALIDATION_CSV
+                        input validation data CSV file
+  --data_test_csv DATA_TEST_CSV
+                        input test data CSV file
+  --data_hdf5 DATA_HDF5
+                        input data HDF5 file. It is an intermediate preprocess
+                        version of the input CSV created the first time a CSV
+                        file is used in the same directory with the same name
+                        and a hdf5 extension
+  --data_train_hdf5 DATA_TRAIN_HDF5
+                        input train data HDF5 file. It is an intermediate
+                        preprocess version of the input CSV created the first
+                        time a CSV file is used in the same directory with the
+                        same name and a hdf5 extension
+  --data_validation_hdf5 DATA_VALIDATION_HDF5
+                        input validation data HDF5 file. It is an intermediate
+                        preprocess version of the input CSV created the first
+                        time a CSV file is used in the same directory with the
+                        same name and a hdf5 extension
+  --data_test_hdf5 DATA_TEST_HDF5
+                        input test data HDF5 file. It is an intermediate
+                        preprocess version of the input CSV created the first
+                        time a CSV file is used in the same directory with the
+                        same name and a hdf5 extension
+  --train_set_metadata_json TRAIN_SET_METADATA_JSON
+                        input train set metadata JSON file. It is an intermediate
+                        preprocess file containing the mappings of the input
+                        CSV created the first time a CSV file is used in the
+                        same directory with the same name and a json extension
+  -sspi, --skip_save_processed_input
+                        skips saving intermediate HDF5 and JSON files
+  -ssuo, --skip_save_unprocessed_output
+                        skips saving intermediate NPY output files
+  -sshs, --skip_save_hyperopt_statistics
+                        skips saving hyperopt statistics file
+  -md MODEL_DEFINITION, --model_definition MODEL_DEFINITION
+                        model definition
+  -mdf MODEL_DEFINITION_FILE, --model_definition_file MODEL_DEFINITION_FILE
+                        YAML file describing the model. Ignores
+                        --model_hyperparameters
+  -ssp SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress SKIP_SAVE_PROGRESS_WEIGHTS
+                        disables saving weights after each epoch. By default
+                        Ludwig saves weights after each epoch for enabling
+                        resuming of training, but if the model is really big
+                        that can be time consuming and will use twice as much
+                        storage space, use this parameter to skip it.
+  -rs RANDOM_SEED, --random_seed RANDOM_SEED
+                        a random seed that is going to be used anywhere there
+                        is a call to a random number generator: data
+                        splitting, parameter initialization and training set
+                        shuffling
+  -g GPUS [GPUS ...], --gpus GPUS [GPUS ...]
+                        list of gpus to use
+  -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
+                        fraction of gpu memory to initialize the process with
+  -dbg, --debug         enables debugging mode
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+```
+
+The parameters combine parameters from both [train](#train) and [test](#test) so refer to those sections for an in depth explanation.
+The output directory will contain the outputs both commands produce.
+
+Hyper-parameters will be specified inside the Ludwig model definition as a root key.
+Each hyper-parameter parameter will have its type, range and additional parameters.
+
+In order to specify hyper-parameters to optimize, one needs to add a `hyperopt` section to the `model_definition_file` or `model_definition` that contains all hyper-parameters to optimize. If the parameters are nested, `.` is used to reference an parameter nested one layer below. For instance, to reference the `learning_rate`, one would have to use the name `training.learning_rate`. If the parameter to reference is nested inside in an input or output feature, the name of that feature will be be used as starting point, for instance, for referencing the cell_type of the utterance specify `utterance.cell_type`.
+
+```yaml
+hyperopt:
+  strategy:
+    type: grid  # random
+    # strategy parameters...
+  executor:
+    type: serial  # parallel
+    # executor parameters...
+  parameters:
+    utterance.cell_type: ...
+    utterance.num_layers: ...
+    combiner.num_fc_layers: ...
+    section.embedding_size: ...
+    preprocessing.text.vocab_size: ...
+    training.learning_rate: ...
+    training.optimizer.type: ...
+```
+
+The `strategy` section contains which strategy to use to perform hyper-parameter optimization. Different types that are implemented are grid and random. The strategy parameters are used to modify the strategy, for instance for random, how many random samples to draw.
+
+The `executor` section specifies how to execute hyperparameter optimization.
+The Implementation could happen locally in a serial manner or parallely across multiple workers and with gpus as well if opted.
+
+In the `parameters` section, the values associated with those keys vary depending on the type of the parameter. Types can be `float`, `int` and `category`.
+
+#### Strategy
+
+Example of grid strategy:
+```yaml
+strategy:
+  type: grid
+```
+
+Example of random strategy:
+```yaml
+strategy:
+  type: random
+  num_samples: 20
+```
+
+
+#### Executor
+
+Example of serial executor:
+```yaml
+executor:
+  type: serial
+```
+
+Example of parallel strategy:
+```yaml
+executor:
+  type: parallel
+  num_workers: 4
+```
+
+
+#### Float parameters
+
+For a `float` value, the parameters to specify are:
+- `low`: minimum value
+- `high`: maximum value
+- `scale`: `log` or `linear`
+- `steps`: OPTIONAL number of steps.
+For instance low:0.0, high:1.0, steps 3 would yield [0.0, 0.5, 1.0] for the search
+
+In the future the distribution to use (`uniform`, `gaussian`, `gamma`, etc.) with the distribution parameters could be specified, but to begin with just those parameters are sufficient.
+
+Example:
+```yaml
+training.learning_rate:
+  type: float
+  low: 0.001
+  high: 0.1
+  steps: 4
+  scale: linear
+```
+
+
+#### Int parameters
+
+For an `int` value, the parameters to specify are:
+- `low`: minimum value
+- `high`: maximum value
+- `steps`: OPTIONAL number of steps. 
+For instance low:0, high:10, steps 3 would yeald [0, 5, 10] for the search
+
+Example:
+```yaml
+combiner.num_fc_layers:
+  type: int
+  low: 1
+  high: 4
+```
+
+
+#### Category parameters
+
+For a `category` value, the parameters to specify are:
+- `values`: a list of possible values. The type of each value of the list is not important (they could be strings, integers, floats and anything else).
+
+Example:
+```yaml
+utterance.cell_type:
+  type: category
+  values: [rnn, gru, lstm]
+```
+
+Each hyperopt strategy can work for minimizing or maximizing a measure or a loss of any of the output features (as Ludwig supports more than one) on any of the splits.
+
+hyperopt:
+  output_feature: combined  # this is the default, but can be the name of any output feature
+  measure: loss  # but can be anything returned by the training
+  split: validation  # can also be training or test
+  goal: minimize  # or maximize
+
+
+#### Full example
+
+```yaml
+input_features:
+  -
+    name: utterance
+    type: text
+    encoder: rnn
+    cell_type: lstm
+    num_layers: 2
+  -
+  	name: section
+    type: category
+    representation: dense
+    embedding_szize: 100
+combiner:
+  type: concat
+  num_fc_layers: 1
+output_features:
+  -
+    name: class
+    type: category
+preprocessing:
+  text:
+    word_vocab_size: 10000
+training:
+  learning_rate: 0.001
+  optimizaer:
+    type: adam
+hyperopt:
+  strategy:
+    type: random
+    num_samples: 12
+  executor:
+    type: parallel
+    num_workers: 4
+  parameters:
+    training.learning_rate:
+      type: float
+      low: 0.0001
+      high: 0.1
+      steps: 4
+      scale: log
+    combiner.num_fc_layers:
+      type: int
+      low: 1
+      high: 5
+    utterance.cell_type:
+      type: category
+      values: [rnn, gru, lstm]
+    goal: minimize
+```
+
+Example:
+```
+ludwig hyperopt --data_csv reuters-allcats.csv --model_definition "{input_features: [{name: utterance, type: text, encoder: rnn, cell_type: lstm, num_layers: 2}], output_features: [{name: class, type: category}], training: {learning_rate: 0.001}, hyperopt: {strategy: {type: grid}, executor: {type: serial}, parameters: {training.learning_rate: {type: float, low: 0.0001, high: 0.1, steps: 4, scale: log}, utterance.cell_type: {type: category, values: [rnn, gru, lstm]}}}}"
+```
 
 collect_weights
 ---------------
