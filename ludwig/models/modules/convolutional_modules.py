@@ -566,7 +566,6 @@ class ResNetBlock(Layer):
     def __init__(
             self,
             num_filters,
-            filter_size,
             strides,
             weights_regularizer=None,
             batch_norm_momentum=0.9,
@@ -590,7 +589,7 @@ class ResNetBlock(Layer):
 
         self.conv1 = Conv2DLayerFixedPadding(
             num_filters=num_filters,
-            filter_size=filter_size,
+            filter_size=3,
             strides=strides,
             weights_regularizer=weights_regularizer
         )
@@ -608,8 +607,8 @@ class ResNetBlock(Layer):
 
         self.conv2 = Conv2DLayerFixedPadding(
             num_filters=num_filters,
-            filter_size=filter_size,
-            strides=strides,
+            filter_size=3,
+            strides=1,
             weights_regularizer=weights_regularizer
         )
 
@@ -793,6 +792,7 @@ class ResNet2(Layer):
         batch_norm_momentum=0.9,
         batch_norm_epsilon=0.001
     ):
+        resnet_size = 8
         super(ResNet2, self).__init__()
         self.resnet_size = resnet_size
 
@@ -835,7 +835,7 @@ class ResNet2(Layer):
                     is_bottleneck,
                     block_class,
                     num_blocks,
-                    self.block_sizes[i],
+                    block_strides[i],
                     weights_regularizer=weights_regularizer,
                     batch_norm_momentum=batch_norm_momentum,
                     batch_norm_epsilon=batch_norm_epsilon
@@ -861,8 +861,8 @@ class ResNet2(Layer):
             hidden = layer(hidden, training=training)
 
         axes = [1, 2]
-        hidden = math.reduce_mean(hidden, axes)
-        # hidden = squeeze(hidden, axes)
+        hidden = math.reduce_mean(hidden, axes, keepdims=True)
+        hidden = squeeze(hidden, axes)
 
         return hidden
 
