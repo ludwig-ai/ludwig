@@ -237,29 +237,28 @@ Adding a HyperoptStrategy
 
 ### 1. Add a new strategy class
 
-Source code for the base `Strategy` class lives under `ludwig/utils/hyperopt_utils.py`.
-Classes extending the base class should be defined in the same file for now.
+The source code for the base `HyperoptStrategy` class is in the `ludwig/utils/hyperopt_utils.py` module.
+Classes extending the base class should be defined in the same module.
 
 #### `__init__`
 ```python
 def __init__(self, goal: str, parameters: Dict[str, Any]):
 ```
 
-The parameters of the base `Strategy` class constructor are
+The parameters of the base `HyperoptStrategy` class constructor are:
 - `goal` which indicates if to minimize or maximize a metric or a loss of any of the output features on any of the splits which is defined in the `hyperopt` section
 - `parameters` which contains all hyper-parameters to optimize with their types and ranges / values.
 
 TODO Add example
 
 #### `sample`
-
 ```python
 def sample_batch(self) -> Dict[str, Any]:
 ```
 
 `sample` is a method that yields a new sample according to the strategy.
 It returns a set of parameters names and their values.
-Iif `finished()` returns `True`, calling `sample` would return a `IndexError`.
+If `finished()` returns `True`, calling `sample` would return a `IndexError`.
 
 Example:
 ```
@@ -267,7 +266,6 @@ Example:
 ```
 
 #### `sample_batch`
-
 ```python
 def sample_batch(self, batch_size: int = 1) -> List[Dict[str, Any]]:
 ```
@@ -277,7 +275,6 @@ If `finished()` returns `True`, calling `sample_batch` would return a `IndexErro
 
 
 #### `update`
-
 ```python
 def update(
     self,
@@ -291,7 +288,6 @@ def update(
 TODO Add example
 
 #### `finished`
-
 ```python
 def finished(self) -> bool:
 ```
@@ -300,7 +296,6 @@ The `finished` method return `True` when all samples have been sampled, return `
 
 
 ### 2. Add the new strategy class to the corresponding strategy registry
-
 
 The `strategy_registry` contains a mapping between `strategy` names in the `hyperopt` section of model definition and `HyperoptStartegy` sub-classes.
 To make a new strategy available, add it to the registry:
@@ -313,16 +308,15 @@ strategy_registry = {
 ```
 
 
-Adding a HyperoptExecution
---------------------------
+Adding a HyperoptExecutor
+-------------------------
 
 ### 1. Add a new executor class
 
-Source code for the Base Executor class lives under `ludwig/utils/hyperopt_utils.py`.
-New Executors should be defined in the same file for now.
+The source code for the base `HyperoptExecutor` class is in the `ludwig/utils/hyperopt_utils.py` module.
+Classes extending the base class should be defined in the module.
 
-`HyperoptExecutor` has a `HyperoptStrategy` as parameter, and other parameters such as `output_feature`, `metric`, `split`, `num_workers`, etc on which each hyperopt strategy can work for minimizing or maximizing a measure or a loss of any of the output features on any of the splits and initialize the execution context (for instance creates the workers).
-
+#### `__init__`
 ```python
 def __init__(
     self,
@@ -333,8 +327,15 @@ def __init__(
 )
 ```
 
-`execute` method executes the hyper-parameter optimization according to the strategy
+The parameters of the base `HyperoptExecutor` class constructor are
+- `hyperopt_strategy` is a `HyperoptStrategy` object that will be used to sample hyper-parameters values
+- `output_feature` is a `str` contaning the name of the output_feature that we want to optimize the metric or loss of
+- `metric` is the metric that we want to optimize for, different ones are available depending on the data type of the output feature. Check the User Guide to determine which metrics are available for each.
+- `split` is the split of data that we want to compute our metric on. Usually it is the `validation` split, but users have the flexibility to specify also `train` or `test` splits.
 
+TODO Add example
+
+#### `execute`
 ```python
 def execute(
     self,
@@ -375,16 +376,20 @@ def execute(
 ):
 ```
 
+The `execute` method executes the hyper-parameter optimization.
+It can leverage the `train_and_eval_on_split` function to obtain training and eval statistics and the `self.get_metric_score` function to extract the metric score from the eval results according to `self.output_feature`, `self.metric` and `self.split`.
+
 
 ### 2. Add the new executor class to the corresponding executor registry
 
-Mapping between executor keywords in the hyperopt section of model definition and executor classes is done by executor registry
-
+The `executor_registry` contains a mapping between `executor` names in the `hyperopt` section of model definition and `HyperoptExecutor` sub-classes.
+To make a new executor available, add it to the registry:
 ```
 executor_registry = {
     "serial": SerialExecutor,
     "parallel": ParallelExecutor,
     "fiber": FiberExecutor,
+    "new_executor_name": NewExecutorClass
 }
 ```
 
