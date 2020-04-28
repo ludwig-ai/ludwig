@@ -211,38 +211,72 @@ __Return__
 Input and output feature registries are defined in `ludwig/features/feature_registries.py`.
 
 
-Hyperopt Structure
-========================
+Hyper-parameter optimization
+============================
 
-Hyperopt Structure has two abstract interfaces: `HyperoptStrategy` and `HyperoptExecutor`. 
-`HyperoptStrategy` deals with the `strategy` and the `parameters` defined in the `hyperopt` section of the YAML model definition as inputs.
-`HyperoptExecution` has a `HyperoptStrategy` as a parameter, and multiple other parameters on which the `strategy` could work on and initialize the execution context. It executes the hyper-parameter optimization according to the strategy.
+The hyper-parameter optimization design in Ludwig is based on two abstract interfaces: `HyperoptStrategy` and `HyperoptExecutor`. 
 
-First, `HyperoptStrategy` samples some parameters with the strategy defined in the hyperopt section. Then, sampled parameters is merged with the basic model definition specified in the model definition, overriding them. Training is executed using the merged model definition and training and validation losses and measures is collected in a statistics object.(sampled_parameters, statistics) pair is provided to the `HyperoptStrategy.update` function. This Iteration happens till all the samples are sampled.
-At the end, `HyperoptExecutor.execute` returns a list of pairs of parameters and statistics, which can be used to print a summary matrix and some visualizations.
+`HyperoptStrategy` represents the strategy adopted for sampling hyper-parameters values.
+ Which strategy to use is defined in the `strategy` section of the model definition.
+ A `HyperoptStrategy` uses the `parameters` defined in the `hyperopt` section of the YAML model definition and a `goal` , either to minimize or maximize.
+ Each sub-class of `HyperoptStrategy` that implements its abstract methods samples parameters according to their definition and type (see [User Guide]() for details) differently, like using a random search (implemented in `RandomStrategy`), or a grid serach (implemented in `GridStrategy`, or bayesian optimization or evolutionary techniques.
+ 
+`HyperoptExecutor` represents the method used to execute the hyper-parameter optimization, independently of how the values fo the hyperparameters are sampled.
+Available implementations are a serial ecevutor that executes the training with the different sampled hyper-parameters values one at a time (implemented in `SerialExecutor`), a parallel executor that runs the trainin using sampled hyper-parameters values in parallel on the same machine (implemented in the `ParallelEcevutor`), and a [Fiber]()-based executor that enables to run the trainin using sampled hyper-parameters values in parallel on multiple machines within a cluster. 
+A `HyperoptExecutor` uses a `HyperoptStrategy` to sample hyper-parameters values, usually initialzies an execution context, like a multithread pool fo instance, and executes the hyper-parameter optimization according to the strategy.
+First, a new batch of paramters is sampled from the `HyperoptStrategy`.
+Then, sampled parameters are merged with the basic model definition parameters specified, overriding them.
+Training is executed using the merged model definition and training and validation losses and metrics are collected.
+A `(sampled_parameters, statistics)` pair is provided to the `HyperoptStrategy.update` function and the loop is repeted untill all the samples are sampled.
+At the end, `HyperoptExecutor.execute` returns a list of dictionaries that include a parameter sample, its metric score, and its training and test statistics.
+The returned list can is printed and saved to disk, so that it can also be used as input to [hyper-parameter optimization specific visualizations]().
 
-Adding a Strategy
-=================
 
- 1. Add a new strategy class
----------------------------
+Adding a HyperoptStrategy
+-------------------------
 
-Source code for the Base Strategy class lives under `ludwig/utils/hyperopt_utils.py`.
-New Strategies should be defined in the same file for now.
+### 1. Add a new strategy class
 
-The Strategy parameters would be `goal` which would minimize or maximize a measure or a loss of any of the output features on any of the splits which is defined in the `hyperopt` section. `parameters` would contain all `hyper-parameters` to optimize with their types and values.
+Source code for the base `Strategy` class lives under `ludwig/utils/hyperopt_utils.py`.
+Classes extending the base class should be defined in the same file for now.
 
+#### `__init__`
 ```python
 def __init__(self, goal: str, parameters: Dict[str, Any]):
 ```
 
-`sample` is a method that yields a new sample according to the strategy. It returns a set of parameters names and their values. Example: `{'training.learning_rate': 0.005, 'combiner.num_fc_layers': 2, 'utterance.cell_type': 'gru'}`. And `sample_batch` method would return sampled parameters according to `batch_size`.
+The parameters of the base `Strategy` class constructor are
+- `goal` which indicates if to minimize or maximize a metric or a loss of any of the output features on any of the splits which is defined in the `hyperopt` section
+- `parameters` which contains all hyper-parameters to optimize with their types and ranges / values.
+
+TODO Add example
+
+#### `sample`
+
+```python
+def sample_batch(self) -> Dict[str, Any]:
+```
+
+`sample` is a method that yields a new sample according to the strategy.
+It returns a set of parameters names and their values.
+Iif `finished()` returns `True`, calling `sample` would return a `IndexError`.
+
+Example:
+```
+{'training.learning_rate': 0.005, 'combiner.num_fc_layers': 2, 'utterance.cell_type': 'gru'}
+```
+
+#### `sample_batch`
 
 ```python
 def sample_batch(self, batch_size: int = 1) -> List[Dict[str, Any]]:
 ```
 
-`update` with the results of previous computation, it updates the strategy (not needed for stateless strategies like grid and random, but will be needed by bayesian).
+`sample_batch` method returns a list of sampled parameters of length equal to or less than `batch_size`.
+If `finished()` returns `True`, calling `sample_batch` would return a `IndexError`. 
+
+
+#### `update`
 
 ```python
 def update(
@@ -252,31 +286,37 @@ def update(
 ):
 ```
 
-`finished` method should return true when all samples have been sampled.
+`update` updates the strategy with the results of previous computation. It is not needed for stateless strategies like grid and random, but is needed for stateful strategies like bayesian and evolutionary ones.
+
+TODO Add example
+
+#### `finished`
 
 ```python
 def finished(self) -> bool:
 ```
 
+The `finished` method return `True` when all samples have been sampled, return `False` otherwise.
 
- 2. Add the new strategy class to the corresponding strategy registry
--------------------------------------------------------------------
 
-Mapping between strategy keywords in the hyperopt section of model definition and strategy classes is done by strategy registry
+### 2. Add the new strategy class to the corresponding strategy registry
 
+
+The `strategy_registry` contains a mapping between `strategy` names in the `hyperopt` section of model definition and `HyperoptStartegy` sub-classes.
+To make a new strategy available, add it to the registry:
 ```
 strategy_registry = {
     "random": RandomStrategy,
-    "grid": GridStrategy
+    "grid": GridStrategy,
+    "new_strategy_name": NewStrategyClass
 }
 ```
 
 
-Adding a Executor
-=================
+Adding a HyperoptExecution
+--------------------------
 
- 1. Add a new executor class
----------------------------
+### 1. Add a new executor class
 
 Source code for the Base Executor class lives under `ludwig/utils/hyperopt_utils.py`.
 New Executors should be defined in the same file for now.
@@ -336,8 +376,7 @@ def execute(
 ```
 
 
- 2. Add the new executor class to the corresponding executor registry
--------------------------------------------------------------------
+### 2. Add the new executor class to the corresponding executor registry
 
 Mapping between executor keywords in the hyperopt section of model definition and executor classes is done by executor registry
 
