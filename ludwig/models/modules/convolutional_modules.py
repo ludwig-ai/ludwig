@@ -1436,5 +1436,5 @@ class ResNet(object):
             inputs = tf.reduce_mean(inputs, axes, keepdims=True)
             inputs = tf.identity(inputs, 'final_reduce_mean')
 
-            # inputs = tf.squeeze(inputs, axes)
+            inputs = tf.squeeze(inputs, axes)
             return inputs
