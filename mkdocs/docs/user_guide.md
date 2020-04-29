@@ -2046,7 +2046,11 @@ preprocessing:
 reduce_output: True
 ```
 
-When using a BERT encoder and finetuning it we suggest using small learning rates around `0.00002` and turning on learning rate warm up for the best results.
+When using a BERT encoder and fine-tuning it we suggest using small learning rates around `0.00002` and turning on learning rate warm up for the best results.
+Be mindful that `BERT` is a pbig model with large activations, meaning it requires a lot of RAM / VRAM to be utilized.
+By consequence, if your machine is not equipped with sufficient resources, it is likely that the training process will go out of memory and will be killed during the computation of the first batch already.
+If this occurs, we suggest to decrease the batch size to `32` or lower, sepending on your configuration.
+Check out the [Training](#training) section for details on how to set `learning_rate` and `batch_szie`.
 
 
 #### Passthrough Encoder
