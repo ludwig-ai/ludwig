@@ -7,33 +7,35 @@
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      
-        <meta name="description" content="Deep learning toolbox">
-      
-      
-        <link rel="canonical" href="https://uber.github.io/ludwig/getting_started/">
-      
-      
-        <meta name="author" content="Piero Molino">
+
+      <meta name="description" content="Deep learning toolbox">
+
+
+      <link rel="canonical"
+            href="https://uber.github.io/ludwig/getting_started/">
+
+
+      <meta name="author" content="Piero Molino">
 
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta content="mkdocs-1.1, mkdocs-material-5.0.2" name="generator">
+      <meta content="mkdocs-1.1, mkdocs-material-5.1.3" name="generator">
 
 
       <title>Getting Started - Ludwig</title>
 
 
-      <link href="../assets/stylesheets/main.07c9fbf5.min.css" rel="stylesheet">
+      <link href="../assets/stylesheets/main.62d34fff.min.css" rel="stylesheet">
 
-      <link href="../assets/stylesheets/palette.ecd4686e.min.css"
+      <link href="../assets/stylesheets/palette.c8acc6db.min.css"
             rel="stylesheet">
 
 
-      <meta name="theme-color" content="#757575">
+      <meta content="#757575" name="theme-color">
 
 
-      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+      <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
       <style>body, input {
           font-family: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif
       }
@@ -140,7 +142,7 @@
                           <div class="md-search-result"
                                data-md-component="search-result">
                               <div class="md-search-result__meta">
-                                  Type to start searching
+                                  Initializing search
                               </div>
                               <ol class="md-search-result__list"></ol>
                           </div>
@@ -212,106 +214,116 @@
                                       </div>
                                   </a>
                               </div>
-    
-    <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-        
-        
+
+                              <ul class="md-nav__list" data-md-scrollfix>
 
 
-  <li class="md-nav__item">
-    <a href=".." title="About" class="md-nav__link">
-      About
-    </a>
-  </li>
+                                  <li class="md-nav__item">
+                                      <a href=".." title="About"
+                                         class="md-nav__link">
+                                          About
+                                      </a>
+                                  </li>
 
 
-        <li class="md-nav__item md-nav__item--active">
+                                  <li class="md-nav__item md-nav__item--active">
 
-            <input class="md-nav__toggle md-toggle" data-md-toggle="toc"
-                   id="__toc" type="checkbox">
+                                      <input class="md-nav__toggle md-toggle"
+                                             data-md-toggle="toc" id="__toc"
+                                             type="checkbox">
 
 
-            <label class="md-nav__link md-nav__link--active" for="__toc">
-                Getting Started
-                <span class="md-nav__icon md-icon">
+                                      <label class="md-nav__link md-nav__link--active"
+                                             for="__toc">
+                                          Getting Started
+                                          <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z"/></svg>
         </span>
-            </label>
+                                      </label>
 
-            <a href="./" title="Getting Started"
-               class="md-nav__link md-nav__link--active">
-                Getting Started
-            </a>
-
-
-            <nav aria-label="Table of contents"
-                 class="md-nav md-nav--secondary">
+                                      <a class="md-nav__link md-nav__link--active"
+                                         href="./" title="Getting Started">
+                                          Getting Started
+                                      </a>
 
 
-                <label class="md-nav__title" for="__toc">
+                                      <nav aria-label="Table of contents"
+                                           class="md-nav md-nav--secondary">
+
+
+                                          <label class="md-nav__title"
+                                                 for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-                    Table of contents
-                </label>
-                <ul class="md-nav__list" data-md-scrollfix>
+                                              Table of contents
+                                          </label>
+                                          <ul class="md-nav__list"
+                                              data-md-scrollfix>
 
-                    <li class="md-nav__item">
-                        <a class="md-nav__link" href="#introduction">
-                            Introduction
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#introduction">
+                                                      Introduction
+                                                  </a>
 
-                    </li>
+                                              </li>
 
-                    <li class="md-nav__item">
-                        <a href="#installation" class="md-nav__link">
-                            Installation
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#installation">
+                                                      Installation
+                                                  </a>
 
-                    </li>
+                                              </li>
 
-                    <li class="md-nav__item">
-                        <a href="#basic-principles" class="md-nav__link">
-                            Basic Principles
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#basic-principles">
+                                                      Basic Principles
+                                                  </a>
 
-                        <nav aria-label="Basic Principles" class="md-nav">
-                            <ul class="md-nav__list">
+                                                  <nav aria-label="Basic Principles"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link" href="#training">
-                                        Training
-                                    </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#training">
+                                                                  Training
+                                                              </a>
 
-                                </li>
+                                                          </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#distributed-training"
-                                       class="md-nav__link">
-                                        Distributed Training
-                                    </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#distributed-training">
+                                                                  Distributed
+                                                                  Training
+                                                              </a>
 
-                                </li>
+                                                          </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#predict" class="md-nav__link">
-                                        Predict
-                                    </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#programmatic-api" class="md-nav__link">
-    Programmatic API
-  </a>
-  
-</li>
-        
-      </ul>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#predict">
+                                                                  Predict
+                                                              </a>
+
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a href="#programmatic-api"
+                                                                 class="md-nav__link">
+                                                                  Programmatic
+                                                                  API
+                                                              </a>
+
+                                                          </li>
+
+                                                      </ul>
     </nav>
   
 </li>
@@ -353,58 +365,62 @@
     </a>
   </li>
 
-        
-        
-        
-        
+
+                                  <li class="md-nav__item">
+                                      <a href="../developer_guide/"
+                                         title="Developer Guide"
+                                         class="md-nav__link">
+                                          Developer Guide
+                                      </a>
+                                  </li>
 
 
-  <li class="md-nav__item">
-    <a href="../developer_guide/" title="Developer Guide" class="md-nav__link">
-      Developer Guide
-    </a>
-  </li>
+                                  <li class="md-nav__item md-nav__item--nested">
 
+                                      <input class="md-nav__toggle md-toggle"
+                                             data-md-toggle="nav-6" id="nav-6"
+                                             type="checkbox">
 
-        <li class="md-nav__item md-nav__item--nested">
-
-            <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6"
-                   id="nav-6" type="checkbox">
-
-            <label class="md-nav__link" for="nav-6">
-                API
-                <span class="md-nav__icon md-icon">
+                                      <label class="md-nav__link" for="nav-6">
+                                          API
+                                          <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
       </span>
-            </label>
-            <nav aria-label="API" class="md-nav" data-md-level="1">
-                <label class="md-nav__title" for="nav-6">
+                                      </label>
+                                      <nav aria-label="API" class="md-nav"
+                                           data-md-level="1">
+                                          <label class="md-nav__title"
+                                                 for="nav-6">
         <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
         </span>
-                    API
-                </label>
-                <ul class="md-nav__list" data-md-scrollfix>
+                                              API
+                                          </label>
+                                          <ul class="md-nav__list"
+                                              data-md-scrollfix>
 
 
-                    <li class="md-nav__item">
-                        <a href="../api/LudwigModel/" title="LudwigModel"
-                           class="md-nav__link">
-                            LudwigModel
-                        </a>
-                    </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="../api/LudwigModel/"
+                                                     title="LudwigModel">
+                                                      LudwigModel
+                                                  </a>
+                                              </li>
 
 
-                    <li class="md-nav__item">
-    <a href="../api/visualization/" title="Visualization" class="md-nav__link">
-      Visualization
-    </a>
-  </li>
+                                              <li class="md-nav__item">
+                                                  <a href="../api/visualization/"
+                                                     title="Visualization"
+                                                     class="md-nav__link">
+                                                      Visualization
+                                                  </a>
+                                              </li>
 
-        
-      </ul>
+
+                                          </ul>
     </nav>
   </li>
 
@@ -429,80 +445,81 @@
             
             
               <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                    <div class="md-sidebar__inner">
+                  <div class="md-sidebar__scrollwrap">
+                      <div class="md-sidebar__inner">
 
-                        <nav aria-label="Table of contents"
-                             class="md-nav md-nav--secondary">
+                          <nav aria-label="Table of contents"
+                               class="md-nav md-nav--secondary">
 
 
-                            <label class="md-nav__title" for="__toc">
+                              <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-                                Table of contents
-                            </label>
-                            <ul class="md-nav__list" data-md-scrollfix>
+                                  Table of contents
+                              </label>
+                              <ul class="md-nav__list" data-md-scrollfix>
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#introduction">
-                                        Introduction
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#introduction">
+                                          Introduction
+                                      </a>
 
-                                </li>
+                                  </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#installation"
-                                       class="md-nav__link">
-                                        Installation
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#installation">
+                                          Installation
+                                      </a>
 
-                                </li>
+                                  </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#basic-principles"
-                                       class="md-nav__link">
-                                        Basic Principles
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#basic-principles">
+                                          Basic Principles
+                                      </a>
 
-                                    <nav aria-label="Basic Principles"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                      <nav aria-label="Basic Principles"
+                                           class="md-nav">
+                                          <ul class="md-nav__list">
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#training">
-                                                    Training
-                                                </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#training">
+                                                      Training
+                                                  </a>
 
-                                            </li>
+                                              </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#distributed-training"
-                                                   class="md-nav__link">
-                                                    Distributed Training
-                                                </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#distributed-training">
+                                                      Distributed Training
+                                                  </a>
 
-                                            </li>
+                                              </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#predict"
-                                                   class="md-nav__link">
-                                                    Predict
-                                                </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#programmatic-api" class="md-nav__link">
-    Programmatic API
-  </a>
-  
-</li>
-        
-      </ul>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#predict">
+                                                      Predict
+                                                  </a>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a href="#programmatic-api"
+                                                     class="md-nav__link">
+                                                      Programmatic API
+                                                  </a>
+
+                                              </li>
+
+                                          </ul>
     </nav>
   
 </li>
@@ -511,14 +528,14 @@
   <a href="#extensibility" class="md-nav__link">
     Extensibility
   </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
+
+        </li>
+
+                              </ul>
+
+                          </nav>
+                      </div>
                   </div>
-                </div>
               </div>
 
 
@@ -591,16 +608,19 @@
                           visualizations to understand their performance and
                           compare their predictions.
                           - Open Source: Apache License 2.0</p>
-<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
-<p>Ludwig's basic requirements are the following:</p>
-<ul>
-<li>tensorflow</li>
-<li>numpy</li>
-<li>pandas</li>
-<li>scipy</li>
-<li>scikit-learn</li>
-<li>Cython</li>
-<li>h5py</li>
+                      <h2 id="installation">Installation<a class="headerlink"
+                                                           href="#installation"
+                                                           title="Permanent link">&para;</a>
+                      </h2>
+                      <p>Ludwig's basic requirements are the following:</p>
+                      <ul>
+                          <li>tensorflow</li>
+                          <li>numpy</li>
+                          <li>pandas</li>
+                          <li>scipy</li>
+                          <li>scikit-learn</li>
+                          <li>Cython</li>
+                          <li>h5py</li>
 <li>tabulate</li>
 <li>tqdm</li>
 <li>PyYAML</li>
@@ -787,13 +807,21 @@ Those can be visualized by the <code>visualize</code> tool, which can also be us
 <span class="n">train_stats</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">training_dataframe</span><span class="p">)</span>
 
 <span class="c1"># or load a model</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">LudwigModel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">LudwigModel</span><span
+            class="o">.</span><span class="n">load</span><span
+            class="p">(</span><span class="n">model_path</span><span
+            class="p">)</span>
 
 <span class="c1"># obtain predictions</span>
-<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_dataframe</span><span class="p">)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span
+            class="o">.</span><span class="n">predict</span><span
+            class="p">(</span><span class="n">test_dataframe</span><span
+            class="p">)</span>
 
-<span class="n">model</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</code></pre></div>
+<span class="n">model</span><span class="o">.</span><span class="n">close</span><span
+            class="p">()</span>
+</code></pre>
+</div>
 
 
                       <p><code>model_definition</code> is a dictionary contaning
@@ -908,8 +936,8 @@ Those can be visualized by the <code>visualize</code> tool, which can also be us
 
   </div>
 
-  <script src="../assets/javascripts/vendor.36cbf620.min.js"></script>
-  <script src="../assets/javascripts/bundle.00c583dd.min.js"></script>
+  <script src="../assets/javascripts/vendor.f81b9e8b.min.js"></script>
+  <script src="../assets/javascripts/bundle.23546af0.min.js"></script>
   <script id="__lang" type="application/json">{
       "clipboard.copy": "Copy to clipboard",
       "clipboard.copied": "Copied to clipboard",
@@ -927,7 +955,7 @@ Those can be visualized by the <code>visualize</code> tool, which can also be us
           base: "..",
           features: [],
           search: Object.assign({
-              worker: "../assets/javascripts/worker/search.7f7c8775.min.js"
+              worker: "../assets/javascripts/worker/search.58d22e8e.min.js"
           }, typeof search !== "undefined" && search)
       })
   </script>

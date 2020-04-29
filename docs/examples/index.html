@@ -7,33 +7,34 @@
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      
-        <meta name="description" content="Deep learning toolbox">
-      
-      
-        <link rel="canonical" href="https://uber.github.io/ludwig/examples/">
-      
-      
-        <meta name="author" content="Piero Molino">
+
+      <meta name="description" content="Deep learning toolbox">
+
+
+      <link rel="canonical" href="https://uber.github.io/ludwig/examples/">
+
+
+      <meta name="author" content="Piero Molino">
 
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta content="mkdocs-1.1, mkdocs-material-5.0.2" name="generator">
+      <meta content="mkdocs-1.1, mkdocs-material-5.1.3" name="generator">
 
 
       <title>Examples - Ludwig</title>
 
 
-      <link href="../assets/stylesheets/main.07c9fbf5.min.css" rel="stylesheet">
+      <link href="../assets/stylesheets/main.62d34fff.min.css" rel="stylesheet">
 
-      <link href="../assets/stylesheets/palette.ecd4686e.min.css"
+      <link href="../assets/stylesheets/palette.c8acc6db.min.css"
             rel="stylesheet">
 
 
-      <meta name="theme-color" content="#757575">
+      <meta content="#757575" name="theme-color">
 
 
-      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+      <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
       <style>body, input {
           font-family: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif
       }
@@ -140,7 +141,7 @@
                           <div class="md-search-result"
                                data-md-component="search-result">
                               <div class="md-search-result__meta">
-                                  Type to start searching
+                                  Initializing search
                               </div>
                               <ol class="md-search-result__list"></ol>
                           </div>
@@ -212,97 +213,99 @@
                                       </div>
                                   </a>
                               </div>
-    
-    <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-        
-        
+
+                              <ul class="md-nav__list" data-md-scrollfix>
 
 
-  <li class="md-nav__item">
-    <a href=".." title="About" class="md-nav__link">
+                                  <li class="md-nav__item">
+                                      <a href=".." title="About"
+                                         class="md-nav__link">
       About
     </a>
   </li>
 
-        
-        
-        
-        
+
+                                  <li class="md-nav__item">
+                                      <a href="../getting_started/"
+                                         title="Getting Started"
+                                         class="md-nav__link">
+                                          Getting Started
+                                      </a>
+                                  </li>
 
 
-  <li class="md-nav__item">
-    <a href="../getting_started/" title="Getting Started" class="md-nav__link">
-      Getting Started
-    </a>
-  </li>
+                                  <li class="md-nav__item md-nav__item--active">
+
+                                      <input class="md-nav__toggle md-toggle"
+                                             data-md-toggle="toc" id="__toc"
+                                             type="checkbox">
 
 
-        <li class="md-nav__item md-nav__item--active">
-
-            <input class="md-nav__toggle md-toggle" data-md-toggle="toc"
-                   id="__toc" type="checkbox">
-
-
-            <label class="md-nav__link md-nav__link--active" for="__toc">
-                Examples
-                <span class="md-nav__icon md-icon">
+                                      <label class="md-nav__link md-nav__link--active"
+                                             for="__toc">
+                                          Examples
+                                          <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z"/></svg>
         </span>
-            </label>
+                                      </label>
 
-            <a href="./" title="Examples"
-               class="md-nav__link md-nav__link--active">
-                Examples
-            </a>
-
-
-            <nav aria-label="Table of contents"
-                 class="md-nav md-nav--secondary">
+                                      <a class="md-nav__link md-nav__link--active"
+                                         href="./" title="Examples">
+                                          Examples
+                                      </a>
 
 
-                <label class="md-nav__title" for="__toc">
+                                      <nav aria-label="Table of contents"
+                                           class="md-nav md-nav--secondary">
+
+
+                                          <label class="md-nav__title"
+                                                 for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-                    Table of contents
-                </label>
-                <ul class="md-nav__list" data-md-scrollfix>
+                                              Table of contents
+                                          </label>
+                                          <ul class="md-nav__list"
+                                              data-md-scrollfix>
 
-                    <li class="md-nav__item">
-                        <a class="md-nav__link" href="#text-classification">
-                            Text Classification
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#text-classification">
+                                                      Text Classification
+                                                  </a>
 
-                    </li>
+                                              </li>
 
-                    <li class="md-nav__item">
-                        <a href="#named-entity-recognition-tagging"
-                           class="md-nav__link">
-                            Named Entity Recognition Tagging
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#named-entity-recognition-tagging">
+                                                      Named Entity Recognition
+                                                      Tagging
+                                                  </a>
 
-                    </li>
+                                              </li>
 
-                    <li class="md-nav__item">
-                        <a href="#natural-language-understanding"
-                           class="md-nav__link">
-                            Natural Language Understanding
-                        </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#machine-translation" class="md-nav__link">
-    Machine Translation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#natural-language-understanding">
+                                                      Natural Language
+                                                      Understanding
+                                                  </a>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a href="#machine-translation"
+                                                     class="md-nav__link">
+                                                      Machine Translation
+                                                  </a>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
   <a href="#chit-chat-dialogue-modeling-through-sequence2sequence" class="md-nav__link">
     Chit-Chat Dialogue Modeling through Sequence2Sequence
   </a>
@@ -313,57 +316,62 @@
   <a href="#sentiment-analysis" class="md-nav__link">
     Sentiment Analysis
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#image-classification" class="md-nav__link">
-    Image Classification
-  </a>
-  
-</li>
 
-                    <li class="md-nav__item">
-                        <a href="#image-classification-mnist"
-                           class="md-nav__link">
-                            Image Classification (MNIST)
-                        </a>
+        </li>
 
-                        <nav aria-label="Image Classification (MNIST)"
-                             class="md-nav">
-                            <ul class="md-nav__list">
+                                              <li class="md-nav__item">
+                                                  <a href="#image-classification"
+                                                     class="md-nav__link">
+                                                      Image Classification
+                                                  </a>
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#download-the-mnist-dataset">
-                                        Download the MNIST dataset.
-                                    </a>
+                                              </li>
 
-                                </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#image-classification-mnist">
+                                                      Image Classification
+                                                      (MNIST)
+                                                  </a>
 
-                                <li class="md-nav__item">
-                                    <a href="#create-train-and-test-csvs"
-                                       class="md-nav__link">
-                                        Create train and test CSVs.
-                                    </a>
+                                                  <nav aria-label="Image Classification (MNIST)"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                </li>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#download-the-mnist-dataset">
+                                                                  Download the
+                                                                  MNIST dataset.
+                                                              </a>
 
-                                <li class="md-nav__item">
-                                    <a href="#train-a-model"
-                                       class="md-nav__link">
-                                        Train a model.
-                                    </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#image-captioning" class="md-nav__link">
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#create-train-and-test-csvs">
+                                                                  Create train
+                                                                  and test CSVs.
+                                                              </a>
+
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#train-a-model">
+                                                                  Train a model.
+                                                              </a>
+
+                                                          </li>
+
+                                                      </ul>
+                                                  </nav>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a href="#image-captioning"
+                                                     class="md-nav__link">
     Image Captioning
   </a>
   
@@ -373,57 +381,64 @@
   <a href="#one-shot-learning-with-siamese-networks" class="md-nav__link">
     One-shot Learning with Siamese Networks
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#visual-question-answering" class="md-nav__link">
-    Visual Question Answering
-  </a>
-  
-</li>
 
-                    <li class="md-nav__item">
-                        <a href="#spoken-digit-speech-recognition"
-                           class="md-nav__link">
-                            Spoken Digit Speech Recognition
-                        </a>
+        </li>
 
-                        <nav aria-label="Spoken Digit Speech Recognition"
-                             class="md-nav">
-                            <ul class="md-nav__list">
+                                              <li class="md-nav__item">
+                                                  <a href="#visual-question-answering"
+                                                     class="md-nav__link">
+                                                      Visual Question Answering
+                                                  </a>
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#download-the-free-spoken-digit-dataset">
-                                        Download the free spoken digit dataset.
-                                    </a>
+                                              </li>
 
-                                </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#spoken-digit-speech-recognition">
+                                                      Spoken Digit Speech
+                                                      Recognition
+                                                  </a>
 
-                                <li class="md-nav__item">
-                                    <a href="#create-an-experiment-csv"
-                                       class="md-nav__link">
-                                        Create an experiment CSV.
-                                    </a>
+                                                  <nav aria-label="Spoken Digit Speech Recognition"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                </li>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#download-the-free-spoken-digit-dataset">
+                                                                  Download the
+                                                                  free spoken
+                                                                  digit dataset.
+                                                              </a>
 
-                                <li class="md-nav__item">
-                                    <a href="#train-a-model_1"
-                                       class="md-nav__link">
-                                        Train a model.
-                                    </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#speaker-verification" class="md-nav__link">
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#create-an-experiment-csv">
+                                                                  Create an
+                                                                  experiment
+                                                                  CSV.
+                                                              </a>
+
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#train-a-model_1">
+                                                                  Train a model.
+                                                              </a>
+
+                                                          </li>
+
+                                                      </ul>
+                                                  </nav>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a href="#speaker-verification"
+                                                     class="md-nav__link">
     Speaker Verification
   </a>
   
@@ -503,58 +518,62 @@
     </a>
   </li>
 
-        
-        
-        
-        
+
+                                  <li class="md-nav__item">
+                                      <a href="../developer_guide/"
+                                         title="Developer Guide"
+                                         class="md-nav__link">
+                                          Developer Guide
+                                      </a>
+                                  </li>
 
 
-  <li class="md-nav__item">
-    <a href="../developer_guide/" title="Developer Guide" class="md-nav__link">
-      Developer Guide
-    </a>
-  </li>
+                                  <li class="md-nav__item md-nav__item--nested">
 
+                                      <input class="md-nav__toggle md-toggle"
+                                             data-md-toggle="nav-6" id="nav-6"
+                                             type="checkbox">
 
-        <li class="md-nav__item md-nav__item--nested">
-
-            <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6"
-                   id="nav-6" type="checkbox">
-
-            <label class="md-nav__link" for="nav-6">
-                API
-                <span class="md-nav__icon md-icon">
+                                      <label class="md-nav__link" for="nav-6">
+                                          API
+                                          <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
       </span>
-            </label>
-            <nav aria-label="API" class="md-nav" data-md-level="1">
-                <label class="md-nav__title" for="nav-6">
+                                      </label>
+                                      <nav aria-label="API" class="md-nav"
+                                           data-md-level="1">
+                                          <label class="md-nav__title"
+                                                 for="nav-6">
         <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
         </span>
-                    API
-                </label>
-                <ul class="md-nav__list" data-md-scrollfix>
+                                              API
+                                          </label>
+                                          <ul class="md-nav__list"
+                                              data-md-scrollfix>
 
 
-                    <li class="md-nav__item">
-                        <a href="../api/LudwigModel/" title="LudwigModel"
-                           class="md-nav__link">
-                            LudwigModel
-                        </a>
-                    </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="../api/LudwigModel/"
+                                                     title="LudwigModel">
+                                                      LudwigModel
+                                                  </a>
+                                              </li>
 
 
-                    <li class="md-nav__item">
-    <a href="../api/visualization/" title="Visualization" class="md-nav__link">
-      Visualization
-    </a>
-  </li>
+                                              <li class="md-nav__item">
+                                                  <a href="../api/visualization/"
+                                                     title="Visualization"
+                                                     class="md-nav__link">
+                                                      Visualization
+                                                  </a>
+                                              </li>
 
-        
-      </ul>
+
+                                          </ul>
     </nav>
   </li>
 
@@ -579,54 +598,55 @@
             
             
               <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                    <div class="md-sidebar__inner">
+                  <div class="md-sidebar__scrollwrap">
+                      <div class="md-sidebar__inner">
 
-                        <nav aria-label="Table of contents"
-                             class="md-nav md-nav--secondary">
+                          <nav aria-label="Table of contents"
+                               class="md-nav md-nav--secondary">
 
 
-                            <label class="md-nav__title" for="__toc">
+                              <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-                                Table of contents
-                            </label>
-                            <ul class="md-nav__list" data-md-scrollfix>
+                                  Table of contents
+                              </label>
+                              <ul class="md-nav__list" data-md-scrollfix>
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#text-classification">
-                                        Text Classification
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#text-classification">
+                                          Text Classification
+                                      </a>
 
-                                </li>
+                                  </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#named-entity-recognition-tagging"
-                                       class="md-nav__link">
-                                        Named Entity Recognition Tagging
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#named-entity-recognition-tagging">
+                                          Named Entity Recognition Tagging
+                                      </a>
 
-                                </li>
+                                  </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#natural-language-understanding"
-                                       class="md-nav__link">
-                                        Natural Language Understanding
-                                    </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#machine-translation" class="md-nav__link">
-    Machine Translation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#natural-language-understanding">
+                                          Natural Language Understanding
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a href="#machine-translation"
+                                         class="md-nav__link">
+                                          Machine Translation
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
   <a href="#chit-chat-dialogue-modeling-through-sequence2sequence" class="md-nav__link">
     Chit-Chat Dialogue Modeling through Sequence2Sequence
   </a>
@@ -637,57 +657,61 @@
   <a href="#sentiment-analysis" class="md-nav__link">
     Sentiment Analysis
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#image-classification" class="md-nav__link">
-    Image Classification
-  </a>
-  
-</li>
 
-                                <li class="md-nav__item">
-                                    <a href="#image-classification-mnist"
-                                       class="md-nav__link">
-                                        Image Classification (MNIST)
-                                    </a>
+        </li>
 
-                                    <nav aria-label="Image Classification (MNIST)"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                  <li class="md-nav__item">
+                                      <a href="#image-classification"
+                                         class="md-nav__link">
+                                          Image Classification
+                                      </a>
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#download-the-mnist-dataset">
-                                                    Download the MNIST dataset.
-                                                </a>
+                                  </li>
 
-                                            </li>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#image-classification-mnist">
+                                          Image Classification (MNIST)
+                                      </a>
 
-                                            <li class="md-nav__item">
-                                                <a href="#create-train-and-test-csvs"
-                                                   class="md-nav__link">
-                                                    Create train and test CSVs.
-                                                </a>
+                                      <nav aria-label="Image Classification (MNIST)"
+                                           class="md-nav">
+                                          <ul class="md-nav__list">
 
-                                            </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#download-the-mnist-dataset">
+                                                      Download the MNIST
+                                                      dataset.
+                                                  </a>
 
-                                            <li class="md-nav__item">
-                                                <a href="#train-a-model"
-                                                   class="md-nav__link">
-                                                    Train a model.
-                                                </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#image-captioning" class="md-nav__link">
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#create-train-and-test-csvs">
+                                                      Create train and test
+                                                      CSVs.
+                                                  </a>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#train-a-model">
+                                                      Train a model.
+                                                  </a>
+
+                                              </li>
+
+                                          </ul>
+                                      </nav>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a href="#image-captioning"
+                                         class="md-nav__link">
     Image Captioning
   </a>
   
@@ -697,58 +721,60 @@
   <a href="#one-shot-learning-with-siamese-networks" class="md-nav__link">
     One-shot Learning with Siamese Networks
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#visual-question-answering" class="md-nav__link">
-    Visual Question Answering
-  </a>
-  
-</li>
 
-                                <li class="md-nav__item">
-                                    <a href="#spoken-digit-speech-recognition"
-                                       class="md-nav__link">
-                                        Spoken Digit Speech Recognition
-                                    </a>
+        </li>
 
-                                    <nav aria-label="Spoken Digit Speech Recognition"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                  <li class="md-nav__item">
+                                      <a href="#visual-question-answering"
+                                         class="md-nav__link">
+                                          Visual Question Answering
+                                      </a>
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#download-the-free-spoken-digit-dataset">
-                                                    Download the free spoken
-                                                    digit dataset.
-                                                </a>
+                                  </li>
 
-                                            </li>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#spoken-digit-speech-recognition">
+                                          Spoken Digit Speech Recognition
+                                      </a>
 
-                                            <li class="md-nav__item">
-                                                <a href="#create-an-experiment-csv"
-                                                   class="md-nav__link">
-                                                    Create an experiment CSV.
-                                                </a>
+                                      <nav aria-label="Spoken Digit Speech Recognition"
+                                           class="md-nav">
+                                          <ul class="md-nav__list">
 
-                                            </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#download-the-free-spoken-digit-dataset">
+                                                      Download the free spoken
+                                                      digit dataset.
+                                                  </a>
 
-                                            <li class="md-nav__item">
-                                                <a href="#train-a-model_1"
-                                                   class="md-nav__link">
-                                                    Train a model.
-                                                </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#speaker-verification" class="md-nav__link">
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#create-an-experiment-csv">
+                                                      Create an experiment CSV.
+                                                  </a>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#train-a-model_1">
+                                                      Train a model.
+                                                  </a>
+
+                                              </li>
+
+                                          </ul>
+                                      </nav>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a href="#speaker-verification"
+                                         class="md-nav__link">
     Speaker Verification
   </a>
   
@@ -807,14 +833,14 @@
   <a href="#binary-classification-fraud-transactions-identification" class="md-nav__link">
     Binary Classification: Fraud Transactions Identification
   </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
+
+        </li>
+
+                              </ul>
+
+                          </nav>
+                      </div>
                   </div>
-                </div>
               </div>
 
 
@@ -868,16 +894,21 @@
                                   expects earnings in 1987 to increase at least
                                   15...
                               </td>
-<td>earnings</td>
-</tr>
-<tr>
-<td>New York  Feb 26 - American Express Co remained silent on market rumors...</td>
-<td>acquisition</td>
-</tr>
-<tr>
-<td>BANGKOK  March 25 - Vietnam will resettle 300000 people on state farms known as new economic...</td>
-<td>coffee</td>
-</tr>
+                              <td>earnings</td>
+                          </tr>
+                          <tr>
+                              <td>New York Feb 26 - American Express Co remained
+                                  silent on market rumors...
+                              </td>
+                              <td>acquisition</td>
+                          </tr>
+                          <tr>
+                              <td>BANGKOK March 25 - Vietnam will resettle
+                                  300000 people on state farms known as new
+                                  economic...
+                              </td>
+                              <td>coffee</td>
+                          </tr>
 </tbody>
 </table>
 <div class="codehilite"><pre><span></span><code>ludwig experiment \
@@ -2254,14 +2285,20 @@ df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
     <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">transaction_amount</span>
     <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">numerical</span>
   <span class="p p-Indicator">-</span>
-    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">authorization_response_code</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="nt">name</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">authorization_response_code</span>
+    <span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">category</span>
   <span class="p p-Indicator">-</span>
-    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">atm_network_xid</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="nt">name</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">atm_network_xid</span>
+    <span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">category</span>
   <span class="p p-Indicator">-</span>
-    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">cvv_2_response_xflg</span>
-    <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">category</span>
+    <span class="nt">name</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">cvv_2_response_xflg</span>
+    <span class="nt">type</span><span class="p">:</span> <span
+            class="l l-Scalar l-Scalar-Plain">category</span>
 
 <span class="nt">combiner</span><span class="p">:</span>
     <span class="nt">type</span><span class="p">:</span> <span
@@ -2366,8 +2403,8 @@ df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
 
   </div>
 
-  <script src="../assets/javascripts/vendor.36cbf620.min.js"></script>
-  <script src="../assets/javascripts/bundle.00c583dd.min.js"></script>
+  <script src="../assets/javascripts/vendor.f81b9e8b.min.js"></script>
+  <script src="../assets/javascripts/bundle.23546af0.min.js"></script>
   <script id="__lang" type="application/json">{
       "clipboard.copy": "Copy to clipboard",
       "clipboard.copied": "Copied to clipboard",
@@ -2385,7 +2422,7 @@ df.to_csv(&#39;&lt;PATH_TO_FILE&gt;/temperature_la.csv&#39;)
           base: "..",
           features: [],
           search: Object.assign({
-              worker: "../assets/javascripts/worker/search.7f7c8775.min.js"
+              worker: "../assets/javascripts/worker/search.58d22e8e.min.js"
           }, typeof search !== "undefined" && search)
       })
   </script>

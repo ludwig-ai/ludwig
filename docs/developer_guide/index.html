@@ -7,33 +7,35 @@
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      
-        <meta name="description" content="Deep learning toolbox">
-      
-      
-        <link rel="canonical" href="https://uber.github.io/ludwig/developer_guide/">
-      
-      
-        <meta name="author" content="Piero Molino">
+
+      <meta name="description" content="Deep learning toolbox">
+
+
+      <link rel="canonical"
+            href="https://uber.github.io/ludwig/developer_guide/">
+
+
+      <meta name="author" content="Piero Molino">
 
       <link rel="shortcut icon" href="../favicon.ico">
-      <meta content="mkdocs-1.1, mkdocs-material-5.0.2" name="generator">
+      <meta content="mkdocs-1.1, mkdocs-material-5.1.3" name="generator">
 
 
       <title>Developer Guide - Ludwig</title>
 
 
-      <link href="../assets/stylesheets/main.07c9fbf5.min.css" rel="stylesheet">
+      <link href="../assets/stylesheets/main.62d34fff.min.css" rel="stylesheet">
 
-      <link href="../assets/stylesheets/palette.ecd4686e.min.css"
+      <link href="../assets/stylesheets/palette.c8acc6db.min.css"
             rel="stylesheet">
 
 
-      <meta name="theme-color" content="#757575">
+      <meta content="#757575" name="theme-color">
 
 
-      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+      <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+      <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
       <style>body, input {
           font-family: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif
       }
@@ -140,7 +142,7 @@
                           <div class="md-search-result"
                                data-md-component="search-result">
                               <div class="md-search-result__meta">
-                                  Type to start searching
+                                  Initializing search
                               </div>
                               <ol class="md-search-result__list"></ol>
                           </div>
@@ -212,16 +214,13 @@
                                       </div>
                                   </a>
                               </div>
-    
-    <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-        
-        
+
+                              <ul class="md-nav__list" data-md-scrollfix>
 
 
-  <li class="md-nav__item">
-    <a href=".." title="About" class="md-nav__link">
+                                  <li class="md-nav__item">
+                                      <a href=".." title="About"
+                                         class="md-nav__link">
       About
     </a>
   </li>
@@ -250,169 +249,192 @@
     </a>
   </li>
 
-        
-        
-        
-        
+
+                                  <li class="md-nav__item">
+                                      <a href="../user_guide/"
+                                         title="User Guide"
+                                         class="md-nav__link">
+                                          User Guide
+                                      </a>
+                                  </li>
 
 
-  <li class="md-nav__item">
-    <a href="../user_guide/" title="User Guide" class="md-nav__link">
-      User Guide
-    </a>
-  </li>
+                                  <li class="md-nav__item md-nav__item--active">
+
+                                      <input class="md-nav__toggle md-toggle"
+                                             data-md-toggle="toc" id="__toc"
+                                             type="checkbox">
 
 
-        <li class="md-nav__item md-nav__item--active">
-
-            <input class="md-nav__toggle md-toggle" data-md-toggle="toc"
-                   id="__toc" type="checkbox">
-
-
-            <label class="md-nav__link md-nav__link--active" for="__toc">
-                Developer Guide
-                <span class="md-nav__icon md-icon">
+                                      <label class="md-nav__link md-nav__link--active"
+                                             for="__toc">
+                                          Developer Guide
+                                          <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z"/></svg>
         </span>
-            </label>
+                                      </label>
 
-            <a href="./" title="Developer Guide"
-               class="md-nav__link md-nav__link--active">
-                Developer Guide
-            </a>
-
-
-            <nav aria-label="Table of contents"
-                 class="md-nav md-nav--secondary">
+                                      <a class="md-nav__link md-nav__link--active"
+                                         href="./" title="Developer Guide">
+                                          Developer Guide
+                                      </a>
 
 
-                <label class="md-nav__title" for="__toc">
+                                      <nav aria-label="Table of contents"
+                                           class="md-nav md-nav--secondary">
+
+
+                                          <label class="md-nav__title"
+                                                 for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-                    Table of contents
-                </label>
-                <ul class="md-nav__list" data-md-scrollfix>
+                                              Table of contents
+                                          </label>
+                                          <ul class="md-nav__list"
+                                              data-md-scrollfix>
 
-                    <li class="md-nav__item">
-                        <a class="md-nav__link" href="#codebase-structure">
-                            Codebase Structure
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#codebase-structure">
+                                                      Codebase Structure
+                                                  </a>
 
-                    </li>
+                                              </li>
 
-                    <li class="md-nav__item">
-                        <a href="#adding-an-encoder" class="md-nav__link">
-                            Adding an Encoder
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#adding-an-encoder">
+                                                      Adding an Encoder
+                                                  </a>
 
-                        <nav aria-label="Adding an Encoder" class="md-nav">
-                            <ul class="md-nav__list">
+                                                  <nav aria-label="Adding an Encoder"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#1-add-a-new-encoder-class">
-                                        1. Add a new encoder class
-                                    </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#1-add-a-new-encoder-class">
+                                                                  1. Add a new
+                                                                  encoder class
+                                                              </a>
 
-                                </li>
+                                                          </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#2-add-the-new-encoder-class-to-the-corresponding-encoder-registry"
-                                       class="md-nav__link">
-                                        2. Add the new encoder class to the
-                                        corresponding encoder registry
-                                    </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#2-add-the-new-encoder-class-to-the-corresponding-encoder-registry">
+                                                                  2. Add the new
+                                                                  encoder class
+                                                                  to the
+                                                                  corresponding
+                                                                  encoder
+                                                                  registry
+                                                              </a>
 
-                                </li>
+                                                          </li>
 
-                            </ul>
-                        </nav>
+                                                      </ul>
+                                                  </nav>
 
-                    </li>
+                                              </li>
 
-                    <li class="md-nav__item">
-                        <a href="#adding-a-decoder" class="md-nav__link">
-                            Adding a Decoder
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#adding-a-decoder">
+                                                      Adding a Decoder
+                                                  </a>
 
-                        <nav aria-label="Adding a Decoder" class="md-nav">
-                            <ul class="md-nav__list">
+                                                  <nav aria-label="Adding a Decoder"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#1-add-a-new-decoder-class">
-                                        1. Add a new decoder class
-                                    </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#1-add-a-new-decoder-class">
+                                                                  1. Add a new
+                                                                  decoder class
+                                                              </a>
 
-                                </li>
+                                                          </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#2-add-the-new-decoder-class-to-the-corresponding-decoder-registry"
-                                       class="md-nav__link">
-                                        2. Add the new decoder class to the
-                                        corresponding decoder registry
-                                    </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#2-add-the-new-decoder-class-to-the-corresponding-decoder-registry">
+                                                                  2. Add the new
+                                                                  decoder class
+                                                                  to the
+                                                                  corresponding
+                                                                  decoder
+                                                                  registry
+                                                              </a>
 
-                                </li>
+                                                          </li>
 
-                            </ul>
-                        </nav>
+                                                      </ul>
+                                                  </nav>
 
-                    </li>
+                                              </li>
 
-                    <li class="md-nav__item">
-                        <a href="#adding-a-new-feature-type"
-                           class="md-nav__link">
-                            Adding a new Feature Type
-                        </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#adding-a-new-feature-type">
+                                                      Adding a new Feature Type
+                                                  </a>
 
-                        <nav aria-label="Adding a new Feature Type"
-                             class="md-nav">
-                            <ul class="md-nav__list">
+                                                  <nav aria-label="Adding a new Feature Type"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#1-add-a-new-feature-class">
-                                        1. Add a new feature class
-                                    </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#1-add-a-new-feature-class">
+                                                                  1. Add a new
+                                                                  feature class
+                                                              </a>
 
-                                    <nav aria-label="1. Add a new feature class"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                                              <nav aria-label="1. Add a new feature class"
+                                                                   class="md-nav">
+                                                                  <ul class="md-nav__list">
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#build_input">
-                                                    build_input
-                                                </a>
+                                                                      <li class="md-nav__item">
+                                                                          <a class="md-nav__link"
+                                                                             href="#build_input">
+                                                                              build_input
+                                                                          </a>
 
-                                            </li>
+                                                                      </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#build_output"
-                                                   class="md-nav__link">
-                                                    build_output
-                                                </a>
+                                                                      <li class="md-nav__item">
+                                                                          <a class="md-nav__link"
+                                                                             href="#build_output">
+                                                                              build_output
+                                                                          </a>
 
-                                            </li>
+                                                                      </li>
 
-                                        </ul>
-                                    </nav>
+                                                                  </ul>
+                                                              </nav>
 
-                                </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-add-the-new-feature-class-to-the-corresponding-feature-registry" class="md-nav__link">
-    2. Add the new feature class to the corresponding feature registry
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a href="#2-add-the-new-feature-class-to-the-corresponding-feature-registry"
+                                                                 class="md-nav__link">
+                                                                  2. Add the new
+                                                                  feature class
+                                                                  to the
+                                                                  corresponding
+                                                                  feature
+                                                                  registry
+                                                              </a>
+
+                                                          </li>
+
+                                                      </ul>
+                                                  </nav>
   
 </li>
       
@@ -420,97 +442,109 @@
   <a href="#adding-a-new-integration" class="md-nav__link">
     Adding a new Integration
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#style-guidelines" class="md-nav__link">
-    Style Guidelines
-  </a>
-  
-</li>
 
-                    <li class="md-nav__item">
-                        <a href="#tests" class="md-nav__link">
-                            Tests
-                        </a>
+        </li>
 
-                        <nav aria-label="Tests" class="md-nav">
-                            <ul class="md-nav__list">
+                                              <li class="md-nav__item">
+                                                  <a href="#style-guidelines"
+                                                     class="md-nav__link">
+                                                      Style Guidelines
+                                                  </a>
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link" href="#checklist">
-                                        Checklist
-                                    </a>
+                                              </li>
 
-                                </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#tests">
+                                                      Tests
+                                                  </a>
 
-                                <li class="md-nav__item">
-                                    <a href="#running-tests"
-                                       class="md-nav__link">
-                                        Running tests
-                                    </a>
+                                                  <nav aria-label="Tests"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                </li>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#checklist">
+                                                                  Checklist
+                                                              </a>
 
-                                <li class="md-nav__item">
-                                    <a href="#example" class="md-nav__link">
-                                        Example
-                                    </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-    
-  </li>
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#running-tests">
+                                                                  Running tests
+                                                              </a>
+
+                                                          </li>
+
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#example">
+                                                                  Example
+                                                              </a>
+
+                                                          </li>
+
+                                                      </ul>
+                                                  </nav>
+
+                                              </li>
+
+                                          </ul>
+
+                                      </nav>
+
+                                  </li>
 
 
-        <li class="md-nav__item md-nav__item--nested">
+                                  <li class="md-nav__item md-nav__item--nested">
 
-            <input class="md-nav__toggle md-toggle" data-md-toggle="nav-6"
-                   id="nav-6" type="checkbox">
+                                      <input class="md-nav__toggle md-toggle"
+                                             data-md-toggle="nav-6" id="nav-6"
+                                             type="checkbox">
 
-            <label class="md-nav__link" for="nav-6">
-                API
-                <span class="md-nav__icon md-icon">
+                                      <label class="md-nav__link" for="nav-6">
+                                          API
+                                          <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
       </span>
-            </label>
-            <nav aria-label="API" class="md-nav" data-md-level="1">
-                <label class="md-nav__title" for="nav-6">
+                                      </label>
+                                      <nav aria-label="API" class="md-nav"
+                                           data-md-level="1">
+                                          <label class="md-nav__title"
+                                                 for="nav-6">
         <span class="md-nav__icon md-icon">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                   d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
         </span>
-                    API
-                </label>
-                <ul class="md-nav__list" data-md-scrollfix>
+                                              API
+                                          </label>
+                                          <ul class="md-nav__list"
+                                              data-md-scrollfix>
 
 
-                    <li class="md-nav__item">
-                        <a href="../api/LudwigModel/" title="LudwigModel"
-                           class="md-nav__link">
-                            LudwigModel
-                        </a>
-                    </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="../api/LudwigModel/"
+                                                     title="LudwigModel">
+                                                      LudwigModel
+                                                  </a>
+                                              </li>
 
 
-                    <li class="md-nav__item">
-    <a href="../api/visualization/" title="Visualization" class="md-nav__link">
-      Visualization
-    </a>
-  </li>
+                                              <li class="md-nav__item">
+                                                  <a href="../api/visualization/"
+                                                     title="Visualization"
+                                                     class="md-nav__link">
+                                                      Visualization
+                                                  </a>
+                                              </li>
 
-        
-      </ul>
+
+                                          </ul>
     </nav>
   </li>
 
@@ -535,146 +569,149 @@
             
             
               <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                    <div class="md-sidebar__inner">
+                  <div class="md-sidebar__scrollwrap">
+                      <div class="md-sidebar__inner">
 
-                        <nav aria-label="Table of contents"
-                             class="md-nav md-nav--secondary">
+                          <nav aria-label="Table of contents"
+                               class="md-nav md-nav--secondary">
 
 
-                            <label class="md-nav__title" for="__toc">
+                              <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
                 d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
       </span>
-                                Table of contents
-                            </label>
-                            <ul class="md-nav__list" data-md-scrollfix>
+                                  Table of contents
+                              </label>
+                              <ul class="md-nav__list" data-md-scrollfix>
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#codebase-structure">
-                                        Codebase Structure
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#codebase-structure">
+                                          Codebase Structure
+                                      </a>
 
-                                </li>
+                                  </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#adding-an-encoder"
-                                       class="md-nav__link">
-                                        Adding an Encoder
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#adding-an-encoder">
+                                          Adding an Encoder
+                                      </a>
 
-                                    <nav aria-label="Adding an Encoder"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                      <nav aria-label="Adding an Encoder"
+                                           class="md-nav">
+                                          <ul class="md-nav__list">
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#1-add-a-new-encoder-class">
-                                                    1. Add a new encoder class
-                                                </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#1-add-a-new-encoder-class">
+                                                      1. Add a new encoder class
+                                                  </a>
 
-                                            </li>
+                                              </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#2-add-the-new-encoder-class-to-the-corresponding-encoder-registry"
-                                                   class="md-nav__link">
-                                                    2. Add the new encoder class
-                                                    to the corresponding encoder
-                                                    registry
-                                                </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#2-add-the-new-encoder-class-to-the-corresponding-encoder-registry">
+                                                      2. Add the new encoder
+                                                      class to the corresponding
+                                                      encoder registry
+                                                  </a>
 
-                                            </li>
+                                              </li>
 
-                                        </ul>
-                                    </nav>
+                                          </ul>
+                                      </nav>
 
-                                </li>
+                                  </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#adding-a-decoder"
-                                       class="md-nav__link">
-                                        Adding a Decoder
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#adding-a-decoder">
+                                          Adding a Decoder
+                                      </a>
 
-                                    <nav aria-label="Adding a Decoder"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                      <nav aria-label="Adding a Decoder"
+                                           class="md-nav">
+                                          <ul class="md-nav__list">
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#1-add-a-new-decoder-class">
-                                                    1. Add a new decoder class
-                                                </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#1-add-a-new-decoder-class">
+                                                      1. Add a new decoder class
+                                                  </a>
 
-                                            </li>
+                                              </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#2-add-the-new-decoder-class-to-the-corresponding-decoder-registry"
-                                                   class="md-nav__link">
-                                                    2. Add the new decoder class
-                                                    to the corresponding decoder
-                                                    registry
-                                                </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#2-add-the-new-decoder-class-to-the-corresponding-decoder-registry">
+                                                      2. Add the new decoder
+                                                      class to the corresponding
+                                                      decoder registry
+                                                  </a>
 
-                                            </li>
+                                              </li>
 
-                                        </ul>
-                                    </nav>
+                                          </ul>
+                                      </nav>
 
-                                </li>
+                                  </li>
 
-                                <li class="md-nav__item">
-                                    <a href="#adding-a-new-feature-type"
-                                       class="md-nav__link">
-                                        Adding a new Feature Type
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link"
+                                         href="#adding-a-new-feature-type">
+                                          Adding a new Feature Type
+                                      </a>
 
-                                    <nav aria-label="Adding a new Feature Type"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                      <nav aria-label="Adding a new Feature Type"
+                                           class="md-nav">
+                                          <ul class="md-nav__list">
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#1-add-a-new-feature-class">
-                                                    1. Add a new feature class
-                                                </a>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#1-add-a-new-feature-class">
+                                                      1. Add a new feature class
+                                                  </a>
 
-                                                <nav aria-label="1. Add a new feature class"
-                                                     class="md-nav">
-                                                    <ul class="md-nav__list">
+                                                  <nav aria-label="1. Add a new feature class"
+                                                       class="md-nav">
+                                                      <ul class="md-nav__list">
 
-                                                        <li class="md-nav__item">
-                                                            <a class="md-nav__link"
-                                                               href="#build_input">
-                                                                build_input
-                                                            </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#build_input">
+                                                                  build_input
+                                                              </a>
 
-                                                        </li>
+                                                          </li>
 
-                                                        <li class="md-nav__item">
-                                                            <a href="#build_output"
-                                                               class="md-nav__link">
-                                                                build_output
-                                                            </a>
+                                                          <li class="md-nav__item">
+                                                              <a class="md-nav__link"
+                                                                 href="#build_output">
+                                                                  build_output
+                                                              </a>
 
-                                                        </li>
+                                                          </li>
 
-                                                    </ul>
-                                                </nav>
+                                                      </ul>
+                                                  </nav>
 
-                                            </li>
-        
-          <li class="md-nav__item">
-  <a href="#2-add-the-new-feature-class-to-the-corresponding-feature-registry" class="md-nav__link">
-    2. Add the new feature class to the corresponding feature registry
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a href="#2-add-the-new-feature-class-to-the-corresponding-feature-registry"
+                                                     class="md-nav__link">
+                                                      2. Add the new feature
+                                                      class to the corresponding
+                                                      feature registry
+                                                  </a>
+
+                                              </li>
+
+                                          </ul>
+                                      </nav>
   
 </li>
       
@@ -682,58 +719,59 @@
   <a href="#adding-a-new-integration" class="md-nav__link">
     Adding a new Integration
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#style-guidelines" class="md-nav__link">
-    Style Guidelines
-  </a>
-  
-</li>
 
-                                <li class="md-nav__item">
-                                    <a href="#tests" class="md-nav__link">
-                                        Tests
-                                    </a>
+        </li>
 
-                                    <nav aria-label="Tests" class="md-nav">
-                                        <ul class="md-nav__list">
+                                  <li class="md-nav__item">
+                                      <a href="#style-guidelines"
+                                         class="md-nav__link">
+                                          Style Guidelines
+                                      </a>
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#checklist">
-                                                    Checklist
-                                                </a>
+                                  </li>
 
-                                            </li>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#tests">
+                                          Tests
+                                      </a>
 
-                                            <li class="md-nav__item">
-                                                <a href="#running-tests"
-                                                   class="md-nav__link">
-                                                    Running tests
-                                                </a>
+                                      <nav aria-label="Tests" class="md-nav">
+                                          <ul class="md-nav__list">
 
-                                            </li>
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#checklist">
+                                                      Checklist
+                                                  </a>
 
-                                            <li class="md-nav__item">
-                                                <a href="#example"
-                                                   class="md-nav__link">
-                                                    Example
-                                                </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#running-tests">
+                                                      Running tests
+                                                  </a>
+
+                                              </li>
+
+                                              <li class="md-nav__item">
+                                                  <a class="md-nav__link"
+                                                     href="#example">
+                                                      Example
+                                                  </a>
+
+                                              </li>
+
+                                          </ul>
+                                      </nav>
+
+                                  </li>
+
+                              </ul>
+
+                          </nav>
+                      </div>
                   </div>
-                </div>
               </div>
 
 
@@ -808,16 +846,29 @@
     <span class="n">representation</span><span class="o">=</span><span
                                   class="s1">&#39;dense&#39;</span><span
                                   class="p">,</span>
-    <span class="n">embedding_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
-    <span class="n">embeddings_trainable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">pretrained_embeddings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">embeddings_on_cpu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">num_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">state_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
-    <span class="n">cell_type</span><span class="o">=</span><span class="s1">&#39;rnn&#39;</span><span class="p">,</span>
-    <span class="n">bidirectional</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">dropout</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">initializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">embedding_size</span><span class="o">=</span><span
+                                  class="mi">256</span><span class="p">,</span>
+    <span class="n">embeddings_trainable</span><span class="o">=</span><span
+                                  class="kc">True</span><span class="p">,</span>
+    <span class="n">pretrained_embeddings</span><span class="o">=</span><span
+                                  class="kc">None</span><span class="p">,</span>
+    <span class="n">embeddings_on_cpu</span><span class="o">=</span><span
+                                  class="kc">False</span><span
+                                  class="p">,</span>
+    <span class="n">num_layers</span><span class="o">=</span><span
+                                  class="mi">1</span><span class="p">,</span>
+    <span class="n">state_size</span><span class="o">=</span><span class="mi">256</span><span
+                                  class="p">,</span>
+    <span class="n">cell_type</span><span class="o">=</span><span class="s1">&#39;rnn&#39;</span><span
+                                  class="p">,</span>
+    <span class="n">bidirectional</span><span class="o">=</span><span
+                                  class="kc">False</span><span
+                                  class="p">,</span>
+    <span class="n">dropout</span><span class="o">=</span><span
+                                  class="kc">False</span><span
+                                  class="p">,</span>
+    <span class="n">initializer</span><span class="o">=</span><span class="kc">None</span><span
+                                  class="p">,</span>
     <span class="n">regularize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">reduce_output</span><span class="o">=</span><span class="s1">&#39;last&#39;</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span>
@@ -1049,18 +1100,31 @@ documentation. See existing calls as a pattern to follow.</p>
 </ol>
 <h2 id="style-guidelines">Style Guidelines<a class="headerlink" href="#style-guidelines" title="Permanent link">&para;</a></h2>
 <p>We expect contributions to mimic existing patterns in the codebase and demonstrate good practices: the code should be concise, readable, PEP8-compliant, and conforming to 80 character line length limit.</p>
-<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
-<p>We are using <code>pytest</code> to run tests. 
-Current test coverage is limited to several integration tests which ensure end-to-end functionality but we are planning to expand it.</p>
-<h3 id="checklist">Checklist<a class="headerlink" href="#checklist" title="Permanent link">&para;</a></h3>
-<p>Before running tests, make sure 
-1. Your environment is properly setup.
-2. You have write access on the machine. Some of the tests require saving data to disk.</p>
-<h3 id="running-tests">Running tests<a class="headerlink" href="#running-tests" title="Permanent link">&para;</a></h3>
-<p>To run all tests, just run
-<code>python -m pytest</code> from the ludwig root directory.
-    Note that you don't need to have ludwig module installed and in this case
-    code change will take effect immediately.</p>
+                      <h2 id="tests">Tests<a class="headerlink" href="#tests"
+                                             title="Permanent link">&para;</a>
+                      </h2>
+                      <p>We are using <code>pytest</code> to run tests.
+                          Current test coverage is limited to several
+                          integration tests which ensure end-to-end
+                          functionality but we are planning to expand it.</p>
+                      <h3 id="checklist">Checklist<a class="headerlink"
+                                                     href="#checklist"
+                                                     title="Permanent link">&para;</a>
+                      </h3>
+                      <p>Before running tests, make sure
+                          1. Your environment is properly setup.
+                          2. You have write access on the machine. Some of the
+                          tests require saving data to disk.</p>
+                      <h3 id="running-tests">Running tests<a class="headerlink"
+                                                             href="#running-tests"
+                                                             title="Permanent link">&para;</a>
+                      </h3>
+                      <p>To run all tests, just run
+                          <code>python -m pytest</code> from the ludwig root
+                          directory.
+                          Note that you don't need to have ludwig module
+                          installed and in this case
+                          code change will take effect immediately.</p>
                       <p>To run a single test, run</p>
                       <div class="codehilite"><pre><span></span><code>python -m pytest path_to_filename -k &quot;test_method_name&quot;
 </code></pre>
@@ -1161,8 +1225,8 @@ Current test coverage is limited to several integration tests which ensure end-t
 
   </div>
 
-  <script src="../assets/javascripts/vendor.36cbf620.min.js"></script>
-  <script src="../assets/javascripts/bundle.00c583dd.min.js"></script>
+  <script src="../assets/javascripts/vendor.f81b9e8b.min.js"></script>
+  <script src="../assets/javascripts/bundle.23546af0.min.js"></script>
   <script id="__lang" type="application/json">{
       "clipboard.copy": "Copy to clipboard",
       "clipboard.copied": "Copied to clipboard",
@@ -1180,7 +1244,7 @@ Current test coverage is limited to several integration tests which ensure end-t
           base: "..",
           features: [],
           search: Object.assign({
-              worker: "../assets/javascripts/worker/search.7f7c8775.min.js"
+              worker: "../assets/javascripts/worker/search.58d22e8e.min.js"
           }, typeof search !== "undefined" && search)
       })
   </script>
