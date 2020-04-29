@@ -792,7 +792,6 @@ class ResNet2(Layer):
         batch_norm_momentum=0.9,
         batch_norm_epsilon=0.001
     ):
-        resnet_size = 8
         super(ResNet2, self).__init__()
         self.resnet_size = resnet_size
 
