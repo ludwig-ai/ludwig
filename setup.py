@@ -42,14 +42,14 @@ with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
 
 setup(
     name='ludwig',
-
     version='0.2.2.4',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
     long_description_content_type='text/markdown',
 
-    url='https://ludwig.ai',
+    url='https://github.com/uber/ludwig',
+    download_url='https://pypi.org/project/ludwig/',
 
     author='Piero Molino',
     author_email='piero.molino@gmail.com',
@@ -60,7 +60,7 @@ setup(
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
-    python_requires='>=3',
+    python_requires='>=3.6',
 
     include_package_data=True,
     package_data={'ludwig': ['etc/*', 'examples/*.py']},
