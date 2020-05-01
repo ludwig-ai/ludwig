@@ -272,6 +272,8 @@ def cli_collect_activations(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.collect')
 
     print_ludwig('Collect Activations', LUDWIG_VERSION)
 
@@ -345,7 +347,11 @@ def cli_collect_weights(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.collect')
+
     print_ludwig('Collect Weights', LUDWIG_VERSION)
+
     collect_weights(**vars(args))
 
 

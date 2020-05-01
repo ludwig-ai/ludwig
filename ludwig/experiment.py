@@ -36,7 +36,7 @@ from ludwig.predict import predict
 from ludwig.predict import print_test_results
 from ludwig.predict import save_prediction_outputs
 from ludwig.predict import save_test_statistics
-from ludwig.train import full_train, logger
+from ludwig.train import full_train
 from ludwig.utils.data_utils import save_json, generate_kfold_splits
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
@@ -832,6 +832,8 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.experiment')
 
     set_on_master(args.use_horovod)
 

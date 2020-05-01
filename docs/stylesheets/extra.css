@@ -100,7 +100,7 @@ a footnote-ref::before {
 }
 
 @media only screen and (max-width: 76.1875em) {
-    html .md-nav--primary .md-nav__title--site {
+    html .md-nav--primary .md-nav__title {
         background-color: #1e1f20;
     }
 
@@ -109,7 +109,7 @@ a footnote-ref::before {
         background-color: #1e1f20;
     }
 
-    html [data-md-color-primary="grey"] .md-nav--primary .md-nav__title--site {
+    html [data-md-color-primary="grey"] .md-nav--primary .md-nav__title {
         background-color: #1e1f20;
     }
 
@@ -118,16 +118,26 @@ a footnote-ref::before {
     }
 }
 
-.md-nav__title--site .md-nav__button {
+.md-nav__title .md-nav__button {
     width: 22.4rem;
 }
 
+.md-nav__title {
+    color: white;
+}
+
+:root {
+    --md-default-fg-color--light: white;
+}
+
 .md-typeset table:not([class]) th {
-    background-color: #2b2c2f;
+    background-color: #202124;
+    font-weight: bold;
 }
 
 table, th, td {
     border: 1px solid #888;
+    background-color: #2b2c2f;
 }
 
 button[data-md-color-primary="grey"] {

@@ -1,8 +1,11 @@
-<nav class="md-nav md-nav--primary" data-md-level="0">
-    <label class="md-nav__title md-nav__title--site" for="__drawer">
-        <a class="md-nav__button md-logo" href="{{ config.site_url | default(nav.homepage.url, true) | url }}"
+<nav aria-label="{{ lang.t('nav.title') }}" class="md-nav md-nav--primary"
+     data-md-level="0">
+    <label class="md-nav__title" for="__drawer">
+        <a aria-label="{{ config.site_name }}" class="md-nav__button md-logo"
+           href="{{ config.site_url | default(nav.homepage.url, true) | url }}"
            title="{{ config.site_name }}">
-            <img src="{{ config.theme.logo | url }}" style="width: 10rem">
+            <img alt="logo" src="{{ config.theme.logo | url }}"
+                 style="width:10rem;height:auto;">
         </a>
     </label>
     {% if config.repo_url %}

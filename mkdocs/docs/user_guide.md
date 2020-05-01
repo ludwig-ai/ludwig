@@ -152,7 +152,7 @@ This allows for a few possible input data scenarios:
 - you can provide separate UTF-8 encoded train, validation and test CSVs (`--data_train_csv`, `--data_validation_csv`, `--data_test_csv`).
 
 - the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (`--data_train_hdf5`, `--data_validation_hdf5`, `--data_test_hdf5`), with the only difference that you need to specify only one JSON file (`--metadata_json`) instead of three.
-The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure does not improve for a a certain amount of epochs.
+The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure does not improve for a certain amount of epochs.
 The test set is optional too.
 
 Other optional arguments are `--output_directory`, `--experiment_name` and `--model name`.
@@ -766,7 +766,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 
 `Set` features are transformed into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
-Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -778,7 +778,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 
 `Sequence` features are transformed into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
-Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -1375,7 +1375,7 @@ Set Features
 
 Set features are transformed into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
-Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -1525,7 +1525,7 @@ Sequence Features
 
 Sequence features are transformed into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sequences are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
-Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -2046,7 +2046,11 @@ preprocessing:
 reduce_output: True
 ```
 
-When using a BERT encoder and finetuning it we suggest using small learning rates around `0.00002` and turning on learning rate warm up for the best results.
+When using a BERT encoder and fine-tuning it we suggest using small learning rates around `0.00002` and turning on learning rate warm up for the best results.
+Be mindful that `BERT` is a pbig model with large activations, meaning it requires a lot of RAM / VRAM to be utilized.
+By consequence, if your machine is not equipped with sufficient resources, it is likely that the training process will go out of memory and will be killed during the computation of the first batch already.
+If this occurs, we suggest to decrease the batch size to `32` or lower, sepending on your configuration.
+Check out the [Training](#training) section for details on how to set `learning_rate` and `batch_szie`.
 
 
 #### Passthrough Encoder
@@ -3538,9 +3542,9 @@ It needs to be an integer, to figure out the association between classes and int
 
 ### roc_curves_from_test_statistics
 
-This visualization uses the `field`, `test_statistics` and `model_names` parameters.
-`field` needs to be binary feature.
-This visualization produces a line chart plotting the roc curves for the specified `field`.
+This visualization uses the `output_feature_name`, `test_statistics` and `model_names` parameters.
+`output_feature_name` needs to be binary feature.
+This visualization produces a line chart plotting the roc curves for the specified `output_feature_name`.
 
 ![ROC Curves from Prediction Statistics](images/roc_curves_from_test_statistics.png "ROC Curves from Prediction Statistics")
 

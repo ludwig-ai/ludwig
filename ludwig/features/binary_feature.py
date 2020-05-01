@@ -411,9 +411,10 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(
-            output_feature,
-            LOSS,
+        # If Loss is not defined, set an empty dictionary
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(
+            output_feature[LOSS],
             {
                 'robust_lambda': 0,
                 'confidence_penalty': 0,

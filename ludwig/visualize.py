@@ -787,32 +787,36 @@ def compare_performance(
     )
 
     for output_feature_name in output_feature_names:
-        accuracies = []
-        hits_at_ks = []
-        edit_distances = []
+        measure_names_sets = list(
+            set(tspr[output_feature_name].keys())
+            for tspr in test_stats_per_model_list
+        )
+        measure_names = measure_names_sets[0]
+        for measure_names_set in measure_names_sets:
+            measure_names = measure_names.intersection(measure_names_set)
+        measure_names.remove(LOSS)
+        measures_dict = {name: [] for name in measure_names}
 
         for test_stats_per_model in test_stats_per_model_list:
-            if ACCURACY in test_stats_per_model[output_feature_name]:
-                accuracies.append(
-                    test_stats_per_model[output_feature_name][ACCURACY])
-            if HITS_AT_K in test_stats_per_model[output_feature_name]:
-                hits_at_ks.append(
-                    test_stats_per_model[output_feature_name][HITS_AT_K])
-            if EDIT_DISTANCE in test_stats_per_model[output_feature_name]:
-                edit_distances.append(
-                    test_stats_per_model[output_feature_name][EDIT_DISTANCE])
+            for measure_name in measure_names:
+                measures_dict[measure_name].append(
+                    test_stats_per_model[output_feature_name][measure_name]
+                )
 
-        measures = []
+        measures_vals = []
         measures_names = []
-        if len(accuracies) > 0:
-            measures.append(accuracies)
-            measures_names.append(ACCURACY)
-        if len(hits_at_ks) > 0:
-            measures.append(hits_at_ks)
-            measures_names.append(HITS_AT_K)
-        if len(edit_distances) > 0:
-            measures.append(edit_distances)
-            measures_names.append(EDIT_DISTANCE)
+        min_val = float("inf")
+        max_val = float("-inf")
+        for measure_name, measure_vals in measures_dict.items():
+            if len(measure_vals) > 0:
+                measures_vals.append(measure_vals)
+                measures_names.append(measure_name)
+                curr_min = min(measure_vals)
+                if curr_min < min_val:
+                    min_val = curr_min
+                curr_max = max(measure_vals)
+                if curr_max > max_val:
+                    max_val = curr_max
 
         filename = None
 
@@ -821,9 +825,10 @@ def compare_performance(
             os.makedirs(output_directory, exist_ok=True)
 
         visualization_utils.compare_classifiers_plot(
-            measures,
+            measures_vals,
             measures_names,
             model_names_list,
+            adaptive=min_val < 0 or max_val > 1,
             title='Performance comparison on {}'.format(output_feature_name),
             filename=filename
         )
@@ -3001,9 +3006,9 @@ def frequency_vs_f1(
             )
 
             output_feature_name_frequency_reordered = \
-            output_feature_name_frequency_np[
-                f1_sorted_indices[::-1]
-            ][:len(f1_sorted_indices)]
+                output_feature_name_frequency_np[
+                    f1_sorted_indices[::-1]
+                ][:len(f1_sorted_indices)]
             f1_reordered = f1_np[f1_sorted_indices[::-1]][
                            :len(f1_sorted_indices)]
 
@@ -3028,9 +3033,9 @@ def frequency_vs_f1(
 
             frequency_sorted_indices = output_feature_name_frequency_np.argsort()
             output_feature_name_frequency_reordered = \
-            output_feature_name_frequency_np[
-                frequency_sorted_indices[::-1]
-            ][:len(f1_sorted_indices)]
+                output_feature_name_frequency_np[
+                    frequency_sorted_indices[::-1]
+                ][:len(f1_sorted_indices)]
 
             f1_reordered = np.zeros(
                 len(output_feature_name_frequency_reordered))
@@ -3260,6 +3265,8 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.visualize')
 
     try:
         vis_func = visualizations_registry[args.visualization]
