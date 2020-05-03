@@ -222,7 +222,7 @@ The hyper-parameter optimization design in Ludwig is based on two abstract inter
  Each sub-class of `HyperoptStrategy` that implements its abstract methods samples parameters according to their definition and type (see [User Guide]() for details) differently, like using a random search (implemented in `RandomStrategy`), or a grid serach (implemented in `GridStrategy`, or bayesian optimization or evolutionary techniques.
  
 `HyperoptExecutor` represents the method used to execute the hyper-parameter optimization, independently of how the values fo the hyperparameters are sampled.
-Available implementations are a serial ecevutor that executes the training with the different sampled hyper-parameters values one at a time (implemented in `SerialExecutor`), a parallel executor that runs the trainin using sampled hyper-parameters values in parallel on the same machine (implemented in the `ParallelEcevutor`), and a [Fiber]()-based executor that enables to run the trainin using sampled hyper-parameters values in parallel on multiple machines within a cluster. 
+Available implementations are a serial executor that executes the training with the different sampled hyper-parameters values one at a time (implemented in `SerialExecutor`), a parallel executor that runs the training using sampled hyper-parameters values in parallel on the same machine (implemented in the `ParallelExecutor`), and a [Fiber]()-based executor that enables to run the training using sampled hyper-parameters values in parallel on multiple machines within a cluster. 
 A `HyperoptExecutor` uses a `HyperoptStrategy` to sample hyper-parameters values, usually initialzies an execution context, like a multithread pool fo instance, and executes the hyper-parameter optimization according to the strategy.
 First, a new batch of paramters is sampled from the `HyperoptStrategy`.
 Then, sampled parameters are merged with the basic model definition parameters specified, overriding them.
@@ -249,7 +249,27 @@ The parameters of the base `HyperoptStrategy` class constructor are:
 - `goal` which indicates if to minimize or maximize a metric or a loss of any of the output features on any of the splits which is defined in the `hyperopt` section
 - `parameters` which contains all hyper-parameters to optimize with their types and ranges / values.
 
-TODO Add example
+Example:
+```python
+goal = "minimize"
+parameters = {
+            "training.learning_rate": {
+                "type": "float",
+                "low": 0.001,
+                "high": 0.1,
+                "steps": 4,
+                "scale": "linear"
+            },
+            "combiner.num_fc_layers": {
+                "type": "int",
+                "low": 2,
+                "high": 6,
+                "steps": 3
+            }
+        }
+
+strategy = GridStrategy(goal, parameters)
+```
 
 #### `sample`
 ```python
@@ -285,7 +305,16 @@ def update(
 
 `update` updates the strategy with the results of previous computation. It is not needed for stateless strategies like grid and random, but is needed for stateful strategies like bayesian and evolutionary ones.
 
-TODO Add example
+Example:
+```python
+sampled_parameters = {
+    'training.learning_rate': 0.005, 'combiner.num_fc_layers': 2, 
+    'utterance.cell_type': 'gru'
+    } 
+statistics = {'validation_loss': 2.53463, 'validation_accuracy': 0.7, ...}
+
+strategy.update(sampled_parameters, statistics)
+```
 
 #### `finished`
 ```python
@@ -333,7 +362,32 @@ The parameters of the base `HyperoptExecutor` class constructor are
 - `metric` is the metric that we want to optimize for, different ones are available depending on the data type of the output feature. Check the User Guide to determine which metrics are available for each.
 - `split` is the split of data that we want to compute our metric on. Usually it is the `validation` split, but users have the flexibility to specify also `train` or `test` splits.
 
-TODO Add example
+Example:
+```python
+goal = "minimize"
+parameters = {
+            "training.learning_rate": {
+                "type": "float",
+                "low": 0.001,
+                "high": 0.1,
+                "steps": 4,
+                "scale": "linear"
+            },
+            "combiner.num_fc_layers": {
+                "type": "int",
+                "low": 2,
+                "high": 6,
+                "steps": 3
+            }
+        }
+output_feature = "combined"
+metric = "loss"
+split = "validation"
+
+grid_strategy = GridStrategy(goal, parameters)
+
+executor = SerialExecutor(grid_strategy, output_feature, metric, split)
+```
 
 #### `execute`
 ```python
