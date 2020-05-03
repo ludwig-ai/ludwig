@@ -304,12 +304,12 @@ class SerialExecutor(HyperoptExecutor):
             self,
             hyperopt_strategy: HyperoptStrategy,
             output_feature: str,
-            measure: str,
+            metric: str,
             split: str,
             **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, measure, split
+            self, hyperopt_strategy, output_feature, metric, split
         )
 
     def execute(
@@ -414,14 +414,14 @@ class ParallelExecutor(HyperoptExecutor):
             self,
             hyperopt_strategy: HyperoptStrategy,
             output_feature: str,
-            measure: str,
+            metric: str,
             split: str,
             num_workers: int = 2,
             epsilon: int = 0.01,
             **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, measure, split
+            self, hyperopt_strategy, output_feature, metric, split
         )
         self.num_workers = num_workers
         self.epsilon = epsilon
@@ -624,7 +624,7 @@ class FiberExecutor(HyperoptExecutor):
             self,
             hyperopt_strategy: HyperoptStrategy,
             output_feature: str,
-            measure: str,
+            metric: str,
             split: str,
             num_workers: int = 2,
             fiber_backend: str = "local",
@@ -632,7 +632,7 @@ class FiberExecutor(HyperoptExecutor):
     ) -> None:
         import fiber
         HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, measure, split
+            self, hyperopt_strategy, output_feature, metric, split
         )
         fiber.init(backend=fiber_backend)
         self.pool = fiber.Pool(num_workers)

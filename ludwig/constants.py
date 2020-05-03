@@ -70,6 +70,7 @@ FILL_WITH_MEAN = 'fill_with_mean'
 BACKFILL = 'backfill'
 
 MEASURE = 'measure'
+METRIC = 'metric'
 PREDICTION = 'prediction'
 
 SUM = 'sum'
