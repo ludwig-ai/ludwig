@@ -69,8 +69,6 @@ class RecurrentStack(Layer):
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
         self.layers = []
-        self.cell_type = cell_type
-        self.state_size = state_size
 
         rnn_params = {
             'units': state_size,
@@ -105,46 +103,12 @@ class RecurrentStack(Layer):
 
             self.layers.append(layer)
 
-    @staticmethod
-    def _initialize_initial_state(batch_size, state_size, cell_type):
-        if cell_type == 'lstm':
-            initial_state = [
-                tf.zeros((batch_size, state_size)),
-                tf.zeros((batch_size, state_size))
-            ]
-        else:
-            initial_state = tf.zeros((batch_size, state_size))
-
-        return initial_state
-
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
-        batch_size = inputs.shape[0]
-
-        initial_state = self._initialize_initial_state(
-            batch_size,
-            self.state_size,
-            self.cell_type
-        )
-
         for layer in self.layers:
-            if self.cell_type == 'lstm':
-                hidden, final_memory_state, final_carry_state = \
-                    layer(
-                            hidden,
-                            initial_state=initial_state,
-                            training=training
-                          )
-                initial_state = [final_memory_state, final_carry_state]
-            else:
-                hidden, initial_state = layer(
-                    hidden,
-                    initial_state=initial_state,
-                    training=training
-                )
-
-        return hidden, initial_state
-
+            outputs = layer(hidden, training=training)
+            hidden = outputs[0]
+        return hidden, outputs[1:]
 
 def get_cell_fun(cell_type):
     if cell_type == 'rnn':
