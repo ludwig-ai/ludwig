@@ -1756,7 +1756,7 @@ class StackedCNNRNN(Layer):
         )
 
         # ================ Recurrent Layers ================
-        hidden = self.recurrent_stack(
+        hidden, final_state = self.recurrent_stack(
             hidden,
             training=training,
             mask=mask
@@ -1773,7 +1773,10 @@ class StackedCNNRNN(Layer):
                 mask=mask
             )
 
-        return {'encoder_output': hidden}
+        return {
+            'encoder_output': hidden,
+            'encoder_final_state':  final_state
+        }
 
 
 class BERT:
