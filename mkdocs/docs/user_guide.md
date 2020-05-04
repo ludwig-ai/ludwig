@@ -629,185 +629,8 @@ optional arguments:
 The parameters combine parameters from both [train](#train) and [test](#test) so refer to those sections for an in depth explanation.
 The output directory will contain the outputs both commands produce.
 
-Hyper-parameters will be specified inside the Ludwig model definition as a root key.
-Each hyper-parameter parameter will have its type, range and additional parameters.
+In order to perform an hyper-parameter optimization, the `hyperopt` section needs to be provided within the model definition. For details on the `hyperopt` section see the detailed description in [HyperparamterOptimization](#Hyper-parameter optimization).
 
-In order to specify hyper-parameters to optimize, one needs to add a `hyperopt` section to the `model_definition_file` or `model_definition` that contains all hyper-parameters to optimize. If the parameters are nested, `.` is used to reference an parameter nested one layer below. For instance, to reference the `learning_rate`, one would have to use the name `training.learning_rate`. If the parameter to reference is nested inside in an input or output feature, the name of that feature will be be used as starting point, for instance, for referencing the cell_type of the utterance specify `utterance.cell_type`.
-
-```yaml
-hyperopt:
-  strategy:
-    type: grid  # random
-    # strategy parameters...
-  executor:
-    type: serial  # parallel
-    # executor parameters...
-  parameters:
-    utterance.cell_type: ...
-    utterance.num_layers: ...
-    combiner.num_fc_layers: ...
-    section.embedding_size: ...
-    preprocessing.text.vocab_size: ...
-    training.learning_rate: ...
-    training.optimizer.type: ...
-```
-
-The `strategy` section contains which strategy to use to perform hyper-parameter optimization. Different types that are implemented are grid and random. The strategy parameters are used to modify the strategy, for instance for random, how many random samples to draw.
-
-The `executor` section specifies how to execute hyperparameter optimization.
-The Implementation could happen locally in a serial manner or parallely across multiple workers and with gpus as well if opted.
-
-In the `parameters` section, the values associated with those keys vary depending on the type of the parameter. Types can be `float`, `int` and `category`.
-
-#### Strategy
-
-Example of grid strategy:
-```yaml
-strategy:
-  type: grid
-```
-
-Example of random strategy:
-```yaml
-strategy:
-  type: random
-  num_samples: 20
-```
-
-
-#### Executor
-
-Example of serial executor:
-```yaml
-executor:
-  type: serial
-```
-
-Example of parallel strategy:
-```yaml
-executor:
-  type: parallel
-  num_workers: 4
-```
-
-
-#### Float parameters
-
-For a `float` value, the parameters to specify are:
-- `low`: minimum value
-- `high`: maximum value
-- `scale`: `log` or `linear`
-- `steps`: OPTIONAL number of steps.
-For instance low:0.0, high:1.0, steps 3 would yield [0.0, 0.5, 1.0] for the search
-
-In the future the distribution to use (`uniform`, `gaussian`, `gamma`, etc.) with the distribution parameters could be specified, but to begin with just those parameters are sufficient.
-
-Example:
-```yaml
-training.learning_rate:
-  type: float
-  low: 0.001
-  high: 0.1
-  steps: 4
-  scale: linear
-```
-
-
-#### Int parameters
-
-For an `int` value, the parameters to specify are:
-- `low`: minimum value
-- `high`: maximum value
-- `steps`: OPTIONAL number of steps. 
-For instance low:0, high:10, steps 3 would yeald [0, 5, 10] for the search
-
-Example:
-```yaml
-combiner.num_fc_layers:
-  type: int
-  low: 1
-  high: 4
-```
-
-
-#### Category parameters
-
-For a `category` value, the parameters to specify are:
-- `values`: a list of possible values. The type of each value of the list is not important (they could be strings, integers, floats and anything else).
-
-Example:
-```yaml
-utterance.cell_type:
-  type: category
-  values: [rnn, gru, lstm]
-```
-
-Each hyperopt strategy can work for minimizing or maximizing a metric or a loss of any of the output features (as Ludwig supports more than one) on any of the splits.
-Additional Parameters that could be added to `hyperopt` root key is:
-
-- `output_feature` - combined(default). It could be the name of any output feature
-- `metric` - loss(default). It could be anything returned by the training
-- `split` - validation(default). It could also be training or test
-- `goal` - minimize(default). It could be maximize as well
-
-
-#### Full example
-
-```yaml
-input_features:
-  -
-    name: utterance
-    type: text
-    encoder: rnn
-    cell_type: lstm
-    num_layers: 2
-  -
-  	name: section
-    type: category
-    representation: dense
-    embedding_szize: 100
-combiner:
-  type: concat
-  num_fc_layers: 1
-output_features:
-  -
-    name: class
-    type: category
-preprocessing:
-  text:
-    word_vocab_size: 10000
-training:
-  learning_rate: 0.001
-  optimizaer:
-    type: adam
-hyperopt:
-  strategy:
-    type: random
-    num_samples: 12
-  executor:
-    type: parallel
-    num_workers: 4
-  parameters:
-    training.learning_rate:
-      type: float
-      low: 0.0001
-      high: 0.1
-      steps: 4
-      scale: log
-    combiner.num_fc_layers:
-      type: int
-      low: 1
-      high: 5
-    utterance.cell_type:
-      type: category
-      values: [rnn, gru, lstm]
-    goal: minimize
-```
-
-Example:
-```
-ludwig hyperopt --data_csv reuters-allcats.csv --model_definition "{input_features: [{name: utterance, type: text, encoder: rnn, cell_type: lstm, num_layers: 2}], output_features: [{name: class, type: category}], training: {learning_rate: 0.001}, hyperopt: {strategy: {type: grid}, executor: {type: serial}, parameters: {training.learning_rate: {type: float, low: 0.0001, high: 0.1, steps: 4, scale: log}, utterance.cell_type: {type: category, values: [rnn, gru, lstm]}}}}"
-```
 
 collect_weights
 ---------------
@@ -3319,6 +3142,244 @@ The same applies to `experiment`, `predict` and `test`.
 
 More details on Horovod installation and run parameters can be found in [Horovod's documentation](https://github.com/uber/horovod).
 
+
+Hyper-parameter optimization
+============================
+
+Hyper-parameters will be specified inside the Ludwig model definition as a root key `hyperopt` with strategy, executor and other parameters required for optimization.
+
+The different parameters that could be defined in the `hyperopt` config are:
+- `strategy` section contains the strategy to be used for sampling hyper-paramters values. Different types that are implemented are Grid and Random. The strategy parameters are used to modify the strategy,for instance for random, how many random samples to draw. 
+- `executor` section specifies how to execute the hyper-paramter optimization. The execution could happen locally in a serial manner or parallely across multiple workers and with gpu(s) as well if opted.
+- `parameters` section consists of hyper-parameters as keys to optimize and the values associated with those keys vary depending on the type of the parameter. Types can be `float`, `int` and `category`.
+- `split` is the split of data that we want to compute our metric on. Usually it is the `validation` split, but users have the flexibility to specify also `train` or `test` splits.
+- `output_feature` is a `str` contaning the name of the output_feature that we want to optimize the metric or loss of.
+- `metric` is the metric that we want to optimize for, different ones are available depending on the data type of the output feature.
+- `goal` which indicates if to minimize or maximize a metric or a loss of any of the output features on any of the splits which is defined in the `hyperopt` section.
+
+Example:
+```yaml
+hyperopt:
+  strategy:
+    type: grid  # random
+    # strategy parameters...
+  executor:
+    type: serial  # parallel
+    # executor parameters...
+  parameters:
+    utterance.cell_type: ...
+    utterance.num_layers: ...
+    combiner.num_fc_layers: ...
+    section.embedding_size: ...
+    preprocessing.text.vocab_size: ...
+    training.learning_rate: ...
+    training.optimizer.type: ...
+  output_feature: combined
+  metric: loss
+  split: validation
+  goal: minimize
+```
+
+In the `parameters` section, `.` is used to reference an parameter nested one layer below. For instance, to reference the `learning_rate`, one would have to use the name `training.learning_rate`. If the parameter to reference is nested inside in an input or output feature, the name of that feature will be be used as starting point, for instance, for referencing the cell_type of the utterance specify `utterance.cell_type`.
+
+
+#### Strategy
+
+##### Grid Strategy
+
+Grid Strategy creates a search space by laying down grid of all possible configurations with the hyper-parameters mentioned in the `parameters` section with associated type and values.
+
+Example:
+```yaml
+strategy:
+  type: grid
+parameters: ...
+goal: minimize
+```
+
+```python
+strategy = GridStrategy(goal, parameters)
+```
+
+##### Random Strategy
+
+Random Strategy samples hyper-parameters values randomly from the parameters search space. `num_samples` is specified in `strategy` section.
+
+Example:
+```yaml
+strategy:
+  type: random
+  num_samples: 20
+parameters: ...
+goal: minimize
+```
+
+```python
+strategy = RandomStrategy(goal, parameters, num_samples)
+```
+
+
+#### Executor
+
+##### Serial Executor
+
+Serial Executor implements hyper-parameter optimization locally in a serial manner with a set of sampled parameters defined by the strategy.
+
+Example:
+```yaml
+strategy:
+  type: grid
+executor:
+  type: serial
+parameters: ...
+output_feature: combined
+metric: loss
+split: validation
+goal: minimize
+```
+
+```python
+strategy = GridStrategy(goal, parameters)
+executor = SerialExecutor(strategy, output_feature, metric, split)
+```
+
+##### Parallel Executor
+
+Parallel Executor train and evaluate models parallelly across multiple workers or with gpu(s) with different set of hyper-parameters values. `gpus` contains the list of GPUs specified by the user as a cli argument. If `gpus` is None, then `num_workers` is the number of tasks to be implemented across the cores in the system. if `gpus` is defined, `gpu_fraction` gets modified according to the `num_workers` to execute tasks parallely.
+
+Example:
+```yaml
+strategy:
+  type: grid
+executor:
+  type: parallel
+  num_workers: 4
+parameters: ...
+output_feature: combined
+metric: loss
+split: validation
+goal: minimize
+```
+
+```python
+strategy = GridStrategy(goal, parameters)
+executor = ParallelExecutor(strategy, output_feature, metric, split, num_workers)
+```
+
+
+#### Float parameters
+
+For a `float` value, the parameters to specify are:
+- `low`: minimum value
+- `high`: maximum value
+- `scale`: `log` or `linear`
+- `steps`: OPTIONAL number of steps.
+For instance low:0.0, high:1.0, steps 3 would yield [0.0, 0.5, 1.0] for the search
+
+
+Example:
+```yaml
+training.learning_rate:
+  type: float
+  low: 0.001
+  high: 0.1
+  steps: 4
+  scale: linear
+```
+
+
+#### Int parameters
+
+For an `int` value, the parameters to specify are:
+- `low`: minimum value
+- `high`: maximum value
+- `steps`: OPTIONAL number of steps. 
+For instance low:0, high:10, steps 3 would yeald [0, 5, 10] for the search
+
+Example:
+```yaml
+combiner.num_fc_layers:
+  type: int
+  low: 1
+  high: 4
+```
+
+
+#### Category parameters
+
+For a `category` value, the parameters to specify are:
+- `values`: a list of possible values. The type of each value of the list is not important (they could be strings, integers, floats and anything else).
+
+Example:
+```yaml
+utterance.cell_type:
+  type: category
+  values: [rnn, gru, lstm]
+```
+
+
+#### Full example
+
+```yaml
+input_features:
+  - name: utterance
+    type: text
+    encoder: rnn
+    cell_type: lstm
+    num_layers: 2
+  - name: section
+    type: category
+    representation: dense
+    embedding_szize: 100
+combiner:
+  type: concat
+  num_fc_layers: 1
+output_features:
+  - name: class
+    type: category
+preprocessing:
+  text:
+    word_vocab_size: 10000
+training:
+  learning_rate: 0.001
+  optimizer:
+    type: adam
+hyperopt:
+  strategy:
+    type: random
+    num_samples: 12
+  executor:
+    type: parallel
+    num_workers: 4
+  parameters:
+    training.learning_rate:
+      type: float
+      low: 0.0001
+      high: 0.1
+      steps: 4
+      scale: log
+    training.optimizaer.type:
+      type: category
+      values: [sgd, adam, adagrad]
+    preprocessing.text.word_vocab_size:
+      type: int
+      low: 700
+      high: 1200
+      steps: 5
+    combiner.num_fc_layers:
+      type: int
+      low: 1
+      high: 5
+    utterance.cell_type:
+      type: category
+      values: [rnn, gru, lstm]
+  goal: minimize
+```
+
+Example:
+```
+ludwig hyperopt --data_csv reuters-allcats.csv --model_definition "{input_features: [{name: utterance, type: text, encoder: rnn, cell_type: lstm, num_layers: 2}], output_features: [{name: class, type: category}], training: {learning_rate: 0.001}, hyperopt: {strategy: {type: grid}, executor: {type: serial}, parameters: {training.learning_rate: {type: float, low: 0.0001, high: 0.1, steps: 4, scale: log}, utterance.cell_type: {type: category, values: [rnn, gru, lstm]}}}}"
+```
 
 Integrations
 ============
