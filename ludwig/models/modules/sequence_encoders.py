@@ -73,7 +73,7 @@ class SequencePassthroughEncoder(Layer):
             )
         hidden = reduce_sequence(input_sequence, self.reduce_output)
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class SequenceEmbedEncoder(Layer):
@@ -203,7 +203,7 @@ class SequenceEmbedEncoder(Layer):
 
         hidden = reduce_sequence(embedded_sequence, self.reduce_output)
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class ParallelCNN(Layer):
@@ -511,7 +511,7 @@ class ParallelCNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class StackedCNN(Layer):
@@ -861,7 +861,7 @@ class StackedCNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class StackedParallelCNN(Layer):
@@ -1196,7 +1196,7 @@ class StackedParallelCNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class StackedRNN(Layer):
@@ -1450,7 +1450,7 @@ class StackedRNN(Layer):
         hidden = embedded_sequence
 
         # ================ Recurrent Layers ================
-        hidden = self.recurrent_stack(
+        hidden, final_state = self.recurrent_stack(
             hidden,
             training=training,
             mask=mask
@@ -1467,7 +1467,10 @@ class StackedRNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {
+            'encoder_output': hidden,
+            'encoder_final_state': final_state
+        }
 
 
 class StackedCNNRNN(Layer):
@@ -1770,7 +1773,7 @@ class StackedCNNRNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class BERT:

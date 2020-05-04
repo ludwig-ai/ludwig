@@ -69,6 +69,8 @@ class RecurrentStack(Layer):
 
         rnn_layer_class = get_from_registry(cell_type, rnn_layers_registry)
         self.layers = []
+        self.cell_type = cell_type
+        self.state_size = state_size
 
         rnn_params = {
             'units': state_size,
@@ -89,6 +91,7 @@ class RecurrentStack(Layer):
             'dropout': dropout,
             'recurrent_dropout': recurrent_dropout,
             'return_sequences': True,
+            'return_state': True,
         }
         signature = inspect.signature(rnn_layer_class.__init__)
         valid_args = set(signature.parameters.keys())
@@ -102,13 +105,45 @@ class RecurrentStack(Layer):
 
             self.layers.append(layer)
 
+    @staticmethod
+    def _initialize_initial_state(batch_size, state_size, cell_type):
+        if cell_type == 'lstm':
+            initial_state = [
+                tf.zeros((batch_size, state_size)),
+                tf.zeros((batch_size, state_size))
+            ]
+        else:
+            initial_state = tf.zeros((batch_size, state_size))
+
+        return initial_state
+
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
+        batch_size = inputs.shape[0]
+
+        initial_state = self._initialize_initial_state(
+            batch_size,
+            self.state_size,
+            self.cell_type
+        )
 
         for layer in self.layers:
-            hidden = layer(hidden, training=training)
+            if self.cell_type == 'lstm':
+                hidden, final_memory_state, final_carry_state = \
+                    layer(
+                            hidden,
+                            initial_state=initial_state,
+                            training=training
+                          )
+                initial_state = [final_memory_state, final_carry_state]
+            else:
+                hidden, initial_state = layer(
+                    hidden,
+                    initial_state=initial_state,
+                    training=training
+                )
 
-        return hidden
+        return hidden, initial_state
 
 
 def get_cell_fun(cell_type):
