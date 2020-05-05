@@ -106,7 +106,14 @@ class ConcatCombiner(tf.keras.Model):
                 mask=mask
             )
 
-        return {'combiner_output': hidden}
+        return_data = {'combiner_output': hidden}
+
+        if len(encoder_outputs) == 1 and 'encoder_output_state' in inputs:
+            return_data.update({'encoder_output_state': \
+                                    inputs['encoder_output_state']})
+
+
+        return return_data
 
 
 class SequenceConcatCombiner:
