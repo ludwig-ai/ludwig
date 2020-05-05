@@ -135,7 +135,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         BinaryBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
         self.overwrite_defaults(feature)
-        self.decoder = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
@@ -143,7 +143,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             self,
             inputs  # hidden
     ):
-        return self.decoder(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,

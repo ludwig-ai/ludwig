@@ -166,7 +166,8 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             self,
             inputs,  # hidden
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
