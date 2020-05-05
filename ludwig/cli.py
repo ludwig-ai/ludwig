@@ -36,7 +36,7 @@ class CLI(object):
     - collect_activations - For each datapoint, there exists a corresponding
       tensor representation which are collected through this method
     - hyperopt - Performs an hyper-parameter search
-      with a given stratey and parameters
+      with a given strategy and parameters
     """
 
     def __init__(self):

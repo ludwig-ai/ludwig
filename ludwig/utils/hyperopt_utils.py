@@ -19,15 +19,15 @@ import functools
 import itertools
 import logging
 import math
+import multiprocessing
 import os
 import random
 import signal
-import multiprocessing
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
-import psutil
+from typing import Any, Dict, List, Tuple, Iterable
 
 import numpy as np
+import psutil
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, VALIDATION, MAXIMIZE, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess
@@ -35,7 +35,7 @@ from ludwig.predict import predict, print_test_results, save_prediction_outputs,
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_from_registry, set_default_values, \
-    set_default_value
+    set_default_value, get_class_attributes
 
 logger = logging.getLogger(__name__)
 
@@ -137,12 +137,19 @@ class HyperoptStrategy(ABC):
     def update(
             self,
             sampled_parameters: Dict[str, Any],
-            statistics: Dict[str, Any]
+            metric_score: float
     ):
         # Given the results of previous computation, it updates
         # the strategy (not needed for stateless strategies like "grid"
         # and random, but will be needed by bayesian)
         pass
+
+    def update_batch(
+            self,
+            parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]
+    ):
+        for (sampled_parameters, metric_score) in parameters_metric_tuples:
+            self.update(sampled_parameters, metric_score)
 
     @abstractmethod
     def finished(self) -> bool:
@@ -151,6 +158,8 @@ class HyperoptStrategy(ABC):
 
 
 class RandomStrategy(HyperoptStrategy):
+    num_samples = 10
+
     def __init__(
             self,
             goal: str,
@@ -248,7 +257,7 @@ class HyperoptExecutor(ABC):
         self.metric = metric
         self.split = split
 
-    def get_metric_score(self, eval_stats):
+    def get_metric_score(self, eval_stats) -> float:
         return eval_stats[self.output_feature][self.metric]
 
     def sort_hyperopt_results(self, hyperopt_results):
@@ -304,12 +313,12 @@ class SerialExecutor(HyperoptExecutor):
             self,
             hyperopt_strategy: HyperoptStrategy,
             output_feature: str,
-            measure: str,
+            metric: str,
             split: str,
             **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, measure, split
+            self, hyperopt_strategy, output_feature, metric, split
         )
 
     def execute(
@@ -352,6 +361,7 @@ class SerialExecutor(HyperoptExecutor):
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
+            metric_scores = []
 
             for parameters in sampled_parameters:
                 modified_model_definition = substitute_parameters(
@@ -394,8 +404,8 @@ class SerialExecutor(HyperoptExecutor):
                     random_seed=random_seed,
                     debug=debug,
                 )
-                # eval_stats = random_eval_stats(self.output_feature)
                 metric_score = self.get_metric_score(eval_stats)
+                metric_scores.append(metric_score)
 
                 hyperopt_results.append({
                     'parameters': parameters,
@@ -404,24 +414,31 @@ class SerialExecutor(HyperoptExecutor):
                     'eval_stats': eval_stats
                 })
 
+            self.hyperopt_strategy.update_batch(
+                zip(sampled_parameters, metric_scores)
+            )
+
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
 
         return hyperopt_results
 
 
 class ParallelExecutor(HyperoptExecutor):
+    num_workers = 2
+    epsilon = 0.01
+
     def __init__(
             self,
             hyperopt_strategy: HyperoptStrategy,
             output_feature: str,
-            measure: str,
+            metric: str,
             split: str,
             num_workers: int = 2,
             epsilon: int = 0.01,
             **kwargs
     ) -> None:
         HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, measure, split
+            self, hyperopt_strategy, output_feature, metric, split
         )
         self.num_workers = num_workers
         self.epsilon = epsilon
@@ -557,6 +574,10 @@ class ParallelExecutor(HyperoptExecutor):
                 for _ in range(process_per_gpu):
                     self.queue.put(gpu_id)
 
+        pool = multiprocessing.Pool(
+            self.num_workers, ParallelExecutor.init_worker
+        )
+        hyperopt_results = []
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
 
@@ -605,26 +626,35 @@ class ParallelExecutor(HyperoptExecutor):
                     }
                 )
 
-        pool = multiprocessing.Pool(
-            self.num_workers, ParallelExecutor.init_worker)
+            if gpus is not None:
+                batch_results = pool.map(
+                    self._train_and_eval_model_gpu, hyperopt_parameters
+                )
+            else:
+                batch_results = pool.map(
+                    self._train_and_eval_model, hyperopt_parameters
+                )
 
-        if gpus is not None:
-            hyperopt_results = pool.map(
-                self._train_and_eval_model_gpu, hyperopt_parameters)
-        else:
-            hyperopt_results = pool.map(
-                self._train_and_eval_model, hyperopt_parameters)
+            self.hyperopt_strategy.update_batch(
+                (result['parameters'], result['metric_score'])
+                for result in batch_results
+            )
+
+            hyperopt_results.extend(batch_results)
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
         return hyperopt_results
 
 
 class FiberExecutor(HyperoptExecutor):
+    num_workers = 2
+    fiber_backend = "local"
+
     def __init__(
             self,
             hyperopt_strategy: HyperoptStrategy,
             output_feature: str,
-            measure: str,
+            metric: str,
             split: str,
             num_workers: int = 2,
             fiber_backend: str = "local",
@@ -632,7 +662,7 @@ class FiberExecutor(HyperoptExecutor):
     ) -> None:
         import fiber
         HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, measure, split
+            self, hyperopt_strategy, output_feature, metric, split
         )
         fiber.init(backend=fiber_backend)
         self.pool = fiber.Pool(num_workers)
@@ -714,12 +744,13 @@ class FiberExecutor(HyperoptExecutor):
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
+            metric_scores = []
 
             stats_batch = self.pool.map(
                 train_func,
                 [
                     substitute_parameters(
-                        copy.deepcopy(model_definition),parameters
+                        copy.deepcopy(model_definition), parameters
                     )
                     for parameters in sampled_parameters
                 ]
@@ -728,6 +759,7 @@ class FiberExecutor(HyperoptExecutor):
             for stats, parameters in zip(stats_batch, sampled_parameters):
                 train_stats, eval_stats = stats
                 metric_score = self.get_metric_score(eval_stats)
+                metric_scores.append(metric_score)
 
                 hyperopt_results.append({
                     'parameters': parameters,
@@ -735,6 +767,10 @@ class FiberExecutor(HyperoptExecutor):
                     'training_stats': train_stats,
                     'eval_stats': eval_stats
                 })
+
+            self.hyperopt_strategy.update_batch(
+                zip(sampled_parameters, metric_scores)
+            )
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
 
@@ -765,7 +801,6 @@ executor_registry = {
 }
 
 
-# TODO this function should read default parameters from strategies / executors
 def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, STRATEGY, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
@@ -777,18 +812,21 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_values(
         hyperopt_params[STRATEGY],
         {
-            "type": "random",
-            "num_samples": 12
+            "type": "random"
         }
     )
 
-    if hyperopt_params[STRATEGY]["type"] == "grid":
-        set_default_values(
-            hyperopt_params[STRATEGY],
-            {
-                # Put Grid default values
-            },
-        )
+    strategy = get_from_registry(
+        hyperopt_params[STRATEGY]["type"], strategy_registry
+    )
+    strategy_defaults = {
+        k: v for k, v in strategy.__dict__.items()
+        if k in get_class_attributes(strategy)
+    }
+    set_default_values(
+        hyperopt_params[STRATEGY],
+        strategy_defaults,
+    )
 
     set_default_values(
         hyperopt_params[EXECUTOR],
@@ -797,13 +835,17 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
         }
     )
 
-    if hyperopt_params[EXECUTOR]["type"] == "parallel":
-        set_default_values(
-            hyperopt_params[EXECUTOR],
-            {
-                "num_workers": 4
-            }
-        )
+    executor = get_from_registry(
+        hyperopt_params[EXECUTOR]["type"], executor_registry
+    )
+    executor_defaults = {
+        k: v for k, v in executor.__dict__.items()
+        if k in get_class_attributes(executor)
+    }
+    set_default_values(
+        hyperopt_params[EXECUTOR],
+        executor_defaults,
+    )
 
 
 def set_values(model_dict, name, parameters_dict):
@@ -979,39 +1021,3 @@ def train_and_eval_on_split(
     if not skip_save_test_statistics:
         save_test_statistics(test_results, experiment_dir_name)
     return train_stats, test_results
-
-
-def random_eval_stats(output_feature):
-    eval_stats = {
-        'training': {
-            'combined': {
-                'loss': random.uniform(0.1, 2.0)
-            },
-            output_feature: {
-                'loss': random.uniform(0.1, 2.0),
-                'accuracy': random.uniform(0.0, 1.0),
-                'mean_squared_error': random.uniform(0.0, 1000),
-            }
-        },
-        'validation': {
-            'combined': {
-                'loss': random.uniform(0.1, 2.0)
-            },
-            output_feature: {
-                'loss': random.uniform(0.1, 2.0),
-                'accuracy': random.uniform(0.0, 1.0),
-                'mean_squared_error': random.uniform(0.0, 1000),
-            }
-        },
-        'test': {
-            'combined': {
-                'loss': random.uniform(0.1, 2.0)
-            },
-            output_feature: {
-                'loss': random.uniform(0.1, 2.0),
-                'accuracy': random.uniform(0.0, 1.0),
-                'mean_squared_error': random.uniform(0.0, 1000),
-            }
-        }
-    }
-    return eval_stats

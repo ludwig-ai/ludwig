@@ -26,7 +26,7 @@ from pprint import pformat
 
 import yaml
 
-from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, VALIDATION, MEASURE
+from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, VALIDATION, METRIC
 from ludwig.contrib import contrib_command
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
@@ -184,7 +184,7 @@ def hyperopt(
         )
         available_metrics = set(
             key for key, val in feature_class.output_config.items()
-            if val['type'] == MEASURE
+            if val['type'] == METRIC
         )
         if metric not in available_metrics:
             # TODO allow users to specify also metrics from the overall
