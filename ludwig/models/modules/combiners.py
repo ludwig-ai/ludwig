@@ -106,7 +106,7 @@ class ConcatCombiner(tf.keras.Model):
                 mask=mask
             )
 
-        return hidden
+        return {'combiner_output': hidden}
 
 
 class SequenceConcatCombiner:

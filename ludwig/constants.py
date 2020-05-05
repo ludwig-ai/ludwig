@@ -73,6 +73,7 @@ BACKFILL = 'backfill'
 METRIC = 'metric'
 PREDICTION = 'prediction'
 LOGITS = 'logits'
+HIDDEN = 'hidden'
 LAST_HIDDEN = 'last_hidden'
 
 SUM = 'sum'

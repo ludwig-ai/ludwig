@@ -18,7 +18,7 @@ from collections import OrderedDict
 
 import tensorflow.compat.v1 as tf
 
-from ludwig.constants import LOSS
+from ludwig.constants import *
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.utils.misc import merge_dict, get_from_registry
@@ -168,6 +168,8 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
     ):
         combiner_output, other_output_hidden = inputs
 
+        # extract the combined hidden layer
+        combiner_output = combiner_output['combiner_output']
         hidden = self.prepare_decoder_inputs(
             combiner_output,
             other_output_hidden,
@@ -176,7 +178,10 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         )
 
         # ================ Predictions ================
-        logits = self.logits(hidden)
+        logits_input = {
+            HIDDEN: hidden
+        }
+        logits = self.logits(logits_input)
 
         return logits, hidden
 
