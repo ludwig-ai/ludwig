@@ -3314,20 +3314,23 @@ Example YAML:
 
 ```yaml
 input_features:
-  - name: utterance
+  -
+    name: utterance
     type: text
     encoder: rnn
     cell_type: lstm
     num_layers: 2
-  - name: section
+  -
+    name: section
     type: category
     representation: dense
-    embedding_szize: 100
+    embedding_size: 100
 combiner:
   type: concat
   num_fc_layers: 1
 output_features:
-  - name: class
+  -
+    name: class
     type: category
 preprocessing:
   text:
