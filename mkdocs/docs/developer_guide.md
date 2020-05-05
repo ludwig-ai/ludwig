@@ -329,7 +329,7 @@ strategy.update(sampled_parameters, statistics)
 ```python
 def update_batch(
     self,
-    parameters_metric_tuples: List[Tuple[Dict[str, Any], float]]
+    parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]
 ):
 ```
 
