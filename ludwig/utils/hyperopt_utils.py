@@ -35,7 +35,7 @@ from ludwig.predict import predict, print_test_results, save_prediction_outputs,
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_from_registry, set_default_values, \
-    set_default_value
+    set_default_value, get_class_attributes
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +158,8 @@ class HyperoptStrategy(ABC):
 
 
 class RandomStrategy(HyperoptStrategy):
+    num_samples = 10
+
     def __init__(
             self,
             goal: str,
@@ -402,7 +404,6 @@ class SerialExecutor(HyperoptExecutor):
                     random_seed=random_seed,
                     debug=debug,
                 )
-                # eval_stats = random_eval_stats(self.output_feature)
                 metric_score = self.get_metric_score(eval_stats)
                 metric_scores.append(metric_score)
 
@@ -423,6 +424,9 @@ class SerialExecutor(HyperoptExecutor):
 
 
 class ParallelExecutor(HyperoptExecutor):
+    num_workers = 2
+    epsilon = 0.01
+
     def __init__(
             self,
             hyperopt_strategy: HyperoptStrategy,
@@ -643,6 +647,9 @@ class ParallelExecutor(HyperoptExecutor):
 
 
 class FiberExecutor(HyperoptExecutor):
+    num_workers = 2
+    fiber_backend = "local"
+
     def __init__(
             self,
             hyperopt_strategy: HyperoptStrategy,
@@ -794,7 +801,6 @@ executor_registry = {
 }
 
 
-# TODO this function should read default parameters from strategies / executors
 def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, STRATEGY, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
@@ -806,18 +812,21 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_values(
         hyperopt_params[STRATEGY],
         {
-            "type": "random",
-            "num_samples": 12
+            "type": "random"
         }
     )
 
-    if hyperopt_params[STRATEGY]["type"] == "grid":
-        set_default_values(
-            hyperopt_params[STRATEGY],
-            {
-                # Put Grid default values
-            },
-        )
+    strategy = get_from_registry(
+        hyperopt_params[STRATEGY]["type"], strategy_registry
+    )
+    strategy_defaults = {
+        k: v for k, v in strategy.__dict__.items()
+        if k in get_class_attributes(strategy)
+    }
+    set_default_values(
+        hyperopt_params[STRATEGY],
+        strategy_defaults,
+    )
 
     set_default_values(
         hyperopt_params[EXECUTOR],
@@ -826,13 +835,17 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
         }
     )
 
-    if hyperopt_params[EXECUTOR]["type"] == "parallel":
-        set_default_values(
-            hyperopt_params[EXECUTOR],
-            {
-                "num_workers": 4
-            }
-        )
+    executor = get_from_registry(
+        hyperopt_params[EXECUTOR]["type"], executor_registry
+    )
+    executor_defaults = {
+        k: v for k, v in executor.__dict__.items()
+        if k in get_class_attributes(executor)
+    }
+    set_default_values(
+        hyperopt_params[EXECUTOR],
+        executor_defaults,
+    )
 
 
 def set_values(model_dict, name, parameters_dict):
@@ -1008,39 +1021,3 @@ def train_and_eval_on_split(
     if not skip_save_test_statistics:
         save_test_statistics(test_results, experiment_dir_name)
     return train_stats, test_results
-
-
-def random_eval_stats(output_feature):
-    eval_stats = {
-        'training': {
-            'combined': {
-                'loss': random.uniform(0.1, 2.0)
-            },
-            output_feature: {
-                'loss': random.uniform(0.1, 2.0),
-                'accuracy': random.uniform(0.0, 1.0),
-                'mean_squared_error': random.uniform(0.0, 1000),
-            }
-        },
-        'validation': {
-            'combined': {
-                'loss': random.uniform(0.1, 2.0)
-            },
-            output_feature: {
-                'loss': random.uniform(0.1, 2.0),
-                'accuracy': random.uniform(0.0, 1.0),
-                'mean_squared_error': random.uniform(0.0, 1000),
-            }
-        },
-        'test': {
-            'combined': {
-                'loss': random.uniform(0.1, 2.0)
-            },
-            output_feature: {
-                'loss': random.uniform(0.1, 2.0),
-                'accuracy': random.uniform(0.0, 1.0),
-                'mean_squared_error': random.uniform(0.0, 1000),
-            }
-        }
-    }
-    return eval_stats
