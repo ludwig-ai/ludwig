@@ -303,13 +303,13 @@ Example returned value:
 def update(
     self,
     sampled_parameters: Dict[str, Any],
-    metric_value: float
+    metric_score: float
 ):
 ```
 
 `update` updates the strategy with the results of previous computation.
 - `sampled_parameters` is a dictionary of sampled parameters.
-- `metric_value` is the value of the optimization metric obtained for the specified sample.
+- `metric_score` is the value of the optimization metric obtained for the specified sample.
 
 It is not needed for stateless strategies like grid and random, but is needed for stateful strategies like bayesian and evolutionary ones.
 
@@ -320,7 +320,7 @@ sampled_parameters = {
     'combiner.num_fc_layers': 2, 
     'utterance.cell_type': 'gru'
 } 
-metric_value = 2.53463
+metric_score = 2.53463
 
 strategy.update(sampled_parameters, statistics)
 ```
@@ -352,9 +352,9 @@ sampled_parameters = [
         'utterance.cell_type': 'lstm'
     }
 ]
-metric_value = [2.53463, 1.63869]
+metric_scores = [2.53463, 1.63869]
 
-strategy.update_batch(zip(sampled_parameters, metric_values))
+strategy.update_batch(zip(sampled_parameters, metric_scores))
 ```
 
 #### `finished`
