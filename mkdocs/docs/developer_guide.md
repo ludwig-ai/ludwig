@@ -218,18 +218,18 @@ The hyper-parameter optimization design in Ludwig is based on two abstract inter
 
 `HyperoptStrategy` represents the strategy adopted for sampling hyper-parameters values.
  Which strategy to use is defined in the `strategy` section of the model definition.
- A `HyperoptStrategy` uses the `parameters` defined in the `hyperopt` section of the YAML model definition and a `goal` , either to minimize or maximize.
- Each sub-class of `HyperoptStrategy` that implements its abstract methods samples parameters according to their definition and type (see [User Guide]() for details) differently, like using a random search (implemented in `RandomStrategy`), or a grid serach (implemented in `GridStrategy`, or bayesian optimization or evolutionary techniques.
+A `HyperoptStrategy` uses the `parameters` defined in the `hyperopt` section of the YAML model definition and a `goal` , either to minimize or maximize.
+Each sub-class of `HyperoptStrategy` that implements its abstract methods samples parameters according to their definition and type differently (see [User Guide](user_guide.md#hyper-parameter-optimization) for details), like using a random search (implemented in `RandomStrategy`), or a grid serach (implemented in `GridStrategy`, or bayesian optimization or evolutionary techniques.
  
-`HyperoptExecutor` represents the method used to execute the hyper-parameter optimization, independently of how the values fo the hyperparameters are sampled.
-Available implementations are a serial executor that executes the training with the different sampled hyper-parameters values one at a time (implemented in `SerialExecutor`), a parallel executor that runs the training using sampled hyper-parameters values in parallel on the same machine (implemented in the `ParallelExecutor`), and a [Fiber]()-based executor that enables to run the training using sampled hyper-parameters values in parallel on multiple machines within a cluster. 
-A `HyperoptExecutor` uses a `HyperoptStrategy` to sample hyper-parameters values, usually initialzies an execution context, like a multithread pool fo instance, and executes the hyper-parameter optimization according to the strategy.
-First, a new batch of paramters is sampled from the `HyperoptStrategy`.
-Then, sampled parameters are merged with the basic model definition parameters specified, overriding them.
+`HyperoptExecutor` represents the method used to execute the hyper-parameter optimization, independently of how the values for the hyperparameters are sampled.
+Available implementations are a serial executor that executes the training with the different sampled hyper-parameters values one at a time (implemented in `SerialExecutor`), a parallel executor that runs the training using sampled hyper-parameters values in parallel on the same machine (implemented in the `ParallelExecutor`), and a [Fiber](https://uber.github.io/fiber/)-based executor that enables to run the training using sampled hyper-parameters values in parallel on multiple machines within a cluster. 
+A `HyperoptExecutor` uses a `HyperoptStrategy` to sample hyper-parameters values, usually initializes an execution context, like a multithread pool fo instance, and executes the hyper-parameter optimization according to the strategy.
+First, a new batch of parameters values is sampled from the `HyperoptStrategy`.
+Then, sampled parameters values are merged with the basic model definition parameters specified, with the sampled parameters values overriding the ones in the basic model definition they refer to.
 Training is executed using the merged model definition and training and validation losses and metrics are collected.
-A `(sampled_parameters, statistics)` pair is provided to the `HyperoptStrategy.update` function and the loop is repeted untill all the samples are sampled.
+A `(sampled_parameters, statistics)` pair is provided to the `HyperoptStrategy.update` function and the loop is repeated until all the samples are sampled.
 At the end, `HyperoptExecutor.execute` returns a list of dictionaries that include a parameter sample, its metric score, and its training and test statistics.
-The returned list can is printed and saved to disk, so that it can also be used as input to [hyper-parameter optimization specific visualizations]().
+The returned list is printed and saved to disk, so that it can also be used as input to [hyper-parameter optimization visualizations](user_guide.md#hyper-parameter-optimization-visualization).
 
 
 Adding a HyperoptStrategy
@@ -253,34 +253,34 @@ Example:
 ```python
 goal = "minimize"
 parameters = {
-            "training.learning_rate": {
-                "type": "float",
-                "low": 0.001,
-                "high": 0.1,
-                "steps": 4,
-                "scale": "linear"
-            },
-            "combiner.num_fc_layers": {
-                "type": "int",
-                "low": 2,
-                "high": 6,
-                "steps": 3
-            }
-        }
+    "training.learning_rate": {
+        "type": "float",
+        "low": 0.001,
+        "high": 0.1,
+        "steps": 4,
+        "scale": "linear"
+    },
+    "combiner.num_fc_layers": {
+        "type": "int",
+        "low": 2,
+        "high": 6,
+        "steps": 3
+    }
+}
 
 strategy = GridStrategy(goal, parameters)
 ```
 
 #### `sample`
 ```python
-def sample_batch(self) -> Dict[str, Any]:
+def sample(self) -> Dict[str, Any]:
 ```
 
 `sample` is a method that yields a new sample according to the strategy.
 It returns a set of parameters names and their values.
 If `finished()` returns `True`, calling `sample` would return a `IndexError`.
 
-Example:
+Example returned value:
 ```
 {'training.learning_rate': 0.005, 'combiner.num_fc_layers': 2, 'utterance.cell_type': 'gru'}
 ```
@@ -293,27 +293,68 @@ def sample_batch(self, batch_size: int = 1) -> List[Dict[str, Any]]:
 `sample_batch` method returns a list of sampled parameters of length equal to or less than `batch_size`.
 If `finished()` returns `True`, calling `sample_batch` would return a `IndexError`. 
 
+Example returned value:
+```
+[{'training.learning_rate': 0.005, 'combiner.num_fc_layers': 2, 'utterance.cell_type': 'gru'}, {'training.learning_rate': 0.015, 'combiner.num_fc_layers': 3, 'utterance.cell_type': 'lstm'}]
+```
 
 #### `update`
 ```python
 def update(
     self,
     sampled_parameters: Dict[str, Any],
-    statistics: Dict[str, Any]
+    metric_value: float
 ):
 ```
 
-`update` updates the strategy with the results of previous computation. It is not needed for stateless strategies like grid and random, but is needed for stateful strategies like bayesian and evolutionary ones.
+`update` updates the strategy with the results of previous computation.
+- `sampled_parameters` is a dictionary of sampled parameters.
+- `metric_value` is the value of the optimization metric obtained for the specified sample.
+
+It is not needed for stateless strategies like grid and random, but is needed for stateful strategies like bayesian and evolutionary ones.
 
 Example:
 ```python
 sampled_parameters = {
-    'training.learning_rate': 0.005, 'combiner.num_fc_layers': 2, 
+    'training.learning_rate': 0.005,
+    'combiner.num_fc_layers': 2, 
     'utterance.cell_type': 'gru'
-    } 
-statistics = {'validation_loss': 2.53463, 'validation_accuracy': 0.7, ...}
+} 
+metric_value = 2.53463
 
 strategy.update(sampled_parameters, statistics)
+```
+
+#### `update_batch`
+```python
+def update_batch(
+    self,
+    parameters_metric_tuples: List[Tuple[Dict[str, Any], float]]
+):
+```
+
+`update_batch` updates the strategy with the results of previous computation in batch.
+- `parameters_metric_tuples` a list of pairs of sampled parameters and their respective metric value.
+
+It is not needed for stateless strategies like grid and random, but is needed for stateful strategies like bayesian and evolutionary ones.
+
+Example:
+```python
+sampled_parameters = [
+    {
+        'training.learning_rate': 0.005,
+        'combiner.num_fc_layers': 2, 
+        'utterance.cell_type': 'gru'
+    },
+    {
+        'training.learning_rate': 0.015,
+        'combiner.num_fc_layers': 5, 
+        'utterance.cell_type': 'lstm'
+    }
+]
+metric_value = [2.53463, 1.63869]
+
+strategy.update_batch(zip(sampled_parameters, metric_values))
 ```
 
 #### `finished`
@@ -358,9 +399,9 @@ def __init__(
 
 The parameters of the base `HyperoptExecutor` class constructor are
 - `hyperopt_strategy` is a `HyperoptStrategy` object that will be used to sample hyper-parameters values
-- `output_feature` is a `str` contaning the name of the output_feature that we want to optimize the metric or loss of
-- `metric` is the metric that we want to optimize for, different ones are available depending on the data type of the output feature. Check the User Guide to determine which metrics are available for each.
-- `split` is the split of data that we want to compute our metric on. Usually it is the `validation` split, but users have the flexibility to specify also `train` or `test` splits.
+- `output_feature` is a `str` containing the name of the output feature that we want to optimize the metric or loss of. Available values are `combined` (default) or the name of any output feature provided in the model definition. `combined` is a special output feature that allows to optimize for the aggregated loss and metrics of all output features.
+- `metric` is the metric that we want to optimize for. The default one is `loss`, but depending on the tye of the feature defined in `output_feature`, different metrics and losses are available. Check the metrics section of the specific output feature type to figure out what metrics are available to use.
+- `split` is the split of data that we want to compute our metric on. By default it is the `validation` split, but you have the flexibility to specify also `train` or `test` splits.
 
 Example:
 ```python
