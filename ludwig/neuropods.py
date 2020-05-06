@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 from ludwig.api import LudwigModel
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
@@ -23,34 +24,38 @@ def get_model(data_root):
 
 def build_neuropod(
         ludwig_model_path,
-        neuropod_path="neuropod"
+        neuropod_path="/Users/piero/Desktop/neuropod",
+        python_root="/Users/piero/Development/ludwig"
 ):
     from neuropods.backends.python.packager import create_python_neuropod
 
     data_paths = [
         {
-            "path": ludwig_model_path,
+            "path": os.path.join(
+                ludwig_model_path, MODEL_HYPERPARAMETERS_FILE_NAME
+            ),
             "packaged_name": MODEL_HYPERPARAMETERS_FILE_NAME
         },
         {
-            "path": ludwig_model_path,
-            "packaged_name": MODEL_WEIGHTS_FILE_NAME + ".meta"
-        },
-        {
-            "path": ludwig_model_path,
-            "packaged_name": MODEL_WEIGHTS_FILE_NAME + ".index"
-        },
-        {
-            "path": ludwig_model_path,
+            "path": os.path.join(
+                ludwig_model_path, TRAIN_SET_METADATA_FILE_NAME
+            ),
             "packaged_name": TRAIN_SET_METADATA_FILE_NAME
         },
+        {
+            "path": os.path.join(
+                ludwig_model_path, 'checkpoint'
+            ),
+            "packaged_name": 'checkpoint'
+        },
     ]
-    model_weights_files_pattern = MODEL_WEIGHTS_FILE_NAME + ".data-"
     for filename in os.listdir(ludwig_model_path):
-        if model_weights_files_pattern in filename:
+        if MODEL_WEIGHTS_FILE_NAME in filename:
             data_paths.append(
                 {
-                    "path": ludwig_model_path,
+                    "path": os.path.join(
+                        ludwig_model_path, filename
+                    ),
                     "packaged_name": filename
                 }
             )
@@ -83,12 +88,12 @@ def build_neuropod(
         model_name="ludwig_model",
         data_paths=data_paths,
         code_path_spec=[{
-            "python_root": 'code',
+            "python_root": python_root,
             "dirs_to_package": [
-                ""  # Package everything in the python_root
+                "ludwig"  # Package everything in the python_root
             ],
         }],
-        entrypoint_package="main",
+        entrypoint_package="ludwig.neuropods",
         entrypoint="get_model",
         # test_deps=['torch', 'numpy'],
         skip_virtualenv=True,
