@@ -1,8 +1,6 @@
 import os
 import shutil
 
-from neuropods.backends.python.packager import create_python_neuropod
-
 from ludwig.api import LudwigModel
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
@@ -27,6 +25,8 @@ def build_neuropod(
         ludwig_model_path,
         neuropod_path="neuropod"
 ):
+    from neuropods.backends.python.packager import create_python_neuropod
+
     data_paths = [
         {
             "path": ludwig_model_path,
