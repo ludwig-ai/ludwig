@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 
+import ludwig
 from ludwig.api import LudwigModel
 from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
@@ -79,8 +80,7 @@ def postprocess_for_neuropod(predicted, model_definition):
 
 def build_neuropod(
         ludwig_model_path,
-        neuropod_path="/Users/piero/Desktop/neuropod",
-        python_root="/Users/piero/Development/ludwig"
+        neuropod_path
 ):
     from neuropod.backends.python.packager import create_python_neuropod
 
@@ -205,12 +205,16 @@ def build_neuropod(
         else:
             shutil.rmtree(neuropod_path, ignore_errors=True)
 
+    from pathlib import Path
+    path = Path(ludwig.__file__)
+    # print(path.parent.parent)
+
     create_python_neuropod(
         neuropod_path=neuropod_path,
         model_name="ludwig_model",
         data_paths=data_paths,
         code_path_spec=[{
-            "python_root": python_root,
+            "python_root": path.parent.parent,
             "dirs_to_package": [
                 "ludwig"  # Package everything in the python_root
             ],

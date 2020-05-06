@@ -74,7 +74,8 @@ def test_neuropod(csv_filename):
     ################
     # build neuropod
     ################
-    build_neuropod(ludwigmodel_path)
+    neuropod_path = os.path.join(dir_path, 'neuropod')
+    build_neuropod(ludwigmodel_path, neuropod_path=neuropod_path)
 
     ########################
     # predict using neuropod
@@ -93,7 +94,7 @@ def test_neuropod(csv_filename):
 
     from neuropod.loader import load_neuropod
 
-    neuropod_model = load_neuropod('/Users/piero/Desktop/neuropod')
+    neuropod_model = load_neuropod(neuropod_path)
     preds = neuropod_model.infer(
         {input_feature_name: np.array([if_val_1, if_val_2], dtype='str')}
     )
@@ -116,4 +117,4 @@ def test_neuropod(csv_filename):
     # print(original_prob)
 
     assert neuropod_pred == original_pred
-    assert neuropod_prob == original_prob
+    assert np.isclose(neuropod_prob, original_prob).all()
