@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import csv
 import os
 import shutil
 
 import numpy as np
+import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.neuropod import build_neuropod
@@ -80,23 +80,13 @@ def test_neuropod(csv_filename):
     ########################
     # predict using neuropod
     ########################
-    with open(data_csv_path) as f:
-        reader = csv.reader(f)
-        header = next(reader)
-        row_1 = next(reader)
-        row_2 = next(reader)
-    if_idx = 0
-    for i, col in enumerate(header):
-        if col == input_feature_name:
-            if_idx = i
-    if_val_1 = row_1[if_idx]
-    if_val_2 = row_2[if_idx]
+    data_df = pd.read_csv(data_csv_path)
+    if_vals = data_df[input_feature_name].tolist()
 
     from neuropod.loader import load_neuropod
-
     neuropod_model = load_neuropod(neuropod_path)
     preds = neuropod_model.infer(
-        {input_feature_name: np.array([if_val_1, if_val_2], dtype='str')}
+        {input_feature_name: np.array(if_vals, dtype='str')}
     )
 
     ########
@@ -109,9 +99,9 @@ def test_neuropod(csv_filename):
     # print(neuropod_prob)
 
     original_pred = original_predictions_df[
-                        output_feature_name + "_predictions"].iloc[:2].tolist()
+        output_feature_name + "_predictions"].tolist()
     original_prob = original_predictions_df[
-                        output_feature_name + "_probability"].iloc[:2].tolist()
+        output_feature_name + "_probability"].tolist()
 
     # print(original_pred)
     # print(original_prob)

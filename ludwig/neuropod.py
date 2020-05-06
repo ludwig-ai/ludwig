@@ -21,7 +21,7 @@ class LudwigNeuropodModelWrapper:
         predicted = self.ludwig_model.predict(
             data_dict=kwargs, return_type=dict
         )
-        print(predicted, file=sys.stderr)
+        # print(predicted, file=sys.stderr)
         return postprocess_for_neuropod(
             predicted, self.ludwig_model.model_definition
         )
@@ -74,7 +74,7 @@ def postprocess_for_neuropod(predicted, model_definition):
             postprocessed[feature_name + "_predictions"] = np.array(
                 predicted[feature_name]['predictions'], dtype='str'
             )
-    print(postprocessed, file=sys.stderr)
+    # print(postprocessed, file=sys.stderr)
     return postprocessed
 
 
