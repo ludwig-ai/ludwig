@@ -17,14 +17,16 @@ import csv
 import os
 import shutil
 
+import numpy as np
+
 from ludwig.api import LudwigModel
-from ludwig.neuropods import build_neuropod
+from ludwig.neuropod import build_neuropod
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def test_neuropods(csv_filename):
+def test_neuropod(csv_filename):
     #######
     # Setup
     #######
@@ -87,10 +89,10 @@ def test_neuropods(csv_filename):
             if_idx = i
     if_val = row[if_idx]
 
-    from neuropods.loader import load_neuropod
+    from neuropod.loader import load_neuropod
 
     neuropod_model = load_neuropod('/Users/piero/Desktop/neuropod')
     preds = neuropod_model.infer(
-        {input_feature_name: [if_val]}
+        {input_feature_name: np.array([if_val], dtype='str')}
     )
-    print(preds['top_class'])
+    print(preds[output_feature_name])

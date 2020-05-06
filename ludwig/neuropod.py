@@ -2,6 +2,8 @@ import os
 import shutil
 import sys
 
+import numpy as np
+
 from ludwig.api import LudwigModel
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
@@ -14,7 +16,16 @@ class LudwigNeuropodModelWrapper:
 
     def __call__(self, **kwargs):
         print('__call__', file=sys.stderr)
-        return self.ludwig_model.predict(data_dict=kwargs, return_type=dict)
+        predicted = self.ludwig_model.predict(data_dict=kwargs,
+                                              return_type=dict)
+        print(predicted, file=sys.stderr)
+        to_return = {}
+        for output_feature_name in predicted:
+            to_return[output_feature_name] = np.array(
+                predicted[output_feature_name]['predictions'], dtype='str'
+            )
+        print(to_return, file=sys.stderr)
+        return to_return
 
 
 def get_model(data_root):
@@ -27,7 +38,7 @@ def build_neuropod(
         neuropod_path="/Users/piero/Desktop/neuropod",
         python_root="/Users/piero/Development/ludwig"
 ):
-    from neuropods.backends.python.packager import create_python_neuropod
+    from neuropod.backends.python.packager import create_python_neuropod
 
     data_paths = [
         {
@@ -70,18 +81,22 @@ def build_neuropod(
     for feature in ludwig_model_definition['input_features']:
         input_spec.append({
             "name": feature['name'],
-            "dtype": "string",
-            "shape": ("batch_size", 1)
+            "dtype": "str",
+            "shape": (None,)
         })
     output_spec = []
     for feature in ludwig_model_definition['output_features']:
         output_spec.append({
             "name": feature['name'],
-            "dtype": "string",
-            "shape": ("batch_size", 1)
+            "dtype": "str",
+            "shape": (None,)
         })
 
-    shutil.rmtree(neuropod_path, ignore_errors=True)
+    if os.path.exists(neuropod_path):
+        if os.path.isfile(neuropod_path):
+            os.remove(neuropod_path)
+        else:
+            shutil.rmtree(neuropod_path, ignore_errors=True)
 
     create_python_neuropod(
         neuropod_path=neuropod_path,
@@ -93,7 +108,7 @@ def build_neuropod(
                 "ludwig"  # Package everything in the python_root
             ],
         }],
-        entrypoint_package="ludwig.neuropods",
+        entrypoint_package="ludwig.neuropod",
         entrypoint="get_model",
         # test_deps=['torch', 'numpy'],
         skip_virtualenv=True,
