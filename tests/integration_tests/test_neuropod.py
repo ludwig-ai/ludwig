@@ -82,17 +82,38 @@ def test_neuropod(csv_filename):
     with open(data_csv_path) as f:
         reader = csv.reader(f)
         header = next(reader)
-        row = next(reader)
+        row_1 = next(reader)
+        row_2 = next(reader)
     if_idx = 0
     for i, col in enumerate(header):
         if col == input_feature_name:
             if_idx = i
-    if_val = row[if_idx]
+    if_val_1 = row_1[if_idx]
+    if_val_2 = row_2[if_idx]
 
     from neuropod.loader import load_neuropod
 
     neuropod_model = load_neuropod('/Users/piero/Desktop/neuropod')
     preds = neuropod_model.infer(
-        {input_feature_name: np.array([if_val], dtype='str')}
+        {input_feature_name: np.array([if_val_1, if_val_2], dtype='str')}
     )
-    print(preds[output_feature_name])
+
+    ########
+    # checks
+    ########
+    neuropod_pred = preds[output_feature_name + "_predictions"].tolist()
+    neuropod_prob = preds[output_feature_name + "_probability"].tolist()
+
+    # print(neuropod_pred)
+    # print(neuropod_prob)
+
+    original_pred = original_predictions_df[
+                        output_feature_name + "_predictions"].iloc[:2].tolist()
+    original_prob = original_predictions_df[
+                        output_feature_name + "_probability"].iloc[:2].tolist()
+
+    # print(original_pred)
+    # print(original_prob)
+
+    assert neuropod_pred == original_pred
+    assert neuropod_prob == original_prob
