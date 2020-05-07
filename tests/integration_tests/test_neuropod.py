@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
-from ludwig.neuropod import build_neuropod
+from ludwig.neuropod import export_neuropod
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
@@ -75,7 +75,7 @@ def test_neuropod(csv_filename):
     # build neuropod
     ################
     neuropod_path = os.path.join(dir_path, 'neuropod')
-    build_neuropod(ludwigmodel_path, neuropod_path=neuropod_path)
+    export_neuropod(ludwigmodel_path, neuropod_path=neuropod_path)
 
     ########################
     # predict using neuropod

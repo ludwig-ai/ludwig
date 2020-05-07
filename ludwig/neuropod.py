@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import sys
@@ -8,8 +9,9 @@ import ludwig
 from ludwig.api import LudwigModel
 from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
-    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
+    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 
 class LudwigNeuropodModelWrapper:
@@ -78,9 +80,10 @@ def postprocess_for_neuropod(predicted, model_definition):
     return postprocessed
 
 
-def build_neuropod(
+def export_neuropod(
         ludwig_model_path,
-        neuropod_path
+        neuropod_path,
+        neuropod_model_name="ludwig_model"
 ):
     from neuropod.backends.python.packager import create_python_neuropod
 
@@ -115,6 +118,8 @@ def build_neuropod(
                 }
             )
 
+    logger.debug('data_paths:', data_paths)
+
     ludwig_model_definition = load_json(
         os.path.join(
             ludwig_model_path,
@@ -128,6 +133,8 @@ def build_neuropod(
             "dtype": "str",
             "shape": (None,)
         })
+    logger.debug('input_spec:', input_spec)
+
     output_spec = []
     for feature in ludwig_model_definition['output_features']:
         feature_type = feature['type']
@@ -198,20 +205,23 @@ def build_neuropod(
                 "dtype": "str",
                 "shape": (None,)
             })
+    logger.debug('output_spec:', output_spec)
 
     if os.path.exists(neuropod_path):
         if os.path.isfile(neuropod_path):
+            logger.warning('Removing file', neuropod_path)
             os.remove(neuropod_path)
         else:
+            logger.warning('Removing directory', neuropod_path)
             shutil.rmtree(neuropod_path, ignore_errors=True)
 
     from pathlib import Path
     path = Path(ludwig.__file__)
-    # print(path.parent.parent)
+    logger.debug('python_root', path.parent.parent)
 
     create_python_neuropod(
         neuropod_path=neuropod_path,
-        model_name="ludwig_model",
+        model_name=neuropod_model_name,
         data_paths=data_paths,
         code_path_spec=[{
             "python_root": path.parent.parent,
@@ -226,3 +236,62 @@ def build_neuropod(
         input_spec=input_spec,
         output_spec=output_spec
     )
+
+
+def cli(sys_argv):
+    parser = argparse.ArgumentParser(
+        description='This script exports a Ludwig model in the Neuropod format'
+    )
+
+    # ----------------
+    # Model parameters
+    # ----------------
+    parser.add_argument(
+        '-m',
+        '--ludwig_model_path',
+        help='path to the Ludwig model to export',
+        required=True
+    )
+
+    parser.add_argument(
+        '-l',
+        '--logging_level',
+        default='info',
+        help='the level of logging to use',
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+    )
+
+    # -------------------
+    # Neuropod parameters
+    # -------------------
+    parser.add_argument(
+        '-n',
+        '--neuropod_path',
+        help='path of the output Neuropod package file',
+        required=True
+    )
+    parser.add_argument(
+        '-nm',
+        '--neuropod_model_name',
+        help='path of the output Neuropod package file',
+        default='ludwig_model'
+    )
+
+    args = parser.parse_args(sys_argv)
+
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
+    global logger
+    logger = logging.getLogger('ludwig.serve')
+
+    print_ludwig('Export Neuropod', LUDWIG_VERSION)
+
+    export_neuropod(
+        args.ludwig.model_path, args.neuropod_path, args.nueropod_model_name
+    )
+
+
+if __name__ == '__main__':
+    # contrib_command("neuropod", *sys.argv)
+    cli(sys.argv)
