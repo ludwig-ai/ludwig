@@ -27,7 +27,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple, Iterable
 
 import numpy as np
-import psutil
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, VALIDATION, MAXIMIZE, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess
@@ -517,14 +516,7 @@ class ParallelExecutor(HyperoptExecutor):
 
         if gpus is not None:
 
-            num_available_cpus = psutil.cpu_count(logical=False)
-
-            if num_available_cpus is None:
-                num_available_cpus = psutil.cpu_count()
-                logger.warning(
-                    'WARNING: Couldn\'t get the number of physical cores '
-                    'from the OS, using the logical cores instead.'
-                )
+            num_available_cpus = multiprocessing.cpu_count()
 
             if self.num_workers > num_available_cpus:
                 logger.warning(
