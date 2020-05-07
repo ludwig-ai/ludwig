@@ -89,6 +89,16 @@ def test_neuropod(csv_filename):
         {input_feature_name: np.array(if_vals, dtype='str')}
     )
 
+    #########
+    # cleanup
+    #########
+    for path in [ludwigmodel_path, neuropod_path]:
+        if os.path.exists(path):
+            if os.path.isfile(path):
+                os.remove(path)
+            else:
+                shutil.rmtree(path, ignore_errors=True)
+
     ########
     # checks
     ########
