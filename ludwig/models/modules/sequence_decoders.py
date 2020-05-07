@@ -17,13 +17,23 @@ import logging
 import numpy as np
 
 import tensorflow.compat.v1 as tf
-from tensorflow.keras.layers import Layer, Dense, Embedding, LSTMCell
-import tensorflow_addons as tfa
+from tensorflow.keras.layers import Layer, Dense, Embedding, LSTM, LSTMCell
 
-from ludwig.models.modules.attention_modules import \
-    feed_forward_memory_attention
-from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.recurrent_modules import recurrent_decoder
+import tensorflow_addons as tfa
+from tensorflow_addons.seq2seq import BasicDecoder
+from tensorflow_addons.seq2seq.sampler import TrainingSampler
+from tensorflow_addons.seq2seq import AttentionWrapper
+from tensorflow_addons.seq2seq import LuongAttention
+from tensorflow_addons.seq2seq import BahdanauAttention
+
+from ludwig.utils.tf_utils import sequence_length_3D
+
+
+# todo tf2 clean up
+# from ludwig.models.modules.attention_modules import \
+#     feed_forward_memory_attention
+# from ludwig.models.modules.initializer_modules import get_initializer
+# from ludwig.models.modules.recurrent_modules import recurrent_decoder
 
 logger = logging.getLogger(__name__)
 
@@ -65,55 +75,46 @@ class SequenceGeneratorDecoder(Layer):
         self.is_timeseries = is_timeseries
         self.num_classes = num_classes
         self.max_sequence_length = max_sequence_length
+        self.state_size = state_size
+        self.attention_mechanism = None
+
 
         if is_timeseries:
             self.vocab_size = 1
         else:
             self.vocab_size = self.num_classes
 
-        self.decoder_embedding = tf.keras.layers.Embedding(
-            input_dim=output_vocab_size,
-            output_dim=embedding_dims)
-        self.dense_layer = tf.keras.layers.Dense(output_vocab_size)
-        self.decoder_rnncell = tf.keras.layers.LSTMCell(rnn_units)
+        self.decoder_embedding = Embedding(
+            input_dim=num_classes,
+            output_dim=embedding_size)
+        self.dense_layer = Dense(num_classes)
+        self.decoder_rnncell = LSTMCell(state_size)
 
         # Sampler
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
 
-        self.attention_mechanism = None
-        self.rnn_units = rnn_units
-
         print('setting up attention for', attention_mechanism)
         if attention_mechanism is not None:
-            self.attention_mechanism = self.build_attention_mechanism(
-                attention_mechanism,
-                dense_units
-            )
-            self.decoder_rnncell = self.build_rnn_cell()
+            if attention_mechanism == 'luong':
+                self.attention_mechanism =  LuongAttention(units=state_size)
+            elif attention_mechanism == 'bahdanau':
+                self.attention_mechanism = BahdanauAttention(units=state_size)
+
+            self.decoder_rnncell = AttentionWrapper(self.decoder_rnncell,
+                                                self.attention_mechanism,
+                                                attention_layer_size=state_size)
+
 
         self.decoder = tfa.seq2seq.BasicDecoder(self.decoder_rnncell,
                                                 sampler=self.sampler,
                                                 output_layer=self.dense_layer)
 
 
-    def build_attention_mechanism(self, attention_type, units):
-        if attention_type == 'luong':
-            return tfa.seq2seq.LuongAttention(units)
-        elif attention_type == 'bahdanau':
-            return tfa.seq2seq.BahdanauAttention(units)
-
-    # wrap decodernn cell
-    def build_rnn_cell(self):
-        rnn_cell = tfa.seq2seq.AttentionWrapper(self.decoder_rnncell,
-                                                self.attention_mechanism,
-                                                attention_layer_size=dense_units)
-        return rnn_cell
-
-    def build_decoder_initial_state(self, batch_size, encoder_state, Dtype):
+    def build_decoder_initial_state(self, batch_size, encoder_state, dtype):
         if self.attention_mechanism is not None:
             decoder_initial_state = self.decoder_rnncell.get_initial_state(
                 batch_size=batch_size,
-                dtype=Dtype)
+                dtype=dtype)
             decoder_initial_state = decoder_initial_state.clone(
                 cell_state=encoder_state)
         else:
@@ -141,27 +142,29 @@ class SequenceGeneratorDecoder(Layer):
         decoder_initial_state = self.build_decoder_initial_state(
             batch_size,
             encoder_state=[a_tx, c_tx],
-            Dtype=tf.float32
+            dtype=tf.float32
         )
 
         # BasicDecoderOutput
         outputs, final_state, final_sequence_lengths = self.decoder(
             decoder_emb_inp,
             initial_state=decoder_initial_state,
-            sequence_length=batch_size * [Ty - 1]
+            sequence_length=batch_size * sequence_length_3D(encoder_output) #[Ty - 1]
         )
 
         return outputs.rnn_output, outputs, final_state, final_sequence_lengths
 
     def decoder_inference(self, encoder_output,
              encoder_end_state=None):
-
+        # ================ Setup ================
+        GO_SYMBOL = self.vocab_size
+        END_SYMBOL = 0
         batch_size = encoder_output.shape[0]
 
         greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
 
         decoder_input = tf.expand_dims(
-            [ge_tokenizer.word_index['<start>']] * batch_size, 1)
+            [GO_SYMBOL] * batch_size, 1)
 
         a_tx, c_tx = encoder_end_state
         decoder_emb_inp = self.decoder_embedding(decoder_input)
@@ -179,16 +182,15 @@ class SequenceGeneratorDecoder(Layer):
         # Since we do not know the target sequence lengths in advance,
         # we use maximum_iterations to limit the translation lengths.
         # One heuristic is to decode up to two times the source sentence lengths.
-        maximum_iterations = tf.round(tf.reduce_max(Tx) * 2)
+        maximum_iterations = tf.round(tf.reduce_max(self.max_sequence_length) * 2)
 
         decoder_initial_state = self.build_decoder_initial_state(
             batch_size,
             encoder_state=[a_tx, c_tx],
-            Dtype=tf.float32)
+            dtype=tf.float32)
 
-        start_tokens = tf.fill([batch_size],
-                               ge_tokenizer.word_index['<start>'])
-        end_token = ge_tokenizer.word_index['<end>']
+        start_tokens = tf.fill([batch_size], GO_SYMBOL)
+        end_token = END_SYMBOL
 
         # initialize inference decoder
         decoder_embedding_matrix = self.decoder_embedding.variables[0]
@@ -210,9 +212,6 @@ class SequenceGeneratorDecoder(Layer):
             predictions = np.append(predictions, outputs, axis=-1)
 
         return predictions, None, None, None
-
-
-
 
 ############### Old code  todo tf2 remove
     #     self.embeddings_dec = Embedding(num_classes, embedding_size)
@@ -296,6 +295,34 @@ class SequenceGeneratorDecoder(Layer):
                 'when attention mechanism is {}. '
                 'Consider setting reduce_input of output feature to a value different from None.'.format(
                     len(inputs.shape), self.attention_mechanism))
+
+        batch_size = inputs.shape[0]
+        print(">>>>>>batch_size", batch_size)
+
+        # if encode end state exists use it, otherwise set up zero end state
+        if 'encoder_end_state' in encoder_outputs:
+            encoder_end_state = encoder_outputs['encoder_end_state']
+        else:
+            encoder_end_state = [
+                tf.zeros([batch_size, self.rnn_units], tf.float32),
+                tf.zeros([batch_size, self.rnn_units], tf.float32)
+            ]
+
+        if training:
+            return_tuple = self.decoder_training(
+                encoder_output,
+                targets=encoder_outputs['targets'],
+                encoder_end_state=encoder_end_state,
+                batch_size=batch_size
+            )
+        else:
+            return_tuple = self.decoder_inference(
+                encoder_output,
+                encoder_end_state=encoder_end_state
+            )
+
+        return return_tuple
+
 
 ####### old code todo tf2
         # decoder_embeddings = self.embeddings_dec(inputs)
