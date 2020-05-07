@@ -43,11 +43,10 @@ def postprocess_for_neuropod(predicted, model_definition):
         feature_name = output_feature['name']
         feature_type = output_feature['type']
         if feature_type == BINARY:
-            postprocessed[feature_name] = np.array(
-                predicted[feature_name]['_predictions'], dtype='bool'
-            )
-            postprocessed[feature_name + "_probability"] = \
-                predicted[feature_name]['probability']
+            postprocessed[feature_name + "_predictions"] = \
+                predicted[feature_name]['predictions'].astype('str')
+            postprocessed[feature_name + "_probabilities"] = \
+                predicted[feature_name]['probabilities']
         elif feature_type == NUMERICAL:
             postprocessed[feature_name + "_predictions"] = \
                 predicted[feature_name]['predictions']
@@ -60,19 +59,36 @@ def postprocess_for_neuropod(predicted, model_definition):
             postprocessed[feature_name + "_probabilities"] = \
                 predicted[feature_name]['probabilities']
         elif feature_type == SEQUENCE:
+            predictions = list(map(
+                lambda x: ' '.join(x),
+                predicted[feature_name]['predictions']
+            ))
             postprocessed[feature_name + "_predictions"] = np.array(
-                predicted[feature_name]['predictions'], dtype='str'
+                predictions, dtype='str'
             )
         elif feature_type == TEXT:
+            predictions = list(map(
+                lambda x: ' '.join(x),
+                predicted[feature_name]['predictions']
+            ))
             postprocessed[feature_name + "_predictions"] = np.array(
-                predicted[feature_name]['predictions'], dtype='str'
+                predictions, dtype='str'
             )
         elif feature_type == SET:
+            predictions = list(map(
+                lambda x: ' '.join(x),
+                predicted[feature_name]['predictions']
+            ))
             postprocessed[feature_name + "_predictions"] = np.array(
-                predicted[feature_name]['predictions'], dtype='str'
+                predictions, dtype='str'
             )
-            postprocessed[feature_name + "_probability"] = \
+            probability = list(map(
+                lambda x: ' '.join([str(e) for e in x]),
                 predicted[feature_name]['probability']
+            ))
+            postprocessed[feature_name + "_probability"] = np.array(
+                probability, dtype='str'
+            )
             postprocessed[feature_name + "_probabilities"] = \
                 predicted[feature_name]['probabilities']
         else:
@@ -150,11 +166,11 @@ def export_neuropod(
         if feature_type == BINARY:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
-                "dtype": "bool",
+                "dtype": "str",
                 "shape": (None,)
             })
             output_spec.append({
-                "name": feature['name'] + '_probability',
+                "name": feature['name'] + '_probabilities',
                 "dtype": "float32",
                 "shape": (None,)
             })
@@ -200,7 +216,7 @@ def export_neuropod(
             })
             output_spec.append({
                 "name": feature['name'] + '_probability',
-                "dtype": "float32",
+                "dtype": "str",
                 "shape": (None,)
             })
             output_spec.append({

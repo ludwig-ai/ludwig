@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import itertools
 import os
 import shutil
 
@@ -20,7 +21,9 @@ import numpy as np
 import pandas as pd
 
 from ludwig.api import LudwigModel
+from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
 from ludwig.neuropod import export_neuropod
+from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, set_feature
 from tests.integration_tests.utils import generate_data
@@ -48,7 +51,6 @@ def test_neuropod(csv_filename):
         text_feature(vocab_size=3),
         set_feature(vocab_size=3),
     ]
-    output_feature_name = output_features[0]['name']
 
     # Generate test data
     data_csv_path = generate_data(input_features, output_features, csv_filename)
@@ -111,19 +113,49 @@ def test_neuropod(csv_filename):
     ########
     # checks
     ########
-    neuropod_pred = preds[output_feature_name + "_predictions"].tolist()
-    neuropod_prob = preds[output_feature_name + "_probability"].tolist()
+    for output_feature in output_features:
+        output_feature_name = output_feature['name']
+        output_feature_type = output_feature['type']
 
-    # print(neuropod_pred)
-    # print(neuropod_prob)
+        if (output_feature_name + "_predictions" in preds and
+                output_feature_name + "_predictions" in original_predictions_df):
+            neuropod_pred = preds[output_feature_name + "_predictions"].tolist()
+            if output_feature_type == BINARY:
+                neuropod_pred = list(map(lambda x: str2bool(x), neuropod_pred))
+            if output_feature_type in {SEQUENCE, TEXT, SET}:
+                neuropod_pred = list(map(lambda x: x.split(), neuropod_pred))
 
-    original_pred = original_predictions_df[
-        output_feature_name + "_predictions"].tolist()
-    original_prob = original_predictions_df[
-        output_feature_name + "_probability"].tolist()
+            original_pred = original_predictions_df[
+                output_feature_name + "_predictions"].tolist()
 
-    # print(original_pred)
-    # print(original_prob)
+            assert neuropod_pred == original_pred
 
-    assert neuropod_pred == original_pred
-    assert np.isclose(neuropod_prob, original_prob).all()
+        if (output_feature_name + "_probability" in preds and
+                output_feature_name + "_probability" in original_predictions_df):
+            neuropod_prob = preds[output_feature_name + "_probability"].tolist()
+            if output_feature_type in {SEQUENCE, TEXT, SET}:
+                neuropod_prob = list(
+                    map(lambda x: [float(n) for n in x.split()], neuropod_prob))
+            if any(isinstance(el, list) for el in neuropod_prob):
+                neuropod_prob = np.array(list(
+                    itertools.zip_longest(*neuropod_prob, fillvalue=0)
+                )).T
+
+            original_prob = original_predictions_df[
+                output_feature_name + "_probability"].tolist()
+            if any(isinstance(el, list) for el in original_prob):
+                original_prob = np.array(list(
+                    itertools.zip_longest(*original_prob, fillvalue=0)
+                )).T
+
+            assert np.isclose(neuropod_prob, original_prob).all()
+
+        if (output_feature_name + "_probabilities" in preds and
+                output_feature_name + "_probabilities" in original_predictions_df):
+            neuropod_prob = preds[
+                output_feature_name + "_probabilities"].tolist()
+
+            original_prob = original_predictions_df[
+                output_feature_name + "_probabilities"].tolist()
+
+            assert np.isclose(neuropod_prob, original_prob).all()
