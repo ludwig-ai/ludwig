@@ -748,7 +748,9 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
-                    [metadata['idx2str'][token] for token in pred]
+                    [metadata['idx2str'][token]
+                     if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
+                     for token in pred]
                     for pred in preds
                 ]
             else:
@@ -763,7 +765,9 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             last_preds = result[LAST_PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
-                    metadata['idx2str'][last_pred] for last_pred in last_preds
+                    metadata['idx2str'][last_pred]
+                    if last_pred < len(metadata['idx2str']) else UNKNOWN_SYMBOL
+                    for last_pred in last_preds
                 ]
             else:
                 postprocessed[LAST_PREDICTIONS] = last_preds

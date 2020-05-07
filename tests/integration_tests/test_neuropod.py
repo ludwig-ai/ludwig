@@ -21,7 +21,8 @@ import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.neuropod import export_neuropod
-from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import category_feature, binary_feature, \
+    numerical_feature, text_feature, set_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -32,13 +33,21 @@ def test_neuropod(csv_filename):
     #######
     dir_path = os.path.dirname(csv_filename)
 
-    # Single sequence input, single category output
+    output_feature_options = []
+
+    # Single sequence input, multiple outputs
     sf = sequence_feature()
-    sf['encoder'] = 'parallel_cnn'
     input_features = [sf]
     input_feature_name = input_features[0]['name']
 
-    output_features = [category_feature(vocab_size=2)]
+    output_features = [
+        binary_feature(),
+        numerical_feature(),
+        category_feature(vocab_size=3),
+        sequence_feature(vocab_size=3),
+        text_feature(vocab_size=3),
+        set_feature(vocab_size=3),
+    ]
     output_feature_name = output_features[0]['name']
 
     # Generate test data

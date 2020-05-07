@@ -445,7 +445,9 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             preds = result[PREDICTIONS]
             if level_idx2str in metadata:
                 postprocessed[PREDICTIONS] = [
-                    [metadata[level_idx2str][token] for token in pred]
+                    [metadata[level_idx2str][token]
+                     if token < len(metadata[level_idx2str]) else UNKNOWN_SYMBOL
+                     for token in pred]
                     for pred in preds
                 ]
             else:
@@ -460,8 +462,10 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             last_preds = result[LAST_PREDICTIONS]
             if level_idx2str in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
-                    metadata[level_idx2str][last_pred] for last_pred in
-                    last_preds
+                    metadata[level_idx2str][last_pred]
+                    if last_pred < len(
+                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
+                    for last_pred in last_preds
                 ]
             else:
                 postprocessed[LAST_PREDICTIONS] = last_preds
