@@ -684,6 +684,58 @@ Once running, you can make a POST request on the `/predict` endpoint to run infe
 `curl http://0.0.0.0:8000/predict -X POST -F 'text=mixed together with' -F 'image=@path_to_image/example.png'`
 
 
+Additional executables
+----------------------
+
+Ludwig provides a number of additional entry points for specific tasks.
+Those are more experimental functionalities, once solidified they will be added as additional commands in the Ludwig CLI.
+
+
+### Dataset Synthesys
+
+WIP
+
+
+### Preprocessing
+
+WIP
+
+
+### Neuropod export
+
+A Ludwig model can be exported as a [Neuropod](https://github.com/uber/neuropod), a mechanism that allows it to be executed in a framework agnostic way.
+
+In order to export a Ludwig model as a Neuropod, first make sure the `neuropod` package is installed in your environment, then run the following command:
+
+```
+python -m ludwig.neuropod --ludwig_model_path <LUDWIG_MODEL_PATH> --neuropod_path <NEUROPOD_PATH>
+```
+
+where `ludwig_model_path` is the path to a trained Ludwig model and `neuropod_path` is the path where to save the Neuropod contaning the model.
+Be aware that, if a file already exists at `neuropod_path` it will be overridden.
+
+These are the available arguments:
+```
+usage: neuropod.py [-h] -m LUDWIG_MODEL_PATH
+                   [-l {critical,error,warning,info,debug,notset}] -n
+                   NEUROPOD_PATH [-nm NEUROPOD_MODEL_NAME]
+
+This script exports a Ludwig model in the Neuropod format
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m LUDWIG_MODEL_PATH, --ludwig_model_path LUDWIG_MODEL_PATH
+                        path to the Ludwig model to export
+  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
+                        the level of logging to use
+  -n NEUROPOD_PATH, --neuropod_path NEUROPOD_PATH
+                        path of the output Neuropod package file
+  -nm NEUROPOD_MODEL_NAME, --neuropod_model_name NEUROPOD_MODEL_NAME
+                        path of the output Neuropod package file
+```
+
+This functionality has been tested with `neuropod==0.1.1`.
+
 
 Data Preprocessing
 ==================
