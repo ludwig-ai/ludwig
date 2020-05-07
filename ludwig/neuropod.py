@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import shutil
@@ -5,13 +6,15 @@ import sys
 
 import numpy as np
 
-import ludwig
+from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
 from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+
+logger = logging.getLogger(__name__)
 
 
 class LudwigNeuropodModelWrapper:
@@ -85,7 +88,13 @@ def export_neuropod(
         neuropod_path,
         neuropod_model_name="ludwig_model"
 ):
-    from neuropod.backends.python.packager import create_python_neuropod
+    try:
+        from neuropod.backends.python.packager import create_python_neuropod
+    except ImportError:
+        logger.error(
+            'The "neuropod" package is not installed in your environment.'
+        )
+        sys.exit(-1)
 
     data_paths = [
         {
@@ -216,7 +225,7 @@ def export_neuropod(
             shutil.rmtree(neuropod_path, ignore_errors=True)
 
     from pathlib import Path
-    path = Path(ludwig.__file__)
+    path = Path(ludwig_path)
     logger.debug('python_root', path.parent.parent)
 
     create_python_neuropod(
