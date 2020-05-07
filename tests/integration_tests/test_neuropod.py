@@ -25,7 +25,7 @@ from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
 from ludwig.neuropod import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
-    numerical_feature, text_feature, set_feature
+    numerical_feature, text_feature, set_feature, vector_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -50,6 +50,7 @@ def test_neuropod(csv_filename):
         sequence_feature(vocab_size=3),
         text_feature(vocab_size=3),
         set_feature(vocab_size=3),
+        vector_feature()
     ]
 
     # Generate test data

@@ -8,7 +8,8 @@ import numpy as np
 
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
-from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET
+from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET, \
+    VECTOR
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json
@@ -91,6 +92,9 @@ def postprocess_for_neuropod(predicted, model_definition):
             )
             postprocessed[feature_name + "_probabilities"] = \
                 predicted[feature_name]['probabilities']
+        elif feature_type == VECTOR:
+            postprocessed[feature_name + "_predictions"] = \
+                predicted[feature_name]['predictions']
         else:
             postprocessed[feature_name + "_predictions"] = np.array(
                 predicted[feature_name]['predictions'], dtype='str'
@@ -221,6 +225,12 @@ def export_neuropod(
             })
             output_spec.append({
                 "name": feature['name'] + '_probabilities',
+                "dtype": "float32",
+                "shape": (None, None)
+            })
+        elif feature_type == VECTOR:
+            output_spec.append({
+                "name": feature['name'] + '_predictions',
                 "dtype": "float32",
                 "shape": (None, None)
             })
