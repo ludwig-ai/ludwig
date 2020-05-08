@@ -108,13 +108,10 @@ class ConcatCombiner(tf.keras.Model):
 
         return_data = {'combiner_output': hidden}
 
-        if len(encoder_outputs) == 1:
-            encoder_dict = list(inputs.values())[0]
-            if 'encoder_output_state' in encoder_dict:
-                return_data.update(
-                    {'encoder_output_state': encoder_dict['encoder_output_state']}
-                )
-
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
 
         return return_data
 
