@@ -166,10 +166,10 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             training=None,
             mask=None
     ):
-        combiner_output, other_output_hidden = inputs
+        combiner_outputs, other_output_hidden = inputs
 
         # extract the combined hidden layer
-        combiner_output = combiner_output['combiner_output']
+        combiner_output = combiner_outputs['combiner_output']
         hidden = self.prepare_decoder_inputs(
             combiner_output,
             other_output_hidden,
@@ -181,6 +181,10 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         logits_input = {
             HIDDEN: hidden
         }
+        if 'encoder_output_state' in combiner_outputs:
+            logits_input.update({
+                'encoder_output_state': combiner_outputs['encoder_output_state']
+            })
         logits = self.logits(logits_input)
 
         return logits, hidden
