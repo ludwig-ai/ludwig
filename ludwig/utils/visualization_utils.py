@@ -1243,23 +1243,28 @@ def hyperopt_int_plot(
         hp_name,
         metric,
         filename,
-        log_scale=True
+        log_scale_x=False,
+        log_scale_y=True
 ):
     sns.set_style('whitegrid')
     plt.figure()
-    seaborn_figure = sns.lmplot(
+    seaborn_figure = sns.scatterplot(
         x=hp_name,
         y=metric,
-        data=hyperopt_results_df,
-        fit_reg=False
+        data=hyperopt_results_df
     )
-    if log_scale:
+    if log_scale_x:
+        seaborn_figure.set(xscale="log")
+    if log_scale_y:
         seaborn_figure.set(yscale="log")
-    plt.tight_layout()
+    seaborn_figure.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    seaborn_figure.xaxis.set_major_formatter(ticker.ScalarFormatter())
+    seaborn_figure.xaxis.set_minor_formatter(ticker.NullFormatter())
+    seaborn_figure.figure.tight_layout()
     if filename:
-        plt.savefig(filename)
+        seaborn_figure.figure.savefig(filename)
     else:
-        plt.show()
+        seaborn_figure.figure.show()
 
 
 def hyperopt_float_plot(
@@ -1272,22 +1277,21 @@ def hyperopt_float_plot(
 ):
     sns.set_style('whitegrid')
     plt.figure()
-    seaborn_figure = sns.lmplot(
+    seaborn_figure = sns.scatterplot(
         x=hp_name,
         y=metric,
-        data=hyperopt_results_df,
-        fit_reg=False
+        data=hyperopt_results_df
     )
     seaborn_figure.set(ylabel=metric)
     if log_scale_x:
         seaborn_figure.set(xscale="log")
     if log_scale_y:
         seaborn_figure.set(yscale="log")
-    plt.tight_layout()
+    seaborn_figure.figure.tight_layout()
     if filename:
-        seaborn_figure.savefig(filename)
+        seaborn_figure.figure.savefig(filename)
     else:
-        seaborn_figure.show()
+        seaborn_figure.figure.show()
 
 
 def hyperopt_category_plot(
