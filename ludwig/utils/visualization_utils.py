@@ -1202,7 +1202,8 @@ def hyperopt_report(
                 hyperopt_results_df,
                 hp_name,
                 metric,
-                filename_template.format(hp_name) if filename_template else None
+                filename_template.format(hp_name) if filename_template else None,
+                log_scale_x=hp_params['scale'] == 'log' if 'scale' in hp_params else False
             )
         elif hp_params['type'] == 'category':
             hyperopt_category_plot(
@@ -1266,7 +1267,8 @@ def hyperopt_float_plot(
         hp_name,
         metric,
         filename,
-        log_scale=True
+        log_scale_x=False,
+        log_scale_y=True
 ):
     sns.set_style('whitegrid')
     plt.figure()
@@ -1277,7 +1279,9 @@ def hyperopt_float_plot(
         fit_reg=False
     )
     seaborn_figure.set(ylabel=metric)
-    if log_scale:
+    if log_scale_x:
+        seaborn_figure.set(xscale="log")
+    if log_scale_y:
         seaborn_figure.set(yscale="log")
     plt.tight_layout()
     if filename:
