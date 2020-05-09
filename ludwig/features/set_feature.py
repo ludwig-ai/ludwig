@@ -73,7 +73,7 @@ class SetBaseFeature(BaseFeature):
                     metadata['str2idx'],
                     preprocessing_parameters['tokenizer']
                 )
-            ),
+            )
         )
 
         set_matrix = np.zeros(
