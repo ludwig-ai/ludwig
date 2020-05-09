@@ -141,7 +141,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     def logits(
             self,
-            inputs  # hidden
+            inputs,  # hidden
+            **kwargs
     ):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)

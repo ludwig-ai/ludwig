@@ -164,7 +164,8 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             self,
             inputs,  # hidden, other_output_hidden
             training=None,
-            mask=None
+            mask=None,
+            targets=None
     ):
         combiner_outputs, other_output_hidden = inputs
 
@@ -185,7 +186,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             logits_input.update({
                 'encoder_output_state': combiner_outputs['encoder_output_state']
             })
-        logits = self.logits(logits_input)
+        logits = self.logits(logits_input, targets=targets)
 
         return logits, hidden
 

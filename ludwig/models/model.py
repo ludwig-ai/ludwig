@@ -143,7 +143,7 @@ class Model:
     def train_step(self, model, optimizer, inputs, targets,
                    regularization_lambda=0.0):
         with tf.GradientTape() as tape:
-            logits = model(inputs, training=True)
+            logits = model((inputs, targets), training=True)
             loss, _ = model.train_loss(targets, logits, regularization_lambda)
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))

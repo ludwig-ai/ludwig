@@ -250,9 +250,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def logits(
             self,
-            inputs  # hidden
+            inputs,  # hidden
+            targets=None
     ):
-        return self.decoder_obj(inputs)
+        return self.decoder_obj(inputs, targets=targets[self.feature_name])
 
     def predictions(
             self,

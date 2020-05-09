@@ -198,6 +198,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
         hidden = inputs[HIDDEN]
         return self.decoder_obj(hidden)

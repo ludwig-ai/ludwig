@@ -133,7 +133,8 @@ class SequenceGeneratorDecoder(Layer):
         return decoder_initial_state
 
     def decoder_training(self, encoder_output,
-             targets=None, encoder_end_state=None, batch_size=None):
+            targets=None, encoder_end_state=None, batch_size=None,
+            sequence_length=None):
 
         # Prepare correct Decoder input & output sequence data
         decoder_input = targets[:, :-1]  # ignore <end>
@@ -146,7 +147,7 @@ class SequenceGeneratorDecoder(Layer):
         if self.attention_mechanism is not None:
             self.attention_mechanism.setup_memory(
                 encoder_output,
-                memory_sequence_length=sequence_length_3D(encoder_output)
+                memory_sequence_length=self.max_sequence_length
             )
 
         decoder_initial_state = self.build_decoder_initial_state(
@@ -159,7 +160,7 @@ class SequenceGeneratorDecoder(Layer):
         outputs, final_state, final_sequence_lengths = self.decoder(
             decoder_emb_inp,
             initial_state=decoder_initial_state,
-            sequence_length=batch_size * sequence_length_3D(encoder_output) #[Ty - 1]
+            sequence_length=batch_size * [self.max_sequence_length]  #[Ty -1]
         )
 
         return outputs.rnn_output, outputs, final_state, final_sequence_lengths
@@ -289,7 +290,8 @@ class SequenceGeneratorDecoder(Layer):
             self,
             inputs,
             training=None,
-            mask=None
+            mask=None,
+            targets=None
     ):
         input = inputs['hidden']
         try:
@@ -297,20 +299,20 @@ class SequenceGeneratorDecoder(Layer):
         except KeyError:
             encoder_output_state = None
 
-        if len(input.shape) != 3 and self.attention_mechanism is not None:
-            raise ValueError(
-                'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
-                'when attention mechanism is {}. '
-                'If you are using a sequential encoder or combiner consider setting reduce_output to None '
-                'and flatten to False if those parameters apply.'
-                'Also make sure theat reduce_input of output feature is None,'.format(
-                    len(input.shape), self.attention_name))
-        if len(input.shape) != 2 and self.attention_mechanism is None:
-            raise ValueError(
-                'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
-                'when attention mechanism is {}. '
-                'Consider setting reduce_input of output feature to a value different from None.'.format(
-                    len(input.shape), self.attention_name))
+        # if len(input.shape) != 3 and self.attention_mechanism is not None:
+        #     raise ValueError(
+        #         'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
+        #         'when attention mechanism is {}. '
+        #         'If you are using a sequential encoder or combiner consider setting reduce_output to None '
+        #         'and flatten to False if those parameters apply.'
+        #         'Also make sure theat reduce_input of output feature is None,'.format(
+        #             len(input.shape), self.attention_name))
+        # if len(input.shape) != 2 and self.attention_mechanism is None:
+        #     raise ValueError(
+        #         'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
+        #         'when attention mechanism is {}. '
+        #         'Consider setting reduce_input of output feature to a value different from None.'.format(
+        #             len(input.shape), self.attention_name))
 
         batch_size = input.shape[0]
         print(">>>>>>batch_size", batch_size)
@@ -330,13 +332,14 @@ class SequenceGeneratorDecoder(Layer):
         if training:
             return_tuple = self.decoder_training(
                 input,
-                targets=encoder_outputs['targets'],
+                targets=targets,
                 encoder_end_state=encoder_end_state,
-                batch_size=batch_size
+                batch_size=batch_size,
+                sequence_length=sequence_length_3D(input)
             )
         else:
             return_tuple = self.decoder_inference(
-                encoder_output,
+                input,
                 encoder_end_state=encoder_end_state
             )
 
