@@ -29,7 +29,6 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.models.modules.embedding_modules import EmbedSparse
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.set_encoders import SetSparseEncoder
-from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary
 
