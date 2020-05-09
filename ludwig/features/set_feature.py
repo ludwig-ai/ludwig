@@ -28,6 +28,8 @@ from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.models.modules.embedding_modules import EmbedSparse
 from ludwig.models.modules.initializer_modules import get_initializer
+from ludwig.models.modules.set_encoders import SetSparseEncoder
+from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary
 
@@ -35,10 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 class SetBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = IMAGE
-
+    type = SET
     preprocessing_defaults = {
         'tokenizer': 'space',
         'most_common': 10000,
@@ -46,6 +45,9 @@ class SetBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -72,19 +74,18 @@ class SetBaseFeature(BaseFeature):
                     metadata['str2idx'],
                     preprocessing_parameters['tokenizer']
                 )
-            )
+            ),
         )
 
         set_matrix = np.zeros(
             (len(column),
              len(metadata['str2idx'])),
-            dtype=bool
         )
 
         for i in range(len(column)):
             set_matrix[i, feature_vector[i]] = 1
 
-        return set_matrix
+        return set_matrix.astype(np.int32)
 
     @staticmethod
     def add_feature_data(
@@ -102,68 +103,28 @@ class SetBaseFeature(BaseFeature):
 
 
 class SetInputFeature(SetBaseFeature, InputFeature):
-    def __init__(self, feature):
+    encoder = 'sparse'
+
+    def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
 
-        self.vocab = []
-        self.embedding_size = 50
-        self.representation = 'dense'
-        self.embeddings_trainable = True
-        self.pretrained_embeddings = None
-        self.embeddings_on_cpu = False
-        self.dropout = False
-        self.initializer = None
-        self.regularize = True
+        SetBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        _ = self.overwrite_defaults(feature)
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.int32
 
-        self.embed_sparse = EmbedSparse(
-            self.vocab,
-            self.embedding_size,
-            representation=self.representation,
-            embeddings_trainable=self.embeddings_trainable,
-            pretrained_embeddings=self.pretrained_embeddings,
-            embeddings_on_cpu=self.embeddings_on_cpu,
-            dropout=self.dropout,
-            initializer=self.initializer,
-            regularize=self.regularize
+        encoder_output = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
 
-    def _get_input_placeholder(self):
-        # None is for dealing with variable batch size
-        return tf.placeholder(
-            tf.int32,
-            shape=[None, len(self.vocab)],
-            name=self.feature_name
-        )
-
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  placeholder: {0}'.format(placeholder))
-
-        embedded, embedding_size = self.embed_sparse(
-            placeholder,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-        logger.debug('  feature_representation: {0}'.format(embedded))
-
-        feature_representation = {
-            'name': self.feature_name,
-            'type': self.type,
-            'representation': embedded,
-            'size': embedding_size,
-            'placeholder': placeholder
-        }
-
-        return feature_representation
+        return {'encoder_output': encoder_output}
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -177,6 +138,11 @@ class SetInputFeature(SetBaseFeature, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
+
+    encoder_registry = {
+        'sparse': SetSparseEncoder,
+        None: SetSparseEncoder
+    }
 
 
 class SetOutputFeature(SetBaseFeature, OutputFeature):
