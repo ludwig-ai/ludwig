@@ -55,7 +55,7 @@ class SequenceGeneratorDecoder(Layer):
             embedding_size=64,
             beam_width=1,
             num_layers=1,
-            attention_mechanism=None,
+            attention=None,
             tied_embeddings=None,
             initializer=None,
             regularize=True,
@@ -76,7 +76,7 @@ class SequenceGeneratorDecoder(Layer):
         self.embedding_size = embedding_size
         self.beam_width = beam_width
         self.num_layers = num_layers
-        self.attention_name = attention_mechanism
+        self.attention = attention
         self.attention_mechanism = None
         self.tied_embeddings = tied_embeddings
         self.initializer = initializer
@@ -104,17 +104,16 @@ class SequenceGeneratorDecoder(Layer):
         # Sampler
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
 
-        print('setting up attention for', attention_mechanism)
-        if attention_mechanism is not None:
-            if attention_mechanism == 'luong':
+        print('setting up attention for', attention)
+        if attention is not None:
+            if attention == 'luong':
                 self.attention_mechanism =  LuongAttention(units=state_size)
-            elif attention_mechanism == 'bahdanau':
+            elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
 
             self.decoder_rnncell = AttentionWrapper(self.decoder_rnncell,
                                                 self.attention_mechanism,
                                                 attention_layer_size=state_size)
-
 
         self.decoder = tfa.seq2seq.BasicDecoder(self.decoder_rnncell,
                                                 sampler=self.sampler,
