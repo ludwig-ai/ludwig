@@ -3963,5 +3963,28 @@ Hyper-parameter optimization visualization
 The examples of the hyper-parameter visualizations shown here are obtained by running a random search with 100 samples on the [ATIS dataset](https://www.kaggle.com/siddhadev/ms-cntk-atis) used for classifying intents given user utterances.
  
 ### hyperopt_report
-    
+
+This visualization uses the `hyperopt_stats_path` parameter.
+
+The visualization creates one plot for each hyper-parameter in the file at `hyperopt_stats_path`, plus an additional one containing a pair plot.
+
+Each plot will show the distribution of the parameters with respect to the metric to optimize.
+For `float` and `int` parameters, a scatter plot is used, while for `category` parameters, a violin plot is used instead. 
+
+![Float hyperopt plot](images/hyperopt_float.png "Float hyperopt plot")
+
+![Int hyperopt plot](images/hyperopt_int.png "Int hyperopt plot")
+
+![Category hyperopt plot](images/hyperopt_category.png "Category hyperopt plot")
+
+The pair plot shows a heatmap of how the values of pairs of hyper-parameters correlate with the metric to optimize.
+
+![Pait hyperopt plot](images/hyperopt_pair.png "Pait hyperopt plot")
+
 ### hyperopt_hiplot
+
+This visualization uses the `hyperopt_stats_path` parameter.
+
+The visualization creates an interactive HTML page visualizing all the results from the hyper-parameter optimization at once, using a parallel coordinate plot.
+
+![Hiplot hyperopt plot](images/hyperopt_hiplot.jpeg "Hiplot hyperopt plot")
