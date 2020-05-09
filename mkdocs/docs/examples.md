@@ -621,8 +621,9 @@ Kaggle's Titanic: Predicting survivors
 ===
 
 This example describes how to use Ludwig to train a model for the
-[kaggle competition](https://www.kaggle.com/c/titanic/), on predicting a passenger's probability of surviving the Titanic
-disaster. Here's a sample of the data:
+[Titanic Kaggle competition dataset](https://www.kaggle.com/c/titanic/), on predicting a passenger's probability of surviving the Titanic
+disaster.
+Here's a sample of the data:
 
 | Pclass | Sex    | Age | SibSp | Parch | Fare    | Survived | Embarked |
 |--------|--------|-----|-------|-------|---------|----------|----------|
