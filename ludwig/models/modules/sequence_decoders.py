@@ -133,11 +133,11 @@ class SequenceGeneratorDecoder(Layer):
         return decoder_initial_state
 
     def decoder_training(self, encoder_output,
-            targets=None, encoder_end_state=None, batch_size=None,
+            target=None, encoder_end_state=None, batch_size=None,
             sequence_length=None):
 
         # Prepare correct Decoder input & output sequence data
-        decoder_input = targets[:, :-1]  # ignore <end>
+        decoder_input = target[:, :-1]  # ignore <end>
         a_tx, c_tx = encoder_end_state
 
         # Decoder Embeddings
@@ -291,7 +291,7 @@ class SequenceGeneratorDecoder(Layer):
             inputs,
             training=None,
             mask=None,
-            targets=None
+            target=None
     ):
         input = inputs['hidden']
         try:
@@ -299,20 +299,20 @@ class SequenceGeneratorDecoder(Layer):
         except KeyError:
             encoder_output_state = None
 
-        # if len(input.shape) != 3 and self.attention_mechanism is not None:
-        #     raise ValueError(
-        #         'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
-        #         'when attention mechanism is {}. '
-        #         'If you are using a sequential encoder or combiner consider setting reduce_output to None '
-        #         'and flatten to False if those parameters apply.'
-        #         'Also make sure theat reduce_input of output feature is None,'.format(
-        #             len(input.shape), self.attention_name))
-        # if len(input.shape) != 2 and self.attention_mechanism is None:
-        #     raise ValueError(
-        #         'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
-        #         'when attention mechanism is {}. '
-        #         'Consider setting reduce_input of output feature to a value different from None.'.format(
-        #             len(input.shape), self.attention_name))
+        if len(input.shape) != 3 and self.attention_mechanism is not None:
+            raise ValueError(
+                'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
+                'when attention mechanism is {}. '
+                'If you are using a sequential encoder or combiner consider setting reduce_output to None '
+                'and flatten to False if those parameters apply.'
+                'Also make sure theat reduce_input of output feature is None,'.format(
+                    len(input.shape), self.attention_name))
+        if len(input.shape) != 2 and self.attention_mechanism is None:
+            raise ValueError(
+                'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
+                'when attention mechanism is {}. '
+                'Consider setting reduce_input of output feature to a value different from None.'.format(
+                    len(input.shape), self.attention_name))
 
         batch_size = input.shape[0]
         print(">>>>>>batch_size", batch_size)
@@ -332,7 +332,7 @@ class SequenceGeneratorDecoder(Layer):
         if training:
             return_tuple = self.decoder_training(
                 input,
-                targets=targets,
+                target=target,
                 encoder_end_state=encoder_end_state,
                 batch_size=batch_size,
                 sequence_length=sequence_length_3D(input)

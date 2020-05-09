@@ -72,7 +72,7 @@ class ECD(tf.keras.Model):
                 (combiner_outputs, output_last_hidden),
                 training=training,
                 mask=mask,
-                targets=targets
+                target=targets[output_feature_name]
             )
             output_logits[output_feature_name] = {}
             output_logits[output_feature_name][LOGITS] = decoder_logits
