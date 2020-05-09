@@ -35,7 +35,7 @@ from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.hyperopt_utils import get_build_hyperopt_strategy, get_build_hyperopt_executor, \
     update_hyperopt_params_with_defaults
 from ludwig.utils.misc import get_from_registry
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig, print_boxed
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +266,7 @@ def hyperopt(
 
 
 def print_hyperopt_results(hyperopt_results):
-    logger.info("Hyeropt results:")
+    print_boxed('HYPEROPT RESULTS', print_fun=logger.info)
     for hyperopt_result in hyperopt_results:
         logger.info('score: {:.6f} | parameters: {}'.format(
             hyperopt_result['metric_score'], hyperopt_result['parameters']
