@@ -118,6 +118,8 @@ class SequenceGeneratorDecoder(Layer):
                                                 output_layer=self.dense_layer)
 
     def build_decoder_initial_state(self, batch_size, encoder_state, dtype):
+        # todo tf2 attentinon_mechanism vs cell_type to determine method
+        #      for initial state setup, attention meth
         if self.attention_mechanism is not None:
             decoder_initial_state = self.decoder_rnncell.get_initial_state(
                 batch_size=batch_size,
@@ -335,7 +337,8 @@ class SequenceGeneratorDecoder(Layer):
                 'Consider setting reduce_input of output feature to a value different from None.'.format(
                     len(input.shape), self.attention_name))
 
-        print(">>>>>>batch_size", input.shape[0])
+        batch_size = input.shape[0]
+        print(">>>>>>batch_size", batch_size)
 
         # Assume we have a final state
         encoder_end_state = encoder_output_state
@@ -362,46 +365,6 @@ class SequenceGeneratorDecoder(Layer):
             )
 
         return return_tuple
-
-####### old code todo tf2
-        # decoder_embeddings = self.embeddings_dec(inputs)
-        #
-        # sequence_lengths = self.build_sequence_lengths(inputs.shape[0],
-        #                                                self.max_sequence_length)
-        # if self.attention_mechanism is not None:
-        #     self.attention_mechanism.setup_memory(inputs)
-        #     initial_state = self.build_initial_state(inputs.shape[0])
-        # else:
-        #     initial_state = None
-        #
-        # final_outputs, final_state, final_sequence_lengths = self.decoder(
-        #     decoder_embeddings, initial_state=initial_state,
-        #     sequence_length=sequence_lengths)
-        #
-        # return final_outputs.rnn_output  # todo tf2 in case we need, final_outputs, final_state, final_sequence_lengths
-
-
-        # TODO TF2 clean up after port
-        # tied_embeddings_tensor = None
-        # todo tf2  determine how to handle following
-        # if self.tied_embeddings is not None:
-        #     try:
-        #         tied_embeddings_tensor = tf.get_default_graph().get_tensor_by_name(
-        #             '{}/embeddings:0'.format(self.tied_embeddings))
-        #     except:
-        #         raise ValueError(
-        #             'An error occurred while obtaining embeddings from the feature {} '
-        #             'to use as tied weights in the generator decoder of feature {}. '
-        #             '{} does not exists or does not have an embedding weights.v'
-        #             'Please check the spelling of the feature name '
-        #             'in the tied_embeddings field and '
-        #             'be sure its type is not binary, numerical or timeseries.'.format(
-        #                 self.tied_embeddings,
-        #                 output_feature['name'],
-        #                 self.tied_embeddings
-        #             )
-        #         )
-
 
         # if self.is_timeseries:
         #     vocab_size = 1

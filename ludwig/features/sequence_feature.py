@@ -250,9 +250,15 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def logits(
             self,
-            inputs,  # hidden
-            target=None
+            inputs,  # {'hidden': hidden, 'encoder_output_state': encoder_output_state}
+            target=None  # target sequence [batch_size, seq_size]
     ):
+        # 'hidden' shape [batch_size, seq_size, hidden_size]
+        # 'encoder_output_state' dependent on cell_type:
+        #      lstm: list (shape [batch_size, state_size], shape [batch_size, state_size])
+        #      rnn, gru: list [shape [batch_size, state_size]]
+        # return logits shape [batch_size, seq_size, num_classes]
+
         return self.decoder_obj(inputs, target=target)
 
     def predictions(
