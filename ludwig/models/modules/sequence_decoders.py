@@ -28,7 +28,7 @@ from tensorflow_addons.seq2seq import LuongAttention
 from tensorflow_addons.seq2seq import BahdanauAttention
 
 from ludwig.utils.misc import get_from_registry
-from ludwig.utils.tf_utils import sequence_length_3D
+from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
 
 # todo tf2 clean up
@@ -131,14 +131,16 @@ class SequenceGeneratorDecoder(Layer):
         return decoder_initial_state
 
     def decoder_training(self, encoder_output,
-            target=None, encoder_end_state=None, batch_size=None,
-            sequence_length=None):
+            target=None, encoder_end_state=None):
 
         # ================ Setup ================
         GO_SYMBOL = self.vocab_size
         END_SYMBOL = 0
+        batch_size = encoder_output.shape[0]
+        encoder_sequence_length = sequence_length_3D(encoder_output)
 
-        # Prepare correct Decoder input for decoding
+        # Prepare target for decoding
+        target_sequence_length = sequence_length_2D(target)
         start_tokens = tf.tile([GO_SYMBOL], [batch_size])
         end_tokens = tf.tile([END_SYMBOL], [batch_size])
         if self.is_timeseries:
@@ -148,7 +150,7 @@ class SequenceGeneratorDecoder(Layer):
             tf.expand_dims(start_tokens, 1),
             target,  # todo tf2: right now cast to tf.int32, fails if tf.int64
             tf.expand_dims(end_tokens, 1)], 1)
-        sequence_length_with_eos = sequence_length + 1
+        target_sequence_length_with_eos = target_sequence_length + 1
 
         # Decoder Embeddings
         decoder_emb_inp = self.decoder_embedding(targets_with_go_and_eos)
@@ -157,7 +159,7 @@ class SequenceGeneratorDecoder(Layer):
         if self.attention_mechanism is not None:
             self.attention_mechanism.setup_memory(
                 encoder_output,
-                memory_sequence_length=sequence_length_with_eos
+                memory_sequence_length=encoder_sequence_length
             )
 
         decoder_initial_state = self.build_decoder_initial_state(
@@ -170,20 +172,29 @@ class SequenceGeneratorDecoder(Layer):
         outputs, final_state, final_sequence_lengths = self.decoder(
             decoder_emb_inp,
             initial_state=decoder_initial_state,
-            sequence_length=sequence_length_with_eos  #[Ty -1]
+            sequence_length=target_sequence_length_with_eos
         )
 
         return outputs.rnn_output #, outputs, final_state, final_sequence_lengths
 
-    def decoder_inference(self, encoder_output,
-             encoder_end_state=None):
+    def decoder_inference(self, encoder_output, encoder_end_state=None):
 
         # ================ Setup ================
         GO_SYMBOL = self.vocab_size
         END_SYMBOL = 0
-
         batch_size = encoder_output.shape[0]
+        encoder_sequence_length = sequence_length_3D(encoder_output)
 
+        # ============== compute logits ================
+
+        return_tuple = self.decoder_training(
+            encoder_output,
+            target=None,
+            encoder_end_state=encoder_end_state
+        )
+
+
+        # ================ predictions =================
         greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
 
         decoder_input = tf.expand_dims(
@@ -325,8 +336,7 @@ class SequenceGeneratorDecoder(Layer):
                 'Consider setting reduce_input of output feature to a value different from None.'.format(
                     len(input.shape), self.attention_name))
 
-        batch_size = input.shape[0]
-        print(">>>>>>batch_size", batch_size)
+        print(">>>>>>batch_size", input.shape[0])
 
         # Assume we have a final state
         encoder_end_state = encoder_output_state
@@ -345,13 +355,11 @@ class SequenceGeneratorDecoder(Layer):
                 input,
                 target=target,
                 encoder_end_state=encoder_end_state,
-                batch_size=batch_size,
-                sequence_length=sequence_length_3D(input)
             )
         else:
             return_tuple = self.decoder_inference(
                 input,
-                encoder_end_state=encoder_end_state
+                encoder_end_state=encoder_end_state,
             )
 
         return return_tuple
