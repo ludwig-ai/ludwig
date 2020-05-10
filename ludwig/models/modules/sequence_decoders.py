@@ -98,7 +98,6 @@ class SequenceGeneratorDecoder(Layer):
         self.dense_layer = Dense(num_classes)
         self.decoder_rnncell = \
             get_from_registry(cell_type, rnn_layers_registry)(state_size)
-        # self.decoder_rnncell = LSTMCell(state_size)
 
         # Sampler
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
