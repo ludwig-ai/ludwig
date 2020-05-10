@@ -27,7 +27,8 @@ class SetSparseEncoder(Layer):
 
     def __init__(
             self,
-            vocab=None,
+            vocab,
+            representation='dense',
             embedding_size=50,
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -35,6 +36,7 @@ class SetSparseEncoder(Layer):
             dropout_rate=0.0,
             initializer=None,
             regularizer=None,
+            reduce_output='sum',
             **kwargs
     ):
         super(SetSparseEncoder, self).__init__()
@@ -42,13 +44,14 @@ class SetSparseEncoder(Layer):
         self.embed_sparse = EmbedSparse(
             vocab,
             embedding_size,
-            representation='sparse',
+            representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
             initializer=initializer,
-            regularizer=regularizer
+            regularizer=regularizer,
+            reduce_output=reduce_output,
         )
 
     def call(self, inputs, training=None, mask=None):

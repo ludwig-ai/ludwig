@@ -26,7 +26,6 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.models.modules.embedding_modules import EmbedSparse
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.set_encoders import SetSparseEncoder
 from ludwig.utils.misc import set_default_value
@@ -102,7 +101,7 @@ class SetBaseFeature(BaseFeature):
 
 
 class SetInputFeature(SetBaseFeature, InputFeature):
-    encoder = 'sparse'
+    encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -139,7 +138,7 @@ class SetInputFeature(SetBaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
 
     encoder_registry = {
-        'sparse': SetSparseEncoder,
+        'embed': SetSparseEncoder,
         None: SetSparseEncoder
     }
 
