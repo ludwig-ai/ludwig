@@ -27,7 +27,7 @@ class CategoricalEmbedEncoder(Layer):
 
     def __init__(
             self,
-            vocab=None,
+            vocab,
             embedding_size=50,
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -68,7 +68,7 @@ class CategoricalSparseEncoder(Layer):
 
     def __init__(
             self,
-            vocab=None,
+            vocab,
             embedding_size=50,
             embeddings_trainable=True,
             pretrained_embeddings=None,
