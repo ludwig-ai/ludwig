@@ -84,7 +84,7 @@ class SetBaseFeature(BaseFeature):
         for i in range(len(column)):
             set_matrix[i, feature_vector[i]] = 1
 
-        return set_matrix.astype(np.int32)
+        return set_matrix.astype(np.bool)
 
     @staticmethod
     def add_feature_data(
@@ -117,7 +117,7 @@ class SetInputFeature(SetBaseFeature, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int32
+        assert inputs.dtype == tf.bool
 
         encoder_output = self.encoder_obj(
             inputs, training=training, mask=mask

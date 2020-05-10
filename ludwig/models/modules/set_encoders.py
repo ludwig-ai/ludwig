@@ -18,7 +18,7 @@ import logging
 
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.embedding_modules import Embed
+from ludwig.models.modules.embedding_modules import EmbedSparse
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,9 @@ class SetSparseEncoder(Layer):
     ):
         super(SetSparseEncoder, self).__init__()
 
-        self.embed = Embed(
-            vocab=vocab,
-            embedding_size=embedding_size,
+        self.embed_sparse = EmbedSparse(
+            vocab,
+            embedding_size,
             representation='sparse',
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
@@ -58,7 +58,7 @@ class SetSparseEncoder(Layer):
 
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
-        embedded = self.embed(
+        embedded = self.embed_sparse(
             inputs, training=None, mask=None
         )
         return embedded
