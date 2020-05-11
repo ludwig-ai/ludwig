@@ -11,7 +11,8 @@ from ludwig.api import LudwigModel
 from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET, \
     VECTOR
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
-    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION
+    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION, \
+    MODEL_WEIGHTS_PROGRESS_FILE_NAME
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -137,7 +138,8 @@ def export_neuropod(
         },
     ]
     for filename in os.listdir(ludwig_model_path):
-        if MODEL_WEIGHTS_FILE_NAME in filename:
+        if (MODEL_WEIGHTS_FILE_NAME in filename
+                and MODEL_WEIGHTS_PROGRESS_FILE_NAME not in filename):
             data_paths.append(
                 {
                     "path": os.path.join(
