@@ -105,7 +105,7 @@ class SequenceGeneratorDecoder(Layer):
         print('setting up attention for', attention)
         if attention is not None:
             if attention == 'luong':
-                self.attention_mechanism =  LuongAttention(units=state_size)
+                self.attention_mechanism = LuongAttention(units=state_size)
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
 
@@ -185,15 +185,6 @@ class SequenceGeneratorDecoder(Layer):
         END_SYMBOL = 0
         batch_size = encoder_output.shape[0]
         encoder_sequence_length = sequence_length_3D(encoder_output)
-
-        # ============== compute logits ================
-
-        return_tuple = self.decoder_training(
-            encoder_output,
-            target=None,
-            encoder_end_state=encoder_end_state
-        )
-
 
         # ================ predictions =================
         greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
@@ -359,10 +350,15 @@ class SequenceGeneratorDecoder(Layer):
                 encoder_end_state=encoder_end_state,
             )
         else:
-            return_tuple = self.decoder_inference(
-                input,
-                encoder_end_state=encoder_end_state,
-            )
+            # todo tf2 clean-up code
+            # return_tuple = self.decoder_inference(
+            #     input,
+            #     encoder_end_state=encoder_end_state
+            # )
+            return_tuple = {
+                'encoder_output': input,
+                'encoder_output_state': encoder_end_state
+            }
 
         return return_tuple
 

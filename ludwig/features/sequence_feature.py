@@ -19,6 +19,10 @@ import os
 
 import numpy as np
 import tensorflow.compat.v1 as tf
+import tensorflow_addons as tfa
+from tensorflow_addons.seq2seq import dynamic_decode, Decoder, BasicDecoder, \
+    GreedyEmbeddingSampler
+
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -48,7 +52,7 @@ from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
-from ludwig.utils.tf_utils import sequence_length_2D
+from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
@@ -266,10 +270,41 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             inputs   # logits
     ):
 
-        logits = inputs[LOGITS]
+        encoder_output = inputs[LOGITS]['encoder_output']
+        encoder_output_state = inputs[LOGITS]['encoder_output_state']
 
+        batch_size = encoder_output.shape[0]
+
+        greedy_sampler = GreedyEmbeddingSampler()
+
+        if self.decoder_obj.attention_mechanism is not None:
+            self.decoder_obj.attention_mechanism.setup_memory(
+                encoder_output,
+                memory_sequence_length=sequence_length_3D(encoder_output)
+            )
+
+        decoder_initial_state = self.decoder_obj.build_decoder_initial_state(
+            batch_size,
+            encoder_state=encoder_output_state,
+            dtype=tf.float32
+        )
+
+        decoder = BasicDecoder(
+            cell=self.decoder_obj.decoder_rnncell, sampler=greedy_sampler,
+            output_layer=self.decoder_obj.dense_layer)
+        decoder.initialize(encoder_output, initial_state=decoder_initial_state)
+
+        final_outputs, final_state, final_sequence_lengths = \
+            dynamic_decode(
+                decoder=decoder,
+                training=False,
+                decoder_init_input=encoder_output,
+                decoder_init_kwargs={'initial_state': encoder_output_state}
+            )
+
+        # todo tf2 following code needs to be adapted for above
         probabilities = tf.nn.softmax(
-            logits,
+            final_outputs.rnn_output,
             name='probabilities_{}'.format(self.name)
         )
         predictions = tf.argmax(
@@ -305,6 +340,75 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             PROBABILITIES: probabilities,
             LOGITS: logits
         }
+
+        # todo tf2 Placeholder code
+        # # ================ Setup ================
+        # GO_SYMBOL = self.vocab_size
+        # END_SYMBOL = 0
+        # batch_size = encoder_output.shape[0]
+        # encoder_sequence_length = sequence_length_3D(encoder_output)
+        #
+        # # ============== compute logits ================
+        #
+        # return_tuple = self.decoder_training(
+        #     encoder_output,
+        #     target=None,
+        #     encoder_end_state=encoder_end_state
+        # )
+        #
+        #
+        # # ================ predictions =================
+        # greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
+        #
+        # decoder_input = tf.expand_dims(
+        #     [GO_SYMBOL] * batch_size, 1)
+        #
+        # decoder_emb_inp = self.decoder_embedding(decoder_input)
+        #
+        # decoder_instance = tfa.seq2seq.BasicDecoder(
+        #     cell=self.decoder_rnncell, sampler=greedy_sampler,
+        #     output_layer=self.dense_layer)
+        #
+        # if self.attention_mechanism is not None:
+        #     self.attention_mechanism.setup_memory(
+        #         encoder_output,
+        #         memory_sequence_length=sequence_length_3D(encoder_output)
+        #     )
+        #
+        # # Since we do not know the target sequence lengths in advance,
+        # # we use maximum_iterations to limit the translation lengths.
+        # # One heuristic is to decode up to two times the source sentence lengths.
+        # maximum_iterations = tf.round(tf.reduce_max(self.max_sequence_length) * 2)
+        #
+        # decoder_initial_state = self.build_decoder_initial_state(
+        #     batch_size,
+        #     encoder_state=encoder_end_state,
+        #     dtype=tf.float32)
+        #
+        # start_tokens = tf.fill([batch_size], GO_SYMBOL)
+        # end_token = END_SYMBOL
+        #
+        # # initialize inference decoder
+        # decoder_embedding_matrix = self.decoder_embedding.variables[0]
+        # (first_finished, first_inputs,
+        #  first_state) = decoder_instance.initialize(decoder_embedding_matrix,
+        #                                             start_tokens=start_tokens,
+        #                                             end_token=end_token,
+        #                                             initial_state=decoder_initial_state)
+        #
+        # inputs = first_inputs
+        # state = first_state
+        # predictions = np.empty((batch_size, 0), dtype=np.int32)
+        # for j in range(maximum_iterations):
+        #     outputs, next_state, next_inputs, finished = decoder_instance.step(
+        #         j, inputs, state)
+        #     inputs = next_inputs
+        #     state = next_state
+        #     outputs = np.expand_dims(outputs.sample_id, axis=-1)
+        #     predictions = np.append(predictions, outputs, axis=-1)
+        #
+        # return predictions, None, None, None
+
 
 
     default_validation_metric = LOSS
