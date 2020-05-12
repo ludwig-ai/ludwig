@@ -252,18 +252,60 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             else:
                 metric_fn.update_state(targets, predictions[PREDICTIONS])
 
+    # def logits(
+    #         self,
+    #         inputs,  # {'hidden': hidden, 'encoder_output_state': encoder_output_state}
+    #         target=None  # target sequence [batch_size, seq_size]
+    # ):
+    #     # 'hidden' shape [batch_size, seq_size, hidden_size]
+    #     # 'encoder_output_state' dependent on cell_type:
+    #     #      lstm: list (shape [batch_size, state_size], shape [batch_size, state_size])
+    #     #      rnn, gru: list [shape [batch_size, state_size]]
+    #     # return logits shape [batch_size, seq_size, num_classes]
+    #
+    #     return self.decoder_obj(inputs, target=target)
+
     def logits(
             self,
-            inputs,  # {'hidden': hidden, 'encoder_output_state': encoder_output_state}
-            target=None  # target sequence [batch_size, seq_size]
+            inputs,
+            target=None,
+            training=None
     ):
-        # 'hidden' shape [batch_size, seq_size, hidden_size]
-        # 'encoder_output_state' dependent on cell_type:
-        #      lstm: list (shape [batch_size, state_size], shape [batch_size, state_size])
-        #      rnn, gru: list [shape [batch_size, state_size]]
-        # return logits shape [batch_size, seq_size, num_classes]
+        if training:
+            return self._logits_training(inputs, target, training)
+        else:
+            return self._logits_prediction(inputs)
 
-        return self.decoder_obj(inputs, target=target)
+
+    def _logits_training(self, inputs, target, training):
+        input = inputs['hidden']
+        try:
+            encoder_output_state = inputs['encoder_output_state']
+        except KeyError:
+            encoder_output_state = None
+
+        batch_size = input.shape[0]
+        print(">>>>>>batch_size", batch_size)
+
+        # Assume we have a final state
+        encoder_end_state = encoder_output_state
+
+        # in case we don't have a final state set to default value
+        if self.decoder_obj.cell_type in 'lstm' and encoder_end_state is None:
+            encoder_end_state = [
+                tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32),
+                tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
+            ]
+        elif self.decoder_obj.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
+            encoder_end_state = tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
+
+        logits = self.decoder_obj.decoder_training(input, target=target,
+                                                   encoder_end_state=encoder_end_state)
+        return logits  # shape = [b, s, c]
+
+    def _logits_prediction(self, inputs):
+        return inputs
+
 
     def predictions(
             self,
