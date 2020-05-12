@@ -236,7 +236,10 @@ class SequenceGeneratorDecoder(Layer):
             outputs = np.expand_dims(outputs.sample_id, axis=-1)
             predictions = np.append(predictions, outputs, axis=-1)
 
-        return predictions, None, None, None
+        logits = None # todo tf2 how to compute?
+        probabilities = None # todo tf2 need logits
+
+        return predictions, probabilities
 
 ############### Old code  todo tf2 remove
     #     self.embeddings_dec = Embedding(num_classes, embedding_size)

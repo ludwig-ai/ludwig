@@ -128,7 +128,8 @@ class ECD(tf.keras.Model):
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                logits[of_name]
+                logits[of_name],
+                training=False
             )
 
         return predictions

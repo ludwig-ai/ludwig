@@ -278,8 +278,11 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
 
     def _logits_training(self, inputs, target, training):
-        input = inputs['hidden']
+        input = inputs['hidden'] # shape [batch_size, seq_size, state_size]
         try:
+            # form dependent on cell_type
+            # lstm: list([batch_size, state_size], [batch_size, state_size])
+            # rnn, gru: [batch_size, state_size]
             encoder_output_state = inputs['encoder_output_state']
         except KeyError:
             encoder_output_state = None
@@ -306,81 +309,39 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
     def _logits_prediction(self, inputs):
         return inputs
 
+    def predictions(self, inputs, training=None):
+        if training:
+            return self._predictions_training(inputs)
+        else:
+            return self._predictions_prediction(inputs)
 
-    def predictions(
+    def _predictions_training(self, inputs):
+        # inputs == logits
+        probs = softmax(inputs)
+        preds = tf.argmax(inputs)
+        return {'predictions': preds, 'probabilities': probs}
+
+
+    def _predictions_prediction(
             self,
-            inputs   # logits
+            inputs   # encoder_output, encoder_output_state
     ):
 
-        encoder_output = inputs[LOGITS]['encoder_output']
+        encoder_output = inputs[LOGITS]['hidden'] # shape [batch_size, seq_size, state_size]
+        # form dependent on cell_type
+        # lstm: list([batch_size, state_size], [batch_size, state_size])
+        # rnn, gru: [batch_size, state_size]
         encoder_output_state = inputs[LOGITS]['encoder_output_state']
 
-        batch_size = encoder_output.shape[0]
-
-        greedy_sampler = GreedyEmbeddingSampler()
-
-        if self.decoder_obj.attention_mechanism is not None:
-            self.decoder_obj.attention_mechanism.setup_memory(
-                encoder_output,
-                memory_sequence_length=sequence_length_3D(encoder_output)
-            )
-
-        decoder_initial_state = self.decoder_obj.build_decoder_initial_state(
-            batch_size,
-            encoder_state=encoder_output_state,
-            dtype=tf.float32
-        )
-
-        decoder = BasicDecoder(
-            cell=self.decoder_obj.decoder_rnncell, sampler=greedy_sampler,
-            output_layer=self.decoder_obj.dense_layer)
-        decoder.initialize(encoder_output, initial_state=decoder_initial_state)
-
-        final_outputs, final_state, final_sequence_lengths = \
-            dynamic_decode(
-                decoder=decoder,
-                training=False,
-                decoder_init_input=encoder_output,
-                decoder_init_kwargs={'initial_state': encoder_output_state}
-            )
-
-        # todo tf2 following code needs to be adapted for above
-        probabilities = tf.nn.softmax(
-            final_outputs.rnn_output,
-            name='probabilities_{}'.format(self.name)
-        )
-        predictions = tf.argmax(
-            logits,
-            -1,
-            name='predictions_{}'.format(self.name),
-            output_type=tf.int64
-        )
-
-        if self.decoder == 'generator':
-            additional = 1  # because of eos symbol
-        elif self.decoder == 'tagger':
-            additional = 0
-        else:
-            additional = 0
-
-        predictions_sequence_length = sequence_length_2D(predictions)
-        last_predictions = tf.gather_nd(
-            predictions,
-            tf.stack(
-                [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(
-                     predictions_sequence_length - 1 - additional,
-                     0
-                 )],
-                axis=1
-            )
-        )
+        predictions, probabilities = \
+            self.decoder_obj.decoder_inference(encoder_output,
+                                              encoder_end_state=encoder_output_state)
 
         return {
             PREDICTIONS: predictions,
-            LAST_PREDICTIONS: last_predictions,
+            # LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
-            LOGITS: logits
+            # LOGITS: logits
         }
 
         # todo tf2 Placeholder code
