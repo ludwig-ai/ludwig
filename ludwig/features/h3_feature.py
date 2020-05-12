@@ -70,10 +70,11 @@ class H3BaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = np.array(
-            [H3BaseFeature.h3_to_list(row)
-             for row in dataset_df[feature['name']]], dtype=np.uint8
-        )
+        column = dataset_df[feature['name']]
+        if column.dtype == object:
+            column = column.map(int)
+        column = column.map(H3BaseFeature.h3_to_list)
+        data[feature['name']] = np.array(column.tolist(), dtype=np.uint8)
 
 
 class H3InputFeature(H3BaseFeature, InputFeature):
