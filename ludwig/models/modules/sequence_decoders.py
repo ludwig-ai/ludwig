@@ -207,7 +207,7 @@ class SequenceGeneratorDecoder(Layer):
         # Since we do not know the target sequence lengths in advance,
         # we use maximum_iterations to limit the translation lengths.
         # One heuristic is to decode up to two times the source sentence lengths.
-        maximum_iterations = tf.round(tf.reduce_max(self.max_sequence_length) * 2)
+        maximum_iterations = self.max_sequence_length
 
         decoder_initial_state = self.build_decoder_initial_state(
             batch_size,
@@ -227,81 +227,48 @@ class SequenceGeneratorDecoder(Layer):
 
         inputs = first_inputs
         state = first_state
-        predictions = np.empty((batch_size, 0), dtype=np.int32)
+        predictions = tf.convert_to_tensor(
+            np.array([]).reshape([batch_size, 0]),
+            dtype=tf.int32
+        )
+        logits = tf.convert_to_tensor(
+            np.array([]).reshape([batch_size, 0, self.num_classes]),
+            dtype=tf.float32
+        )
         for j in range(maximum_iterations):
             outputs, next_state, next_inputs, finished = decoder_instance.step(
                 j, inputs, state)
             inputs = next_inputs
             state = next_state
-            outputs = np.expand_dims(outputs.sample_id, axis=-1)
-            predictions = np.append(predictions, outputs, axis=-1)
+            one_logit = tf.expand_dims(outputs.rnn_output, axis=1)
+            logits = tf.concat([logits, one_logit], axis=1)
 
-        logits = None # todo tf2 how to compute?
-        probabilities = None # todo tf2 need logits
+        probabilities = tf.nn.softmax(
+            logits,
+            name='probabilities_{}'.format(self.name)
+        )
+        predictions = tf.argmax(
+            logits,
+            -1,
+            name='predictions_{}'.format(self.name)
+        )
+        seq_len = sequence_length_2D(predictions)
+        last_predictions = tf.gather_nd(
+            predictions,
+            tf.stack(
+                [tf.range(tf.shape(predictions)[0]),
+                 tf.maximum(
+                     seq_len-1,
+                     0
+                 )],
+                axis=1
+            ),
+            name='last_predictions_{}'.format(self.name)
+        )
 
-        return predictions, probabilities
 
-############### Old code  todo tf2 remove
-    #     self.embeddings_dec = Embedding(num_classes, embedding_size)
-    #     self.decoder_cell = LSTMCell(state_size)
-    #
-    #     if attention_mechanism:
-    #         if attention_mechanism == 'bahdanau':
-    #             pass
-    #         elif attention_mechanism == 'luong':
-    #             self.attention_mechanism = tfa.seq2seq.LuongAttention(
-    #                 state_size,
-    #                 None,  # todo tf2: confirm on need
-    #                 memory_sequence_length=max_sequence_length  # todo tf2: confirm inputs or output seq length
-    #             )
-    #         else:
-    #             raise ValueError(
-    #                 "Attention specificaiton '{}' is invalid.  Valid values are "
-    #                 "'bahdanau' or 'luong'.".format(self.attention_mechanism))
-    #
-    #         self.decoder_cell = tfa.seq2seq.AttentionWrapper(
-    #             self.decoder_cell,
-    #             self.attention_mechanism
-    #         )
-    #
-    #     self.sampler = tfa.seq2seq.sampler.TrainingSampler()
-    #
-    #     self.projection_layer = Dense(
-    #         units=num_classes,
-    #         use_bias=use_bias,
-    #         kernel_initializer=weights_initializer,
-    #         bias_initializer=bias_initializer,
-    #         kernel_regularizer=weights_regularizer,
-    #         bias_regularizer=bias_regularizer,
-    #         activity_regularizer=activity_regularizer
-    #     )
-    #
-    #     self.decoder = \
-    #         tfa.seq2seq.basic_decoder.BasicDecoder(self.decoder_cell,
-    #                                                 self.sampler,
-    #                                                 output_layer=self.projection_layer)
-    #
-    # # todo tf2: remove if not needed
-    # # def build_initial_state1(self, batch_size, encoder_state=None):
-    # #     initial_state = self.decoder_cell.get_initial_state(
-    # #         inputs=encoder_state,
-    # #         batch_size=batch_size,
-    # #         dtype=tf.float32
-    # #     )
-    # #     return initial_state
-    #
-    # def build_sequence_lengths(self, batch_size, max_sequence_length):
-    #     return np.ones((batch_size,)).astype(np.int32) * max_sequence_length
-    #
-    # def build_initial_state(self, batch_size):
-    #     initial_state = self.decoder_cell.get_initial_state(
-    #         batch_size=batch_size, dtype=tf.float32
-    #     )
-    #     # todo tf2:  need to confirm this is correct construct
-    #     zero_state = tf.zeros([batch_size, self.state_size])
-    #     initial_state = initial_state.clone(cell_state=[zero_state, zero_state])
-    #     return initial_state
-#############old code
+        return predictions, last_predictions, probabilities, logits
+
 
     def call(
             self,
@@ -316,6 +283,7 @@ class SequenceGeneratorDecoder(Layer):
         except KeyError:
             encoder_output_state = None
 
+        # todo tf2 need to move this to sequence output feature class
         if len(input.shape) != 3 and self.attention_mechanism is not None:
             raise ValueError(
                 'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
@@ -365,40 +333,6 @@ class SequenceGeneratorDecoder(Layer):
 
         return return_tuple
 
-        # if self.is_timeseries:
-        #     vocab_size = 1
-        # else:
-        #     vocab_size = self.num_classes
-        #
-        # if not self.regularize:
-        #     regularizer = None
-        #
-        # predictions_sequence, predictions_sequence_scores, \
-        # predictions_sequence_length_with_eos, \
-        # targets_sequence_length_with_eos, eval_logits, train_logits, \
-        # class_weights, class_biases = recurrent_decoder(
-        #     hidden,
-        #     targets,
-        #     output_feature['max_sequence_length'],
-        #     vocab_size,
-        #     cell_type=self.cell_type,
-        #     state_size=self.state_size,
-        #     embedding_size=self.embedding_size,
-        #     beam_width=self.beam_width,
-        #     num_layers=self.num_layers,
-        #     attention_mechanism=self.attention_mechanism,
-        #     is_timeseries=self.is_timeseries,
-        #     embeddings=tied_embeddings_tensor,
-        #     initializer=self.initializer,
-        #     regularizer=regularizer
-        # )
-        #
-        # probabilities_target_sequence = tf.nn.softmax(eval_logits)
-        #
-        # return predictions_sequence, predictions_sequence_scores, \
-        #        predictions_sequence_length_with_eos, \
-        #        probabilities_target_sequence, targets_sequence_length_with_eos, \
-        #        eval_logits, train_logits, class_weights, class_biases
 
 
 class SequenceTaggerDecoder(Layer):
