@@ -64,3 +64,46 @@ class Dataset:
 
     def set_dataset(self, dataset):
         self.dataset = dataset
+
+
+class CSVDataset(Dataset):
+    def __init__(self, all_path, train_path, validation_path, test_path, model_definition,
+                 train_set_metadata_json_fp, *args, **kwargs):
+        pass
+
+    def load_raw_all(self):
+        pass
+
+    def load_preprocessed_all(self):
+        pass
+
+    def load_raw_batch(self):
+        pass
+
+    def preprocess_for_training(self, preprocess_pipeline):
+        pass
+
+    def preprocess_for_prediction(self, preprocess_pipeline):
+        pass
+
+
+class HDF5Dataset(Dataset):
+    def __init__(self, all_path, train_path, validation_path, test_path, model_definition,
+                 train_set_metadata_json_fp, *args, **kwargs):
+        pass
+
+    def load_raw(self):
+        pass
+
+    def load_preprocessed(self):
+        pass
+
+    def preprocess_for_training(self):
+        pass
+
+    def preprocess_for_prediction(self):
+        pass
+
+
+
+
