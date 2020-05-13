@@ -173,6 +173,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         logits = inputs[LOGITS]
 

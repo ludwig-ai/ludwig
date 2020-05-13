@@ -149,7 +149,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     def predictions(
             self,
-            inputs  # hidden
+            inputs,  # hidden
+            **kwargs
     ):
         logits = inputs[LOGITS]
 

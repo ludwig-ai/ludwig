@@ -206,6 +206,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         logits = inputs[LOGITS]
         predictions = logits
