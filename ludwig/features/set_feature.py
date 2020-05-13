@@ -156,27 +156,15 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
     def __init__(self, feature):
         SetBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
+
+        self.num_classes = 0
+        self.threshold = 0.5
+
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
-        # super().__init__(feature)
-        # self.type = SET
 
-        # self.loss = {'type': 'sigmoid_cross_entropy'}
-        self.num_classes = 0
-        self.threshold = 0.5
-        # self.initializer = None
-        # self.regularize = True
-
-        # _ = self.overwrite_defaults(feature)
-
-    # def _get_output_placeholder(self):
-    #     return tf.placeholder(
-    #         tf.bool,
-    #         shape=[None, self.num_classes],
-    #         name='{}_placeholder'.format(self.feature_name)
-    #     )
     def logits(
             self,
             inputs,  # hidden
