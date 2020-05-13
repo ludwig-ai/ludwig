@@ -494,29 +494,6 @@ def weighted_softmax_cross_entropy(
             reduction=Reduction.NONE)
     return train_loss
 
-def sigmoid_cross_entropy(
-        logits,
-        targets,
-        class_weights=1,
-        labels_smoothing=0,
-        **kwargs
-):
-    use_class_weights = not isinstance(class_weights, (int, float))
-    if use_class_weights:
-        train_loss = softmax_cross_entropy_with_class_weighting(
-            logits,
-            vector_labels,
-            class_weights,
-            labels_smoothing
-        )
-    else:
-        train_loss = tf.losses.softmax_cross_entropy(
-            onehot_labels=vector_labels,
-            logits=logits,
-            label_smoothing=labels_smoothing,
-            reduction=Reduction.NONE)
-    return train_loss
-
 
 def loss_multilabel(logits, vector_labels, loss):
     # input: `logits` and `labels` must have the same shape `[batch_size, num_classes]`
