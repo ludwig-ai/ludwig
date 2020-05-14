@@ -164,8 +164,9 @@ class SequenceLoss(tf.keras.losses.Loss):
             y_true = tf.concat([y_true, pad], axis=1)
 
         # add one to sequence length to account for EOS token
-        mask = tf.cast(
-            tf.sequence_mask(sequence_length_2D(y_true) + 1, y_true.shape[1]),
+        mask = tf.sequence_mask(
+            sequence_length_2D(y_true) + 1,
+            maxlen=y_true.shape[1],
             dtype=tf.float32
         )
 
