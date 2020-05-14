@@ -26,7 +26,7 @@ from ludwig.neuropod import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, set_feature, vector_feature, image_feature, \
-    audio_feature, timeseries_feature, date_feature, h3_feature
+    audio_feature, timeseries_feature, date_feature, h3_feature, bag_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
@@ -51,9 +51,8 @@ def test_neuropod(csv_filename):
         timeseries_feature(),
         date_feature(),
         h3_feature(),
-        # set_feature(vocab_size=3),  # TODO fix
-        # bag_feature(vocab_size=3),  # TODO fix
-
+        set_feature(vocab_size=3),
+        bag_feature(vocab_size=3),
     ]
 
     output_features = [
@@ -170,12 +169,12 @@ def test_neuropod(csv_filename):
 
             assert np.isclose(neuropod_prob, original_prob).all()
 
-        # if (output_feature_name + "_probabilities" in preds and
-        #         output_feature_name + "_probabilities" in original_predictions_df):
-        #     neuropod_prob = preds[
-        #         output_feature_name + "_probabilities"].tolist()
-        #
-        #     original_prob = original_predictions_df[
-        #         output_feature_name + "_probabilities"].tolist()
-        #
-        #     assert np.isclose(neuropod_prob, original_prob).all()
+        if (output_feature_name + "_probabilities" in preds and
+                output_feature_name + "_probabilities" in original_predictions_df):
+            neuropod_prob = preds[
+                output_feature_name + "_probabilities"].tolist()
+
+            original_prob = original_predictions_df[
+                output_feature_name + "_probabilities"].tolist()
+
+            assert np.isclose(neuropod_prob, original_prob).all()
