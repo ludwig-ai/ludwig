@@ -17,9 +17,9 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_addons as tfa
 from tensorflow.python.ops.losses.losses_impl import Reduction
-from tensorflow_addons.seq2seq import SequenceLoss as TfaSequenceLoss
 
 from ludwig.constants import *
+from ludwig.utils.tf_utils import sequence_length_2D
 
 
 #
@@ -132,7 +132,9 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
 class SequenceLoss(tf.keras.losses.Loss):
     def __init__(self, name=None, **kwargs):
         super(SequenceLoss, self).__init__(name=name)
-        self.loss_function = TfaSequenceLoss()
+        self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True
+        )
 
     def call(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
@@ -151,8 +153,6 @@ class SequenceLoss(tf.keras.losses.Loss):
                 ],
                 dtype=y_pred.dtype)
             y_pred = tf.concat([y_pred, pad], axis=1)
-            # obtain mask from y_true
-            mask = tf.cast(tf.greater(y_true, 0), tf.float32)
         elif y_pred.shape[1] > y_true.shape[1]:
             pad = tf.zeros(
                 [
@@ -162,11 +162,12 @@ class SequenceLoss(tf.keras.losses.Loss):
                 dtype=y_true.dtype
             )
             y_true = tf.concat([y_true, pad], axis=1)
-            # obtain mask from y_pred
-            mask = tf.cast(tf.reduce_any(tf.not_equal(y_pred, 0.0), 2), tf.float32)
-        else:
-            # obtain mask from y_true
-            mask = tf.cast(tf.greater(y_true, 0), tf.float32)
+
+        # add one to sequence length to account for EOS token
+        mask = tf.cast(
+            tf.sequence_mask(sequence_length_2D(y_true) + 1, y_true.shape[1]),
+            dtype=tf.float32
+        )
 
         # compute loss based on valid time steps
         loss = self.loss_function(y_true, y_pred, sample_weight=mask)

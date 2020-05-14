@@ -288,7 +288,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             encoder_output_state = None
 
         batch_size = input.shape[0]
-        print(">>>>>>batch_size", batch_size)
 
         # Assume we have a final state
         encoder_end_state = encoder_output_state
