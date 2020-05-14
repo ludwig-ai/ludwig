@@ -306,17 +306,12 @@ class EmbedSparse:
             self.initializer
         )
 
-        multiple_hot_indexes = tf.multiply(
-            input_sparse,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
-        )
-
-        idx = tf.where(tf.not_equal(multiple_hot_indexes, 0))
+        idx = tf.where(tf.equal(input_sparse, True))
 
         sparse_multiple_hot_indexes = tf.SparseTensor(
             idx,
-            tf.gather_nd(multiple_hot_indexes, idx),
-            tf.shape(multiple_hot_indexes, out_type=tf.int64)
+            idx[:, 1],
+            tf.shape(input_sparse, out_type=tf.int64)
         )
 
         embedded_reduced = tf.nn.embedding_lookup_sparse(

@@ -132,7 +132,7 @@ class SetInputFeature(SetBaseFeature, InputFeature):
     def _get_input_placeholder(self):
         # None is for dealing with variable batch size
         return tf.compat.v1.placeholder(
-            tf.int32,
+            tf.bool,
             shape=[None, len(self.vocab)],
             name=self.name
         )
