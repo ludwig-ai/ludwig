@@ -649,6 +649,8 @@ class FiberExecutor(HyperoptExecutor):
             metric: str,
             split: str,
             num_workers: int = 2,
+            num_cpus_per_worker: int = -1,
+            num_gpus_per_worker: int = -1,
             fiber_backend: str = "local",
             **kwargs
     ) -> None:
@@ -656,7 +658,21 @@ class FiberExecutor(HyperoptExecutor):
         HyperoptExecutor.__init__(
             self, hyperopt_strategy, output_feature, metric, split
         )
+
         fiber.init(backend=fiber_backend)
+        self.fiber_meta = fiber.meta
+
+        self.num_cpus_per_worker = num_cpus_per_worker
+        self.num_gpus_per_worker = num_gpus_per_worker
+
+        self.resource_limits = {}
+        if num_cpus_per_worker != -1:
+            self.resource_limits["cpu"] = num_cpus_per_worker
+
+        if num_gpus_per_worker != -1:
+            self.resource_limits["gpu"] = num_gpus_per_worker
+
+        self.num_workers = num_workers
         self.pool = fiber.Pool(num_workers)
 
     def execute(
@@ -732,6 +748,9 @@ class FiberExecutor(HyperoptExecutor):
             random_seed=random_seed,
             debug=debug,
         )
+
+        if self.resource_limits:
+            train_func = self.fiber_meta(**self.resource_limits)(train_func)
 
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
