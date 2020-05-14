@@ -26,7 +26,7 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.models.modules.embedding_modules import EmbedWeighted
 from ludwig.utils.misc import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class BagBaseFeature(BaseFeature):
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ''
+        'fill_value': UNKNOWN_SYMBOL
     }
 
     @staticmethod

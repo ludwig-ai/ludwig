@@ -125,6 +125,11 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
             preprocessing_parameters = global_preprocessing_parameters[
                 feature['type']
             ]
+        handle_missing_values(
+            dataset_df,
+            feature,
+            preprocessing_parameters
+        )
         train_set_metadata[feature['name']] = get_feature_meta(
             dataset_df[feature['name']].astype(str),
             preprocessing_parameters

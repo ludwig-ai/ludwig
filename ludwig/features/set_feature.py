@@ -29,7 +29,7 @@ from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.models.modules.embedding_modules import EmbedSparse
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.utils.misc import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +37,14 @@ logger = logging.getLogger(__name__)
 class SetBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
-        self.type = IMAGE
+        self.type = SET
 
     preprocessing_defaults = {
         'tokenizer': 'space',
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ''
+        'fill_value': UNKNOWN_SYMBOL
     }
 
     @staticmethod

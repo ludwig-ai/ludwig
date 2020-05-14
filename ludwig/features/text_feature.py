@@ -56,7 +56,7 @@ class TextBaseFeature(BaseFeature):
         'padding': 'right',
         'lowercase': True,
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ''
+        'fill_value': UNKNOWN_SYMBOL
     }
 
     @staticmethod
