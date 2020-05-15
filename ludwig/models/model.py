@@ -148,7 +148,7 @@ class Model:
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        print('Training loss (for one batch): %s' % float(loss))
+        # print('Training loss (for one batch): %s' % float(loss))
 
         # todo tf2: make sure tensorboard works for batch  and epoch level metrics
         # model.update_metrics(targets, predictions)

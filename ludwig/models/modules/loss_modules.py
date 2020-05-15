@@ -19,7 +19,7 @@ import tensorflow_addons as tfa
 from tensorflow.python.ops.losses.losses_impl import Reduction
 
 from ludwig.constants import *
-from ludwig.utils.tf_utils import sequence_length_2D
+from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 
 #
@@ -133,7 +133,8 @@ class SequenceLoss(tf.keras.losses.Loss):
     def __init__(self, name=None, **kwargs):
         super(SequenceLoss, self).__init__(name=name)
         self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True
+            from_logits=True,
+            reduction='none'
         )
 
     def call(self, y_true, y_pred):
@@ -142,8 +143,6 @@ class SequenceLoss(tf.keras.losses.Loss):
 
         y_pred = y_pred[LOGITS]
         y_true = tf.convert_to_tensor(y_true, dtype=tf.int64)
-        orig_y_true_shape = y_true.shape
-
 
         # pad the shorter sequence
         if y_true.shape[1] > y_pred.shape[1]:
@@ -165,16 +164,20 @@ class SequenceLoss(tf.keras.losses.Loss):
             )
             y_true = tf.concat([y_true, pad], axis=1)
 
-        # add one to sequence length to account for EOS token
+        longest_sequence_length = tf.maximum(sequence_length_2D(y_true),
+                                         sequence_length_3D(y_pred))
+        longest_sequence_length += 1  # for EOS
+        longest_sequence_length = tf.minimum(longest_sequence_length, y_true.shape[1])
         mask = tf.sequence_mask(
-            tf.minimum(sequence_length_2D(y_true) + 1, orig_y_true_shape[1]),
+            longest_sequence_length,
             maxlen=y_true.shape[1],
             dtype=tf.float32
         )
-
         # compute loss based on valid time steps
-        loss = self.loss_function(y_true, y_pred, sample_weight=mask)
-        return loss  # vector of shape [batch_size,]
+        loss = self.loss_function(y_true, y_pred)
+        loss = loss * mask
+        loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
+        return loss
 
 
 # end of custom classes
