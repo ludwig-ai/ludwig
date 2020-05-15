@@ -259,7 +259,7 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None or self.model.session is None or
+        if (self.model is None or self.model._session is None or
                 self.model_definition is None or self.train_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
@@ -270,7 +270,7 @@ class LudwigModel:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
 
-        self.model.save_weights(self.model.session, model_weights_path)
+        self.model.save_weights(self.model._session, model_weights_path)
 
         train_set_metadata_path = os.path.join(
             save_path,
@@ -279,7 +279,7 @@ class LudwigModel:
         save_json(train_set_metadata_path, self.train_set_metadata)
 
         self.model.save_hyperparameters(
-            self.model.hyperparameters,
+            self.model._hyperparameters,
             model_hyperparameters_path
         )
 
@@ -299,7 +299,7 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None or self.model.session is None or
+        if (self.model is None or self.model._session is None or
                 self.model_definition is None or self.train_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 

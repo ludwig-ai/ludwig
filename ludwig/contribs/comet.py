@@ -92,7 +92,7 @@ class Comet():
             model_definition_path = args[2]
             if model:
                 self.cometml_experiment.set_model_graph(
-                    str(model.graph.as_graph_def()))
+                    str(model._graph.as_graph_def()))
             if model_definition:
                 if model_definition_path:
                     base_name = os.path.basename(model_definition_path)

@@ -33,10 +33,6 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
-from tabulate import tabulate
-from tensorflow.python import debug as tf_debug
-from tqdm import tqdm
-
 from ludwig.constants import *
 from ludwig.contrib import contrib_command
 from ludwig.features.feature_registries import output_type_registry
@@ -67,6 +63,9 @@ from ludwig.utils.math_utils import learning_rate_warmup_distributed, \
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 from ludwig.utils.tf_utils import get_tf_config
+from tabulate import tabulate
+from tensorflow.python import debug as tf_debug
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -88,20 +87,20 @@ class Model:
             debug=False,
             **kwargs
     ):
-        self.horovod = None
+        self._horovod = None
         if use_horovod:
             import horovod.tensorflow
-            self.horovod = horovod.tensorflow
+            self._horovod = horovod.tensorflow
             from mpi4py import MPI
-            self.comm = MPI.COMM_WORLD
+            self._comm = MPI.COMM_WORLD
 
-        self.debug = debug
-        self.weights_save_path = None
-        self.hyperparameters = {}
-        self.session = None
+        self._debug = debug
+        self._weights_save_path = None
+        self._hyperparameters = {}
+        self._session = None
 
-        self.epochs = None
-        self.received_sigint = False
+        self._epochs = None
+        self._received_sigint = False
 
         self.__build(
             input_features,
@@ -123,16 +122,16 @@ class Model:
             random_seed,
             **kwargs
     ):
-        self.hyperparameters['input_features'] = input_features
-        self.hyperparameters['output_features'] = output_features
-        self.hyperparameters['combiner'] = combiner
-        self.hyperparameters[TRAINING] = training
-        self.hyperparameters['preprocessing'] = preprocessing
-        self.hyperparameters['random_seed'] = random_seed
-        self.hyperparameters.update(kwargs)
+        self._hyperparameters['input_features'] = input_features
+        self._hyperparameters['output_features'] = output_features
+        self._hyperparameters['combiner'] = combiner
+        self._hyperparameters[TRAINING] = training
+        self._hyperparameters['preprocessing'] = preprocessing
+        self._hyperparameters['random_seed'] = random_seed
+        self._hyperparameters.update(kwargs)
 
-        if self.horovod:
-            self.horovod.init()
+        if self._horovod:
+            self._horovod.init()
 
         tf.compat.v1.reset_default_graph()
         graph = tf.Graph()
@@ -140,29 +139,29 @@ class Model:
             # ================ Setup ================
             tf.compat.v1.set_random_seed(random_seed)
 
-            self.global_step = tf.Variable(0, trainable=False)
-            self.regularization_lambda = tf.compat.v1.placeholder(
+            self._global_step = tf.Variable(0, trainable=False)
+            self._regularization_lambda = tf.compat.v1.placeholder(
                 tf.float32,
                 name='regularization_lambda'
             )
             regularizer = regularizer_registry[training['regularizer']]
-            self.regularizer = regularizer(self.regularization_lambda)
+            self._regularizer = regularizer(self._regularization_lambda)
 
-            self.learning_rate = tf.compat.v1.placeholder(
+            self._learning_rate = tf.compat.v1.placeholder(
                 tf.float32,
                 name='learning_rate'
             )
-            self.dropout_rate = tf.compat.v1.placeholder(tf.float32,
-                                                         name='dropout_rate')
-            self.is_training = tf.compat.v1.placeholder(tf.bool, [],
-                                                        name='is_training')
+            self._dropout_rate = tf.compat.v1.placeholder(tf.float32,
+                                                          name='dropout_rate')
+            self._is_training = tf.compat.v1.placeholder(tf.bool, [],
+                                                         name='is_training')
 
             # ================ Inputs ================
             feature_encodings = build_inputs(
                 input_features,
-                self.regularizer,
-                self.dropout_rate,
-                is_training=self.is_training
+                self._regularizer,
+                self._dropout_rate,
+                is_training=self._is_training
             )
 
             for fe_name, fe_properties in feature_encodings.items():
@@ -173,9 +172,9 @@ class Model:
             build_combiner = get_build_combiner(combiner['type'])(**combiner)
             hidden, hidden_size = build_combiner(
                 feature_encodings,
-                self.regularizer,
-                self.dropout_rate,
-                is_training=self.is_training,
+                self._regularizer,
+                self._dropout_rate,
+                is_training=self._is_training,
                 **kwargs
             )
 
@@ -184,15 +183,15 @@ class Model:
                 output_features,
                 hidden,
                 hidden_size,
-                regularizer=self.regularizer,
-                dropout_rate=self.dropout_rate,
-                is_training=self.is_training
+                regularizer=self._regularizer,
+                dropout_rate=self._dropout_rate,
+                is_training=self._is_training
             )
 
             (
-                self.train_reg_mean_loss,
-                self.eval_combined_loss,
-                self.regularization_loss,
+                self._train_reg_mean_loss,
+                self._eval_combined_loss,
+                self._regularization_loss,
                 output_tensors
             ) = outs
 
@@ -200,48 +199,49 @@ class Model:
                 setattr(self, ot_name, ot)
 
             # ================ Optimizer ================
-            self.optimize, self.learning_rate = optimize(
-                self.train_reg_mean_loss,
+            self._optimize, self._learning_rate = optimize(
+                self._train_reg_mean_loss,
                 training,
-                self.learning_rate,
-                self.global_step,
-                self.horovod
+                self._learning_rate,
+                self._global_step,
+                self._horovod
             )
 
             tf.compat.v1.summary.scalar(
                 'combined/batch_train_reg_mean_loss',
-                self.train_reg_mean_loss
+                self._train_reg_mean_loss
             )
 
-            self.merged_summary = tf.compat.v1.summary.merge_all()
-            self.graph = graph
-            self.graph_initialize = tf.compat.v1.global_variables_initializer()
-            if self.horovod:
-                self.broadcast_op = self.horovod.broadcast_global_variables(0)
-            self.saver = tf.compat.v1.train.Saver()
+            self._merged_summary = tf.compat.v1.summary.merge_all()
+            self._graph = graph
+            self._graph_initialize = tf.compat.v1.global_variables_initializer()
+            if self._horovod:
+                self._broadcast_op = self._horovod.broadcast_global_variables(
+                    0)
+            self._saver = tf.compat.v1.train.Saver()
 
     def initialize_session(self, gpus=None, gpu_fraction=1):
-        if self.session is None:
+        if self._session is None:
 
-            self.session = tf.compat.v1.Session(
-                config=get_tf_config(gpus, gpu_fraction, self.horovod),
-                graph=self.graph
+            self._session = tf.compat.v1.Session(
+                config=get_tf_config(gpus, gpu_fraction, self._horovod),
+                graph=self._graph
             )
-            self.session.run(self.graph_initialize)
+            self._session.run(self._graph_initialize)
 
-            if self.debug:
-                session = tf_debug.LocalCLIDebugWrapperSession(self.session)
+            if self._debug:
+                session = tf_debug.LocalCLIDebugWrapperSession(self._session)
                 session.add_tensor_filter(
                     'has_inf_or_nan',
                     tf_debug.has_inf_or_nan
                 )
 
-        return self.session
+        return self._session
 
     def close_session(self):
-        if self.session is not None:
-            self.session.close()
-            self.session = None
+        if self._session is not None:
+            self._session.close()
+            self._session = None
 
     def feed_dict(
             self,
@@ -252,13 +252,13 @@ class Model:
             dropout_rate=default_training_params['dropout_rate'],
             is_training=True
     ):
-        input_features = self.hyperparameters['input_features']
-        output_features = self.hyperparameters['output_features']
+        input_features = self._hyperparameters['input_features']
+        output_features = self._hyperparameters['output_features']
         feed_dict = {
-            self.is_training: is_training,
-            self.regularization_lambda: regularization_lambda,
-            self.learning_rate: learning_rate,
-            self.dropout_rate: dropout_rate
+            self._is_training: is_training,
+            self._regularization_lambda: regularization_lambda,
+            self._learning_rate: learning_rate,
+            self._dropout_rate: dropout_rate
         }
         for input_feature in input_features:
             feed_dict[getattr(self, input_feature['name'])] = batch[
@@ -409,10 +409,10 @@ class Model:
         :type: Float
         """
         # ====== General setup =======
-        output_features = self.hyperparameters['output_features']
-        self.epochs = epochs
-        digits_per_epochs = len(str(self.epochs))
-        self.received_sigint = False
+        output_features = self._hyperparameters['output_features']
+        self._epochs = epochs
+        digits_per_epochs = len(str(self._epochs))
+        self._received_sigint = False
         # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
@@ -420,8 +420,8 @@ class Model:
         if eval_batch_size < 1:
             eval_batch_size = batch_size
         stat_names = get_all_measures_names(output_features)
-        if self.horovod:
-            learning_rate *= self.horovod.size()
+        if self._horovod:
+            learning_rate *= self._horovod.size()
 
         # check if validation_field is valid
         valid_validation_field = False
@@ -473,18 +473,18 @@ class Model:
         # ====== Setup session =======
         session = self.initialize_session(gpus, gpu_fraction)
 
-        if self.weights_save_path:
-            self.restore(session, self.weights_save_path)
+        if self._weights_save_path:
+            self.restore(session, self._weights_save_path)
 
         train_writer = None
         if is_on_master():
             if not skip_save_log:
                 train_writer = tf.compat.v1.summary.FileWriter(
                     os.path.join(save_path, 'log', 'train'),
-                    session.graph
+                    session._graph
                 )
 
-        if self.debug:
+        if self._debug:
             session = tf_debug.LocalCLIDebugWrapperSession(session)
             session.add_tensor_filter(
                 'has_inf_or_nan',
@@ -528,8 +528,8 @@ class Model:
             )
 
         # horovod broadcasting after init or restore
-        if self.horovod:
-            session.run(self.broadcast_op)
+        if self._horovod:
+            session.run(self._broadcast_op)
 
         set_random_seed(random_seed)
         batcher = self.initialize_batcher(
@@ -539,7 +539,7 @@ class Model:
         )
 
         # ================ Training Loop ================
-        while progress_tracker.epoch < self.epochs:
+        while progress_tracker.epoch < self._epochs:
             # epoch init
             start_time = time.time()
             if is_on_master():
@@ -565,15 +565,15 @@ class Model:
             while not batcher.last_batch():
                 batch = batcher.next_batch()
 
-                if self.horovod:
+                if self._horovod:
                     current_learning_rate = learning_rate_warmup_distributed(
                         progress_tracker.learning_rate,
                         progress_tracker.epoch,
                         learning_rate_warmup_epochs,
-                        self.horovod.size(),
+                        self._horovod.size(),
                         batcher.step,
                         batcher.steps_per_epoch
-                    ) * self.horovod.size()
+                    ) * self._horovod.size()
                 else:
                     current_learning_rate = learning_rate_warmup(
                         progress_tracker.learning_rate,
@@ -583,9 +583,9 @@ class Model:
                         batcher.steps_per_epoch
                     )
 
-                readout_nodes = {'optimize': self.optimize}
+                readout_nodes = {'optimize': self._optimize}
                 if not skip_save_log:
-                    readout_nodes['summary'] = self.merged_summary
+                    readout_nodes['summary'] = self._merged_summary
 
                 output_values = session.run(
                     readout_nodes,
@@ -746,7 +746,7 @@ class Model:
                     if not skip_save_model:
                         self.save_weights(session, model_weights_path)
                         self.save_hyperparameters(
-                            self.hyperparameters,
+                            self._hyperparameters,
                             model_hyperparameters_path
                         )
 
@@ -762,7 +762,7 @@ class Model:
                     )
                     if skip_save_model:
                         self.save_hyperparameters(
-                            self.hyperparameters,
+                            self._hyperparameters,
                             model_hyperparameters_path
                         )
 
@@ -805,7 +805,7 @@ class Model:
             batch = batcher.next_batch()
 
             _ = session.run(
-                [self.optimize],
+                [self._optimize],
                 feed_dict=self.feed_dict(
                     batch,
                     regularization_lambda=regularization_lambda,
@@ -839,7 +839,7 @@ class Model:
             name=dataset_name
         )
 
-        for output_feature in self.hyperparameters['output_features']:
+        for output_feature in self._hyperparameters['output_features']:
             of_name = output_feature['name']
             table_row = [dataset_name]
 
@@ -884,7 +884,7 @@ class Model:
                 logger.warning('No datapoints to evaluate on.')
             return output_stats
         seq_set_size = {output_feature['name']: {} for output_feature in
-                        self.hyperparameters['output_features'] if
+                        self._hyperparameters['output_features'] if
                         output_feature['type'] in SEQUENCE_TYPES}
 
         batcher = self.initialize_batcher(
@@ -928,7 +928,7 @@ class Model:
         if is_on_master():
             progress_bar.close()
 
-        if self.horovod:
+        if self._horovod:
             output_stats, seq_set_size = self.merge_workers_outputs(
                 output_stats,
                 seq_set_size
@@ -944,8 +944,8 @@ class Model:
 
         if 'combined' in output_stats and LOSS in output_stats['combined']:
             regularization = session.run(
-                [self.regularization_loss],
-                feed_dict={self.regularization_lambda: regularization_lambda}
+                [self._regularization_loss],
+                feed_dict={self._regularization_lambda: regularization_lambda}
             )[0]
             output_stats['combined'][LOSS] += regularization
 
@@ -953,8 +953,8 @@ class Model:
 
     def merge_workers_outputs(self, output_stats, seq_set_size):
         # gather outputs from all workers
-        all_workers_output_stats = self.comm.allgather(output_stats)
-        all_workers_seq_set_size = self.comm.allgather(seq_set_size)
+        all_workers_output_stats = self._comm.allgather(output_stats)
+        all_workers_seq_set_size = self._comm.allgather(seq_set_size)
 
         # merge them into a single one
         merged_output_stats = sum_dicts(
@@ -973,8 +973,9 @@ class Model:
             tensor_names,
             bucketing_field=None
     ):
-        output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
-                        for tensor_name in tensor_names}
+        output_nodes = {
+            tensor_name: self._graph.get_tensor_by_name(tensor_name)
+            for tensor_name in tensor_names}
         collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
 
         batcher = self.initialize_batcher(
@@ -1012,7 +1013,7 @@ class Model:
         return collected_tensors
 
     def get_output_nodes(self, collect_predictions, only_predictions=False):
-        output_features = self.hyperparameters['output_features']
+        output_features = self._hyperparameters['output_features']
         output_nodes = {}
 
         for output_feature in output_features:
@@ -1035,13 +1036,13 @@ class Model:
         if not only_predictions:
             output_nodes['eval_combined_loss'] = getattr(
                 self,
-                'eval_combined_loss'
+                '_eval_combined_loss'
             )
 
         return output_nodes
 
     def get_outputs_stats(self):
-        output_features = self.hyperparameters['output_features']
+        output_features = self._hyperparameters['output_features']
         output_stats = OrderedDict()
 
         for output_feature in output_features:
@@ -1068,7 +1069,7 @@ class Model:
             only_predictions,
             result
     ):
-        output_features = self.hyperparameters['output_features']
+        output_features = self._hyperparameters['output_features']
         combined_correct_predictions = None
 
         for output_feature in output_features:
@@ -1140,7 +1141,7 @@ class Model:
             collect_predictions,
             only_predictions
     ):
-        output_features = self.hyperparameters['output_features']
+        output_features = self._hyperparameters['output_features']
 
         for i, output_feature in enumerate(output_features):
             feature_type = output_feature['type']
@@ -1253,7 +1254,7 @@ class Model:
                 if not skip_save_model:
                     self.save_weights(session, model_weights_path)
                     self.save_hyperparameters(
-                        self.hyperparameters,
+                        self._hyperparameters,
                         model_hyperparameters_path
                     )
                     logger.info(
@@ -1321,14 +1322,14 @@ class Model:
             gpu_fraction=1,
             **kwargs
     ):
-        if self.session is None:
+        if self._session is None:
             session = self.initialize_session(gpus, gpu_fraction)
 
             # load parameters
-            if self.weights_save_path:
-                self.restore(session, self.weights_save_path)
+            if self._weights_save_path:
+                self.restore(session, self._weights_save_path)
         else:
-            session = self.session
+            session = self._session
 
         # predict
         predict_stats = self.batch_evaluation(
@@ -1351,18 +1352,18 @@ class Model:
             gpu_fraction=1,
             **kwargs
     ):
-        if self.session is None:
+        if self._session is None:
             session = self.initialize_session(gpus, gpu_fraction)
 
             # load parameters
-            if self.weights_save_path:
-                self.restore(session, self.weights_save_path)
+            if self._weights_save_path:
+                self.restore(session, self._weights_save_path)
         else:
-            session = self.session
+            session = self._session
 
         # get operation names
         operation_names = {
-            t.name for op in self.graph.get_operations() for t in op.values()
+            t.name for op in self._graph.get_operations() for t in op.values()
         }
 
         for tensor_name in tensor_names:
@@ -1389,17 +1390,17 @@ class Model:
             gpu_fraction=1,
             **kwargs
     ):
-        if self.session is None:
+        if self._session is None:
             session = self.initialize_session(gpus, gpu_fraction)
 
             # load parameters
-            if self.weights_save_path:
-                self.restore(session, self.weights_save_path)
+            if self._weights_save_path:
+                self.restore(session, self._weights_save_path)
         else:
-            session = self.session
+            session = self._session
 
         operation_names = {
-            t.name for op in self.graph.get_operations() for t in op.values()
+            t.name for op in self._graph.get_operations() for t in op.values()
         }
         for tensor_name in tensor_names:
             if tensor_name not in operation_names:
@@ -1410,14 +1411,15 @@ class Model:
 
         # collect tensors
         collected_tensors = {
-            tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
+            tensor_name: session.run(
+                self._graph.get_tensor_by_name(tensor_name))
             for tensor_name in tensor_names
         }
 
         return collected_tensors
 
     def save_weights(self, session, save_path):
-        self.weights_save_path = self.saver.save(session, save_path)
+        self._weights_save_path = self._saver.save(session, save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
@@ -1433,23 +1435,23 @@ class Model:
 
     def save_savedmodel(self, save_path):
 
-        if self.session is None:
+        if self._session is None:
             logger.warning(
                 "The model has no initialized session."
                 "Initializing a news session and restoring the weights "
                 "of the model (if a weights path has been specified)."
             )
             self.initialize_session()
-            if self.weights_save_path:
-                self.restore(self.session, self.weights_save_path)
+            if self._weights_save_path:
+                self.restore(self._session, self._weights_save_path)
 
         inputs = {}
         outputs = {}
 
-        for feature in self.hyperparameters['input_features']:
+        for feature in self._hyperparameters['input_features']:
             inputs[feature['name']] = getattr(self, feature['name'])
 
-        for feature in self.hyperparameters['output_features']:
+        for feature in self._hyperparameters['output_features']:
             outputs['predictions_' + feature['name']] = getattr(
                 self, 'predictions_' + feature['name']
             )
@@ -1464,7 +1466,7 @@ class Model:
 
         builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(save_path)
 
-        with self.session as session:
+        with self._session as session:
             signature = tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
                 inputs=inputs,
                 outputs=outputs
@@ -1481,7 +1483,7 @@ class Model:
             builder.save()
 
     def restore(self, session, weights_path):
-        self.saver.restore(session, weights_path)
+        self._saver.restore(session, weights_path)
 
     @staticmethod
     def load(load_path, gpus=None, gpu_fraction=1, use_horovod=False):
@@ -1491,18 +1493,18 @@ class Model:
         )
         hyperparameters = load_json(hyperparameter_file)
         model = Model(use_horovod=use_horovod, **hyperparameters)
-        model.weights_save_path = os.path.join(
+        model._weights_save_path = os.path.join(
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
         model.initialize_session(gpus, gpu_fraction)
-        model.restore(model.session, model.weights_save_path)
+        model.restore(model._session, model._weights_save_path)
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
-        if not self.received_sigint:
-            self.epochs = 1
-            self.received_sigint = True
+        if not self._received_sigint:
+            self._epochs = 1
+            self._received_sigint = True
             logger.critical(
                 '\nReceived SIGINT, will finish this epoch and then conclude '
                 'the training'
@@ -1521,7 +1523,7 @@ class Model:
     def resume_training(self, save_path, model_weights_path):
         if is_on_master():
             logger.info('Resuming training of model: {0}'.format(save_path))
-        self.weights_save_path = model_weights_path
+        self._weights_save_path = model_weights_path
         progress_tracker = ProgressTracker.load(
             os.path.join(
                 save_path,
@@ -1566,17 +1568,17 @@ class Model:
             should_shuffle=True,
             ignore_last=False
     ):
-        if self.horovod:
+        if self._horovod:
             batcher = DistributedBatcher(
                 dataset,
-                self.horovod.rank(),
-                self.horovod,
+                self._horovod.rank(),
+                self._horovod,
                 batch_size,
                 should_shuffle=should_shuffle,
                 ignore_last=ignore_last
             )
         elif bucketing_field is not None:
-            input_features = self.hyperparameters['input_features']
+            input_features = self._hyperparameters['input_features']
             bucketing_feature = [
                 feature for feature in input_features if
                 feature['name'] == bucketing_field
@@ -1594,7 +1596,7 @@ class Model:
             if 'preprocessing' in bucketing_feature:
                 trim_side = bucketing_feature['preprocessing']['padding']
             else:
-                trim_side = self.hyperparameters['preprocessing'][
+                trim_side = self._hyperparameters['preprocessing'][
                     bucketing_feature['type']]['padding']
 
             batcher = BucketedBatcher(
@@ -1663,7 +1665,7 @@ class Model:
                         'or since the learning rate was reduced'
                     )
 
-                progress_tracker.learning_rate *= (
+                progress_tracker._learning_rate *= (
                     reduce_learning_rate_on_plateau_rate
                 )
                 progress_tracker.last_improvement_epoch = (
