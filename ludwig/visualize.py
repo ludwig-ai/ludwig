@@ -773,6 +773,8 @@ def compare_performance(
 
     :return: (None)
     """
+    ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats']
+
     filename_template = 'compare_performance_{}.' + file_format
     filename_template_path = generate_filename_template_path(
         output_directory,
@@ -795,6 +797,9 @@ def compare_performance(
         for measure_names_set in measure_names_sets:
             measure_names = measure_names.intersection(measure_names_set)
         measure_names.remove(LOSS)
+        for name in ignore_names:
+            if name in measure_names:
+                measure_names.remove(name)
         measures_dict = {name: [] for name in measure_names}
 
         for test_stats_per_model in test_stats_per_model_list:
