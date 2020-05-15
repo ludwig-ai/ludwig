@@ -142,6 +142,8 @@ class SequenceLoss(tf.keras.losses.Loss):
 
         y_pred = y_pred[LOGITS]
         y_true = tf.convert_to_tensor(y_true, dtype=tf.int64)
+        orig_y_true_shape = y_true.shape
+
 
         # pad the shorter sequence
         if y_true.shape[1] > y_pred.shape[1]:
@@ -165,7 +167,7 @@ class SequenceLoss(tf.keras.losses.Loss):
 
         # add one to sequence length to account for EOS token
         mask = tf.sequence_mask(
-            sequence_length_2D(y_true) + 1,
+            tf.minimum(sequence_length_2D(y_true) + 1, orig_y_true_shape[1]),
             maxlen=y_true.shape[1],
             dtype=tf.float32
         )
