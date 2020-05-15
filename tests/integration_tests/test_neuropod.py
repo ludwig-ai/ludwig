@@ -25,13 +25,14 @@ from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
 from ludwig.neuropod import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
-    numerical_feature, text_feature, set_feature, vector_feature, image_feature, \
+    numerical_feature, text_feature, set_feature, vector_feature, \
+    image_feature, \
     audio_feature, timeseries_feature, date_feature, h3_feature, bag_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def test_neuropod(csv_filename):
+def neuropod(csv_filename):
     #######
     # Setup
     #######
