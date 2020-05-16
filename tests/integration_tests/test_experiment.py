@@ -321,14 +321,22 @@ def test_experiment_tied_weights(csv_filename):
 def test_experiment_attention(csv_filename):
     # Machine translation with attention
     input_features = [
-        sequence_feature(encoder='rnn', cell_type='lstm', max_len=10)
+        sequence_feature(
+            min_len=5,
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )
     ]
     output_features = [
         sequence_feature(
+            min_len=5,
             max_len=10,
-            cell_type='lstm',
             decoder='generator',
-            attention='bahdanau'
+            cell_type='lstm',
+            attention='bahdanau',
+            reduce_input=None
         )
     ]
 
