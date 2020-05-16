@@ -14,22 +14,18 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+
 import numpy as np
-
 import tensorflow.compat.v1 as tf
-from tensorflow.keras.layers import Layer, Dense, Embedding
-from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
-
 import tensorflow_addons as tfa
-from tensorflow_addons.seq2seq import BasicDecoder
-from tensorflow_addons.seq2seq.sampler import TrainingSampler
+from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
+from tensorflow.keras.layers import Layer, Dense, Embedding
 from tensorflow_addons.seq2seq import AttentionWrapper
-from tensorflow_addons.seq2seq import LuongAttention
 from tensorflow_addons.seq2seq import BahdanauAttention
+from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
-
 
 # todo tf2 clean up
 # from ludwig.models.modules.attention_modules import \
@@ -170,13 +166,19 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         # BasicDecoderOutput
-        outputs, final_state, final_sequence_lengths = self.decoder(
+        outputs, final_state, generated_sequence_lengths = self.decoder(
             decoder_emb_inp,
             initial_state=decoder_initial_state,
             sequence_length=target_sequence_length_with_eos
         )
-
-        return outputs.rnn_output #, outputs, final_state, final_sequence_lengths
+        logits = outputs.rnn_output
+        mask = tf.sequence_mask(
+            generated_sequence_lengths,
+            maxlen=logits.shape[1],
+            dtype=tf.float32
+        )
+        logits = logits * mask[:, :, tf.newaxis]
+        return logits  # , outputs, final_state, generated_sequence_lengths
 
     def decoder_inference(self, encoder_output, encoder_end_state=None):
 
