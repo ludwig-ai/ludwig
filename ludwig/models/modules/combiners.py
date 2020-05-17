@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
 from ludwig.features.feature_utils import SEQUENCE_TYPES

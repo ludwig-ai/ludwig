@@ -16,7 +16,7 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.models.modules.fully_connected_modules import FCStack

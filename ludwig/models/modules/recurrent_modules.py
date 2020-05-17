@@ -17,7 +17,7 @@ import collections
 import inspect
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, LSTMStateTuple
 from tensorflow.keras.layers import SimpleRNN, GRU, LSTM, Bidirectional, Layer
@@ -141,7 +141,7 @@ def get_cell_fun(cell_type):
     return cell_fn
 
 
-class Projection(tf.layers.Layer):
+class Projection(tf.keras.layers.Layer):
     def __init__(self, projection_weights, projection_biases, name=None,
                  **kwargs):
         super(Projection, self).__init__(name=name, **kwargs)

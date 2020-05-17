@@ -15,7 +15,9 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
+from tensorflow import math
+from tensorflow import squeeze
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import AveragePooling1D
@@ -29,9 +31,6 @@ from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import MaxPool1D
 from tensorflow.keras.layers import MaxPool2D
 from tensorflow.keras.layers import ZeroPadding2D
-from tensorflow import math
-from tensorflow import squeeze
-
 
 logger = logging.getLogger(__name__)
 

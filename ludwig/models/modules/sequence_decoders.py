@@ -16,7 +16,7 @@
 import logging
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
 from tensorflow.keras.layers import Layer, Dense, Embedding

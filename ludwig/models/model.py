@@ -31,7 +31,7 @@ import threading
 import time
 from collections import OrderedDict
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 # import tensorflow as tf2    # todo: tf2 port
 from tabulate import tabulate
 from tqdm import tqdm
@@ -105,7 +105,7 @@ class Model:
         self.hyperparameters['random_seed'] = random_seed
         self.hyperparameters.update(kwargs)
 
-        tf.set_random_seed(random_seed)
+        tf.random.set_seed(random_seed)
 
         self.ecd = ECD(input_features, combiner, output_features)
 
