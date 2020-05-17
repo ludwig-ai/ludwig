@@ -105,10 +105,15 @@ class RecurrentStack(Layer):
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
+        final_state = None
         for layer in self.layers:
             outputs = layer(hidden, training=training)
             hidden = outputs[0]
-        return hidden, outputs[1:]
+            final_state = outputs[1:]
+        if final_state:
+            if len(final_state) == 1:
+                final_state = final_state[0]
+        return hidden, final_state
 
 def get_cell_fun(cell_type):
     if cell_type == 'rnn':
