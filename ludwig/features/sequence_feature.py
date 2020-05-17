@@ -19,12 +19,7 @@ import os
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-import tensorflow_addons as tfa
-from tensorflow_addons.seq2seq import dynamic_decode, Decoder, BasicDecoder, \
-    GreedyEmbeddingSampler
-
-from ludwig.models.modules.reduction_modules import reduce_sequence
-
+from tensorflow.keras.layers import average
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -37,6 +32,7 @@ from ludwig.models.modules.metric_modules import PerplexityMetric
 from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.models.modules.metric_modules import SequenceLossMetric
 from ludwig.models.modules.metric_modules import TokenAccuracyMetric
+from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.models.modules.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.models.modules.sequence_decoders import SequenceTaggerDecoder
 from ludwig.models.modules.sequence_encoders import BERT
@@ -54,7 +50,6 @@ from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
-from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
@@ -362,42 +357,100 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             decoder_input_state = inputs['encoder_output_state']
         else:
             eo = inputs['encoder_output']
-            if len(eo.shape) == 3:  # it was a sequence
-                decoder_input_state = reduce_sequence(eo,
-                                             self.reduce_input)  # this returns a [b, h]
+            if len(eo.shape) == 3:  # encoder_output is a sequence
+                # reduce_sequence returns a [b, h]
+                decoder_input_state = reduce_sequence(eo, self.reduce_input)
             elif len(eo.shape) == 2:
-                decoder_input_state = eo  # this returns a [b, h]
+                # this returns a [b, h]
+                decoder_input_state = eo
             else:
-                raise ValueError("Only works for 1d or 2d inputs")
+                raise ValueError("Only works for 1d or 2d encoder_output")
 
-        # now we have to deal with the fact that the state needs to be a tuple in case of lstm or a vector otherwise
-        if self.decoder_obj.cell_type == 'lstm' and isinstance(decoder_input_state, list):
-            # do nothing, we are good
-            pass
-        elif self.decoder_obj.cell_type == 'lstm' and not isinstance(decoder_input_state,
-                                                         list):
+        # now we have to deal with the fact that the state needs to be a list
+        # in case of lstm or a tensor otherwise
+        if (self.decoder_obj.cell_type == 'lstm' and
+                isinstance(decoder_input_state, list)):
+            if len(decoder_input_state) == 2:
+                # this maybe a unidirection lstm or a bidirectional gru / rnn
+                # there is no way to tell
+                # If it is a unidirectional lstm, pass will work fine
+                # if it is bidirectional gru / rnn, the output of one of
+                # the directions will be treated as the inital c of the lstm
+                # which is weird and may lead to poor performance
+                # todo try to find a way to distinguish among these two cases
+                pass
+            elif len(decoder_input_state) == 4:
+                # the encoder was a bidirectional lstm
+                # a good strategy is to average the 2 h and the 2 c vectors
+                decoder_input_state = [
+                    average(
+                        [decoder_input_state[0], decoder_input_state[2]]
+                    ),
+                    average(
+                        [decoder_input_state[1], decoder_input_state[3]]
+                    )
+                ]
+            else:
+                # no idea how lists of length different than 2 or 4
+                # might have been originated, we can either rise an ValueError
+                # or deal with it averaging everything
+                # raise ValueError(
+                #     "encoder_output_state has length different than 2 or 4. "
+                #     "Please doublecheck your encoder"
+                # )
+                average_state = average(decoder_input_state)
+                decoder_input_state = [average_state, average_state]
+
+        elif (self.decoder_obj.cell_type == 'lstm' and
+              not isinstance(decoder_input_state, list)):
             decoder_input_state = (decoder_input_state, decoder_input_state)
-        elif self.decoder_obj.cell_type != 'lstm' and isinstance(decoder_input_state,
-                                                     list):
-            # here we have a couple options, either reuse part of the input lstm encoder state, or just use its output, thsoe are the following two lines, I would go with the second ome
-            decoder_input_state = decoder_input_state[0]
-            # decoder_input_state = reduce_sequence(eo,
-            #                              self.reduce_input)  # this returns a [b, h]
-        elif self.decoder_obj.cell_type != 'lstm' and not isinstance(decoder_input_state,
-                                                         list):
+
+        elif (self.decoder_obj.cell_type != 'lstm' and
+              isinstance(decoder_input_state, list)):
+            # here we have a couple options,
+            # either reuse part of the input encoder state,
+            # or just use its output
+            if len(decoder_input_state) == 2:
+                # using h and ignoring c
+                decoder_input_state = decoder_input_state[0]
+            elif len(decoder_input_state) == 4:
+                # using h and ignoring c
+                decoder_input_state + average(
+                    [decoder_input_state[0], decoder_input_state[2]]
+                )
+            else:
+                # no idea how lists of length different than 2 or 4
+                # might have been originated, we can either rise an ValueError
+                # or deal with it averaging everything
+                # raise ValueError(
+                #     "encoder_output_state has length different than 2 or 4. "
+                #     "Please doublecheck your encoder"
+                # )
+                decoder_input_state = average(decoder_input_state)
+            # this returns a [b, h]
+            # decoder_input_state = reduce_sequence(eo, self.reduce_input)
+
+        elif (self.decoder_obj.cell_type != 'lstm' and
+              not isinstance(decoder_input_state, list)):
             # do nothing, we are good
             pass
 
-        # at this point decoder_input_state is either a [b,h] or a tuple([b,h], [b,h]) if the encoder was an lstm
-        # h may not be the same as out deoder state size, so we may need to project
+        # at this point decoder_input_state is either a [b,h]
+        # or a list([b,h], [b,h]) if the decoder cell is an lstm
+        # but h may not be the same as the decoder state size,
+        # so we may need to project
         if isinstance(decoder_input_state, list):
             for i in range(len(decoder_input_state)):
-                if decoder_input_state[i].shape[1] != self.decoder_obj.state_size:
-                    decoder_input_state[i] = self.decoder_obj.project(decoder_input_state[
-                                                              i])  # I'll define this in the text later
+                if (decoder_input_state[i].shape[1] !=
+                        self.decoder_obj.state_size):
+                    decoder_input_state[i] = self.decoder_obj.project(
+                        decoder_input_state[i]
+                    )
         else:
             if decoder_input_state.shape[1] != self.decoder_obj.state_size:
-                decoder_input_state = self.decoder_obj.project(decoder_input_state)
+                decoder_input_state = self.decoder_obj.project(
+                    decoder_input_state
+                )
 
         return decoder_input_state
 
