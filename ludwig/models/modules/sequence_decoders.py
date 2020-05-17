@@ -88,6 +88,8 @@ class SequenceGeneratorDecoder(Layer):
         else:
             self.vocab_size = self.num_classes
 
+        self.project = Dense(state_size)
+
         self.decoder_embedding = Embedding(
             input_dim=self.num_classes + 1, # account for GO_SYMBOL
             output_dim=embedding_size)

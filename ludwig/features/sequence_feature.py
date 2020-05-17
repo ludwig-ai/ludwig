@@ -23,6 +23,8 @@ import tensorflow_addons as tfa
 from tensorflow_addons.seq2seq import dynamic_decode, Decoder, BasicDecoder, \
     GreedyEmbeddingSampler
 
+from ludwig.models.modules.reduction_modules import reduce_sequence
+
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -279,27 +281,31 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _logits_training(self, inputs, target, training):
         input = inputs['hidden'] # shape [batch_size, seq_size, state_size]
-        try:
-            # form dependent on cell_type
-            # lstm: list([batch_size, state_size], [batch_size, state_size])
-            # rnn, gru: [batch_size, state_size]
-            encoder_output_state = inputs['encoder_output_state']
-        except KeyError:
-            encoder_output_state = None
+        encoder_end_state = self._prepare_decoder_input_state(inputs)
+
+        # todo tf2 if _prepare_decoder_input_statue() works, then clean out this code
+        # try:
+        #     # form dependent on cell_type
+        #     # lstm: list([batch_size, state_size], [batch_size, state_size])
+        #     # rnn, gru: [batch_size, state_size]
+        #     encoder_output_state = inputs['encoder_output_state']
+        # except KeyError:
+        #     encoder_output_state = None
 
         batch_size = input.shape[0]
 
+        # todo tf2 if _prepare_decoder_input_statue() works, then clean out this code
         # Assume we have a final state
-        encoder_end_state = encoder_output_state
+        #encoder_end_state = encoder_output_state
 
-        # in case we don't have a final state set to default value
-        if self.decoder_obj.cell_type in 'lstm' and encoder_end_state is None:
-            encoder_end_state = [
-                tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32),
-                tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
-            ]
-        elif self.decoder_obj.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
-            encoder_end_state = tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
+        # # in case we don't have a final state set to default value
+        # if self.decoder_obj.cell_type in 'lstm' and encoder_end_state is None:
+        #     encoder_end_state = [
+        #         tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32),
+        #         tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
+        #     ]
+        # elif self.decoder_obj.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
+        #     encoder_end_state = tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
 
         logits = self.decoder_obj.decoder_training(input, target=target,
                                                    encoder_end_state=encoder_end_state)
@@ -314,11 +320,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         else:
             return self._predictions_prediction(inputs)
 
-    def _predictions_training(self, inputs):
-        # inputs == logits
-        probs = softmax(inputs)
-        preds = tf.argmax(inputs)
-        return {'predictions': preds, 'probabilities': probs}
+    # todo tf2 need to determine if the section of code is needed
+    # def _predictions_training(self, inputs):    # not executed
+    #     # inputs == logits
+    #     probs = softmax(inputs)
+    #     preds = tf.argmax(inputs)
+    #     return {'predictions': preds, 'probabilities': probs}
 
 
     def _predictions_prediction(
@@ -348,6 +355,51 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             PROBABILITIES: probabilities,
             LOGITS: logits
         }
+
+    def _prepare_decoder_input_state(self, inputs):
+
+        if 'encoder_output_state' in inputs:
+            decoder_input_state = inputs['encoder_output_state']
+        else:
+            eo = inputs['encoder_output']
+            if len(eo.shape) == 3:  # it was a sequence
+                decoder_input_state = reduce_sequence(eo,
+                                             self.reduce_input)  # this returns a [b, h]
+            elif len(eo.shape) == 2:
+                decoder_input_state = eo  # this returns a [b, h]
+            else:
+                raise ValueError("Only works for 1d or 2d inputs")
+
+        # now we have to deal with the fact that the state needs to be a tuple in case of lstm or a vector otherwise
+        if self.decoder_obj.cell_type == 'lstm' and isinstance(decoder_input_state, list):
+            # do nothing, we are good
+            pass
+        elif self.decoder_obj.cell_type == 'lstm' and not isinstance(decoder_input_state,
+                                                         list):
+            decoder_input_state = (decoder_input_state, decoder_input_state)
+        elif self.decoder_obj.cell_type != 'lstm' and isinstance(decoder_input_state,
+                                                     list):
+            # here we have a couple options, either reuse part of the input lstm encoder state, or just use its output, thsoe are the following two lines, I would go with the second ome
+            decoder_input_state = decoder_input_state[0]
+            # decoder_input_state = reduce_sequence(eo,
+            #                              self.reduce_input)  # this returns a [b, h]
+        elif self.decoder_obj.cell_type != 'lstm' and not isinstance(decoder_input_state,
+                                                         list):
+            # do nothing, we are good
+            pass
+
+        # at this point decoder_input_state is either a [b,h] or a tuple([b,h], [b,h]) if the encoder was an lstm
+        # h may not be the same as out deoder state size, so we may need to project
+        if isinstance(decoder_input_state, list):
+            for i in range(len(decoder_input_state)):
+                if decoder_input_state[i].shape[1] != self.decoder_obj.state_size:
+                    decoder_input_state[i] = self.decoder_obj.project(decoder_input_state[
+                                                              i])  # I'll define this in the text later
+        else:
+            if decoder_input_state.shape[1] != self.decoder_obj.state_size:
+                decoder_input_state = self.decoder_obj.project(decoder_input_state)
+
+        return decoder_input_state
 
     default_validation_metric = LOSS
 
@@ -452,6 +504,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 feature_metadata['str2freq'][cls]
                 for cls in feature_metadata['idx2str']
             ]
+
 
     @staticmethod
     def calculate_overall_stats(
