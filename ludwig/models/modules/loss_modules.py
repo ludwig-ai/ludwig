@@ -43,7 +43,7 @@ class BWCEWLoss(tf.keras.losses.Loss):
 
         # weighted cross entropy
         train_loss = tf.nn.weighted_cross_entropy_with_logits(
-            targets=tf.cast(y_true, tf.float32),
+            labels=tf.cast(y_true, tf.float32),
             logits=logits,
             pos_weight=self.positive_class_weight
         )
@@ -303,7 +303,7 @@ def sampled_softmax_cross_entropy(
         tf.int64
     )
     if sampler == 'fixed_unigram':
-        sampled_values = tf.nn.fixed_unigram_candidate_sampler(
+        sampled_values = tf.random.fixed_unigram_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -313,7 +313,7 @@ def sampled_softmax_cross_entropy(
             distortion=distortion
         )
     elif sampler == 'uniform':
-        sampled_values = tf.nn.uniform_candidate_sampler(
+        sampled_values = tf.random.uniform_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -321,7 +321,7 @@ def sampled_softmax_cross_entropy(
             range_max=num_classes
         )
     elif sampler == 'log_uniform':
-        sampled_values = tf.nn.log_uniform_candidate_sampler(
+        sampled_values = tf.random.log_uniform_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -329,7 +329,7 @@ def sampled_softmax_cross_entropy(
             range_max=num_classes
         )
     elif sampler == 'learned_unigram':
-        sampled_values = tf.nn.fixed_unigram_candidate_sampler(
+        sampled_values = tf.random.fixed_unigram_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -478,11 +478,12 @@ def weighted_softmax_cross_entropy(
             labels_smoothing
         )
     else:
-        train_loss = tf.losses.softmax_cross_entropy(
-            onehot_labels=vector_labels,
-            logits=logits,
-            label_smoothing=labels_smoothing,
-            reduction=Reduction.NONE)
+        train_loss = tf.keras.losses.categorical_crossentropy(
+            y_true=vector_labels,
+            y_pred=logits,
+            from_logits=True,
+            label_smoothing=labels_smoothing
+        )
     return train_loss
 
 
