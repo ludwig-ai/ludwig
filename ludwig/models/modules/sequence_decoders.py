@@ -24,6 +24,7 @@ from tensorflow_addons.seq2seq import AttentionWrapper
 from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
+from ludwig.constants import *
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
@@ -283,6 +284,8 @@ class SequenceGeneratorDecoder(Layer):
         return predictions, last_predictions, probabilities, logits
 
 
+
+
     def call(
             self,
             inputs,
@@ -297,35 +300,35 @@ class SequenceGeneratorDecoder(Layer):
             encoder_output_state = None
 
         # todo tf2 need to move this to sequence output feature class
-        if len(input.shape) != 3 and self.attention_mechanism is not None:
-            raise ValueError(
-                'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
-                'when attention mechanism is {}. '
-                'If you are using a sequential encoder or combiner consider setting reduce_output to None '
-                'and flatten to False if those parameters apply.'
-                'Also make sure theat reduce_input of output feature is None,'.format(
-                    len(input.shape), self.attention_name))
-        if len(input.shape) != 2 and self.attention_mechanism is None:
-            raise ValueError(
-                'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
-                'when attention mechanism is {}. '
-                'Consider setting reduce_input of output feature to a value different from None.'.format(
-                    len(input.shape), self.attention_name))
-
-        batch_size = input.shape[0]
-        print(">>>>>>batch_size", batch_size)
-
-        # Assume we have a final state
-        encoder_end_state = encoder_output_state
-
-        # in case we don't have a final state set to default value
-        if self.cell_type in 'lstm' and encoder_end_state is None:
-            encoder_end_state = [
-                tf.zeros([batch_size, self.rnn_units], tf.float32),
-                tf.zeros([batch_size, self.rnn_units], tf.float32)
-            ]
-        elif self.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
-            encoder_end_state = tf.zeros([batch_size, self.rnn_units], tf.float32)
+        # if len(input.shape) != 3 and self.attention_mechanism is not None:
+        #     raise ValueError(
+        #         'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
+        #         'when attention mechanism is {}. '
+        #         'If you are using a sequential encoder or combiner consider setting reduce_output to None '
+        #         'and flatten to False if those parameters apply.'
+        #         'Also make sure theat reduce_input of output feature is None,'.format(
+        #             len(input.shape), self.attention_name))
+        # if len(input.shape) != 2 and self.attention_mechanism is None:
+        #     raise ValueError(
+        #         'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
+        #         'when attention mechanism is {}. '
+        #         'Consider setting reduce_input of output feature to a value different from None.'.format(
+        #             len(input.shape), self.attention_name))
+        #
+        # batch_size = input.shape[0]
+        # print(">>>>>>batch_size", batch_size)
+        #
+        # # Assume we have a final state
+        # encoder_end_state = encoder_output_state
+        #
+        # # in case we don't have a final state set to default value
+        # if self.cell_type in 'lstm' and encoder_end_state is None:
+        #     encoder_end_state = [
+        #         tf.zeros([batch_size, self.rnn_units], tf.float32),
+        #         tf.zeros([batch_size, self.rnn_units], tf.float32)
+        #     ]
+        # elif self.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
+        #     encoder_end_state = tf.zeros([batch_size, self.rnn_units], tf.float32)
 
         if training:
             return_tuple = self.decoder_training(
@@ -345,7 +348,6 @@ class SequenceGeneratorDecoder(Layer):
             }
 
         return return_tuple
-
 
 
 class SequenceTaggerDecoder(Layer):
@@ -384,7 +386,8 @@ class SequenceTaggerDecoder(Layer):
             training=None,
             mask=None
     ):
-        if len(inputs.shape) != 3:
+        input = inputs[HIDDEN]
+        if len(input.shape) != 3:
             raise ValueError(
                 'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
                 'when using a tagger sequential decoder. '
@@ -392,7 +395,7 @@ class SequenceTaggerDecoder(Layer):
                     len(inputs.shape)))
 
         # hidden shape [batch_size, sequence_length, hidden_size]
-        logits = self.decoder_layer(inputs)
+        logits = self.decoder_layer(input)
 
         # TODO tf2 add feed forward attention
 

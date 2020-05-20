@@ -268,39 +268,20 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             target=None,
             training=None
     ):
-        if training:
-            return self._logits_training(inputs, target, training)
+        if isinstance(self.decoder_obj, SequenceGeneratorDecoder):
+            # Generator Decoder
+            if training:
+                return self._logits_training(inputs, target, training)
+            else:
+                return self._logits_prediction(inputs)
         else:
-            return self._logits_prediction(inputs)
+            # Tagger Decoder
+            self.decoder_obj(inputs)
 
 
-    def _logits_training(self, inputs, target, training):
+    def _logits_training(self, inputs, target, training=None):
         input = inputs['hidden'] # shape [batch_size, seq_size, state_size]
         encoder_end_state = self._prepare_decoder_input_state(inputs)
-
-        # todo tf2 if _prepare_decoder_input_statue() works, then clean out this code
-        # try:
-        #     # form dependent on cell_type
-        #     # lstm: list([batch_size, state_size], [batch_size, state_size])
-        #     # rnn, gru: [batch_size, state_size]
-        #     encoder_output_state = inputs['encoder_output_state']
-        # except KeyError:
-        #     encoder_output_state = None
-
-        batch_size = input.shape[0]
-
-        # todo tf2 if _prepare_decoder_input_statue() works, then clean out this code
-        # Assume we have a final state
-        #encoder_end_state = encoder_output_state
-
-        # # in case we don't have a final state set to default value
-        # if self.decoder_obj.cell_type in 'lstm' and encoder_end_state is None:
-        #     encoder_end_state = [
-        #         tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32),
-        #         tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
-        #     ]
-        # elif self.decoder_obj.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
-        #     encoder_end_state = tf.zeros([batch_size, self.decoder_obj.rnn_units], tf.float32)
 
         logits = self.decoder_obj.decoder_training(input, target=target,
                                                    encoder_end_state=encoder_end_state)
@@ -310,10 +291,15 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         return inputs
 
     def predictions(self, inputs, training=None):
-        if training:
-            return self._predictions_training(inputs)
+        if isinstance(self.decoder_obj, SequenceGeneratorDecoder):
+            # Generator Decoder
+            if training:
+                return self._predictions_training(inputs)
+            else:
+                return self._predictions_prediction(inputs)
         else:
-            return self._predictions_prediction(inputs)
+            # Tagger Decoder
+            return self._predictions_tagger(inputs)
 
     # todo tf2 need to determine if the section of code is needed
     # def _predictions_training(self, inputs):    # not executed
@@ -350,6 +336,53 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             PROBABILITIES: probabilities,
             LOGITS: logits
         }
+
+
+    def _predictions_tagger(  # todo tf2 work-in-progress
+            self,
+            inputs   # logits
+    ):
+
+        logits = inputs[LOGITS]
+
+        probabilities = tf.nn.softmax(
+            logits,
+            name='probabilities_{}'.format(self.name)
+        )
+        predictions = tf.argmax(
+            logits,
+            -1,
+            name='predictions_{}'.format(self.name),
+            output_type=tf.int64
+        )
+
+        if self.decoder == 'generator':
+            additional = 1  # because of eos symbol
+        elif self.decoder == 'tagger':
+            additional = 0
+        else:
+            additional = 0
+
+        predictions_sequence_length = sequence_length_2D(predictions)
+        last_predictions = tf.gather_nd(
+            predictions,
+            tf.stack(
+                [tf.range(tf.shape(predictions)[0]),
+                 tf.maximum(
+                     predictions_sequence_length - 1 - additional,
+                     0
+                 )],
+                axis=1
+            )
+        )
+
+        return {
+            PREDICTIONS: predictions,
+            LAST_PREDICTIONS: last_predictions,
+            PROBABILITIES: probabilities,
+            LOGITS: logits
+        }
+
 
     def _prepare_decoder_input_state(self, inputs):
 
