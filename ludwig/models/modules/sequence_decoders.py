@@ -232,14 +232,14 @@ class SequenceGeneratorDecoder(Layer):
 
         inputs = first_inputs
         state = first_state
-        predictions = tf.convert_to_tensor(
-            np.array([]).reshape([batch_size, 0]),
-            dtype=tf.int32
-        )
+
+        #create empty logits tensor
         logits = tf.convert_to_tensor(
             np.array([]).reshape([batch_size, 0, self.num_classes]),
             dtype=tf.float32
         )
+
+        # build up logits
         # lengths = tf.zeros([batch_size], dtype=tf.int32)
         for j in range(maximum_iterations):
             outputs, next_state, next_inputs, finished = decoder_instance.step(
@@ -250,40 +250,8 @@ class SequenceGeneratorDecoder(Layer):
             logits = tf.concat([logits, one_logit], axis=1)
             #lengths += tf.cast(tf.math.logical_not(finished), dtype=tf.int32)
 
-        probabilities = tf.nn.softmax(
-            logits,
-            name='probabilities_{}'.format(self.name)
-        )
-        predictions = tf.argmax(
-            logits,
-            -1,
-            name='predictions_{}'.format(self.name)
-        )
-        generated_sequence_lengths = sequence_length_2D(predictions)
-        last_predictions = tf.gather_nd(
-            predictions,
-            tf.stack(
-                [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(
-                     generated_sequence_lengths - 1,
-                     0
-                 )],
-                axis=1
-            ),
-            name='last_predictions_{}'.format(self.name)
-        )
 
-        # mask logits
-        mask = tf.sequence_mask(
-            generated_sequence_lengths,
-            maxlen=logits.shape[1],
-            dtype=tf.float32
-        )
-        logits = logits * mask[:, :, tf.newaxis]
-
-        return predictions, last_predictions, probabilities, logits
-
-
+        return logits
 
 
     def call(

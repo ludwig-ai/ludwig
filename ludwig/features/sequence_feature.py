@@ -50,6 +50,7 @@ from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.tf_utils import sequence_length_2D
 
 logger = logging.getLogger(__name__)
 
@@ -276,7 +277,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 return self._logits_prediction(inputs)
         else:
             # Tagger Decoder
-            self.decoder_obj(inputs)
+            if training:
+                return self.decoder_obj(inputs)
+            else:
+                return self._logits_prediction(inputs)
 
 
     def _logits_training(self, inputs, target, training=None):
@@ -291,15 +295,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         return inputs
 
     def predictions(self, inputs, training=None):
-        if isinstance(self.decoder_obj, SequenceGeneratorDecoder):
-            # Generator Decoder
-            if training:
-                return self._predictions_training(inputs)
-            else:
-                return self._predictions_prediction(inputs)
+
+        # Generator Decoder
+        if training:
+            return self._predictions_training(inputs)
         else:
-            # Tagger Decoder
-            return self._predictions_tagger(inputs)
+            return self._predictions_prediction(inputs)
 
     # todo tf2 need to determine if the section of code is needed
     # def _predictions_training(self, inputs):    # not executed
@@ -320,30 +321,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         # rnn, gru: [batch_size, state_size]
         encoder_output_state = inputs[LOGITS]['encoder_output_state']
 
-        (
-            predictions,
-            last_predictions,
-            probabilities,
-            logits
-        ) = self.decoder_obj.decoder_inference(
+        logits = self.decoder_obj.decoder_inference(
             encoder_output,
             encoder_end_state=encoder_output_state
         )
-
-        return {
-            PREDICTIONS: predictions,
-            LAST_PREDICTIONS: last_predictions,
-            PROBABILITIES: probabilities,
-            LOGITS: logits
-        }
-
-
-    def _predictions_tagger(  # todo tf2 work-in-progress
-            self,
-            inputs   # logits
-    ):
-
-        logits = inputs[LOGITS]
 
         probabilities = tf.nn.softmax(
             logits,
@@ -363,18 +344,28 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         else:
             additional = 0
 
-        predictions_sequence_length = sequence_length_2D(predictions)
+        generated_sequence_lengths = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
                  tf.maximum(
-                     predictions_sequence_length - 1 - additional,
+                     generated_sequence_lengths - 1 - additional,
                      0
                  )],
                 axis=1
-            )
+            ),
+            name='last_predictions_{}'.format(self.name)
         )
+
+        # mask logits
+        mask = tf.sequence_mask(
+            generated_sequence_lengths,
+            maxlen=logits.shape[1],
+            dtype=tf.float32
+        )
+
+        logits = logits * mask[:, :, tf.newaxis]
 
         return {
             PREDICTIONS: predictions,
@@ -382,7 +373,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             PROBABILITIES: probabilities,
             LOGITS: logits
         }
-
 
     def _prepare_decoder_input_state(self, inputs):
 
