@@ -315,16 +315,20 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             inputs   # encoder_output, encoder_output_state
     ):
 
-        encoder_output = inputs[LOGITS]['hidden'] # shape [batch_size, seq_size, state_size]
-        # form dependent on cell_type
-        # lstm: list([batch_size, state_size], [batch_size, state_size])
-        # rnn, gru: [batch_size, state_size]
-        encoder_output_state = inputs[LOGITS]['encoder_output_state']
+        if isinstance(self.decoder_obj, SequenceGeneratorDecoder):
+            encoder_output = inputs[LOGITS]['hidden'] # shape [batch_size, seq_size, state_size]
+            # form dependent on cell_type
+            # lstm: list([batch_size, state_size], [batch_size, state_size])
+            # rnn, gru: [batch_size, state_size]
+            encoder_output_state = inputs[LOGITS]['encoder_output_state']
 
-        logits = self.decoder_obj.decoder_inference(
-            encoder_output,
-            encoder_end_state=encoder_output_state
-        )
+            logits = self.decoder_obj.decoder_inference(
+                encoder_output,
+                encoder_end_state=encoder_output_state
+            )
+        else:
+            # Tagger Decoder  todo tf2 reconcile tensor shape for inputs[LOGITS][HIDDEN]
+            logits = inputs[LOGITS][HIDDEN] #
 
         probabilities = tf.nn.softmax(
             logits,
