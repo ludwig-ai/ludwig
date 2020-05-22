@@ -328,7 +328,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             )
         else:
             # Tagger Decoder  todo tf2 reconcile tensor shape for inputs[LOGITS][HIDDEN]
-            logits = inputs[LOGITS][HIDDEN] #
+            logits = self.decoder_obj(inputs[LOGITS])
 
         probabilities = tf.nn.softmax(
             logits,

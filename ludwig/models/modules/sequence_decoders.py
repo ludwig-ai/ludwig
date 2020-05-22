@@ -338,7 +338,7 @@ class SequenceTaggerDecoder(Layer):
         if is_timeseries:
             num_classes = 1
 
-        self.decoder_layer = Dense(
+        self.projection_layer = Dense(
             units=num_classes,
             use_bias=use_bias,
             kernel_initializer=weights_initializer,
@@ -354,20 +354,19 @@ class SequenceTaggerDecoder(Layer):
             training=None,
             mask=None
     ):
-        input = inputs[HIDDEN]
-        if len(input.shape) != 3:
+        hidden = inputs[HIDDEN]
+        if len(hidden.shape) != 3:
             raise ValueError(
                 'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
                 'when using a tagger sequential decoder. '
                 'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
-                    len(inputs.shape)))
-
-        # hidden shape [batch_size, sequence_length, hidden_size]
-        logits = self.decoder_layer(input)
+                    len(hidden.shape)))
 
         # TODO tf2 add feed forward attention
 
-        # logits shape [batch_size, sequence_length, vocab_size]
-        return logits
+        # hidden shape [batch_size, sequence_length, hidden_size]
+        logits = self.projection_layer(hidden)
+
+        return logits # logits shape [batch_size, sequence_length, num_classes]
 
 
