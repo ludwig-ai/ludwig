@@ -254,19 +254,19 @@ class SequenceGeneratorDecoder(Layer):
         return logits
 
 
-    def call(
-            self,
-            inputs,
-            training=None,
-            mask=None,
-            target=None
-    ):
-        input = inputs['hidden']
-        try:
-            encoder_output_state = inputs['encoder_output_state']
-        except KeyError:
-            encoder_output_state = None
-
+    # def call(
+    #         self,
+    #         inputs,
+    #         training=None,
+    #         mask=None,
+    #         target=None
+    # ):
+        # input = inputs['hidden']
+        # try:
+        #     encoder_output_state = inputs['encoder_output_state']
+        # except KeyError:
+        #     encoder_output_state = None
+        #
         # todo tf2 need to move this to sequence output feature class
         # if len(input.shape) != 3 and self.attention_mechanism is not None:
         #     raise ValueError(
@@ -298,24 +298,6 @@ class SequenceGeneratorDecoder(Layer):
         # elif self.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
         #     encoder_end_state = tf.zeros([batch_size, self.rnn_units], tf.float32)
 
-        if training:
-            return_tuple = self.decoder_training(
-                input,
-                target=target,
-                encoder_end_state=encoder_end_state,
-            )
-        else:
-            # todo tf2 clean-up code
-            # return_tuple = self.decoder_inference(
-            #     input,
-            #     encoder_end_state=encoder_end_state
-            # )
-            return_tuple = {
-                'encoder_output': input,
-                'encoder_output_state': encoder_end_state
-            }
-
-        return return_tuple
 
 
 class SequenceTaggerDecoder(Layer):
