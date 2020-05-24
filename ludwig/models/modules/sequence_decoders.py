@@ -27,6 +27,7 @@ from tensorflow_addons.seq2seq import LuongAttention
 from ludwig.constants import *
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
+from ludwig.models.modules.reduction_modules import reduce_sequence
 
 # todo tf2 clean up
 # from ludwig.models.modules.attention_modules import \
@@ -108,19 +109,19 @@ class SequenceGeneratorDecoder(Layer):
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
 
-            self.decoder_rnncell = AttentionWrapper(self.decoder_rnncell,
+            self.attn_rnncell = AttentionWrapper(self.decoder_rnncell,
                                                 self.attention_mechanism,
                                                 attention_layer_size=state_size)
 
-        self.decoder = tfa.seq2seq.BasicDecoder(self.decoder_rnncell,
-                                                sampler=self.sampler,
-                                                output_layer=self.dense_layer)
+        # self.decoder = tfa.seq2seq.BasicDecoder(self.decoder_rnncell,  # todo tf2 code clean
+        #                                         sampler=self.sampler,
+        #                                         output_layer=self.dense_layer)
 
     def build_decoder_initial_state(self, batch_size, encoder_state, dtype):
         # todo tf2 attentinon_mechanism vs cell_type to determine method
         #      for initial state setup, attention meth
         if self.attention_mechanism is not None:
-            decoder_initial_state = self.decoder_rnncell.get_initial_state(
+            decoder_initial_state = self.attn_rnncell.get_initial_state(
                 batch_size=batch_size,
                 dtype=dtype)
             decoder_initial_state = decoder_initial_state.clone(
@@ -130,9 +131,12 @@ class SequenceGeneratorDecoder(Layer):
 
         return decoder_initial_state
 
-    def decoder_training(self, encoder_output,
-            target=None, encoder_end_state=None):
-
+    def decoder_training(
+            self,
+            encoder_output,
+            target=None,
+            encoder_end_state=None
+    ):
         # ================ Setup ================
         GO_SYMBOL = self.vocab_size
         END_SYMBOL = 0
@@ -155,7 +159,7 @@ class SequenceGeneratorDecoder(Layer):
         # Decoder Embeddings
         decoder_emb_inp = self.decoder_embedding(targets_with_go_and_eos)
 
-        # Setting up decoder memory from encoder output and Zero State for AttentionWrapperState
+        # Setting up decoder memory from encoder output
         if self.attention_mechanism is not None:
             self.attention_mechanism.setup_memory(
                 encoder_output,
@@ -168,12 +172,19 @@ class SequenceGeneratorDecoder(Layer):
             dtype=tf.float32
         )
 
+        decoder = tfa.seq2seq.BasicDecoder(
+            self.attn_rnncell,
+            sampler=self.sampler,
+            output_layer=self.dense_layer
+        )
+
         # BasicDecoderOutput
-        outputs, final_state, generated_sequence_lengths = self.decoder(
+        outputs, final_state, generated_sequence_lengths = decoder(
             decoder_emb_inp,
             initial_state=decoder_initial_state,
             sequence_length=target_sequence_length_with_eos
         )
+
         logits = outputs.rnn_output
         mask = tf.sequence_mask(
             generated_sequence_lengths,
@@ -196,39 +207,79 @@ class SequenceGeneratorDecoder(Layer):
 
         decoder_input = tf.expand_dims(
             [GO_SYMBOL] * batch_size, 1)
-
-        decoder_emb_inp = self.decoder_embedding(decoder_input)
-
-        decoder_instance = tfa.seq2seq.BasicDecoder(
-            cell=self.decoder_rnncell, sampler=greedy_sampler,
-            output_layer=self.dense_layer)
-
-        if self.attention_mechanism is not None:
-            self.attention_mechanism.setup_memory(
-                encoder_output,
-                memory_sequence_length=sequence_length_3D(encoder_output)
-            )
-
-        # Since we do not know the target sequence lengths in advance,
-        # we use maximum_iterations to limit the translation lengths.
-        # One heuristic is to decode up to two times the source sentence lengths.
-        maximum_iterations = self.max_sequence_length
-
-        decoder_initial_state = self.build_decoder_initial_state(
-            batch_size,
-            encoder_state=encoder_end_state,
-            dtype=tf.float32)
-
         start_tokens = tf.fill([batch_size], GO_SYMBOL)
         end_token = END_SYMBOL
 
+        decoder_emb_inp = self.decoder_embedding(decoder_input)
+
+
+
+        if self.beam_width > 1:
+            # code sequence based on example found here
+            # https://www.tensorflow.org/addons/api_docs/python/tfa/seq2seq/BeamSearchDecoder
+            tiled_encoder_output = tfa.seq2seq.tile_batch(
+                encoder_output,
+                multiplier=self.beam_width
+            )
+
+            tiled_encoder_end_state = tfa.seq2seq.tile_batch(
+                encoder_end_state,
+                multiplier=self.beam_width
+            )
+
+            tiled_encoder_sequence_length = tfa.seq2seq.tile_batch(
+                encoder_sequence_length,
+                multiplier=self.beam_width
+            )
+
+            if self.attention_mechanism is not None:
+                self.attention_mechanism.setup_memory(
+                    tiled_encoder_output,
+                    memory_sequence_length=tiled_encoder_sequence_length
+                )
+
+            decoder_initial_state = self.build_decoder_initial_state(
+                batch_size * self.beam_width,
+                encoder_state=tiled_encoder_end_state,
+                dtype=tf.float32
+            )
+
+            decoder = tfa.seq2seq.beam_search_decoder.BeamSearchDecoder(
+                cell=self.attn_rnncell,
+                beam_width=self.beam_width,
+                output_layer=self.dense_layer)
+        else:
+
+            if self.attention_mechanism is not None:
+                self.attention_mechanism.setup_memory(
+                    encoder_output,
+                    memory_sequence_length=encoder_sequence_length
+                )
+
+            decoder_initial_state = self.build_decoder_initial_state(
+                batch_size,
+                encoder_state=encoder_end_state,
+                dtype=tf.float32)
+
+            decoder = tfa.seq2seq.BasicDecoder(
+                cell=self.attn_rnncell, sampler=greedy_sampler,
+                output_layer=self.dense_layer)
+
+        # ================generate logits ==================
+        maximum_iterations = self.max_sequence_length
+
         # initialize inference decoder
         decoder_embedding_matrix = self.decoder_embedding.variables[0]
-        (first_finished, first_inputs,
-         first_state) = decoder_instance.initialize(decoder_embedding_matrix,
-                                                    start_tokens=start_tokens,
-                                                    end_token=end_token,
-                                                    initial_state=decoder_initial_state)
+        (
+            first_finished,
+            first_inputs,
+            first_state
+        ) = decoder.initialize(
+            decoder_embedding_matrix,
+            start_tokens=start_tokens,
+            end_token=end_token,
+            initial_state=decoder_initial_state
+        )
 
         inputs = first_inputs
         state = first_state
@@ -240,18 +291,69 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         # build up logits
-        # lengths = tf.zeros([batch_size], dtype=tf.int32)
         for j in range(maximum_iterations):
-            outputs, next_state, next_inputs, finished = decoder_instance.step(
+            outputs, next_state, next_inputs, finished = decoder.step(
                 j, inputs, state)
             inputs = next_inputs
             state = next_state
             one_logit = tf.expand_dims(outputs.rnn_output, axis=1)
             logits = tf.concat([logits, one_logit], axis=1)
-            #lengths += tf.cast(tf.math.logical_not(finished), dtype=tf.int32)
-
 
         return logits
+
+        # if self.beam_width > 1:
+        #     # code sequence based on example found here
+        #     # https://www.tensorflow.org/addons/api_docs/python/tfa/seq2seq/BeamSearchDecoder
+        #     beam_encoder_output = tfa.seq2seq.tile_batch(
+        #         encoder_output,
+        #         multiplier=self.beam_width
+        #     )
+        #
+        #     beam_encoder_end_state = tfa.seq2seq.tile_batch(
+        #         encoder_end_state,
+        #         multiplier=self.beam_width
+        #     )
+        #
+        #     beam_sequence_length = tfa.seq2seq.tile_batch(
+        #         target_sequence_length,
+        #         multiplier=self.beam_width
+        #     )
+        #
+        #     beam_start_tokens = tfa.seq2seq.tile_batch(
+        #         start_tokens,
+        #         multiplier=self.beam_width
+        #     )
+        #
+        #     if self.attention_mechanism is not None:
+        #         self.attention_mechanism.setup_memory(
+        #             beam_encoder_output,
+        #             memory_sequence_length=beam_sequence_length
+        #         )
+        #
+        #     decoder_initial_state = self.build_decoder_initial_state(
+        #         batch_size * self.beam_width,
+        #         encoder_state=beam_encoder_end_state,
+        #         dtype=tf.float32
+        #     )
+        #
+        #     decoder = tfa.seq2seq.beam_search_decoder.BeamSearchDecoder(
+        #         cell=self.decoder_rnncell,
+        #         beam_width=self.beam_width,
+        #         output_layer=self.dense_layer)
+        #
+        #     beam_decoder_emb_inp = tfa.seq2seq.tile_batch(
+        #         decoder_emb_inp,
+        #         multiplier=self.beam_width
+        #     )
+        #     outputs, final_state, final_sequence_lengths = decoder(
+        #         embedding=beam_decoder_emb_inp,
+        #         start_tokens=beam_start_tokens,
+        #         end_token=END_SYMBOL,
+        #         initial_state=decoder_initial_state,  # needs to be a list
+        #         training=training
+        #     )
+
+
 
 
     # def call(

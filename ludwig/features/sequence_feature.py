@@ -287,8 +287,11 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         input = inputs['hidden'] # shape [batch_size, seq_size, state_size]
         encoder_end_state = self._prepare_decoder_input_state(inputs)
 
-        logits = self.decoder_obj.decoder_training(input, target=target,
-                                                   encoder_end_state=encoder_end_state)
+        logits = self.decoder_obj.decoder_training(
+            input,
+            target=target,
+            encoder_end_state=encoder_end_state
+        )
         return logits  # shape = [b, s, c]
 
     def _logits_prediction(self, inputs):
