@@ -21,13 +21,18 @@ from collections import OrderedDict
 import numpy as np
 import tensorflow.compat.v1 as tf
 
+from tensorflow.keras.metrics import MeanIoU
+
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.models.modules.embedding_modules import EmbedSparse
 from ludwig.models.modules.initializer_modules import get_initializer
+from ludwig.models.modules.loss_modules import SigmoidCrossEntropyLoss
+from ludwig.models.modules.metric_modules import SigmoidCrossEntropyMetric
+from ludwig.models.modules.set_encoders import SetSparseEncoder
+from ludwig.models.modules.set_decoders import Classifier
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary
 
@@ -35,10 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class SetBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = IMAGE
-
+    type = SET
     preprocessing_defaults = {
         'tokenizer': 'space',
         'most_common': 10000,
@@ -46,6 +48,9 @@ class SetBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -78,13 +83,12 @@ class SetBaseFeature(BaseFeature):
         set_matrix = np.zeros(
             (len(column),
              len(metadata['str2idx'])),
-            dtype=bool
         )
 
         for i in range(len(column)):
             set_matrix[i, feature_vector[i]] = 1
 
-        return set_matrix
+        return set_matrix.astype(np.bool)
 
     @staticmethod
     def add_feature_data(
@@ -102,68 +106,28 @@ class SetBaseFeature(BaseFeature):
 
 
 class SetInputFeature(SetBaseFeature, InputFeature):
-    def __init__(self, feature):
+    encoder = 'embed'
+
+    def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
 
-        self.vocab = []
-        self.embedding_size = 50
-        self.representation = 'dense'
-        self.embeddings_trainable = True
-        self.pretrained_embeddings = None
-        self.embeddings_on_cpu = False
-        self.dropout = False
-        self.initializer = None
-        self.regularize = True
+        SetBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        _ = self.overwrite_defaults(feature)
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.bool
 
-        self.embed_sparse = EmbedSparse(
-            self.vocab,
-            self.embedding_size,
-            representation=self.representation,
-            embeddings_trainable=self.embeddings_trainable,
-            pretrained_embeddings=self.pretrained_embeddings,
-            embeddings_on_cpu=self.embeddings_on_cpu,
-            dropout=self.dropout,
-            initializer=self.initializer,
-            regularize=self.regularize
+        encoder_output = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
 
-    def _get_input_placeholder(self):
-        # None is for dealing with variable batch size
-        return tf.placeholder(
-            tf.int32,
-            shape=[None, len(self.vocab)],
-            name=self.feature_name
-        )
-
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  placeholder: {0}'.format(placeholder))
-
-        embedded, embedding_size = self.embed_sparse(
-            placeholder,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-        logger.debug('  feature_representation: {0}'.format(embedded))
-
-        feature_representation = {
-            'name': self.feature_name,
-            'type': self.type,
-            'representation': embedded,
-            'size': embedding_size,
-            'placeholder': placeholder
-        }
-
-        return feature_representation
+        return {'encoder_output': encoder_output}
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -178,147 +142,71 @@ class SetInputFeature(SetBaseFeature, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
+    encoder_registry = {
+        'embed': SetSparseEncoder,
+        None: SetSparseEncoder
+    }
+
 
 class SetOutputFeature(SetBaseFeature, OutputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = SET
+    decoder = 'classifier'
+    num_classes = 0
+    loss = {'type': SIGMOID_CROSS_ENTROPY}
 
-        self.loss = {'type': 'sigmoid_cross_entropy'}
+    def __init__(self, feature):
+        SetBaseFeature.__init__(self, feature)
+        OutputFeature.__init__(self, feature)
+
         self.num_classes = 0
         self.threshold = 0.5
-        self.initializer = None
-        self.regularize = True
 
-        _ = self.overwrite_defaults(feature)
+        self.overwrite_defaults(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
+        self._setup_loss()
+        self._setup_metrics()
 
-    def _get_output_placeholder(self):
-        return tf.placeholder(
-            tf.bool,
-            shape=[None, self.num_classes],
-            name='{}_placeholder'.format(self.feature_name)
-        )
-
-    def _get_predictions(
+    def logits(
             self,
-            hidden,
-            hidden_size,
-            regularizer=None
+            inputs,  # hidden
     ):
-        if not self.regularize:
-            regularizer = None
+        return self.decoder_obj(inputs)
 
-        with tf.variable_scope('predictions_{}'.format(self.feature_name)):
-            initializer_obj = get_initializer(self.initializer)
-            weights = tf.get_variable(
-                'weights',
-                initializer=initializer_obj([hidden_size, self.num_classes]),
-                regularizer=regularizer
-            )
-            logger.debug('  class_weights: {0}'.format(weights))
-
-            biases = tf.get_variable(
-                'biases',
-                [self.num_classes]
-            )
-            logger.debug('  class_biases: {0}'.format(biases))
-
-            logits = tf.linalg.matmul(hidden, weights) + biases
-            logger.debug('  logits: {0}'.format(logits))
-
-            probabilities = tf.nn.sigmoid(
-                logits,
-                name='probabilities_{}'.format(self.feature_name)
-            )
-
-            predictions = tf.greater_equal(
-                probabilities,
-                self.threshold,
-                name='predictions_{}'.format(self.feature_name)
-            )
-
-        return predictions, probabilities, logits
-
-    def _get_loss(
+    def predictions(
             self,
-            targets,
-            logits
+            inputs,  # logits
     ):
-        with tf.variable_scope('loss_{}'.format(self.feature_name)):
-            train_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-                labels=tf.cast(targets, tf.float32),
-                logits=logits
-            )
-            train_loss = tf.reduce_sum(train_loss, axis=1)
+        logits = inputs[LOGITS]
 
-            train_mean_loss = tf.reduce_mean(
-                train_loss,
-                name='train_mean_loss_{}'.format(self.feature_name)
-            )
-
-        return train_mean_loss, train_loss
-
-    def _get_metrics(self, targets, predictions):
-        intersection = tf.reduce_sum(
-            tf.cast(tf.logical_and(targets, predictions), tf.float32),
-            axis=1
-        )
-        union = tf.reduce_sum(
-            tf.cast(tf.logical_or(targets, predictions), tf.float32),
-            axis=1
-        )
-        jaccard_index = intersection / union
-
-        return jaccard_index
-
-    def build_output(
-            self,
-            hidden,
-            hidden_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=None,
-            **kwargs
-    ):
-        output_tensors = {}
-
-        # ================ Placeholder ================
-        targets = self._get_output_placeholder()
-        output_tensors[self.feature_name] = targets
-        logger.debug('  targets_placeholder: {0}'.format(targets))
-
-        # ================ Predictions ================
-        ppl = self._get_predictions(
-            hidden,
-            hidden_size,
-            regularizer=regularizer
-        )
-        predictions, probabilities, logits = ppl
-
-        # ================ metrics ================
-        jaccard_index = self._get_metrics(targets, predictions)
-
-        output_tensors[PREDICTIONS + '_' + self.feature_name] = predictions
-        output_tensors[PROBABILITIES + '_' + self.feature_name] = probabilities
-        output_tensors[JACCARD + '_' + self.feature_name] = jaccard_index
-
-        tf.summary.scalar(
-            'batch_train_jaccard_{}'.format(self.feature_name),
-            jaccard_index
+        probabilities = tf.nn.sigmoid(
+            logits,
+            name='probabilities_{}'.format(self.feature_name)
         )
 
-        # ================ Loss ================
-        train_mean_loss, eval_loss = self._get_loss(targets, logits)
+        predictions = tf.greater_equal(
+            probabilities,
+            self.threshold,
+            name='predictions_{}'.format(self.feature_name)
+        )
+        predictions = tf.cast(predictions, dtype=tf.int64)
 
-        output_tensors[EVAL_LOSS + '_' + self.feature_name] = eval_loss
-        output_tensors[TRAIN_MEAN_LOSS + '_' + self.feature_name] = train_mean_loss
+        return {
+            PREDICTIONS: predictions,
+            PROBABILITIES: probabilities,
+            LOGITS: logits
+        }
 
-        tf.summary.scalar(
-            'batch_train_mean_loss_{}'.format(self.feature_name),
-            train_mean_loss
+    def _setup_loss(self):
+        self.train_loss_function = SigmoidCrossEntropyLoss(
+            name='train_loss'
         )
 
-        return train_mean_loss, eval_loss, output_tensors
+        self.eval_loss_function = SigmoidCrossEntropyMetric(
+            name='eval_loss'
+        )
+
+    def _setup_metrics(self):
+        self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[JACCARD] = MeanIoU(num_classes=self.num_classes)
 
     default_validation_metric = JACCARD
 
@@ -419,3 +307,11 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         set_default_value(output_feature, 'dependencies', [])
         set_default_value(output_feature, 'reduce_input', SUM)
         set_default_value(output_feature, 'reduce_dependencies', SUM)
+
+    decoder_registry = {
+        'classifier': Classifier,
+        'null': Classifier,
+        'none': Classifier,
+        'None': Classifier,
+        None: Classifier
+    }

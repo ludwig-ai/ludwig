@@ -19,6 +19,7 @@ import tensorflow.compat.v1 as tf
 
 from ludwig.constants import *
 from ludwig.models.modules.loss_modules import BWCEWLoss
+from ludwig.models.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.utils.tf_utils import to_sparse
@@ -158,6 +159,21 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
         super().update_state(self.softmax_cross_entropy_function(y, y_hat))
 
 
+class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
+    def __init__(
+            self,
+            feature_loss=None,
+            name='sigmoid_cross_entropy_metric'
+    ):
+        super(SigmoidCrossEntropyMetric, self).__init__(name=name)
+
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss()
+
+    def update_state(self, y, y_hat):
+        super().update_state(self.sigmoid_cross_entropy_function(y, y_hat))
+
+
+
 class SequenceLossMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
         super(SequenceLossMetric, self).__init__(name=name)
@@ -262,9 +278,6 @@ class CategoryAccuracy(tf.keras.metrics.Accuracy):
             y_pred,
             sample_weight=sample_weight
         )
-
-
-# end of custom classes
 
 
 def get_improved_fun(metric):
