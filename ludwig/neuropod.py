@@ -275,7 +275,7 @@ def export_neuropod(
     )
 
 
-def cli(sys_argv):
+def cli():
     parser = argparse.ArgumentParser(
         description='This script exports a Ludwig model in the Neuropod format'
     )
@@ -314,7 +314,7 @@ def cli(sys_argv):
         default='ludwig_model'
     )
 
-    args = parser.parse_args(sys_argv)
+    args = parser.parse_args()
 
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
@@ -325,10 +325,10 @@ def cli(sys_argv):
     print_ludwig('Export Neuropod', LUDWIG_VERSION)
 
     export_neuropod(
-        args.ludwig.model_path, args.neuropod_path, args.nueropod_model_name
+        args.ludwig_model_path, args.neuropod_path, args.neuropod_model_name
     )
 
 
 if __name__ == '__main__':
     # contrib_command("neuropod", *sys.argv)
-    cli(sys.argv)
+    cli()
