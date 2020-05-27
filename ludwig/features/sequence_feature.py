@@ -301,23 +301,22 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         # Generator Decoder
         if training:
-            return self._predictions_training(inputs)
+            return self._predictions_training(inputs, training=training)
         else:
-            return self._predictions_prediction(inputs)
+            return self._predictions_prediction(inputs, training=training)
 
     # todo tf2 need to determine if the section of code is needed
-    # def _predictions_training(self, inputs):    # not executed
-    #     # inputs == logits
-    #     probs = softmax(inputs)
-    #     preds = tf.argmax(inputs)
-    #     return {'predictions': preds, 'probabilities': probs}
-
+    def _predictions_training(self, inputs, training=None):    # not executed
+        # inputs == logits
+        probs = softmax(inputs)
+        preds = tf.argmax(inputs)
+        return {'predictions': preds, 'probabilities': probs}
 
     def _predictions_prediction(
             self,
-            inputs   # encoder_output, encoder_output_state
+            inputs,   # encoder_output, encoder_output_state
+            training=None
     ):
-
         if isinstance(self.decoder_obj, SequenceGeneratorDecoder):
             encoder_output = inputs[LOGITS]['hidden'] # shape [batch_size, seq_size, state_size]
             # form dependent on cell_type
@@ -327,22 +326,31 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
             logits = self.decoder_obj.decoder_inference(
                 encoder_output,
-                encoder_end_state=encoder_output_state
+                encoder_end_state=encoder_output_state,
+                training=training
             )
         else:
             # Tagger Decoder  todo tf2 reconcile tensor shape for inputs[LOGITS][HIDDEN]
-            logits = self.decoder_obj(inputs[LOGITS])
+            logits = self.decoder_obj(inputs[LOGITS], training=training)
 
         probabilities = tf.nn.softmax(
             logits,
             name='probabilities_{}'.format(self.name)
         )
-        predictions = tf.argmax(
-            logits,
-            -1,
-            name='predictions_{}'.format(self.name),
-            output_type=tf.int64
-        )
+
+        if self.decoder_obj.beam_width > 1:
+            predictions = self.decoder_obj.decoder_beam_search(
+                encoder_output,
+                encoder_end_state=encoder_output_state,
+                training=training
+            )
+        else:
+            predictions = tf.argmax(
+                logits,
+                -1,
+                name='predictions_{}'.format(self.name),
+                output_type=tf.int64
+            )
 
         if self.decoder == 'generator':
             additional = 1  # because of eos symbol
