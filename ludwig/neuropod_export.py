@@ -149,7 +149,7 @@ def export_neuropod(
                 }
             )
 
-    logger.debug('data_paths:', data_paths)
+    logger.debug('data_paths: {}'.format(data_paths))
 
     ludwig_model_definition = load_json(
         os.path.join(
@@ -164,7 +164,7 @@ def export_neuropod(
             "dtype": "str",
             "shape": (None,)
         })
-    logger.debug('input_spec:', input_spec)
+    logger.debug('input_spec: {}'.format(input_spec))
 
     output_spec = []
     for feature in ludwig_model_definition['output_features']:
@@ -242,19 +242,19 @@ def export_neuropod(
                 "dtype": "str",
                 "shape": (None,)
             })
-    logger.debug('output_spec:', output_spec)
+    logger.debug('output_spec: {}'.format(output_spec))
 
     if os.path.exists(neuropod_path):
         if os.path.isfile(neuropod_path):
-            logger.warning('Removing file', neuropod_path)
+            logger.warning('Removing file: {}'.format(neuropod_path))
             os.remove(neuropod_path)
         else:
-            logger.warning('Removing directory', neuropod_path)
+            logger.warning('Removing directory: {}'.format(neuropod_path))
             shutil.rmtree(neuropod_path, ignore_errors=True)
 
     from pathlib import Path
     path = Path(ludwig_path)
-    logger.debug('python_root', path.parent.parent)
+    logger.debug('python_root: {}'.format(path.parent.parent))
 
     create_python_neuropod(
         neuropod_path=neuropod_path,
@@ -273,6 +273,7 @@ def export_neuropod(
         input_spec=input_spec,
         output_spec=output_spec
     )
+    logger.info('Neuropod saved to: {}'.format(neuropod_path))
 
 
 def cli():
