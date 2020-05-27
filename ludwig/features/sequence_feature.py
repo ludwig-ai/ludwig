@@ -441,7 +441,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
         elif (self.decoder_obj.cell_type == 'lstm' and
               not isinstance(decoder_input_state, list)):
-            decoder_input_state = (decoder_input_state, decoder_input_state)
+            decoder_input_state = [decoder_input_state, decoder_input_state]
 
         elif (self.decoder_obj.cell_type != 'lstm' and
               isinstance(decoder_input_state, list)):

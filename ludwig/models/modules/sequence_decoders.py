@@ -124,6 +124,13 @@ class SequenceGeneratorDecoder(Layer):
             decoder_initial_state = self.attn_rnncell.get_initial_state(
                 batch_size=batch_size,
                 dtype=dtype)
+
+            # handle situation where encoder and decoder are different cell_types
+            if self.cell_type == 'lstm' and not isinstance(encoder_state, list):
+                encoder_state = [encoder_state, encoder_state]
+            elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
+                encoder_state = encoder_state[0]
+
             decoder_initial_state = decoder_initial_state.clone(
                 cell_state=encoder_state)
         else:
