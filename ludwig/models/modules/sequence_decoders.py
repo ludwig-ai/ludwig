@@ -109,7 +109,7 @@ class SequenceGeneratorDecoder(Layer):
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
 
-            self.attn_rnncell = AttentionWrapper(self.decoder_rnncell,
+            self.decoder_rnncell = AttentionWrapper(self.decoder_rnncell,
                                                 self.attention_mechanism,
                                                 attention_layer_size=state_size)
 
@@ -121,7 +121,7 @@ class SequenceGeneratorDecoder(Layer):
         # todo tf2 attentinon_mechanism vs cell_type to determine method
         #      for initial state setup, attention meth
         if self.attention_mechanism is not None:
-            decoder_initial_state = self.attn_rnncell.get_initial_state(
+            decoder_initial_state = self.decoder_rnncell.get_initial_state(
                 batch_size=batch_size,
                 dtype=dtype)
 
@@ -180,7 +180,7 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         decoder = tfa.seq2seq.BasicDecoder(
-            self.attn_rnncell,
+            self.decoder_rnncell,
             sampler=self.sampler,
             output_layer=self.dense_layer
         )
@@ -255,7 +255,7 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         decoder = tfa.seq2seq.beam_search_decoder.BeamSearchDecoder(
-            cell=self.attn_rnncell,
+            cell=self.decoder_rnncell,
             beam_width=self.beam_width,
             output_layer=self.dense_layer)
         # ================generate logits ==================
@@ -330,7 +330,7 @@ class SequenceGeneratorDecoder(Layer):
             dtype=tf.float32)
 
         decoder = tfa.seq2seq.BasicDecoder(
-            cell=self.attn_rnncell, sampler=greedy_sampler,
+            cell=self.decoder_rnncell, sampler=greedy_sampler,
             output_layer=self.dense_layer)
 
         # ================generate logits ==================
