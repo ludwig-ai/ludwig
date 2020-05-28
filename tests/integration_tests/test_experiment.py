@@ -350,7 +350,7 @@ def test_experiment_attention(csv_filename):
 
 
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
-@pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong'])
+@pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
 @pytest.mark.parametrize('enc_encoder', ENCODERS)
