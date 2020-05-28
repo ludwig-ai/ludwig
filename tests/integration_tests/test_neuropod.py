@@ -22,7 +22,7 @@ import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
-from ludwig.neuropod import export_neuropod
+from ludwig.neuropod_export import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, set_feature, vector_feature, \
@@ -32,7 +32,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def neuropod(csv_filename):
+def t_neuropod(csv_filename):
     #######
     # Setup
     #######
@@ -107,16 +107,19 @@ def neuropod(csv_filename):
     ########################
     data_df = pd.read_csv(data_csv_path)
     if_dict = {
-        input_feature['name']: np.array(
+        input_feature['name']: np.expand_dims(np.array(
             [str(x) for x in data_df[input_feature['name']].tolist()],
             dtype='str'
-        )
+        ), 1)
         for input_feature in input_features
     }
 
     from neuropod.loader import load_neuropod
     neuropod_model = load_neuropod(neuropod_path)
     preds = neuropod_model.infer(if_dict)
+
+    for key in preds:
+        preds[key] = np.squeeze(preds[key])
 
     #########
     # cleanup
