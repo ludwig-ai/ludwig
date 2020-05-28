@@ -266,7 +266,7 @@ def export_neuropod(
                 "ludwig"  # Package everything in the python_root
             ],
         }],
-        entrypoint_package="ludwig.neuropod",
+        entrypoint_package="ludwig.neuropod_export",
         entrypoint="get_model",
         # test_deps=['torch', 'numpy'],
         skip_virtualenv=True,
