@@ -322,7 +322,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             # form dependent on cell_type
             # lstm: list([batch_size, state_size], [batch_size, state_size])
             # rnn, gru: [batch_size, state_size]
-            encoder_output_state = inputs[LOGITS]['encoder_output_state']
+            encoder_output_state = self._prepare_decoder_input_state(inputs[LOGITS])
 
             logits = self.decoder_obj.decoder_inference(
                 encoder_output,
@@ -489,6 +489,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 decoder_input_state = self.decoder_obj.project(
                     decoder_input_state
                 )
+
+        # make sure we are passing back the state tensors in a list
+        if not isinstance(decoder_input_state, list):
+            decoder_input_state = [decoder_input_state]
 
         return decoder_input_state
 

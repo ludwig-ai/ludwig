@@ -134,7 +134,10 @@ class SequenceGeneratorDecoder(Layer):
             decoder_initial_state = decoder_initial_state.clone(
                 cell_state=encoder_state)
         else:
-            decoder_initial_state = encoder_state
+            if not isinstance(encoder_state, list):
+                decoder_initial_state = [encoder_state]
+            else:
+                decoder_initial_state = encoder_state
 
         return decoder_initial_state
 
