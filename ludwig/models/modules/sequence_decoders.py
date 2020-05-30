@@ -123,6 +123,7 @@ class SequenceGeneratorDecoder(Layer):
             dtype=dtype)
 
         # handle situation where encoder and decoder are different cell_types
+        # and to account for inconsistent wrapping for encoder state w/in lists
         if self.cell_type == 'lstm' and not isinstance(encoder_state, list):
             encoder_state = [encoder_state, encoder_state]
         elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
