@@ -330,11 +330,14 @@ class SequenceGeneratorDecoder(Layer):
         decoder_initial_state = self.build_decoder_initial_state(
             batch_size,
             encoder_state=encoder_end_state,
-            dtype=tf.float32)
+            dtype=tf.float32
+        )
 
         decoder = tfa.seq2seq.BasicDecoder(
-            cell=self.decoder_rnncell, sampler=greedy_sampler,
-            output_layer=self.dense_layer)
+            cell=self.decoder_rnncell,
+            sampler=greedy_sampler,
+            output_layer=self.dense_layer
+        )
 
         # ================generate logits ==================
         maximum_iterations = self.max_sequence_length
