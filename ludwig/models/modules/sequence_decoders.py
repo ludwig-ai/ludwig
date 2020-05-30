@@ -118,21 +118,19 @@ class SequenceGeneratorDecoder(Layer):
         #                                         output_layer=self.dense_layer)
 
     def build_decoder_initial_state(self, batch_size, encoder_state, dtype):
-        # todo tf2 attentinon_mechanism vs cell_type to determine method
-        #      for initial state setup, attention meth
+        decoder_initial_state = self.decoder_rnncell.get_initial_state(
+            batch_size=batch_size,
+            dtype=dtype)
+
+        # handle situation where encoder and decoder are different cell_types
+        if self.cell_type == 'lstm' and not isinstance(encoder_state, list):
+            encoder_state = [encoder_state, encoder_state]
+        elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
+            encoder_state = encoder_state[0]
+
         if self.attention_mechanism is not None:
-            decoder_initial_state = self.decoder_rnncell.get_initial_state(
-                batch_size=batch_size,
-                dtype=dtype)
-
-            # handle situation where encoder and decoder are different cell_types
-            if self.cell_type == 'lstm' and not isinstance(encoder_state, list):
-                encoder_state = [encoder_state, encoder_state]
-            elif self.cell_type != 'lstm' and isinstance(encoder_state, list):
-                encoder_state = encoder_state[0]
-
             decoder_initial_state = decoder_initial_state.clone(
-                cell_state=encoder_state)
+                    cell_state=encoder_state)
         else:
             if not isinstance(encoder_state, list):
                 decoder_initial_state = [encoder_state]
