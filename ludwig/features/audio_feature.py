@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-from ludwig.constants import AUDIO, BACKFILL, TIED
+from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import calculate_incr_mean
@@ -41,9 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class AudioBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = AUDIO
+    type = AUDIO
 
     preprocessing_defaults = {
         'audio_file_length_limit_in_s': 7.5,
@@ -55,6 +53,9 @@ class AudioBaseFeature(BaseFeature):
             'type': 'raw',
         }
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -342,12 +343,18 @@ class AudioBaseFeature(BaseFeature):
 
 
 class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = AUDIO
+    encoder = 'embed'
+
+    def __init__(self, feature, encoder_obj=None):
+        AudioBaseFeature.__init__(self, feature)
+        SequenceInputFeature.__init__(self, feature)
         self.length = None
         self.embedding_size = None
         self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
         if not self.embedding_size:
             raise ValueError(
                 'embedding_size has to be defined - '
@@ -357,29 +364,17 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
                 'length has to be defined - '
                 'check "update_model_definition_with_metadata()"')
 
-    def _get_input_placeholder(self):
-        return tf.placeholder(
-            tf.float32, shape=[None, self.length, self.embedding_size],
-            name='{}_placeholder'.format(self.feature_name)
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.float32  # TODO: check that only tf.float32 is correct
+        # assert len(inputs.shape) == 2  # TODO: check correct inputs.shape as per sequence feature
+
+        inputs_exp = tf.cast(inputs, dtype=tf.float32)  # TODO: this should not be needed
+        encoder_output = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
         )
 
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  placeholder: {0}'.format(placeholder))
-
-        return self.build_sequence_input(
-            placeholder,
-            self.encoder_obj,
-            regularizer,
-            dropout_rate,
-            is_training
-        )
+        return {'encoder_output': encoder_output}
 
     @staticmethod
     def update_model_definition_with_metadata(
