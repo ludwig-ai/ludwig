@@ -21,7 +21,7 @@ import tensorflow.compat.v1 as tf
 from ludwig.data.dataset_synthesyzer import build_vocab
 from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder
 from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.models.modules.sequence_encoders import EmbedEncoder
+from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
 from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedCNNRNN
@@ -224,7 +224,7 @@ def test_sequence_encoder_embed():
 
             encoder_args['reduce_output'] = reduce_output
             encoder_args['embeddings_trainable'] = trainable
-            encoder = create_encoder(EmbedEncoder, encoder_args)
+            encoder = create_encoder(SequenceEmbedEncoder, encoder_args)
 
             encoder_test(
                 encoder=encoder,
