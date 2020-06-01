@@ -394,10 +394,14 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         if 'encoder_output_state' in inputs:
             decoder_input_state = inputs['encoder_output_state']
         else:
-            eo = inputs['encoder_output']
+            eo = inputs['hidden']
             if len(eo.shape) == 3:  # encoder_output is a sequence
                 # reduce_sequence returns a [b, h]
-                decoder_input_state = reduce_sequence(eo, self.reduce_input)
+                decoder_input_state = \
+                    reduce_sequence(
+                        eo,
+                        self.reduce_input if self.reduce_input else 'sum'
+                    )
             elif len(eo.shape) == 2:
                 # this returns a [b, h]
                 decoder_input_state = eo
