@@ -25,8 +25,11 @@ class LudwigNeuropodModelWrapper:
 
     def __call__(self, **kwargs):
         print('__call__', file=sys.stderr)
+        data_dict = kwargs
+        for key in data_dict:
+            data_dict[key] = np.squeeze(data_dict[key], axis=1)
         predicted = self.ludwig_model.predict(
-            data_dict=kwargs, return_type=dict
+            data_dict=data_dict, return_type=dict
         )
         # print(predicted, file=sys.stderr)
         return postprocess_for_neuropod(
@@ -46,18 +49,19 @@ def postprocess_for_neuropod(predicted, model_definition):
         feature_type = output_feature['type']
         if feature_type == BINARY:
             postprocessed[feature_name + "_predictions"] = \
-                predicted[feature_name]['predictions'].astype('str')
+                np.expand_dims(
+                    predicted[feature_name]['predictions'].astype('str'), 1)
             postprocessed[feature_name + "_probabilities"] = \
-                predicted[feature_name]['probabilities']
+                np.expand_dims(predicted[feature_name]['probabilities'], 1)
         elif feature_type == NUMERICAL:
             postprocessed[feature_name + "_predictions"] = \
-                predicted[feature_name]['predictions']
+                np.expand_dims(predicted[feature_name]['predictions'], 1)
         elif feature_type == CATEGORY:
-            postprocessed[feature_name + "_predictions"] = np.array(
-                predicted[feature_name]['predictions'], dtype='str'
+            postprocessed[feature_name + "_predictions"] = np.expand_dims(
+                np.array(predicted[feature_name]['predictions'], dtype='str'), 1
             )
             postprocessed[feature_name + "_probability"] = \
-                predicted[feature_name]['probability']
+                np.expand_dims(predicted[feature_name]['probability'], 1)
             postprocessed[feature_name + "_probabilities"] = \
                 predicted[feature_name]['probabilities']
         elif feature_type == SEQUENCE:
@@ -65,31 +69,31 @@ def postprocess_for_neuropod(predicted, model_definition):
                 lambda x: ' '.join(x),
                 predicted[feature_name]['predictions']
             ))
-            postprocessed[feature_name + "_predictions"] = np.array(
-                predictions, dtype='str'
+            postprocessed[feature_name + "_predictions"] = np.expand_dims(
+                np.array(predictions, dtype='str'), 1
             )
         elif feature_type == TEXT:
             predictions = list(map(
                 lambda x: ' '.join(x),
                 predicted[feature_name]['predictions']
             ))
-            postprocessed[feature_name + "_predictions"] = np.array(
-                predictions, dtype='str'
+            postprocessed[feature_name + "_predictions"] = np.expand_dims(
+                np.array(predictions, dtype='str'), 1
             )
         elif feature_type == SET:
             predictions = list(map(
                 lambda x: ' '.join(x),
                 predicted[feature_name]['predictions']
             ))
-            postprocessed[feature_name + "_predictions"] = np.array(
-                predictions, dtype='str'
+            postprocessed[feature_name + "_predictions"] = np.expand_dims(
+                np.array(predictions, dtype='str'), 1
             )
             probability = list(map(
                 lambda x: ' '.join([str(e) for e in x]),
                 predicted[feature_name]['probability']
             ))
-            postprocessed[feature_name + "_probability"] = np.array(
-                probability, dtype='str'
+            postprocessed[feature_name + "_probability"] = np.expand_dims(
+                np.array(probability, dtype='str'), 1
             )
             postprocessed[feature_name + "_probabilities"] = \
                 predicted[feature_name]['probabilities']
@@ -97,8 +101,8 @@ def postprocess_for_neuropod(predicted, model_definition):
             postprocessed[feature_name + "_predictions"] = \
                 predicted[feature_name]['predictions']
         else:
-            postprocessed[feature_name + "_predictions"] = np.array(
-                predicted[feature_name]['predictions'], dtype='str'
+            postprocessed[feature_name + "_predictions"] = np.expand_dims(
+                np.array(predicted[feature_name]['predictions'], dtype='str'), 1
             )
     # print(postprocessed, file=sys.stderr)
     return postprocessed
@@ -149,7 +153,7 @@ def export_neuropod(
                 }
             )
 
-    logger.debug('data_paths:', data_paths)
+    logger.debug('data_paths: {}'.format(data_paths))
 
     ludwig_model_definition = load_json(
         os.path.join(
@@ -157,104 +161,118 @@ def export_neuropod(
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
     )
+    training_set_metadata = load_json(
+        os.path.join(
+            ludwig_model_path,
+            TRAIN_SET_METADATA_FILE_NAME
+        )
+    )
+
     input_spec = []
     for feature in ludwig_model_definition['input_features']:
         input_spec.append({
             "name": feature['name'],
             "dtype": "str",
-            "shape": (None,)
+            "shape": (None, 1)
         })
-    logger.debug('input_spec:', input_spec)
+    logger.debug('input_spec: {}'.format(input_spec))
 
     output_spec = []
     for feature in ludwig_model_definition['output_features']:
         feature_type = feature['type']
+        feature_name = feature['name']
         if feature_type == BINARY:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "str",
-                "shape": (None,)
+                "shape": (None, 1)
             })
             output_spec.append({
                 "name": feature['name'] + '_probabilities',
                 "dtype": "float32",
-                "shape": (None,)
+                "shape": (None, 1)
             })
         elif feature_type == NUMERICAL:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "float32",
-                "shape": (None,)
+                "shape": (None, 1)
             })
         elif feature_type == CATEGORY:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "str",
-                "shape": (None,)
+                "shape": (None, 1)
             })
             output_spec.append({
                 "name": feature['name'] + '_probability',
                 "dtype": "float32",
-                "shape": (None,)
+                "shape": (None, 1)
             })
             output_spec.append({
                 "name": feature['name'] + '_probabilities',
                 "dtype": "float32",
-                "shape": (None, None)
+                "shape": (
+                    None, training_set_metadata[feature_name]['vocab_size']
+                )
             })
         elif feature_type == SEQUENCE:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "str",
-                "shape": (None,)
+                "shape": (None, 1)
             })
         elif feature_type == TEXT:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "str",
-                "shape": (None,)
+                "shape": (None, 1)
             })
         elif feature_type == SET:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "str",
-                "shape": (None,)
+                "shape": (None, 1)
             })
             output_spec.append({
                 "name": feature['name'] + '_probability',
                 "dtype": "str",
-                "shape": (None,)
+                "shape": (None, 1)
             })
             output_spec.append({
                 "name": feature['name'] + '_probabilities',
                 "dtype": "float32",
-                "shape": (None, None)
+                "shape": (
+                    None, training_set_metadata[feature_name]['vocab_size']
+                )
             })
         elif feature_type == VECTOR:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "float32",
-                "shape": (None, None)
+                "shape": (
+                    None, training_set_metadata[feature_name]['vector_size']
+                )
             })
         else:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
                 "dtype": "str",
-                "shape": (None,)
+                "shape": (None, 1)
             })
-    logger.debug('output_spec:', output_spec)
+    logger.debug('output_spec: {}'.format(output_spec))
 
     if os.path.exists(neuropod_path):
         if os.path.isfile(neuropod_path):
-            logger.warning('Removing file', neuropod_path)
+            logger.warning('Removing file: {}'.format(neuropod_path))
             os.remove(neuropod_path)
         else:
-            logger.warning('Removing directory', neuropod_path)
+            logger.warning('Removing directory: {}'.format(neuropod_path))
             shutil.rmtree(neuropod_path, ignore_errors=True)
 
     from pathlib import Path
     path = Path(ludwig_path)
-    logger.debug('python_root', path.parent.parent)
+    logger.debug('python_root: {}'.format(path.parent.parent))
 
     create_python_neuropod(
         neuropod_path=neuropod_path,
@@ -266,16 +284,17 @@ def export_neuropod(
                 "ludwig"  # Package everything in the python_root
             ],
         }],
-        entrypoint_package="ludwig.neuropod",
+        entrypoint_package="ludwig.neuropod_export",
         entrypoint="get_model",
         # test_deps=['torch', 'numpy'],
         skip_virtualenv=True,
         input_spec=input_spec,
         output_spec=output_spec
     )
+    logger.info('Neuropod saved to: {}'.format(neuropod_path))
 
 
-def cli(sys_argv):
+def cli():
     parser = argparse.ArgumentParser(
         description='This script exports a Ludwig model in the Neuropod format'
     )
@@ -314,7 +333,7 @@ def cli(sys_argv):
         default='ludwig_model'
     )
 
-    args = parser.parse_args(sys_argv)
+    args = parser.parse_args()
 
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
@@ -325,10 +344,10 @@ def cli(sys_argv):
     print_ludwig('Export Neuropod', LUDWIG_VERSION)
 
     export_neuropod(
-        args.ludwig.model_path, args.neuropod_path, args.nueropod_model_name
+        args.ludwig_model_path, args.neuropod_path, args.neuropod_model_name
     )
 
 
 if __name__ == '__main__':
     # contrib_command("neuropod", *sys.argv)
-    cli(sys.argv)
+    cli()
