@@ -163,6 +163,8 @@ class EmbedWeighted(Layer):
     ):
         super(EmbedWeighted, self).__init__()
 
+        self.vocab = vocab
+
         if embeddings_on_cpu:
             with tf.device('/cpu:0'):
                 self.embeddings, self.embedding_size = embedding_matrix(
