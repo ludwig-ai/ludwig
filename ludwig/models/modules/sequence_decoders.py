@@ -273,7 +273,10 @@ class SequenceGeneratorDecoder(Layer):
             decoder_embedding_matrix,
             start_tokens=start_tokens,
             end_token=end_token,
-            initial_state=decoder_initial_state
+            # following construct required to work around inconsistent handling
+            # of encoder_end_state by tfa
+            initial_state=decoder_initial_state \
+                if len(decoder_initial_state) != 1 else decoder_initial_state[0]
         )
 
         inputs = first_inputs
