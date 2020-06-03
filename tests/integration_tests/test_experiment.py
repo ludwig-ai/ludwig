@@ -318,37 +318,6 @@ def test_experiment_tied_weights(csv_filename):
         run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-# todo tf2 clean up candidate for removal
-def test_experiment_attention(csv_filename):
-    # Machine translation with attention
-    input_features = [
-        sequence_feature(
-            min_len=5,
-            max_len=10,
-            encoder='rnn',
-            cell_type='lstm',
-            reduce_output=None
-        )
-    ]
-    output_features = [
-        sequence_feature(
-            min_len=5,
-            max_len=10,
-            decoder='generator',
-            cell_type='lstm',
-            attention='bahdanau',
-            reduce_input=None
-        )
-    ]
-
-    # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename)
-
-    for attention in ['bahdanau', 'luong']:
-        output_features[0]['attention'] = attention
-        run_experiment(input_features, output_features, data_csv=rel_path)
-
-
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
 @pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
 @pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
