@@ -338,7 +338,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             name='probabilities_{}'.format(self.name)
         )
 
-        if self.decoder_obj.beam_width > 1:
+        if isinstance(self.decoder_obj, SequenceGeneratorDecoder) and \
+                self.decoder_obj.beam_width > 1:
             predictions = self.decoder_obj.decoder_beam_search(
                 encoder_output,
                 encoder_end_state=encoder_output_state,
