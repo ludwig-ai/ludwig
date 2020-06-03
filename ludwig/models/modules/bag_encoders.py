@@ -41,7 +41,7 @@ class BagEmbedWeightedEncoder(Layer):
     ):
         super(BagEmbedWeightedEncoder, self).__init__()
 
-        self.embed_sparse = EmbedWeighted(
+        self.embed_weighted = EmbedWeighted(
             vocab,
             embedding_size,
             representation=representation,
@@ -61,5 +61,5 @@ class BagEmbedWeightedEncoder(Layer):
 
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
-        embedded = self.embed_sparse(inputs, training=None, mask=None)
+        embedded = self.embed_weighted(inputs, training=None, mask=None)
         return embedded
