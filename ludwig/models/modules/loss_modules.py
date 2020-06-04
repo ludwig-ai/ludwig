@@ -129,6 +129,22 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         return loss
 
 
+class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
+    def __init__(
+            self,
+            name=None
+    ):
+        super(SigmoidCrossEntropyLoss, self).__init__(name=name)
+
+    def call(self, y, y_pred):
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=tf.cast(y, tf.float32),
+            logits=y_pred[LOGITS]
+        )
+
+        return loss
+
+
 class SequenceLoss(tf.keras.losses.Loss):
     def __init__(self, name=None, **kwargs):
         super(SequenceLoss, self).__init__(name=name)

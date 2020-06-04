@@ -15,8 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+from functools import partial
 
 import tensorflow as tf
+from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Layer
 
@@ -48,3 +50,56 @@ class Regressor(Layer):
 
     def call(self, inputs, **kwargs):
         return tf.squeeze(self.dense(inputs))
+
+
+class Projector(Layer):
+
+    def __init__(
+            self,
+            num_classes,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            activation=None,
+            clip=None,
+            **kwargs
+    ):
+        super().__init__()
+        self.dense = Dense(
+            num_classes,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
+
+        self.activation = Activation(activation)
+
+        if clip is not None:
+            if isinstance(clip, (list, tuple)) and len(clip) == 2:
+                self.clip = partial(
+                    tf.clip_by_value,
+                    clip_value_min=clip[0],
+                    clip_value_max=clip[1]
+                )
+            else:
+                raise ValueError(
+                    'The clip parameter of {} is {}. '
+                    'It must be a list or a tuple of length 2.'.format(
+                        self.feature_name,
+                        self.clip
+                    )
+                )
+        else:
+            self.clip = None
+
+    def call(self, inputs, **kwargs):
+        values = self.activation(self.dense(inputs))
+        if self.clip:
+            values = self.clip(values)
+        return values

@@ -18,57 +18,17 @@ import logging
 
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.embedding_modules import Embed
+from ludwig.models.modules.embedding_modules import EmbedSparse
 
 logger = logging.getLogger(__name__)
 
 
-class CategoricalEmbedEncoder(Layer):
+class SetSparseEncoder(Layer):
 
     def __init__(
             self,
             vocab,
-            embedding_size=50,
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            embeddings_on_cpu=False,
-            dropout_rate=0.0,
-            initializer=None,
-            regularizer=None,
-            **kwargs
-    ):
-        super(CategoricalEmbedEncoder, self).__init__()
-
-        self.embed = Embed(
-            vocab=vocab,
-            embedding_size=embedding_size,
             representation='dense',
-            embeddings_trainable=embeddings_trainable,
-            pretrained_embeddings=pretrained_embeddings,
-            embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=initializer,
-            regularizer=regularizer
-        )
-
-    def call(self, inputs, training=None, mask=None):
-        """
-            :param inputs: The inputs fed into the encoder.
-                   Shape: [batch x 1], type tf.int32
-
-            :param return: embeddings of shape [batch x embed size], type tf.float32
-        """
-        embedded = self.embed(
-            inputs, training=training, mask=mask
-        )
-        return embedded
-
-
-class CategoricalSparseEncoder(Layer):
-
-    def __init__(
-            self,
-            vocab,
             embedding_size=50,
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -76,20 +36,22 @@ class CategoricalSparseEncoder(Layer):
             dropout_rate=0.0,
             initializer=None,
             regularizer=None,
+            reduce_output='sum',
             **kwargs
     ):
-        super(CategoricalSparseEncoder, self).__init__()
+        super(SetSparseEncoder, self).__init__()
 
-        self.embed = Embed(
-            vocab=vocab,
-            embedding_size=embedding_size,
-            representation='sparse',
+        self.embed_sparse = EmbedSparse(
+            vocab,
+            embedding_size,
+            representation=representation,
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
             initializer=initializer,
-            regularizer=regularizer
+            regularizer=regularizer,
+            reduce_output=reduce_output,
         )
 
     def call(self, inputs, training=None, mask=None):
@@ -99,7 +61,7 @@ class CategoricalSparseEncoder(Layer):
 
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
-        embedded = self.embed(
+        embedded = self.embed_sparse(
             inputs, training=None, mask=None
         )
         return embedded

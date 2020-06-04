@@ -7,6 +7,6 @@ tabulate>=0.7
 scikit-learn
 tqdm
 tensorflow==2.2
-tensorflow-addons
+tensorflow-addons>=0.9.1
 PyYAML>=3.12
 absl-py

@@ -16,39 +16,85 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
+
 import tensorflow as tf
+from tensorflow.keras.losses import MeanAbsoluteError
+from tensorflow.keras.losses import MeanSquaredError
+from tensorflow.keras.metrics import \
+    MeanAbsoluteError as MeanAbsoluteErrorMetric
+from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
-from ludwig.models.modules.metric_modules import \
-    absolute_error as get_absolute_error
-from ludwig.models.modules.metric_modules import error as get_error
-from ludwig.models.modules.metric_modules import r2 as get_r2
-from ludwig.models.modules.metric_modules import \
-    squared_error as get_squared_error
-from ludwig.utils.misc import get_from_registry
+from ludwig.models.modules.generic_decoders import Projector
+from ludwig.models.modules.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.metric_modules import ErrorScore, \
+    SoftmaxCrossEntropyMetric
+from ludwig.models.modules.metric_modules import R2Score
 from ludwig.utils.misc import set_default_value
 
 logger = logging.getLogger(__name__)
 
 
-class VectorBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = VECTOR
+# TODO TF2 can we eliminate use of these customer wrapper classes?
+#  These are copies of the classes in numerical_modules,
+#  depending on what we end up doing with those, these will follow
+# custom class to handle how Ludwig stores predictions
+class MSELoss(MeanSquaredError):
+    def __init__(self, **kwargs):
+        super(MSELoss, self).__init__(**kwargs)
 
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        logits = y_pred[LOGITS]
+        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        return loss
+
+
+class MSEMetric(MeanSquaredErrorMetric):
+    def __init__(self, **kwargs):
+        super(MSEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred['predictions'], sample_weight=sample_weight
+        )
+
+
+class MAELoss(MeanAbsoluteError):
+    def __init__(self, **kwargs):
+        super(MAELoss, self).__init__(**kwargs)
+
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        logits = y_pred[LOGITS]
+        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        return loss
+
+
+class MAEMetric(MeanAbsoluteErrorMetric):
+    def __init__(self, **kwargs):
+        super(MAEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred['predictions'], sample_weight=sample_weight
+        )
+
+
+class VectorBaseFeature(BaseFeature):
+    type = VECTOR
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ""
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -62,12 +108,12 @@ class VectorBaseFeature(BaseFeature):
             dataset_df,
             data,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
     ):
         """
-        Expects all the vectors to be of the same size. The vectors need to be
-        whitespace delimited strings. Missing values are not handled.
-        """
+                Expects all the vectors to be of the same size. The vectors need to be
+                whitespace delimited strings. Missing values are not handled.
+                """
         if len(dataset_df) == 0:
             raise ValueError("There are no vectors in the dataset provided")
 
@@ -101,58 +147,27 @@ class VectorBaseFeature(BaseFeature):
 
 
 class VectorInputFeature(VectorBaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    encoder = 'dense'
 
-        self.vector_size = 0
-        self.encoder = 'fc_stack'
+    def __init__(self, feature, encoder_obj=None):
+        VectorBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        encoder_parameters = self.overwrite_defaults(feature)
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
+        assert len(inputs.shape) == 2
 
-        self.encoder_obj = self.get_vector_encoder(encoder_parameters)
-
-    def get_vector_encoder(self, encoder_parameters):
-        return get_from_registry(self.encoder, vector_encoder_registry)(
-            **encoder_parameters
+        inputs_encoded = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
 
-    def _get_input_placeholder(self):
-        # None dimension is for dealing with variable batch size
-        return tf.placeholder(
-            tf.float32,
-            shape=[None, self.vector_size],
-            name=self.feature_name,
-        )
-
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  placeholder: {0}'.format(placeholder))
-
-        feature_representation, feature_representation_size = self.encoder_obj(
-            placeholder,
-            self.vector_size,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-        logger.debug(
-            '  feature_representation: {0}'.format(feature_representation)
-        )
-
-        feature_representation = {
-            'name': self.feature_name,
-            'type': self.type,
-            'representation': feature_representation,
-            'size': feature_representation_size,
-            'placeholder': placeholder
-        }
-        return feature_representation
+        return {'encoder_outputs': inputs_encoded}
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -169,230 +184,76 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'preprocessing', {})
 
+    encoder_registry = {
+        'dense': DenseEncoder,
+        'passthrough': PassthroughEncoder,
+        'null': PassthroughEncoder,
+        'none': PassthroughEncoder,
+        'None': PassthroughEncoder,
+        None: PassthroughEncoder
+    }
+
 
 class VectorOutputFeature(VectorBaseFeature, OutputFeature):
+    decoder = 'projector'
+    loss = {'type': MEAN_SQUARED_ERROR}
+    vector_size = 0
+
     def __init__(self, feature):
-        super().__init__(feature)
-        self.type = VECTOR
-        self.vector_size = 0
+        VectorBaseFeature.__init__(self, feature)
+        OutputFeature.__init__(self, feature)
+        self.overwrite_defaults(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
+        self._setup_loss()
+        self._setup_metrics()
 
-        self.loss = {TYPE: MEAN_SQUARED_ERROR}
-        self.softmax = False
-
-        _ = self.overwrite_defaults(feature)
-
-    def _get_output_placeholder(self):
-        return tf.placeholder(
-            tf.float32,
-            [None, self.vector_size],
-            name='{}_placeholder'.format(self.feature_name)
-        )
-
-    def _get_metrics(self, targets, predictions):
-
-        with tf.variable_scope('metrics_{}'.format(self.feature_name)):
-            error_val = get_error(
-                targets,
-                predictions,
-                self.feature_name
-            )
-
-            absolute_error_val = tf.reduce_sum(
-                get_absolute_error(targets, predictions, self.feature_name), axis=1
-            )
-
-            squared_error_val = tf.reduce_sum(
-                get_squared_error(targets, predictions, self.feature_name), axis=1
-            )
-
-            # TODO - not sure if this is correct
-            r2_val = tf.reduce_sum(get_r2(targets, predictions, self.feature_name))
-
-        return error_val, squared_error_val, absolute_error_val, r2_val
-
-    def vector_loss(self, targets, predictions, logits):
-        with tf.variable_scope('loss_{}'.format(self.feature_name)):
-            if self.loss[TYPE] == MEAN_SQUARED_ERROR:
-                train_loss = tf.reduce_sum(
-                    get_squared_error(targets, predictions, self.feature_name), axis=1
-                )
-
-            elif self.loss[TYPE] == MEAN_ABSOLUTE_ERROR:
-                train_loss = tf.reduce_sum(
-                    get_absolute_error(targets, predictions, self.feature_name), axis=1
-                )
-
-            elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
-                train_loss = weighted_softmax_cross_entropy(
-                    logits,
-                    targets,
-                    self.loss
-                )
-
-            else:
-                train_mean_loss = None
-                train_loss = None
-                raise ValueError(
-                    'Unsupported loss type {}'.format(self.loss['type'])
-                )
-
-            train_mean_loss = tf.reduce_mean(
-                train_loss,
-                name='train_mean_loss_{}'.format(self.feature_name)
-            )
-
-        return train_mean_loss, train_loss
-
-    def build_output(
+    def logits(
             self,
-            hidden,
-            hidden_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=None,
-            **kwargs
+            inputs,  # hidden
     ):
-        train_mean_loss, eval_loss, output_tensors = self.build_vector_output(
-            self._get_output_placeholder(),
-            hidden,
-            hidden_size,
-            regularizer=regularizer,
-        )
-        return train_mean_loss, eval_loss, output_tensors
+        return self.decoder_obj(inputs)
 
-    def build_vector_output(
+    def predictions(
             self,
-            targets,
-            hidden,
-            hidden_size,
-            regularizer=None,
+            inputs,  # logits
     ):
-        feature_name = self.feature_name
-        output_tensors = {}
+        return {PREDICTIONS: inputs[LOGITS], LOGITS: inputs[LOGITS]}
 
-        # ================ Placeholder ================
-        output_tensors['{}'.format(feature_name)] = targets
+    def _setup_loss(self):
+        if self.loss[TYPE] == 'mean_squared_error':
+            self.train_loss_function = MSELoss()
+            self.eval_loss_function = MSEMetric(name='eval_loss')
+        elif self.loss[TYPE] == 'mean_absolute_error':
+            self.train_loss_function = MAELoss()
+            self.eval_loss_function = MAEMetric(name='eval_loss')
+        elif self.loss[TYPE] == SOFTMAX_CROSS_ENTROPY:
+            self.train_loss_function = SoftmaxCrossEntropyLoss(
+                num_classes=self.vector_size,
+                feature_loss=self.loss,
+                name='train_loss'
+            )
+            self.eval_loss_function = SoftmaxCrossEntropyMetric(
+                num_classes=self.vector_size,
+                feature_loss=self.loss,
+                name='eval_loss'
+            )
+        else:
+            raise ValueError(
+                'Unsupported loss type {}'.format(self.loss[TYPE])
+            )
 
-        # ================ Predictions ================
-        logits, logits_size, predictions = self.vector_predictions(
-            hidden,
-            hidden_size,
-            regularizer=regularizer,
+    def _setup_metrics(self):
+        self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[ERROR] = ErrorScore(name='metric_error')
+        self.metric_functions[MEAN_SQUARED_ERROR] = MeanSquaredErrorMetric(
+            name='metric_mse'
         )
-
-        output_tensors[PREDICTIONS + '_' + feature_name] = predictions
-
-        # ================ metrics ============
-        error, squared_error, absolute_error, r2 = self._get_metrics(
-            targets,
-            predictions
+        self.metric_functions[MEAN_ABSOLUTE_ERROR] = MeanAbsoluteErrorMetric(
+            name='metric_mae'
         )
+        self.metric_functions[R2] = R2Score(name='metric_r2')
 
-        output_tensors[ERROR + '_' + self.feature_name] = error
-        output_tensors[SQUARED_ERROR + '_' + self.feature_name] = squared_error
-        output_tensors[ABSOLUTE_ERROR + '_' + self.feature_name] = absolute_error
-        output_tensors[R2 + '_' + self.feature_name] = r2
-
-        if 'sampled' not in self.loss['type']:
-            tf.summary.scalar(
-                'batch_train_mean_squared_error_{}'.format(self.feature_name),
-                tf.reduce_mean(squared_error)
-            )
-            tf.summary.scalar(
-                'batch_train_mean_absolute_error_{}'.format(self.feature_name),
-                tf.reduce_mean(absolute_error)
-            )
-            tf.summary.scalar(
-                'batch_train_mean_r2_{}'.format(self.feature_name),
-                tf.reduce_mean(r2)
-            )
-
-        # ================ Loss ================
-        train_mean_loss, eval_loss = self.vector_loss(
-            targets, predictions, logits
-        )
-        output_tensors[EVAL_LOSS + '_' + self.feature_name] = eval_loss
-        output_tensors[
-            TRAIN_MEAN_LOSS + '_' + self.feature_name] = train_mean_loss
-
-        tf.summary.scalar(
-            'batch_train_mean_loss_{}'.format(self.feature_name),
-            train_mean_loss,
-        )
-
-        return train_mean_loss, eval_loss, output_tensors
-
-    def vector_predictions(
-            self,
-            hidden,
-            hidden_size,
-            regularizer=None,
-    ):
-        with tf.variable_scope('predictions_{}'.format(self.feature_name)):
-            initializer_obj = get_initializer(self.initializer)
-            weights = tf.get_variable(
-                'weights',
-                initializer=initializer_obj([hidden_size, self.vector_size]),
-                regularizer=regularizer
-            )
-            logger.debug('  projection_weights: {0}'.format(weights))
-
-            biases = tf.get_variable(
-                'biases',
-                [self.vector_size]
-            )
-            logger.debug('  projection_biases: {0}'.format(biases))
-
-            logits = tf.matmul(hidden, weights) + biases
-            logger.debug('  logits: {0}'.format(logits))
-
-            if self.softmax:
-                predictions = tf.nn.softmax(logits)
-            else:
-                predictions = logits
-
-        return logits, self.vector_size, predictions
-
-    default_validation_metric = LOSS
-
-    output_config = OrderedDict([
-        (LOSS, {
-            'output': EVAL_LOSS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (MEAN_SQUARED_ERROR, {
-            'output': SQUARED_ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (MEAN_ABSOLUTE_ERROR, {
-            'output': ABSOLUTE_ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (R2, {
-            'output': R2,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (ERROR, {
-            'output': ERROR,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (PREDICTIONS, {
-            'output': PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        })
-    ])
+    default_validation_metric = MEAN_SQUARED_ERROR
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -401,7 +262,6 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
             *args,
             **kwargs
     ):
-
         output_feature['vector_size'] = feature_metadata['vector_size']
 
     @staticmethod
@@ -438,17 +298,18 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-
         set_default_value(output_feature, LOSS, {})
         set_default_value(output_feature[LOSS], 'type', MEAN_SQUARED_ERROR)
         set_default_value(output_feature[LOSS], 'weight', 1)
         set_default_value(output_feature, 'reduce_input', None)
         set_default_value(output_feature, 'reduce_dependencies', None)
-        set_default_value(output_feature, 'softmax', False)
-        set_default_value(output_feature, 'decoder', 'fc_stack')
+        set_default_value(output_feature, 'decoder', 'projector')
         set_default_value(output_feature, 'dependencies', [])
 
-
-vector_encoder_registry = {
-    'fc_stack': FCStack
-}
+    decoder_registry = {
+        'projector': Projector,
+        'null': Projector,
+        'none': Projector,
+        'None': Projector,
+        None: Projector
+    }

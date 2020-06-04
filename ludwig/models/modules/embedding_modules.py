@@ -83,7 +83,8 @@ def embedding_matrix(
 
     else:
         raise Exception(
-            'Embedding representation {} not supported.'.format(representation))
+            'Embedding representation {} not supported.'.format(
+                representation))
 
     return embeddings, embedding_size
 
@@ -210,7 +211,8 @@ class EmbedWeighted(Layer):
         embedded_reduced = tf.reduce_sum(weighted_embedded, 1)
 
         if self.dropout:
-            embedded_reduced = self.dropout(embedded_reduced, training=training)
+            embedded_reduced = self.dropout(embedded_reduced,
+                                            training=training)
 
         return embedded_reduced
 
@@ -219,7 +221,7 @@ class EmbedSparse(Layer):
     def __init__(
             self,
             vocab,
-            embedding_size,
+            embedding_size=50,
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -227,7 +229,8 @@ class EmbedSparse(Layer):
             embeddings_on_cpu=False,
             dropout_rate=0.0,
             initializer=None,
-            regularizer=None
+            regularizer=None,
+            reduce_output='sum'
     ):
         super(EmbedSparse, self).__init__()
 
@@ -262,18 +265,15 @@ class EmbedSparse(Layer):
         else:
             self.dropout = None
 
-    def call(self, inputs, training=None, mask=None):
-        multiple_hot_indexes = tf.multiply(
-            inputs,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
-        )
+        self.reduce_output = reduce_output
 
-        idx = tf.where(tf.not_equal(multiple_hot_indexes, 0))
+    def call(self, inputs, training=None, mask=None):
+        idx = tf.where(tf.equal(inputs, True))
 
         sparse_multiple_hot_indexes = tf.SparseTensor(
             idx,
-            tf.gather_nd(multiple_hot_indexes, idx),
-            tf.shape(multiple_hot_indexes, out_type=tf.int64)
+            idx[:, 1],
+            tf.shape(inputs, out_type=tf.int64)
         )
 
         embedded_reduced = tf.nn.embedding_lookup_sparse(
@@ -284,7 +284,9 @@ class EmbedSparse(Layer):
         )
 
         if self.dropout:
-            embedded_reduced = self.dropout(embedded_reduced, training=training)
+            embedded_reduced = self.dropout(
+                embedded_reduced, training=training
+            )
 
         return embedded_reduced
 
