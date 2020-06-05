@@ -268,7 +268,11 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             training=None
     ):
         if training:
-            return self.decoder_obj._logits_training(inputs, target, training)
+            return self.decoder_obj._logits_training(
+                inputs,
+                target=target,
+                training=training
+            )
         else:
             return inputs
 

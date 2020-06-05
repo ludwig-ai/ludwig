@@ -256,7 +256,7 @@ class SequenceGeneratorDecoder(Layer):
 
         if self.attention_mechanism is not None:
             decoder_initial_state = decoder_initial_state.clone(
-                    cell_state=encoder_state)
+                cell_state=encoder_state)
         else:
             if not isinstance(encoder_state, list):
                 decoder_initial_state = [encoder_state]
@@ -328,12 +328,11 @@ class SequenceGeneratorDecoder(Layer):
         logits = logits * mask[:, :, tf.newaxis]
         return logits  # , outputs, final_state, generated_sequence_lengths
 
-
     def decoder_beam_search(
-        self,
-        encoder_output,
-        encoder_end_state=None,
-        training=None
+            self,
+            encoder_output,
+            encoder_end_state=None,
+            training=None
     ):
 
         # ================ Setup ================
@@ -440,12 +439,11 @@ class SequenceGeneratorDecoder(Layer):
 
         return logits, predictions
 
-
     def decoder_inference(
-        self,
-        encoder_output,
-        encoder_end_state=None,
-        training=None
+            self,
+            encoder_output,
+            encoder_end_state=None,
+            training=None
     ):
 
         # ================ Setup ================
@@ -563,41 +561,40 @@ class SequenceGeneratorDecoder(Layer):
     # ):
     # input = inputs['hidden']
     # try:
-        #     encoder_output_state = inputs['encoder_output_state']
-        # except KeyError:
-        #     encoder_output_state = None
-        #
-        # todo tf2 need to move this to sequence output feature class
-        # if len(input.shape) != 3 and self.attention_mechanism is not None:
-        #     raise ValueError(
-        #         'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
-        #         'when attention mechanism is {}. '
-        #         'If you are using a sequential encoder or combiner consider setting reduce_output to None '
-        #         'and flatten to False if those parameters apply.'
-        #         'Also make sure theat reduce_input of output feature is None,'.format(
-        #             len(input.shape), self.attention_name))
-        # if len(input.shape) != 2 and self.attention_mechanism is None:
-        #     raise ValueError(
-        #         'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
-        #         'when attention mechanism is {}. '
-        #         'Consider setting reduce_input of output feature to a value different from None.'.format(
-        #             len(input.shape), self.attention_name))
-        #
-        # batch_size = input.shape[0]
-        # print(">>>>>>batch_size", batch_size)
-        #
-        # # Assume we have a final state
-        # encoder_end_state = encoder_output_state
-        #
-        # # in case we don't have a final state set to default value
-        # if self.cell_type in 'lstm' and encoder_end_state is None:
-        #     encoder_end_state = [
-        #         tf.zeros([batch_size, self.rnn_units], tf.float32),
-        #         tf.zeros([batch_size, self.rnn_units], tf.float32)
-        #     ]
-        # elif self.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
-        #     encoder_end_state = tf.zeros([batch_size, self.rnn_units], tf.float32)
-
+    #     encoder_output_state = inputs['encoder_output_state']
+    # except KeyError:
+    #     encoder_output_state = None
+    #
+    # todo tf2 need to move this to sequence output feature class
+    # if len(input.shape) != 3 and self.attention_mechanism is not None:
+    #     raise ValueError(
+    #         'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
+    #         'when attention mechanism is {}. '
+    #         'If you are using a sequential encoder or combiner consider setting reduce_output to None '
+    #         'and flatten to False if those parameters apply.'
+    #         'Also make sure theat reduce_input of output feature is None,'.format(
+    #             len(input.shape), self.attention_name))
+    # if len(input.shape) != 2 and self.attention_mechanism is None:
+    #     raise ValueError(
+    #         'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
+    #         'when attention mechanism is {}. '
+    #         'Consider setting reduce_input of output feature to a value different from None.'.format(
+    #             len(input.shape), self.attention_name))
+    #
+    # batch_size = input.shape[0]
+    # print(">>>>>>batch_size", batch_size)
+    #
+    # # Assume we have a final state
+    # encoder_end_state = encoder_output_state
+    #
+    # # in case we don't have a final state set to default value
+    # if self.cell_type in 'lstm' and encoder_end_state is None:
+    #     encoder_end_state = [
+    #         tf.zeros([batch_size, self.rnn_units], tf.float32),
+    #         tf.zeros([batch_size, self.rnn_units], tf.float32)
+    #     ]
+    # elif self.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
+    #     encoder_end_state = tf.zeros([batch_size, self.rnn_units], tf.float32)
 
 
 class SequenceTaggerDecoder(Layer):
@@ -636,7 +633,10 @@ class SequenceTaggerDecoder(Layer):
             training=None,
             mask=None
     ):
-        hidden = inputs[HIDDEN]
+        # shape [batch_size, seq_size, state_size]
+        if LOGITS in inputs:
+            inputs = inputs[LOGITS]
+        hidden = inputs['hidden']
         if len(hidden.shape) != 3:
             raise ValueError(
                 'Decoder inputs rank is {}, but should be 3 [batch x sequence x hidden] '
@@ -651,5 +651,12 @@ class SequenceTaggerDecoder(Layer):
 
         return logits, None  # logits shape [batch_size, sequence_length, num_classes]
 
-    def _logits_training(self, inputs, **kwargs):
-        return self(inputs)
+    def _logits_training(
+            self,
+            inputs,
+            training=None,
+            mask=None,
+            *args,
+            **kwarg
+    ):
+        return self.call(inputs, training=training, mask=mask)

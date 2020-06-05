@@ -191,6 +191,8 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             logits_input['encoder_output_state'] = \
                 combiner_outputs['encoder_output_state']
         logits = self.logits(logits_input, target=target, training=training)
+        if isinstance(logits, tuple):
+            logits = logits[0]
 
         return logits, hidden
 
