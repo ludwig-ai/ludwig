@@ -19,7 +19,6 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import average
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -32,7 +31,6 @@ from ludwig.models.modules.metric_modules import PerplexityMetric
 from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.models.modules.metric_modules import SequenceLossMetric
 from ludwig.models.modules.metric_modules import TokenAccuracyMetric
-from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.models.modules.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.models.modules.sequence_decoders import SequenceTaggerDecoder
 from ludwig.models.modules.sequence_encoders import BERT
@@ -269,33 +267,10 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             target=None,
             training=None
     ):
-        if isinstance(self.decoder_obj, SequenceGeneratorDecoder):
-            # Generator Decoder
-            if training:
-                return self._logits_training(inputs, target, training)
-            else:
-                return self._logits_prediction(inputs)
+        if training:
+            return self.decoder_obj._logits_training(inputs, target, training)
         else:
-            # Tagger Decoder
-            if training:
-                return self.decoder_obj(inputs)
-            else:
-                return self._logits_prediction(inputs)
-
-
-    def _logits_training(self, inputs, target, training=None):
-        input = inputs['hidden'] # shape [batch_size, seq_size, state_size]
-        encoder_end_state = self._prepare_decoder_input_state(inputs)
-
-        logits = self.decoder_obj.decoder_training(
-            input,
-            target=target,
-            encoder_end_state=encoder_end_state
-        )
-        return logits  # shape = [b, s, c]
-
-    def _logits_prediction(self, inputs):
-        return inputs
+            return inputs
 
     def predictions(self, inputs, training=None):
 
@@ -306,7 +281,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             return self._predictions_prediction(inputs, training=training)
 
     # todo tf2 need to determine if the section of code is needed
-    def _predictions_training(self, inputs, training=None):    # not executed
+    def _predictions_training(self, inputs, training=None):  # not executed
         # inputs == logits
         probs = softmax(inputs)
         preds = tf.argmax(inputs)
@@ -314,38 +289,20 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
 
     def _predictions_prediction(
             self,
-            inputs,   # encoder_output, encoder_output_state
+            inputs,  # encoder_output, encoder_output_state
             training=None
     ):
-        if isinstance(self.decoder_obj, SequenceGeneratorDecoder):
-            encoder_output = inputs[LOGITS]['hidden'] # shape [batch_size, seq_size, state_size]
-            # form dependent on cell_type
-            # lstm: list([batch_size, state_size], [batch_size, state_size])
-            # rnn, gru: [batch_size, state_size]
-            encoder_output_state = self._prepare_decoder_input_state(inputs[LOGITS])
+        logits, predictions = self.decoder_obj(inputs, training=training)
 
-            logits = self.decoder_obj.decoder_inference(
-                encoder_output,
-                encoder_end_state=encoder_output_state,
-                training=training
-            )
-        else:
-            # Tagger Decoder  todo tf2 reconcile tensor shape for inputs[LOGITS][HIDDEN]
-            logits = self.decoder_obj(inputs[LOGITS], training=training)
-
+        # todo piero don't expect logits from beam search
+        #  expect scores from beam search,
+        #  in that case don't recompute probabilities
         probabilities = tf.nn.softmax(
             logits,
             name='probabilities_{}'.format(self.name)
         )
 
-        if isinstance(self.decoder_obj, SequenceGeneratorDecoder) and \
-                self.decoder_obj.beam_width > 1:
-            predictions = self.decoder_obj.decoder_beam_search(
-                encoder_output,
-                encoder_end_state=encoder_output_state,
-                training=training
-            )
-        else:
+        if predictions is None:
             predictions = tf.argmax(
                 logits,
                 -1,
@@ -353,12 +310,12 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 output_type=tf.int64
             )
 
-        if self.decoder == 'generator':
-            additional = 1  # because of eos symbol
-        elif self.decoder == 'tagger':
-            additional = 0
-        else:
-            additional = 0
+        # if self.decoder == 'generator':
+        #    additional = 1  # because of eos symbol
+        # elif self.decoder == 'tagger':
+        #    additional = 0
+        # else:
+        #    additional = 0
 
         generated_sequence_lengths = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
@@ -366,7 +323,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
                  tf.maximum(
-                     generated_sequence_lengths - 1 - additional,
+                     generated_sequence_lengths - 1,
                      0
                  )],
                 axis=1
@@ -389,117 +346,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             PROBABILITIES: probabilities,
             LOGITS: logits
         }
-
-    def _prepare_decoder_input_state(self, inputs):
-
-        if 'encoder_output_state' in inputs:
-            decoder_input_state = inputs['encoder_output_state']
-        else:
-            eo = inputs['hidden']
-            if len(eo.shape) == 3:  # encoder_output is a sequence
-                # reduce_sequence returns a [b, h]
-                decoder_input_state = \
-                    reduce_sequence(
-                        eo,
-                        self.reduce_input if self.reduce_input else 'sum'
-                    )
-            elif len(eo.shape) == 2:
-                # this returns a [b, h]
-                decoder_input_state = eo
-            else:
-                raise ValueError("Only works for 1d or 2d encoder_output")
-
-        # now we have to deal with the fact that the state needs to be a list
-        # in case of lstm or a tensor otherwise
-        if (self.decoder_obj.cell_type == 'lstm' and
-                isinstance(decoder_input_state, list)):
-            if len(decoder_input_state) == 2:
-                # this maybe a unidirection lstm or a bidirectional gru / rnn
-                # there is no way to tell
-                # If it is a unidirectional lstm, pass will work fine
-                # if it is bidirectional gru / rnn, the output of one of
-                # the directions will be treated as the inital c of the lstm
-                # which is weird and may lead to poor performance
-                # todo try to find a way to distinguish among these two cases
-                pass
-            elif len(decoder_input_state) == 4:
-                # the encoder was a bidirectional lstm
-                # a good strategy is to average the 2 h and the 2 c vectors
-                decoder_input_state = [
-                    average(
-                        [decoder_input_state[0], decoder_input_state[2]]
-                    ),
-                    average(
-                        [decoder_input_state[1], decoder_input_state[3]]
-                    )
-                ]
-            else:
-                # no idea how lists of length different than 2 or 4
-                # might have been originated, we can either rise an ValueError
-                # or deal with it averaging everything
-                # raise ValueError(
-                #     "encoder_output_state has length different than 2 or 4. "
-                #     "Please doublecheck your encoder"
-                # )
-                average_state = average(decoder_input_state)
-                decoder_input_state = [average_state, average_state]
-
-        elif (self.decoder_obj.cell_type == 'lstm' and
-              not isinstance(decoder_input_state, list)):
-            decoder_input_state = [decoder_input_state, decoder_input_state]
-
-        elif (self.decoder_obj.cell_type != 'lstm' and
-              isinstance(decoder_input_state, list)):
-            # here we have a couple options,
-            # either reuse part of the input encoder state,
-            # or just use its output
-            if len(decoder_input_state) == 2:
-                # using h and ignoring c
-                decoder_input_state = decoder_input_state[0]
-            elif len(decoder_input_state) == 4:
-                # using h and ignoring c
-                decoder_input_state + average(
-                    [decoder_input_state[0], decoder_input_state[2]]
-                )
-            else:
-                # no idea how lists of length different than 2 or 4
-                # might have been originated, we can either rise an ValueError
-                # or deal with it averaging everything
-                # raise ValueError(
-                #     "encoder_output_state has length different than 2 or 4. "
-                #     "Please doublecheck your encoder"
-                # )
-                decoder_input_state = average(decoder_input_state)
-            # this returns a [b, h]
-            # decoder_input_state = reduce_sequence(eo, self.reduce_input)
-
-        elif (self.decoder_obj.cell_type != 'lstm' and
-              not isinstance(decoder_input_state, list)):
-            # do nothing, we are good
-            pass
-
-        # at this point decoder_input_state is either a [b,h]
-        # or a list([b,h], [b,h]) if the decoder cell is an lstm
-        # but h may not be the same as the decoder state size,
-        # so we may need to project
-        if isinstance(decoder_input_state, list):
-            for i in range(len(decoder_input_state)):
-                if (decoder_input_state[i].shape[1] !=
-                        self.decoder_obj.state_size):
-                    decoder_input_state[i] = self.decoder_obj.project(
-                        decoder_input_state[i]
-                    )
-        else:
-            if decoder_input_state.shape[1] != self.decoder_obj.state_size:
-                decoder_input_state = self.decoder_obj.project(
-                    decoder_input_state
-                )
-
-        # make sure we are passing back the state tensors in a list
-        if not isinstance(decoder_input_state, list):
-            decoder_input_state = [decoder_input_state]
-
-        return decoder_input_state
 
     default_validation_metric = LOSS
 
@@ -605,7 +451,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 for cls in feature_metadata['idx2str']
             ]
 
-
     @staticmethod
     def calculate_overall_stats(
             test_stats,
@@ -664,7 +509,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 postprocessed[LAST_PREDICTIONS] = last_preds
 
             if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS), last_preds)
+                np.save(npy_filename.format(name, LAST_PREDICTIONS),
+                        last_preds)
 
             del result[LAST_PREDICTIONS]
 
@@ -720,7 +566,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 'weight': 1
             }
         )
-        set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
+        set_default_value(output_feature[LOSS], 'type',
+                          'softmax_cross_entropy')
         set_default_value(output_feature[LOSS], 'labels_smoothing', 0)
         set_default_value(output_feature[LOSS], 'class_weights', 1)
         set_default_value(output_feature[LOSS], 'robust_lambda', 0)
@@ -753,7 +600,3 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         'generator': SequenceGeneratorDecoder,
         'tagger': SequenceTaggerDecoder
     }
-
-
-
-
