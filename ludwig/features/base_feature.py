@@ -191,6 +191,11 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             logits_input['encoder_output_state'] = \
                 combiner_outputs['encoder_output_state']
         logits = self.logits(logits_input, target=target, training=training)
+
+        # most of the cases the output of self.logits is a tensor
+        # in some cases like for sequence features, it can be  tuple of
+        # logits, predictions, scores
+        # The first element will be the logits tensor
         if isinstance(logits, tuple):
             logits = logits[0]
 
