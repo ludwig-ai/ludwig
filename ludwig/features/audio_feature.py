@@ -366,8 +366,8 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.float32  # TODO: check that only tf.float32 is correct
-        # assert len(inputs.shape) == 2  # TODO: check correct inputs.shape as per sequence feature
+        assert inputs.dtype == tf.float32
+        assert len(inputs.shape) == 3
 
         inputs_exp = tf.cast(inputs, dtype=tf.float32)  # TODO: this should not be needed
         encoder_output = self.encoder_obj(
