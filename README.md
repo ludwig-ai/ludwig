@@ -83,7 +83,7 @@ If you intend to use text features and want to use [spaCy](http://spacy.io) base
 ```
 python -m spacy download <language_code>
 ```
-More details in the [User Guide](https://uber.github.io/ludwig/user_guide/#spacy-based-word-format-options).
+More details in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#spacy-based-word-format-options).
 
 Image features extra packages can be installed with `pip install ludwig[image]` and include:
 
@@ -180,7 +180,7 @@ If you prefer to use an RNN encoder and increase the number of epochs you want t
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-Refer to the [User Guide](https://uber.github.io/ludwig/user_guide/) to find out all the options available to you in the model definition and take a look at the [Examples](https://uber.github.io/ludwig/examples/) to see how you can use Ludwig for several different tasks.
+Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) to find out all the options available to you in the model definition and take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different tasks.
 
 After training, Ludwig will create a directory under `results` containing the trained model with its hyperparameters and summary statistics of the training process.
 You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
@@ -193,14 +193,14 @@ The commands will display a graph that looks like the following, where you can s
 
 ![Learning Curves](https://github.com/uber/ludwig/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
-Several visualizations are available, please refer to [Visualizations](https://uber.github.io/ludwig/user_guide/#visualizations) for more details.
+Several visualizations are available, please refer to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations) for more details.
 
 
 Distributed Training
 --------------------
 
 You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
-Refer to the [User Guide](https://uber.github.io/ludwig/user_guide/#distributed-training) for more details.
+Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training) for more details.
 
 
 Predict
@@ -249,7 +249,7 @@ model.close()
 ```
 
 `model_definition` is a dictionary containing the same information of the YAML file.
-More details are provided in the [User Guide](https://uber.github.io/ludwig/user_guide/) and in the [API documentation](https://uber.github.io/ludwig/api/).
+More details are provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) and in the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
 
 
 Extensibility
@@ -260,7 +260,7 @@ It is easy to add an additional data type that is not currently supported by add
 
 Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending on the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
-Refer to the [Developer Guide](https://uber.github.io/ludwig/developer_guide/) for further details.
+Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/) for further details.
 
 
 Full documentation
