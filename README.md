@@ -1,4 +1,4 @@
-![Ludwig logo](https://github.com/uber/ludwig/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
+![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
 Ludwig is a toolbox built on top of TensorFlow that allows users to train and test deep learning models without the need to write code.
 
@@ -191,7 +191,7 @@ ludwig visualize --visualization learning_curves --training_statistics path/to/t
 
 The commands will display a graph that looks like the following, where you can see loss and accuracy as functions of train iteration number:
 
-![Learning Curves](https://github.com/uber/ludwig/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
+![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
 Several visualizations are available, please refer to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations) for more details.
 
@@ -221,7 +221,7 @@ ludwig visualize --visualization compare_performance --test_statistics path/to/t
 
 will return a bar plot comparing the models on different measures:
 
-![Performance Comparison](https://github.com/uber/ludwig/raw/master/docs/images/compare_performance.png "Performance Comparison")
+![Performance Comparison](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/compare_performance.png "Performance Comparison")
 
 A handy `ludwig experiment` command that performs training and prediction one after the other is also available.
 
