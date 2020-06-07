@@ -163,6 +163,8 @@ class EmbedWeighted(Layer):
     ):
         super(EmbedWeighted, self).__init__()
 
+        self.vocab_length = len(vocab)
+
         if embeddings_on_cpu:
             with tf.device('/cpu:0'):
                 self.embeddings, self.embedding_size = embedding_matrix(
@@ -198,7 +200,7 @@ class EmbedWeighted(Layer):
         signed_input = tf.cast(tf.sign(tf.abs(inputs)), tf.int32)
         multiple_hot_indexes = tf.multiply(
             signed_input,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
+            tf.constant(np.array([range(self.vocab_length)], dtype=np.int32))
         )
         embedded = tf.nn.embedding_lookup(
             self.embeddings, multiple_hot_indexes, name='embeddings_lookup'
