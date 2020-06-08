@@ -19,7 +19,7 @@ import os
 from collections import OrderedDict
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from tensorflow.keras.metrics import MeanIoU
 
