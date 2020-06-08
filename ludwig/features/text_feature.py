@@ -207,7 +207,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
             inputs_exp, training=training, mask=mask
         )
 
-        return {'encoder_output': encoder_output}
+        return encoder_output
 
     @staticmethod
     def update_model_definition_with_metadata(
