@@ -16,7 +16,7 @@
 import random
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.data.dataset_synthesyzer import build_vocab
 from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder

@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
 from ludwig.features.feature_utils import SEQUENCE_TYPES
@@ -106,7 +106,14 @@ class ConcatCombiner(tf.keras.Model):
                 mask=mask
             )
 
-        return hidden
+        return_data = {'combiner_output': hidden}
+
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
+
+        return return_data
 
 
 class SequenceConcatCombiner:

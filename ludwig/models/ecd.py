@@ -46,7 +46,15 @@ class ECD(tf.keras.Model):
         self.eval_loss_metric = tf.keras.metrics.Mean()
 
     def call(self, inputs, training=None, mask=None):
-        # inputs is a dict feature_name -> tensor / ndarray
+        # parameter inputs is a dict feature_name -> tensor / ndarray
+        # or
+        # parameter (inputs, targets) where
+        #   inputs is a dict feature_name -> tensor/ndarray
+        #   targets is dict feature_name -> tensor/ndarray
+        if isinstance(inputs, tuple):
+            inputs, targets = inputs
+        else:
+            targets = None
         assert inputs.keys() == self.input_features.keys()
 
         encoder_outputs = {}
@@ -60,8 +68,19 @@ class ECD(tf.keras.Model):
         output_logits = {}
         output_last_hidden = {}
         for output_feature_name, decoder in self.output_features.items():
+            # use presence or absence of targets to signal training or prediction
+            if targets is not None:
+                # doing training
+                target_to_use = tf.cast(targets[output_feature_name], dtype=tf.int32)
+            else:
+                # doing prediction
+                target_to_use = None
+
             decoder_logits, decoder_last_hidden = decoder(
-                (combiner_outputs, output_last_hidden),
+                (
+                    (combiner_outputs, output_last_hidden),
+                    target_to_use
+                ),
                 training=training,
                 mask=mask
             )
@@ -109,7 +128,8 @@ class ECD(tf.keras.Model):
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                logits[of_name]
+                logits[of_name],
+                training=False
             )
 
         return predictions

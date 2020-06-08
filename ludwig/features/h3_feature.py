@@ -17,7 +17,7 @@
 import logging
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature

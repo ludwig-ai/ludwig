@@ -18,8 +18,7 @@ import logging
 import os
 
 import numpy as np
-import tensorflow.compat.v1 as tf
-from tensorflow.keras.metrics import Accuracy
+import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
@@ -31,8 +30,8 @@ from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
 from ludwig.models.modules.generic_encoders import PassthroughEncoder
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import CategoryAccuracy
+from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -165,12 +164,15 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         logits = inputs[LOGITS]
 

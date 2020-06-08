@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 

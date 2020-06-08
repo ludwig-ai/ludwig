@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.python.ops.losses.losses_impl import Reduction
-from tensorflow_addons.seq2seq import SequenceLoss as TfaSequenceLoss
 
 from ludwig.constants import *
+from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 
 #
@@ -43,7 +43,7 @@ class BWCEWLoss(tf.keras.losses.Loss):
 
         # weighted cross entropy
         train_loss = tf.nn.weighted_cross_entropy_with_logits(
-            targets=tf.cast(y_true, tf.float32),
+            labels=tf.cast(y_true, tf.float32),
             logits=logits,
             pos_weight=self.positive_class_weight
         )
@@ -148,7 +148,10 @@ class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
 class SequenceLoss(tf.keras.losses.Loss):
     def __init__(self, name=None, **kwargs):
         super(SequenceLoss, self).__init__(name=name)
-        self.loss_function = TfaSequenceLoss()
+        self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True,
+            reduction='none'
+        )
 
     def call(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
@@ -167,8 +170,6 @@ class SequenceLoss(tf.keras.losses.Loss):
                 ],
                 dtype=y_pred.dtype)
             y_pred = tf.concat([y_pred, pad], axis=1)
-            # obtain mask from y_true
-            mask = tf.cast(tf.greater(y_true, 0), tf.float32)
         elif y_pred.shape[1] > y_true.shape[1]:
             pad = tf.zeros(
                 [
@@ -178,15 +179,21 @@ class SequenceLoss(tf.keras.losses.Loss):
                 dtype=y_true.dtype
             )
             y_true = tf.concat([y_true, pad], axis=1)
-            # obtain mask from y_pred
-            mask = tf.cast(tf.reduce_any(tf.not_equal(y_pred, 0.0), 2), tf.float32)
-        else:
-            # obtain mask from y_true
-            mask = tf.cast(tf.greater(y_true, 0), tf.float32)
 
+        longest_sequence_length = tf.maximum(sequence_length_2D(y_true),
+                                         sequence_length_3D(y_pred))
+        longest_sequence_length += 1  # for EOS
+        longest_sequence_length = tf.minimum(longest_sequence_length, y_true.shape[1])
+        mask = tf.sequence_mask(
+            longest_sequence_length,
+            maxlen=y_true.shape[1],
+            dtype=tf.float32
+        )
         # compute loss based on valid time steps
-        loss = self.loss_function(y_true, y_pred, sample_weight=mask)
-        return loss  # vector of shape [batch_size,]
+        loss = self.loss_function(y_true, y_pred)
+        loss = loss * mask
+        loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
+        return loss
 
 
 # end of custom classes
@@ -312,7 +319,7 @@ def sampled_softmax_cross_entropy(
         tf.int64
     )
     if sampler == 'fixed_unigram':
-        sampled_values = tf.nn.fixed_unigram_candidate_sampler(
+        sampled_values = tf.random.fixed_unigram_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -322,7 +329,7 @@ def sampled_softmax_cross_entropy(
             distortion=distortion
         )
     elif sampler == 'uniform':
-        sampled_values = tf.nn.uniform_candidate_sampler(
+        sampled_values = tf.random.uniform_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -330,7 +337,7 @@ def sampled_softmax_cross_entropy(
             range_max=num_classes
         )
     elif sampler == 'log_uniform':
-        sampled_values = tf.nn.log_uniform_candidate_sampler(
+        sampled_values = tf.random.log_uniform_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -338,7 +345,7 @@ def sampled_softmax_cross_entropy(
             range_max=num_classes
         )
     elif sampler == 'learned_unigram':
-        sampled_values = tf.nn.fixed_unigram_candidate_sampler(
+        sampled_values = tf.random.fixed_unigram_candidate_sampler(
             true_classes=output_exp,
             num_true=1,
             num_sampled=negative_samples,
@@ -487,11 +494,12 @@ def weighted_softmax_cross_entropy(
             labels_smoothing
         )
     else:
-        train_loss = tf.losses.softmax_cross_entropy(
-            onehot_labels=vector_labels,
-            logits=logits,
-            label_smoothing=labels_smoothing,
-            reduction=Reduction.NONE)
+        train_loss = tf.keras.losses.categorical_crossentropy(
+            y_true=vector_labels,
+            y_pred=logits,
+            from_logits=True,
+            label_smoothing=labels_smoothing
+        )
     return train_loss
 
 

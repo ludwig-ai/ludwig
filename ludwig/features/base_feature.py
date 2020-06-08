@@ -16,9 +16,9 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
-from ludwig.constants import LOSS
+from ludwig.constants import *
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.utils.misc import merge_dict, get_from_registry
@@ -162,12 +162,20 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
     def call(
             self,
-            inputs,  # hidden, other_output_hidden
+            inputs,  # ((hidden, other_output_hidden), target)
             training=None,
             mask=None
     ):
-        combiner_output, other_output_hidden = inputs
+        # account for output feature target
+        if isinstance(inputs, tuple):
+            inputs, target = inputs
+        else:
+            target = None
 
+        combiner_outputs, other_output_hidden = inputs
+
+        # extract the combined hidden layer
+        combiner_output = combiner_outputs['combiner_output']
         hidden = self.prepare_decoder_inputs(
             combiner_output,
             other_output_hidden,
@@ -176,7 +184,20 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         )
 
         # ================ Predictions ================
-        logits = self.logits(hidden)
+        logits_input = {
+            HIDDEN: hidden
+        }
+        if 'encoder_output_state' in combiner_outputs:
+            logits_input['encoder_output_state'] = \
+                combiner_outputs['encoder_output_state']
+        logits = self.logits(logits_input, target=target, training=training)
+
+        # most of the cases the output of self.logits is a tensor
+        # in some cases like for sequence features, it can be  tuple of
+        # logits, predictions, scores
+        # The first element will be the logits tensor
+        if isinstance(logits, tuple):
+            logits = logits[0]
 
         return logits, hidden
 

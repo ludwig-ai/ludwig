@@ -31,7 +31,7 @@ import threading
 import time
 from collections import OrderedDict
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 # import tensorflow as tf2    # todo: tf2 port
 from tabulate import tabulate
 from tqdm import tqdm
@@ -105,7 +105,7 @@ class Model:
         self.hyperparameters['random_seed'] = random_seed
         self.hyperparameters.update(kwargs)
 
-        tf.set_random_seed(random_seed)
+        tf.random.set_seed(random_seed)
 
         self.ecd = ECD(input_features, combiner, output_features)
 
@@ -143,12 +143,12 @@ class Model:
     def train_step(self, model, optimizer, inputs, targets,
                    regularization_lambda=0.0):
         with tf.GradientTape() as tape:
-            logits = model(inputs, training=True)
+            logits = model((inputs, targets), training=True)
             loss, _ = model.train_loss(targets, logits, regularization_lambda)
         gradients = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        print('Training loss (for one batch): %s' % float(loss))
+        # print('Training loss (for one batch): %s' % float(loss))
 
         # todo tf2: make sure tensorboard works for batch  and epoch level metrics
         # model.update_metrics(targets, predictions)
