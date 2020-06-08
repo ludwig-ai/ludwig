@@ -318,27 +318,86 @@ def test_experiment_tied_weights(csv_filename):
         run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def test_experiment_attention(csv_filename):
-    # Machine translation with attention
+@pytest.mark.parametrize('dec_beam_width', [1, 3])
+@pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
+@pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize('enc_encoder', ENCODERS)
+def test_sequence_generator(
+        enc_encoder,
+        enc_cell_type,
+        dec_cell_type,
+        dec_attention,
+        dec_beam_width,
+        csv_filename
+):
+    # Define input and output features
     input_features = [
-        sequence_feature(encoder='rnn', cell_type='lstm', max_len=10)
+        sequence_feature(
+            min_len=5,
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )
     ]
     output_features = [
         sequence_feature(
+            min_len=5,
             max_len=10,
-            cell_type='lstm',
             decoder='generator',
-            attention='bahdanau'
+            cell_type='lstm',
+            attention='bahdanau',
+            reduce_input=None
         )
     ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    for attention in ['bahdanau', 'luong']:
-        output_features[0]['attention'] = attention
-        run_experiment(input_features, output_features, data_csv=rel_path)
+    # setup encoder specification
+    input_features[0]['encoder'] = enc_encoder
+    input_features[0]['cell_type'] = enc_cell_type
 
+    # setup decoder specification
+    output_features[0]['cell_type'] = dec_cell_type
+    output_features[0]['attention'] = dec_attention
+    output_features[0]['beam_width'] = dec_beam_width
+
+    # run the experiment
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
+def test_sequence_tagger(
+        enc_cell_type,
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        sequence_feature(
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            reduce_input=None
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # setup encoder specification
+    input_features[0]['cell_type'] = enc_cell_type
+
+    # run the experiment
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 def test_experiment_sequence_combiner(csv_filename):
     # Sequence combiner

@@ -15,7 +15,9 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
+from tensorflow import math
+from tensorflow import squeeze
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import AveragePooling1D
@@ -29,9 +31,6 @@ from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import MaxPool1D
 from tensorflow.keras.layers import MaxPool2D
 from tensorflow.keras.layers import ZeroPadding2D
-from tensorflow import math
-from tensorflow import squeeze
-
 
 logger = logging.getLogger(__name__)
 
@@ -211,32 +210,31 @@ class Conv1DStack(Layer):
         self.stack = []
 
         for i, layer in enumerate(self.layers):
-            with tf.variable_scope('conv_' + str(i)):
-                self.stack.append(
-                    Conv1DLayer(
-                        num_filters=layer['num_filters'],
-                        filter_size=layer['filter_size'],
-                        strides=layer['strides'],
-                        padding=layer['padding'],
-                        dilation_rate=layer['dilation_rate'],
-                        use_bias=layer['use_bias'],
-                        weights_initializer=layer['weights_initializer'],
-                        bias_initializer=layer['bias_initializer'],
-                        weights_regularizer=layer['weights_regularizer'],
-                        bias_regularizer=layer['bias_regularizer'],
-                        activity_regularizer=layer['activity_regularizer'],
-                        # weights_constraint=layer['weights_constraint'],
-                        # bias_constraint=layer['bias_constraint'],
-                        norm=layer['norm'],
-                        norm_params=layer['norm_params'],
-                        activation=layer['activation'],
-                        dropout_rate=layer['dropout_rate'],
-                        pool_function=layer['pool_function'],
-                        pool_size=layer['pool_size'],
-                        pool_strides=layer['pool_strides'],
-                        pool_padding=layer['pool_padding'],
-                    )
+            self.stack.append(
+                Conv1DLayer(
+                    num_filters=layer['num_filters'],
+                    filter_size=layer['filter_size'],
+                    strides=layer['strides'],
+                    padding=layer['padding'],
+                    dilation_rate=layer['dilation_rate'],
+                    use_bias=layer['use_bias'],
+                    weights_initializer=layer['weights_initializer'],
+                    bias_initializer=layer['bias_initializer'],
+                    weights_regularizer=layer['weights_regularizer'],
+                    bias_regularizer=layer['bias_regularizer'],
+                    activity_regularizer=layer['activity_regularizer'],
+                    # weights_constraint=layer['weights_constraint'],
+                    # bias_constraint=layer['bias_constraint'],
+                    norm=layer['norm'],
+                    norm_params=layer['norm_params'],
+                    activation=layer['activation'],
+                    dropout_rate=layer['dropout_rate'],
+                    pool_function=layer['pool_function'],
+                    pool_size=layer['pool_size'],
+                    pool_strides=layer['pool_strides'],
+                    pool_padding=layer['pool_padding'],
                 )
+            )
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -345,32 +343,31 @@ class ParallelConv1D(Layer):
         self.parallel_layers = []
 
         for i, layer in enumerate(self.layers):
-            with tf.variable_scope('conv_' + str(i)):
-                self.parallel_layers.append(
-                    Conv1DLayer(
-                        num_filters=layer['num_filters'],
-                        filter_size=layer['filter_size'],
-                        strides=layer['strides'],
-                        padding=layer['padding'],
-                        dilation_rate=layer['dilation_rate'],
-                        use_bias=layer['use_bias'],
-                        weights_initializer=layer['weights_initializer'],
-                        bias_initializer=layer['bias_initializer'],
-                        weights_regularizer=layer['weights_regularizer'],
-                        bias_regularizer=layer['bias_regularizer'],
-                        activity_regularizer=layer['activity_regularizer'],
-                        # weights_constraint=layer['weights_constraint'],
-                        # bias_constraint=layer['bias_constraint'],
-                        norm=layer['norm'],
-                        norm_params=layer['norm_params'],
-                        activation=layer['activation'],
-                        dropout_rate=layer['dropout_rate'],
-                        pool_function=layer['pool_function'],
-                        pool_size=layer['pool_size'],
-                        pool_strides=layer['pool_strides'],
-                        pool_padding=layer['pool_padding'],
-                    )
+            self.parallel_layers.append(
+                Conv1DLayer(
+                    num_filters=layer['num_filters'],
+                    filter_size=layer['filter_size'],
+                    strides=layer['strides'],
+                    padding=layer['padding'],
+                    dilation_rate=layer['dilation_rate'],
+                    use_bias=layer['use_bias'],
+                    weights_initializer=layer['weights_initializer'],
+                    bias_initializer=layer['bias_initializer'],
+                    weights_regularizer=layer['weights_regularizer'],
+                    bias_regularizer=layer['bias_regularizer'],
+                    activity_regularizer=layer['activity_regularizer'],
+                    # weights_constraint=layer['weights_constraint'],
+                    # bias_constraint=layer['bias_constraint'],
+                    norm=layer['norm'],
+                    norm_params=layer['norm_params'],
+                    activation=layer['activation'],
+                    dropout_rate=layer['dropout_rate'],
+                    pool_function=layer['pool_function'],
+                    pool_size=layer['pool_size'],
+                    pool_strides=layer['pool_strides'],
+                    pool_padding=layer['pool_padding'],
                 )
+            )
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -501,8 +498,7 @@ class ParallelConv1DStack(Layer):
         self.stack = []
 
         for i, parallel_layers in enumerate(self.stacked_parallel_layers):
-            with tf.variable_scope('parallel_conv_{}'.format(i)):
-                self.stack.append(ParallelConv1D(layers=parallel_layers))
+            self.stack.append(ParallelConv1D(layers=parallel_layers))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs

@@ -18,10 +18,11 @@ import logging
 import os
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.losses import MeanAbsoluteError
 from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.metrics import MeanAbsoluteError as MeanAbsoluteErrorMetric
+from tensorflow.keras.metrics import \
+    MeanAbsoluteError as MeanAbsoluteErrorMetric
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
@@ -29,7 +30,8 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.generic_decoders import Regressor
-from ludwig.models.modules.generic_encoders import PassthroughEncoder, DenseEncoder
+from ludwig.models.modules.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
 from ludwig.models.modules.metric_modules import ErrorScore
 from ludwig.models.modules.metric_modules import R2Score
 from ludwig.utils.misc import set_default_value
@@ -198,12 +200,15 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         logits = inputs[LOGITS]
         predictions = logits

@@ -17,7 +17,7 @@
 import logging
 import math
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.models.modules.embedding_modules import Embed
 from ludwig.models.modules.fully_connected_modules import FCStack

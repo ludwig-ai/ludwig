@@ -15,15 +15,14 @@
 # ==============================================================================
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.models.modules.loss_modules import BWCEWLoss
-from ludwig.models.modules.loss_modules import SigmoidCrossEntropyLoss
-from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.utils.tf_utils import sequence_length_2D
 from ludwig.utils.tf_utils import to_sparse
-from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,

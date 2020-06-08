@@ -17,7 +17,7 @@ import collections
 import inspect
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.compat.v1.nn.rnn_cell import MultiRNNCell, LSTMStateTuple
 from tensorflow.keras.layers import SimpleRNN, GRU, LSTM, Bidirectional, Layer
@@ -89,6 +89,7 @@ class RecurrentStack(Layer):
             'dropout': dropout,
             'recurrent_dropout': recurrent_dropout,
             'return_sequences': True,
+            'return_state': True,
         }
         signature = inspect.signature(rnn_layer_class.__init__)
         valid_args = set(signature.parameters.keys())
@@ -104,12 +105,15 @@ class RecurrentStack(Layer):
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
-
+        final_state = None
         for layer in self.layers:
-            hidden = layer(hidden, training=training)
-
-        return hidden
-
+            outputs = layer(hidden, training=training)
+            hidden = outputs[0]
+            final_state = outputs[1:]
+        if final_state:
+            if len(final_state) == 1:
+                final_state = final_state[0]
+        return hidden, final_state
 
 def get_cell_fun(cell_type):
     if cell_type == 'rnn':
@@ -137,7 +141,7 @@ def get_cell_fun(cell_type):
     return cell_fn
 
 
-class Projection(tf.layers.Layer):
+class Projection(tf.keras.layers.Layer):
     def __init__(self, projection_weights, projection_biases, name=None,
                  **kwargs):
         super(Projection, self).__init__(name=name, **kwargs)

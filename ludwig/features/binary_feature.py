@@ -18,7 +18,7 @@ import logging
 import os
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
@@ -26,7 +26,8 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.models.modules.generic_decoders import Regressor
-from ludwig.models.modules.generic_encoders import PassthroughEncoder, DenseEncoder
+from ludwig.models.modules.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
 from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -135,19 +136,22 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
         BinaryBaseFeature.__init__(self, feature)
         OutputFeature.__init__(self, feature)
         self.overwrite_defaults(feature)
-        self.decoder = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
     def logits(
             self,
-            inputs  # hidden
+            inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
-            inputs  # hidden
+            inputs,  # hidden
+            **kwargs
     ):
         logits = inputs[LOGITS]
 
