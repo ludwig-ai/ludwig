@@ -94,6 +94,9 @@ class SequenceGeneratorDecoder(Layer):
         else:
             self.vocab_size = self.num_classes
 
+        self.GO_SYMBOL = self.vocab_size
+        self.END_SYMBOL = 0
+
         self.project = Dense(state_size)
 
         self.decoder_embedding = Embedding(
@@ -113,19 +116,17 @@ class SequenceGeneratorDecoder(Layer):
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
 
-            self.decoder_rnncell = AttentionWrapper(self.decoder_rnncell,
-                                                    self.attention_mechanism,
-                                                    attention_layer_size=state_size)
-
-        # self.decoder = tfa.seq2seq.BasicDecoder(self.decoder_rnncell,  # todo tf2 code clean
-        #                                         sampler=self.sampler,
-        #                                         output_layer=self.dense_layer)
+            self.decoder_rnncell = AttentionWrapper(
+                self.decoder_rnncell,
+                self.attention_mechanism,
+                attention_layer_size=state_size
+            )
 
     def _logits_training(self, inputs, target, training=None):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
         encoder_end_state = self._prepare_decoder_input_state(inputs)
 
-        logits = self.decoder_training(
+        logits = self.decoder_teacher_forcing(
             input,
             target=target,
             encoder_end_state=encoder_end_state
@@ -265,22 +266,20 @@ class SequenceGeneratorDecoder(Layer):
 
         return decoder_initial_state
 
-    def decoder_training(
+    def decoder_teacher_forcing(
             self,
             encoder_output,
             target=None,
             encoder_end_state=None
     ):
         # ================ Setup ================
-        GO_SYMBOL = self.vocab_size
-        END_SYMBOL = 0
         batch_size = encoder_output.shape[0]
         encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # Prepare target for decoding
         target_sequence_length = sequence_length_2D(target)
-        start_tokens = tf.tile([GO_SYMBOL], [batch_size])
-        end_tokens = tf.tile([END_SYMBOL], [batch_size])
+        start_tokens = tf.tile([self.GO_SYMBOL], [batch_size])
+        end_tokens = tf.tile([self.END_SYMBOL], [batch_size])
         if self.is_timeseries:
             start_tokens = tf.cast(start_tokens, tf.float32)
             end_tokens = tf.cast(end_tokens, tf.float32)
@@ -334,22 +333,14 @@ class SequenceGeneratorDecoder(Layer):
             encoder_end_state=None,
             training=None
     ):
-
         # ================ Setup ================
-        GO_SYMBOL = self.vocab_size
-        END_SYMBOL = 0
         batch_size = encoder_output.shape[0]
         encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # ================ predictions =================
-        greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
-
-        decoder_input = tf.expand_dims(
-            [GO_SYMBOL] * batch_size, 1)
-        start_tokens = tf.fill([batch_size], GO_SYMBOL)
-        end_token = END_SYMBOL
-
-        decoder_emb_inp = self.decoder_embedding(decoder_input)
+        # decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
+        start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
+        end_token = self.END_SYMBOL
 
         # code sequence based on example found here
         # https://www.tensorflow.org/addons/api_docs/python/tfa/seq2seq/BeamSearchDecoder
@@ -383,7 +374,9 @@ class SequenceGeneratorDecoder(Layer):
         decoder = tfa.seq2seq.beam_search_decoder.BeamSearchDecoder(
             cell=self.decoder_rnncell,
             beam_width=self.beam_width,
-            output_layer=self.dense_layer)
+            output_layer=self.dense_layer
+
+        )
         # ================generate logits ==================
         maximum_iterations = self.max_sequence_length
 
@@ -400,8 +393,8 @@ class SequenceGeneratorDecoder(Layer):
             # following construct required to work around inconsistent handling
             # of encoder_end_state by tfa
             initial_state=decoder_initial_state \
-                if len(decoder_initial_state) != 1 else decoder_initial_state[
-                0]
+                if len(decoder_initial_state) != 1 \
+                else decoder_initial_state[0]
         )
 
         inputs = first_inputs
@@ -417,6 +410,8 @@ class SequenceGeneratorDecoder(Layer):
             np.array([]).reshape([batch_size, 0]),
             dtype=tf.int32  # todo tf2 need to change to tf.int64
         )
+        # create lengths tensor
+        lengths = tf.zeros([batch_size], dtype=tf.int32)
 
         # beam search
         for j in range(maximum_iterations):
@@ -431,36 +426,42 @@ class SequenceGeneratorDecoder(Layer):
                                                  axis=1)
             predictions = tf.concat([predictions, one_predicted_token], axis=1)
 
-        # todo we should first run all the iterations and only at the end
-        #  collect logits and predictions
+        # todo tf2: we should first run all the iterations and only at the end
+        #  collect logits and predictions. The current implementation is WRONG
 
-        # todo solve cases when predictions become 0 and then return
+        # todo tf2: solve cases when predictions become 0 and then return
         #  to be a number, which confuses the last_predictions later
 
-        return logits, predictions
+        last_predictions = tf.gather_nd(
+            predictions,
+            tf.stack(
+                [tf.range(tf.shape(predictions)[0]),
+                 tf.maximum(lengths - 1, 0)],
+                axis=1
+            ),
+            name='last_predictions_{}'.format(self.name)
+        )
 
-    def decoder_inference(
+        probabilities = tf.zeros_like(logits)
+
+        return logits, lengths, predictions, last_predictions, probabilities
+
+    def decoder_greedy(
             self,
             encoder_output,
             encoder_end_state=None,
             training=None
     ):
-
         # ================ Setup ================
-        GO_SYMBOL = self.vocab_size
-        END_SYMBOL = 0
         batch_size = encoder_output.shape[0]
         encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # ================ predictions =================
         greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
 
-        decoder_input = tf.expand_dims(
-            [GO_SYMBOL] * batch_size, 1)
-        start_tokens = tf.fill([batch_size], GO_SYMBOL)
-        end_token = END_SYMBOL
-
-        decoder_emb_inp = self.decoder_embedding(decoder_input)
+        # decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
+        start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
+        end_token = self.END_SYMBOL
 
         if self.attention_mechanism is not None:
             self.attention_mechanism.setup_memory(
@@ -509,6 +510,10 @@ class SequenceGeneratorDecoder(Layer):
             np.array([]).reshape([batch_size, 0]),
             dtype=tf.int32  # todo tf2 need to change to tf.int64
         )
+        # create lengths tensor
+        lengths = tf.zeros([batch_size], dtype=tf.int32)
+        already_finished = tf.cast(tf.zeros([batch_size], dtype=tf.int8),
+                                   dtype=tf.bool)
 
         # build up logits
         for j in range(maximum_iterations):
@@ -521,10 +526,41 @@ class SequenceGeneratorDecoder(Layer):
             one_prediction = tf.expand_dims(outputs.sample_id, axis=1)
             predictions = tf.concat([predictions, one_prediction], axis=1)
 
-        # todo solve cases when predictions become 0 and then return
-        #  to be a number, which confuses the last_predictions later
+            already_finished = tf.logical_or(already_finished, finished)
+            lengths += tf.cast(tf.logical_not(already_finished),
+                               dtype=tf.int32)
 
-        return logits, predictions
+        probabilities = tf.nn.softmax(
+            logits,
+            name='probabilities_{}'.format(self.name)
+        )
+
+        predictions = tf.cast(
+            predictions,
+            tf.int64,
+            name='predictions_{}'.format(self.name)
+        )
+
+        last_predictions = tf.gather_nd(
+            predictions,
+            tf.stack(
+                [tf.range(tf.shape(predictions)[0]),
+                 tf.maximum(lengths - 1, 0)],
+                axis=1
+            ),
+            name='last_predictions_{}'.format(self.name)
+        )
+
+        # mask logits
+        mask = tf.sequence_mask(
+            lengths,
+            maxlen=logits.shape[1],
+            dtype=tf.float32
+        )
+
+        logits = logits * mask[:, :, tf.newaxis]
+
+        return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
@@ -538,64 +574,36 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         if self.beam_width > 1:
-            logits, predictions = self.decoder_beam_search(
+            decoder_outputs = self.decoder_beam_search(
                 encoder_output,
                 encoder_end_state=encoder_output_state,
                 training=training
             )
         else:
-            logits, predictions = self.decoder_inference(
+            decoder_outputs = self.decoder_greedy(
                 encoder_output,
                 encoder_end_state=encoder_output_state,
                 training=training
             )
 
-        return logits, predictions
+        logits, lengths, preds, last_preds, probs = decoder_outputs
 
-    # def call(
-    #         self,
-    #         inputs,
-    #         training=None,
-    #         mask=None,
-    #         target=None
-    # ):
-    # input = inputs['hidden']
-    # try:
-    #     encoder_output_state = inputs['encoder_output_state']
-    # except KeyError:
-    #     encoder_output_state = None
-    #
-    # todo tf2 need to move this to sequence output feature class
-    # if len(input.shape) != 3 and self.attention_mechanism is not None:
-    #     raise ValueError(
-    #         'Encoder outputs rank is {}, but should be 3 [batch x sequence x hidden] '
-    #         'when attention mechanism is {}. '
-    #         'If you are using a sequential encoder or combiner consider setting reduce_output to None '
-    #         'and flatten to False if those parameters apply.'
-    #         'Also make sure theat reduce_input of output feature is None,'.format(
-    #             len(input.shape), self.attention_name))
-    # if len(input.shape) != 2 and self.attention_mechanism is None:
-    #     raise ValueError(
-    #         'Encoder outputs rank is {}, but should be 2 [batch x hidden] '
-    #         'when attention mechanism is {}. '
-    #         'Consider setting reduce_input of output feature to a value different from None.'.format(
-    #             len(input.shape), self.attention_name))
-    #
-    # batch_size = input.shape[0]
-    # print(">>>>>>batch_size", batch_size)
-    #
-    # # Assume we have a final state
-    # encoder_end_state = encoder_output_state
-    #
-    # # in case we don't have a final state set to default value
-    # if self.cell_type in 'lstm' and encoder_end_state is None:
-    #     encoder_end_state = [
-    #         tf.zeros([batch_size, self.rnn_units], tf.float32),
-    #         tf.zeros([batch_size, self.rnn_units], tf.float32)
-    #     ]
-    # elif self.cell_type in {'rnn', 'gru'} and encoder_end_state is None:
-    #     encoder_end_state = tf.zeros([batch_size, self.rnn_units], tf.float32)
+        return logits, lengths, preds, last_preds, probs
 
+    def _predictions_eval(
+            self,
+            inputs,  # encoder_output, encoder_output_state
+            training=None
+    ):
+        decoder_outputs = self.call(inputs, training=training)
+        logits, lengths, preds, last_preds, probs = decoder_outputs
+
+        return {
+            PREDICTIONS: preds,
+            LAST_PREDICTIONS: last_preds,
+            PROBABILITIES: probs,
+            LOGITS: logits
+        }
 
 class SequenceTaggerDecoder(Layer):
     def __init__(
@@ -649,7 +657,7 @@ class SequenceTaggerDecoder(Layer):
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)
 
-        return logits, None  # logits shape [batch_size, sequence_length, num_classes]
+        return logits  # logits shape [batch_size, sequence_length, num_classes]
 
     def _logits_training(
             self,
@@ -660,3 +668,52 @@ class SequenceTaggerDecoder(Layer):
             **kwarg
     ):
         return self.call(inputs, training=training, mask=mask)
+
+    def _predictions_eval(
+            self,
+            inputs,  # encoder_output, encoder_output_state
+            training=None
+    ):
+        logits = self.call(inputs, training=training)
+
+        probabilities = tf.nn.softmax(
+            logits,
+            name='probabilities_{}'.format(self.name)
+        )
+
+        predictions = tf.argmax(
+            logits,
+            -1,
+            name='predictions_{}'.format(self.name),
+            output_type=tf.int64
+        )
+
+        generated_sequence_lengths = sequence_length_2D(predictions)
+        last_predictions = tf.gather_nd(
+            predictions,
+            tf.stack(
+                [tf.range(tf.shape(predictions)[0]),
+                 tf.maximum(
+                     generated_sequence_lengths - 1,
+                     0
+                 )],
+                axis=1
+            ),
+            name='last_predictions_{}'.format(self.name)
+        )
+
+        # mask logits
+        mask = tf.sequence_mask(
+            generated_sequence_lengths,
+            maxlen=logits.shape[1],
+            dtype=tf.float32
+        )
+
+        logits = logits * mask[:, :, tf.newaxis]
+
+        return {
+            PREDICTIONS: predictions,
+            LAST_PREDICTIONS: last_predictions,
+            PROBABILITIES: probabilities,
+            LOGITS: logits
+        }
