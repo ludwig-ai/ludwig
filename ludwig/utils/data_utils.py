@@ -22,6 +22,7 @@ import os.path
 import pickle
 import random
 import re
+import functools
 
 import h5py
 import numpy as np
@@ -204,6 +205,7 @@ def load_pretrained_embeddings(embeddings_path, vocab):
     return embeddings_matrix
 
 
+@functools.lru_cache(1)
 def load_glove(file_path):
     logger.info('  Loading Glove format file {}'.format(file_path))
     embeddings = {}
