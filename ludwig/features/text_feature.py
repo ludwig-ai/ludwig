@@ -185,12 +185,13 @@ class TextBaseFeature(BaseFeature):
 
 class TextInputFeature(TextBaseFeature, SequenceInputFeature):
     encoder = 'parallel_cnn'
+    level = 'word'
+    length = 0
 
     def __init__(self, feature, encoder_obj=None):
         TextBaseFeature.__init__(self, feature)
         SequenceInputFeature.__init__(self, feature)
-        self.level = 'word'
-        self.length = 0
+
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -199,7 +200,8 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.int8
+        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
+               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
@@ -237,20 +239,19 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
 
 class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
     decoder = 'generator'
+    level = 'word'
+    max_sequence_length = 0
+    loss = {
+        'type': SOFTMAX_CROSS_ENTROPY,
+        'class_weights': 1,
+        'class_similarities_temperature': 0,
+        'weight': 1
+    }
+    num_classes = 0
 
     def __init__(self, feature, decoder_obj=None):
         TextBaseFeature.__init__(self, feature)
         SequenceOutputFeature.__init__(self, feature)
-        self.level = 'word'
-        self.max_sequence_length = 0
-        self.loss = {
-            'type': SOFTMAX_CROSS_ENTROPY,
-            'class_weights': 1,
-            'class_similarities_temperature': 0,
-            'weight': 1
-        }
-        self.num_classes = 0
-
         self.overwrite_defaults(feature)
         if decoder_obj:
             self.encoder_obj = decoder_obj
