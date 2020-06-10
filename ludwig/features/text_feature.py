@@ -38,9 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = TEXT
+    type = TEXT
 
     preprocessing_defaults = {
         'char_tokenizer': 'characters',
@@ -58,6 +56,9 @@ class TextBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters):
@@ -183,42 +184,32 @@ class TextBaseFeature(BaseFeature):
 
 
 class TextInputFeature(TextBaseFeature, SequenceInputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    encoder = 'parallel_cnn'
+    level = 'word'
+    length = 0
 
-        self.type = TEXT
+    def __init__(self, feature, encoder_obj=None):
+        TextBaseFeature.__init__(self, feature)
+        SequenceInputFeature.__init__(self, feature)
 
-        self.level = 'word'
-        self.length = 0
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        self.encoder = 'parallel_cnn'
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
+               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+        assert len(inputs.shape) == 2
 
-        encoder_parameters = self.overwrite_defaults(feature)
-        self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
-
-    def _get_input_placeholder(self):
-        return tf.placeholder(
-            tf.int32, shape=[None, None],
-            name='{}_placeholder'.format(self.feature_name)
+        inputs_exp = tf.cast(inputs, dtype=tf.int32)
+        encoder_output = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
         )
 
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  targets_placeholder: {0}'.format(placeholder))
-
-        return self.build_sequence_input(
-            placeholder,
-            self.encoder_obj,
-            regularizer,
-            dropout_rate,
-            is_training
-        )
+        return encoder_output
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -247,50 +238,25 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
 
 
 class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = TEXT
+    decoder = 'generator'
+    level = 'word'
+    max_sequence_length = 0
+    loss = {
+        'type': SOFTMAX_CROSS_ENTROPY,
+        'class_weights': 1,
+        'class_similarities_temperature': 0,
+        'weight': 1
+    }
+    num_classes = 0
 
-        self.level = 'word'
-        self.decoder = 'generator'
-        self.max_sequence_length = 0
-        self.loss = {
-            'type': SOFTMAX_CROSS_ENTROPY,
-            'class_weights': 1,
-            'class_similarities_temperature': 0,
-            'weight': 1
-        }
-        self.num_classes = 0
-
-        a = self.overwrite_defaults(feature)
-
-        self.decoder_obj = self.get_sequence_decoder(feature)
-
-    def _get_output_placeholder(self):
-        return tf.placeholder(
-            tf.int32,
-            [None, self.max_sequence_length],
-            name='{}_placeholder'.format(self.feature_name)
-        )
-
-    def build_output(
-            self,
-            hidden,
-            hidden_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=None,
-            **kwargs
-    ):
-        train_mean_loss, eval_loss, output_tensors = self.build_sequence_output(
-            self._get_output_placeholder(),
-            self.decoder_obj,
-            hidden,
-            hidden_size,
-            regularizer=regularizer,
-            kwarg=kwargs
-        )
-        return train_mean_loss, eval_loss, output_tensors
+    def __init__(self, feature, decoder_obj=None):
+        TextBaseFeature.__init__(self, feature)
+        SequenceOutputFeature.__init__(self, feature)
+        self.overwrite_defaults(feature)
+        if decoder_obj:
+            self.encoder_obj = decoder_obj
+        else:
+            self.encoder_obj = self.initialize_decoder(feature)
 
     default_validation_metric = LOSS
 
