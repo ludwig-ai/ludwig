@@ -265,7 +265,7 @@ class SequenceCombiner:
             **kwargs
     ):
         self.combiner = SequenceConcatCombiner(
-            reduce_output=False,
+            reduce_output=None,
             main_sequence_feature=main_sequence_feature
         )
 
