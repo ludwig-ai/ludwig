@@ -22,7 +22,7 @@ import pandas as pd
 
 from ludwig.api import LudwigModel
 from ludwig.constants import BINARY, SEQUENCE, TEXT, SET
-from ludwig.neuropod_export import export_neuropod
+from ludwig.utils.neuropod_utils import export_neuropod
 from ludwig.utils.strings_utils import str2bool
 from tests.integration_tests.utils import category_feature, binary_feature, \
     numerical_feature, text_feature, set_feature, vector_feature, \

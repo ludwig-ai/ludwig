@@ -104,7 +104,7 @@ def postprocess_for_neuropod(predicted, model_definition):
             postprocessed[feature_name + "_predictions"] = np.expand_dims(
                 np.array(predicted[feature_name]['predictions'], dtype='str'), 1
             )
-    # print(postprocessed, file=sys.stderr)
+
     return postprocessed
 
 
@@ -284,7 +284,7 @@ def export_neuropod(
                 "ludwig"  # Package everything in the python_root
             ],
         }],
-        entrypoint_package="ludwig.neuropod_export",
+        entrypoint_package="ludwig.utils.neuropod_utils",
         entrypoint="get_model",
         # test_deps=['torch', 'numpy'],
         skip_virtualenv=True,
