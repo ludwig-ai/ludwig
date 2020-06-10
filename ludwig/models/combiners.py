@@ -29,7 +29,6 @@ from ludwig.models.modules.sequence_encoders import StackedParallelCNN
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -148,7 +147,7 @@ class SequenceConcatCombiner:
         with tf.compat.v1.variable_scope(scope_name):
             # ================ Concat ================
             for fe_name, fe_properties in feature_encodings.items():
-                if fe_name is not self.main_sequence_feature:
+                if fe_name != self.main_sequence_feature:
                     if fe_properties['type'] in SEQUENCE_TYPES and \
                             len(fe_properties['representation'].shape) == 3:
                         # The following check makes sense when
@@ -266,13 +265,14 @@ class SequenceCombiner:
             **kwargs
     ):
         self.combiner = SequenceConcatCombiner(
-            reduce_output=reduce_output,
+            reduce_output=False,
             main_sequence_feature=main_sequence_feature
         )
 
         self.encoder_obj = get_from_registry(
             encoder, sequence_encoder_registry)(
             should_embed=False,
+            reduce_output=reduce_output,
             **kwargs
         )
 
