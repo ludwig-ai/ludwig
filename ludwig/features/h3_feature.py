@@ -34,15 +34,15 @@ H3_PADDING_VALUE = 7
 
 
 class H3BaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = H3
-
+    type = H3
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 576495936675512319
         # mode 1 edge 0 resolution 0 base_cell 0
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -66,9 +66,7 @@ class H3BaseFeature(BaseFeature):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
-            metadata,
-            preprocessing_parameters=None
+            data
     ):
         data[feature['name']] = np.array(
             [H3BaseFeature.h3_to_list(row)
@@ -77,56 +75,18 @@ class H3BaseFeature(BaseFeature):
 
 
 class H3InputFeature(H3BaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    encoder = 'embed'
 
-        self.encoder = 'embed'
+    def __init__(self, feature, encoder_obj=None):
+        H3BaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
 
-        encoder_parameters = self.overwrite_defaults(feature)
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        self.encoder_obj = self.get_h3_encoder(encoder_parameters)
-
-    def get_h3_encoder(self, encoder_parameters):
-        return get_from_registry(
-            self.encoder, h3_encoder_registry)(
-            **encoder_parameters
-        )
-
-    def _get_input_placeholder(self):
-        # None dimension is for dealing with variable batch size
-        return tf.placeholder(
-            tf.int32,
-            shape=[None, H3_VECTOR_LENGTH],
-            name=self.feature_name
-        )
-
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('placeholder: {0}'.format(placeholder))
-
-        feature_representation, feature_representation_size = self.encoder_obj(
-            placeholder,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
-        )
-        logging.debug('  feature_representation: {0}'.format(
-            feature_representation))
-
-        feature_representation = {
-            'name': self.feature_name,
-            'type': self.type,
-            'representation': feature_representation,
-            'size': feature_representation_size,
-            'placeholder': placeholder
-        }
-        return feature_representation
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -142,8 +102,8 @@ class H3InputFeature(H3BaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
 
 
-h3_encoder_registry = {
-    'embed': H3Embed,
-    'weighted_sum': H3WeightedSum,
-    'rnn': H3RNN
-}
+    encoder_registry = {
+        'embed': H3Embed,
+        'weighted_sum': H3WeightedSum,
+        'rnn': H3RNN
+    }
