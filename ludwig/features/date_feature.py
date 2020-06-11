@@ -26,7 +26,7 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.date_encoders import DateEmbed, DateWave
-from ludwig.utils.misc import set_default_value, get_from_registry
+from ludwig.utils.misc import set_default_value
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,8 @@ class DateBaseFeature(BaseFeature):
 
 class DateInputFeature(DateBaseFeature, InputFeature):
     def __init__(self, feature, encoder_obj=None):
-        super().__init__(feature)
+        DateBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
 
         self.encoder = 'embed'
 
@@ -129,57 +130,13 @@ class DateInputFeature(DateBaseFeature, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        assert inputs.dtype == tf.uint8
-        # assert len(inputs.shape) == 1
+        assert inputs.dtype == tf.int16
 
         inputs_encoded = self.encoder_obj(
             inputs, training=training, mask=mask
         )
 
         return inputs_encoded
-
-
-    # def get_date_encoder(self, encoder_parameters):
-    #     return get_from_registry(
-    #         self.encoder, date_encoder_registry)(
-    #         **encoder_parameters
-    #     )
-    #
-    # def _get_input_placeholder(self):
-    #     # None dimension is for dealing with variable batch size
-    #     return tf.placeholder(
-    #         tf.int32,
-    #         shape=[None, DATE_VECTOR_LENGTH],
-    #         name=self.feature_name
-    #     )
-    #
-    # def build_input(
-    #         self,
-    #         regularizer,
-    #         dropout_rate,
-    #         is_training=False,
-    #         **kwargs
-    # ):
-    #     placeholder = self._get_input_placeholder()
-    #     logger.debug('placeholder: {0}'.format(placeholder))
-    #
-    #     feature_representation, feature_representation_size = self.encoder_obj(
-    #         placeholder,
-    #         regularizer=regularizer,
-    #         dropout_rate=dropout_rate,
-    #         is_training=is_training
-    #     )
-    #     logging.debug('  feature_representation: {0}'.format(
-    #         feature_representation))
-    #
-    #     feature_representation = {
-    #         'name': self.feature_name,
-    #         'type': self.type,
-    #         'representation': feature_representation,
-    #         'size': feature_representation_size,
-    #         'placeholder': placeholder
-    #     }
-    #     return feature_representation
 
     @staticmethod
     def update_model_definition_with_metadata(
