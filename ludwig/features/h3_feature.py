@@ -95,9 +95,8 @@ class H3InputFeature(H3BaseFeature, InputFeature):
         # assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
         # assert len(inputs.shape) == 1
 
-        inputs_exp = inputs[:, tf.newaxis]
         inputs_encoded = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
+            inputs, training=training, mask=mask
         )
 
         return inputs_encoded
