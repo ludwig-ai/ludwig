@@ -18,6 +18,7 @@ import logging
 import math
 
 import tensorflow as tf
+from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.embedding_modules import Embed
 from ludwig.models.modules.fully_connected_modules import FCStack
@@ -25,7 +26,7 @@ from ludwig.models.modules.fully_connected_modules import FCStack
 logger = logging.getLogger(__name__)
 
 
-class DateEmbed:
+class DateEmbed(Layer):
 
     def __init__(
             self,
@@ -86,6 +87,8 @@ class DateEmbed:
                    is greater than 0).
             :type regularize: Boolean
         """
+        super(DateEmbed, self).__init__()
+
         self.year_fc = FCStack(
             num_layers=1,
             default_fc_size=1,
@@ -109,9 +112,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout_rate=dropout_rate,
             initializer=weights_initializer,
-            regularize=weights_regularizer
+            regularizer=weights_regularizer
         )
         self.embed_day = Embed(
             [str(i) for i in range(31)],
@@ -120,9 +123,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout_rate=dropout_rate,
             initializer=weights_initializer,
-            regularize=weights_regularizer
+            regularizer=weights_regularizer
         )
         self.embed_weekday = Embed(
             [str(i) for i in range(7)],
@@ -131,9 +134,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout_rate=dropout_rate,
             initializer=weights_initializer,
-            regularize=weights_regularizer
+            regularizer=weights_regularizer
         )
         self.embed_yearday = Embed(
             [str(i) for i in range(366)],
@@ -142,9 +145,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout_rate=dropout_rate,
             initializer=weights_initializer,
-            regularize=weights_regularizer
+            regularizer=weights_regularizer
         )
         self.embed_hour = Embed(
             [str(i) for i in range(24)],
@@ -153,9 +156,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout_rate=dropout_rate,
             initializer=weights_initializer,
-            regularize=weights_regularizer
+            regularizer=weights_regularizer
         )
         self.embed_minute = Embed(
             [str(i) for i in range(60)],
@@ -164,9 +167,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout_rate=dropout_rate,
             initializer=weights_initializer,
-            regularize=weights_regularizer
+            regularizer=weights_regularizer
         )
         self.embed_second = Embed(
             [str(i) for i in range(60)],
@@ -175,9 +178,9 @@ class DateEmbed:
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout_rate=dropout_rate,
             initializer=weights_initializer,
-            regularize=weights_regularizer
+            regularizer=weights_regularizer
         )
         self.fc_stack = FCStack(
             layers=fc_layers,
@@ -197,85 +200,64 @@ class DateEmbed:
             default_dropout_rate=dropout_rate,
         )
 
-    def __call__(
+    def call(
             self,
-            input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            inputs,
+            training=None,
+            mask=None
     ):
         """
             :param input_vector: The input vector fed into the encoder.
                    Shape: [batch x 19], type tf.int8
             :type input_vector: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
-        """
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
+            :param mask: bool specifying masked values
+            :type mask: bool
+         """
         # ================ Embeddings ================
-        with tf.variable_scope('year', reuse=tf.AUTO_REUSE):
-            scaled_year = self.year_fc(
-                tf.cast(input_vector[:, 0:1], tf.float32),
-                1,
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.variable_scope('month', reuse=tf.AUTO_REUSE):
-            embedded_month, _ = self.embed_month(
-                input_vector[:, 1] - 1,
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.variable_scope('day', reuse=tf.AUTO_REUSE):
-            embedded_day, _ = self.embed_day(
-                input_vector[:, 2] - 1,
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.variable_scope('weekday', reuse=tf.AUTO_REUSE):
-            embedded_weekday, _ = self.embed_weekday(
-                input_vector[:, 3],
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.variable_scope('yearday', reuse=tf.AUTO_REUSE):
-            embedded_yearday, _ = self.embed_yearday(
-                input_vector[:, 4] - 1,
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.variable_scope('hour', reuse=tf.AUTO_REUSE):
-            embedded_hour, _ = self.embed_hour(
-                input_vector[:, 5],
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.variable_scope('minute', reuse=tf.AUTO_REUSE):
-            embedded_minute, _ = self.embed_minute(
-                input_vector[:, 6],
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.variable_scope('second',
-                               reuse=tf.AUTO_REUSE):
-            embedded_second, _ = self.embed_second(
-                input_vector[:, 7],
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
+        input_vector = tf.cast(inputs, tf.int32)
+
+        scaled_year = self.year_fc(
+            tf.cast(input_vector[:, 0:1], tf.float32),
+            training=training,
+            mask=mask
+        )
+        embedded_month = self.embed_month(
+            input_vector[:, 1] - 1,
+            training=training,
+            mask=mask
+        )
+        embedded_day = self.embed_day(
+            input_vector[:, 2] - 1,
+            training=training,
+            mask=mask
+        )
+        embedded_weekday = self.embed_weekday(
+            input_vector[:, 3],
+            training=training,
+            mask=mask
+        )
+        embedded_yearday = self.embed_yearday(
+            input_vector[:, 4] - 1,
+            training=training,
+            mask=mask
+        )
+        embedded_hour = self.embed_hour(
+            input_vector[:, 5],
+            training=training,
+            mask=mask
+        )
+        embedded_minute = self.embed_minute(
+            input_vector[:, 6],
+            training=training,
+            mask=mask
+        )
+        embedded_second = self.embed_second(
+            input_vector[:, 7],
+            training=training,
+            mask=mask
+        )
 
         periodic_second_of_day = tf.sin(
             tf.cast(input_vector[:, 8:9], dtype=tf.float32)
@@ -291,22 +273,18 @@ class DateEmbed:
         )
 
         # ================ FC Stack ================
-        hidden_size = hidden.shape.as_list()[-1]
         logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,
-            hidden_size,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
-        hidden_size = hidden.shape.as_list()[-1]
 
-        return hidden, hidden_size
+        return {'encoder_output': hidden}
 
 
-class DateWave:
+class DateWave(Layer):
 
     def __init__(
             self,
@@ -365,6 +343,8 @@ class DateWave:
                    is greater than 0).
             :type regularize: Boolean
         """
+        super(DateWave, self).__init__()
+
         self.year_fc = FCStack(
             num_layers=1,
             default_fc_size=1,
@@ -399,34 +379,27 @@ class DateWave:
             default_dropout_rate=dropout_rate,
         )
 
-    def __call__(
+    def call(
             self,
-            input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            inputs,
+            training=None,
+            mask=None
     ):
         """
             :param input_vector: The input vector fed into the encoder.
                    Shape: [batch x 19], type tf.int8
             :type input_vector: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
-        """
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
+            :param mask: bool specifying masked values
+            :type mask: bool
+         """
         # ================ Embeddings ================
-        input_vector = tf.cast(input_vector, tf.float32)
+        input_vector = tf.cast(inputs, tf.float32)
         scaled_year = self.year_fc(
             input_vector[:, 0:1],
-            1,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
         periodic_month = tf.sin(input_vector[:, 1:2] * (2 * math.pi / 12))
         periodic_day = tf.sin(input_vector[:, 2:3] * (2 * math.pi / 31))
@@ -447,16 +420,12 @@ class DateWave:
             axis=1)
 
         # ================ FC Stack ================
-        hidden_size = hidden.shape.as_list()[-1]
         logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,
-            hidden_size,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
-        hidden_size = hidden.shape.as_list()[-1]
 
-        return hidden, hidden_size
+        return {'encoder_output': hidden}
