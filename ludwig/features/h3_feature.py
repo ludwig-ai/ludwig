@@ -66,7 +66,9 @@ class H3BaseFeature(BaseFeature):
     def add_feature_data(
             feature,
             dataset_df,
-            data
+            data,
+            metadata,
+            preprocessing_parameters
     ):
         data[feature['name']] = np.array(
             [H3BaseFeature.h3_to_list(row)
@@ -114,9 +116,8 @@ class H3InputFeature(H3BaseFeature, InputFeature):
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
 
-
-encoder_registry = {
-    'embed': H3Embed,
-    'weighted_sum': H3WeightedSum,
-    'rnn': H3RNN
-}
+    encoder_registry = {
+        'embed': H3Embed,
+        'weighted_sum': H3WeightedSum,
+        'rnn': H3RNN
+    }
