@@ -186,7 +186,7 @@ class H3Embed(Layer):
             :type input_vector: Tensor
             :param training: bool specifying if in training mode (important for dropout)
             :type training: bool
-            :param mask: bool specifying masked values
+            :param mask: bool tensor encoding masked timesteps in the input
             :type mask: bool
          """
         input_vector = tf.cast(inputs, tf.int32)
@@ -358,7 +358,7 @@ class H3WeightedSum(Layer):
             :type input_vector: Tensor
             :param training: bool specifying if in training mode (important for dropout)
             :type training: bool
-            :param mask: bool specifying masked values
+            :param mask: bool tensor encoding masked timesteps in the input
             :type mask: bool
          """
         # ================ Embeddings ================
@@ -389,7 +389,7 @@ class H3WeightedSum(Layer):
         return {'encoder_output': hidden}
 
 
-class H3RNN:
+class H3RNN(Layer):
 
     def __init__(
             self,
@@ -467,6 +467,8 @@ class H3RNN:
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
+        super(H3RNN, self).__init__()
+
         self.embedding_size = embedding_size
 
         self.h3_embed = H3Embed(
@@ -475,7 +477,7 @@ class H3RNN:
             dropout=dropout,
             initializer=initializer,
             regularize=regularize,
-            reduce_output=None
+            reduce_output='None'
         )
 
         self.recurrent_stack = RecurrentStack(
@@ -488,40 +490,38 @@ class H3RNN:
             reduce_output=reduce_output
         )
 
-    def __call__(
+    def call(
             self,
-            input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            inputs,
+            training=None,
+            mask=None
     ):
         """
             :param input_vector: The input vector fed into the encoder.
                    Shape: [batch x 19], type tf.int8
             :type input_vector: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
-        """
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
+            :param mask: bool tensor encoding masked timesteps in the input
+            :type mask: bool
+         """
+        input_vector = inputs
+
         # ================ Embeddings ================
-        embedded_h3, _ = self.h3_embed(
+        embedded_h3 = self.h3_embed(
             input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
 
         # ================ RNN ================
-        hidden, hidden_size = self.recurrent_stack(
-            embedded_h3,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
+        hidden, final_state = self.recurrent_stack(
+            embedded_h3['encoder_output'],
+            training=training,
+            mask=mask
         )
 
-        return hidden, hidden_size
+        return {
+            'encoder_output': hidden,
+            'encoder_output_state': final_state
+        }
