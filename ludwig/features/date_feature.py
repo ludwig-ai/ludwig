@@ -116,11 +116,11 @@ class DateBaseFeature(BaseFeature):
 
 
 class DateInputFeature(DateBaseFeature, InputFeature):
+    encoder = 'embed'
+
     def __init__(self, feature, encoder_obj=None):
         DateBaseFeature.__init__(self, feature)
         InputFeature.__init__(self)
-
-        self.encoder = 'embed'
 
         self.overwrite_defaults(feature)
         if encoder_obj:
