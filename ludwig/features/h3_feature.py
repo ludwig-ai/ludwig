@@ -88,6 +88,19 @@ class H3InputFeature(H3BaseFeature, InputFeature):
             self.encoder_obj = self.initialize_encoder(feature)
 
 
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        # assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
+        # assert len(inputs.shape) == 1
+
+        inputs_exp = inputs[:, tf.newaxis]
+        inputs_encoded = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
+        )
+
+        return inputs_encoded
+
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -102,8 +115,8 @@ class H3InputFeature(H3BaseFeature, InputFeature):
         set_default_value(input_feature, TIED, None)
 
 
-    encoder_registry = {
-        'embed': H3Embed,
-        'weighted_sum': H3WeightedSum,
-        'rnn': H3RNN
-    }
+encoder_registry = {
+    'embed': H3Embed,
+    'weighted_sum': H3WeightedSum,
+    'rnn': H3RNN
+}

@@ -22,7 +22,7 @@ import yaml
 
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import full_experiment
-from ludwig.features.h3_feature import h3_encoder_registry
+from ludwig.features.h3_feature import encoder_registry as h3_encoder_registry
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
