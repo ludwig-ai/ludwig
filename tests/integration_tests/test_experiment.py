@@ -23,6 +23,7 @@ import yaml
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import full_experiment
 from ludwig.predict import full_predict
+from ludwig.features.h3_feature import H3InputFeature
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import audio_feature
@@ -612,7 +613,7 @@ def test_experiment_date(csv_filename):
         input_features[0]['encoder'] = encoder
         run_experiment(input_features, output_features, data_csv=rel_path)
 
-@pytest.mark.parametrize('encoder', ['embed', 'weighted_sum', 'rnn'])
+@pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
 def test_experiment_h3(encoder, csv_filename):
     input_features = [h3_feature()]
     output_features = [binary_feature()]

@@ -319,12 +319,10 @@ class H3WeightedSum(Layer):
             dropout=dropout_rate,
             initializer=weights_initializer,
             regularize=weights_regularizer,
-            reduce_output='None',
+            reduce_output=None,
         )
 
-        # renamed from self.weights to self.h3_weights
-        # apparent conflict with `weight` attribute in super class
-        self.h3_weights = tf.Variable(
+        self.aggregation_weights = tf.Variable(
             get_initializer(weights_initializer)([19, 1])
         )
 
@@ -371,9 +369,9 @@ class H3WeightedSum(Layer):
 
         # ================ Weighted Sum ================
         if self.should_softmax:
-            weights = tf.nn.softmax(self.h3_weights)
+            weights = tf.nn.softmax(self.aggregation_weights)
         else:
-            weights = self.h3_weights
+            weights = self.aggregation_weights
 
         hidden = reduce_sum(embedded_h3['encoder_output'] * weights)
 
@@ -477,7 +475,7 @@ class H3RNN(Layer):
             dropout=dropout,
             initializer=initializer,
             regularize=regularize,
-            reduce_output='None'
+            reduce_output=None
         )
 
         self.recurrent_stack = RecurrentStack(
@@ -505,11 +503,10 @@ class H3RNN(Layer):
             :param mask: bool tensor encoding masked timesteps in the input
             :type mask: bool
          """
-        input_vector = inputs
 
         # ================ Embeddings ================
         embedded_h3 = self.h3_embed(
-            input_vector,
+            inputs,
             training=training,
             mask=mask
         )

@@ -92,8 +92,8 @@ class H3InputFeature(H3BaseFeature, InputFeature):
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
-        # assert inputs.dtype == tf.float32 or inputs.dtype == tf.float64
-        # assert len(inputs.shape) == 1
+        assert inputs.dtype == tf.uint8
+        assert len(inputs.shape) == 2
 
         inputs_encoded = self.encoder_obj(
             inputs, training=training, mask=mask
