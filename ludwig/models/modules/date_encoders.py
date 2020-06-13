@@ -64,28 +64,38 @@ class DateEmbed(Layer):
                    of the embedding matrix in regular memroy and the CPU is used
                    to resolve them, slightly slowing down the process
                    as a result of data transfer between CPU and GPU memory.
-            :param dropout: determines if there should be a dropout layer before
+            :param fc_layers: list of dictionaries containing the parameters of
+                    all the fully connected layers
+            :type fc_layers: List
+            :param num_fc_layers: Number of stacked fully connected layers
+            :type num_fc_layers: Integer
+            :param fc_size: Size of each layer
+            :type fc_size: Integer
+            :param use_bias: bool determines where to use a bias vector
+            :type use_bias: bool
+            :param weights_initializer: Initializer for the weights (aka kernel)
+                   matrix
+            :type weights_initializer: string
+            :param bias_initializer: Initializer for the bias vector
+            :type bias_initializer: string
+            :param weights_regularizer: regularizer applied to the weights
+                   (kernal) matrix
+            :type weights_regularizer: string
+            :param bias_regularizer: reguralizer function applied to biase vector.
+            :type bias_regularizer: string
+            :param activity_regularizer: Regularizer applied to the output of the
+                   layer (activation)
+            :type activity_regularizer: string
+            :param norm: type of normalization to use 'batch' or 'layer'
+            :type norm: string, default None
+            :param norm_params: parameters to pass to normalization function
+            :type norm_params: dictionary
+            :param activation: Activation function to use.
+            :type activation: string
+            :param dropout_rate: determines if there should be a dropout layer before
                    returning the encoder output.
-            :type dropout: Boolean
-            :param initializer: the initializer to use. If `None`, the default
-                   initialized of each variable is used (`glorot_uniform`
-                   in most cases). Options are: `constant`, `identity`, `zeros`,
-                    `ones`, `orthogonal`, `normal`, `uniform`,
-                    `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                    `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
-                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-                    Alternatively it is possible to specify a dictionary with
-                    a key `type` that identifies the type of initialzier and
-                    other keys for its parameters, e.g.
-                    `{type: normal, mean: 0, stddev: 0}`.
-                    To know the parameters of each initializer, please refer to
-                    TensorFlow's documentation.
-            :type initializer: str
-            :param regularize: if `True` the embedding wieghts are added to
-                   the set of weights that get reularized by a regularization
-                   loss (if the `regularization_lambda` in `training`
-                   is greater than 0).
-            :type regularize: Boolean
+            :type dropout_rate: float
+
         """
         super(DateEmbed, self).__init__()
 
@@ -306,42 +316,37 @@ class DateWave(Layer):
             **kwargs
     ):
         """
-            :param embedding_size: it is the maximum embedding size, the actual
-                   size will be `min(vocaularyb_size, embedding_size)`
-                   for `dense` representations and exacly `vocaularyb_size`
-                   for the `sparse` encoding, where `vocabulary_size` is
-                   the number of different strings appearing in the training set
-                   in the column the feature is named after (plus 1 for `<UNK>`).
-            :type embedding_size: Integer
-            :param embeddings_on_cpu: by default embedings matrices are stored
-                   on GPU memory if a GPU is used, as it allows
-                   for faster access, but in some cases the embedding matrix
-                   may be really big and this parameter forces the placement
-                   of the embedding matrix in regular memroy and the CPU is used
-                   to resolve them, slightly slowing down the process
-                   as a result of data transfer between CPU and GPU memory.
-            :param dropout: determines if there should be a dropout layer before
+            :param fc_layers: list of dictionaries containing the parameters of
+                    all the fully connected layers
+            :type fc_layers: List
+            :param num_fc_layers: Number of stacked fully connected layers
+            :type num_fc_layers: Integer
+            :param fc_size: Size of each layer
+            :type fc_size: Integer
+            :param use_bias: bool determines where to use a bias vector
+            :type use_bias: bool
+            :param weights_initializer: Initializer for the weights (aka kernel)
+                   matrix
+            :type weights_initializer: string
+            :param bias_initializer: Initializer for the bias vector
+            :type bias_initializer: string
+            :param weights_regularizer: regularizer applied to the weights
+                   (kernal) matrix
+            :type weights_regularizer: string
+            :param bias_regularizer: reguralizer function applied to biase vector.
+            :type bias_regularizer: string
+            :param activity_regularizer: Regularizer applied to the output of the
+                   layer (activation)
+            :type activity_regularizer: string
+            :param norm: type of normalization to use 'batch' or 'layer'
+            :type norm: string, default None
+            :param norm_params: parameters to pass to normalization function
+            :type norm_params: dictionary
+            :param activation: Activation function to use.
+            :type activation: string
+            :param dropout_rate: determines if there should be a dropout layer before
                    returning the encoder output.
-            :type dropout: Boolean
-            :param initializer: the initializer to use. If `None`, the default
-                   initialized of each variable is used (`glorot_uniform`
-                   in most cases). Options are: `constant`, `identity`, `zeros`,
-                    `ones`, `orthogonal`, `normal`, `uniform`,
-                    `truncated_normal`, `variance_scaling`, `glorot_normal`,
-                    `glorot_uniform`, `xavier_normal`, `xavier_uniform`,
-                    `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`.
-                    Alternatively it is possible to specify a dictionary with
-                    a key `type` that identifies the type of initialzier and
-                    other keys for its parameters, e.g.
-                    `{type: normal, mean: 0, stddev: 0}`.
-                    To know the parameters of each initializer, please refer to
-                    TensorFlow's documentation.
-            :type initializer: str
-            :param regularize: if `True` the embedding wieghts are added to
-                   the set of weights that get reularized by a regularization
-                   loss (if the `regularization_lambda` in `training`
-                   is greater than 0).
-            :type regularize: Boolean
+            :type dropout_rate: float
         """
         super(DateWave, self).__init__()
 
