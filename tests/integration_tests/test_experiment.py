@@ -22,8 +22,8 @@ import yaml
 
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import full_experiment
-from ludwig.features.h3_feature import h3_encoder_registry
 from ludwig.predict import full_predict
+from ludwig.features.h3_feature import H3InputFeature
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import audio_feature
@@ -613,16 +613,16 @@ def test_experiment_date(csv_filename):
         input_features[0]['encoder'] = encoder
         run_experiment(input_features, output_features, data_csv=rel_path)
 
-
-def test_experiment_h3(csv_filename):
+@pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
+def test_experiment_h3(encoder, csv_filename):
     input_features = [h3_feature()]
     output_features = [binary_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    for encoder in h3_encoder_registry:
-        input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+
+    input_features[0]['encoder'] = encoder
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 
 def test_experiment_vector_feature_1(csv_filename):
