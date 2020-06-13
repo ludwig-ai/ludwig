@@ -651,36 +651,35 @@ class Model:
                             )
                         )
 
-        #     if should_validate:
-        #         should_break = self.check_progress_on_validation(
-        #             progress_tracker,
-        #             validation_field,
-        #             validation_metric,
-        #             session,
-        #             model_weights_path,
-        #             model_hyperparameters_path,
-        #             reduce_learning_rate_on_plateau,
-        #             reduce_learning_rate_on_plateau_patience,
-        #             reduce_learning_rate_on_plateau_rate,
-        #             increase_batch_size_on_plateau_patience,
-        #             increase_batch_size_on_plateau,
-        #             increase_batch_size_on_plateau_max,
-        #             increase_batch_size_on_plateau_rate,
-        #             early_stop,
-        #             skip_save_model
-        #         )
-        #         if should_break:
-        #             break
-        #     else:
-        #         # there's no validation, so we save the model at each iteration
-        #         if is_on_master():
-        #             if not skip_save_model:
-        #                 self.save_weights(session, model_weights_path)
-        #                 self.save_hyperparameters(
-        #                     self.hyperparameters,
-        #                     model_hyperparameters_path
-        #                 )
-        #
+            if should_validate:
+                should_break = self.check_progress_on_validation(
+                    progress_tracker,
+                    validation_field,
+                    validation_metric,
+                    model_weights_path,
+                    model_hyperparameters_path,
+                    reduce_learning_rate_on_plateau,
+                    reduce_learning_rate_on_plateau_patience,
+                    reduce_learning_rate_on_plateau_rate,
+                    increase_batch_size_on_plateau_patience,
+                    increase_batch_size_on_plateau,
+                    increase_batch_size_on_plateau_max,
+                    increase_batch_size_on_plateau_rate,
+                    early_stop,
+                    skip_save_model
+                )
+                if should_break:
+                    break
+            # else:
+            #     # there's no validation, so we save the model at each iteration
+            #     if is_on_master():
+            #         if not skip_save_model:
+            #             self.save_weights(session, model_weights_path)
+            #             self.save_hyperparameters(
+            #                 self.hyperparameters,
+            #                 model_hyperparameters_path
+            #             )
+            #
         #     # ========== Save training progress ==========
         #     if is_on_master():
         #         if not skip_save_progress:
@@ -932,7 +931,7 @@ class Model:
             progress_tracker,
             validation_field,
             validation_metric,
-            session, model_weights_path,
+            model_weights_path,
             model_hyperparameters_path,
             reduce_learning_rate_on_plateau,
             reduce_learning_rate_on_plateau_patience,
