@@ -397,7 +397,19 @@ class H3RNN(Layer):
             state_size=10,
             cell_type='rnn',
             bidirectional=False,
-            dropout=False,
+            activation='tanh',
+            recurrent_activation='sigmoid',
+            use_bias=True,
+            unit_forget_bias=True,
+            weights_initializer='glorot_uniform',
+            recurrent_initializer='orthogonal',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            recurrent_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            dropout_rate=0.0,
+            recurrent_dropout=0.0,
             initializer=None,
             regularize=True,
             reduce_output='last',
@@ -434,9 +446,42 @@ class H3RNN(Layer):
                    encoding in the forward and backward direction and
                    their outputs will be concatenated.
             :type bidirectional: Boolean
-            :param dropout: determines if there should be a dropout layer before
+            :param activation: Activation function to use.
+            :type activation: string
+            :param recurrent_activation: Activation function to use for the
+                    recurrent step.
+            :type recurrent_activation: string
+            :param use_bias: bool determines where to use a bias vector
+            :type use_bias: bool
+            :param unit_forget_bias: if True add 1 to the bias forget gate at
+                   initialization.
+            :type unit_forget_bias: bool
+            :param weights_initializer: Initializer for the weights (aka kernel)
+                   matrix
+            :type weights_initializer: string
+            :param recurrent_initializer: Initializer for the recurrent weights
+                   matrix
+            :type recurrent_initializer: string
+            :param bias_initializer: Initializer for the bias vector
+            :type bias_initializer: string
+            :param weights_regularizer: regularizer applied to the weights
+                   (kernal) matrix
+            :type weights_regularizer: string
+            :param recurrent_regularizer: Regularizer for the recurrent weights
+                   matrix
+            :type recurrent_regularizer: string
+            :param bias_regularizer: reguralizer function applied to biase vector.
+            :type bias_regularizer: string
+            :param activity_regularizer: Regularizer applied to the output of the
+                   layer (activation)
+            :type activity_regularizer: string
+            :param dropout_rate: determines if there should be a dropout layer before
                    returning the encoder output.
-            :type dropout: Boolean
+            :type dropout_rate: float
+            :param recurrent_dropout: Float between 0.0 and 1.0.  Fraction of
+                   the units to drop for the linear transformation of the
+                   recurrent state.
+            :type recurrent_dropout: float
             :param initializer: the initializer to use. If `None` it uses
                    `glorot_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
@@ -472,7 +517,7 @@ class H3RNN(Layer):
         self.h3_embed = H3Embed(
             embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
+            dropout=dropout_rate,
             initializer=initializer,
             regularize=regularize,
             reduce_output=None
@@ -483,7 +528,19 @@ class H3RNN(Layer):
             cell_type=cell_type,
             num_layers=num_layers,
             bidirectional=bidirectional,
-            dropout=dropout,
+            activation=activation,
+            recurrent_activation=recurrent_activation,
+            use_bias=use_bias,
+            unit_forget_bias=unit_forget_bias,
+            weights_initializer=weights_initializer,
+            recurrent_initializer=recurrent_initializer,
+            bias_initializer=bias_initializer,
+            weights_regularizer=weights_regularizer,
+            recurrent_regularizer=recurrent_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            dropout=dropout_rate,
+            recurrent_dropout=recurrent_dropout,
             regularize=regularize,
             reduce_output=reduce_output
         )
