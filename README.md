@@ -266,4 +266,4 @@ Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer
 Full documentation
 ------------------
 
-You can find the full documentation [here](http://uber.github.io/ludwig/).
+You can find the full documentation [here](https://ludwig-ai.github.io/ludwig-docs).

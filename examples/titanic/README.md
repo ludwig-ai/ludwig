@@ -1,6 +1,6 @@
 # Kaggle Titanic Survivor Prediction
 
-This API example is based on [Ludwig's Kaggle Titanic example](https://uber.github.io/ludwig/examples/#kaggles-titanic-predicting-survivors) for predicting probability of surviving. 
+This API example is based on [Ludwig's Kaggle Titanic example](https://ludwig-ai.github.io/ludwig-docs/examples/#kaggles-titanic-predicting-survivors) for predicting probability of surviving. 
 
 ### Preparatory Steps
 * Create `data` directory
