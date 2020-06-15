@@ -601,17 +601,16 @@ def test_image_resizing_num_channel_handling(csv_filename):
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
 
-
-def test_experiment_date(csv_filename):
+@pytest.mark.parametrize('encoder', ['wave', 'embed'])
+def test_experiment_date(encoder, csv_filename):
     input_features = [date_feature()]
     output_features = [category_feature(vocab_size=2)]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoders = ['wave', 'embed']
-    for encoder in encoders:
-        input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+
+    input_features[0]['encoder'] = encoder
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 @pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
 def test_experiment_h3(encoder, csv_filename):
