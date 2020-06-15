@@ -141,7 +141,7 @@ def test_model_save_resume(generated_data, tmp_path):
         model_resume_path=exp_dir_name
     )
 
-    test_fp = os.path.join(tmp_path, 'data_to_predict.csv')
+    test_fp = os.path.join(str(tmp_path), 'data_to_predict.csv')
     generated_data.test_df.to_csv(
         test_fp,
         index=False
