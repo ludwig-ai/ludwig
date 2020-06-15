@@ -670,32 +670,32 @@ class Model:
                 )
                 if should_break:
                     break
-            # else:
-            #     # there's no validation, so we save the model at each iteration
-            #     if is_on_master():
-            #         if not skip_save_model:
-            #             self.save_weights(session, model_weights_path)
-            #             self.save_hyperparameters(
-            #                 self.hyperparameters,
-            #                 model_hyperparameters_path
-            #             )
-            #
-        #     # ========== Save training progress ==========
-        #     if is_on_master():
-        #         if not skip_save_progress:
-        #             self.save_weights(session, model_weights_progress_path)
-        #             progress_tracker.save(
-        #                 os.path.join(
-        #                     save_path,
-        #                     TRAINING_PROGRESS_FILE_NAME
-        #                 )
-        #             )
-        #             if skip_save_model:
-        #                 self.save_hyperparameters(
-        #                     self.hyperparameters,
-        #                     model_hyperparameters_path
-        #                 )
-        #
+            else:
+                # there's no validation, so we save the model at each iteration
+                if is_on_master():
+                    if not skip_save_model:
+                        self.save_weights(model_weights_path)
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path
+                        )
+
+            # ========== Save training progress ==========
+            if is_on_master():
+                if not skip_save_progress:
+                    self.save_weights(model_weights_progress_path)
+                    progress_tracker.save(
+                        os.path.join(
+                            save_path,
+                            TRAINING_PROGRESS_FILE_NAME
+                        )
+                    )
+                    if skip_save_model:
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path
+                        )
+
         #     if is_on_master():
         #         contrib_command("train_epoch_end", progress_tracker)
         #         logger.info('')
@@ -956,7 +956,7 @@ class Model:
                 validation_field][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
-                    self.save_weights(session, model_weights_path)
+                    self.save_weights(model_weights_path)
                     self.save_hyperparameters(
                         self.hyperparameters,
                         model_hyperparameters_path
@@ -1110,10 +1110,10 @@ class Model:
         # return collected_tensors
         pass
 
-    def save_weights(self, session, save_path):
+    def save_weights(self, save_path):
         # todo tf2: reintroduce functionality
-        # self.weights_save_path = self.saver.save(session, save_path)
-        pass
+        #self.weights_save_path = self.saver.save(save_path)
+        self.ecd.save_weights(save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
@@ -1158,10 +1158,11 @@ class Model:
         # builder.save()
         pass
 
-    def restore(self, session, weights_path):
+    def restore(self,weights_path):
         # todo tf2: reintroduce this functionality
         # self.saver.restore(session, weights_path)
-        pass
+        self.ecd.load_weights(weights_path)
+
 
     @staticmethod
     def load(load_path, use_horovod=False):
