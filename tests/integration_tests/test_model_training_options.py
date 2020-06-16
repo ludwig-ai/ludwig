@@ -69,24 +69,18 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
-    # specify model training options
-    kwargs = {
-        'output_directory':results_dir,
-        'model_definition': model_definition,
-        'skip_save_processed_input': True,
-        'skip_save_progress': True,
-        'skip_save_unprocessed_output': True,
-        'skip_save_model': True,
-        'skip_save_log': True
-
-    }
-
     # run experiment
     exp_dir_name = full_experiment(
         data_train_df=generated_data.train_df,
         data_validation_df=generated_data.validation_df,
         data_test_df=generated_data.test_df,
-        **kwargs
+        output_directory=str(results_dir),
+        model_definition=model_definition,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        skip_save_model=True,
+        skip_save_log=True
     )
 
     # test existence of required files
@@ -112,7 +106,63 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     # confirm early stopping
     assert (last_epoch - best_epoch - 1) == early_stop_value
 
+@pytest.mark.parametrize('skip_save_progress', [False, True])
+@pytest.mark.parametrize('skip_save_model', [False, True])
+def test_model_progress_save(
+        skip_save_progress,
+        skip_save_model,
+        generated_data,
+        tmp_path
+):
 
+    input_features, output_features = get_feature_definitions()
+
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {'type': 'concat', 'fc_size': 14},
+        'training': {'epochs': 10}
+    }
+
+    # create sub-directory to store results
+    results_dir = tmp_path / 'results'
+    results_dir.mkdir()
+
+    # run experiment
+    exp_dir_name = full_experiment(
+        data_train_df=generated_data.train_df,
+        data_validation_df=generated_data.validation_df,
+        data_test_df=generated_data.test_df,
+        output_directory=str(results_dir),
+        model_definition=model_definition,
+        skip_save_processed_input=True,
+        skip_save_progress=skip_save_progress,
+        skip_save_unprocessed_output=True,
+        skip_save_model=skip_save_model,
+        skip_save_log=True
+    )
+
+    #========== Check for required result data sets =============
+    if skip_save_model:
+        assert not os.path.isfile(
+            os.path.join(exp_dir_name, 'model', 'model_weights.index')
+        )
+    else:
+        assert os.path.isfile(
+            os.path.join(exp_dir_name, 'model', 'model_weights.index')
+        )
+
+    if skip_save_progress:
+        assert not os.path.isfile(
+            os.path.join(exp_dir_name, 'model', 'model_weights_progress.index')
+        )
+    else:
+        assert os.path.isfile(
+            os.path.join(exp_dir_name, 'model', 'model_weights_progress.index')
+        )
+
+
+# work-in-progress
 def test_model_save_resume(generated_data, tmp_path):
 
     input_features, output_features = get_feature_definitions()
@@ -152,4 +202,3 @@ def test_model_save_resume(generated_data, tmp_path):
     y_pred = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
 
     mse = mean_squared_error(y_pred, generated_data.test_df['y'])
-    pass
