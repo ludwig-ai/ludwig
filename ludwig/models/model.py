@@ -379,8 +379,8 @@ class Model:
 
         # ====== Setup session =======
         # todo tf2: reintroduce restoring weights
-        # if self.weights_save_path:
-        #    self.restore(session, self.weights_save_path)
+        if self.weights_save_path:
+           self.restore(self.weights_save_path)
 
         # todo tf2: reintroduce tensorboard logging
         # train_writer = None
@@ -1298,7 +1298,6 @@ class Model:
 
     def resume_session(
             self,
-            session,
             save_path,
             model_weights_path,
             model_weights_progress_path
