@@ -406,13 +406,12 @@ class Model:
                 model_weights_path
             )
             # todo tf3: reintroduce session resume
-            # if is_on_master():
-            #    self.resume_session(
-            #        session,
-            #        save_path,
-            #        model_weights_path,
-            #        model_weights_progress_path
-            #    )
+            if is_on_master():
+               self.resume_session(
+                   save_path,
+                   model_weights_path,
+                   model_weights_progress_path
+               )
         else:
             (
                 train_metrics,
@@ -1158,7 +1157,7 @@ class Model:
         # builder.save()
         pass
 
-    def restore(self,weights_path):
+    def restore(self, weights_path):
         # todo tf2: reintroduce this functionality
         # self.saver.restore(session, weights_path)
         self.ecd.load_weights(weights_path)
@@ -1308,9 +1307,9 @@ class Model:
             if pattern.match(file_path):
                 num_matching_files += 1
         if num_matching_files == 3:
-            self.restore(session, model_weights_progress_path)
+            self.restore(model_weights_progress_path)
         else:
-            self.restore(session, model_weights_path)
+            self.restore(model_weights_path)
 
     def reduce_learning_rate(
             self,
