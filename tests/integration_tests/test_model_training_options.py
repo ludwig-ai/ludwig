@@ -1,6 +1,7 @@
 import os.path
 import json
 from collections import namedtuple
+import shutil
 
 import pandas as pd
 import numpy as np
@@ -10,7 +11,7 @@ from sklearn.metrics import mean_squared_error
 import pytest
 
 from ludwig.experiment import full_experiment
-from ludwig.predict import full_predict
+from ludwig.predict import full_predict, predict
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
@@ -185,20 +186,17 @@ def test_model_save_resume(generated_data, tmp_path):
         output_directory=results_dir
     )
 
+    y_pred1 = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
+
     full_experiment(
         model_definition,
         data_train_df=generated_data.train_df,
+        data_validation_df=generated_data.validation_df,
+        data_test_df=generated_data.test_df,
         model_resume_path=exp_dir_name
     )
 
-    test_fp = os.path.join(str(tmp_path), 'data_to_predict.csv')
-    generated_data.test_df.to_csv(
-        test_fp,
-        index=False
-    )
+    y_pred2 = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
 
-    full_predict(os.path.join(exp_dir_name, 'model'), data_csv=test_fp)
+    assert np.all(np.isclose(y_pred1, y_pred2))
 
-    y_pred = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
-
-    mse = mean_squared_error(y_pred, generated_data.test_df['y'])
