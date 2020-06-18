@@ -82,7 +82,7 @@ def load_vocabulary(vocab_file):
                 line = line.split(' ')[0]
             vocabulary.append(line)
         return vocabulary
-        #return [line.strip() for line in f]
+        # return [line.strip() for line in f]
 
 
 def create_vocabulary(
@@ -746,6 +746,7 @@ class NorwegianLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
             filter_stopwords=True
         )
 
+
 class LithuanianTokenizer(BaseTokenizer):
     def __call__(self, text):
         return process_text(text, load_nlp_pipeline('lt'))
@@ -797,11 +798,270 @@ class LithuanianLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
             filter_stopwords=True
         )
 
+
+class DanishTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('da'))
+
+
+class DanishFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('da'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class DanishRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('da'),
+            filter_stopwords=True
+        )
+
+
+class DanishLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('da'), return_lemma=True)
+
+
+class DanishLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('da'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class DanishLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('da'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class PolishTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('pl'))
+
+
+class PolishFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pl'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class PolishRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pl'),
+            filter_stopwords=True
+        )
+
+
+class PolishLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('pl'), return_lemma=True)
+
+
+class PolishLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pl'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class PolishLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('pl'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class RomanianTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('ro'))
+
+
+class RomanianFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('ro'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class RomanianRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('ro'),
+            filter_stopwords=True
+        )
+
+
+class RomanianLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('ro'), return_lemma=True)
+
+
+class RomanianLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('ro'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class RomanianLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('ro'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class JapaneseTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('jp'))
+
+
+class JapaneseFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('jp'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class JapaneseRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('jp'),
+            filter_stopwords=True
+        )
+
+
+class JapaneseLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('jp'), return_lemma=True)
+
+
+class JapaneseLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('jp'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class JapaneseLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('jp'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
+class ChineseTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('zh'))
+
+
+class ChineseFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('zh'),
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class ChineseRemoveStopwordsTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('zh'),
+            filter_stopwords=True
+        )
+
+
+class ChineseLemmatizeTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(text, load_nlp_pipeline('zh'), return_lemma=True)
+
+
+class ChineseLemmatizeFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('zh'),
+            return_lemma=True,
+            filter_numbers=True,
+            filter_punctuation=True,
+            filter_short_tokens=True
+        )
+
+
+class ChineseLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
+    def __call__(self, text):
+        return process_text(
+            text,
+            load_nlp_pipeline('zh'),
+            return_lemma=True,
+            filter_stopwords=True
+        )
+
+
 class MultiTokenizer(BaseTokenizer):
     def __call__(self, text):
         return process_text(text, load_nlp_pipeline('xx'))
-
-
 
 
 class MultiFilterTokenizer(BaseTokenizer):
@@ -853,7 +1113,7 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 
 class BERTTokenizer(BaseTokenizer):
     def __init__(self, vocab_file=None, **kwargs):
-
+        super().__init__()
         if vocab_file is None:
             raise ValueError(
                 'Vocabulary file is required to initialize BERT tokenizer'
@@ -940,6 +1200,36 @@ tokenizer_registry = {
     'lithuanian_lemmatize': LithuanianLemmatizeTokenizer,
     'lithuanian_lemmatize_filter': LithuanianLemmatizeFilterTokenizer,
     'lithuanian_lemmatize_remove_stopwords': LithuanianLemmatizeRemoveStopwordsFilterTokenizer,
+    'danish_tokenize': DanishTokenizer,
+    'danish_tokenize_filter': DanishFilterTokenizer,
+    'danish_tokenize_remove_stopwords': DanishRemoveStopwordsTokenizer,
+    'danish_lemmatize': DanishLemmatizeTokenizer,
+    'danish_lemmatize_filter': DanishLemmatizeFilterTokenizer,
+    'danish_lemmatize_remove_stopwords': DanishLemmatizeRemoveStopwordsFilterTokenizer,
+    'polish_tokenize': PolishTokenizer,
+    'polish_tokenize_filter': PolishFilterTokenizer,
+    'polish_tokenize_remove_stopwords': PolishRemoveStopwordsTokenizer,
+    'polish_lemmatize': PolishLemmatizeTokenizer,
+    'polish_lemmatize_filter': PolishLemmatizeFilterTokenizer,
+    'polish_lemmatize_remove_stopwords': PolishLemmatizeRemoveStopwordsFilterTokenizer,
+    'romanian_tokenize': RomanianTokenizer,
+    'romanian_tokenize_filter': RomanianFilterTokenizer,
+    'romanian_tokenize_remove_stopwords': RomanianRemoveStopwordsTokenizer,
+    'romanian_lemmatize': RomanianLemmatizeTokenizer,
+    'romanian_lemmatize_filter': RomanianLemmatizeFilterTokenizer,
+    'romanian_lemmatize_remove_stopwords': RomanianLemmatizeRemoveStopwordsFilterTokenizer,
+    'japanese_tokenize': JapaneseTokenizer,
+    'japanese_tokenize_filter': JapaneseFilterTokenizer,
+    'japanese_tokenize_remove_stopwords': JapaneseRemoveStopwordsTokenizer,
+    'japanese_lemmatize': JapaneseLemmatizeTokenizer,
+    'japanese_lemmatize_filter': JapaneseLemmatizeFilterTokenizer,
+    'japanese_lemmatize_remove_stopwords': JapaneseLemmatizeRemoveStopwordsFilterTokenizer,
+    'chinese_tokenize': ChineseTokenizer,
+    'chinese_tokenize_filter': ChineseFilterTokenizer,
+    'chinese_tokenize_remove_stopwords': ChineseRemoveStopwordsTokenizer,
+    'chinese_lemmatize': ChineseLemmatizeTokenizer,
+    'chinese_lemmatize_filter': ChineseLemmatizeFilterTokenizer,
+    'chinese_lemmatize_remove_stopwords': ChineseLemmatizeRemoveStopwordsFilterTokenizer,
     'multi_tokenize': MultiTokenizer,
     'multi_tokenize_filter': MultiFilterTokenizer,
     'multi_tokenize_remove_stopwords': MultiRemoveStopwordsTokenizer,
