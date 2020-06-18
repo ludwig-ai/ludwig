@@ -25,7 +25,7 @@ from ludwig.models.modules.sequence_encoders import StackedParallelCNN
 from ludwig.models.modules.sequence_encoders import RNN
 from ludwig.models.modules.sequence_encoders import CNNRNN
 from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.data.dataset_synthesyzer import build_vocab
+from ludwig.data.dataset_synthesizer import build_vocab
 
 
 L1_REGULARIZER = regularizer_registry['l1'](0.1)
