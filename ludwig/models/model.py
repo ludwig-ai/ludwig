@@ -1665,7 +1665,7 @@ class Model:
                         'or since the learning rate was reduced'
                     )
 
-                progress_tracker._learning_rate *= (
+                progress_tracker.learning_rate *= (
                     reduce_learning_rate_on_plateau_rate
                 )
                 progress_tracker.last_improvement_epoch = (

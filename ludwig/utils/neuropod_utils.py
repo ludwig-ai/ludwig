@@ -111,7 +111,8 @@ def postprocess_for_neuropod(predicted, model_definition):
 def export_neuropod(
         ludwig_model_path,
         neuropod_path,
-        neuropod_model_name="ludwig_model"
+        neuropod_model_name="ludwig_model",
+        package_as_dir=False
 ):
     try:
         from neuropod.backends.python.packager import create_python_neuropod
@@ -287,6 +288,7 @@ def export_neuropod(
         entrypoint_package="ludwig.utils.neuropod_utils",
         entrypoint="get_model",
         # test_deps=['torch', 'numpy'],
+        package_as_zip=not package_as_dir,
         skip_virtualenv=True,
         input_spec=input_spec,
         output_spec=output_spec
@@ -332,6 +334,14 @@ def cli():
         help='path of the output Neuropod package file',
         default='ludwig_model'
     )
+    parser.add_argument(
+        '-d',
+        '--package_as_dir',
+        help='output the Neuropod package a directory '
+             '(by default it is a zip file)',
+        action='store_true',
+        default=False
+    )
 
     args = parser.parse_args()
 
@@ -344,7 +354,10 @@ def cli():
     print_ludwig('Export Neuropod', LUDWIG_VERSION)
 
     export_neuropod(
-        args.ludwig_model_path, args.neuropod_path, args.neuropod_model_name
+        args.ludwig_model_path,
+        args.neuropod_path,
+        args.neuropod_model_name,
+        args.package_as_dir
     )
 
 
