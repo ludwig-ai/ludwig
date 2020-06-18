@@ -32,7 +32,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def t_neuropod(csv_filename):
+def _test_neuropod(csv_filename):
     #######
     # Setup
     #######
