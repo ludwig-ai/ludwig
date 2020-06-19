@@ -168,11 +168,12 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
     ):
         # account for output feature target
         if isinstance(inputs, tuple):
-            inputs, target = inputs
+            local_inputs, target = inputs
         else:
+            local_inputs = inputs
             target = None
 
-        combiner_outputs, other_output_hidden = inputs
+        combiner_outputs, other_output_hidden = local_inputs
 
         # extract the combined hidden layer
         combiner_output = combiner_outputs['combiner_output']
@@ -389,6 +390,5 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             training=training,
             mask=mask
         )
-        other_output_features[self.feature_name] = feature_hidden
 
         return feature_hidden

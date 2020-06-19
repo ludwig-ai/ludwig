@@ -171,7 +171,7 @@ def test_model_save_resume(generated_data, tmp_path):
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 30, 'early_stop': 5}
+        'training': {'epochs': 30, 'early_stop': 3}
     }
 
     # create sub-directory to store results

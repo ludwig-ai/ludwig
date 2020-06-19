@@ -1112,7 +1112,7 @@ class Model:
     def save_weights(self, save_path):
         # todo tf2: reintroduce functionality
         #self.weights_save_path = self.saver.save(save_path)
-        self.ecd.save_weights(save_path)
+        self.ecd.save(save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
@@ -1160,7 +1160,7 @@ class Model:
     def restore(self, weights_path):
         # todo tf2: reintroduce this functionality
         # self.saver.restore(session, weights_path)
-        self.ecd.load_weights(weights_path)
+        tf.keras.models.load_model(weights_path)
 
 
     @staticmethod
