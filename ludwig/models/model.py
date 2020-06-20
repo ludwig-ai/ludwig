@@ -24,15 +24,18 @@ from __future__ import print_function
 import copy
 import logging
 import os
+import os.path
+import pickle
 import re
 import signal
 import sys
 import threading
+import tempfile
 import time
 from collections import OrderedDict
 
 import tensorflow as tf
-# import tensorflow as tf2    # todo: tf2 port
+
 from tabulate import tabulate
 from tqdm import tqdm
 
@@ -55,9 +58,6 @@ from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
-
-from ludwig.features.numerical_feature import MSEMetric  #todo tf2 testing code
-from ludwig.models.modules.metric_modules import ErrorScore, R2Score
 
 logger = logging.getLogger(__name__)
 
@@ -1113,8 +1113,29 @@ class Model:
         pass
 
     def save_weights(self, save_path):
-        # todo tf2: reintroduce functionality
-        #self.weights_save_path = self.saver.save(save_path)
+        # collect all custom metrics used in output features
+        custom_objects = {}
+        for of_name, of in self.ecd.output_features.items():
+            for mfn_name, mfn_obj in of.metric_functions.items():
+                # if module name starts with 'ludwig' this is a custom metric
+                if mfn_obj.__class__.__module__[:6] == 'ludwig':
+                    custom_objects.update(
+                        {mfn_obj.__class__.__name__: mfn_obj.__class__}
+                    )
+        # create pickle of the custom object and save pickled
+        # file in the saved model 'asset' directory
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            custom_objects_fp = os.path.join(tmpdirname, "ludwig_custom_objects.pkl")
+            with open(custom_objects_fp, "wb") as f:
+                pickle.dump(custom_objects, f)
+            # add pickle file to trackable object
+            trackable_obj = tf.train.Checkpoint()
+            custom_objects_asset = tf.saved_model.Asset(custom_objects_fp)
+            trackable_obj.custom_objects_asset = custom_objects_asset
+            # save trackable object in the saved model asset directory
+            tf.saved_model.save(trackable_obj, save_path)
+
+        # save model
         self.ecd.save(save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
@@ -1161,14 +1182,18 @@ class Model:
         pass
 
     def restore(self, weights_path):
-        # todo tf2: clean up debugging code
+        # retrieve custom objects
+        customs_objects_fp = os.path.join(
+            weights_path,
+            'assets',
+            'ludwig_custom_objects.pkl'
+        )
+        with open(customs_objects_fp, 'rb') as f:
+            custom_objects = pickle.load(f)
+
         tf.keras.models.load_model(
             weights_path,
-            custom_objects={
-                'MSEMetric': MSEMetric,
-                'ErrorScore': ErrorScore,
-                'R2Score': R2Score
-            }
+            custom_objects=custom_objects
         )
 
 
