@@ -141,7 +141,7 @@ def test_model_progress_save(
         skip_save_unprocessed_output=True,
         skip_save_model=skip_save_model,
         skip_save_log=True
-    )˚
+    )
 
     #========== Check for required result data sets =============
     if skip_save_model:
