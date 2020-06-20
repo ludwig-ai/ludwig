@@ -43,7 +43,7 @@ class R2Score(tf.keras.metrics.Metric):
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, name='r2_score'):
+    def __init__(self, name='r2_score', **kwargs):
         super(R2Score, self).__init__(name=name)
         self._reset_states()
 
@@ -81,7 +81,7 @@ class ErrorScore(tf.keras.metrics.Metric):
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, name='error_score'):
+    def __init__(self, name='error_score', **kwargs):
         super(ErrorScore, self).__init__(name=name)
         self._reset_states()
 
