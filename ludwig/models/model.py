@@ -56,6 +56,9 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 
+from ludwig.features.numerical_feature import MSEMetric  #todo tf2 testing code
+from ludwig.models.modules.metric_modules import ErrorScore, R2Score
+
 logger = logging.getLogger(__name__)
 
 tf.config.experimental_run_functions_eagerly(True)
@@ -1158,9 +1161,15 @@ class Model:
         pass
 
     def restore(self, weights_path):
-        # todo tf2: reintroduce this functionality
-        # self.saver.restore(session, weights_path)
-        tf.keras.models.load_model(weights_path)
+        # todo tf2: clean up debugging code
+        tf.keras.models.load_model(
+            weights_path,
+            custom_objects={
+                'MSEMetric': MSEMetric,
+                'ErrorScore': ErrorScore,
+                'R2Score': R2Score
+            }
+        )
 
 
     @staticmethod
