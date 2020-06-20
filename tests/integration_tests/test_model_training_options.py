@@ -28,7 +28,7 @@ def get_feature_definitions():
     return input_features, output_features
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def generated_data():
     # function generates simple training data that guarantee convergence
     # within 30 epochs for suitable model definition
@@ -121,7 +121,7 @@ def test_model_progress_save(
     model_definition = {
         'input_features': input_features,
         'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
+        'combiner': {'type': 'concat'},
         'training': {'epochs': 10}
     }
 
@@ -141,25 +141,25 @@ def test_model_progress_save(
         skip_save_unprocessed_output=True,
         skip_save_model=skip_save_model,
         skip_save_log=True
-    )
+    )˚
 
     #========== Check for required result data sets =============
     if skip_save_model:
-        assert not os.path.isfile(
-            os.path.join(exp_dir_name, 'model', 'model_weights.index')
+        assert not os.path.isdir(
+            os.path.join(exp_dir_name, 'model', 'model_weights')
         )
     else:
-        assert os.path.isfile(
-            os.path.join(exp_dir_name, 'model', 'model_weights.index')
+        assert os.path.isdir(
+            os.path.join(exp_dir_name, 'model', 'model_weights')
         )
 
     if skip_save_progress:
-        assert not os.path.isfile(
-            os.path.join(exp_dir_name, 'model', 'model_weights_progress.index')
+        assert not os.path.isdir(
+            os.path.join(exp_dir_name, 'model', 'model_weights_progress')
         )
     else:
-        assert os.path.isfile(
-            os.path.join(exp_dir_name, 'model', 'model_weights_progress.index')
+        assert os.path.isdir(
+            os.path.join(exp_dir_name, 'model', 'model_weights_progress')
         )
 
 
@@ -170,8 +170,8 @@ def test_model_save_resume(generated_data, tmp_path):
     model_definition = {
         'input_features': input_features,
         'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
-        'training': {'epochs': 30, 'early_stop': 3}
+        'combiner': {'type': 'concat'},
+        'training': {'epochs': 30, 'early_stop': 3, 'batch_size': 16}
     }
 
     # create sub-directory to store results
