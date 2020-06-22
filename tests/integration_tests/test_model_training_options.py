@@ -10,8 +10,10 @@ from sklearn.metrics import mean_squared_error
 
 import pytest
 
+import tensorflow as tf
 from ludwig.experiment import full_experiment
-from ludwig.predict import full_predict, predict
+from ludwig.api import LudwigModel
+
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
@@ -122,7 +124,7 @@ def test_model_progress_save(
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat'},
-        'training': {'epochs': 10}
+        'training': {'epochs': 5}
     }
 
     # create sub-directory to store results
@@ -171,7 +173,7 @@ def test_model_save_resume(generated_data, tmp_path):
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat'},
-        'training': {'epochs': 30, 'early_stop': 3, 'batch_size': 16}
+        'training': {'epochs': 10, 'early_stop': 0, 'batch_size': 16}
     }
 
     # create sub-directory to store results
@@ -183,10 +185,12 @@ def test_model_save_resume(generated_data, tmp_path):
         data_train_df=generated_data.train_df,
         data_validation_df=generated_data.validation_df,
         data_test_df=generated_data.test_df,
-        output_directory=results_dir
+        output_directory='results' #results_dir
     )
 
     y_pred1 = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
+
+    model_definition['training']['epochs'] = 20
 
     full_experiment(
         model_definition,
@@ -200,3 +204,41 @@ def test_model_save_resume(generated_data, tmp_path):
 
     assert np.all(np.isclose(y_pred1, y_pred2))
 
+# work-in-progress
+# def test_model_save_resume(generated_data, tmp_path):
+#
+#     input_features, output_features = get_feature_definitions()
+#     model_definition = {
+#         'input_features': input_features,
+#         'output_features': output_features,
+#         'combiner': {'type': 'concat'},
+#         'training': {'epochs': 3, 'batch_size': 16}
+#     }
+#
+#     # create sub-directory to store results
+#     results_dir = tmp_path / 'results'
+#     results_dir.mkdir()
+#
+#     # perform inital model training
+#     ludwig_model = LudwigModel(model_definition)
+#     train_stats = ludwig_model.train(
+#         data_train_df=generated_data.train_df,
+#         data_validation_df=generated_data.validation_df,
+#         data_test_df=generated_data.test_df,
+#         output_directory='results' #results_dir
+#     )
+#
+#     # load saved model definition
+#     ludwig_model2 = LudwigModel.load(
+#         os.path.join(ludwig_model.exp_dir_name, 'model')
+#     )
+#
+#     for _, i_feature in ludwig_model2.model.ecd.input_features.items():
+#         i_feature.encoder_obj(None, training=False)
+#
+#     ludwig_model2.model.ecd.combiner({'x': {'encoder_output': [None]}}, training=False)
+#
+#     for _, o_feature in ludwig_model2.model.ecd.output_features.items():
+#         o_feature.decoder_obj(None, training=False)
+#
+#     pass
