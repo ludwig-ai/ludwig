@@ -3017,6 +3017,10 @@ def frequency_vs_f1(
             f1_reordered = f1_np[f1_sorted_indices[::-1]][
                            :len(f1_sorted_indices)]
 
+            labels_np = np.array(labels)
+            labels_reordered = labels_np[f1_sorted_indices[::-1]][
+                           :len(f1_sorted_indices)]
+
             filename = None
             if output_directory:
                 os.makedirs(output_directory, exist_ok=True)
@@ -3028,7 +3032,7 @@ def frequency_vs_f1(
                 output_feature_name_frequency_reordered,
                 'F1 score',
                 'frequency',
-                labels=labels,
+                labels=labels_reordered,
                 title='{} F1 Score vs Frequency {}'.format(
                     model_name_name,
                     output_feature_name
@@ -3042,19 +3046,18 @@ def frequency_vs_f1(
                     frequency_sorted_indices[::-1]
                 ][:len(f1_sorted_indices)]
 
-            f1_reordered = np.zeros(
-                len(output_feature_name_frequency_reordered))
+            labels_reordered = labels_np[frequency_sorted_indices[::-1]][
+                           :len(frequency_sorted_indices)]
 
-            for idx in frequency_sorted_indices[::-1]:
-                if idx < len(f1_np):
-                    f1_reordered[idx] = f1_np[idx]
-
+            f1_reordered = f1_np[frequency_sorted_indices[::-1]][
+                           :len(frequency_sorted_indices)]
+                           
             visualization_utils.double_axis_line_plot(
                 output_feature_name_frequency_reordered,
                 f1_reordered,
                 'frequency',
                 'F1 score',
-                labels=labels,
+                labels=labels_reordered,
                 title='{} F1 Score vs Frequency {}'.format(
                     model_name_name,
                     output_feature_name
