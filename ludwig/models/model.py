@@ -452,6 +452,7 @@ class Model:
 
         # ================ Training Loop ================
         while progress_tracker.epoch < self.epochs:
+            print(">>>> progress tracker epoch", progress_tracker.epoch)
             # epoch init
             start_time = time.time()
             if is_on_master():
@@ -1113,30 +1114,8 @@ class Model:
         pass
 
     def save_weights(self, save_path):
-        # collect all custom metrics used in output features
-        custom_objects = {}
-        for of_name, of in self.ecd.output_features.items():
-            for mfn_name, mfn_obj in of.metric_functions.items():
-                # if module name starts with 'ludwig' this is a custom metric
-                if mfn_obj.__class__.__module__[:6] == 'ludwig':
-                    custom_objects.update(
-                        {mfn_obj.__class__.__name__: mfn_obj.__class__}
-                    )
-        # create pickle of the custom object and save pickled
-        # file in the saved model 'asset' directory
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            custom_objects_fp = os.path.join(tmpdirname, "ludwig_custom_objects.pkl")
-            with open(custom_objects_fp, "wb") as f:
-                pickle.dump(custom_objects, f)
-            # add pickle file to trackable object
-            trackable_obj = tf.train.Checkpoint()
-            custom_objects_asset = tf.saved_model.Asset(custom_objects_fp)
-            trackable_obj.custom_objects_asset = custom_objects_asset
-            # save trackable object in the saved model asset directory
-            tf.saved_model.save(trackable_obj, save_path)
-
         # save model
-        self.ecd.save(save_path)
+        self.ecd.save_weights(save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
@@ -1182,19 +1161,9 @@ class Model:
         pass
 
     def restore(self, weights_path):
-        # retrieve custom objects
-        customs_objects_fp = os.path.join(
-            weights_path,
-            'assets',
-            'ludwig_custom_objects.pkl'
-        )
-        with open(customs_objects_fp, 'rb') as f:
-            custom_objects = pickle.load(f)
-
-        tf.keras.models.load_model(
-            weights_path,
-            custom_objects=custom_objects
-        )
+        self.ecd.load_weights(weights_path)
+        weights = self.ecd.get_weights()
+        pass
 
 
     @staticmethod
