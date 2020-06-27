@@ -1014,19 +1014,19 @@ def double_axis_line_plot(
         ax1.set_xticklabels(labels, rotation=45, ha='right')
         ax1.set_xticks(np.arange(len(labels)))
 
-    ax1.set_ylabel(y2_name, color=colors[1])
+    ax1.set_ylabel(y1_name, color=colors[1])
     ax1.tick_params('y', colors=colors[1])
-    ax1.set_ylim(min(y2), max(y2))
+    ax1.set_ylim(min(y1_sorted), max(y1_sorted))
 
     ax2 = ax1.twinx()
-    ax2.set_ylabel(y1_name, color=colors[0])
+    ax2.set_ylabel(y2_name, color=colors[0])
     ax2.tick_params('y', colors=colors[0])
-    ax2.set_ylim(min(y1_sorted), max(y1_sorted))
+    ax2.set_ylim(min(y2), max(y2))
 
-    ax1.plot(y2, label=y2_name, color=colors[1],
+    ax1.plot(y1_sorted, label=y1_name, color=colors[1],
+             linewidth=4)
+    ax2.plot(y2, label=y2_name, color=colors[0],
              linewidth=3)
-    ax2.plot(y1_sorted, label=y1_name, color=colors[0],
-             linewidth=4.0)
 
     fig.tight_layout()
     ludwig.contrib.contrib_command("visualize_figure", plt.gcf())
