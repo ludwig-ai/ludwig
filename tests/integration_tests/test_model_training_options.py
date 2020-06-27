@@ -173,7 +173,7 @@ def test_model_save_resume(generated_data, tmp_path):
         'input_features': input_features,
         'output_features': output_features,
         'combiner': {'type': 'concat'},
-        'training': {'epochs': 10, 'early_stop': 0, 'batch_size': 16}
+        'training': {'epochs': 5, 'early_stop': 0, 'batch_size': 16}
     }
 
     # create sub-directory to store results
@@ -190,7 +190,7 @@ def test_model_save_resume(generated_data, tmp_path):
 
     y_pred1 = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
 
-    model_definition['training']['epochs'] = 20
+    model_definition['training']['epochs'] = 15
 
     full_experiment(
         model_definition,

@@ -1162,9 +1162,6 @@ class Model:
 
     def restore(self, weights_path):
         self.ecd.load_weights(weights_path)
-        weights = self.ecd.get_weights()
-        pass
-
 
     @staticmethod
     def load(load_path, use_horovod=False):
