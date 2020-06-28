@@ -759,7 +759,12 @@ class Model:
         for output_feature in self.ecd.output_features:
             scores = [dataset_name]
 
-            for metric in metrics_log[output_feature]:
+            # collect metric names based on output features metrics to
+            # ensure consistent order of reporting metrics
+            metric_names = self.ecd.output_features[output_feature]\
+                .metric_functions.keys()
+
+            for metric in metric_names:
                 score = results[output_feature][metric]
                 metrics_log[output_feature][metric].append(score)
                 scores.append(score)
