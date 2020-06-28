@@ -163,8 +163,8 @@ class Model:
         return predictions
 
     @tf.function
-    def predict_step(self, model, x):
-        return model(x, training=False)
+    def predict_step(self, model, inputs):
+        return model.predictions(inputs, output_features=None)
 
     # def initialize_session(self, gpus=None, gpu_fraction=1):
     #     if self.session is None:
@@ -809,15 +809,24 @@ class Model:
             # create array for predictors
             # todo: tf2 need to handle case of single predictor, e.g., image
             inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self.hyperparameters['input_features']}
-            targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
 
-            (
-                preds
-            ) = self.evaluation_step(
-                self.ecd,
-                inputs,
-                targets
-            )
+            if only_predictions:
+                (
+                    preds
+                ) = self.predict_step(
+                    self.ecd,
+                    inputs
+                )
+            else:
+                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
+
+                (
+                    preds
+                ) = self.evaluation_step(
+                    self.ecd,
+                    inputs,
+                    targets
+                )
 
             # accumulate predictions from batch for each output feature
             for of_name, of_preds in preds.items():
@@ -846,9 +855,12 @@ class Model:
             for pred_name, pred_value_list in of_predictions.items():
                 predictions[of_name][pred_name] = tf.concat(pred_value_list, axis=0)
 
-        metrics = self.ecd.get_metrics()
-        self.ecd.reset_metrics()
-        return metrics, predictions
+        if only_predictions:
+            return predictions
+        else:
+            metrics = self.ecd.get_metrics()
+            self.ecd.reset_metrics()
+            return metrics, predictions
 
     def evaluation(
             self,
@@ -1035,14 +1047,22 @@ class Model:
             **kwargs
     ):
         # predict
-        eval_metrics, eval_predictions = self.batch_evaluation(
-            dataset,
-            batch_size,
-            collect_predictions=True,
-            only_predictions=not evaluate_performance
-        )
-
-        return eval_metrics, eval_predictions
+        if evaluate_performance:
+            eval_metrics, eval_predictions = self.batch_evaluation(
+                dataset,
+                batch_size,
+                collect_predictions=True,
+                only_predictions=not evaluate_performance
+            )
+            return eval_metrics, eval_predictions
+        else:
+            eval_predictions = self.batch_evaluation(
+                dataset,
+                batch_size,
+                collect_predictions=True,
+                only_predictions=not evaluate_performance
+            )
+            return eval_predictions
 
     def collect_activations(
             self,
