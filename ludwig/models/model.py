@@ -1200,6 +1200,7 @@ class Model:
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
+        model.restore(model.weights_save_path)
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
