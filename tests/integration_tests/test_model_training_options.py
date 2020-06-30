@@ -5,11 +5,15 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_frame_equal
 from sklearn.model_selection import train_test_split
 
 from ludwig.api import LudwigModel
+from ludwig.data.preprocessing import get_split
 from ludwig.experiment import full_experiment
+from ludwig.utils.data_utils import split_dataset_tvt, read_csv
+from tests.integration_tests.utils import binary_feature, numerical_feature, \
+    category_feature, sequence_feature, date_feature, h3_feature, \
+    set_feature, generate_data
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
@@ -18,7 +22,7 @@ GeneratedData = namedtuple('GeneratedData',
 def get_feature_definitions():
     input_features = [
         {'name': 'x', 'type': 'numerical'},
-        ]
+    ]
     output_features = [
         {'name': 'y', 'type': 'numerical', 'loss': {'type': 'mean_squared_error'},
          'num_fc_layers': 5, 'fc_size': 64}
@@ -246,14 +250,58 @@ def test_model_save_resume(generated_data, tmp_path):
 #     pass
 
 
-def test_model_save_reload_API(generated_data, tmp_path):
-    input_features, output_features = get_feature_definitions()
+def test_model_save_reload_API(csv_filename, tmp_path):
+    dir_path = os.path.dirname(csv_filename)
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+    audio_dest_folder = os.path.join(os.getcwd(), 'generated_audio')
+
+    input_features = [
+        binary_feature(),
+        numerical_feature(),
+        category_feature(vocab_size=3),
+        sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # vector_feature(),
+        # image_feature(image_dest_folder),
+        # audio_feature(audio_dest_folder),
+        # timeseries_feature(),
+        date_feature(),
+        h3_feature(),
+        set_feature(vocab_size=3),
+        # bag_feature(vocab_size=3),
+    ]
+
+    output_features = [
+        binary_feature(),
+        numerical_feature(),
+        # category_feature(vocab_size=3),
+        # sequence_feature(vocab_size=3),
+        # text_feature(vocab_size=3),
+        # set_feature(vocab_size=3),
+        # vector_feature()
+    ]
+
+    # Generate test data
+    data_csv_path = generate_data(input_features, output_features,
+                                  csv_filename)
+
+    #############
+    # Train model
+    #############
     model_definition = {
         'input_features': input_features,
         'output_features': output_features,
-        'combiner': {'type': 'concat'},
-        'training': {'epochs': 3, 'batch_size': 16}
+        'training': {'epochs': 2}
     }
+
+    data_df = read_csv(data_csv_path)
+    training_set, test_set, validation_set = split_dataset_tvt(
+        data_df,
+        get_split(data_df)
+    )
+    training_set = pd.DataFrame(training_set)
+    validation_set = pd.DataFrame(validation_set)
+    test_set = pd.DataFrame(test_set)
 
     # create sub-directory to store results
     results_dir = tmp_path / 'results'
@@ -262,22 +310,23 @@ def test_model_save_reload_API(generated_data, tmp_path):
     # perform initial model training
     ludwig_model1 = LudwigModel(model_definition)
     train_stats = ludwig_model1.train(
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+        data_train_df=training_set,
+        data_validation_df=validation_set,
+        data_test_df=test_set,
         output_directory='results'  # results_dir
     )
 
-    preds_1 = ludwig_model1.predict(data_df=generated_data.validation_df)
+    preds_1 = ludwig_model1.predict(data_df=validation_set)
 
     # load saved model
     ludwig_model2 = LudwigModel.load(
         os.path.join(ludwig_model1.exp_dir_name, 'model')
     )
 
-    preds_2 = ludwig_model2.predict(data_df=generated_data.validation_df)
+    preds_2 = ludwig_model2.predict(data_df=validation_set)
 
-    assert_frame_equal(preds_1, preds_2)
+    for key in preds_1:
+        assert np.allclose(preds_1[key], preds_2[key])
 
     for if_name in ludwig_model1.model.ecd.input_features:
         if1 = ludwig_model1.model.ecd.input_features[if_name]
