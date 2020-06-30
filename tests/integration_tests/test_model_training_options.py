@@ -1,26 +1,23 @@
-import os.path
 import json
+import os.path
 from collections import namedtuple
-import shutil
 
-import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
-
+import pandas as pd
 import pytest
+from pandas.util.testing import assert_frame_equal
+from sklearn.model_selection import train_test_split
 
-import tensorflow as tf
-from ludwig.experiment import full_experiment
 from ludwig.api import LudwigModel
-
+from ludwig.experiment import full_experiment
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
 
+
 def get_feature_definitions():
     input_features = [
-            {'name': 'x', 'type': 'numerical'},
+        {'name': 'x', 'type': 'numerical'},
         ]
     output_features = [
         {'name': 'y', 'type': 'numerical', 'loss': {'type': 'mean_squared_error'},
@@ -174,8 +171,8 @@ def test_model_save_resume(generated_data, tmp_path):
         'output_features': output_features,
         'combiner': {'type': 'concat'},
         'training': {
-            'epochs': 5,
-            'early_stop': 0,
+            'epochs': 7,
+            'early_stop': 1000,
             'batch_size': 16,
             'optimizer': {'type': 'adam'}
         }
@@ -247,3 +244,56 @@ def test_model_save_resume(generated_data, tmp_path):
 #         o_feature.decoder_obj(None, training=False)
 #
 #     pass
+
+
+def test_model_save_reload_API(generated_data, tmp_path):
+    input_features, output_features = get_feature_definitions()
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {'type': 'concat'},
+        'training': {'epochs': 3, 'batch_size': 16}
+    }
+
+    # create sub-directory to store results
+    results_dir = tmp_path / 'results'
+    results_dir.mkdir()
+
+    # perform initial model training
+    ludwig_model1 = LudwigModel(model_definition)
+    train_stats = ludwig_model1.train(
+        data_train_df=generated_data.train_df,
+        data_validation_df=generated_data.validation_df,
+        data_test_df=generated_data.test_df,
+        output_directory='results'  # results_dir
+    )
+
+    preds_1 = ludwig_model1.predict(data_df=generated_data.validation_df)
+
+    # load saved model
+    ludwig_model2 = LudwigModel.load(
+        os.path.join(ludwig_model1.exp_dir_name, 'model')
+    )
+
+    preds_2 = ludwig_model2.predict(data_df=generated_data.validation_df)
+
+    assert_frame_equal(preds_1, preds_2)
+
+    for if_name in ludwig_model1.model.ecd.input_features:
+        if1 = ludwig_model1.model.ecd.input_features[if_name]
+        if2 = ludwig_model2.model.ecd.input_features[if_name]
+        for if1_w, if2_w in zip(if1.encoder_obj.weights,
+                                if2.encoder_obj.weights):
+            assert np.allclose(if1_w.numpy(), if2_w.numpy())
+
+    c1 = ludwig_model1.model.ecd.combiner
+    c2 = ludwig_model2.model.ecd.combiner
+    for c1_w, c2_w in zip(c1.weights, c2.weights):
+        assert np.allclose(c1_w.numpy(), c2_w.numpy())
+
+    for of_name in ludwig_model1.model.ecd.output_features:
+        of1 = ludwig_model1.model.ecd.output_features[of_name]
+        of2 = ludwig_model2.model.ecd.output_features[of_name]
+        for of1_w, of2_w in zip(of1.decoder_obj.weights,
+                                of2.decoder_obj.weights):
+            assert np.allclose(of1_w.numpy(), of2_w.numpy())
