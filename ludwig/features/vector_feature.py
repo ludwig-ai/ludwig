@@ -209,12 +209,15 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         return {PREDICTIONS: inputs[LOGITS], LOGITS: inputs[LOGITS]}
 
@@ -285,7 +288,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         name = output_feature['name']
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS]
+            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
