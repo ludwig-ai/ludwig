@@ -252,7 +252,10 @@ class ImageBaseFeature(BaseFeature):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_image_path = dataset_df[feature['name']][0]
+        # this is not super nice, but works both and DFs and lists
+        for first_image_path in dataset_df[feature['name']]:
+            break
+
         if csv_path is None and not os.path.isabs(first_image_path):
             raise ValueError('Image file paths must be absolute')
 
