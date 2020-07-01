@@ -243,10 +243,13 @@ class AudioBaseFeature(BaseFeature):
                 'for audio.')
 
         csv_path = None
+        # this is not super nice, but works both and DFs and lists
+        first_path = '.'
+        for first_path in dataset_df[feature['name']]:
+            break
         if hasattr(dataset_df, 'csv'):
             csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
-        if (csv_path is None and
-                not os.path.isabs(dataset_df[feature['name']][0])):
+        if csv_path is None and not os.path.isabs(first_path):
             raise ValueError(
                 'Audio file paths must be absolute'
             )
@@ -281,10 +284,10 @@ class AudioBaseFeature(BaseFeature):
                 (num_audio_utterances, max_length, feature_dim),
                 dtype=np.float32
             )
-            for i in range(len(dataset_df)):
+            for i, path in enumerate(dataset_df[feature['name']]):
                 filepath = get_abs_path(
                     csv_path,
-                    dataset_df[feature['name']][i]
+                    path
                 )
                 audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(
                     filepath, audio_feature_dict, feature_dim, max_length,
