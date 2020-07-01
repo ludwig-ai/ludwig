@@ -275,11 +275,11 @@ def test_model_save_reload_API(csv_filename, tmp_path):
     output_features = [
         binary_feature(),
         numerical_feature(),
-        # category_feature(vocab_size=3),
+        category_feature(vocab_size=3),
         # sequence_feature(vocab_size=3),
         # text_feature(vocab_size=3),
-        # set_feature(vocab_size=3),
-        # vector_feature()
+        set_feature(vocab_size=3),
+        vector_feature(),
     ]
 
     # Generate test data
@@ -327,7 +327,14 @@ def test_model_save_reload_API(csv_filename, tmp_path):
     preds_2 = ludwig_model2.predict(data_df=validation_set)
 
     for key in preds_1:
-        assert np.allclose(preds_1[key], preds_2[key])
+        assert preds_1[key].dtype == preds_2[key].dtype
+        assert preds_1[key].equals(preds_2[key])
+
+        # col_dtype = preds_1[key].dtype
+        # if col_dtype in {'int32', 'int64', 'float32', 'float64'}:
+        #    assert np.allclose(preds_1[key], preds_2[key])
+        # else:
+        #    assert preds_1[key].equals(preds_2[key])
 
     for if_name in ludwig_model1.model.ecd.input_features:
         if1 = ludwig_model1.model.ecd.input_features[if_name]
