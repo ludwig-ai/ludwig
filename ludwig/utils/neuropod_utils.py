@@ -52,18 +52,24 @@ def postprocess_for_neuropod(predicted, model_definition):
                 np.expand_dims(
                     predicted[feature_name]['predictions'].astype('str'), 1)
             postprocessed[feature_name + "_probabilities"] = \
-                np.expand_dims(predicted[feature_name]['probabilities'], 1)
+                np.expand_dims(
+                    predicted[feature_name]['probabilities'].astype('float64'),
+                    1)
         elif feature_type == NUMERICAL:
             postprocessed[feature_name + "_predictions"] = \
-                np.expand_dims(predicted[feature_name]['predictions'], 1)
+                np.expand_dims(
+                    predicted[feature_name]['predictions'].astype('float64'),
+                    1)
         elif feature_type == CATEGORY:
             postprocessed[feature_name + "_predictions"] = np.expand_dims(
                 np.array(predicted[feature_name]['predictions'], dtype='str'), 1
             )
             postprocessed[feature_name + "_probability"] = \
-                np.expand_dims(predicted[feature_name]['probability'], 1)
+                np.expand_dims(
+                    predicted[feature_name]['probability'].astype('float64'),
+                    1)
             postprocessed[feature_name + "_probabilities"] = \
-                predicted[feature_name]['probabilities']
+                predicted[feature_name]['probabilities'].astype('float64')
         elif feature_type == SEQUENCE:
             predictions = list(map(
                 lambda x: ' '.join(x),
@@ -96,15 +102,15 @@ def postprocess_for_neuropod(predicted, model_definition):
                 np.array(probability, dtype='str'), 1
             )
             postprocessed[feature_name + "_probabilities"] = \
-                predicted[feature_name]['probabilities']
+                predicted[feature_name]['probabilities'].astype('float64')
         elif feature_type == VECTOR:
             postprocessed[feature_name + "_predictions"] = \
-                predicted[feature_name]['predictions']
+                predicted[feature_name]['predictions'].astype('float64')
         else:
             postprocessed[feature_name + "_predictions"] = np.expand_dims(
                 np.array(predicted[feature_name]['predictions'], dtype='str'), 1
             )
-
+    # print(postprocessed, file=sys.stderr)
     return postprocessed
 
 
@@ -190,13 +196,13 @@ def export_neuropod(
             })
             output_spec.append({
                 "name": feature['name'] + '_probabilities',
-                "dtype": "float32",
+                "dtype": "float64",
                 "shape": (None, 1)
             })
         elif feature_type == NUMERICAL:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
-                "dtype": "float32",
+                "dtype": "float64",
                 "shape": (None, 1)
             })
         elif feature_type == CATEGORY:
@@ -207,12 +213,12 @@ def export_neuropod(
             })
             output_spec.append({
                 "name": feature['name'] + '_probability',
-                "dtype": "float32",
+                "dtype": "float64",
                 "shape": (None, 1)
             })
             output_spec.append({
                 "name": feature['name'] + '_probabilities',
-                "dtype": "float32",
+                "dtype": "float64",
                 "shape": (
                     None, training_set_metadata[feature_name]['vocab_size']
                 )
@@ -242,7 +248,7 @@ def export_neuropod(
             })
             output_spec.append({
                 "name": feature['name'] + '_probabilities',
-                "dtype": "float32",
+                "dtype": "float64",
                 "shape": (
                     None, training_set_metadata[feature_name]['vocab_size']
                 )
@@ -250,7 +256,7 @@ def export_neuropod(
         elif feature_type == VECTOR:
             output_spec.append({
                 "name": feature['name'] + '_predictions',
-                "dtype": "float32",
+                "dtype": "float64",
                 "shape": (
                     None, training_set_metadata[feature_name]['vector_size']
                 )
@@ -288,7 +294,6 @@ def export_neuropod(
         entrypoint_package="ludwig.utils.neuropod_utils",
         entrypoint="get_model",
         # test_deps=['torch', 'numpy'],
-        package_as_zip=not package_as_dir,
         skip_virtualenv=True,
         input_spec=input_spec,
         output_spec=output_spec
@@ -333,14 +338,6 @@ def cli():
         '--neuropod_model_name',
         help='path of the output Neuropod package file',
         default='ludwig_model'
-    )
-    parser.add_argument(
-        '-d',
-        '--package_as_dir',
-        help='output the Neuropod package a directory '
-             '(by default it is a zip file)',
-        action='store_true',
-        default=False
     )
 
     args = parser.parse_args()
