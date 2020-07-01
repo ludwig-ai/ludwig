@@ -25,7 +25,6 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.models.modules.bag_encoders import BagEmbedWeightedEncoder
-from ludwig.models.modules.embedding_modules import EmbedWeighted
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary
 
@@ -70,13 +69,14 @@ class BagBaseFeature(BaseFeature):
             dtype=float
         )
 
-        for i in range(len(column)):
+        for i, set_str in enumerate(column):
             col_counter = Counter(set_str_to_idx(
-                column[i],
+                set_str,
                 metadata['str2idx'],
                 preprocessing_parameters['tokenizer'])
             )
-            bag_matrix[i, list(col_counter.keys())] = list(col_counter.values())
+            bag_matrix[i, list(col_counter.keys())] = list(
+                col_counter.values())
 
         return bag_matrix
 
