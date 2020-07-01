@@ -18,7 +18,6 @@ import logging
 import os
 
 import numpy as np
-
 import tensorflow as tf
 from tensorflow.keras.losses import MeanAbsoluteError
 from tensorflow.keras.losses import MeanSquaredError
@@ -167,7 +166,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
             inputs, training=training, mask=mask
         )
 
-        return {'encoder_outputs': inputs_encoded}
+        return inputs_encoded
 
     @staticmethod
     def update_model_definition_with_metadata(

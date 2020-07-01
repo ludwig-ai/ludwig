@@ -13,7 +13,7 @@ from ludwig.experiment import full_experiment
 from ludwig.utils.data_utils import split_dataset_tvt, read_csv
 from tests.integration_tests.utils import binary_feature, numerical_feature, \
     category_feature, sequence_feature, date_feature, h3_feature, \
-    set_feature, generate_data
+    set_feature, generate_data, text_feature, vector_feature
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
@@ -260,8 +260,8 @@ def test_model_save_reload_API(csv_filename, tmp_path):
         numerical_feature(),
         category_feature(vocab_size=3),
         sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
-        # vector_feature(),
+        text_feature(vocab_size=3),
+        vector_feature(),
         # image_feature(image_dest_folder),
         # audio_feature(audio_dest_folder),
         # timeseries_feature(),
