@@ -252,11 +252,15 @@ class ImageBaseFeature(BaseFeature):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_image_path = dataset_df[feature['name']][0]
-        if csv_path is None and not os.path.isabs(first_image_path):
+        # this is not super nice, but works both and DFs and lists
+        first_path = '.'
+        for first_path in dataset_df[feature['name']]:
+            break
+
+        if csv_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
 
-        first_image_path = get_abs_path(csv_path, first_image_path)
+        first_path = get_abs_path(csv_path, first_path)
 
         (
             should_resize,
@@ -266,7 +270,7 @@ class ImageBaseFeature(BaseFeature):
             user_specified_num_channels,
             first_image
         ) = ImageBaseFeature._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_image_path
+            preprocessing_parameters, first_path
         )
 
         metadata[feature['name']]['preprocessing']['height'] = height

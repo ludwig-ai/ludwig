@@ -18,7 +18,6 @@ import logging
 import os
 
 import numpy as np
-
 import tensorflow as tf
 from tensorflow.keras.losses import MeanAbsoluteError
 from tensorflow.keras.losses import MeanSquaredError
@@ -167,7 +166,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
             inputs, training=training, mask=mask
         )
 
-        return {'encoder_outputs': inputs_encoded}
+        return inputs_encoded
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -210,12 +209,15 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         return {PREDICTIONS: inputs[LOGITS], LOGITS: inputs[LOGITS]}
 
@@ -286,7 +288,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
         name = output_feature['name']
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS]
+            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),

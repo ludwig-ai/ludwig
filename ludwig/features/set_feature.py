@@ -20,7 +20,6 @@ from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
-
 from tensorflow.keras.metrics import MeanIoU
 
 from ludwig.constants import *
@@ -28,11 +27,10 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.models.modules.metric_modules import SigmoidCrossEntropyMetric
-from ludwig.models.modules.set_encoders import SetSparseEncoder
 from ludwig.models.modules.set_decoders import Classifier
+from ludwig.models.modules.set_encoders import SetSparseEncoder
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary
 
@@ -168,12 +166,15 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         logits = inputs[LOGITS]
 
@@ -284,9 +285,10 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             del result[PREDICTIONS]
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES]
+            probs = result[PROBABILITIES].numpy()
             prob = [[prob for prob in prob_set if
-                     prob >= output_feature['threshold']] for prob_set in probs]
+                     prob >= output_feature['threshold']] for prob_set in
+                    probs]
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob
 

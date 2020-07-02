@@ -35,7 +35,7 @@ from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
 from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc import set_default_value, get_from_registry
+from ludwig.utils.misc import set_default_value
 from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
@@ -79,12 +79,7 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.get_binary_encoder(feature)
-
-    def get_binary_encoder(self, encoder_parameters):
-        return get_from_registry(self.encoder, self.encoder_registry)(
-            **encoder_parameters
-        )
+            self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)

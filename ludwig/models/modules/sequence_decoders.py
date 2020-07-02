@@ -455,9 +455,10 @@ class SequenceGeneratorDecoder(Layer):
         # ================ predictions =================
         greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
 
-        # decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
+        decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
         start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
         end_token = self.END_SYMBOL
+        decoder_inp_emb = self.decoder_embedding(decoder_input)
 
         if self.attention_mechanism is not None:
             self.attention_mechanism.setup_memory(

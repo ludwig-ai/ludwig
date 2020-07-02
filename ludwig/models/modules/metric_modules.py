@@ -18,7 +18,8 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.models.modules.loss_modules import BWCEWLoss
+from ludwig.models.modules.loss_modules import BWCEWLoss, \
+    SigmoidCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.utils.tf_utils import sequence_length_2D
@@ -43,7 +44,7 @@ class R2Score(tf.keras.metrics.Metric):
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, name='r2_score'):
+    def __init__(self, name='r2_score', **kwargs):
         super(R2Score, self).__init__(name=name)
         self._reset_states()
 
@@ -81,7 +82,7 @@ class ErrorScore(tf.keras.metrics.Metric):
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, name='error_score'):
+    def __init__(self, name='error_score', **kwargs):
         super(ErrorScore, self).__init__(name=name)
         self._reset_states()
 

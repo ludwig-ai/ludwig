@@ -56,7 +56,7 @@ class Projector(Layer):
 
     def __init__(
             self,
-            num_classes,
+            vector_size,
             use_bias=True,
             kernel_initializer='glorot_uniform',
             bias_initializer='zeros',
@@ -69,7 +69,7 @@ class Projector(Layer):
     ):
         super().__init__()
         self.dense = Dense(
-            num_classes,
+            vector_size,
             use_bias=use_bias,
             kernel_initializer=kernel_initializer,
             bias_initializer=bias_initializer,

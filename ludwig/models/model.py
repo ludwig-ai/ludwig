@@ -24,15 +24,18 @@ from __future__ import print_function
 import copy
 import logging
 import os
+import os.path
+import pickle
 import re
 import signal
 import sys
 import threading
+import tempfile
 import time
 from collections import OrderedDict
 
 import tensorflow as tf
-# import tensorflow as tf2    # todo: tf2 port
+
 from tabulate import tabulate
 from tqdm import tqdm
 
@@ -160,8 +163,8 @@ class Model:
         return predictions
 
     @tf.function
-    def predict_step(self, model, x):
-        return model(x, training=False)
+    def predict_step(self, model, inputs):
+        return model.predictions(inputs, output_features=None)
 
     # def initialize_session(self, gpus=None, gpu_fraction=1):
     #     if self.session is None:
@@ -379,8 +382,8 @@ class Model:
 
         # ====== Setup session =======
         # todo tf2: reintroduce restoring weights
-        # if self.weights_save_path:
-        #    self.restore(session, self.weights_save_path)
+        if self.weights_save_path:
+           self.restore(self.weights_save_path)
 
         # todo tf2: reintroduce tensorboard logging
         # train_writer = None
@@ -406,13 +409,12 @@ class Model:
                 model_weights_path
             )
             # todo tf3: reintroduce session resume
-            # if is_on_master():
-            #    self.resume_session(
-            #        session,
-            #        save_path,
-            #        model_weights_path,
-            #        model_weights_progress_path
-            #    )
+            if is_on_master():
+               self.resume_session(
+                   save_path,
+                   model_weights_path,
+                   model_weights_progress_path
+               )
         else:
             (
                 train_metrics,
@@ -450,6 +452,7 @@ class Model:
 
         # ================ Training Loop ================
         while progress_tracker.epoch < self.epochs:
+            print(">>>> progress tracker epoch", progress_tracker.epoch)
             # epoch init
             start_time = time.time()
             if is_on_master():
@@ -651,52 +654,51 @@ class Model:
                             )
                         )
 
-        #     if should_validate:
-        #         should_break = self.check_progress_on_validation(
-        #             progress_tracker,
-        #             validation_field,
-        #             validation_metric,
-        #             session,
-        #             model_weights_path,
-        #             model_hyperparameters_path,
-        #             reduce_learning_rate_on_plateau,
-        #             reduce_learning_rate_on_plateau_patience,
-        #             reduce_learning_rate_on_plateau_rate,
-        #             increase_batch_size_on_plateau_patience,
-        #             increase_batch_size_on_plateau,
-        #             increase_batch_size_on_plateau_max,
-        #             increase_batch_size_on_plateau_rate,
-        #             early_stop,
-        #             skip_save_model
-        #         )
-        #         if should_break:
-        #             break
-        #     else:
-        #         # there's no validation, so we save the model at each iteration
-        #         if is_on_master():
-        #             if not skip_save_model:
-        #                 self.save_weights(session, model_weights_path)
-        #                 self.save_hyperparameters(
-        #                     self.hyperparameters,
-        #                     model_hyperparameters_path
-        #                 )
-        #
-        #     # ========== Save training progress ==========
-        #     if is_on_master():
-        #         if not skip_save_progress:
-        #             self.save_weights(session, model_weights_progress_path)
-        #             progress_tracker.save(
-        #                 os.path.join(
-        #                     save_path,
-        #                     TRAINING_PROGRESS_FILE_NAME
-        #                 )
-        #             )
-        #             if skip_save_model:
-        #                 self.save_hyperparameters(
-        #                     self.hyperparameters,
-        #                     model_hyperparameters_path
-        #                 )
-        #
+            if should_validate:
+                should_break = self.check_progress_on_validation(
+                    progress_tracker,
+                    validation_field,
+                    validation_metric,
+                    model_weights_path,
+                    model_hyperparameters_path,
+                    reduce_learning_rate_on_plateau,
+                    reduce_learning_rate_on_plateau_patience,
+                    reduce_learning_rate_on_plateau_rate,
+                    increase_batch_size_on_plateau_patience,
+                    increase_batch_size_on_plateau,
+                    increase_batch_size_on_plateau_max,
+                    increase_batch_size_on_plateau_rate,
+                    early_stop,
+                    skip_save_model
+                )
+                if should_break:
+                    break
+            else:
+                # there's no validation, so we save the model at each iteration
+                if is_on_master():
+                    if not skip_save_model:
+                        self.save_weights(model_weights_path)
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path
+                        )
+
+            # ========== Save training progress ==========
+            if is_on_master():
+                if not skip_save_progress:
+                    self.save_weights(model_weights_progress_path)
+                    progress_tracker.save(
+                        os.path.join(
+                            save_path,
+                            TRAINING_PROGRESS_FILE_NAME
+                        )
+                    )
+                    if skip_save_model:
+                        self.save_hyperparameters(
+                            self.hyperparameters,
+                            model_hyperparameters_path
+                        )
+
         #     if is_on_master():
         #         contrib_command("train_epoch_end", progress_tracker)
         #         logger.info('')
@@ -757,7 +759,12 @@ class Model:
         for output_feature in self.ecd.output_features:
             scores = [dataset_name]
 
-            for metric in metrics_log[output_feature]:
+            # collect metric names based on output features metrics to
+            # ensure consistent order of reporting metrics
+            metric_names = self.ecd.output_features[output_feature]\
+                .metric_functions.keys()
+
+            for metric in metric_names:
                 score = results[output_feature][metric]
                 metrics_log[output_feature][metric].append(score)
                 scores.append(score)
@@ -802,15 +809,24 @@ class Model:
             # create array for predictors
             # todo: tf2 need to handle case of single predictor, e.g., image
             inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self.hyperparameters['input_features']}
-            targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
 
-            (
-                preds
-            ) = self.evaluation_step(
-                self.ecd,
-                inputs,
-                targets
-            )
+            if only_predictions:
+                (
+                    preds
+                ) = self.predict_step(
+                    self.ecd,
+                    inputs
+                )
+            else:
+                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
+
+                (
+                    preds
+                ) = self.evaluation_step(
+                    self.ecd,
+                    inputs,
+                    targets
+                )
 
             # accumulate predictions from batch for each output feature
             for of_name, of_preds in preds.items():
@@ -839,9 +855,12 @@ class Model:
             for pred_name, pred_value_list in of_predictions.items():
                 predictions[of_name][pred_name] = tf.concat(pred_value_list, axis=0)
 
-        metrics = self.ecd.get_metrics()
-        self.ecd.reset_metrics()
-        return metrics, predictions
+        if only_predictions:
+            return predictions
+        else:
+            metrics = self.ecd.get_metrics()
+            self.ecd.reset_metrics()
+            return metrics, predictions
 
     def evaluation(
             self,
@@ -932,7 +951,7 @@ class Model:
             progress_tracker,
             validation_field,
             validation_metric,
-            session, model_weights_path,
+            model_weights_path,
             model_hyperparameters_path,
             reduce_learning_rate_on_plateau,
             reduce_learning_rate_on_plateau_patience,
@@ -957,7 +976,7 @@ class Model:
                 validation_field][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
-                    self.save_weights(session, model_weights_path)
+                    self.save_weights(model_weights_path)
                     self.save_hyperparameters(
                         self.hyperparameters,
                         model_hyperparameters_path
@@ -1028,14 +1047,22 @@ class Model:
             **kwargs
     ):
         # predict
-        eval_metrics, eval_predictions = self.batch_evaluation(
-            dataset,
-            batch_size,
-            collect_predictions=True,
-            only_predictions=not evaluate_performance
-        )
-
-        return eval_metrics, eval_predictions
+        if evaluate_performance:
+            eval_metrics, eval_predictions = self.batch_evaluation(
+                dataset,
+                batch_size,
+                collect_predictions=True,
+                only_predictions=not evaluate_performance
+            )
+            return eval_metrics, eval_predictions
+        else:
+            eval_predictions = self.batch_evaluation(
+                dataset,
+                batch_size,
+                collect_predictions=True,
+                only_predictions=not evaluate_performance
+            )
+            return eval_predictions
 
     def collect_activations(
             self,
@@ -1111,10 +1138,9 @@ class Model:
         # return collected_tensors
         pass
 
-    def save_weights(self, session, save_path):
-        # todo tf2: reintroduce functionality
-        # self.weights_save_path = self.saver.save(session, save_path)
-        pass
+    def save_weights(self, save_path):
+        # save model
+        self.ecd.save_weights(save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
@@ -1159,10 +1185,8 @@ class Model:
         # builder.save()
         pass
 
-    def restore(self, session, weights_path):
-        # todo tf2: reintroduce this functionality
-        # self.saver.restore(session, weights_path)
-        pass
+    def restore(self, weights_path):
+        self.ecd.load_weights(weights_path)
 
     @staticmethod
     def load(load_path, use_horovod=False):
@@ -1176,6 +1200,7 @@ class Model:
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
+        model.restore(model.weights_save_path)
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
@@ -1298,7 +1323,6 @@ class Model:
 
     def resume_session(
             self,
-            session,
             save_path,
             model_weights_path,
             model_weights_progress_path
@@ -1309,9 +1333,9 @@ class Model:
             if pattern.match(file_path):
                 num_matching_files += 1
         if num_matching_files == 3:
-            self.restore(session, model_weights_progress_path)
+            self.restore(model_weights_progress_path)
         else:
-            self.restore(session, model_weights_path)
+            self.restore(model_weights_path)
 
     def reduce_learning_rate(
             self,

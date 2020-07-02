@@ -99,7 +99,7 @@ def full_predict(
         gpu_fraction,
         debug
     )
-    model.close_session()
+    # model.close_session()  # todo tf2 code clean -up
 
     if is_on_master():
         # setup directories and file names
