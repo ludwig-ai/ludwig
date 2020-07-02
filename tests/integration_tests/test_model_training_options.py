@@ -8,6 +8,7 @@ import pytest
 from sklearn.model_selection import train_test_split
 
 from ludwig.experiment import full_experiment
+from ludwig.utils.data_utils import load_json
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
@@ -169,7 +170,7 @@ def test_resume_training(generated_data, tmp_path):
         'output_features': output_features,
         'combiner': {'type': 'concat'},
         'training': {
-            'epochs': 7,
+            'epochs': 2,
             'early_stop': 1000,
             'batch_size': 16,
             'optimizer': {'type': 'adam'}
@@ -180,7 +181,7 @@ def test_resume_training(generated_data, tmp_path):
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
-    exp_dir_name = full_experiment(
+    exp_dir_name_1 = full_experiment(
         model_definition,
         data_train_df=generated_data.train_df,
         data_validation_df=generated_data.validation_df,
@@ -188,20 +189,31 @@ def test_resume_training(generated_data, tmp_path):
         output_directory='results'  # results_dir
     )
 
-    y_pred1 = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
-
-    model_definition['training']['epochs'] = 15
+    model_definition['training']['epochs'] = 4
 
     full_experiment(
         model_definition,
         data_train_df=generated_data.train_df,
         data_validation_df=generated_data.validation_df,
         data_test_df=generated_data.test_df,
-        model_resume_path=exp_dir_name
+        model_resume_path=exp_dir_name_1
     )
 
-    y_pred2 = np.load(os.path.join(exp_dir_name, 'y_predictions.npy'))
+    exp_dir_name_2 = full_experiment(
+        model_definition,
+        data_train_df=generated_data.train_df,
+        data_validation_df=generated_data.validation_df,
+        data_test_df=generated_data.test_df,
+    )
 
+    # compare learning curves with and without resuming
+    ts1 = load_json(os.path.join(exp_dir_name_1, 'training_statistics.json'))
+    ts2 = load_json(os.path.join(exp_dir_name_2, 'training_statistics.json'))
+    assert ts1['train']['combined']['loss'] == ts2['train']['combined']['loss']
+
+    # compare predictions with and without resuming
+    y_pred1 = np.load(os.path.join(exp_dir_name_1, 'y_predictions.npy'))
+    y_pred2 = np.load(os.path.join(exp_dir_name_2, 'y_predictions.npy'))
     assert np.all(np.isclose(y_pred1, y_pred2))
 
 # work-in-progress
