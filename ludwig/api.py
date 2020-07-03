@@ -308,8 +308,8 @@ class LudwigModel:
         """Closes an open LudwigModel (closing the session running it).
         It should be called once done with the model to release resources.
         """
-        if self.model is not None:
-            self.model.close_session()
+        # TODO(travis): determine whether this method is still needed in TF2
+        pass
 
     def train(
             self,
