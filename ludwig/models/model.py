@@ -25,17 +25,14 @@ import copy
 import logging
 import os
 import os.path
-import pickle
 import re
 import signal
 import sys
 import threading
-import tempfile
 import time
 from collections import OrderedDict
 
 import tensorflow as tf
-
 from tabulate import tabulate
 from tqdm import tqdm
 
@@ -49,7 +46,7 @@ from ludwig.globals import is_progressbar_disabled
 from ludwig.models.ecd import ECD, dynamic_length_encoders
 from ludwig.models.modules.metric_modules import get_improved_fun
 from ludwig.models.modules.metric_modules import get_initial_validation_value
-from ludwig.models.modules.optimization_modules import get_optimizer_fun_tf2
+from ludwig.models.modules.optimization_modules import OptimizerWrapper
 from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
@@ -124,8 +121,8 @@ class Model:
 
         # todo tf2: reintroduce optimizer parameters
         # todo tf2: reintroduce learning scheduler in different form most likely
-        self.optimizer_function = get_optimizer_fun_tf2(
-            self.hyperparameters['training']['optimizer'][TYPE]
+        self.optimizer = OptimizerWrapper(
+            **self.hyperparameters['training']['optimizer']
         )
 
         # todo tf2: reintroduce tensorboard tracking and summaries
@@ -148,8 +145,7 @@ class Model:
         with tf.GradientTape() as tape:
             logits = model((inputs, targets), training=True)
             loss, _ = model.train_loss(targets, logits, regularization_lambda)
-        gradients = tape.gradient(loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        optimizer.minimize(tape, loss, model.trainable_variables)
 
         # print('Training loss (for one batch): %s' % float(loss))
 
@@ -485,7 +481,7 @@ class Model:
 
                 self.train_step(
                     self.ecd,
-                    self.optimizer_function,
+                    self.optimizer,
                     inputs,
                     targets,
                     regularization_lambda
@@ -745,7 +741,8 @@ class Model:
             targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
 
             self.train_step(
-                self.optimizer_function,
+                self.ecd,
+                self.optimizer,
                 inputs,
                 targets,
                 regularization_lambda

@@ -173,7 +173,7 @@ def test_resume_training(generated_data, tmp_path):
             'epochs': 2,
             'early_stop': 1000,
             'batch_size': 16,
-            'optimizer': {'type': 'adam'}
+            'optimizer': {'type': 'sgd'}
         }
     }
 

@@ -15,6 +15,7 @@
 # ==============================================================================
 import tensorflow as tf
 
+
 # todo tf2 need a tf2 version of this function
 def optimize(
         loss,
@@ -23,7 +24,8 @@ def optimize(
         global_step,
         horovod=None
 ):
-    if training_parameters is not None and training_parameters['decay'] is True:
+    if training_parameters is not None and training_parameters[
+        'decay'] is True:
         learning_rate = tf.train.exponential_decay(
             learning_rate, global_step,
             training_parameters['decay_steps'],
@@ -52,7 +54,8 @@ def optimize(
                     training_parameters['gradient_clipping'] is not None:
                 grad_clip_norm = training_parameters['gradient_clipping']
                 gradients, variables = zip(*optimizer.compute_gradients(loss))
-                gradients, _ = tf.clip_by_global_norm(gradients, grad_clip_norm)
+                gradients, _ = tf.clip_by_global_norm(gradients,
+                                                      grad_clip_norm)
                 apply_grads = optimizer.apply_gradients(
                     zip(gradients, variables))
                 increment_global_step = tf.assign(global_step,
@@ -104,34 +107,67 @@ def get_optimizer_fun(optimizer_type):
         raise ValueError('Invalid optimizer_type: ' + optimizer_type)
 
 
-def get_optimizer_fun_tf2(optimizer_type):
-    optimizer_type = optimizer_type.lower()
-    if (
-            optimizer_type == 'sgd' or
-            optimizer_type == 'stochastic_gradient_descent' or
-            optimizer_type == 'gd' or
-            optimizer_type == 'gradient_descent'
+# todo tf2: improve this class with better names and parameters
+class OptimizerWrapper(object):
+
+    def __init__(
+            self,
+            type='sgd',
+            clipglobalnorm=5.0,
+            clipnorm=None,
+            clipvalue=None,
+            **kwargs
     ):
-        return tf.keras.optimizers.SGD()
-    elif optimizer_type == 'adam':
-        return tf.keras.optimizers.Adam()
-    elif optimizer_type == 'adadelta':
-        return tf.keras.optimizers.Adadelta()
-    elif optimizer_type == 'adagrad':
-        return tf.keras.optimizers.Adagrad()
-    elif optimizer_type == 'adagradda':
-        return None # tf.train.AdagradDAOptimizer  todo appears tf.keras.optimizers does not support
-    elif optimizer_type == 'momentum':
-        return None # tf.train.MomentumOptimizer  todo appears tf.keras.optimizers does not support
-    elif optimizer_type == 'ftrl':
-        return tf.keras.optimizers.Ftrl()
-    elif optimizer_type == 'proximalgd':
-        return None #tf.train.ProximalGradientDescentOptimizer todo appears tf.keras.optimizers does not support
-    elif optimizer_type == 'proximaladagrad':
-        return None #tf.train.ProximalAdagradOptimizer todo appears tf.keras.optimizers does not support
-    elif optimizer_type == 'rmsprop':
-        return tf.keras.optimizers.RMSprop()
-    else:
-        raise ValueError('Invalid optimizer_type: ' + optimizer_type)
+        optimizer_type = type.lower()
+        if (
+                optimizer_type == 'sgd' or
+                optimizer_type == 'stochastic_gradient_descent' or
+                optimizer_type == 'gd' or
+                optimizer_type == 'gradient_descent'
+        ):
+            self.optimizer = tf.keras.optimizers.SGD(**kwargs)
+        elif optimizer_type == 'adam':
+            self.optimizer = tf.keras.optimizers.Adam(**kwargs)
+        elif optimizer_type == 'adadelta':
+            self.optimizer = tf.keras.optimizers.Adadelta(**kwargs)
+        elif optimizer_type == 'adagrad':
+            self.optimizer = tf.keras.optimizers.Adagrad(**kwargs)
+        elif optimizer_type == 'adagradda':
+            self.optimizer = None  # tf.train.AdagradDAOptimizer  todo appears tf.keras.optimizers does not support
+        elif optimizer_type == 'momentum':
+            self.optimizer = None  # tf.train.MomentumOptimizer  todo appears tf.keras.optimizers does not support
+        elif optimizer_type == 'ftrl':
+            self.optimizer = tf.keras.optimizers.Ftrl(**kwargs)
+        elif optimizer_type == 'proximalgd':
+            self.optimizer = None  # tf.train.ProximalGradientDescentOptimizer todo appears tf.keras.optimizers does not support
+        elif optimizer_type == 'proximaladagrad':
+            self.optimizer = None  # tf.train.ProximalAdagradOptimizer todo appears tf.keras.optimizers does not support
+        elif optimizer_type == 'rmsprop':
+            self.optimizer = tf.keras.optimizers.RMSprop(**kwargs)
+        else:
+            raise ValueError('Invalid optimizer_type: ' + type)
 
+        self.clipglobalnorm = clipglobalnorm
+        self.clipnorm = clipnorm
+        self.clipvalue = clipvalue
 
+    def minimize(self, tape, loss, variables):
+        gradients = tape.gradient(loss, variables)
+        if self.clipglobalnorm:
+            gradients, _ = tf.clip_by_global_norm(gradients,
+                                                  self.clipglobalnorm)
+        if self.clipnorm:
+            gradients = map(
+                lambda x: tf.clip_by_norm(x, self.clipnorm),
+                gradients
+            )
+        if self.clipvalue:
+            gradients = map(
+                lambda x: tf.clip_by_value(
+                    x,
+                    clip_value_min=self.clipvalue[0],
+                    clip_value_max=self.clipvalue[1]
+                ),
+                gradients
+            )
+        self.optimizer.apply_gradients(zip(gradients, variables))
