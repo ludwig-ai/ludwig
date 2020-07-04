@@ -16,11 +16,7 @@
 
 import io
 
-import cloudpickle
-
 import tensorflow as tf
-
-from horovod.tensorflow import allgather, size
 
 
 def allgather_object(obj):
@@ -33,6 +29,9 @@ def allgather_object(obj):
     Returns:
         The list of objects that were allgathered across all ranks.
     """
+    import cloudpickle
+    from horovod.tensorflow import allgather, size
+
     def load(t):
         buf = io.BytesIO(t.tobytes())
         return cloudpickle.load(buf)

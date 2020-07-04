@@ -861,12 +861,6 @@ class Model:
         if is_on_master():
             progress_bar.close()
 
-        # if self.horovod:
-        #     output_metrics, seq_set_size = self.merge_workers_outputs(
-        #         output_metrics,
-        #         seq_set_size
-        #     )
-
         # consolidate predictions from each batch to a single tensor
         for of_name, of_predictions in predictions.items():
             for pred_name, pred_value_list in of_predictions.items():
@@ -876,6 +870,9 @@ class Model:
             return predictions
         else:
             metrics = self.ecd.get_metrics()
+            if self.horovod:
+                metrics = self.merge_workers_metrics(metrics)
+
             self.ecd.reset_metrics()
             return metrics, predictions
 
@@ -902,19 +899,17 @@ class Model:
 
         return metrics_log, tables
 
-    def merge_workers_outputs(self, output_metrics, seq_set_size):
+    def merge_workers_metrics(self, metrics):
         # gather outputs from all workers
-        all_workers_output_metrics = allgather_object(output_metrics)
-        all_workers_seq_set_size = allgather_object(seq_set_size)
+        all_workers_output_metrics = allgather_object(metrics)
 
         # merge them into a single one
         merged_output_metrics = sum_dicts(
             all_workers_output_metrics,
             dict_type=OrderedDict
         )
-        merged_seq_set_size = sum_dicts(all_workers_seq_set_size)
 
-        return merged_output_metrics, merged_seq_set_size
+        return merged_output_metrics
 
     def batch_collect_activations(
             self,
