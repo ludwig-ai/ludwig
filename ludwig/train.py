@@ -80,7 +80,7 @@ def full_train(
         should_close_session=True,
         gpus=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         random_seed=42,
         debug=False,
         **kwargs
@@ -428,7 +428,7 @@ def train(
         skip_save_log=False,
         gpus=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False
 ):
@@ -775,7 +775,7 @@ def cli(sys_argv):
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(

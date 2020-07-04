@@ -52,7 +52,7 @@ from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import allgather_object
+from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 
@@ -73,13 +73,13 @@ class Model:
             combiner,
             training,
             preprocessing,
-            use_horovod=False,
+            use_horovod=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
     ):
         self.horovod = None
-        if use_horovod:
+        if should_use_horovod(use_horovod):
             import horovod.tensorflow
             self.horovod = horovod.tensorflow
             self.horovod.init()
@@ -1214,7 +1214,7 @@ class Model:
         self.ecd.load_weights(weights_path)
 
     @staticmethod
-    def load(load_path, use_horovod=False):
+    def load(load_path, use_horovod=None):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -1484,7 +1484,7 @@ class ProgressTracker:
         return ProgressTracker(**loaded)
 
 
-def load_model_and_definition(model_dir, use_horovod=False):
+def load_model_and_definition(model_dir, use_horovod=None):
     # Load model definition and weights
     model_definition = load_json(
         os.path.join(

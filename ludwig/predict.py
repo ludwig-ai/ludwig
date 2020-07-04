@@ -57,7 +57,7 @@ def full_predict(
         evaluate_performance=True,
         gpus=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         debug=False,
         **kwargs
 ):
@@ -370,7 +370,7 @@ def cli(sys_argv):
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(

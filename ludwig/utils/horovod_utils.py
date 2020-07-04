@@ -15,8 +15,21 @@
 # ==============================================================================
 
 import io
+import os
 
 import tensorflow as tf
+
+
+def should_use_horovod(use_horovod):
+    """Returns True if user did not specify explicitly and running with `horovodrun`."""
+    if use_horovod is None:
+        return has_horovodrun()
+    return use_horovod
+
+
+def has_horovodrun():
+    """Returns True if running with `horovodrun` using Gloo or OpenMPI."""
+    return 'OMPI_COMM_WORLD_RANK' in os.environ or 'HOROVOD_RANK' in os.environ
 
 
 def allgather_object(obj):
@@ -38,9 +51,10 @@ def allgather_object(obj):
 
     b = io.BytesIO()
     cloudpickle.dump(obj, b)
-    t = tf.convert_to_tensor(bytearray(b.getvalue()), dtype=tf.uint8)
 
+    t = tf.convert_to_tensor(bytearray(b.getvalue()), dtype=tf.uint8)
     sz = tf.convert_to_tensor([t.shape[0]], dtype=tf.int32)
+
     sizes = allgather(sz, name=type(obj).__name__ + '.sz').numpy()
     gathered = allgather(t, name=type(obj).__name__ + '.t').numpy()
 

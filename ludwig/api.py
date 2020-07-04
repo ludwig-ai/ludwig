@@ -343,7 +343,7 @@ class LudwigModel:
             output_directory='results',
             gpus=None,
             allow_parallel_threads=True,
-            use_horovod=False,
+            use_horovod=None,
             random_seed=42,
             debug=False,
             **kwargs

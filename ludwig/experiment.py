@@ -77,7 +77,7 @@ def experiment(
         should_close_session=False,
         gpus=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -192,7 +192,7 @@ def full_experiment(
         output_directory='results',
         gpus=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -806,7 +806,7 @@ def cli(sys_argv):
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(
