@@ -133,9 +133,8 @@ class Model:
         #    self.train_reg_mean_loss
         # )
 
-        # todo tf2: reintroduce horovod
-        # if self.horovod:
-        #    self.broadcast_op = self.horovod.broadcast_global_variables(0)
+        # todo tf2: reintroduce saving
+        # self.saver = tf.train.Saver()
 
     # todo: tf2 proof-of-concept code
     @tf.function

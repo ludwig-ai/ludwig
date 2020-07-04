@@ -201,7 +201,7 @@ Several visualizations are available, please refer to [Visualizations](https://u
 Distributed Training
 --------------------
 
-You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
+You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
 Refer to the [User Guide](https://uber.github.io/ludwig/user_guide/#distributed-training) for more details.
 
 
