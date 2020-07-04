@@ -105,13 +105,15 @@ Model serving extra packages can be installed with `pip install ludwig[serve]` a
 - pydantic
 - python-multipart
 
+Distributed training is supported with [Horovod](https://github.com/horovod/horovod), support for
+which can be installed with `pip install ludwig[horovod]` or `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]`
+for GPU support.  See Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) 
+for full details on available installation options.
+
 Any combination of extra packages can be installed at the same time with `pip install ludwig[extra1,extra2,...]` like for instance `pip install ludwig[text,viz]`.
 The full set of dependencies can be installed with `pip install ludwig[full]`.
 
 Beware that the `tensorflow` package contained in the `requirements.txt` file is the GPU version which works only on machines without a GPU and reverts back to CPU computation. If you prefer to install the CPU version, uninstall `tensorflow-gpu` and replace it with `tensorflow` after having installed `ludwig`, being careful at matching the version ludwig requires, as shown in `requirements.txt`.
-
-If you want to train Ludwig models in a distributed way, you need to also install the `horovod` and the `mpi4py` packages.
-Please follow the instructions on [Horovod's repository](https://github.com/uber/horovod) to install it.
 
 
 Basic Principles
