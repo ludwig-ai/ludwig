@@ -25,18 +25,20 @@ except ImportError:
     USE_HOROVOD = False
 
 
-@pytest.mark.skipif(not USE_HOROVOD, 'Horovod is not available')
+@pytest.mark.skipif(not USE_HOROVOD, reason='Horovod is not available')
 def test_allgather_object():
     def fn():
         import horovod.tensorflow as hvd
         hvd.init()
-        d = {'metric_val': hvd.rank()}
+        d = {'metric_val_1': hvd.rank()}
+        if hvd.rank() == 1:
+            d['metric_val_2'] = 42
         return allgather_object(d)
 
     results = horovodrun(fn, np=2)
     assert len(results) == 2
     assert results[0] == results[1]
     assert results[0] == [
-        {'metric_val': 0},
-        {'metric_val': 1}
+        {'metric_val_1': 0},
+        {'metric_val_1': 1, 'metric_val_2': 42}
     ]

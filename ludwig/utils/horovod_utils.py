@@ -32,12 +32,21 @@ def allgather_object(obj):
     import cloudpickle
     from horovod.tensorflow import allgather, size
 
-    def load(t):
-        buf = io.BytesIO(t.tobytes())
+    def load(byte_array):
+        buf = io.BytesIO(byte_array.tobytes())
         return cloudpickle.load(buf)
 
     b = io.BytesIO()
     cloudpickle.dump(obj, b)
     t = tf.convert_to_tensor(bytearray(b.getvalue()), dtype=tf.uint8)
-    gathered = allgather(t, name=type(obj).__name__).numpy()
-    return [load(gathered[i]) for i in range(size())]
+
+    sz = tf.convert_to_tensor([t.shape[0]], dtype=tf.int32)
+    sizes = allgather(sz, name=type(obj).__name__ + '.sz').numpy()
+    gathered = allgather(t, name=type(obj).__name__ + '.t').numpy()
+
+    def select(i):
+        start = sizes[i - 1] if i > 0 else 0
+        end = start + sizes[i]
+        return gathered[start:end]
+
+    return [load(select(i)) for i in range(size())]
