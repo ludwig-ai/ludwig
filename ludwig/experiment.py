@@ -76,7 +76,7 @@ def experiment(
         output_directory='results',
         should_close_session=False,
         gpus=None,
-        gpu_fraction=1.0,
+        allow_parallel_threads=True,
         use_horovod=False,
         random_seed=default_random_seed,
         debug=False,
@@ -117,7 +117,7 @@ def experiment(
         output_directory=output_directory,
         should_close_session=should_close_session,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
@@ -144,7 +144,7 @@ def experiment(
             batch_size,
             evaluate_performance=True,
             gpus=gpus,
-            gpu_fraction=gpu_fraction,
+            allow_parallel_threads=allow_parallel_threads,
             debug=debug
         )
     else:
@@ -191,7 +191,7 @@ def full_experiment(
         skip_save_test_statistics=False,
         output_directory='results',
         gpus=None,
-        gpu_fraction=1.0,
+        allow_parallel_threads=True,
         use_horovod=False,
         random_seed=default_random_seed,
         debug=False,
@@ -294,9 +294,9 @@ def full_experiment(
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of the memory of each GPU to use at
-           the beginning of the training. The memory may grow elastically.
-    :type gpu_fraction: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :type allow_parallel_threads: Boolean
     :param use_horovod: Flag for using horovod
     :type use_horovod: Boolean
     :param random_seed: Random seed used for weights initialization,
@@ -342,7 +342,7 @@ def full_experiment(
         output_directory=output_directory,
         should_close_session=False,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
@@ -796,11 +796,11 @@ def cli(sys_argv):
         help='list of GPUs to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',

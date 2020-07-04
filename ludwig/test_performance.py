@@ -122,11 +122,11 @@ def cli(sys_argv):
         help='list of gpu to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',

@@ -49,7 +49,7 @@ def collect_activations(
         batch_size=128,
         output_directory='results',
         gpus=None,
-        gpu_fraction=1.0,
+        allow_parallel_threads=True,
         debug=False,
         **kwargs
 ):
@@ -66,8 +66,9 @@ def collect_activations(
     :param batch_size: Batch size
     :param output_directory: Output directory
     :param gpus: The total number of GPUs that the model intends to use
-    :param gpu_fraction: The fraction of each GPU that the model intends on
-           using
+    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+           multithreading parallelism to improve performance at the cost of
+           determinism.
     :param debug: To step through the stack traces and find possible errors
     :returns: None
 
@@ -105,7 +106,7 @@ def collect_activations(
         tensors,
         batch_size,
         gpus=gpus,
-        gpu_fraction=gpu_fraction
+        allow_parallel_threads=allow_parallel_threads
     )
 
     model.close_session()
@@ -246,11 +247,11 @@ def cli_collect_activations(sys_argv):
         help='list of gpu to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-dbg',

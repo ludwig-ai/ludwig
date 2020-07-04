@@ -52,6 +52,7 @@ from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import allgather_object
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 
@@ -77,15 +78,13 @@ class Model:
             debug=False,
             **kwargs
     ):
-        # todo tf2: reintroduce horovod
         self.horovod = None
-        # if use_horovod:
-        #     import horovod.tensorflow
-        #     self.horovod = horovod.tensorflow
-        #     from mpi4py import MPI
-        #     self.comm = MPI.COMM_WORLD
-        #     self.horovod.init()
+        if use_horovod:
+            import horovod.tensorflow
+            self.horovod = horovod.tensorflow
+            self.horovod.init()
 
+        self.initialized = False
         # self.session = None
 
         self.debug = debug
@@ -162,6 +161,26 @@ class Model:
     @tf.function
     def predict_step(self, model, inputs):
         return model.predictions(inputs, output_features=None)
+
+    def initialize_tensorflow(self, gpus=None, allow_parallel_threads=True):
+        # For reproducivility / determinism, set parallel threads to 1.
+        # For performance, set to 0 to allow TensorFlow to select the best value automatically.
+        tf.config.threading.set_intra_op_parallelism_threads(0 if allow_parallel_threads else 1)
+        tf.config.threading.set_inter_op_parallelism_threads(0 if allow_parallel_threads else 1)
+
+        if self.horovod is not None and gpus is None:
+            gpus = [self.horovod.local_rank()]
+        gpus = [gpus] if isinstance(gpus, int) else gpus
+
+        if gpus is not None:
+            gpu_devices = tf.config.list_physical_devices('GPU')
+            for gpu in gpu_devices:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            if gpu_devices:
+                local_devices = [gpu_devices[g] for g in gpus]
+                tf.config.set_visible_devices(local_devices, 'GPU')
+
+        self.initialized = True
 
     # def initialize_session(self, gpus=None, gpu_fraction=1):
     #     if self.session is None:
@@ -259,7 +278,7 @@ class Model:
             skip_save_progress=False,
             skip_save_log=False,
             gpus=None,
-            gpu_fraction=1,
+            allow_parallel_threads=True,
             random_seed=default_random_seed,
             **kwargs
     ):
@@ -344,8 +363,9 @@ class Model:
         :type skip_save_log: Boolean
         :param gpus: List of gpus to use
         :type gpus: List
-        :param gpu_fraction: Percentage of the GPU that is intended to be used
-        :type gpu_fraction: Float
+        :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+               to improve performance at the cost of determinism.
+        :type allow_parallel_threads: Boolean
         :param random_seed: Default initialization for the random seeds
         :type: Float
         """
@@ -722,10 +742,9 @@ class Model:
             regularization_lambda=0.0,
             bucketing_field=None,
             gpus=None,
-            gpu_fraction=1
+            allow_parallel_threads=True
     ):
-        # todo tf2: figure out how to reintroduce the GPU usage without session
-        # session = self.initialize_session(gpus, gpu_fraction)
+        self.initialize_tensorflow(gpus, allow_parallel_threads)
         batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
 
         # training step loop
@@ -885,8 +904,8 @@ class Model:
 
     def merge_workers_outputs(self, output_metrics, seq_set_size):
         # gather outputs from all workers
-        all_workers_output_metrics = self.comm.allgather(output_metrics)
-        all_workers_seq_set_size = self.comm.allgather(seq_set_size)
+        all_workers_output_metrics = allgather_object(output_metrics)
+        all_workers_seq_set_size = allgather_object(seq_set_size)
 
         # merge them into a single one
         merged_output_metrics = sum_dicts(
@@ -1041,7 +1060,7 @@ class Model:
             batch_size,
             evaluate_performance=True,
             gpus=None,
-            gpu_fraction=1,
+            allow_parallel_threads=True,
             **kwargs
     ):
         # predict
@@ -1068,9 +1087,12 @@ class Model:
             tensor_names,
             batch_size,
             gpus=None,
-            gpu_fraction=1,
+            allow_parallel_threads=True,
             **kwargs
     ):
+        if not self.initialized:
+            self.initialize_tensorflow(gpus, allow_parallel_threads)
+
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
         #
@@ -1104,9 +1126,12 @@ class Model:
             self,
             tensor_names,
             gpus=None,
-            gpu_fraction=1,
+            allow_parallel_threads=True,
             **kwargs
     ):
+        if not self.initialized:
+            self.initialize_tensorflow(gpus, allow_parallel_threads)
+
         # todo tf2: reintroduce functionality
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
