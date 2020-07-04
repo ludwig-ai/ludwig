@@ -178,5 +178,8 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue):
                dict(_ClippedOptimizer.__dict__))
     return cls.from_config(optimizer.get_config())
 
+    def set_learning_rate(self, learning_rate):
+        self.optimizer.lr.assign(learning_rate)
+
     def variables(self):
         return self.optimizer.variables()

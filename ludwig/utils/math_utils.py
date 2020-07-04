@@ -78,8 +78,7 @@ def learning_rate_warmup_distributed(
         return learning_rate
     else:
         epoch_adjusted = float(epoch) + (curr_step / steps_per_epoch)
-        return learning_rate / num_workers * \
-               (epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
+        return learning_rate / num_workers * (epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
 
 
 def learning_rate_warmup(

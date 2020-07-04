@@ -53,6 +53,7 @@ from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
+from ludwig.utils.math_utils import learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 
@@ -514,25 +515,26 @@ class Model:
                     self.horovod.broadcast_variables(self.ecd.variables, root_rank=0)
                     self.horovod.broadcast_variables(self.optimizer.variables(), root_rank=0)
 
+                if self.horovod:
+                    current_learning_rate = learning_rate_warmup_distributed(
+                        progress_tracker.learning_rate,
+                        progress_tracker.epoch,
+                        learning_rate_warmup_epochs,
+                        self.horovod.size(),
+                        batcher.step,
+                        batcher.steps_per_epoch
+                    ) * self.horovod.size()
+                else:
+                    current_learning_rate = learning_rate_warmup(
+                        progress_tracker.learning_rate,
+                        progress_tracker.epoch,
+                        learning_rate_warmup_epochs,
+                        batcher.step,
+                        batcher.steps_per_epoch
+                    )
+                self.optimizer.set_learning_rate(current_learning_rate)
+
                 # todo: tf2 add back relevant code
-                # if self.horovod:
-                #     current_learning_rate = learning_rate_warmup_distributed(
-                #         progress_tracker.learning_rate,
-                #         progress_tracker.epoch,
-                #         learning_rate_warmup_epochs,
-                #         self.horovod.size(),
-                #         batcher.step,
-                #         batcher.steps_per_epoch
-                #     ) * self.horovod.size()
-                # else:
-                #     current_learning_rate = learning_rate_warmup(
-                #         progress_tracker.learning_rate,
-                #         progress_tracker.epoch,
-                #         learning_rate_warmup_epochs,
-                #         batcher.step,
-                #         batcher.steps_per_epoch
-                #     )
-                #
                 # readout_nodes = {'optimize': self.optimize}
                 # if not skip_save_log:
                 #     readout_nodes['summary'] = self.merged_summary
