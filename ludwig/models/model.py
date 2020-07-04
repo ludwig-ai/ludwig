@@ -455,11 +455,6 @@ class Model:
                 test_metrics=test_metrics
             )
 
-        # todo tf2: reintroduce horovod
-        # horovod broadcasting after init or restore
-        # if self.horovod:
-        #    session.run(self.broadcast_op)
-
         set_random_seed(random_seed)
         batcher = self.initialize_batcher(
             training_set,
@@ -468,6 +463,7 @@ class Model:
         )
 
         # ================ Training Loop ================
+        first_batch = True
         while progress_tracker.epoch < self.epochs:
             print(">>>> progress tracker epoch", progress_tracker.epoch)
             # epoch init
@@ -507,6 +503,16 @@ class Model:
                     targets,
                     regularization_lambda
                 )
+
+                if self.horovod and first_batch:
+                    # Horovod: broadcast initial variable states from rank 0 to all other processes.
+                    # This is necessary to ensure consistent initialization of all workers when
+                    # training is started with random weights or restored from a checkpoint.
+                    #
+                    # Note: broadcast should be done after the first gradient step to ensure
+                    # optimizer initialization.
+                    self.horovod.broadcast_variables(self.ecd.variables, root_rank=0)
+                    self.horovod.broadcast_variables(self.optimizer.variables(), root_rank=0)
 
                 # todo: tf2 add back relevant code
                 # if self.horovod:
@@ -553,6 +559,7 @@ class Model:
                 progress_tracker.steps += 1
                 if is_on_master():
                     progress_bar.update(1)
+                first_batch = False
 
             # post training ############################
             if is_on_master():

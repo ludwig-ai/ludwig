@@ -177,3 +177,6 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue):
     cls = type(optimizer.__class__.__name__, (optimizer.__class__,),
                dict(_ClippedOptimizer.__dict__))
     return cls.from_config(optimizer.get_config())
+
+    def variables(self):
+        return self.optimizer.variables()
