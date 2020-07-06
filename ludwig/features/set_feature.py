@@ -27,6 +27,7 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
+from ludwig.globals import is_on_master
 from ludwig.models.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.models.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.models.modules.set_decoders import Classifier
@@ -266,8 +267,13 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]

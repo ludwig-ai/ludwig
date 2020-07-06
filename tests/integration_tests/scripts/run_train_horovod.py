@@ -51,15 +51,13 @@ def run_api_experiment(input_features, output_features, data_csv, **kwargs):
         # Training with csv
         model.train(
             data_csv=data_csv,
-            skip_save_processed_input=True,
-            skip_save_progress=True,
-            skip_save_unprocessed_output=True,
             **kwargs
         )
 
         model.predict(data_csv=data_csv)
     finally:
-        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        if model.exp_dir_name:
+            shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
 
 def test_horovod_intent_classification(rel_path, input_features, output_features, **kwargs):

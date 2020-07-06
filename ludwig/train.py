@@ -231,7 +231,7 @@ def full_train(
                 model_name
             )
         else:
-            experiment_dir_name = '.'
+            experiment_dir_name = None
 
     # if model_load_path is not None, load its train_set_metadata
     if model_load_path is not None:
@@ -250,14 +250,13 @@ def full_train(
             skip_save_log and
             skip_save_processed_input
     )
+
+    description_fn = training_stats_fn = model_dir = None
     if is_on_master():
         if should_create_exp_dir:
             if not os.path.exists(experiment_dir_name):
                 os.makedirs(experiment_dir_name)
-
-    description_fn, training_stats_fn, model_dir = get_file_names(
-        experiment_dir_name
-    )
+        description_fn, training_stats_fn, model_dir = get_file_names(experiment_dir_name)
 
     # save description
     description = get_experiment_description(

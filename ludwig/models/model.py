@@ -392,21 +392,23 @@ class Model:
             learning_rate *= self.horovod.size()
 
         # ====== Setup file names =======
+        model_weights_path = model_hyperparameters_path = None
+        training_checkpoints_path = training_checkpoints_prefix_path = training_progress_tracker_path = None
         if is_on_master():
             os.makedirs(save_path, exist_ok=True)
-        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        model_hyperparameters_path = os.path.join(
-            save_path, MODEL_HYPERPARAMETERS_FILE_NAME
-        )
-        training_checkpoints_path = os.path.join(
-            save_path, TRAINING_CHECKPOINTS_DIR_PATH
-        )
-        training_checkpoints_prefix_path = os.path.join(
-            training_checkpoints_path, "ckpt"
-        )
-        training_progress_tracker_path = os.path.join(
-            save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
-        )
+            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            model_hyperparameters_path = os.path.join(
+                save_path, MODEL_HYPERPARAMETERS_FILE_NAME
+            )
+            training_checkpoints_path = os.path.join(
+                save_path, TRAINING_CHECKPOINTS_DIR_PATH
+            )
+            training_checkpoints_prefix_path = os.path.join(
+                training_checkpoints_path, "ckpt"
+            )
+            training_progress_tracker_path = os.path.join(
+                save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
+            )
 
         # ====== Setup session =======
         # todo tf2: reintroduce restoring weights
