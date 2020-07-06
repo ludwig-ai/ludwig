@@ -70,8 +70,8 @@ default_training_params = {
 
 default_optimizer_params_registry = {
     'adam': {
-        'beta_1': 0.9,
-        'beta_2': 0.999,
+        'beta1': 0.9,
+        'beta2': 0.999,
         'epsilon': 1e-08
     },
     'adadelta': {

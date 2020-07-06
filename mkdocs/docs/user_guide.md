@@ -3010,7 +3010,7 @@ horovodrun -np 16 \
 
 The same applies to `experiment`, `predict` and `test`.
 
-When using `horovodrun`, Ludwig will automatically use Horovod during to conduct the model building, training and prediction phases in a distributed way.
+When using `horovodrun`, Ludwig will automatically use Horovod to conduct the model building, training and prediction phases in a distributed way.
 
 When using `mpirun` directly, you may need to additionally pass the `--use_horovod` argument to Ludwig:
 
