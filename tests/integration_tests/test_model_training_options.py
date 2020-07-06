@@ -254,3 +254,61 @@ def test_resume_training(generated_data, tmp_path):
 #         o_feature.decoder_obj(None, training=False)
 #
 #     pass
+
+# todo tf2: add optimizer registry in optimization_module.py
+OPTIMIZER_REGISTRY = [
+    'sgd', 'stochastic_gradient_descent', 'gd', 'gradient_descent',
+    'adam', 'adadelta', 'adagrad', 'ftrl', 'rmsprop'
+]
+@pytest.mark.parametrize('optimizer_type', OPTIMIZER_REGISTRY)
+def test_default_optimizer(optimizer_type, generated_data, tmp_path):
+
+    input_features, output_features = get_feature_definitions()
+
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {
+            'type': 'concat'
+        },
+        'training': {
+            'epochs': 5,
+            'batch_size': 16,
+            'optimizer': {'type': optimizer_type}
+        }
+    }
+
+    # create sub-directory to store results
+    results_dir = tmp_path / 'results'
+    results_dir.mkdir()
+
+    # run experiment
+    exp_dir_name = full_experiment(
+        data_train_df=generated_data.train_df,
+        data_validation_df=generated_data.validation_df,
+        data_test_df=generated_data.test_df,
+        output_directory=str(results_dir),
+        model_definition=model_definition,
+        skip_save_processed_input=True,
+        skip_save_progress=True,
+        skip_save_unprocessed_output=True,
+        skip_save_model=True,
+        skip_save_log=True
+    )
+
+    # test existence of required files
+    train_stats_fp = os.path.join(exp_dir_name, 'training_statistics.json')
+    metadata_fp = os.path.join(exp_dir_name, 'description.json')
+    assert os.path.isfile(train_stats_fp)
+    assert os.path.isfile(metadata_fp)
+
+    # retrieve results so we can validate early stopping
+    with open(train_stats_fp, 'r') as f:
+        train_stats = json.load(f)
+
+    # retrieve training losses for first and last epochs
+    train_losses = np.array(train_stats['train']['combined']['loss'])
+    last_epoch = train_losses.shape[0]
+
+    # ensure train loss for last epoch is less than first epoch
+    assert train_losses[last_epoch - 1] < train_losses[0]
