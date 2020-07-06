@@ -269,7 +269,7 @@ class LudwigModel:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
 
-        self.model.save_weights(self.model.session, model_weights_path)
+        self.model.ecd.save_weights(model_weights_path)
 
         train_set_metadata_path = os.path.join(
             save_path,

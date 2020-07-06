@@ -1,5 +1,6 @@
 import json
 import os.path
+import re
 from collections import namedtuple
 
 import numpy as np
@@ -144,26 +145,28 @@ def test_model_progress_save(
 
     # ========== Check for required result data sets =============
     if skip_save_model:
-        assert not os.path.isdir(
-            os.path.join(exp_dir_name, 'model', 'model_weights')
-        )
+        model_dir = os.path.join(exp_dir_name, 'model')
+        files = [f for f in os.listdir(model_dir) if
+                 re.match(r'model_weights', f)]
+        assert len(files) == 0
     else:
-        assert os.path.isdir(
-            os.path.join(exp_dir_name, 'model', 'model_weights')
-        )
+        model_dir = os.path.join(exp_dir_name, 'model')
+        files = [f for f in os.listdir(model_dir) if
+                 re.match(r'model_weights', f)]
+        assert len(files) == 3
 
     if skip_save_progress:
         assert not os.path.isdir(
-            os.path.join(exp_dir_name, 'model', 'model_weights_progress')
+            os.path.join(exp_dir_name, 'model', 'training_checkpoints')
         )
     else:
         assert os.path.isdir(
-            os.path.join(exp_dir_name, 'model', 'model_weights_progress')
+            os.path.join(exp_dir_name, 'model', 'training_checkpoints')
         )
 
 
-# work-in-progress
-def test_resume_training(generated_data, tmp_path):
+@pytest.mark.parametrize('optimizer', ['sgd', 'adam'])
+def test_resume_training(optimizer, generated_data, tmp_path):
     input_features, output_features = get_feature_definitions()
     model_definition = {
         'input_features': input_features,
@@ -173,7 +176,7 @@ def test_resume_training(generated_data, tmp_path):
             'epochs': 2,
             'early_stop': 1000,
             'batch_size': 16,
-            'optimizer': {'type': 'sgd'}
+            'optimizer': {'type': optimizer}
         }
     }
 
@@ -209,11 +212,15 @@ def test_resume_training(generated_data, tmp_path):
     # compare learning curves with and without resuming
     ts1 = load_json(os.path.join(exp_dir_name_1, 'training_statistics.json'))
     ts2 = load_json(os.path.join(exp_dir_name_2, 'training_statistics.json'))
+    print('ts1', ts1)
+    print('ts2', ts2)
     assert ts1['train']['combined']['loss'] == ts2['train']['combined']['loss']
 
     # compare predictions with and without resuming
     y_pred1 = np.load(os.path.join(exp_dir_name_1, 'y_predictions.npy'))
     y_pred2 = np.load(os.path.join(exp_dir_name_2, 'y_predictions.npy'))
+    print('y_pred1', y_pred1)
+    print('y_pred2', y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
 
 # work-in-progress

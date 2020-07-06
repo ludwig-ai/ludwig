@@ -17,10 +17,10 @@
 LUDWIG_VERSION = '0.2.1'
 
 MODEL_WEIGHTS_FILE_NAME = 'model_weights'
-MODEL_WEIGHTS_PROGRESS_FILE_NAME = 'model_weights_progress'
 MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'
-TRAINING_PROGRESS_FILE_NAME = 'training_progress.json'
 TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'
+TRAINING_PROGRESS_TRACKER_FILE_NAME = 'training_progress.json'
+TRAINING_CHECKPOINTS_DIR_PATH = 'training_checkpoints'
 
 DISABLE_PROGRESSBAR = False
 

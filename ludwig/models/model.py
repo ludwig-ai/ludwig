@@ -25,7 +25,6 @@ import copy
 import logging
 import os
 import os.path
-import re
 import signal
 import sys
 import threading
@@ -39,14 +38,14 @@ from tqdm import tqdm
 from ludwig.constants import LOSS, COMBINED, TYPE
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
-from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
-from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
+from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
+from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
 from ludwig.models.ecd import ECD, dynamic_length_encoders
 from ludwig.models.modules.metric_modules import get_improved_fun
 from ludwig.models.modules.metric_modules import get_initial_validation_value
-from ludwig.models.modules.optimization_modules import OptimizerWrapper
+from ludwig.models.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
@@ -121,7 +120,10 @@ class Model:
 
         # todo tf2: reintroduce optimizer parameters
         # todo tf2: reintroduce learning scheduler in different form most likely
-        self.optimizer = OptimizerWrapper(
+        # self.optimizer = get_optimizer_fun_tf2(
+        #    **self.hyperparameters['training']['optimizer']
+        # )
+        self.optimizer = ClippedOptimizer(
             **self.hyperparameters['training']['optimizer']
         )
 
@@ -135,9 +137,6 @@ class Model:
         # if self.horovod:
         #    self.broadcast_op = self.horovod.broadcast_global_variables(0)
 
-        # todo tf2: reintroduce saving
-        # self.saver = tf.train.Saver()
-
     # todo: tf2 proof-of-concept code
     @tf.function
     def train_step(self, model, optimizer, inputs, targets,
@@ -146,6 +145,8 @@ class Model:
             logits = model((inputs, targets), training=True)
             loss, _ = model.train_loss(targets, logits, regularization_lambda)
         optimizer.minimize_with_tape(tape, loss, model.trainable_variables)
+        # grads = tape.gradient(loss, model.trainable_weights)
+        # optimizer.apply_gradients(zip(grads, model.trainable_weights))
 
         # print('Training loss (for one batch): %s' % float(loss))
 
@@ -367,19 +368,23 @@ class Model:
         if is_on_master():
             os.makedirs(save_path, exist_ok=True)
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        model_weights_progress_path = os.path.join(
-            save_path,
-            MODEL_WEIGHTS_PROGRESS_FILE_NAME
-        )
         model_hyperparameters_path = os.path.join(
-            save_path,
-            MODEL_HYPERPARAMETERS_FILE_NAME
+            save_path, MODEL_HYPERPARAMETERS_FILE_NAME
+        )
+        training_checkpoints_path = os.path.join(
+            save_path, TRAINING_CHECKPOINTS_DIR_PATH
+        )
+        training_checkpoints_prefix_path = os.path.join(
+            training_checkpoints_path, "ckpt"
+        )
+        training_progress_tracker_path = os.path.join(
+            save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
         )
 
         # ====== Setup session =======
         # todo tf2: reintroduce restoring weights
-        if self.weights_save_path:
-           self.restore(self.weights_save_path)
+        checkpoint = tf.train.Checkpoint(optimizer=self.optimizer,
+                                         model=self.ecd)
 
         # todo tf2: reintroduce tensorboard logging
         # train_writer = None
@@ -400,17 +405,13 @@ class Model:
 
         # ================ Resume logic ================
         if resume:
-            progress_tracker = self.resume_training(
-                save_path,
-                model_weights_path
+            progress_tracker = self.resume_training_progress_tracker(
+                training_progress_tracker_path
             )
-            # todo tf3: reintroduce session resume
             if is_on_master():
-               self.resume_session(
-                   save_path,
-                   model_weights_path,
-                   model_weights_progress_path
-               )
+                self.resume_weights_and_optimzier(
+                    training_checkpoints_path, checkpoint
+                )
         else:
             (
                 train_metrics,
@@ -673,7 +674,7 @@ class Model:
                 # there's no validation, so we save the model at each iteration
                 if is_on_master():
                     if not skip_save_model:
-                        self.save_weights(model_weights_path)
+                        self.ecd.save_weights(model_weights_path)
                         self.save_hyperparameters(
                             self.hyperparameters,
                             model_hyperparameters_path
@@ -682,11 +683,11 @@ class Model:
             # ========== Save training progress ==========
             if is_on_master():
                 if not skip_save_progress:
-                    self.save_weights(model_weights_progress_path)
+                    checkpoint.save(training_checkpoints_prefix_path)
                     progress_tracker.save(
                         os.path.join(
                             save_path,
-                            TRAINING_PROGRESS_FILE_NAME
+                            TRAINING_PROGRESS_TRACKER_FILE_NAME
                         )
                     )
                     if skip_save_model:
@@ -973,7 +974,7 @@ class Model:
                 validation_field][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
-                    self.save_weights(model_weights_path)
+                    self.ecd.save_weights(model_weights_path)
                     self.save_hyperparameters(
                         self.hyperparameters,
                         model_hyperparameters_path
@@ -1193,11 +1194,11 @@ class Model:
         )
         hyperparameters = load_json(hyperparameter_file)
         model = Model(use_horovod=use_horovod, **hyperparameters)
-        model.weights_save_path = os.path.join(
+        weights_save_path = os.path.join(
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
-        model.restore(model.weights_save_path)
+        model.restore(weights_save_path)
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
@@ -1219,16 +1220,12 @@ class Model:
         logger.critical('Received SIGQUIT, will kill training')
         sys.exit(1)
 
-    def resume_training(self, save_path, model_weights_path):
+    def resume_training_progress_tracker(self, training_progress_tracker_path):
         if is_on_master():
-            logger.info('Resuming training of model: {0}'.format(save_path))
-        self.weights_save_path = model_weights_path
-        progress_tracker = ProgressTracker.load(
-            os.path.join(
-                save_path,
-                TRAINING_PROGRESS_FILE_NAME
-            )
-        )
+            logger.info('Resuming training of model: {0}'.format(
+                training_progress_tracker_path
+            ))
+        progress_tracker = ProgressTracker.load(training_progress_tracker_path)
         return progress_tracker
 
     def initialize_training_metrics(self, output_features):
@@ -1318,21 +1315,14 @@ class Model:
             )
         return batcher
 
-    def resume_session(
+    def resume_weights_and_optimzier(
             self,
-            save_path,
-            model_weights_path,
-            model_weights_progress_path
+            model_weights_progress_path,
+            checkpoint
     ):
-        num_matching_files = 0
-        pattern = re.compile(MODEL_WEIGHTS_PROGRESS_FILE_NAME)
-        for file_path in os.listdir(save_path):
-            if pattern.match(file_path):
-                num_matching_files += 1
-        if num_matching_files == 3:
-            self.restore(model_weights_progress_path)
-        else:
-            self.restore(model_weights_path)
+        checkpoint.restore(
+            tf.train.latest_checkpoint(model_weights_progress_path)
+        )
 
     def reduce_learning_rate(
             self,
