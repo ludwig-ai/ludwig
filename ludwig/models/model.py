@@ -145,7 +145,7 @@ class Model:
         with tf.GradientTape() as tape:
             logits = model((inputs, targets), training=True)
             loss, _ = model.train_loss(targets, logits, regularization_lambda)
-        optimizer.minimize(tape, loss, model.trainable_variables)
+        optimizer.minimize_with_tape(tape, loss, model.trainable_variables)
 
         # print('Training loss (for one batch): %s' % float(loss))
 
