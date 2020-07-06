@@ -153,7 +153,10 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue):
             self.clipvalue = clipvalue
             super(self.__class__, self).__init__(**kwargs)
 
-        def minimize_with_tape(self, tape, loss, variables):
+        def minimize_with_tape(self, tape, loss, variables, horovod=None):
+            if horovod:
+                tape = horovod.DistributedGradientTape(tape)
+
             gradients = tape.gradient(loss, variables)
             if self.clipglobalnorm:
                 gradients, _ = tf.clip_by_global_norm(gradients,
@@ -174,12 +177,9 @@ def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue):
                 )
             self.apply_gradients(zip(gradients, variables))
 
+        def set_learning_rate(self, learning_rate):
+            self.lr.assign(learning_rate)
+
     cls = type(optimizer.__class__.__name__, (optimizer.__class__,),
                dict(_ClippedOptimizer.__dict__))
     return cls.from_config(optimizer.get_config())
-
-    def set_learning_rate(self, learning_rate):
-        self.optimizer.lr.assign(learning_rate)
-
-    def variables(self):
-        return self.optimizer.variables()
