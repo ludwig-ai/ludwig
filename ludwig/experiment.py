@@ -76,6 +76,7 @@ def experiment(
         output_directory='results',
         should_close_session=False,
         gpus=None,
+        gpu_memory_limit=None,
         allow_parallel_threads=True,
         use_horovod=None,
         random_seed=default_random_seed,
@@ -117,6 +118,7 @@ def experiment(
         output_directory=output_directory,
         should_close_session=should_close_session,
         gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
@@ -144,6 +146,7 @@ def experiment(
             batch_size,
             evaluate_performance=True,
             gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
             debug=debug
         )
@@ -191,6 +194,7 @@ def full_experiment(
         skip_save_test_statistics=False,
         output_directory='results',
         gpus=None,
+        gpu_memory_limit=None,
         allow_parallel_threads=True,
         use_horovod=None,
         random_seed=default_random_seed,
@@ -294,6 +298,8 @@ def full_experiment(
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
     :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
            to improve performance at the cost of determinism.
     :type allow_parallel_threads: Boolean
@@ -342,6 +348,7 @@ def full_experiment(
         output_directory=output_directory,
         should_close_session=False,
         gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
@@ -794,6 +801,13 @@ def cli(sys_argv):
         type=int,
         default=None,
         help='list of GPUs to use'
+    )
+    parser.add_argument(
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
     )
     parser.add_argument(
         '-dpt',

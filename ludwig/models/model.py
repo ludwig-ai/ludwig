@@ -162,7 +162,7 @@ class Model:
     def predict_step(self, model, inputs):
         return model.predictions(inputs, output_features=None)
 
-    def initialize_tensorflow(self, gpus=None, allow_parallel_threads=True):
+    def initialize_tensorflow(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True):
         # For reproducivility / determinism, set parallel threads to 1.
         # For performance, set to 0 to allow TensorFlow to select the best value automatically.
         tf.config.threading.set_intra_op_parallelism_threads(0 if allow_parallel_threads else 1)
@@ -176,6 +176,10 @@ class Model:
             gpu_devices = tf.config.list_physical_devices('GPU')
             for gpu in gpu_devices:
                 tf.config.experimental.set_memory_growth(gpu, True)
+                if gpu_memory_limit is not None:
+                    tf.config.set_logical_device_configuration(
+                        gpu,
+                        [tf.config.LogicalDeviceConfiguration(memory_limit=gpu_memory_limit)])
             if gpu_devices:
                 local_devices = [gpu_devices[g] for g in gpus]
                 tf.config.set_visible_devices(local_devices, 'GPU')
@@ -278,6 +282,7 @@ class Model:
             skip_save_progress=False,
             skip_save_log=False,
             gpus=None,
+            gpu_memory_limit=None,
             allow_parallel_threads=True,
             random_seed=default_random_seed,
             **kwargs
@@ -363,6 +368,8 @@ class Model:
         :type skip_save_log: Boolean
         :param gpus: List of gpus to use
         :type gpus: List
+        :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+        :type gpu_memory_limit: Integer
         :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
                to improve performance at the cost of determinism.
         :type allow_parallel_threads: Boolean
@@ -750,9 +757,10 @@ class Model:
             regularization_lambda=0.0,
             bucketing_field=None,
             gpus=None,
+            gpu_memory_limit=None,
             allow_parallel_threads=True
     ):
-        self.initialize_tensorflow(gpus, allow_parallel_threads)
+        self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
         batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
 
         # training step loop
@@ -1063,6 +1071,7 @@ class Model:
             batch_size,
             evaluate_performance=True,
             gpus=None,
+            gpu_memory_limit=None,
             allow_parallel_threads=True,
             **kwargs
     ):
@@ -1090,11 +1099,12 @@ class Model:
             tensor_names,
             batch_size,
             gpus=None,
+            gpu_memory_limit=None,
             allow_parallel_threads=True,
             **kwargs
     ):
         if not self.initialized:
-            self.initialize_tensorflow(gpus, allow_parallel_threads)
+            self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
 
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
@@ -1129,11 +1139,12 @@ class Model:
             self,
             tensor_names,
             gpus=None,
+            gpu_memory_limit=None,
             allow_parallel_threads=True,
             **kwargs
     ):
         if not self.initialized:
-            self.initialize_tensorflow(gpus, allow_parallel_threads)
+            self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
 
         # todo tf2: reintroduce functionality
         # if self.session is None:

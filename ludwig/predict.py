@@ -56,6 +56,7 @@ def full_predict(
         output_directory='results',
         evaluate_performance=True,
         gpus=None,
+        gpu_memory_limit=None,
         allow_parallel_threads=True,
         use_horovod=None,
         debug=False,
@@ -96,6 +97,7 @@ def full_predict(
         batch_size,
         evaluate_performance,
         gpus,
+        gpu_memory_limit,
         allow_parallel_threads,
         debug
     )
@@ -143,6 +145,7 @@ def predict(
         batch_size=128,
         evaluate_performance=True,
         gpus=None,
+        gpu_memory_limit=None,
         allow_parallel_threads=True,
         debug=False
 ):
@@ -164,6 +167,7 @@ def predict(
                the metrics cannot be computed.
         :type evaluate_performance: Bool
         :type gpus: List
+        :type gpu_memory_limit Int
         :type allow_parallel_threads: Bool
         :param debug: If true turns on tfdbg with inf_or_nan checks.
         :type debug: Boolean
@@ -180,6 +184,7 @@ def predict(
         batch_size,
         evaluate_performance=evaluate_performance,
         gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads
     )
 
@@ -358,6 +363,13 @@ def cli(sys_argv):
         type=int,
         default=0,
         help='list of gpu to use'
+    )
+    parser.add_argument(
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
     )
     parser.add_argument(
         '-dpt',

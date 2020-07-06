@@ -122,6 +122,13 @@ def cli(sys_argv):
         help='list of gpu to use'
     )
     parser.add_argument(
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
         '-dpt',
         '--disable_parallel_threads',
         action='store_false',

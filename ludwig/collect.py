@@ -49,6 +49,7 @@ def collect_activations(
         batch_size=128,
         output_directory='results',
         gpus=None,
+        gpu_memory_limit=None,
         allow_parallel_threads=True,
         debug=False,
         **kwargs
@@ -66,6 +67,8 @@ def collect_activations(
     :param batch_size: Batch size
     :param output_directory: Output directory
     :param gpus: The total number of GPUs that the model intends to use
+    :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+           per GPU device.
     :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
            multithreading parallelism to improve performance at the cost of
            determinism.
@@ -106,6 +109,7 @@ def collect_activations(
         tensors,
         batch_size,
         gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads
     )
 
@@ -245,6 +249,13 @@ def cli_collect_activations(sys_argv):
         type=int,
         default=0,
         help='list of gpu to use'
+    )
+    parser.add_argument(
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
     )
     parser.add_argument(
         '-dpt',

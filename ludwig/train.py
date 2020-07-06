@@ -79,6 +79,7 @@ def full_train(
         output_directory='results',
         should_close_session=True,
         gpus=None,
+        gpu_memory_limit=None,
         allow_parallel_threads=True,
         use_horovod=None,
         random_seed=42,
@@ -176,6 +177,8 @@ def full_train(
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
     :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
            to improve performance at the cost of determinism.
     :type allow_parallel_threads: Boolean
@@ -349,6 +352,7 @@ def full_train(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
@@ -427,6 +431,7 @@ def train(
         skip_save_progress=False,
         skip_save_log=False,
         gpus=None,
+        gpu_memory_limit=None,
         allow_parallel_threads=True,
         use_horovod=None,
         random_seed=default_random_seed,
@@ -470,7 +475,9 @@ def train(
     :type skip_save_log: Boolean
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    ::param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
            to improve performance at the cost of determinism.
     :type allow_parallel_threads: Boolean
     :param random_seed: Random seed used for weights initialization,
@@ -517,6 +524,7 @@ def train(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         random_seed=random_seed,
         **model_definition['training']
@@ -763,6 +771,13 @@ def cli(sys_argv):
         type=int,
         default=None,
         help='list of gpus to use'
+    )
+    parser.add_argument(
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
     )
     parser.add_argument(
         '-dpt',
