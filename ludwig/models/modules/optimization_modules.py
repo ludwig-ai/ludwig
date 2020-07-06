@@ -142,10 +142,10 @@ def ClippedOptimizer(type='sgd',
     else:
         raise ValueError('Invalid optimizer_type: ' + type)
 
-    return vlip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue)
+    return clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue)
 
 
-def vlip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue):
+def clip_optimizer(optimizer, clipglobalnorm, clipnorm, clipvalue):
     class _ClippedOptimizer(tf.keras.optimizers.Optimizer):
         def __init__(self, **kwargs):
             self.clipglobalnorm = clipglobalnorm
