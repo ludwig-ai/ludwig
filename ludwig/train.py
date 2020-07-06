@@ -189,6 +189,8 @@ def full_train(
     :type debug: Boolean
     :returns: None
     """
+    set_on_master(use_horovod)
+
     # check for model_definition and model_definition_file
     if model_definition is None and model_definition_file is None:
         raise ValueError(

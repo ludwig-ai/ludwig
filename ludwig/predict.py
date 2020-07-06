@@ -62,6 +62,7 @@ def full_predict(
         debug=False,
         **kwargs
 ):
+    set_on_master(use_horovod)
     if is_on_master():
         logger.info('Dataset path: {}'.format(
             data_csv if data_csv is not None else data_hdf5))

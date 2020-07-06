@@ -311,6 +311,7 @@ def full_experiment(
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     """
+    set_on_master(use_horovod)
 
     (
         model,
