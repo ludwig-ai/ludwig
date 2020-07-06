@@ -261,7 +261,7 @@ OPTIMIZER_REGISTRY = [
     'adam', 'adadelta', 'adagrad', 'ftrl', 'rmsprop'
 ]
 @pytest.mark.parametrize('optimizer_type', OPTIMIZER_REGISTRY)
-def test_default_optimizer(optimizer_type, generated_data, tmp_path):
+def test_optimizers(optimizer_type, generated_data, tmp_path):
 
     input_features, output_features = get_feature_definitions()
 
