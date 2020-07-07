@@ -22,8 +22,8 @@ import yaml
 
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import full_experiment
-from ludwig.predict import full_predict
 from ludwig.features.h3_feature import H3InputFeature
+from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
 from tests.integration_tests.utils import audio_feature
@@ -169,10 +169,7 @@ def test_experiment_multi_input_intent_classification(csv_filename):
     # Multiple inputs, Single category output
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        category_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
