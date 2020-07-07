@@ -1771,8 +1771,7 @@ class StackedCNNRNN(Layer):
         # ================ Recurrent Layers ================
         hidden, final_state = self.recurrent_stack(
             hidden,
-            training=training,
-            mask=mask
+            training=training
         )
 
         # ================ Sequence Reduction ================
