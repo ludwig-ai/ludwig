@@ -2981,25 +2981,23 @@ encoder: parallel_cnn
 Distributed Training
 ====================
 
-You can distribute the training and prediction of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
+You can distribute the training and prediction of your models using [Horovod](https://github.com/horovod/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
 
-In order to use distributed training you have to install Horovod as detailed in [Horovod's installation instructions](https://github.com/uber/horovod#install) (which include installing [OpenMPI](https://www.open-mpi.org) or other [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) implementations or [Gloo](https://github.com/facebookincubator/gloo)) and then install the two packages:
+Support for Horovod enabled by installing Ludwig with `pip install ludwig[horovod]` or `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]`
+for GPU support.  See Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) for full details on available installation options.
 
-```
-pip install horovod mpi4py
-```
+Note that to install Horovod, you must have either CMake or a version of [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) installed (e.g., [OpenMPI](https://www.open-mpi.org)).
 
 Horovod works by, in practice, increasing the batch size and distributing a part of each batch to a different node and collecting the gradients from all the nodes in a smart and scalable way.
 It also adjusts the learning rate to counter balance the increase in the batch size.
 The advantage is that training speed scales almost linearly with the number of nodes.
 
-`experiment`, `train` and `predict` commands accept a `--use_horovod` argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
-A `horovodrun` command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
+Use the `horovodrun` command to specify which machines and how many worker processes (GPUs) to use.  This command must be provided before the call to Ludwig itself.
 For instance, in order to train a Ludwig model on a local machine with four GPUs one you can run:
 
 ```
 horovodrun -np 4 \
-    ludwig train --use_horovod ...other Ludwig parameters...
+    ludwig train ...Ludwig parameters...
 ```
 
 While for training on four remote machines with four GPUs each you can run:
@@ -3007,12 +3005,21 @@ While for training on four remote machines with four GPUs each you can run:
 ```
 horovodrun -np 16 \
     -H server1:4,server2:4,server3:4,server4:4 \
-    ludwig train --use_horovod ...other Ludwig parameters...
+    ludwig train ...Ludwig parameters...
 ```
 
 The same applies to `experiment`, `predict` and `test`.
 
-More details on Horovod installation and run parameters can be found in [Horovod's documentation](https://github.com/uber/horovod).
+When using `horovodrun`, Ludwig will automatically use Horovod to conduct the model building, training and prediction phases in a distributed way.
+
+When using `mpirun` directly, you may need to additionally pass the `--use_horovod` argument to Ludwig:
+
+```
+mpirun ... \
+    ludwig train --use_horovod ...other Ludwig parameters...
+```
+
+More details on Horovod installation and run parameters can be found in [Horovod's documentation](https://horovod.readthedocs.io/en/stable).
 
 
 Integrations

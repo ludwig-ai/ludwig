@@ -308,8 +308,8 @@ class LudwigModel:
         """Closes an open LudwigModel (closing the session running it).
         It should be called once done with the model to release resources.
         """
-        if self.model is not None:
-            self.model.close_session()
+        # TODO(travis): determine whether this method is still needed in TF2
+        pass
 
     def train(
             self,
@@ -342,8 +342,9 @@ class LudwigModel:
             skip_save_processed_input=False,
             output_directory='results',
             gpus=None,
-            gpu_fraction=1.0,
-            use_horovod=False,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            use_horovod=None,
             random_seed=42,
             debug=False,
             **kwargs
@@ -457,8 +458,11 @@ class LudwigModel:
                contains the results
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_fraction: (float, default `1.0`) fraction of gpu memory to
-               initialize the process with
+       :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+              per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+               multithreading parallelism to improve performance at the cost of
+               determinism.
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -537,7 +541,8 @@ class LudwigModel:
             output_directory=output_directory,
             should_close_session=False,
             gpus=gpus,
-            gpu_fraction=gpu_fraction,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
             use_horovod=use_horovod,
             random_seed=random_seed,
             debug=debug,
@@ -552,7 +557,8 @@ class LudwigModel:
             train_set_metadata=None,
             train_set_metadata_json=None,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -573,8 +579,11 @@ class LudwigModel:
                input and output features the model is going to be trained on
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_fraction: (float, default `1.0`) fraction of GPU memory to
-               initialize the process with
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+               per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+               multithreading parallelism to improve performance at the cost of
+               determinism.
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -603,7 +612,9 @@ class LudwigModel:
             random_seed=random_seed,
             debug=debug
         )
-        model.initialize_session(gpus=gpus, gpu_fraction=gpu_fraction)
+        model.initialize_tensorflow(gpus=gpus,
+                                    gpu_memory_limit=gpu_memory_limit,
+                                    allow_parallel_threads=allow_parallel_threads)
 
         # set parameters
         self.model = model
@@ -620,7 +631,8 @@ class LudwigModel:
             dropout_rate=None,
             bucketing_field=None,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
     ):
         """This function is used to perform one epoch of training of the model
         on the specified dataset.
@@ -651,8 +663,11 @@ class LudwigModel:
                model definition.
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_fraction: (float, default `1.0`) fraction of GPU memory to
-               initialize the process with
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+               per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+               multithreading parallelism to improve performance at the cost of
+               determinism.
 
         There are three ways to provide data: by dataframes using the `data_df`
         parameter, by CSV using the `data_csv` parameter and by dictionary,
@@ -721,7 +736,8 @@ class LudwigModel:
             dropout_rate=dropout_rate,
             bucketing_field=bucketing_field,
             gpus=gpus,
-            gpu_fraction=gpu_fraction)
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads)
 
     def _predict(
             self,
@@ -733,7 +749,8 @@ class LudwigModel:
             evaluate_performance=False,
             skip_save_unprocessed_output=False,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
     ):
 
         if (self.model is None or self.model_definition is None or
@@ -787,7 +804,8 @@ class LudwigModel:
             batch_size,
             evaluate_performance=evaluate_performance,
             gpus=gpus,
-            gpu_fraction=gpu_fraction,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
             session=getattr(self.model, 'session', None)
         )
 
@@ -847,7 +865,8 @@ class LudwigModel:
             return_type=pd.DataFrame,
             batch_size=128,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             skip_save_unprocessed_output=True
     ):
         """This function is used to predict the output variables given the input
@@ -881,8 +900,11 @@ class LudwigModel:
                True, only the CSV ones are saved and the numpy ones are skipped.
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_fraction: (float, default `1.0`) fraction of gpu memory to
-               initialize the process with
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+               per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+               multithreading parallelism to improve performance at the cost of
+               determinism.
 
         # Return
 
@@ -910,7 +932,8 @@ class LudwigModel:
             evaluate_performance=False,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             gpus=gpus,
-            gpu_fraction=gpu_fraction,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
         )
 
         return predictions
@@ -924,7 +947,8 @@ class LudwigModel:
             batch_size=128,
             skip_save_unprocessed_output=False,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
     ):
         """This function is used to predict the output variables given the input
         variables using the trained model and compute test statistics like
@@ -960,8 +984,11 @@ class LudwigModel:
                True, only the CSV ones are saved and the numpy ones are skipped.
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_fraction: (float, default `1.0`) fraction of GPU memory to
-               initialize the process with
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+               per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+               multithreading parallelism to improve performance at the cost of
+               determinism.
 
         # Return
 
@@ -995,7 +1022,8 @@ class LudwigModel:
             evaluate_performance=True,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
             gpus=gpus,
-            gpu_fraction=gpu_fraction,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
         )
 
         return predictions, test_stats
@@ -1054,7 +1082,8 @@ def test_train(
         model_definition,
         batch_size=128,
         gpus=None,
-        gpu_fraction=1,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
         debug=False,
         logging_level=logging.ERROR,
         **kwargs
@@ -1064,7 +1093,8 @@ def test_train(
     train_stats = ludwig_model.train(
         data_csv=data_csv,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         debug=debug
     )
 
@@ -1075,7 +1105,8 @@ def test_train(
         data_csv=data_csv,
         batch_size=batch_size,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
     )
 
     ludwig_model.close()
@@ -1087,7 +1118,8 @@ def test_train_online(
         model_definition,
         batch_size=128,
         gpus=None,
-        gpu_fraction=1,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
         debug=False,
         logging_level=logging.ERROR,
         **kwargs
@@ -1107,13 +1139,15 @@ def test_train_online(
         data_csv=data_csv,
         batch_size=128,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
     )
     ludwig_model.train_online(
         data_csv=data_csv,
         batch_size=128,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
     )
 
     # predict
@@ -1121,7 +1155,8 @@ def test_train_online(
         data_csv=data_csv,
         batch_size=batch_size,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
     )
     ludwig_model.close()
     logger.critical(predictions)
@@ -1132,7 +1167,8 @@ def test_predict(
         model_path,
         batch_size=128,
         gpus=None,
-        gpu_fraction=1,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
         logging_level=logging.ERROR,
         **kwargs
 ):
@@ -1142,7 +1178,8 @@ def test_predict(
         data_csv=data_csv,
         batch_size=batch_size,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
     )
 
     ludwig_model.close()
@@ -1152,7 +1189,8 @@ def test_predict(
         data_csv=data_csv,
         batch_size=batch_size,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
     )
 
     logger.critical(predictions)
@@ -1213,11 +1251,18 @@ def main(sys_argv):
         help='list of gpu to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-dbg',

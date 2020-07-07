@@ -52,6 +52,8 @@ from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
+from ludwig.utils.math_utils import learning_rate_warmup, learning_rate_warmup_distributed
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
 
@@ -72,20 +74,18 @@ class Model:
             combiner,
             training,
             preprocessing,
-            use_horovod=False,
+            use_horovod=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
     ):
-        # todo tf2: reintroduce horovod
         self.horovod = None
-        # if use_horovod:
-        #     import horovod.tensorflow
-        #     self.horovod = horovod.tensorflow
-        #     from mpi4py import MPI
-        #     self.comm = MPI.COMM_WORLD
-        #     self.horovod.init()
+        if should_use_horovod(use_horovod):
+            import horovod.tensorflow
+            self.horovod = horovod.tensorflow
+            self.horovod.init()
 
+        self.initialized = False
         # self.session = None
 
         self.debug = debug
@@ -133,9 +133,8 @@ class Model:
         #    self.train_reg_mean_loss
         # )
 
-        # todo tf2: reintroduce horovod
-        # if self.horovod:
-        #    self.broadcast_op = self.horovod.broadcast_global_variables(0)
+        # todo tf2: reintroduce saving
+        # self.saver = tf.train.Saver()
 
     # todo: tf2 proof-of-concept code
     @tf.function
@@ -144,7 +143,7 @@ class Model:
         with tf.GradientTape() as tape:
             logits = model((inputs, targets), training=True)
             loss, _ = model.train_loss(targets, logits, regularization_lambda)
-        optimizer.minimize_with_tape(tape, loss, model.trainable_variables)
+        optimizer.minimize_with_tape(tape, loss, model.trainable_variables, self.horovod)
         # grads = tape.gradient(loss, model.trainable_weights)
         # optimizer.apply_gradients(zip(grads, model.trainable_weights))
 
@@ -162,6 +161,30 @@ class Model:
     @tf.function
     def predict_step(self, model, inputs):
         return model.predictions(inputs, output_features=None)
+
+    def initialize_tensorflow(self, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True):
+        # For reproducivility / determinism, set parallel threads to 1.
+        # For performance, set to 0 to allow TensorFlow to select the best value automatically.
+        tf.config.threading.set_intra_op_parallelism_threads(0 if allow_parallel_threads else 1)
+        tf.config.threading.set_inter_op_parallelism_threads(0 if allow_parallel_threads else 1)
+
+        if self.horovod is not None and gpus is None:
+            gpus = [self.horovod.local_rank()]
+        gpus = [gpus] if isinstance(gpus, int) else gpus
+
+        if gpus is not None:
+            gpu_devices = tf.config.list_physical_devices('GPU')
+            for gpu in gpu_devices:
+                tf.config.experimental.set_memory_growth(gpu, True)
+                if gpu_memory_limit is not None:
+                    tf.config.set_logical_device_configuration(
+                        gpu,
+                        [tf.config.LogicalDeviceConfiguration(memory_limit=gpu_memory_limit)])
+            if gpu_devices:
+                local_devices = [gpu_devices[g] for g in gpus]
+                tf.config.set_visible_devices(local_devices, 'GPU')
+
+        self.initialized = True
 
     # def initialize_session(self, gpus=None, gpu_fraction=1):
     #     if self.session is None:
@@ -259,7 +282,8 @@ class Model:
             skip_save_progress=False,
             skip_save_log=False,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             random_seed=default_random_seed,
             **kwargs
     ):
@@ -344,8 +368,11 @@ class Model:
         :type skip_save_log: Boolean
         :param gpus: List of gpus to use
         :type gpus: List
-        :param gpu_fraction: Percentage of the GPU that is intended to be used
-        :type gpu_fraction: Float
+        :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+        :type gpu_memory_limit: Integer
+        :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+               to improve performance at the cost of determinism.
+        :type allow_parallel_threads: Boolean
         :param random_seed: Default initialization for the random seeds
         :type: Float
         """
@@ -365,21 +392,23 @@ class Model:
             learning_rate *= self.horovod.size()
 
         # ====== Setup file names =======
+        model_weights_path = model_hyperparameters_path = None
+        training_checkpoints_path = training_checkpoints_prefix_path = training_progress_tracker_path = None
         if is_on_master():
             os.makedirs(save_path, exist_ok=True)
-        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        model_hyperparameters_path = os.path.join(
-            save_path, MODEL_HYPERPARAMETERS_FILE_NAME
-        )
-        training_checkpoints_path = os.path.join(
-            save_path, TRAINING_CHECKPOINTS_DIR_PATH
-        )
-        training_checkpoints_prefix_path = os.path.join(
-            training_checkpoints_path, "ckpt"
-        )
-        training_progress_tracker_path = os.path.join(
-            save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
-        )
+            model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+            model_hyperparameters_path = os.path.join(
+                save_path, MODEL_HYPERPARAMETERS_FILE_NAME
+            )
+            training_checkpoints_path = os.path.join(
+                save_path, TRAINING_CHECKPOINTS_DIR_PATH
+            )
+            training_checkpoints_prefix_path = os.path.join(
+                training_checkpoints_path, "ckpt"
+            )
+            training_progress_tracker_path = os.path.join(
+                save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
+            )
 
         # ====== Setup session =======
         # todo tf2: reintroduce restoring weights
@@ -435,11 +464,6 @@ class Model:
                 test_metrics=test_metrics
             )
 
-        # todo tf2: reintroduce horovod
-        # horovod broadcasting after init or restore
-        # if self.horovod:
-        #    session.run(self.broadcast_op)
-
         set_random_seed(random_seed)
         batcher = self.initialize_batcher(
             training_set,
@@ -448,6 +472,7 @@ class Model:
         )
 
         # ================ Training Loop ================
+        first_batch = True
         while progress_tracker.epoch < self.epochs:
             print(">>>> progress tracker epoch", progress_tracker.epoch)
             # epoch init
@@ -488,25 +513,36 @@ class Model:
                     regularization_lambda
                 )
 
+                if self.horovod and first_batch:
+                    # Horovod: broadcast initial variable states from rank 0 to all other processes.
+                    # This is necessary to ensure consistent initialization of all workers when
+                    # training is started with random weights or restored from a checkpoint.
+                    #
+                    # Note: broadcast should be done after the first gradient step to ensure
+                    # optimizer initialization.
+                    self.horovod.broadcast_variables(self.ecd.variables, root_rank=0)
+                    self.horovod.broadcast_variables(self.optimizer.variables(), root_rank=0)
+
+                if self.horovod:
+                    current_learning_rate = learning_rate_warmup_distributed(
+                        progress_tracker.learning_rate,
+                        progress_tracker.epoch,
+                        learning_rate_warmup_epochs,
+                        self.horovod.size(),
+                        batcher.step,
+                        batcher.steps_per_epoch
+                    ) * self.horovod.size()
+                else:
+                    current_learning_rate = learning_rate_warmup(
+                        progress_tracker.learning_rate,
+                        progress_tracker.epoch,
+                        learning_rate_warmup_epochs,
+                        batcher.step,
+                        batcher.steps_per_epoch
+                    )
+                self.optimizer.set_learning_rate(current_learning_rate)
+
                 # todo: tf2 add back relevant code
-                # if self.horovod:
-                #     current_learning_rate = learning_rate_warmup_distributed(
-                #         progress_tracker.learning_rate,
-                #         progress_tracker.epoch,
-                #         learning_rate_warmup_epochs,
-                #         self.horovod.size(),
-                #         batcher.step,
-                #         batcher.steps_per_epoch
-                #     ) * self.horovod.size()
-                # else:
-                #     current_learning_rate = learning_rate_warmup(
-                #         progress_tracker.learning_rate,
-                #         progress_tracker.epoch,
-                #         learning_rate_warmup_epochs,
-                #         batcher.step,
-                #         batcher.steps_per_epoch
-                #     )
-                #
                 # readout_nodes = {'optimize': self.optimize}
                 # if not skip_save_log:
                 #     readout_nodes['summary'] = self.merged_summary
@@ -533,6 +569,7 @@ class Model:
                 progress_tracker.steps += 1
                 if is_on_master():
                     progress_bar.update(1)
+                first_batch = False
 
             # post training ############################
             if is_on_master():
@@ -722,10 +759,10 @@ class Model:
             regularization_lambda=0.0,
             bucketing_field=None,
             gpus=None,
-            gpu_fraction=1
+            gpu_memory_limit=None,
+            allow_parallel_threads=True
     ):
-        # todo tf2: figure out how to reintroduce the GPU usage without session
-        # session = self.initialize_session(gpus, gpu_fraction)
+        self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
         batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
 
         # training step loop
@@ -842,12 +879,6 @@ class Model:
         if is_on_master():
             progress_bar.close()
 
-        # if self.horovod:
-        #     output_metrics, seq_set_size = self.merge_workers_outputs(
-        #         output_metrics,
-        #         seq_set_size
-        #     )
-
         # consolidate predictions from each batch to a single tensor
         for of_name, of_predictions in predictions.items():
             for pred_name, pred_value_list in of_predictions.items():
@@ -857,6 +888,9 @@ class Model:
             return predictions
         else:
             metrics = self.ecd.get_metrics()
+            if self.horovod:
+                metrics = self.merge_workers_metrics(metrics)
+
             self.ecd.reset_metrics()
             return metrics, predictions
 
@@ -883,19 +917,17 @@ class Model:
 
         return metrics_log, tables
 
-    def merge_workers_outputs(self, output_metrics, seq_set_size):
+    def merge_workers_metrics(self, metrics):
         # gather outputs from all workers
-        all_workers_output_metrics = self.comm.allgather(output_metrics)
-        all_workers_seq_set_size = self.comm.allgather(seq_set_size)
+        all_workers_output_metrics = allgather_object(metrics)
 
         # merge them into a single one
         merged_output_metrics = sum_dicts(
             all_workers_output_metrics,
             dict_type=OrderedDict
         )
-        merged_seq_set_size = sum_dicts(all_workers_seq_set_size)
 
-        return merged_output_metrics, merged_seq_set_size
+        return merged_output_metrics
 
     def batch_collect_activations(
             self,
@@ -1041,7 +1073,8 @@ class Model:
             batch_size,
             evaluate_performance=True,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             **kwargs
     ):
         # predict
@@ -1068,9 +1101,13 @@ class Model:
             tensor_names,
             batch_size,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             **kwargs
     ):
+        if not self.initialized:
+            self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
+
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
         #
@@ -1104,9 +1141,13 @@ class Model:
             self,
             tensor_names,
             gpus=None,
-            gpu_fraction=1,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             **kwargs
     ):
+        if not self.initialized:
+            self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
+
         # todo tf2: reintroduce functionality
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
@@ -1187,7 +1228,7 @@ class Model:
         self.ecd.load_weights(weights_path)
 
     @staticmethod
-    def load(load_path, use_horovod=False):
+    def load(load_path, use_horovod=None):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -1457,7 +1498,7 @@ class ProgressTracker:
         return ProgressTracker(**loaded)
 
 
-def load_model_and_definition(model_dir, use_horovod=False):
+def load_model_and_definition(model_dir, use_horovod=None):
     # Load model definition and weights
     model_definition = load_json(
         os.path.join(

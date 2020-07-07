@@ -1,0 +1,2 @@
+horovod>=0.19
+cloudpickle

@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from ludwig.utils.horovod_utils import should_use_horovod
+
 LUDWIG_VERSION = '0.2.1'
 
 MODEL_WEIGHTS_FILE_NAME = 'model_weights'
@@ -38,7 +40,7 @@ def is_progressbar_disabled():
 
 def set_on_master(use_horovod):
     global ON_MASTER
-    if use_horovod:
+    if should_use_horovod(use_horovod):
         try:
             import horovod.tensorflow
             horovod.tensorflow.init()
@@ -47,7 +49,7 @@ def set_on_master(use_horovod):
             raise ValueError("use_horovod parameter specified, "
                              "but cannot import horovod.tensorflow. "
                              "Install horovod following the instructions at: "
-                             " https://github.com/uber/horovod")
+                             " https://github.com/horovod/horovod")
     else:
         ON_MASTER = True
 

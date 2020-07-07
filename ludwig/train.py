@@ -79,8 +79,9 @@ def full_train(
         output_directory='results',
         should_close_session=True,
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         random_seed=42,
         debug=False,
         **kwargs
@@ -176,9 +177,11 @@ def full_train(
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of the memory of each GPU to use at
-           the beginning of the training. The memory may grow elastically.
-    :type gpu_fraction: Integer
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :type allow_parallel_threads: Boolean
     :param random_seed: Random seed used for weights initialization,
            splits and any other random function.
     :type random_seed: Integer
@@ -186,6 +189,8 @@ def full_train(
     :type debug: Boolean
     :returns: None
     """
+    set_on_master(use_horovod)
+
     # check for model_definition and model_definition_file
     if model_definition is None and model_definition_file is None:
         raise ValueError(
@@ -226,7 +231,7 @@ def full_train(
                 model_name
             )
         else:
-            experiment_dir_name = '.'
+            experiment_dir_name = None
 
     # if model_load_path is not None, load its train_set_metadata
     if model_load_path is not None:
@@ -245,14 +250,13 @@ def full_train(
             skip_save_log and
             skip_save_processed_input
     )
+
+    description_fn = training_stats_fn = model_dir = None
     if is_on_master():
         if should_create_exp_dir:
             if not os.path.exists(experiment_dir_name):
                 os.makedirs(experiment_dir_name)
-
-    description_fn, training_stats_fn, model_dir = get_file_names(
-        experiment_dir_name
-    )
+        description_fn, training_stats_fn, model_dir = get_file_names(experiment_dir_name)
 
     # save description
     description = get_experiment_description(
@@ -349,7 +353,8 @@ def full_train(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug
@@ -427,8 +432,9 @@ def train(
         skip_save_progress=False,
         skip_save_log=False,
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False
 ):
@@ -470,9 +476,11 @@ def train(
     :type skip_save_log: Boolean
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of the memory of each GPU to use at
-           the beginning of the training. The memory may grow elastically.
-    :type gpu_fraction: Integer
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :type allow_parallel_threads: Boolean
     :param random_seed: Random seed used for weights initialization,
            splits and any other random function.
     :type random_seed: Integer
@@ -516,7 +524,9 @@ def train(
         skip_save_model=skip_save_model,
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
-        gpus=gpus, gpu_fraction=gpu_fraction,
+        gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         random_seed=random_seed,
         **model_definition['training']
     )
@@ -764,17 +774,24 @@ def cli(sys_argv):
         help='list of gpus to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(

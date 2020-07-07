@@ -56,11 +56,13 @@ def full_predict(
         output_directory='results',
         evaluate_performance=True,
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         debug=False,
         **kwargs
 ):
+    set_on_master(use_horovod)
     if is_on_master():
         logger.info('Dataset path: {}'.format(
             data_csv if data_csv is not None else data_hdf5))
@@ -96,7 +98,8 @@ def full_predict(
         batch_size,
         evaluate_performance,
         gpus,
-        gpu_fraction,
+        gpu_memory_limit,
+        allow_parallel_threads,
         debug
     )
     # model.close_session()  # todo tf2 code clean -up
@@ -143,7 +146,8 @@ def predict(
         batch_size=128,
         evaluate_performance=True,
         gpus=None,
-        gpu_fraction=1.0,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
         debug=False
 ):
     """Computes predictions based on the computed model.
@@ -164,7 +168,8 @@ def predict(
                the metrics cannot be computed.
         :type evaluate_performance: Bool
         :type gpus: List
-        :type gpu_fraction: Integer
+        :type gpu_memory_limit Int
+        :type allow_parallel_threads: Bool
         :param debug: If true turns on tfdbg with inf_or_nan checks.
         :type debug: Boolean
 
@@ -180,7 +185,8 @@ def predict(
         batch_size,
         evaluate_performance=evaluate_performance,
         gpus=gpus,
-        gpu_fraction=gpu_fraction
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads
     )
 
     # combine predictions with the overall metrics
@@ -360,17 +366,24 @@ def cli(sys_argv):
         help='list of gpu to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(

@@ -24,6 +24,7 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
+from ludwig.globals import is_on_master
 from ludwig.models.modules.category_decoders import Classifier
 from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
 from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
@@ -361,8 +362,13 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]

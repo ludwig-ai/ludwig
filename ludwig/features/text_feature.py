@@ -25,6 +25,7 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
+from ludwig.globals import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc import set_default_value
@@ -403,9 +404,14 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
     ):
         # todo: refactor to reuse SeuuqnceOutputFeature.postprocess_results
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
         level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
