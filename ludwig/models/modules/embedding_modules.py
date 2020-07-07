@@ -104,6 +104,7 @@ class Embed(Layer):
             regularizer=None
     ):
         super(Embed, self).__init__()
+        self.supports_masking = True
 
         if embeddings_on_cpu:
             with tf.device('/cpu:0'):
@@ -308,6 +309,7 @@ class EmbedSequence(Layer):
             regularizer=None
     ):
         super(EmbedSequence, self).__init__()
+        self.supports_masking = True
 
         if embeddings_on_cpu:
             with tf.device('/cpu:0'):
@@ -345,10 +347,9 @@ class EmbedSequence(Layer):
             self.embeddings, inputs, name='embeddings_lookup'
         )
 
-        # TODO use tf2 mechanism for masking
         if mask:
             mask_matrix = tf.cast(
-                tf.expand_dims(tf.sign(tf.abs(inputs)), -1),
+                tf.expand_dims(mask, -1),
                 dtype=tf.float32
             )
             embedded = tf.multiply(embedded, mask_matrix)
