@@ -19,7 +19,7 @@ from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.convolutional_modules import Conv2DStack, \
-    ResNet, get_resnet_block_sizes
+    get_resnet_block_sizes
 from ludwig.models.modules.convolutional_modules import ResNet2
 from ludwig.models.modules.fully_connected_modules import FCStack
 
