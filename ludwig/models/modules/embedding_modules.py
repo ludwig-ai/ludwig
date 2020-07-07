@@ -347,7 +347,7 @@ class EmbedSequence(Layer):
             self.embeddings, inputs, name='embeddings_lookup'
         )
 
-        if mask:
+        if mask is not None:
             mask_matrix = tf.cast(
                 tf.expand_dims(mask, -1),
                 dtype=tf.float32
