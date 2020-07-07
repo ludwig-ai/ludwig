@@ -51,7 +51,7 @@ class SequencePassthroughEncoder(Layer):
         """
         super(SequencePassthroughEncoder, self).__init__()
         self.reduce_output = reduce_output
-        if self.reduce_output is not None:
+        if self.reduce_output is None:
             self.supports_masking = True
 
     def call(
@@ -176,7 +176,7 @@ class SequenceEmbedEncoder(Layer):
         super(SequenceEmbedEncoder, self).__init__()
 
         self.reduce_output = reduce_output
-        if self.reduce_output is not None:
+        if self.reduce_output is None:
             self.supports_masking = True
 
         self.embed_sequence = EmbedSequence(
@@ -1373,7 +1373,7 @@ class StackedRNN(Layer):
         super(StackedRNN, self).__init__()
 
         self.reduce_output = reduce_output
-        if self.reduce_output is not None:
+        if self.reduce_output is None:
             self.supports_masking = True
 
         self.should_embed = should_embed
