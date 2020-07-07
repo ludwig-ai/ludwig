@@ -1151,44 +1151,43 @@ class ResNet2(Layer):
 #         padding=('SAME' if strides == 1 else 'VALID'), use_bias=False,
 #         kernel_initializer=tf.variance_scaling_initializer(),
 #         kernel_regularizer=regularizer)
-#
-#
-# resnet_choices = {
-#     8: [1, 2, 2],
-#     14: [1, 2, 2],
-#     18: [2, 2, 2, 2],
-#     34: [3, 4, 6, 3],
-#     50: [3, 4, 6, 3],
-#     101: [3, 4, 23, 3],
-#     152: [3, 8, 36, 3],
-#     200: [3, 24, 36, 3]
-# }
-#
-#
-# def get_resnet_block_sizes(resnet_size):
-#     """Retrieve the size of each block_layer in the ResNet model.
-#     The number of block layers used for the Resnet model varies according
-#     to the size of the model. This helper grabs the layer set we want, throwing
-#     an error if a non-standard size has been selected.
-#     Args:
-#       resnet_size: The number of convolutional layers needed in the model.
-#     Returns:
-#       A list of block sizes to use in building the model.
-#     Raises:
-#       KeyError: if invalid resnet_size is received.
-#     """
-#     try:
-#         return resnet_choices[resnet_size]
-#     except KeyError:
-#         err = (
-#             'Could not find layers for selected Resnet size.\n'
-#             'Size received: {}; sizes allowed: {}.'.format(
-#                 resnet_size, resnet_choices.keys()
-#             )
-#         )
-#         raise ValueError(err)
-#
-#
+
+
+resnet_choices = {
+    8: [1, 2, 2],
+    14: [1, 2, 2],
+    18: [2, 2, 2, 2],
+    34: [3, 4, 6, 3],
+    50: [3, 4, 6, 3],
+    101: [3, 4, 23, 3],
+    152: [3, 8, 36, 3],
+    200: [3, 24, 36, 3]
+}
+
+
+def get_resnet_block_sizes(resnet_size):
+    """Retrieve the size of each block_layer in the ResNet model.
+    The number of block layers used for the Resnet model varies according
+    to the size of the model. This helper grabs the layer set we want, throwing
+    an error if a non-standard size has been selected.
+    Args:
+      resnet_size: The number of convolutional layers needed in the model.
+    Returns:
+      A list of block sizes to use in building the model.
+    Raises:
+      KeyError: if invalid resnet_size is received.
+    """
+    try:
+        return resnet_choices[resnet_size]
+    except KeyError:
+        err = (
+            'Could not find layers for selected Resnet size.\n'
+            'Size received: {}; sizes allowed: {}.'.format(
+                resnet_size, resnet_choices.keys()
+            )
+        )
+        raise ValueError(err)
+
 # ################################################################################
 # # ResNet block definitions.
 # ################################################################################
