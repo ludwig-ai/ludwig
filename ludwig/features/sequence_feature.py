@@ -144,8 +144,9 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
+        inputs_mask = tf.not_equal(inputs, 0)
         encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
+            inputs_exp, training=training, mask=inputs_mask
         )
 
         return encoder_output

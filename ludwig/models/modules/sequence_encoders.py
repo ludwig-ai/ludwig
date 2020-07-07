@@ -51,6 +51,8 @@ class SequencePassthroughEncoder(Layer):
         """
         super(SequencePassthroughEncoder, self).__init__()
         self.reduce_output = reduce_output
+        if self.reduce_output is not None:
+            self.supports_masking = True
 
     def call(
             self,
@@ -174,6 +176,8 @@ class SequenceEmbedEncoder(Layer):
         super(SequenceEmbedEncoder, self).__init__()
 
         self.reduce_output = reduce_output
+        if self.reduce_output is not None:
+            self.supports_masking = True
 
         self.embed_sequence = EmbedSequence(
             vocab,
@@ -454,23 +458,24 @@ class ParallelCNN(Layer):
             default_pool_padding='same',
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout_rate=dropout_rate,
-        )
+        if self.reduce_output is not None:
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -798,23 +803,24 @@ class StackedCNN(Layer):
             default_pool_padding=pool_padding,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout_rate=dropout_rate,
-        )
+        if self.reduce_output is not None:
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -1133,23 +1139,24 @@ class StackedParallelCNN(Layer):
             default_pool_size=pool_size,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout_rate=dropout_rate,
-        )
+        if self.reduce_output is not None:
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -1366,8 +1373,12 @@ class StackedRNN(Layer):
         super(StackedRNN, self).__init__()
 
         self.reduce_output = reduce_output
+        if self.reduce_output is not None:
+            self.supports_masking = True
+
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
             self.embed_sequence = EmbedSequence(
                 vocab,
@@ -1404,23 +1415,24 @@ class StackedRNN(Layer):
             recurrent_dropout=recurrent_dropout,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=fc_activation,
-            default_dropout_rate=fc_dropout_rate,
-        )
+        if self.reduce_output is not None:
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=fc_activation,
+                default_dropout_rate=fc_dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -1703,23 +1715,24 @@ class StackedCNNRNN(Layer):
             recurrent_dropout=recurrent_dropout,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=fc_activation,
-            default_dropout_rate=fc_dropout_rate,
-        )
+        if self.reduce_output is not None:
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=fc_activation,
+                default_dropout_rate=fc_dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
