@@ -84,6 +84,9 @@ class ConcatCombiner(tf.keras.Model):
                 default_dropout_rate=dropout_rate,
             )
 
+        if len(input_features) == 1 and fc_layers is None:
+            self.supports_masking = True
+
     def call(
             self,
             inputs,  # encoder outputs
@@ -124,6 +127,8 @@ class SequenceConcatCombiner:
             **kwargs
     ):
         self.reduce_output = reduce_output
+        if self.reduce_output is None:
+            self.supports_masking = True
         self.main_sequence_feature = main_sequence_feature
 
     def __call__(
@@ -208,7 +213,8 @@ class SequenceConcatCombiner:
                     elif len(fe_properties['representation'].shape) == 2:
                         sequence_max_length = tf.shape(representation)[1]
                         multipliers = tf.concat(
-                            [[1], tf.expand_dims(sequence_max_length, -1), [1]],
+                            [[1], tf.expand_dims(sequence_max_length, -1),
+                             [1]],
                             0
                         )
                         tiled_representation = tf.tile(
@@ -284,6 +290,10 @@ class SequenceCombiner:
             should_embed=False,
             **kwargs
         )
+
+        if (hasattr(self.encoder_obj, 'supports_masking') and
+                self.encoder_obj.supports_masking):
+            self.supports_masking = True
 
     def __call__(
             self,
