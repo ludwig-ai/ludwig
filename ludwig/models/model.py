@@ -1263,7 +1263,7 @@ class Model:
         self.ecd.load_weights(weights_path)
 
     @staticmethod
-    def load(load_path, use_horovod=None):
+    def load(load_path, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, use_horovod=None):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -1274,6 +1274,7 @@ class Model:
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
+        model.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
         model.restore(weights_save_path)
         return model
 
