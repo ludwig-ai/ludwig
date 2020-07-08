@@ -4,7 +4,8 @@ from collections import OrderedDict
 import tensorflow as tf
 
 from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
-from ludwig.features.feature_registries import input_type_registry, output_type_registry
+from ludwig.features.feature_registries import input_type_registry, \
+    output_type_registry
 from ludwig.models.modules.combiners import get_combiner_class
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.misc import get_from_registry
@@ -31,7 +32,7 @@ class ECD(tf.keras.Model):
         logger.debug('- Combiner {}'.format(combiner_def[TYPE]))
         combiner_class = get_combiner_class(combiner_def[TYPE])
         self.combiner = combiner_class(
-            self.input_features,
+            input_features=self.input_features,
             **combiner_def,
             **kwargs
         )

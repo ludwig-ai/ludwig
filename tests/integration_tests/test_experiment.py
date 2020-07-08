@@ -396,30 +396,25 @@ def test_sequence_tagger(
     # run the experiment
     run_experiment(input_features, output_features, data_csv=rel_path)
 
-def test_experiment_sequence_combiner(csv_filename):
+@pytest.mark.parametrize('sequence_combiner_encoder', ENCODERS[:-2])
+def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
     # Sequence combiner
     input_features = [
         sequence_feature(
-            name='english',
+            name='seq1',
             min_len=5,
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None,
-            preprocessing={
-                'tokenizer': 'english_tokenize'
-            }
+            reduce_output=None
         ),
         sequence_feature(
-            name='spanish',
+            name='seq2',
             min_len=5,
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None,
-            preprocessing = {
-                'tokenizer': 'spanish_tokenize'
-            }
+            reduce_output=None
         ),
         category_feature(vocab_size=5)
     ]
@@ -434,9 +429,10 @@ def test_experiment_sequence_combiner(csv_filename):
             'epochs': 2
         },
         'combiner': {
-            'type': 'sequence_concat',
+            'type': 'sequence',
             'encoder': 'rnn',
-            'main_sequence_feature': 'random_sequence'
+            'main_sequence_feature': 'seq1',
+            'reduce_output': None,
         }
     }
 
