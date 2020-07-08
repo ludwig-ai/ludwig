@@ -19,8 +19,8 @@ import uuid
 
 import pandas as pd
 
-from ludwig.data.dataset_synthesyzer import DATETIME_FORMATS
-from ludwig.data.dataset_synthesyzer import build_synthetic_dataset
+from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
+from ludwig.data.dataset_synthesizer import build_synthetic_dataset
 from ludwig.constants import VECTOR
 
 ENCODERS = [

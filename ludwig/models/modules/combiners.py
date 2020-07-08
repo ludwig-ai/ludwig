@@ -163,7 +163,7 @@ class SequenceConcatCombiner:
         with tf.variable_scope(scope_name):
             # ================ Concat ================
             for fe_name, fe_properties in feature_encodings.items():
-                if fe_name is not self.main_sequence_feature:
+                if fe_name != self.main_sequence_feature:
                     if fe_properties['type'] in SEQUENCE_TYPES and \
                             len(fe_properties['representation'].shape) == 3:
                         # The following check makes sense when
@@ -281,13 +281,14 @@ class SequenceCombiner:
             **kwargs
     ):
         self.combiner = SequenceConcatCombiner(
-            reduce_output=reduce_output,
+            reduce_output=None,
             main_sequence_feature=main_sequence_feature
         )
 
         self.encoder_obj = get_from_registry(
             encoder, sequence_encoder_registry)(
             should_embed=False,
+            reduce_output=reduce_output,
             **kwargs
         )
 

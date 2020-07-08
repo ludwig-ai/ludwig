@@ -83,3 +83,9 @@ SEQ_SUM = 'seq_sum'
 AVG_EXP = 'avg_exp'
 
 TYPE = 'type'
+
+TRAINING = 'training'
+VALIDATION = 'validation'
+TEST = 'test'
+SPLIT = 'split'
+FULL = 'full'

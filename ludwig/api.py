@@ -33,6 +33,7 @@ import os
 import sys
 
 import ludwig.contrib
+from ludwig.constants import TRAINING
 
 ludwig.contrib.contrib_import()
 
@@ -258,7 +259,7 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None or self.model.session is None or
+        if (self.model is None or self.model._session is None or
                 self.model_definition is None or self.train_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
@@ -278,7 +279,7 @@ class LudwigModel:
         save_json(train_set_metadata_path, self.train_set_metadata)
 
         self.model.save_hyperparameters(
-            self.model.hyperparameters,
+            self.model._hyperparameters,
             model_hyperparameters_path
         )
 
@@ -298,7 +299,7 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None or self.model.session is None or
+        if (self.model is None or self.model._session is None or
                 self.model_definition is None or self.train_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
@@ -607,7 +608,7 @@ class LudwigModel:
             self.model_definition['input_features'],
             self.model_definition['output_features'],
             self.model_definition['combiner'],
-            self.model_definition['training'],
+            self.model_definition[TRAINING],
             self.model_definition['preprocessing'],
             random_seed=random_seed,
             debug=debug
@@ -692,17 +693,17 @@ class LudwigModel:
             data_df.csv = data_csv
 
         if batch_size is None:
-            batch_size = self.model_definition['training']['batch_size']
+            batch_size = self.model_definition[TRAINING]['batch_size']
         if learning_rate is None:
-            learning_rate = self.model_definition['training']['learning_rate']
+            learning_rate = self.model_definition[TRAINING]['learning_rate']
         if regularization_lambda is None:
-            regularization_lambda = self.model_definition['training'][
+            regularization_lambda = self.model_definition[TRAINING][
                 'regularization_lambda'
             ]
         if dropout_rate is None:
-            dropout_rate = self.model_definition['training']['dropout_rate'],
+            dropout_rate = self.model_definition[TRAINING]['dropout_rate'],
         if bucketing_field is None:
-            bucketing_field = self.model_definition['training'][
+            bucketing_field = self.model_definition[TRAINING][
                 'bucketing_field'
             ]
 
@@ -1194,7 +1195,7 @@ def test_predict(
     )
 
     logger.critical(predictions)
-    
+
 
 def main(sys_argv):
     parser = argparse.ArgumentParser(

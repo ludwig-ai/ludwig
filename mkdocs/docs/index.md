@@ -1,4 +1,0 @@
----
-template: landing.html
----
-About

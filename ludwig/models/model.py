@@ -79,33 +79,34 @@ class Model:
             debug=False,
             **kwargs
     ):
-        self.horovod = None
+        self._horovod = None
         if should_use_horovod(use_horovod):
             import horovod.tensorflow
-            self.horovod = horovod.tensorflow
-            self.horovod.init()
+            self._horovod = horovod.tensorflow
+            self._horovod.init()
 
-        self.initialized = False
+        self._initialized = False
         # self.session = None
 
-        self.debug = debug
-        self.weights_save_path = None
-        self.hyperparameters = {}
-        self.output_metrics_cache = None
+        self._debug = debug
+        self._weights_save_path = None
+        self._hyperparameters = {}
+        self._output_metrics_cache = None
 
-        self.epochs = None
-        self.received_sigint = False
+        self._epochs = None
+        self._received_sigint = False
 
-        self.hyperparameters['input_features'] = input_features
-        self.hyperparameters['combiner'] = combiner
-        self.hyperparameters['output_features'] = output_features
-        self.hyperparameters['training'] = training
-        self.hyperparameters['preprocessing'] = preprocessing
-        self.hyperparameters['random_seed'] = random_seed
-        self.hyperparameters.update(kwargs)
+        self._hyperparameters['input_features'] = input_features
+        self._hyperparameters['combiner'] = combiner
+        self._hyperparameters['output_features'] = output_features
+        self._hyperparameters['training'] = training
+        self._hyperparameters['preprocessing'] = preprocessing
+        self._hyperparameters['random_seed'] = random_seed
+        self._hyperparameters.update(kwargs)
 
         tf.random.set_seed(random_seed)
 
+        # public
         self.ecd = ECD(input_features, combiner, output_features)
 
         # ================ Optimizer ================
@@ -123,8 +124,8 @@ class Model:
         # self.optimizer = get_optimizer_fun_tf2(
         #    **self.hyperparameters['training']['optimizer']
         # )
-        self.optimizer = ClippedOptimizer(
-            **self.hyperparameters['training']['optimizer']
+        self._optimizer = ClippedOptimizer(
+            **self._hyperparameters['training']['optimizer']
         )
 
         # todo tf2: reintroduce tensorboard tracking and summaries
@@ -143,7 +144,7 @@ class Model:
         with tf.GradientTape() as tape:
             logits = model((inputs, targets), training=True)
             loss, _ = model.train_loss(targets, logits, regularization_lambda)
-        optimizer.minimize_with_tape(tape, loss, model.trainable_variables, self.horovod)
+        optimizer.minimize_with_tape(tape, loss, model.trainable_variables, self._horovod)
         # grads = tape.gradient(loss, model.trainable_weights)
         # optimizer.apply_gradients(zip(grads, model.trainable_weights))
 
@@ -168,8 +169,8 @@ class Model:
         tf.config.threading.set_intra_op_parallelism_threads(0 if allow_parallel_threads else 1)
         tf.config.threading.set_inter_op_parallelism_threads(0 if allow_parallel_threads else 1)
 
-        if self.horovod is not None and gpus is None:
-            gpus = [self.horovod.local_rank()]
+        if self._horovod is not None and gpus is None:
+            gpus = [self._horovod.local_rank()]
         gpus = [gpus] if isinstance(gpus, int) else gpus
 
         if gpus is not None:
@@ -184,7 +185,7 @@ class Model:
                 local_devices = [gpu_devices[g] for g in gpus]
                 tf.config.set_visible_devices(local_devices, 'GPU')
 
-        self.initialized = True
+        self._initialized = True
 
     # def initialize_session(self, gpus=None, gpu_fraction=1):
     #     if self.session is None:
@@ -378,9 +379,9 @@ class Model:
         """
         # ====== General setup =======
         output_features = self.ecd.output_features
-        self.epochs = epochs
-        digits_per_epochs = len(str(self.epochs))
-        self.received_sigint = False
+        self._epochs = epochs
+        digits_per_epochs = len(str(self._epochs))
+        self._received_sigint = False
         # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
@@ -388,8 +389,42 @@ class Model:
         if eval_batch_size < 1:
             eval_batch_size = batch_size
         metrics_names = self.get_metrics_names(output_features)
-        if self.horovod:
-            learning_rate *= self.horovod.size()
+        if self._horovod:
+            learning_rate *= self._horovod.size()
+
+        # check if validation_field is valid
+        valid_validation_field = False
+        validation_output_feature_name = None
+        if validation_field == 'combined':
+            valid_validation_field = True
+            validation_output_feature_name = 'combined'
+        else:
+            for output_feature in output_features:
+                if validation_field == output_feature['name']:
+                    valid_validation_field = True
+                    validation_output_feature_name = output_feature['name']
+        if not valid_validation_field:
+            raise ValueError(
+                'The specificed validation_field {} is not valid.'
+                'Available ones are: {}'.format(
+                    validation_field,
+                    [of['name'] for of in output_features] + ['combined']
+                )
+            )
+
+        # check if validation_measure is valid
+        valid_validation_measure = validation_metric in metrics_names[
+            validation_output_feature_name
+        ]
+        if not valid_validation_measure:
+            raise ValueError(
+                'The specificed metric {} is not valid.'
+                'Available metrics for {} output features are: {}'.format(
+                    validation_metric,
+                    validation_output_feature_name,
+                    metrics_names[validation_output_feature_name]
+                )
+            )
 
         # ====== Setup file names =======
         model_weights_path = model_hyperparameters_path = None
@@ -412,7 +447,7 @@ class Model:
 
         # ====== Setup session =======
         # todo tf2: reintroduce restoring weights
-        checkpoint = tf.train.Checkpoint(optimizer=self.optimizer,
+        checkpoint = tf.train.Checkpoint(optimizer=self._optimizer,
                                          model=self.ecd)
 
         # todo tf2: reintroduce tensorboard logging
@@ -473,7 +508,7 @@ class Model:
 
         # ================ Training Loop ================
         first_batch = True
-        while progress_tracker.epoch < self.epochs:
+        while progress_tracker.epoch < self._epochs:
             print(">>>> progress tracker epoch", progress_tracker.epoch)
             # epoch init
             start_time = time.time()
@@ -502,36 +537,36 @@ class Model:
             # training step loop
             while not batcher.last_batch():
                 batch = batcher.next_batch()
-                inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self.hyperparameters['input_features']}
-                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
+                inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self._hyperparameters['input_features']}
+                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self._hyperparameters['output_features']}
 
                 self.train_step(
                     self.ecd,
-                    self.optimizer,
+                    self._optimizer,
                     inputs,
                     targets,
                     regularization_lambda
                 )
 
-                if self.horovod and first_batch:
+                if self._horovod and first_batch:
                     # Horovod: broadcast initial variable states from rank 0 to all other processes.
                     # This is necessary to ensure consistent initialization of all workers when
                     # training is started with random weights or restored from a checkpoint.
                     #
                     # Note: broadcast should be done after the first gradient step to ensure
                     # optimizer initialization.
-                    self.horovod.broadcast_variables(self.ecd.variables, root_rank=0)
-                    self.horovod.broadcast_variables(self.optimizer.variables(), root_rank=0)
+                    self._horovod.broadcast_variables(self.ecd.variables, root_rank=0)
+                    self._horovod.broadcast_variables(self._optimizer.variables(), root_rank=0)
 
-                if self.horovod:
+                if self._horovod:
                     current_learning_rate = learning_rate_warmup_distributed(
                         progress_tracker.learning_rate,
                         progress_tracker.epoch,
                         learning_rate_warmup_epochs,
-                        self.horovod.size(),
+                        self._horovod.size(),
                         batcher.step,
                         batcher.steps_per_epoch
-                    ) * self.horovod.size()
+                    ) * self._horovod.size()
                 else:
                     current_learning_rate = learning_rate_warmup(
                         progress_tracker.learning_rate,
@@ -540,7 +575,7 @@ class Model:
                         batcher.step,
                         batcher.steps_per_epoch
                     )
-                self.optimizer.set_learning_rate(current_learning_rate)
+                self._optimizer.set_learning_rate(current_learning_rate)
 
                 # todo: tf2 add back relevant code
                 # readout_nodes = {'optimize': self.optimize}
@@ -713,7 +748,7 @@ class Model:
                     if not skip_save_model:
                         self.ecd.save_weights(model_weights_path)
                         self.save_hyperparameters(
-                            self.hyperparameters,
+                            self._hyperparameters,
                             model_hyperparameters_path
                         )
 
@@ -729,7 +764,7 @@ class Model:
                     )
                     if skip_save_model:
                         self.save_hyperparameters(
-                            self.hyperparameters,
+                            self._hyperparameters,
                             model_hyperparameters_path
                         )
 
@@ -775,12 +810,12 @@ class Model:
 
         while not batcher.last_batch():
             batch = batcher.next_batch()
-            inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self.hyperparameters['input_features']}
-            targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
+            inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self._hyperparameters['input_features']}
+            targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self._hyperparameters['output_features']}
 
             self.train_step(
                 self.ecd,
-                self.optimizer,
+                self._optimizer,
                 inputs,
                 targets,
                 regularization_lambda
@@ -843,7 +878,7 @@ class Model:
             # todo: tf2 need to rationalize to reduce redundant code
             # create array for predictors
             # todo: tf2 need to handle case of single predictor, e.g., image
-            inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self.hyperparameters['input_features']}
+            inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in self._hyperparameters['input_features']}
 
             if only_predictions:
                 (
@@ -853,7 +888,7 @@ class Model:
                     inputs
                 )
             else:
-                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self.hyperparameters['output_features']}
+                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in self._hyperparameters['output_features']}
 
                 (
                     preds
@@ -888,7 +923,7 @@ class Model:
             return predictions
         else:
             metrics = self.ecd.get_metrics()
-            if self.horovod:
+            if self._horovod:
                 metrics = self.merge_workers_metrics(metrics)
 
             self.ecd.reset_metrics()
@@ -1008,7 +1043,7 @@ class Model:
                 if not skip_save_model:
                     self.ecd.save_weights(model_weights_path)
                     self.save_hyperparameters(
-                        self.hyperparameters,
+                        self._hyperparameters,
                         model_hyperparameters_path
                     )
                     logger.info(
@@ -1105,7 +1140,7 @@ class Model:
             allow_parallel_threads=True,
             **kwargs
     ):
-        if not self.initialized:
+        if not self._initialized:
             self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
 
         # if self.session is None:
@@ -1145,7 +1180,7 @@ class Model:
             allow_parallel_threads=True,
             **kwargs
     ):
-        if not self.initialized:
+        if not self._initialized:
             self.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
 
         # todo tf2: reintroduce functionality
@@ -1243,9 +1278,9 @@ class Model:
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
-        if not self.received_sigint:
-            self.epochs = 1
-            self.received_sigint = True
+        if not self._received_sigint:
+            self._epochs = 1
+            self._received_sigint = True
             logger.critical(
                 '\nReceived SIGINT, will finish this epoch and then conclude '
                 'the training'
@@ -1306,17 +1341,17 @@ class Model:
             should_shuffle=True,
             ignore_last=False
     ):
-        if self.horovod:
+        if self._horovod:
             batcher = DistributedBatcher(
                 dataset,
-                self.horovod.rank(),
-                self.horovod,
+                self._horovod.rank(),
+                self._horovod,
                 batch_size,
                 should_shuffle=should_shuffle,
                 ignore_last=ignore_last
             )
         elif bucketing_field is not None:
-            input_features = self.hyperparameters['input_features']
+            input_features = self._hyperparameters['input_features']
             bucketing_feature = [
                 feature for feature in input_features if
                 feature['name'] == bucketing_field
@@ -1334,7 +1369,7 @@ class Model:
             if 'preprocessing' in bucketing_feature:
                 trim_side = bucketing_feature['preprocessing']['padding']
             else:
-                trim_side = self.hyperparameters['preprocessing'][
+                trim_side = self._hyperparameters['preprocessing'][
                     bucketing_feature[TYPE]]['padding']
 
             batcher = BucketedBatcher(

@@ -30,7 +30,7 @@ from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import collapse_rare_labels
+from ludwig.utils.data_utils import collapse_rare_labels, csv_contains_column
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import load_json
 from ludwig.utils.data_utils import read_csv
@@ -96,7 +96,7 @@ def build_dataset_df(
         global_preprocessing_parameters
     )
 
-    data_val['split'] = get_split(
+    data_val[SPLIT] = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -125,6 +125,11 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
             preprocessing_parameters = global_preprocessing_parameters[
                 feature[TYPE]
             ]
+        handle_missing_values(
+            dataset_df,
+            feature,
+            preprocessing_parameters
+        )
         train_set_metadata[feature['name']] = get_feature_meta(
             dataset_df[feature['name']].astype(str),
             preprocessing_parameters
@@ -208,8 +213,8 @@ def get_split(
         stratify=None,
         random_seed=default_random_seed,
 ):
-    if 'split' in dataset_df and not force_split:
-        split = dataset_df['split']
+    if SPLIT in dataset_df and not force_split:
+        split = dataset_df[SPLIT]
     else:
         set_random_seed(random_seed)
         if stratify is None or stratify not in dataset_df:
@@ -270,7 +275,7 @@ def load_data(
         hdf5_data.close()
         return dataset
 
-    split = hdf5_data['split'][()]
+    split = hdf5_data[SPLIT][()]
     hdf5_data.close()
     training_set, test_set, validation_set = split_dataset_tvt(dataset, split)
 
@@ -629,7 +634,7 @@ def _preprocess_csv_for_training(
 
         training_set, test_set, validation_set = split_dataset_tvt(
             data,
-            data['split']
+            data[SPLIT]
         )
 
     elif data_train_csv is not None:
@@ -656,7 +661,7 @@ def _preprocess_csv_for_training(
         )
         training_set, test_set, validation_set = split_dataset_tvt(
             data,
-            data['split']
+            data[SPLIT]
         )
         if not skip_save_processed_input:
             logger.info('Writing dataset')
@@ -742,7 +747,7 @@ def _preprocess_df_for_training(
     )
     training_set, test_set, validation_set = split_dataset_tvt(
         data,
-        data['split']
+        data[SPLIT]
     )
     return training_set, test_set, validation_set, train_set_metadata
 
@@ -801,7 +806,7 @@ def preprocess_for_prediction(
 
     # Load data
     train_set_metadata = load_metadata(train_set_metadata)
-    if split == 'full':
+    if split == FULL:
         if data_hdf5 is not None:
             dataset = load_data(
                 data_hdf5,
@@ -818,19 +823,20 @@ def preprocess_for_prediction(
             )
     else:
         if data_hdf5 is not None:
-            training, test, validation = load_data(
+            training_set, test_set, validation_set = load_data(
                 data_hdf5,
                 model_definition['input_features'],
                 output_features,
                 shuffle_training=False
             )
 
-            if split == 'training':
-                dataset = training
-            elif split == 'validation':
-                dataset = validation
-            else:  # if split == 'test':
-                dataset = test
+            if split == TRAINING:
+                dataset = training_set
+            elif split == VALIDATION:
+                dataset = validation_set
+            else:  # if split == TEST:
+                dataset = test_set
+
         else:
             dataset, train_set_metadata = build_dataset(
                 data_csv,
@@ -838,6 +844,28 @@ def preprocess_for_prediction(
                 preprocessing_params,
                 train_set_metadata=train_set_metadata
             )
+            # build_dataset adds a split column if there is none in the csv
+            # so if we want to check if the csv contained a split column
+            # we have to check in the csv not in the built dataset.
+            # The logic is that if there is no split in the original csv
+            # we treat the split parameter as if it was == full
+            if csv_contains_column(data_csv, SPLIT):
+                training_set, test_set, validation_set = split_dataset_tvt(
+                    dataset,
+                    dataset[SPLIT]
+                )
+                if split == TRAINING:
+                    dataset = training_set
+                elif split == VALIDATION:
+                    dataset = validation_set
+                else:  # if split == TEST:
+                    dataset = test_set
+            else:
+                logger.warning(
+                    'You requested the {} split, but the data CSV '
+                    'does not contain a "split" column, so the '
+                    'full data will be used instead'
+                )
 
     replace_text_feature_level(
         features,

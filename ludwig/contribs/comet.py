@@ -55,6 +55,7 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
+            self.cometml_experiment = None
             logger.error(
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
@@ -72,6 +73,7 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.Experiment(log_code=False)
         except Exception:
+            self.cometml_experiment = None
             logger.error(
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
@@ -92,7 +94,7 @@ class Comet():
             model_definition_path = args[2]
             if model:
                 self.cometml_experiment.set_model_graph(
-                    str(model.graph.as_graph_def()))
+                    str(model._graph.as_graph_def()))
             if model_definition:
                 if model_definition_path:
                     base_name = os.path.basename(model_definition_path)
@@ -145,6 +147,7 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
         except Exception:
+            self.cometml_experiment = None
             logger.error("Ignored --comet. No '.comet.config' file")
             return
 
@@ -162,6 +165,7 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
         except Exception:
+            self.cometml_experiment = None
             logger.error("Ignored --comet. No '.comet.config' file")
             return
 
@@ -174,6 +178,7 @@ class Comet():
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
         except Exception:
+            self.cometml_experiment = None
             logger.error("Ignored --comet. No '.comet.config' file")
             return
 
