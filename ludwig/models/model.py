@@ -525,6 +525,9 @@ class Model:
             # Reset the metrics at the start of the next epoch
             self.ecd.reset_metrics()
 
+            if first_batch:
+                tf.summary.trace_on(graph=True)
+
             # ================ Train ================
             if is_on_master():
                 progress_bar = tqdm(
@@ -599,6 +602,10 @@ class Model:
                         batcher.steps_per_epoch
                     )
                 self.optimizer.set_learning_rate(current_learning_rate)
+
+                if first_batch:
+                    with train_summary_writer.as_default():
+                        tf.summary.trace_export(name="Model", step=0)
 
                 progress_tracker.steps += 1
                 if is_on_master():
