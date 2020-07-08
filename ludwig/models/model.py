@@ -88,7 +88,6 @@ class Model:
             self.horovod.init()
 
         self.initialized = False
-        # self.session = None
 
         self.debug = debug
         self.weights_save_path = None
@@ -111,34 +110,10 @@ class Model:
         self.ecd = ECD(input_features, combiner, output_features)
 
         # ================ Optimizer ================
-        # self.global_step = tf.Variable(0, trainable=False)
-        # self.optimize, self.learning_rate = optimize(
-        #    self.train_reg_mean_loss,
-        #    training,
-        #    self.learning_rate,
-        #    self.global_step,
-        #    self.horovod
-        # )
-
-        # todo tf2: reintroduce optimizer parameters
-        # todo tf2: reintroduce learning scheduler in different form most likely
-        # self.optimizer = get_optimizer_fun_tf2(
-        #    **self.hyperparameters['training']['optimizer']
-        # )
         self.optimizer = ClippedOptimizer(
             **self.hyperparameters['training']['optimizer']
         )
 
-        # todo tf2: reintroduce tensorboard tracking and summaries
-        # tf.summary.scalar(
-        #    'combined/batch_train_reg_mean_loss',
-        #    self.train_reg_mean_loss
-        # )
-
-        # todo tf2: reintroduce saving
-        # self.saver = tf.train.Saver()
-
-    # todo: tf2 proof-of-concept code
     @tf.function
     def train_step(self, model, optimizer, inputs, targets,
                    regularization_lambda=0.0):
@@ -153,7 +128,6 @@ class Model:
         # grads = tape.gradient(loss, model.trainable_weights)
         # optimizer.apply_gradients(zip(grads, model.trainable_weights))
         return loss, all_losses
-
 
     @tf.function
     def evaluation_step(self, model, inputs, targets):
@@ -193,61 +167,12 @@ class Model:
 
         self.initialized = True
 
-    # def initialize_session(self, gpus=None, gpu_fraction=1):
-    #     if self.session is None:
-    #
-    #         self.session = tf.Session(
-    #             config=get_tf_config(gpus, gpu_fraction, self.horovod),
-    #             graph=self.graph
-    #         )
-    #         self.session.run(self.graph_initialize)
-    #
-    #         if self.debug:
-    #             session = tf_debug.LocalCLIDebugWrapperSession(self.session)
-    #             session.add_tensor_filter(
-    #                 'has_inf_or_nan',
-    #                 tf_debug.has_inf_or_nan
-    #             )
-    #
-    #     return self.session
-
-    # def close_session(self):
-    #     if self.session is not None:
-    #         self.session.close()
-    #         self.session = None
-
-    # def feed_dict(
-    #         self,
-    #         batch,
-    #         regularization_lambda=default_training_params[
-    #             'regularization_lambda'],
-    #         learning_rate=default_training_params['learning_rate'],
-    #         dropout_rate=default_training_params['dropout_rate'],
-    #         is_training=True
-    # ):
-    #     input_features = self.hyperparameters['input_features']
-    #     output_features = self.hyperparameters['output_features']
-    #     feed_dict = {
-    #         self.is_training: is_training,
-    #         self.regularization_lambda: regularization_lambda,
-    #         self.learning_rate: learning_rate,
-    #         self.dropout_rate: dropout_rate
-    #     }
-    #     for input_feature in input_features:
-    #         feed_dict[getattr(self, input_feature['name'])] = batch[
-    #             input_feature['name']]
-    #     for output_feature in output_features:
-    #         if output_feature['name'] in batch:
-    #             feed_dict[getattr(self, output_feature['name'])] = batch[
-    #                 output_feature['name']]
-    #     return feed_dict
-
     @classmethod
     def write_epoch_summary(
             cls,
+            train_summary_writer,
             metrics,
             prefix,
-            train_summary_writer,
             step
     ):
         if not train_summary_writer:
@@ -559,18 +484,11 @@ class Model:
 
                 if is_on_master() and not skip_save_log:
                     self.write_step_summary(
-                        train_summary_writer,
-                        loss,
-                        all_losses,
-                        progress_tracker.steps,
+                        train_summary_writer=train_summary_writer,
+                        combined_loss=loss,
+                        all_losses=all_losses,
+                        step=progress_tracker.steps,
                     )
-
-                # todo: tf2 add back relevant code
-                # if is_on_master() and not skip_save_log:
-                #    # it is initialized only on master
-                #    with train_writer.as_default():
-                #        tf.summary.scalar('loss', train_loss.result(),
-                #                          step=epoch)
 
                 if self.horovod and first_batch:
                     # Horovod: broadcast initial variable states from rank 0 to all other processes.
@@ -612,7 +530,7 @@ class Model:
                     progress_bar.update(1)
                 first_batch = False
 
-            # post training ############################
+            # ================ Post Training Epoch ================
             if is_on_master():
                 progress_bar.close()
 
@@ -649,10 +567,10 @@ class Model:
 
             if is_on_master() and not skip_save_log:
                 self.write_epoch_summary(
-                    progress_tracker.train_metrics,
-                    "training",
-                    train_summary_writer,
-                    progress_tracker.epoch
+                    train_summary_writer=train_summary_writer,
+                    metrics=progress_tracker.train_metrics,
+                    prefix="training",
+                    step=progress_tracker.epoch,
                 )
 
             if validation_set is not None and validation_set.size > 0:
@@ -668,10 +586,10 @@ class Model:
 
                 if is_on_master() and not skip_save_log:
                     self.write_epoch_summary(
-                        progress_tracker.vali_metrics,
-                        "validation",
-                        train_summary_writer,
-                        progress_tracker.epoch
+                        train_summary_writer=train_summary_writer,
+                        metrics=progress_tracker.vali_metrics,
+                        prefix="validation",
+                        step=progress_tracker.epoch,
                     )
 
             if test_set is not None and test_set.size > 0:
@@ -687,10 +605,10 @@ class Model:
 
                 if is_on_master() and not skip_save_log:
                     self.write_epoch_summary(
-                        progress_tracker.test_metrics,
-                        "test",
-                        train_summary_writer,
-                        progress_tracker.epoch
+                        train_summary_writer=train_summary_writer,
+                        metrics=progress_tracker.test_metrics,
+                        prefix="test",
+                        step=progress_tracker.epoch,
                     )
 
             elapsed_time = (time.time() - start_time) * 1000.0
@@ -716,6 +634,7 @@ class Model:
                             )
                         )
 
+            # ================ Validation Logic ================
             if should_validate:
                 should_break = self.check_progress_on_validation(
                     progress_tracker,
@@ -931,10 +850,7 @@ class Model:
             batch_size=128,
             bucketing_field=None
     ):
-        (
-            results,
-            predictions
-        ) = self.batch_evaluation(
+        results, predictions = self.batch_evaluation(
             dataset,
             batch_size,
             bucketing_field=bucketing_field,
@@ -957,6 +873,7 @@ class Model:
 
         return merged_output_metrics
 
+    # todo tf2: reintroduce this functionality
     def batch_collect_activations(
             self,
             dataset,
@@ -964,7 +881,6 @@ class Model:
             tensor_names,
             bucketing_field=None
     ):
-        # todo tf2: reintroduce this functionality
         # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
         #                 for tensor_name in tensor_names}
         # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
@@ -1123,6 +1039,7 @@ class Model:
             )
             return eval_predictions
 
+    # todo tf2: reintroduce this functionality
     def collect_activations(
             self,
             dataset,
@@ -1166,6 +1083,7 @@ class Model:
 
         return collected_tensors
 
+    # todo tf2: reintroduce this functionality
     def collect_weights(
             self,
             tensor_names,
@@ -1223,8 +1141,8 @@ class Model:
                 feature['pretrained_embeddings'] = None
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
 
+    # todo tf2: reintroduce this functionality
     def save_savedmodel(self, save_path):
-        # todo tf2: reintroduce this functionality
         # input_tensors = {}
         # for input_feature in self.hyperparameters['input_features']:
         #     input_tensors[input_feature['name']] = getattr(
