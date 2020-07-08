@@ -36,6 +36,7 @@ from tabulate import tabulate
 from tqdm import tqdm
 
 from ludwig.constants import LOSS, COMBINED, TYPE
+from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
@@ -143,14 +144,16 @@ class Model:
                    regularization_lambda=0.0):
         with tf.GradientTape() as tape:
             logits = model((inputs, targets), training=True)
-            loss, _ = model.train_loss(targets, logits, regularization_lambda)
-        optimizer.minimize_with_tape(tape, loss, model.trainable_variables,
-                                     self.horovod)
+            loss, all_losses = model.train_loss(
+                targets, logits, regularization_lambda
+            )
+        optimizer.minimize_with_tape(
+            tape, loss, model.trainable_variables, self.horovod
+        )
         # grads = tape.gradient(loss, model.trainable_weights)
         # optimizer.apply_gradients(zip(grads, model.trainable_weights))
+        return loss, all_losses
 
-        # todo tf2: make sure tensorboard works for batch  and epoch level metrics
-        # model.update_metrics(targets, predictions)
 
     @tf.function
     def evaluation_step(self, model, inputs, targets):
@@ -240,12 +243,17 @@ class Model:
     #     return feed_dict
 
     @classmethod
-    def add_tensorboard_epoch_summary(cls, metrics, prefix, train_writer,
-                                      step):
-        if not train_writer:
+    def write_epoch_summary(
+            cls,
+            metrics,
+            prefix,
+            train_summary_writer,
+            step
+    ):
+        if not train_summary_writer:
             return
 
-        with train_writer.as_default():
+        with train_summary_writer.as_default():
             for feature_name, output_feature in metrics.items():
                 for metric in output_feature:
                     metric_tag = "{}/epoch_{}_{}".format(
@@ -255,7 +263,30 @@ class Model:
                     tf.summary.scalar(metric_tag,
                                       metric_val,
                                       step=step)
-        train_writer.flush()
+        train_summary_writer.flush()
+
+    @classmethod
+    def write_step_summary(
+            cls,
+            train_summary_writer,
+            combined_loss,
+            all_losses,
+            step
+    ):
+        if not train_summary_writer:
+            return
+
+        with train_summary_writer.as_default():
+            # combined loss
+            loss_tag = "{}/step_training_loss".format("combined")
+            tf.summary.scalar(loss_tag, combined_loss, step=step)
+
+            # all other losses
+            for feature_name, loss in all_losses.items():
+                loss_tag = "{}/step_training_loss".format(feature_name)
+                tf.summary.scalar(loss_tag, loss, step=step)
+
+        train_summary_writer.flush()
 
     def train(
             self,
@@ -422,9 +453,9 @@ class Model:
         checkpoint = tf.train.Checkpoint(optimizer=self.optimizer,
                                          model=self.ecd)
 
-        train_writer = None
+        train_summary_writer = None
         if is_on_master() and not skip_save_log and tensorboard_log_dir:
-            train_writer = tf.summary.create_file_writer(
+            train_summary_writer = tf.summary.create_file_writer(
                 tensorboard_log_dir
             )
 
@@ -515,13 +546,28 @@ class Model:
                     for o_feat in self.hyperparameters['output_features']
                 }
 
-                self.train_step(
+                loss, all_losses = self.train_step(
                     self.ecd,
                     self.optimizer,
                     inputs,
                     targets,
                     regularization_lambda
                 )
+
+                if is_on_master() and not skip_save_log:
+                    self.write_step_summary(
+                        train_summary_writer,
+                        loss,
+                        all_losses,
+                        progress_tracker.steps,
+                    )
+
+                # todo: tf2 add back relevant code
+                # if is_on_master() and not skip_save_log:
+                #    # it is initialized only on master
+                #    with train_writer.as_default():
+                #        tf.summary.scalar('loss', train_loss.result(),
+                #                          step=epoch)
 
                 if self.horovod and first_batch:
                     # Horovod: broadcast initial variable states from rank 0 to all other processes.
@@ -553,13 +599,6 @@ class Model:
                         batcher.steps_per_epoch
                     )
                 self.optimizer.set_learning_rate(current_learning_rate)
-
-                # todo: tf2 add back relevant code
-                # if is_on_master() and not skip_save_log:
-                #    # it is initialized only on master
-                #    with train_writer.as_default():
-                #        tf.summary.scalar('loss', train_loss.result(),
-                #                          step=epoch)
 
                 progress_tracker.steps += 1
                 if is_on_master():
@@ -602,10 +641,10 @@ class Model:
             )
 
             if is_on_master() and not skip_save_log:
-                self.add_tensorboard_epoch_summary(
+                self.write_epoch_summary(
                     progress_tracker.train_metrics,
                     "training",
-                    train_writer,
+                    train_summary_writer,
                     progress_tracker.epoch
                 )
 
@@ -621,10 +660,10 @@ class Model:
                 )
 
                 if is_on_master() and not skip_save_log:
-                    self.add_tensorboard_epoch_summary(
+                    self.write_epoch_summary(
                         progress_tracker.vali_metrics,
                         "validation",
-                        train_writer,
+                        train_summary_writer,
                         progress_tracker.epoch
                     )
 
@@ -640,10 +679,10 @@ class Model:
                 )
 
                 if is_on_master() and not skip_save_log:
-                    self.add_tensorboard_epoch_summary(
+                    self.write_epoch_summary(
                         progress_tracker.test_metrics,
                         "test",
-                        train_writer,
+                        train_summary_writer,
                         progress_tracker.epoch
                     )
 
@@ -715,18 +754,12 @@ class Model:
                             model_hyperparameters_path
                         )
 
-        #     if is_on_master():
-        #         contrib_command("train_epoch_end", progress_tracker)
-        #         logger.info('')
-        #
-        # if train_writer is not None:
-        #     train_writer.close()
-        #
-        # return (
-        #     progress_tracker.train_metrics,
-        #     progress_tracker.vali_metrics,
-        #     progress_tracker.test_metrics
-        # )
+            if is_on_master():
+                contrib_command("train_epoch_end", progress_tracker)
+                logger.info('')
+
+        if train_summary_writer is not None:
+            train_summary_writer.close()
 
         return (
             progress_tracker.train_metrics,
