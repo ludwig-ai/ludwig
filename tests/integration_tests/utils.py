@@ -19,9 +19,9 @@ import uuid
 
 import pandas as pd
 
+from ludwig.constants import VECTOR
 from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
-from ludwig.constants import VECTOR
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -179,7 +179,6 @@ def audio_feature(folder, **kwargs):
     return feature
 
 
-
 def timeseries_feature(**kwargs):
     ts_feature = {
         'name': 'timeseries_' + random_string(),
@@ -211,7 +210,6 @@ def bag_feature(**kwargs):
 
 
 def date_feature(**kwargs):
-
     feature = {
         'name': 'date_' + random_string(),
         'type': 'date',
