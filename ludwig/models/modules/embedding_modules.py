@@ -144,14 +144,14 @@ class Embed(Layer):
         self.supports_masking = True
 
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
-            self.vocab,
-            self.embedding_size,
-            self.representation,
-            self.embeddings_trainable,
-            self.pretrained_embeddings,
-            self.force_embedding_size,
-            self.embeddings_on_cpu,
-            self.initializer
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
         )
 
         if regularizer:
@@ -191,14 +191,14 @@ class EmbedWeighted(Layer):
         super(EmbedWeighted, self).__init__()
 
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
-            self.vocab,
-            self.embedding_size,
-            self.representation,
-            self.embeddings_trainable,
-            self.pretrained_embeddings,
-            self.force_embedding_size,
-            self.embeddings_on_cpu,
-            self.initializer
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
         )
         self.vocab_length = len(vocab)
 
@@ -252,14 +252,14 @@ class EmbedSparse(Layer):
         super(EmbedSparse, self).__init__()
 
         self.embeddings, self.embedding_size = embedding_matrix_on_device(
-            self.vocab,
-            self.embedding_size,
-            self.representation,
-            self.embeddings_trainable,
-            self.pretrained_embeddings,
-            self.force_embedding_size,
-            self.embeddings_on_cpu,
-            self.initializer
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
         )
 
         if regularizer:
@@ -314,27 +314,16 @@ class EmbedSequence(Layer):
         super(EmbedSequence, self).__init__()
         self.supports_masking = True
 
-        if embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                self.embeddings, self.embedding_size = embedding_matrix(
-                    vocab,
-                    embedding_size,
-                    representation=representation,
-                    embeddings_trainable=embeddings_trainable,
-                    pretrained_embeddings=pretrained_embeddings,
-                    force_embedding_size=force_embedding_size,
-                    initializer=initializer,
-                )
-        else:
-            self.embeddings, self.embedding_size = embedding_matrix(
-                vocab,
-                embedding_size,
-                representation=representation,
-                embeddings_trainable=embeddings_trainable,
-                pretrained_embeddings=pretrained_embeddings,
-                force_embedding_size=force_embedding_size,
-                initializer=initializer,
-            )
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
 
         if regularizer:
             regularizer_obj = tf.keras.regularizers.get(regularizer)()
