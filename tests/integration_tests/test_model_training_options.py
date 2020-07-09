@@ -214,7 +214,8 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     ts2 = load_json(os.path.join(exp_dir_name_2, 'training_statistics.json'))
     print('ts1', ts1)
     print('ts2', ts2)
-    assert ts1['train']['combined']['loss'] == ts2['train']['combined']['loss']
+    assert ts1['training']['combined']['loss'] == ts2['training']['combined'][
+        'loss']
 
     # compare predictions with and without resuming
     y_pred1 = np.load(os.path.join(exp_dir_name_1, 'y_predictions.npy'))
@@ -314,7 +315,7 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
         train_stats = json.load(f)
 
     # retrieve training losses for first and last epochs
-    train_losses = np.array(train_stats['train']['combined']['loss'])
+    train_losses = np.array(train_stats['training']['combined']['loss'])
     last_epoch = train_losses.shape[0]
 
     # ensure train loss for last epoch is less than first epoch
