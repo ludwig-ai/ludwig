@@ -62,7 +62,7 @@ class MSEMetric(MeanSquaredErrorMetric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
-            y_true, y_pred['predictions'], sample_weight=sample_weight
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
 
 
@@ -82,7 +82,7 @@ class MAEMetric(MeanAbsoluteErrorMetric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
-            y_true, y_pred['predictions'], sample_weight=sample_weight
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
 
 

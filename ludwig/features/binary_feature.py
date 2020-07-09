@@ -194,7 +194,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     #         if metric == LOSS:
     #             metric_fn.update_state(targets, predictions[LOGITS])
     #         else:
-    #             metric_fn.update_state(targets, predictions['predictions'])
+    #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
     default_validation_metric = ACCURACY
 

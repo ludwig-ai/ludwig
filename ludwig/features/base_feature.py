@@ -147,7 +147,7 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             if metric == LOSS:
                 metric_fn.update_state(targets, predictions)
             else:
-                metric_fn.update_state(targets, predictions['predictions'])
+                metric_fn.update_state(targets, predictions[PREDICTIONS])
 
     def get_metrics(self):
         metric_vals = {}

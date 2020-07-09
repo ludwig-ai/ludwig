@@ -290,7 +290,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         # inputs == logits
         probs = softmax(inputs)
         preds = tf.argmax(inputs)
-        return {'predictions': preds, 'probabilities': probs}
+        return {PREDICTIONS: preds, PROBABILITIES: probs}
 
     # def _predictions_eval(
     #         self,

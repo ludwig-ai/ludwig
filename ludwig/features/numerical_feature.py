@@ -40,7 +40,7 @@ from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
 
-# TODO TF2 can we eliminate use of these customer wrapper classes?
+# TODO TF2 can we eliminate use of these custom wrapper classes?
 # custom class to handle how Ludwig stores predictions
 class MSELoss(MeanSquaredError):
     def __init__(self, **kwargs):
@@ -58,7 +58,7 @@ class MSEMetric(MeanSquaredErrorMetric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
-            y_true, y_pred['predictions'], sample_weight=sample_weight
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
 
 
@@ -78,7 +78,7 @@ class MAEMetric(MeanAbsoluteErrorMetric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
-            y_true, y_pred['predictions'], sample_weight=sample_weight
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
 
 
@@ -260,7 +260,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
     # def update_metrics(self, targets, predictions):
     #     for metric in self.metric_functions.values():
-    #         metric.update_state(targets, predictions['predictions'])
+    #         metric.update_state(targets, predictions[PREDICTIONS])
 
     default_validation_metric = MEAN_SQUARED_ERROR
 
