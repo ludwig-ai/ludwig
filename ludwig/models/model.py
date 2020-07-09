@@ -172,15 +172,15 @@ class Model:
     @classmethod
     def write_epoch_summary(
             cls,
-            train_summary_writer,
+            summary_writer,
             metrics,
             prefix,
             step
     ):
-        if not train_summary_writer:
+        if not summary_writer:
             return
 
-        with train_summary_writer.as_default():
+        with summary_writer.as_default():
             for feature_name, output_feature in metrics.items():
                 for metric in output_feature:
                     metric_tag = "{}/epoch_{}_{}".format(
@@ -190,7 +190,7 @@ class Model:
                     tf.summary.scalar(metric_tag,
                                       metric_val,
                                       step=step)
-        train_summary_writer.flush()
+        summary_writer.flush()
 
     @classmethod
     def write_step_summary(
@@ -415,10 +415,26 @@ class Model:
                                          model=self.ecd)
 
         train_summary_writer = None
+        validation_summary_writer = None
+        test_summary_writer = None
         if is_on_master() and not skip_save_log and tensorboard_log_dir:
             train_summary_writer = tf.summary.create_file_writer(
-                tensorboard_log_dir
+                os.path.join(
+                    tensorboard_log_dir, TRAINING
+                )
             )
+            if validation_set is not None and validation_set.size > 0:
+                validation_summary_writer = tf.summary.create_file_writer(
+                    os.path.join(
+                        tensorboard_log_dir, VALIDATION
+                    )
+                )
+            if test_set is not None and test_set.size > 0:
+                test_summary_writer = tf.summary.create_file_writer(
+                    os.path.join(
+                        tensorboard_log_dir, TEST
+                    )
+                )
 
         # todo tf2: reintroduce debugging mode
         # if self.debug:
@@ -607,9 +623,9 @@ class Model:
 
             if is_on_master() and not skip_save_log:
                 self.write_epoch_summary(
-                    train_summary_writer=train_summary_writer,
+                    summary_writer=train_summary_writer,
                     metrics=progress_tracker.train_metrics,
-                    prefix=TRAINING,
+                    prefix='',
                     step=progress_tracker.epoch,
                 )
 
@@ -626,9 +642,9 @@ class Model:
 
                 if is_on_master() and not skip_save_log:
                     self.write_epoch_summary(
-                        train_summary_writer=train_summary_writer,
+                        summary_writer=validation_summary_writer,
                         metrics=progress_tracker.vali_metrics,
-                        prefix=VALIDATION,
+                        prefix='',
                         step=progress_tracker.epoch,
                     )
 
@@ -645,9 +661,9 @@ class Model:
 
                 if is_on_master() and not skip_save_log:
                     self.write_epoch_summary(
-                        train_summary_writer=train_summary_writer,
+                        summary_writer=test_summary_writer,
                         metrics=progress_tracker.test_metrics,
-                        prefix=TEST,
+                        prefix='',
                         step=progress_tracker.epoch,
                     )
 
@@ -726,6 +742,10 @@ class Model:
 
         if train_summary_writer is not None:
             train_summary_writer.close()
+        if validation_summary_writer is not None:
+            validation_summary_writer.close()
+        if test_summary_writer is not None:
+            test_summary_writer.close()
 
         return (
             progress_tracker.train_metrics,
