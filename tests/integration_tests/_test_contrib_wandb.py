@@ -3,13 +3,13 @@ import os
 import shutil
 import sys
 
+import wandb
+
 import ludwig.contrib
 from tests.integration_tests.test_experiment import run_experiment
-from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
-
-import wandb
+from tests.integration_tests.utils import image_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -49,10 +49,13 @@ def test_wandb_experiment(csv_filename):
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
 
+    # unimport wandb
+    del wandb
+
 
 if __name__ == '__main__':
     """
     To run tests individually, run:
-    ```python -m pytest tests/integration_tests/test_contrib_wandb.py::test_name```
+    ```python -m pytest tests/integration_tests/_test_contrib_wandb.py::test_name```
     """
     pass
