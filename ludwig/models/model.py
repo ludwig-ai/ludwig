@@ -486,7 +486,7 @@ class Model:
             # Reset the metrics at the start of the next epoch
             self.ecd.reset_metrics()
 
-            if first_batch:
+            if first_batch and is_on_master() and not skip_save_log:
                 tf.summary.trace_on(graph=True)
 
             # ================ Train ================
@@ -555,7 +555,7 @@ class Model:
                     )
                 self._optimizer.set_learning_rate(current_learning_rate)
 
-                if first_batch:
+                if first_batch and is_on_master() and not skip_save_log:
                     with train_summary_writer.as_default():
                         tf.summary.trace_export(name="Model", step=0)
 
