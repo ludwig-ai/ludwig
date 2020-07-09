@@ -239,7 +239,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         self.metric_functions[PERPLEXITY] = PerplexityMetric()
         self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
 
-    # over ride super class OutputFeature.update_metrics() method
+    # overrides super class OutputFeature.update_metrics() method
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS or metric == PERPLEXITY:
@@ -278,7 +278,6 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             return inputs
 
     def predictions(self, inputs, training=None):
-
         # Generator Decoder
         if training:
             return self._predictions_training(inputs, training=training)

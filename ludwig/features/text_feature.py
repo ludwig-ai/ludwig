@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
@@ -243,7 +242,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
     level = 'word'
     max_sequence_length = 0
     loss = {
-        TYPE: SOFTMAX_CROSS_ENTROPY,
+        'type': SOFTMAX_CROSS_ENTROPY,
         'class_weights': 1,
         'class_similarities_temperature': 0,
         'weight': 1
@@ -259,64 +258,6 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         else:
             self.encoder_obj = self.initialize_decoder(feature)
 
-    default_validation_metric = LOSS
-
-    output_config = OrderedDict([
-        (LOSS, {
-            'output': EVAL_LOSS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (ACCURACY, {
-            'output': CORRECT_ROWWISE_PREDICTIONS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (TOKEN_ACCURACY, {
-            'output': CORRECT_OVERALL_PREDICTIONS,
-            'aggregation': SEQ_SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (LAST_ACCURACY, {
-            'output': CORRECT_LAST_PREDICTIONS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (PERPLEXITY, {
-            'output': PERPLEXITY,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (EDIT_DISTANCE, {
-            'output': EDIT_DISTANCE,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (LAST_PREDICTIONS, {
-            'output': LAST_PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        }),
-        (PREDICTIONS, {
-            'output': PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        }),
-        (LENGTHS, {
-            'output': LENGTHS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        })
-    ])
 
     @staticmethod
     def update_model_definition_with_metadata(

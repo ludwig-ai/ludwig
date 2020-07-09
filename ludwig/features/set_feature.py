@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
@@ -211,33 +210,6 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
         self.metric_functions[JACCARD] = MeanIoU(num_classes=self.num_classes)
 
     default_validation_metric = JACCARD
-
-    output_config = OrderedDict([
-        (LOSS, {
-            'output': EVAL_LOSS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (JACCARD, {
-            'output': JACCARD,
-            'aggregation': SUM,
-            'value': 0,
-            'type': METRIC
-        }),
-        (PREDICTIONS, {
-            'output': PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        }),
-        (PROBABILITIES, {
-            'output': PROBABILITIES,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        })
-    ])
 
     @staticmethod
     def update_model_definition_with_metadata(
