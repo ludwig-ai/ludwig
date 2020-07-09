@@ -18,11 +18,11 @@ import random
 import numpy as np
 import tensorflow as tf
 
-from ludwig.data.dataset_synthesyzer import build_vocab
+from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder
 from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
+from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
 from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedCNNRNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
