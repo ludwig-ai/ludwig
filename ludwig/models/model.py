@@ -486,9 +486,6 @@ class Model:
             # Reset the metrics at the start of the next epoch
             self.ecd.reset_metrics()
 
-            if first_batch and is_on_master() and not skip_save_log:
-                tf.summary.trace_on(graph=True)
-
             # ================ Train ================
             if is_on_master():
                 progress_bar = tqdm(
@@ -510,6 +507,10 @@ class Model:
                     for o_feat in self._hyperparameters['output_features']
                 }
 
+                # Reintroduce for tensorboard graph
+                # if first_batch and is_on_master() and not skip_save_log:
+                #    tf.summary.trace_on(graph=True, profiler=True)
+
                 loss, all_losses = self.train_step(
                     self.ecd,
                     self._optimizer,
@@ -517,6 +518,15 @@ class Model:
                     targets,
                     regularization_lambda
                 )
+
+                # Reintroduce for tensorboard graph
+                # if first_batch and is_on_master() and not skip_save_log:
+                #     with train_summary_writer.as_default():
+                #         tf.summary.trace_export(
+                #             name="Model",
+                #             step=0,
+                #             profiler_outdir=tensorboard_log_dir
+                #         )
 
                 if is_on_master() and not skip_save_log:
                     self.write_step_summary(
@@ -554,10 +564,6 @@ class Model:
                         batcher.steps_per_epoch
                     )
                 self._optimizer.set_learning_rate(current_learning_rate)
-
-                if first_batch and is_on_master() and not skip_save_log:
-                    with train_summary_writer.as_default():
-                        tf.summary.trace_export(name="Model", step=0)
 
                 progress_tracker.steps += 1
                 if is_on_master():
