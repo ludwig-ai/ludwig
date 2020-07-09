@@ -38,6 +38,7 @@ from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.misc import set_default_values
+from ludwig.utils.strings_utils import str2bool
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,10 @@ class BinaryBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = dataset_df[feature['name']].astype(
-            np.bool_).values
+        column = dataset_df[feature['name']]
+        if column.dtype == object:
+            column = column.map(str2bool)
+        data[feature['name']] = column.astype(np.bool_).values
 
 
 class BinaryInputFeature(BinaryBaseFeature, InputFeature):
@@ -303,9 +306,10 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(
-            output_feature,
-            LOSS,
+        # If Loss is not defined, set an empty dictionary
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(
+            output_feature[LOSS],
             {
                 'robust_lambda': 0,
                 'confidence_penalty': 0,

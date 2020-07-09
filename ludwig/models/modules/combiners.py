@@ -263,13 +263,14 @@ class SequenceCombiner:
             **kwargs
     ):
         self.combiner = SequenceConcatCombiner(
-            reduce_output=reduce_output,
+            reduce_output=None,
             main_sequence_feature=main_sequence_feature
         )
 
         self.encoder_obj = get_from_registry(
             encoder, sequence_encoder_registry)(
             should_embed=False,
+            reduce_output=reduce_output,
             **kwargs
         )
 

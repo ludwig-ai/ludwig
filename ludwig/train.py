@@ -27,6 +27,7 @@ from pprint import pformat
 
 import yaml
 
+from ludwig.constants import TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
 from ludwig.constants import *
 from ludwig.data.preprocessing import preprocess_for_training
@@ -362,9 +363,9 @@ def full_train(
 
     train_trainset_stats, train_valisest_stats, train_testset_stats = result
     train_stats = {
-        'train': train_trainset_stats,
-        'validation': train_valisest_stats,
-        'test': train_testset_stats
+        TRAINING: train_trainset_stats,
+        VALIDATION: train_valisest_stats,
+        TEST: train_testset_stats
     }
 
     if should_close_session:
@@ -376,8 +377,8 @@ def full_train(
             save_json(training_stats_fn, train_stats)
 
     # grab the results of the model with highest validation test performance
-    validation_field = model_definition['training']['validation_field']
-    validation_metric = model_definition['training']['validation_metric']
+    validation_field = model_definition[TRAINING]['validation_field']
+    validation_metric = model_definition[TRAINING]['validation_metric']
     validation_field_result = train_valisest_stats[validation_field]
 
     best_function = get_best_function(validation_metric)
@@ -493,7 +494,8 @@ def train(
         if is_on_master():
             print_boxed('LOADING MODEL')
             logger.info('Loading model: {}\n'.format(model_load_path))
-        model, _ = load_model_and_definition(model_load_path)
+        model, _ = load_model_and_definition(model_load_path,
+                                             use_horovod=use_horovod)
     else:
         # Build model
         if is_on_master():
@@ -503,7 +505,7 @@ def train(
             model_definition['input_features'],
             model_definition['output_features'],
             model_definition['combiner'],
-            model_definition['training'],
+            model_definition[TRAINING],
             model_definition['preprocessing'],
             use_horovod=use_horovod,
             random_seed=random_seed,
@@ -528,7 +530,7 @@ def train(
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
         random_seed=random_seed,
-        **model_definition['training']
+        **model_definition[TRAINING]
     )
 
 
@@ -813,6 +815,9 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.train')
+
     set_on_master(args.use_horovod)
 
     if is_on_master():

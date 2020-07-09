@@ -146,7 +146,7 @@ class ImageBaseFeature(BaseFeature):
                 "or explicit image width and height are expected"
                 "to be provided. "
                 "Additional information: "
-                "https://uber.github.io/ludwig/user_guide/#image-features-preprocessing"
+                "https://ludwig-ai.github.io/ludwig-docs/user_guide/#image-features-preprocessing"
                     .format([img_height, img_width, num_channels], img.shape)
             )
 

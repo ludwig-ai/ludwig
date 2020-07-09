@@ -22,11 +22,11 @@ import argparse
 import logging
 import sys
 
+from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command
 from ludwig.globals import set_on_master, is_on_master, LUDWIG_VERSION
 from ludwig.predict import full_predict
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
-
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +68,8 @@ def cli(sys_argv):
     parser.add_argument(
         '-s',
         '--split',
-        default='test',
-        choices=['training', 'validation', 'test', 'full'],
+        default=TEST,
+        choices=[TRAINING, VALIDATION, TEST, FULL],
         help='the split to test the model on'
     )
 
@@ -163,6 +163,9 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.test_performance')
+
     set_on_master(args.use_horovod)
 
     if is_on_master():

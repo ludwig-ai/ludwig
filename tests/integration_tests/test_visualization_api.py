@@ -81,7 +81,7 @@ class Experiment:
         self.output_feature_name = self.output_features[0]['name']
         # probabilities need to be list of lists containing each row data
         # from the probability columns
-        # ref: https://uber.github.io/ludwig/api/#test - Return
+        # ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
         num_probs = self.output_features[0]['vocab_size']
         self.probability = self.test_stats_full[0].iloc[:, 1:(num_probs+2)].values
         self.ground_truth_metadata = self.model.train_set_metadata
@@ -506,7 +506,7 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     output_feature_name1 = output_features[0]['name']
     output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
-    # probability columns ref: https://uber.github.io/ludwig/api/#test - Return
+    # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
     probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
     probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
 
@@ -572,7 +572,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     output_feature_name1 = output_features[0]['name']
     output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
-    # probability columns ref: https://uber.github.io/ludwig/api/#test - Return
+    # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
     probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
     probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
 

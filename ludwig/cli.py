@@ -103,6 +103,16 @@ Available sub-commands:
         ludwig.contrib.contrib_command("collect_activations", *sys.argv)
         collect.cli_collect_activations(sys.argv[2:])
 
+    def export(self):
+        from ludwig import export
+        ludwig.contrib.contrib_command("export", *sys.argv)
+        export.cli(sys.argv[2:])
+
+    def saved_model_predict(self):
+        from ludwig import export
+        ludwig.contrib.contrib_command("saved_model_predict", *sys.argv)
+        export.cli(sys.argv[2:])
+
 
 def main():
     CLI()

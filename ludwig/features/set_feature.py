@@ -33,7 +33,7 @@ from ludwig.models.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.models.modules.set_decoders import Classifier
 from ludwig.models.modules.set_encoders import SetSparseEncoder
 from ludwig.utils.misc import set_default_value
-from ludwig.utils.strings_utils import create_vocabulary
+from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class SetBaseFeature(BaseFeature):
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ''
+        'fill_value': UNKNOWN_SYMBOL
     }
 
     def __init__(self, feature):

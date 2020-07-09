@@ -2,9 +2,9 @@
 # coding: utf-8
 
 # # Simple Model Training Example
-# 
+#
 # This example is the API example for this Ludwig command line example
-# (https://uber.github.io/ludwig/examples/#kaggles-titanic-predicting-survivors).
+# (https://ludwig-ai.github.io/ludwig-docs/examples/#kaggles-titanic-predicting-survivors).
 
 # Import required libraries
 
@@ -24,7 +24,7 @@ except FileNotFoundError:
 model = LudwigModel(model_definition_file='./model1_definition.yaml',
                     logging_level=logging.INFO)
 
-# initiate model training 
+# initiate model training
 train_stats = model.train(data_csv='./data/train.csv',
                           experiment_name='simple_experiment',
                           model_name='simple_model')

@@ -714,7 +714,7 @@ def learning_curves(
     metrics = [LOSS, ACCURACY, HITS_AT_K, EDIT_DISTANCE]
     for output_feature_name in output_feature_names:
         for metric in metrics:
-            if metric in train_stats_per_model_list[0]['train'][
+            if metric in train_stats_per_model_list[0][TRAINING][
                 output_feature_name]:
                 filename = None
                 if filename_template_path:
@@ -722,15 +722,15 @@ def learning_curves(
                         output_feature_name, metric)
 
                 training_stats = [
-                    learning_stats['train'][output_feature_name][metric]
+                    learning_stats[TRAINING][output_feature_name][metric]
                     for learning_stats in
                     train_stats_per_model_list]
 
                 validation_stats = []
                 for learning_stats in train_stats_per_model_list:
-                    if 'validation' in learning_stats:
+                    if VALIDATION in learning_stats:
                         validation_stats.append(
-                            learning_stats['validation'][output_feature_name][
+                            learning_stats[VALIDATION][output_feature_name][
                                 metric]
                         )
                     else:
@@ -773,6 +773,8 @@ def compare_performance(
 
     :return: (None)
     """
+    ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats']
+
     filename_template = 'compare_performance_{}.' + file_format
     filename_template_path = generate_filename_template_path(
         output_directory,
@@ -787,32 +789,39 @@ def compare_performance(
     )
 
     for output_feature_name in output_feature_names:
-        accuracies = []
-        hits_at_ks = []
-        edit_distances = []
+        metric_names_sets = list(
+            set(tspr[output_feature_name].keys())
+            for tspr in test_stats_per_model_list
+        )
+        metric_names = metric_names_sets[0]
+        for metric_names_set in metric_names_sets:
+            metric_names = metric_names.intersection(metric_names_set)
+        metric_names.remove(LOSS)
+        for name in ignore_names:
+            if name in metric_names:
+                metric_names.remove(name)
+        metrics_dict = {name: [] for name in metric_names}
 
         for test_stats_per_model in test_stats_per_model_list:
-            if ACCURACY in test_stats_per_model[output_feature_name]:
-                accuracies.append(
-                    test_stats_per_model[output_feature_name][ACCURACY])
-            if HITS_AT_K in test_stats_per_model[output_feature_name]:
-                hits_at_ks.append(
-                    test_stats_per_model[output_feature_name][HITS_AT_K])
-            if EDIT_DISTANCE in test_stats_per_model[output_feature_name]:
-                edit_distances.append(
-                    test_stats_per_model[output_feature_name][EDIT_DISTANCE])
+            for metric_name in metric_names:
+                metrics_dict[metric_name].append(
+                    test_stats_per_model[output_feature_name][metric_name]
+                )
 
         metrics = []
         metrics_names = []
-        if len(accuracies) > 0:
-            metrics.append(accuracies)
-            metrics_names.append(ACCURACY)
-        if len(hits_at_ks) > 0:
-            metrics.append(hits_at_ks)
-            metrics_names.append(HITS_AT_K)
-        if len(edit_distances) > 0:
-            metrics.append(edit_distances)
-            metrics_names.append(EDIT_DISTANCE)
+        min_val = float("inf")
+        max_val = float("-inf")
+        for metric_name, metric_vals in metrics_dict.items():
+            if len(metric_vals) > 0:
+                metrics.append(metric_vals)
+                metrics_names.append(metric_name)
+                curr_min = min(metric_vals)
+                if curr_min < min_val:
+                    min_val = curr_min
+                curr_max = max(metric_vals)
+                if curr_max > max_val:
+                    max_val = curr_max
 
         filename = None
 
@@ -824,6 +833,7 @@ def compare_performance(
             metrics,
             metrics_names,
             model_names_list,
+            adaptive=min_val < 0 or max_val > 1,
             title='Performance comparison on {}'.format(output_feature_name),
             filename=filename
         )
@@ -2943,7 +2953,7 @@ def frequency_vs_f1(
 
     :param test_stats_per_model: (list) List containing train statistics per model
     :param metadata: (dict) Model's input metadata
-    :param output_feature_name: (string) Name of the output feature that is predicted and for which is provided ground truth
+    :param of_name: (string) Name of the output feature that is predicted and for which is provided ground truth
     :param top_n_classes: (list) List containing the number of classes to plot
     :param model_names: (list, default: None) List of the names of the models to use as labels.
     :param output_directory: (string, default: None) Directory where to save plots.
@@ -2967,87 +2977,97 @@ def frequency_vs_f1(
     )
     k = top_n_classes[0]
 
-    for i, test_statistics in enumerate(
-            test_stats_per_model_list):
-        for output_feature_name in output_feature_names:
-            model_name_name = (model_names_list[i]
-                               if model_names_list is not None and i < len(
-                model_names_list)
-                               else '')
-            per_class_stats = test_statistics[output_feature_name][
-                'per_class_stats']
-            f1_scores = []
-            labels = []
-            class_names = metadata[output_feature_name]['idx2str']
+    for i, test_stats in enumerate(test_stats_per_model_list):
+        for of_name in output_feature_names:
+
+            # Figure out model name
+            model_name = (
+                model_names_list[i]
+                if model_names_list is not None and i < len(model_names_list)
+                else ''
+            )
+
+            # setup directory and filename
+            filename = None
+            if output_directory:
+                os.makedirs(output_directory, exist_ok=True)
+                filename = filename_template_path.format(model_name, of_name)
+
+            # setup local variables
+            per_class_stats = test_stats[of_name]['per_class_stats']
+            class_names = metadata[of_name]['idx2str']
+
             if k > 0:
                 class_names = class_names[:k]
+
+            f1_scores = []
+            labels = []
+
             for class_name in class_names:
                 class_stats = per_class_stats[class_name]
                 f1_scores.append(class_stats['f1_score'])
                 labels.append(class_name)
 
-            f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
-            f1_sorted_indices = f1_np.argsort()
-
-            output_feature_name_frequency_dict = {
-                metadata[output_feature_name]['str2idx'][key]: val
+            # get np arrays of frequencies, f1s and labels
+            idx2freq = {
+                metadata[of_name]['str2idx'][key]: val
                 for key, val in
-                metadata[output_feature_name]['str2freq'].items()
+                metadata[of_name]['str2freq'].items()
             }
-            output_feature_name_frequency_np = np.array(
-                [output_feature_name_frequency_dict[class_id]
-                 for class_id in sorted(output_feature_name_frequency_dict)],
+            freq_np = np.array(
+                [idx2freq[class_id]
+                 for class_id in sorted(idx2freq)],
                 dtype=np.int32
             )
+            f1_np = np.nan_to_num(np.array(f1_scores, dtype=np.float32))
+            labels_np = np.array(labels)
 
-            output_feature_name_frequency_reordered = \
-            output_feature_name_frequency_np[
-                f1_sorted_indices[::-1]
-            ][:len(f1_sorted_indices)]
-            f1_reordered = f1_np[f1_sorted_indices[::-1]][
-                           :len(f1_sorted_indices)]
+            # sort by f1
+            f1_sort_idcs = f1_np.argsort()[::-1]
+            len_f1_sort_idcs = len(f1_sort_idcs)
 
-            filename = None
-            if output_directory:
-                os.makedirs(output_directory, exist_ok=True)
-                filename = filename_template_path.format(model_name_name,
-                                                         output_feature_name)
+            freq_sorted_by_f1 = freq_np[f1_sort_idcs]
+            freq_sorted_by_f1 = freq_sorted_by_f1[:len_f1_sort_idcs]
+            f1_sorted_by_f1 = f1_np[f1_sort_idcs]
+            f1_sorted_by_f1 = f1_sorted_by_f1[:len_f1_sort_idcs]
+            labels_sorted_by_f1 = labels_np[f1_sort_idcs]
+            labels_sorted_by_f1 = labels_sorted_by_f1[:len_f1_sort_idcs]
 
+            # create viz sorted by f1
             visualization_utils.double_axis_line_plot(
-                f1_reordered,
-                output_feature_name_frequency_reordered,
+                f1_sorted_by_f1,
+                freq_sorted_by_f1,
                 'F1 score',
                 'frequency',
-                labels=labels,
+                labels=labels_sorted_by_f1,
                 title='{} F1 Score vs Frequency {}'.format(
-                    model_name_name,
-                    output_feature_name
+                    model_name,
+                    of_name
                 ),
                 filename=filename
             )
 
-            frequency_sorted_indices = output_feature_name_frequency_np.argsort()
-            output_feature_name_frequency_reordered = \
-            output_feature_name_frequency_np[
-                frequency_sorted_indices[::-1]
-            ][:len(f1_sorted_indices)]
+            # sort by freq
+            freq_sort_idcs = freq_np.argsort()[::-1]
+            len_freq_sort_idcs = len(freq_sort_idcs)
 
-            f1_reordered = np.zeros(
-                len(output_feature_name_frequency_reordered))
+            freq_sorted_by_freq = freq_np[freq_sort_idcs]
+            freq_sorted_by_freq = freq_sorted_by_freq[:len_freq_sort_idcs]
+            f1_sorted_by_freq = f1_np[freq_sort_idcs]
+            f1_sorted_by_freq = f1_sorted_by_freq[:len_freq_sort_idcs]
+            labels_sorted_by_freq = labels_np[freq_sort_idcs]
+            labels_sorted_by_freq = labels_sorted_by_freq[:len_freq_sort_idcs]
 
-            for idx in frequency_sorted_indices[::-1]:
-                if idx < len(f1_np):
-                    f1_reordered[idx] = f1_np[idx]
-
+            # create viz sorted by freq
             visualization_utils.double_axis_line_plot(
-                output_feature_name_frequency_reordered,
-                f1_reordered,
+                freq_sorted_by_freq,
+                f1_sorted_by_freq,
                 'frequency',
                 'F1 score',
-                labels=labels,
+                labels=labels_sorted_by_freq,
                 title='{} F1 Score vs Frequency {}'.format(
-                    model_name_name,
-                    output_feature_name
+                    model_name,
+                    of_name
                 ),
                 filename=filename
             )
@@ -3260,6 +3280,8 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.visualize')
 
     try:
         vis_func = visualizations_registry[args.visualization]

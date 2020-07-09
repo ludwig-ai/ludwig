@@ -43,7 +43,7 @@ class Wandb():
     def train_model(self, model, *args, **kwargs):
         import wandb
         logger.info("wandb.train_model() called...")
-        config = model.hyperparameters.copy()
+        config = model._hyperparameters.copy()
         del config["input_features"]
         del config["output_features"]
         wandb.config.update(config)

@@ -25,7 +25,6 @@ import numpy as np
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -301,7 +300,7 @@ def average_precision_score(conditions, prediction_scores, average='micro',
 #     args = parser.parse_args()
 #
 #     hdf5_data = h5py.File(args.gold_standard, 'r')
-#     split = hdf5_data['split'].value
+#     split = hdf5_data[SPLIT].value
 #     column = hdf5_data['macros'].value
 #     hdf5_data.close()
 #     conditions = column[split == 2]  # ground truth
