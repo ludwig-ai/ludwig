@@ -151,7 +151,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
 class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
-    loss = {'type': SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     top_k = 3
 
     def __init__(self, feature):
@@ -196,13 +196,13 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         }
 
     def _setup_loss(self):
-        if self.loss['type'] == 'softmax_cross_entropy':
+        if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SoftmaxCrossEntropyLoss(
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
                 name='train_loss'
             )
-        elif self.loss['type'] == 'sampled_softmax_cross_entropy':
+        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
             self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
@@ -213,7 +213,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
                 "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss['type'])
+                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
         self.eval_loss_function = SoftmaxCrossEntropyMetric(
@@ -351,7 +351,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     'for feature {}'.format(output_feature['name'])
                 )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             output_feature[LOSS]['class_counts'] = [
                 feature_metadata['str2freq'][cls]
                 for cls in feature_metadata['idx2str']
@@ -464,7 +464,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             }
         )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             set_default_values(
                 output_feature[LOSS],
                 {

@@ -243,7 +243,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
     level = 'word'
     max_sequence_length = 0
     loss = {
-        'type': SOFTMAX_CROSS_ENTROPY,
+        TYPE: SOFTMAX_CROSS_ENTROPY,
         'class_weights': 1,
         'class_similarities_temperature': 0,
         'weight': 1

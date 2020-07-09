@@ -35,7 +35,7 @@ import tensorflow as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED, TYPE
+from ludwig.constants import LOSS, COMBINED, TYPE, TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -101,7 +101,7 @@ class Model:
         self._hyperparameters['input_features'] = input_features
         self._hyperparameters['combiner'] = combiner
         self._hyperparameters['output_features'] = output_features
-        self._hyperparameters['training'] = training
+        self._hyperparameters[TRAINING] = training
         self._hyperparameters['preprocessing'] = preprocessing
         self._hyperparameters['random_seed'] = random_seed
         self._hyperparameters.update(kwargs)
@@ -113,7 +113,7 @@ class Model:
 
         # ================ Optimizer ================
         self._optimizer = ClippedOptimizer(
-            **self._hyperparameters['training']['optimizer']
+            **self._hyperparameters[TRAINING]['optimizer']
         )
 
     @tf.function
@@ -603,7 +603,7 @@ class Model:
                 self.write_epoch_summary(
                     train_summary_writer=train_summary_writer,
                     metrics=progress_tracker.train_metrics,
-                    prefix="training",
+                    prefix=TRAINING,
                     step=progress_tracker.epoch,
                 )
 
@@ -622,7 +622,7 @@ class Model:
                     self.write_epoch_summary(
                         train_summary_writer=train_summary_writer,
                         metrics=progress_tracker.vali_metrics,
-                        prefix="validation",
+                        prefix=VALIDATION,
                         step=progress_tracker.epoch,
                     )
 
@@ -630,7 +630,7 @@ class Model:
                 # eval metrics on test set
                 self.evaluation(
                     test_set,
-                    'test',
+                    TEST,
                     progress_tracker.test_metrics,
                     tables,
                     eval_batch_size,
@@ -641,7 +641,7 @@ class Model:
                     self.write_epoch_summary(
                         train_summary_writer=train_summary_writer,
                         metrics=progress_tracker.test_metrics,
-                        prefix="test",
+                        prefix=TEST,
                         step=progress_tracker.epoch,
                     )
 

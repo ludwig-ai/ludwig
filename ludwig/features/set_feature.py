@@ -150,7 +150,7 @@ class SetInputFeature(SetBaseFeature, InputFeature):
 class SetOutputFeature(SetBaseFeature, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
-    loss = {'type': SIGMOID_CROSS_ENTROPY}
+    loss = {TYPE: SIGMOID_CROSS_ENTROPY}
 
     def __init__(self, feature):
         SetBaseFeature.__init__(self, feature)
@@ -246,7 +246,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
             *args,
             **kwargs
     ):
-        output_feature[LOSS]['type'] = None
+        output_feature[LOSS][TYPE] = None
         output_feature['num_classes'] = feature_metadata['vocab_size']
 
     @staticmethod

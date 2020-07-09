@@ -184,7 +184,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
 
 class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
     decoder = 'tagger'
-    loss = {'type': SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
 
     def __init__(self, feature):
         super().__init__(feature)
@@ -214,9 +214,9 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         self._setup_metrics()
 
     def _setup_loss(self):
-        if self.loss['type'] == 'softmax_cross_entropy':
+        if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SequenceLoss()
-        elif self.loss['type'] == 'sampled_softmax_cross_entropy':
+        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
             self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
@@ -227,7 +227,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
                 "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss['type'])
+                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
         self.eval_loss_function = SequenceLossMetric()

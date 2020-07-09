@@ -187,7 +187,7 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
 
 class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     decoder = 'regressor'
-    loss = {'type': MEAN_SQUARED_ERROR}
+    loss = {TYPE: MEAN_SQUARED_ERROR}
     clip = None
 
     def __init__(self, feature):
@@ -324,7 +324,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         set_default_value(
             output_feature,
             LOSS,
-            {'type': 'mean_squared_error', 'weight': 1}
+            {TYPE: 'mean_squared_error', 'weight': 1}
         )
         set_default_value(output_feature[LOSS], TYPE, 'mean_squared_error')
         set_default_value(output_feature[LOSS], 'weight', 1)
