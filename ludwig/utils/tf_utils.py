@@ -51,7 +51,8 @@ def initialize_tensorflow(gpus=None,
                           horovod=None):
     global _TF_INIT_PARAMS
 
-    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads)
+    use_horovod = horovod is not None
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
     if _TF_INIT_PARAMS is not None:
         if _TF_INIT_PARAMS != param_tuple:
             warnings.warn('TensorFlow has already been initialized. Changes to `gpus`, '
