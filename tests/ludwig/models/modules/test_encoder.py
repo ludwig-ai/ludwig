@@ -86,19 +86,13 @@ def encoder_test(
     :param output_data: expected output data (optional)
     :return: returns the encoder object for the caller to run extra checks
     """
-    tf.reset_default_graph()
-
     # Run the encoder
     input_data = tf.convert_to_tensor(input_data)
-    dropout_rate = tf.convert_to_tensor(dropout_rate)
-    is_training = tf.convert_to_tensor(False)
 
-    hidden, _ = encoder(
+    hidden = encoder(
         input_data,
-        regularizer,
-        dropout_rate,
-        is_training=is_training
-    )
+        training=False
+    )['encoder_output']
 
     # Check output shape and type
     assert hidden.dtype == output_dtype
@@ -294,9 +288,3 @@ def test_sequence_encoders():
                     output_shape=output_shape,
                     output_data=None
                 )
-
-                embed = encoder.embed_sequence.embed
-                assert embed.representation == 'dense'
-                assert embed.embeddings_trainable == trainable
-                assert embed.regularize is True
-                assert embed.dropout is False
