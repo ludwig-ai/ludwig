@@ -121,7 +121,7 @@ class VectorBaseFeature(BaseFeature):
         try:
             data[feature['name']] = np.array(
                 [x.split() for x in dataset_df[feature['name']]],
-                dtype=np.double
+                dtype=np.float32
             )
         except ValueError:
             logger.error(
