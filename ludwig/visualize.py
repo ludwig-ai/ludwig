@@ -138,7 +138,7 @@ def _validate_output_feature_name_from_test_stats(
     """
     output_feature_names_set = set()
     for ls in test_stats_per_model:
-        for key in ls:
+        for key in ls[0]:
             output_feature_names_set.add(key)
     try:
         if output_feature_name in output_feature_names_set:

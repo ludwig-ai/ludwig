@@ -365,7 +365,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             train_set_metadata
     ):
         feature_name = output_feature['name']
-        stats = test_stats[feature_name]
+        stats = test_stats[1][feature_name]
         confusion_matrix = ConfusionMatrix(
             dataset.get(feature_name),
             stats[PREDICTIONS],
