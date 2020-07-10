@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 
-import wandb
+from unittest.mock import patch
 
 import ludwig.contrib
 from tests.integration_tests.test_experiment import run_experiment
@@ -16,7 +16,8 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 
-def test_wandb_experiment(csv_filename):
+@patch('ludwig.contribs.wandb.Wandb.import_call')
+def test_wandb_experiment(import_wandb, csv_filename):
     # Test W&B integration
 
     # add wandb arg and detect flag
@@ -38,10 +39,7 @@ def test_wandb_experiment(csv_filename):
     run_experiment(input_features, output_features, data_csv=rel_path)
 
     # Check a W&B run was created
-    assert wandb.run is not None
-
-    # End session
-    wandb.join()
+    import_wandb.assert_called()
 
     # Remove instance from contrib_registry
     ludwig.contrib.contrib_registry['instances'].pop()
@@ -49,13 +47,10 @@ def test_wandb_experiment(csv_filename):
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
 
-    # unimport wandb
-    del wandb
-
 
 if __name__ == '__main__':
     """
     To run tests individually, run:
-    ```python -m pytest tests/integration_tests/_test_contrib_wandb.py::test_name```
+    ```python -m pytest tests/integration_tests/test_contrib_wandb.py::test_name```
     """
     pass
