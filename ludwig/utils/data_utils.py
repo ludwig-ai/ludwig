@@ -468,3 +468,8 @@ def get_path_size(
                     total_size += os.path.getsize(filepath)
 
     return total_size
+
+
+def clear_data_cache():
+    """Clears any cached data objects (e.g., embeddings)"""
+    load_glove.cache_clear()

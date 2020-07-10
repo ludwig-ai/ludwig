@@ -8,6 +8,7 @@ from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
 from ludwig.models.modules.combiners import get_combiner_class
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
+from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc import get_from_registry
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,9 @@ class ECD(tf.keras.Model):
 
         # ================ Combined loss metric ================
         self.eval_loss_metric = tf.keras.metrics.Mean()
+
+        # After constructing all layers, clear the cache to free up memory
+        clear_data_cache()
 
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
