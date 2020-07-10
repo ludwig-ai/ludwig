@@ -66,7 +66,7 @@ class BagBaseFeature(BaseFeature):
         bag_matrix = np.zeros(
             (len(column),
              len(metadata['str2idx'])),
-            dtype=float
+            dtype=np.float32
         )
 
         for i, set_str in enumerate(column):
