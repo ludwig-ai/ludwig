@@ -174,7 +174,6 @@ class Model:
             cls,
             summary_writer,
             metrics,
-            prefix,
             step
     ):
         if not summary_writer:
@@ -183,13 +182,11 @@ class Model:
         with summary_writer.as_default():
             for feature_name, output_feature in metrics.items():
                 for metric in output_feature:
-                    metric_tag = "{}/epoch_{}_{}".format(
-                        feature_name, prefix, metric
+                    metric_tag = "{}/epoch_{}".format(
+                        feature_name, metric
                     )
                     metric_val = output_feature[metric][-1]
-                    tf.summary.scalar(metric_tag,
-                                      metric_val,
-                                      step=step)
+                    tf.summary.scalar(metric_tag, metric_val, step=step)
         summary_writer.flush()
 
     @classmethod
@@ -400,9 +397,9 @@ class Model:
             training_checkpoints_path = os.path.join(
                 save_path, TRAINING_CHECKPOINTS_DIR_PATH
             )
-            training_checkpoints_prefix_path = os.path.join(
-                training_checkpoints_path, "ckpt"
-            )
+            # training_checkpoints_prefix_path = os.path.join(
+            #    training_checkpoints_path, "ckpt"
+            # )
             training_progress_tracker_path = os.path.join(
                 save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
             )
@@ -411,8 +408,13 @@ class Model:
             )
 
         # ====== Setup session =======
-        checkpoint = tf.train.Checkpoint(optimizer=self._optimizer,
-                                         model=self.ecd)
+        checkpoint = tf.train.Checkpoint(
+            optimizer=self._optimizer,
+            model=self.ecd
+        )
+        checkpoint_manager = tf.train.CheckpointManager(
+            checkpoint, training_checkpoints_path, max_to_keep=1
+        )
 
         train_summary_writer = None
         validation_summary_writer = None
@@ -486,7 +488,6 @@ class Model:
         # ================ Training Loop ================
         first_batch = True
         while progress_tracker.epoch < self._epochs:
-            print(">>>> progress tracker epoch", progress_tracker.epoch)
             # epoch init
             start_time = time.time()
             if is_on_master():
@@ -559,8 +560,10 @@ class Model:
                     #
                     # Note: broadcast should be done after the first gradient step to ensure
                     # optimizer initialization.
-                    self._horovod.broadcast_variables(self.ecd.variables, root_rank=0)
-                    self._horovod.broadcast_variables(self._optimizer.variables(), root_rank=0)
+                    self._horovod.broadcast_variables(self.ecd.variables,
+                                                      root_rank=0)
+                    self._horovod.broadcast_variables(
+                        self._optimizer.variables(), root_rank=0)
 
                 if self._horovod:
                     current_learning_rate = learning_rate_warmup_distributed(
@@ -621,13 +624,11 @@ class Model:
                 bucketing_field
             )
 
-            if is_on_master() and not skip_save_log:
-                self.write_epoch_summary(
-                    summary_writer=train_summary_writer,
-                    metrics=progress_tracker.train_metrics,
-                    prefix='',
-                    step=progress_tracker.epoch,
-                )
+            self.write_epoch_summary(
+                summary_writer=train_summary_writer,
+                metrics=progress_tracker.train_metrics,
+                step=progress_tracker.epoch,
+            )
 
             if validation_set is not None and validation_set.size > 0:
                 # eval metrics on validation set
@@ -640,13 +641,11 @@ class Model:
                     bucketing_field
                 )
 
-                if is_on_master() and not skip_save_log:
-                    self.write_epoch_summary(
-                        summary_writer=validation_summary_writer,
-                        metrics=progress_tracker.vali_metrics,
-                        prefix='',
-                        step=progress_tracker.epoch,
-                    )
+                self.write_epoch_summary(
+                    summary_writer=validation_summary_writer,
+                    metrics=progress_tracker.vali_metrics,
+                    step=progress_tracker.epoch,
+                )
 
             if test_set is not None and test_set.size > 0:
                 # eval metrics on test set
@@ -659,13 +658,11 @@ class Model:
                     bucketing_field
                 )
 
-                if is_on_master() and not skip_save_log:
-                    self.write_epoch_summary(
-                        summary_writer=test_summary_writer,
-                        metrics=progress_tracker.test_metrics,
-                        prefix='',
-                        step=progress_tracker.epoch,
-                    )
+                self.write_epoch_summary(
+                    summary_writer=test_summary_writer,
+                    metrics=progress_tracker.test_metrics,
+                    step=progress_tracker.epoch,
+                )
 
             elapsed_time = (time.time() - start_time) * 1000.0
 
@@ -674,21 +671,16 @@ class Model:
                     time=time_utils.strdelta(elapsed_time)))
 
             # metric prints
-            for output_feature, table in tables.items():
-                if (
-                        output_feature != COMBINED or
-                        (output_feature == COMBINED and
-                         len(output_features) > 1)
-                ):
-                    if is_on_master():
-                        logger.info(
-                            tabulate(
-                                table,
-                                headers='firstrow',
-                                tablefmt='fancy_grid',
-                                floatfmt='.4f'
-                            )
+            if is_on_master():
+                for output_feature, table in tables.items():
+                    logger.info(
+                        tabulate(
+                            table,
+                            headers='firstrow',
+                            tablefmt='fancy_grid',
+                            floatfmt='.4f'
                         )
+                    )
 
             # ================ Validation Logic ================
             if should_validate:
@@ -723,7 +715,7 @@ class Model:
             # ========== Save training progress ==========
             if is_on_master():
                 if not skip_save_progress:
-                    checkpoint.save(training_checkpoints_prefix_path)
+                    checkpoint_manager.save()
                     progress_tracker.save(
                         os.path.join(
                             save_path,
@@ -1236,7 +1228,8 @@ class Model:
         self.ecd.load_weights(weights_path)
 
     @staticmethod
-    def load(load_path, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True, use_horovod=None):
+    def load(load_path, gpus=None, gpu_memory_limit=None,
+             allow_parallel_threads=True, use_horovod=None):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
@@ -1247,7 +1240,8 @@ class Model:
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
-        model.initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads)
+        model.initialize_tensorflow(gpus, gpu_memory_limit,
+                                    allow_parallel_threads)
         model.restore(weights_save_path)
         return model
 
