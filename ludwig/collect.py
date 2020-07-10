@@ -100,17 +100,17 @@ def collect_activations(
         train_set_metadata_fp
     )
 
-    model, model_definition = load_model_and_definition(model_path)
+    model, model_definition = load_model_and_definition(model_path,
+                                                        gpus=gpus,
+                                                        gpu_memory_limit=gpu_memory_limit,
+                                                        allow_parallel_threads=allow_parallel_threads)
 
     # collect activations
     print_boxed('COLLECT ACTIVATIONS')
     collected_tensors = model.collect_activations(
         dataset,
         tensors,
-        batch_size,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads
+        batch_size
     )
 
     model.close_session()
