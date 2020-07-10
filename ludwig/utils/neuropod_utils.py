@@ -9,7 +9,7 @@ import numpy as np
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
 from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET, \
-    VECTOR, PREDICTIONS, PROBABILITIES
+    VECTOR, PREDICTIONS, PROBABILITIES, PROBABILITY
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json
@@ -65,7 +65,7 @@ def postprocess_for_neuropod(predicted, model_definition):
             )
             postprocessed[feature_name + "_probability"] = \
                 np.expand_dims(
-                    predicted[feature_name]['probability'].astype('float64'),
+                    predicted[feature_name][PROBABILITY].astype('float64'),
                     1)
             postprocessed[feature_name + "_probabilities"] = \
                 predicted[feature_name][PROBABILITIES].astype('float64')
