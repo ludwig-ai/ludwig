@@ -374,13 +374,15 @@ class Model:
             )
 
         # ====== Setup session =======
-        checkpoint = tf.train.Checkpoint(
-            optimizer=self._optimizer,
-            model=self.ecd
-        )
-        checkpoint_manager = tf.train.CheckpointManager(
-            checkpoint, training_checkpoints_path, max_to_keep=1
-        )
+        checkpoint = checkpoint_manager = None
+        if is_on_master():
+            checkpoint = tf.train.Checkpoint(
+                optimizer=self._optimizer,
+                model=self.ecd
+            )
+            checkpoint_manager = tf.train.CheckpointManager(
+                checkpoint, training_checkpoints_path, max_to_keep=1
+            )
 
         train_summary_writer = None
         validation_summary_writer = None
