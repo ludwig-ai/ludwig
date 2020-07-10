@@ -16,6 +16,11 @@
 # ==============================================================================
 import tensorflow as tf
 
+import warnings
+
+
+_TF_INIT_PARAMS = None
+
 
 def sequence_length_3D(sequence):
     used = tf.sign(tf.reduce_max(tf.abs(sequence), 2))
@@ -38,3 +43,45 @@ def to_sparse(tensor, lengths, max_length):
     values = tf.cast(tf.boolean_mask(tensor, mask), tf.int32)
     shape = tf.cast(tf.shape(tensor), tf.int64)
     return tf.SparseTensor(indices, values, shape)
+
+
+def initialize_tensorflow(gpus=None,
+                          gpu_memory_limit=None,
+                          allow_parallel_threads=True,
+                          horovod=None):
+    global _TF_INIT_PARAMS
+
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads)
+    if _TF_INIT_PARAMS is not None:
+        if _TF_INIT_PARAMS != param_tuple:
+            warnings.warn('TensorFlow has already been initialized. Changes to `gpus`, '
+                          '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
+                          'Start a new Python process to modify these values.')
+        return
+
+    # For reproducivility / determinism, set parallel threads to 1.
+    # For performance, set to 0 to allow TensorFlow to select the best value automatically.
+    tf.config.threading.set_intra_op_parallelism_threads(
+        0 if allow_parallel_threads else 1)
+    tf.config.threading.set_inter_op_parallelism_threads(
+        0 if allow_parallel_threads else 1)
+
+    if horovod is not None and gpus is None:
+        gpus = [horovod.local_rank()]
+    gpus = [gpus] if isinstance(gpus, int) else gpus
+
+    if gpus is not None:
+        gpu_devices = tf.config.list_physical_devices('GPU')
+        for gpu in gpu_devices:
+            tf.config.experimental.set_memory_growth(gpu, True)
+            if gpu_memory_limit is not None:
+                tf.config.set_logical_device_configuration(
+                    gpu,
+                    [tf.config.LogicalDeviceConfiguration(
+                        memory_limit=gpu_memory_limit)])
+        if gpu_devices:
+            local_devices = [gpu_devices[g] for g in gpus]
+            tf.config.set_visible_devices(local_devices, 'GPU')
+
+    _TF_INIT_PARAMS = param_tuple
+

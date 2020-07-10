@@ -146,9 +146,6 @@ def experiment(
             model_definition,
             batch_size,
             evaluate_performance=True,
-            gpus=gpus,
-            gpu_memory_limit=gpu_memory_limit,
-            allow_parallel_threads=allow_parallel_threads,
             debug=debug
         )
     else:
