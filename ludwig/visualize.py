@@ -25,6 +25,7 @@ import sys
 from functools import partial
 
 import numpy as np
+import pandas as pd
 import sklearn
 from scipy.stats import entropy
 from sklearn.calibration import calibration_curve
@@ -3073,6 +3074,88 @@ def frequency_vs_f1(
             )
 
 
+def hyperopt_report_cli(
+        hyperopt_stats_path,
+        output_directory=None,
+        file_format='pdf',
+        **kwargs
+):
+    """
+    Produces a report about hyperparameter optimization
+    creating one graph per hyperparameter to show the distribution of results.
+
+    :param hyperopt_stats_path: path to the hyperopt results JSON file
+    :param output_directory: path where to save the output plots
+    :param file_format: format of the output plot, pdf or png
+    :return:
+    """
+    filename_template = 'hyperopt_{}.' + file_format
+    filename_template_path = generate_filename_template_path(
+        output_directory,
+        filename_template
+    )
+
+    hyperopt_stats = load_json(hyperopt_stats_path)
+
+    visualization_utils.hyperopt_report(
+        hyperopt_stats['hyperopt_config']['parameters'],
+        hyperopt_results_to_dataframe(
+            hyperopt_stats['hyperopt_results'],
+            hyperopt_stats['hyperopt_config']['parameters'],
+            hyperopt_stats['hyperopt_config']['metric']
+        ),
+        metric=hyperopt_stats['hyperopt_config']['metric'],
+        filename_template=filename_template_path
+    )
+
+
+def hyperopt_hiplot_cli(
+        hyperopt_stats_path,
+        output_directory=None,
+        **kwargs
+):
+    """
+    Produces a parallel coordinate plot about hyperparameter optimization
+    creating one HTML file and optionally a CSV file to be read by hiplot
+
+    :param hyperopt_stats_path: path to the hyperopt results JSON file
+    :param output_directory: path where to save the output plots
+    :return:
+    """
+    filename = 'hyperopt_hiplot.html'
+    filename_path = generate_filename_template_path(
+        output_directory,
+        filename
+    )
+
+    hyperopt_stats = load_json(hyperopt_stats_path)
+    hyperopt_df = hyperopt_results_to_dataframe(
+        hyperopt_stats['hyperopt_results'],
+        hyperopt_stats['hyperopt_config']['parameters'],
+        hyperopt_stats['hyperopt_config']['metric']
+    )
+    visualization_utils.hyperopt_hiplot(
+        hyperopt_df,
+        filename=filename_path,
+    )
+
+
+def hyperopt_results_to_dataframe(
+        hyperopt_results,
+        hyperopt_parameters,
+        metric
+):
+    df = pd.DataFrame(
+        [{metric: res['metric_score'], **res['parameters']}
+         for res in hyperopt_results]
+    )
+    df = df.astype(
+        {hp_name: hp_params['type']
+         for hp_name, hp_params in hyperopt_parameters.items()}
+    )
+    return df
+
+
 visualizations_registry = {
     'compare_performance':
         compare_performance_cli,
@@ -3117,7 +3200,11 @@ visualizations_registry = {
     'frequency_vs_f1':
         frequency_vs_f1_cli,
     'learning_curves':
-        learning_curves_cli
+        learning_curves_cli,
+    'hyperopt_report':
+        hyperopt_report_cli,
+    'hyperopt_hiplot':
+        hyperopt_hiplot_cli
 }
 
 
@@ -3207,6 +3294,13 @@ def cli(sys_argv):
         nargs='+',
         type=str,
         help='test stats files'
+    )
+    parser.add_argument(
+        '-hs',
+        '--hyperopt_stats_path',
+        default=None,
+        type=str,
+        help='hyperopt stats file'
     )
     parser.add_argument(
         '-mn',

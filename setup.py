@@ -35,6 +35,9 @@ with open(path.join(here, 'requirements_viz.txt'), encoding='utf-8') as f:
 with open(path.join(here, 'requirements_horovod.txt'), encoding='utf-8') as f:
     extra_requirements['horovod'] = [line.strip() for line in f if line]
 
+with open(path.join(here, 'requirements_hyperopt.txt'), encoding='utf-8') as f:
+    extra_requirements['hyperopt'] = [line.strip() for line in f if line]
+
 extra_requirements['full'] = [item for sublist in extra_requirements.values()
                               for item in sublist]
 
@@ -45,7 +48,7 @@ with open(path.join(here, 'requirements_test.txt'), encoding='utf-8') as f:
 
 setup(
     name='ludwig',
-    version='0.2.2.8',
+    version='0.3.0-a.1',
 
     description='A deep learning experimentation toolbox',
     long_description=long_description,
