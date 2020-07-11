@@ -13,10 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import sys
-import logging
 
-from ludwig.globals import LUDWIG_VERSION as __version__
-
-
-logging.basicConfig(level=logging.INFO, stream=sys.stdout, format='%(message)s')

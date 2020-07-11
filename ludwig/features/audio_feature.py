@@ -152,7 +152,8 @@ class AudioBaseFeature(BaseFeature):
 
         feature_length = audio_feature.shape[0]
         broadcast_feature_length = min(feature_length, max_length)
-        audio_feature_padded = np.full((max_length, feature_dim), padding_value,
+        audio_feature_padded = np.full((max_length, feature_dim),
+                                       padding_value,
                                        dtype=np.float32)
         audio_feature_padded[:broadcast_feature_length, :] = audio_feature[
                                                              :max_length, :]
@@ -298,19 +299,20 @@ class AudioBaseFeature(BaseFeature):
 
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))
-            print_statistics = """
-            {} audio files loaded.
-            Statistics of audio file lengths:
-            - mean: {:.4f}
-            - std: {:.4f}
-            - max: {:.4f}
-            - min: {:.4f}
-            - cropped audio_files: {}
-            Max length was given as {}.
-            """.format(audio_stats['count'], audio_stats['mean'],
-                       audio_stats['std'], audio_stats['max'],
-                       audio_stats['min'], audio_stats['cropped'],
-                       audio_stats['max_length_in_s'])
+            print_statistics = (
+                "{} audio files loaded.\n"
+                "Statistics of audio file lengths:\n"
+                "- mean: {:.4f}\n"
+                "- std: {:.4f}\n"
+                "- max: {:.4f}\n"
+                "- min: {:.4f}\n"
+                "- cropped audio_files: {}\n"
+                "Max length was given as {}s"
+            ).format(
+                audio_stats['count'], audio_stats['mean'],
+                audio_stats['std'], audio_stats['max'],
+                audio_stats['min'], audio_stats['cropped'],
+                audio_stats['max_length_in_s'])
             logger.debug(print_statistics)
 
     @staticmethod
@@ -372,7 +374,8 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
         assert inputs.dtype == tf.float32
         assert len(inputs.shape) == 3
 
-        inputs_exp = tf.cast(inputs, dtype=tf.float32)  # TODO: this should not be needed
+        inputs_exp = tf.cast(inputs,
+                             dtype=tf.float32)  # TODO: this should not be needed
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=mask
         )

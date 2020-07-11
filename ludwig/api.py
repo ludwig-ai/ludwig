@@ -185,6 +185,8 @@ class LudwigModel:
         logging.getLogger('ludwig').setLevel(logging_level)
         if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
             set_disable_progressbar(True)
+        else:
+            set_disable_progressbar(False)
 
     @staticmethod
     def _read_data(data_csv, data_dict):

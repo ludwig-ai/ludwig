@@ -21,9 +21,9 @@ from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.embedding_modules import Embed
 from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.recurrent_modules import RecurrentStack
 from ludwig.models.modules.reduction_modules import reduce_sum, reduce_sequence
-from ludwig.models.modules.initializer_modules import get_initializer
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +236,7 @@ class H3Embed(Layer):
         hidden = reduce_sequence(concatenated, self.reduce_output)
 
         # ================ FC Stack ================
-        logger.debug('  flatten hidden: {0}'.format(hidden))
+        # logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,
@@ -376,7 +376,7 @@ class H3WeightedSum(Layer):
         hidden = reduce_sum(embedded_h3['encoder_output'] * weights)
 
         # ================ FC Stack ================
-        logger.debug('  flatten hidden: {0}'.format(hidden))
+        #logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,
