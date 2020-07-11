@@ -16,7 +16,7 @@
 # ==============================================================================
 from ludwig.utils.horovod_utils import should_use_horovod
 
-LUDWIG_VERSION = '0.2.1'
+LUDWIG_VERSION = '0.3.0-a.1'
 
 MODEL_WEIGHTS_FILE_NAME = 'model_weights'
 MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'

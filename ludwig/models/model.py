@@ -335,11 +335,11 @@ class Model:
                 )
             )
 
-        # check if validation_measure is valid
-        valid_validation_measure = validation_metric in metrics_names[
+        # check if validation_metric is valid
+        valid_validation_metric = validation_metric in metrics_names[
             validation_output_feature_name
         ]
-        if not valid_validation_measure:
+        if not valid_validation_metric:
             raise ValueError(
                 'The specificed metric {} is not valid.'
                 'Available metrics for {} output features are: {}'.format(

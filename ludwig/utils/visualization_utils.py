@@ -24,6 +24,7 @@ from collections import Counter
 from sys import platform
 
 import numpy as np
+import pandas as pd
 
 import ludwig.contrib
 from ludwig.constants import TRAINING, VALIDATION
@@ -50,6 +51,9 @@ except ImportError:
         'pip install ludwig[viz]'
     )
     sys.exit(-1)
+
+INT_QUANTILES = 10
+FLOAT_QUANTILES = 10
 
 
 # plt.rc('xtick', labelsize='x-large')
@@ -861,7 +865,6 @@ def calibration_plot(
                         i] if algorithm_names is not None and i < len(
                         algorithm_names) else '')
 
-
     ticks = np.linspace(0.0, 1.0, num=11)
     plt.xlim([-0.05, 1.05])
     plt.xticks(ticks)
@@ -1177,3 +1180,193 @@ def bar_plot(
         plt.savefig(filename)
     else:
         plt.show()
+
+
+def hyperopt_report(
+        hyperparameters,
+        hyperopt_results_df,
+        metric,
+        filename_template,
+        float_precision=3
+):
+    for hp_name, hp_params in hyperparameters.items():
+        if hp_params['type'] == 'int':
+            hyperopt_int_plot(
+                hyperopt_results_df,
+                hp_name,
+                metric,
+                filename_template.format(
+                    hp_name) if filename_template else None
+            )
+        elif hp_params['type'] == 'float':
+            hyperopt_float_plot(
+                hyperopt_results_df,
+                hp_name,
+                metric,
+                filename_template.format(
+                    hp_name) if filename_template else None,
+                log_scale_x=hp_params[
+                                'scale'] == 'log' if 'scale' in hp_params else False
+            )
+        elif hp_params['type'] == 'category':
+            hyperopt_category_plot(
+                hyperopt_results_df,
+                hp_name,
+                metric,
+                filename_template.format(
+                    hp_name) if filename_template else None
+            )
+
+    # quantize float and int columns
+    for hp_name, hp_params in hyperparameters.items():
+        if hp_params['type'] == 'int':
+            num_distinct_values = len(hyperopt_results_df[hp_name].unique())
+            if num_distinct_values > INT_QUANTILES:
+                hyperopt_results_df[hp_name] = pd.qcut(
+                    hyperopt_results_df[hp_name],
+                    q=INT_QUANTILES,
+                    precision=0
+                )
+        elif hp_params['type'] == 'float':
+            hyperopt_results_df[hp_name] = pd.qcut(
+                hyperopt_results_df[hp_name],
+                q=FLOAT_QUANTILES,
+                precision=float_precision,
+                duplicates='drop',
+            )
+
+    hyperopt_pair_plot(
+        hyperopt_results_df,
+        metric,
+        filename_template.format('pair_plot') if filename_template else None
+    )
+
+
+def hyperopt_int_plot(
+        hyperopt_results_df,
+        hp_name,
+        metric,
+        filename,
+        log_scale_x=False,
+        log_scale_y=True
+):
+    sns.set_style('whitegrid')
+    plt.figure()
+    seaborn_figure = sns.scatterplot(
+        x=hp_name,
+        y=metric,
+        data=hyperopt_results_df
+    )
+    if log_scale_x:
+        seaborn_figure.set(xscale="log")
+    if log_scale_y:
+        seaborn_figure.set(yscale="log")
+    seaborn_figure.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+    seaborn_figure.xaxis.set_major_formatter(ticker.ScalarFormatter())
+    seaborn_figure.xaxis.set_minor_formatter(ticker.NullFormatter())
+    seaborn_figure.figure.tight_layout()
+    if filename:
+        seaborn_figure.figure.savefig(filename)
+    else:
+        seaborn_figure.figure.show()
+
+
+def hyperopt_float_plot(
+        hyperopt_results_df,
+        hp_name,
+        metric,
+        filename,
+        log_scale_x=False,
+        log_scale_y=True
+):
+    sns.set_style('whitegrid')
+    plt.figure()
+    seaborn_figure = sns.scatterplot(
+        x=hp_name,
+        y=metric,
+        data=hyperopt_results_df
+    )
+    seaborn_figure.set(ylabel=metric)
+    if log_scale_x:
+        seaborn_figure.set(xscale="log")
+    if log_scale_y:
+        seaborn_figure.set(yscale="log")
+    seaborn_figure.figure.tight_layout()
+    if filename:
+        seaborn_figure.figure.savefig(filename)
+    else:
+        seaborn_figure.figure.show()
+
+
+def hyperopt_category_plot(
+        hyperopt_results_df,
+        hp_name,
+        metric,
+        filename,
+        log_scale=True
+):
+    sns.set_style('whitegrid')
+    plt.figure()
+    seaborn_figure = sns.violinplot(
+        x=hp_name,
+        y=metric,
+        data=hyperopt_results_df,
+        fit_reg=False
+    )
+    seaborn_figure.set(ylabel=metric)
+    sns.despine()
+    if log_scale:
+        seaborn_figure.set(yscale="log")
+    plt.tight_layout()
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
+
+
+def hyperopt_pair_plot(
+        hyperopt_results_df,
+        metric,
+        filename
+):
+    params = sorted(list(hyperopt_results_df.keys()))
+    params.remove(metric)
+    num_param = len(params)
+
+    sns.set_style('white')
+    fig = plt.figure(figsize=(20, 20))
+    gs = fig.add_gridspec(num_param, num_param)
+
+    for i, param1 in enumerate(params):
+        for j, param2 in enumerate(params):
+            if i != j:
+                ax = fig.add_subplot(gs[i, j])
+                heatmap = hyperopt_results_df.pivot_table(
+                    index=param1,
+                    columns=param2,
+                    values=metric,
+                    aggfunc='mean'
+                )
+                sns.heatmap(
+                    heatmap,
+                    linewidths=1,
+                    cmap="viridis",
+                    cbar_kws={'label': metric},
+                    ax=ax,
+                )
+
+    plt.tight_layout(pad=5)
+
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()
+
+
+def hyperopt_hiplot(
+        hyperopt_df,
+        filename,
+):
+    import hiplot as hip
+    experiment = hip.Experiment.from_dataframe(hyperopt_df)
+    experiment.to_html(filename)

@@ -3,6 +3,5 @@ python:
   - "3.6"
 install:
   - pip install '.[test]'
-# TODO: re-enable tests/integration_tests/_test_contrib_wandb.py after resolving issue with TF2
 script:
-  - pytest --ignore tests/integration_tests/_test_contrib_wandb.py tests
+  - pytest tests
