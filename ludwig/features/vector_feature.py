@@ -141,7 +141,7 @@ class VectorBaseFeature(BaseFeature):
                     )
                 )
         else:
-            logger.warning('Observed vector size: {}'.format(vector_size))
+            logger.debug('Observed vector size: {}'.format(vector_size))
 
         metadata[feature['name']]['vector_size'] = vector_size
 

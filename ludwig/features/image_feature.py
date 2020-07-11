@@ -305,7 +305,7 @@ class ImageBaseFeature(BaseFeature):
             # standard code anyway.
             if num_processes > 1 or num_images > 1:
                 with Pool(num_processes) as pool:
-                    logger.warning(
+                    logger.debug(
                         'Using {} processes for preprocessing images'.format(
                             num_processes
                         )
@@ -313,10 +313,11 @@ class ImageBaseFeature(BaseFeature):
                     data[feature['name']] = np.array(
                         pool.map(read_image_and_resize, all_file_paths)
                     )
-            # If we're not running multiple processes and we are only processing one
-            # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+
             else:
-                logger.warning(
+                # If we're not running multiple processes and we are only processing one
+                # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+                logger.debug(
                     'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])

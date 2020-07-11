@@ -58,6 +58,7 @@ from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
+from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +78,9 @@ class Model:
             training,
             preprocessing,
             use_horovod=None,
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -87,8 +91,7 @@ class Model:
             self._horovod = horovod.tensorflow
             self._horovod.init()
 
-        self._initialized = False
-        # self.session = None
+        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads, self._horovod)
 
         self._debug = debug
         self._weights_save_path = None
@@ -109,6 +112,7 @@ class Model:
         tf.random.set_seed(random_seed)
 
         # public
+        # NOTE: TensorFlow must be initialized prior to creating the model
         self.ecd = ECD(input_features, combiner, output_features)
 
         # ================ Optimizer ================
@@ -140,34 +144,6 @@ class Model:
     @tf.function
     def predict_step(self, model, inputs):
         return model.predictions(inputs, output_features=None)
-
-    def initialize_tensorflow(self, gpus=None, gpu_memory_limit=None,
-                              allow_parallel_threads=True):
-        # For reproducivility / determinism, set parallel threads to 1.
-        # For performance, set to 0 to allow TensorFlow to select the best value automatically.
-        tf.config.threading.set_intra_op_parallelism_threads(
-            0 if allow_parallel_threads else 1)
-        tf.config.threading.set_inter_op_parallelism_threads(
-            0 if allow_parallel_threads else 1)
-
-        if self._horovod is not None and gpus is None:
-            gpus = [self._horovod.local_rank()]
-        gpus = [gpus] if isinstance(gpus, int) else gpus
-
-        if gpus is not None:
-            gpu_devices = tf.config.list_physical_devices('GPU')
-            for gpu in gpu_devices:
-                tf.config.experimental.set_memory_growth(gpu, True)
-                if gpu_memory_limit is not None:
-                    tf.config.set_logical_device_configuration(
-                        gpu,
-                        [tf.config.LogicalDeviceConfiguration(
-                            memory_limit=gpu_memory_limit)])
-            if gpu_devices:
-                local_devices = [gpu_devices[g] for g in gpus]
-                tf.config.set_visible_devices(local_devices, 'GPU')
-
-        self._initialized = True
 
     @classmethod
     def write_epoch_summary(
@@ -239,9 +215,6 @@ class Model:
             skip_save_model=False,
             skip_save_progress=False,
             skip_save_log=False,
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
             random_seed=default_random_seed,
             **kwargs
     ):
@@ -324,13 +297,6 @@ class Model:
                is not needed turning it off can slightly increase the
                overall speed..
         :type skip_save_log: Boolean
-        :param gpus: List of gpus to use
-        :type gpus: List
-        :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
-        :type gpu_memory_limit: Integer
-        :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
-               to improve performance at the cost of determinism.
-        :type allow_parallel_threads: Boolean
         :param random_seed: Default initialization for the random seeds
         :type: Float
         """
@@ -408,13 +374,15 @@ class Model:
             )
 
         # ====== Setup session =======
-        checkpoint = tf.train.Checkpoint(
-            optimizer=self._optimizer,
-            model=self.ecd
-        )
-        checkpoint_manager = tf.train.CheckpointManager(
-            checkpoint, training_checkpoints_path, max_to_keep=1
-        )
+        checkpoint = checkpoint_manager = None
+        if is_on_master():
+            checkpoint = tf.train.Checkpoint(
+                optimizer=self._optimizer,
+                model=self.ecd
+            )
+            checkpoint_manager = tf.train.CheckpointManager(
+                checkpoint, training_checkpoints_path, max_to_keep=1
+            )
 
         train_summary_writer = None
         validation_summary_writer = None
@@ -750,13 +718,8 @@ class Model:
             dataset,
             batch_size=128,
             regularization_lambda=0.0,
-            bucketing_field=None,
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True
+            bucketing_field=None
     ):
-        self.initialize_tensorflow(gpus, gpu_memory_limit,
-                                   allow_parallel_threads)
         batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
 
         # training step loop
@@ -1068,9 +1031,6 @@ class Model:
             dataset,
             batch_size,
             evaluate_performance=True,
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
             **kwargs
     ):
         # predict
@@ -1097,15 +1057,8 @@ class Model:
             dataset,
             tensor_names,
             batch_size,
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
             **kwargs
     ):
-        if not self._initialized:
-            self.initialize_tensorflow(gpus, gpu_memory_limit,
-                                       allow_parallel_threads)
-
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
         #
@@ -1139,15 +1092,8 @@ class Model:
     def collect_weights(
             self,
             tensor_names,
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
             **kwargs
     ):
-        if not self._initialized:
-            self.initialize_tensorflow(gpus, gpu_memory_limit,
-                                       allow_parallel_threads)
-
         # todo tf2: reintroduce functionality
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
@@ -1228,20 +1174,21 @@ class Model:
         self.ecd.load_weights(weights_path)
 
     @staticmethod
-    def load(load_path, gpus=None, gpu_memory_limit=None,
-             allow_parallel_threads=True, use_horovod=None):
+    def load(load_path, use_horovod=None, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
         hyperparameters = load_json(hyperparameter_file)
-        model = Model(use_horovod=use_horovod, **hyperparameters)
+        model = Model(use_horovod=use_horovod,
+                      gpus=gpus,
+                      gpu_memory_limit=gpu_memory_limit,
+                      allow_parallel_threads=allow_parallel_threads,
+                      **hyperparameters)
         weights_save_path = os.path.join(
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
-        model.initialize_tensorflow(gpus, gpu_memory_limit,
-                                    allow_parallel_threads)
         model.restore(weights_save_path)
         return model
 
@@ -1501,7 +1448,11 @@ class ProgressTracker:
         return ProgressTracker(**loaded)
 
 
-def load_model_and_definition(model_dir, use_horovod=None):
+def load_model_and_definition(model_dir,
+                              use_horovod=None,
+                              gpus=None,
+                              gpu_memory_limit=None,
+                              allow_parallel_threads=True):
     # Load model definition and weights
     model_definition = load_json(
         os.path.join(
@@ -1509,5 +1460,9 @@ def load_model_and_definition(model_dir, use_horovod=None):
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
     )
-    model = Model.load(model_dir, use_horovod=use_horovod)
+    model = Model.load(model_dir,
+                       use_horovod=use_horovod,
+                       gpus=gpus,
+                       gpu_memory_limit=gpu_memory_limit,
+                       allow_parallel_threads=allow_parallel_threads)
     return model, model_definition

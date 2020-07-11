@@ -89,7 +89,10 @@ def full_predict(
     if is_on_master():
         print_boxed('LOADING MODEL')
     model, model_definition = load_model_and_definition(model_path,
-                                                        use_horovod=use_horovod)
+                                                        use_horovod=use_horovod,
+                                                        gpus=gpus,
+                                                        gpu_memory_limit=gpu_memory_limit,
+                                                        allow_parallel_threads=allow_parallel_threads)
 
     prediction_results = predict(
         dataset,
@@ -98,9 +101,6 @@ def full_predict(
         model_definition,
         batch_size,
         evaluate_performance,
-        gpus,
-        gpu_memory_limit,
-        allow_parallel_threads,
         debug
     )
     # model.close_session()  # todo tf2 code clean -up
@@ -146,9 +146,6 @@ def predict(
         model_definition,
         batch_size=128,
         evaluate_performance=True,
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
         debug=False
 ):
     """Computes predictions based on the computed model.
@@ -168,9 +165,6 @@ def predict(
                to contain also ground truth for the output features, otherwise
                the metrics cannot be computed.
         :type evaluate_performance: Bool
-        :type gpus: List
-        :type gpu_memory_limit Int
-        :type allow_parallel_threads: Bool
         :param debug: If true turns on tfdbg with inf_or_nan checks.
         :type debug: Boolean
 
@@ -184,10 +178,7 @@ def predict(
     test_stats, test_predictions = model.predict(
         dataset,
         batch_size,
-        evaluate_performance=evaluate_performance,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads
+        evaluate_performance=evaluate_performance
     )
 
     # combine predictions with the overall metrics

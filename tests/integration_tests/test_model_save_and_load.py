@@ -1,3 +1,4 @@
+import logging
 import os.path
 
 import numpy as np
@@ -70,7 +71,7 @@ def test_model_save_reload_API(csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    ludwig_model1 = LudwigModel(model_definition)
+    ludwig_model1 = LudwigModel(model_definition, logging_level=logging.DEBUG)
     train_stats = ludwig_model1.train(
         data_train_df=training_set,
         data_validation_df=validation_set,

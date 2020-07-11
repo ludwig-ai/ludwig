@@ -121,7 +121,7 @@ def embedding_matrix_on_device(
             initializer=initializer
         )
 
-    logger.debug('  embeddings: {0}'.format(embeddings))
+    # logger.debug('  embeddings: {0}'.format(embeddings))
 
     return embeddings, embedding_size
 
