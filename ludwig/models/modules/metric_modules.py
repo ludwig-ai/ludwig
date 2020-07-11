@@ -280,6 +280,18 @@ class CategoryAccuracy(tf.keras.metrics.Accuracy):
         )
 
 
+class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
+    def __init__(self, k=3, name=None):
+        super(HitsAtKMetric, self).__init__(k=k,name=name)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true,
+            y_pred[LOGITS],
+            sample_weight=sample_weight
+        )
+
+
 def get_improved_fun(metric):
     if metric in min_metrics:
         return lambda x, y: x < y

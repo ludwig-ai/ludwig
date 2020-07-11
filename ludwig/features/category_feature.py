@@ -33,6 +33,7 @@ from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.models.modules.metric_modules import CategoryAccuracy
 from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
+from ludwig.models.modules.metric_modules import HitsAtKMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -227,6 +228,11 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         self.metric_functions[ACCURACY] = CategoryAccuracy(
             name='metric_accuracy'
         )
+        self.metric_functions[HITS_AT_K] = HitsAtKMetric(
+            k=self.top_k,
+            name='metric_top_k_hits'
+        )
+
 
     default_validation_metric = ACCURACY
 
