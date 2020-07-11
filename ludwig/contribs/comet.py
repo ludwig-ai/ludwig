@@ -105,7 +105,7 @@ class Comet():
                 "comet_ml.Experiment() had errors. Perhaps you need to define COMET_API_KEY")
             return
 
-        logger.info("comet.train() called......")
+        logger.info("comet.train_init() called......")
         self.cometml_experiment.set_name(model_name)
         self.cometml_experiment.set_filename("Ludwig API")
         config = comet_ml.get_config()

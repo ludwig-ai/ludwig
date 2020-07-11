@@ -1,7 +1,6 @@
 import logging
 import os
 import shutil
-import sys
 
 from unittest.mock import patch
 
@@ -20,9 +19,8 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 def test_wandb_experiment(import_wandb, csv_filename):
     # Test W&B integration
 
-    # add wandb arg and detect flag
-    sys.argv.append('--wandb')
-    ludwig.contrib.contrib_import()
+    # enable wandb contrib module
+    ludwig.contrib.use_contrib('wandb')
 
     # disable sync to cloud
     os.environ['WANDB_MODE'] = 'dryrun'
@@ -38,7 +36,7 @@ def test_wandb_experiment(import_wandb, csv_filename):
     # Run experiment
     run_experiment(input_features, output_features, data_csv=rel_path)
 
-    # Check a W&B run was created
+    # Check wandb was imported
     import_wandb.assert_called()
 
     # Remove instance from contrib_registry
