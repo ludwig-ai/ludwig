@@ -17,8 +17,6 @@
 import io
 import os
 
-import tensorflow as tf
-
 
 def should_use_horovod(use_horovod):
     """Returns True if user did not specify explicitly and running with `horovodrun`."""
@@ -42,7 +40,10 @@ def allgather_object(obj):
     Returns:
         The list of objects that were allgathered across all ranks.
     """
+    # Horovod and its deps are optional, so do not import them at the top.
+    # TensorFlow is included here as certain modules (like comet) must import before TF.
     import cloudpickle
+    import tensorflow as tf
     from horovod.tensorflow import allgather, size
 
     def load(byte_array):
