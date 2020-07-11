@@ -154,14 +154,15 @@ def test_compare_performance_vis_api(csv_filename):
     :return: None
     """
     experiment = Experiment(csv_filename)
-    test_stats = experiment.test_stats_full[1]
+    # extract test stats only
+    test_stats = experiment.test_stats_full[1][0]
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
             viz_output
         )
         visualize.compare_performance(
-            [test_stats[0], test_stats[0]],
+            [test_stats, test_stats],
             output_feature_name=None,
             model_names=['Model1', 'Model2'],
             output_directory=experiment.model.exp_dir_name,
@@ -286,7 +287,8 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
     :return: None
     """
     experiment = Experiment(csv_filename)
-    test_stats = experiment.test_stats_full[1]
+    # extract test stats only
+    test_stats = experiment.test_stats_full[1][0]
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
@@ -752,7 +754,8 @@ def test_confusion_matrix_vis_api(csv_filename):
     :return: None
     """
     experiment = Experiment(csv_filename)
-    test_stats = experiment.test_stats_full[1]
+    # extract test stats only
+    test_stats = experiment.test_stats_full[1][0]
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
