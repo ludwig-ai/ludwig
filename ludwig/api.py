@@ -33,7 +33,7 @@ import os
 import sys
 
 import ludwig.contrib
-from ludwig.constants import TRAINING
+from ludwig.constants import *
 
 ludwig.contrib.contrib_import()
 
@@ -810,9 +810,17 @@ class LudwigModel:
             session=getattr(self.model, 'session', None)
         )
 
+        # combine predictions with the overall metrics
+        test_stats, test_predictions = copy.deepcopy(predict_results)
+        for of_name in test_predictions:
+            # remove logits, not needed for overall stats
+            del test_predictions[of_name][LOGITS]
+            test_stats[of_name] = {**test_stats[of_name],
+                                   **test_predictions[of_name]}
+
         if evaluate_performance:
             calculate_overall_stats(
-                predict_results,
+                test_stats,
                 self.model_definition['output_features'],
                 dataset,
                 self.train_set_metadata
@@ -825,7 +833,7 @@ class LudwigModel:
                 return_type == dict
         ):
             postprocessed_predictions = postprocess(
-                predict_results,
+                test_predictions,
                 self.model_definition['output_features'],
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
@@ -837,7 +845,7 @@ class LudwigModel:
                 return_type == pd.DataFrame
         ):
             postprocessed_predictions = postprocess_df(
-                predict_results,
+                test_predictions,
                 self.model_definition['output_features'],
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,

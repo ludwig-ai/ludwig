@@ -51,7 +51,7 @@ def postprocess(
     postprocessed = {}
     for output_feature in output_features:
         postprocessed[output_feature['name']] = postprocess_results(
-            results[1][output_feature['name']],
+            results[output_feature['name']],
             output_feature,
             metadata.get(output_feature['name'], {}),
             experiment_dir_name=experiment_dir_name,
