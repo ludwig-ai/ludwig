@@ -70,6 +70,7 @@ FILL_WITH_MEAN = 'fill_with_mean'
 BACKFILL = 'backfill'
 
 MEASURE = 'measure'
+METRIC = 'metric'
 PREDICTION = 'prediction'
 
 SUM = 'sum'
@@ -82,3 +83,10 @@ VALIDATION = 'validation'
 TEST = 'test'
 SPLIT = 'split'
 FULL = 'full'
+COMBINED = 'combined'
+
+HYPEROPT = 'hyperopt'
+STRATEGY = 'strategy'
+EXECUTOR = 'executor'
+MINIMIZE = 'minimize'
+MAXIMIZE = 'maximize'
