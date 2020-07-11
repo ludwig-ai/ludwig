@@ -109,7 +109,7 @@ class SequenceGeneratorDecoder(Layer):
         # Sampler
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
 
-        print('setting up attention for', attention)
+        logger.debug('setting up attention for', attention)
         if attention is not None:
             if attention == 'luong':
                 self.attention_mechanism = LuongAttention(units=state_size)

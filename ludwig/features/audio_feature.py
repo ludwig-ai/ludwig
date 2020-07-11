@@ -311,7 +311,7 @@ class AudioBaseFeature(BaseFeature):
                        audio_stats['std'], audio_stats['max'],
                        audio_stats['min'], audio_stats['cropped'],
                        audio_stats['max_length_in_s'])
-            print(print_statistics)
+            logger.debug(print_statistics)
 
     @staticmethod
     def _get_max_length_feature(
