@@ -161,9 +161,9 @@ def test_compare_performance_vis_api(csv_filename):
             viz_output
         )
         visualize.compare_performance(
-            [test_stats, test_stats],
+            [test_stats[0], test_stats[0]],
             output_feature_name=None,
-            model_namess=['Model1', 'Model2'],
+            model_names=['Model1', 'Model2'],
             output_directory=experiment.model.exp_dir_name,
             file_format=viz_output
         )
