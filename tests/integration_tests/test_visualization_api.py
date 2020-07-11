@@ -143,7 +143,7 @@ def test_learning_curves_vis_api(csv_filename):
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
-        assert 5 == len(figure_cnt)
+        assert 4 == len(figure_cnt)
     shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
 
 
