@@ -808,35 +808,37 @@ def compare_performance(
                     test_stats_per_model[output_feature_name][metric_name]
                 )
 
-        metrics = []
-        metrics_names = []
-        min_val = float("inf")
-        max_val = float("-inf")
-        for metric_name, metric_vals in metrics_dict.items():
-            if len(metric_vals) > 0:
-                metrics.append(metric_vals)
-                metrics_names.append(metric_name)
-                curr_min = min(metric_vals)
-                if curr_min < min_val:
-                    min_val = curr_min
-                curr_max = max(metric_vals)
-                if curr_max > max_val:
-                    max_val = curr_max
+        # are there any metrics to compare?
+        if metrics_dict:
+            metrics = []
+            metrics_names = []
+            min_val = float("inf")
+            max_val = float("-inf")
+            for metric_name, metric_vals in metrics_dict.items():
+                if len(metric_vals) > 0:
+                    metrics.append(metric_vals)
+                    metrics_names.append(metric_name)
+                    curr_min = min(metric_vals)
+                    if curr_min < min_val:
+                        min_val = curr_min
+                    curr_max = max(metric_vals)
+                    if curr_max > max_val:
+                        max_val = curr_max
 
-        filename = None
+            filename = None
 
-        if filename_template_path:
-            filename = filename_template_path.format(output_feature_name)
-            os.makedirs(output_directory, exist_ok=True)
+            if filename_template_path:
+                filename = filename_template_path.format(output_feature_name)
+                os.makedirs(output_directory, exist_ok=True)
 
-        visualization_utils.compare_classifiers_plot(
-            metrics,
-            metrics_names,
-            model_names_list,
-            adaptive=min_val < 0 or max_val > 1,
-            title='Performance comparison on {}'.format(output_feature_name),
-            filename=filename
-        )
+            visualization_utils.compare_classifiers_plot(
+                metrics,
+                metrics_names,
+                model_names_list,
+                adaptive=min_val < 0 or max_val > 1,
+                title='Performance comparison on {}'.format(output_feature_name),
+                filename=filename
+            )
 
 
 def compare_classifiers_performance_from_prob(
