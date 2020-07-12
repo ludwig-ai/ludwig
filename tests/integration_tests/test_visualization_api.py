@@ -669,23 +669,23 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
     """
     input_features = [binary_feature(), bag_feature()]
     output_features = [binary_feature()]
-    encoder = 'parallel_cnn'
 
     # Generate test data
     data_csv = generate_data(input_features, output_features, csv_filename)
     output_feature_name = output_features[0]['name']
-    input_features[0]['encoder'] = encoder
+
     model = run_api_experiment(input_features, output_features)
     data_df = read_csv(data_csv)
     model.train(data_df=data_df)
-    test_stats = model.test(data_df=data_df)[1]
+    # extract test metrics
+    test_stats = model.test(data_df=data_df)[1][0]
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(viz_output)
         visualize.roc_curves_from_test_statistics(
             [test_stats, test_stats],
             output_feature_name,
-            model_namess=['Model1', 'Model2'],
+            model_names=['Model1', 'Model2'],
             output_directory=model.exp_dir_name,
             file_format=viz_output
         )

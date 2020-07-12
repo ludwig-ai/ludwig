@@ -774,7 +774,8 @@ def compare_performance(
 
     :return: (None)
     """
-    ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats']
+    ignore_names = ['overall_stats', 'confusion_matrix', 'per_class_stats',
+                    'predictions', 'probabilities']
 
     filename_template = 'compare_performance_{}.' + file_format
     filename_template_path = generate_filename_template_path(
