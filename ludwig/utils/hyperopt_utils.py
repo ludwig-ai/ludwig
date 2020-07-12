@@ -23,6 +23,7 @@ import multiprocessing
 import os
 import random
 import signal
+import subprocess as sp
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple, Iterable
 
@@ -302,7 +303,8 @@ class HyperoptExecutor(ABC):
             skip_save_test_statistics=False,
             output_directory="results",
             gpus=None,
-            gpu_fraction=1.0,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             use_horovod=False,
             random_seed=default_random_seed,
             debug=False,
@@ -355,7 +357,8 @@ class SerialExecutor(HyperoptExecutor):
             skip_save_test_statistics=False,
             output_directory="results",
             gpus=None,
-            gpu_fraction=1.0,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             use_horovod=False,
             random_seed=default_random_seed,
             debug=False,
@@ -402,7 +405,8 @@ class SerialExecutor(HyperoptExecutor):
                     skip_save_test_statistics=skip_save_test_statistics,
                     output_directory=output_directory,
                     gpus=gpus,
-                    gpu_fraction=gpu_fraction,
+                    gpu_memory_limit=gpu_memory_limit,
+                    allow_parallel_threads=allow_parallel_threads,
                     use_horovod=use_horovod,
                     random_seed=random_seed,
                     debug=debug,
@@ -429,6 +433,7 @@ class SerialExecutor(HyperoptExecutor):
 class ParallelExecutor(HyperoptExecutor):
     num_workers = 2
     epsilon = 0.01
+    epsilon_memory = 200
 
     def __init__(
             self,
@@ -464,14 +469,15 @@ class ParallelExecutor(HyperoptExecutor):
         }
 
     def _train_and_eval_model_gpu(self, hyperopt_dict):
-        gpu_id = self.queue.get()
+        gpu_id_meta = self.queue.get()
         try:
             parameters = hyperopt_dict['parameters']
-            hyperopt_dict["gpus"] = gpu_id
+            hyperopt_dict["gpus"] = gpu_id_meta["gpu_id"]
+            hyperopt_dict["gpu_memory_limit"] = gpu_id_meta["gpu_memory_limit"]
             train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
             metric_score = self.get_metric_score(eval_stats)
         finally:
-            self.queue.put(gpu_id)
+            self.queue.put(gpu_id_meta)
         return {
             'parameters': parameters,
             'metric_score': metric_score,
@@ -510,7 +516,8 @@ class ParallelExecutor(HyperoptExecutor):
             skip_save_test_statistics=False,
             output_directory="results",
             gpus=None,
-            gpu_fraction=1.0,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             use_horovod=False,
             random_seed=default_random_seed,
             debug=False,
@@ -535,40 +542,79 @@ class ParallelExecutor(HyperoptExecutor):
             gpu_ids = gpus.split(',')
             total_gpus = len(gpu_ids)
 
+            available_gpu_memory_list = get_available_gpu_memory()
+            gpu_ids_meta = {}
+
             if total_gpus < self.num_workers:
                 fraction = (total_gpus / self.num_workers) - self.epsilon
-                if fraction < gpu_fraction:
-                    if fraction > 0.5:
-                        if gpu_fraction != 1:
-                            logger.warning(
-                                'WARNING: Setting gpu_fraction to 1 as the gpus '
-                                'would be underutilized for the parallel processes.'
-                            )
-                        gpu_fraction = 1
-                    else:
-                        logger.warning(
-                            'WARNING: Setting gpu_fraction to {} '
-                            'as the available gpus is {} and the num of workers '
-                            'selected is {}'.format(
-                                fraction, total_gpus, self.num_workers)
-                        )
-                        gpu_fraction = fraction
-                else:
-                    logger.warning(
-                        'WARNING: gpu_fraction could be increased to {} '
-                        'as the available gpus is {} and the num of workers '
-                        'being set is {}'.format(
-                            fraction, total_gpus, self.num_workers)
-                    )
+                for gpu_id in gpu_ids:
+                    available_gpu_memory = available_gpu_memory_list[int(gpu_id)]
+                    required_gpu_memory = fraction * available_gpu_memory
 
-            process_per_gpu = int(1 / gpu_fraction)
+                    if gpu_memory_limit is None:
+                        logger.warning(
+                            'WARNING: Setting gpu_memory_limit to {} '
+                            'as the available gpus is {} and the num of workers '
+                            'being set is {} and the available gpu memory for gpu_id '
+                            '{} is {}'.format(
+                                required_gpu_memory, total_gpus, self.num_workers,
+                                gpu_id, available_gpu_memory)
+                        )
+                        new_gpu_memory_limit = required_gpu_memory
+                    else:
+                        new_gpu_memory_limit = gpu_memory_limit
+                        if new_gpu_memory_limit > available_gpu_memory:
+                            logger.warning(
+                                'WARNING: Setting gpu_memory_limit to available gpu '
+                                'memory {} with epsilon as the value specified is greater than '
+                                'available gpu memory.'.format(
+                                    available_gpu_memory)
+                            )
+                            new_gpu_memory_limit = available_gpu_memory - self.epsilon_memory
+
+                        if required_gpu_memory < new_gpu_memory_limit:
+                            if required_gpu_memory > 0.5 * available_gpu_memory:
+                                if available_gpu_memory != new_gpu_memory_limit:
+                                    logger.warning(
+                                        'WARNING: Setting gpu_memory_limit to available gpu '
+                                        'memory {} with epsilon as the gpus would be underutilized for '
+                                        'the parallel processes'.format(
+                                            available_gpu_memory)
+                                    )
+                                    new_gpu_memory_limit = available_gpu_memory - self.epsilon_memory
+                            else:
+                                logger.warning(
+                                    'WARNING: Setting gpu_memory_limit to {} '
+                                    'as the available gpus is {} and the num of workers '
+                                    'being set is {} and the available gpu memory for gpu_id '
+                                    '{} is {}'.format(
+                                        required_gpu_memory, total_gpus, self.num_workers,
+                                        gpu_id, available_gpu_memory)
+                                )
+                                new_gpu_memory_limit = required_gpu_memory
+                        else:
+                            logger.warning(
+                                'WARNING: gpu_memory_limit could be increased to {} '
+                                'as the available gpus is {} and the num of workers '
+                                'being set is {} and the available gpu memory for gpu_id '
+                                '{} is {}'.format(
+                                    required_gpu_memory, total_gpus, self.num_workers,
+                                    gpu_id, available_gpu_memory)
+                            )
+
+                    process_per_gpu = int(available_gpu_memory / new_gpu_memory_limit)
+                    gpu_ids_meta[gpu_id] = {"gpu_memory_limit": new_gpu_memory_limit, "process_per_gpu": process_per_gpu}
 
             manager = multiprocessing.Manager()
             self.queue = manager.Queue()
 
             for gpu_id in gpu_ids:
+                process_per_gpu = gpu_ids_meta[gpu_id]["process_per_gpu"]
+                gpu_memory_limit = gpu_ids_meta[gpu_id]["gpu_memory_limit"]
                 for _ in range(process_per_gpu):
-                    self.queue.put(gpu_id)
+                    gpu_id_meta = {"gpu_id": gpu_id,
+                                   "gpu_memory_limit": gpu_memory_limit}
+                    self.queue.put(gpu_id_meta)
 
         pool = multiprocessing.Pool(
             self.num_workers, ParallelExecutor.init_worker
@@ -615,7 +661,8 @@ class ParallelExecutor(HyperoptExecutor):
                         'skip_save_test_statistics': skip_save_test_statistics,
                         'output_directory': output_directory,
                         'gpus': gpus,
-                        'gpu_fraction': gpu_fraction,
+                        'gpu_memory_limit': gpu_memory_limit,
+                        'allow_parallel_threads' : allow_parallel_threads,
                         'use_horovod': use_horovod,
                         'random_seed': random_seed,
                         'debug': debug,
@@ -710,7 +757,8 @@ class FiberExecutor(HyperoptExecutor):
             skip_save_test_statistics=False,
             output_directory="results",
             gpus=None,
-            gpu_fraction=1.0,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             use_horovod=False,
             random_seed=default_random_seed,
             debug=False,
@@ -747,7 +795,8 @@ class FiberExecutor(HyperoptExecutor):
             skip_save_test_statistics=skip_save_test_statistics,
             output_directory=output_directory,
             gpus=gpus,
-            gpu_fraction=gpu_fraction,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
             use_horovod=use_horovod,
             random_seed=random_seed,
             debug=debug,
@@ -902,6 +951,16 @@ def substitute_parameters(model_definition, parameters):
     return model_definition
 
 
+def get_available_gpu_memory():
+    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
+
+    COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
+    memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+    memory_free_values = [int(x.split()[0])
+                          for i, x in enumerate(memory_free_info)]
+    return memory_free_values
+
+
 # TODo this is duplicate code from experiment,
 #  reorganize experiment to avoid having to do this
 def train_and_eval_on_split(
@@ -935,7 +994,8 @@ def train_and_eval_on_split(
         skip_save_test_statistics=False,
         output_directory="results",
         gpus=None,
-        gpu_fraction=1.0,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
         use_horovod=False,
         random_seed=default_random_seed,
         debug=False,
@@ -977,7 +1037,8 @@ def train_and_eval_on_split(
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
