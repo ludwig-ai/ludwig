@@ -12,7 +12,7 @@ import os
 import shutil
 import sys
 
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import ludwig.contrib
 
@@ -61,6 +61,10 @@ def run(csv_filename):
 
     model = LudwigModel(model_definition)
 
+    # Wrap these methods so we can check that they were called
+    comet_instance.train_init = Mock(side_effect=comet_instance.train_init)
+    comet_instance.train_model = Mock(side_effect=comet_instance.train_model)
+
     with patch('comet_ml.Experiment.log_asset_data') as mock_log_asset_data:
         try:
             # Training with csv
@@ -72,6 +76,10 @@ def run(csv_filename):
 
     # Verify that the experiment was created successfully
     assert comet_instance.cometml_experiment is not None
+
+    # Check that these methods were called at least once
+    comet_instance.train_init.assert_called()
+    comet_instance.train_model.assert_called()
 
     # Check that we ran `train_model`, which calls into `log_assert_data`, successfully
     mock_log_asset_data.assert_called()
