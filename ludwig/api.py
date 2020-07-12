@@ -33,7 +33,7 @@ import os
 import sys
 
 import ludwig.contrib
-from ludwig.constants import TRAINING
+from ludwig.constants import *
 
 ludwig.contrib.contrib_import()
 
@@ -795,16 +795,23 @@ class LudwigModel:
         )
 
         logger.debug('Predicting')
-        predict_results = self.model.predict(
+        predict_stats, predict_predictions = self.model.predict(
             dataset,
             batch_size,
             evaluate_performance=evaluate_performance,
             session=getattr(self.model, 'session', None)
         )
 
+        # combine predictions with the overall metrics
+        for of_name in predict_predictions:
+            # remove logits, not needed for overall stats
+            del predict_predictions[of_name][LOGITS]
+            predict_stats[of_name] = {**predict_stats[of_name],
+                                   **predict_predictions[of_name]}
+
         if evaluate_performance:
             calculate_overall_stats(
-                predict_results,
+                predict_stats,
                 self.model_definition['output_features'],
                 dataset,
                 self.train_set_metadata
@@ -817,7 +824,7 @@ class LudwigModel:
                 return_type == dict
         ):
             postprocessed_predictions = postprocess(
-                predict_results,
+                predict_predictions,
                 self.model_definition['output_features'],
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
@@ -829,7 +836,7 @@ class LudwigModel:
                 return_type == pd.DataFrame
         ):
             postprocessed_predictions = postprocess_df(
-                predict_results,
+                predict_predictions,
                 self.model_definition['output_features'],
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
@@ -841,14 +848,14 @@ class LudwigModel:
                 'Returning DataFrame.'.format(return_type)
             )
             postprocessed_predictions = postprocess(
-                predict_results,
+                (predict_stats, predict_predictions),
                 self.model_definition['output_features'],
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output,
             )
 
-        return postprocessed_predictions, predict_results
+        return postprocessed_predictions, (predict_stats, predict_predictions)
 
     def predict(
             self,
