@@ -1006,8 +1006,6 @@ def train_and_eval_on_split(
         model_definition,
         batch_size,
         evaluate_performance=True,
-        gpus=gpus,
-        gpu_fraction=gpu_fraction,
         debug=debug
     )
     if not (
