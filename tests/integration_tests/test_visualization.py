@@ -133,7 +133,7 @@ def test_visualization_learning_curves_output_saved(csv_filename):
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
-        assert 5 == len(figure_cnt)
+        assert 4 == len(figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
