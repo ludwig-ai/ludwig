@@ -783,7 +783,8 @@ def test_frequency_vs_f1_vis_api(csv_filename):
     :return: None
     """
     experiment = Experiment(csv_filename)
-    test_stats = experiment.test_stats_full[1]
+    # extract test stats
+    test_stats = experiment.test_stats_full[1][0]
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
