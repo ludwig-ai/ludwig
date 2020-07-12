@@ -802,14 +802,14 @@ class LudwigModel:
             session=getattr(self.model, 'session', None)
         )
 
-        # combine predictions with the overall metrics
-        for of_name in predict_predictions:
-            # remove logits, not needed for overall stats
-            del predict_predictions[of_name][LOGITS]
-            predict_stats[of_name] = {**predict_stats[of_name],
-                                   **predict_predictions[of_name]}
-
         if evaluate_performance:
+            # combine predictions with the overall metrics
+            for of_name in predict_predictions:
+                # remove logits, not needed for overall stats
+                del predict_predictions[of_name][LOGITS]
+                predict_stats[of_name] = {**predict_stats[of_name],
+                                          **predict_predictions[of_name]}
+
             calculate_overall_stats(
                 predict_stats,
                 self.model_definition['output_features'],
