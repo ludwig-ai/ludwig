@@ -241,7 +241,7 @@ def test_visualization_compare_performance_output_saved(csv_filename):
         figure_cnt = glob.glob(viz_pattern)
 
         assert 0 == result.returncode
-        assert 2 == len(figure_cnt)
+        assert 1 == len(figure_cnt)
 
     shutil.rmtree(exp_dir_name, ignore_errors=True)
     shutil.rmtree('results', ignore_errors=True)
@@ -1479,7 +1479,7 @@ def test_visualization_roc_curves_from_test_statistics_output_saved(
     output_features = [binary_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    input_features[0]['encoder'] = 'parallel_cnn'
+
     exp_dir_name = run_experiment(
         input_features,
         output_features,
