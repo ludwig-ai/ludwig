@@ -25,7 +25,7 @@ class Wandb():
     """Class that defines the methods necessary to hook into process."""
 
     @staticmethod
-    def import_call(argv, *args, **kwargs):
+    def import_call(*args, **kwargs):
         """
         Enable Third-party support from wandb.ai
         Allows experiment tracking, visualization, and
