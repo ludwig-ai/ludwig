@@ -433,7 +433,7 @@ class SerialExecutor(HyperoptExecutor):
 class ParallelExecutor(HyperoptExecutor):
     num_workers = 2
     epsilon = 0.01
-    epsilon_memory = 200
+    epsilon_memory = 300
 
     def __init__(
             self,
@@ -604,7 +604,10 @@ class ParallelExecutor(HyperoptExecutor):
 
                     process_per_gpu = int(available_gpu_memory / new_gpu_memory_limit)
                     gpu_ids_meta[gpu_id] = {"gpu_memory_limit": new_gpu_memory_limit, "process_per_gpu": process_per_gpu}
-
+            else:
+                for gpu_id in gpu_ids:
+                    gpu_ids_meta[gpu_id] = {"gpu_memory_limit": gpu_memory_limit, "process_per_gpu": 1}
+                    
             manager = multiprocessing.Manager()
             self.queue = manager.Queue()
 
@@ -955,9 +958,13 @@ def get_available_gpu_memory():
     _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
 
     COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
-    memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
-    memory_free_values = [int(x.split()[0])
-                          for i, x in enumerate(memory_free_info)]
+    try:
+        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+        memory_free_values = [int(x.split()[0])
+                            for i, x in enumerate(memory_free_info)]
+    except Exception as e:
+        print('"nvidia-smi" is probably not installed.', e)
+        
     return memory_free_values
 
 
