@@ -23,7 +23,7 @@ import logging
 import sys
 
 from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
-from ludwig.contrib import contrib_command
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import set_on_master, is_on_master, LUDWIG_VERSION
 from ludwig.predict import full_predict
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
@@ -175,5 +175,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("test", *sys.argv)
     cli(sys.argv[1:])

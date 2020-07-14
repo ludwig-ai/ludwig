@@ -25,7 +25,7 @@ import sys
 import tempfile
 
 from ludwig.api import LudwigModel
-from ludwig.contrib import contrib_command
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
@@ -170,5 +170,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("serve", *sys.argv)
     cli(sys.argv[1:])

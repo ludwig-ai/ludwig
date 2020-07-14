@@ -27,9 +27,8 @@ from pprint import pformat
 
 import yaml
 
-from ludwig.constants import TRAINING, VALIDATION, TEST
-from ludwig.contrib import contrib_command
 from ludwig.constants import *
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
@@ -827,5 +826,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("train", *sys.argv)
     cli(sys.argv[1:])

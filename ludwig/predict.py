@@ -25,9 +25,9 @@ import sys
 from collections import OrderedDict
 from pprint import pformat
 
-from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
-from ludwig.contrib import contrib_command
 from ludwig.constants import LOGITS, TYPE
+from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import preprocess_for_prediction, COMBINED
 from ludwig.features.feature_registries import output_type_registry
@@ -411,5 +411,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("predict", *sys.argv)
     cli(sys.argv[1:])

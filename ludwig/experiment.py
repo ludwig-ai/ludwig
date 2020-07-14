@@ -29,7 +29,7 @@ import pandas as pd
 import yaml
 
 from ludwig.constants import TRAINING
-from ludwig.contrib import contrib_command
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.predict import predict
@@ -857,5 +857,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("experiment", *sys.argv)
     cli(sys.argv[1:])

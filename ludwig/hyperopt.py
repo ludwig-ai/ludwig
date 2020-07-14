@@ -28,7 +28,7 @@ import yaml
 
 from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, \
     VALIDATION, METRIC
-from ludwig.contrib import contrib_command
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.utils.data_utils import save_json
@@ -514,5 +514,6 @@ def cli(sys_argv):
 
 
 if __name__ == "__main__":
+    contrib_import()
     contrib_command("hyperopt", *sys.argv)
     cli(sys.argv[1:])
