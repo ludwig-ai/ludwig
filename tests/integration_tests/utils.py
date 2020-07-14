@@ -130,8 +130,8 @@ def image_feature(folder, **kwargs):
         'encoder': 'resnet',
         'preprocessing': {
             'in_memory': True,
-            'height': 8,
-            'width': 8,
+            'height': 12,
+            'width': 12,
             'num_channels': 3
         },
         'resnet_size': 8,
