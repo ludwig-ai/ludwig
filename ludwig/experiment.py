@@ -28,6 +28,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
+import tensorflow as tf
+
 from ludwig.constants import TRAINING
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
@@ -496,6 +498,15 @@ def kfold_cross_validate(
                 raw_kfold_stats[category] = {}
             category_stats = \
                 kfold_cv_stats[fold_name]['fold_metric'][category]
+
+            # clear out predictions Tensors
+            # todo revisit to see if we can save predictions output
+            #    not enough structures to use output feature.postprocess_results()
+            keys = [key for key in category_stats
+                    if isinstance(category_stats[key], tf.Tensor)]
+            for key in keys:
+                del category_stats[key]
+
             for metric in category_stats:
                 if metric not in {
                     'predictions',
