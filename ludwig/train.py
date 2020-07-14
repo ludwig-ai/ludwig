@@ -175,8 +175,9 @@ def full_train(
     :param output_directory: The directory that will contain the training
            statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
-    :param gpus: List of GPUs that are available for training.
-    :type gpus: List
+    :param gpus: (string, default: `None`) list of GPUs to use (it uses the
+            same syntax of CUDA_VISIBLE_DEVICES)
+    :type gpus: str
     :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
     :type gpu_memory_limit: Integer
     :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism

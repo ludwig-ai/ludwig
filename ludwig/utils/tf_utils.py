@@ -69,7 +69,12 @@ def initialize_tensorflow(gpus=None,
 
     if horovod is not None and gpus is None:
         gpus = [horovod.local_rank()]
-    gpus = [gpus] if isinstance(gpus, int) else gpus
+
+    if isinstance(gpus, int):
+        gpus = [gpus]
+    else:
+        gpus = gpus.strip()
+        gpus = [int(g) for g in gpus.split(",")]
 
     if gpus is not None:
         gpu_devices = tf.config.list_physical_devices('GPU')
@@ -85,4 +90,3 @@ def initialize_tensorflow(gpus=None,
             tf.config.set_visible_devices(local_devices, 'GPU')
 
     _TF_INIT_PARAMS = param_tuple
-
