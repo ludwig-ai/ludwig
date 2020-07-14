@@ -847,14 +847,15 @@ class Model:
                                                             axis=0)
 
         if only_predictions:
-            return predictions
+            metrics = None
         else:
             metrics = self.ecd.get_metrics()
             if self._horovod:
                 metrics = self.merge_workers_metrics(metrics)
 
             self.ecd.reset_metrics()
-            return metrics, predictions
+
+        return metrics, predictions
 
     def evaluation(
             self,
@@ -1034,22 +1035,14 @@ class Model:
             **kwargs
     ):
         # predict
-        if evaluate_performance:
-            eval_metrics, eval_predictions = self.batch_evaluation(
-                dataset,
-                batch_size,
-                collect_predictions=True,
-                only_predictions=not evaluate_performance
-            )
-            return eval_metrics, eval_predictions
-        else:
-            eval_predictions = self.batch_evaluation(
-                dataset,
-                batch_size,
-                collect_predictions=True,
-                only_predictions=not evaluate_performance
-            )
-            return eval_predictions
+        eval_metrics, eval_predictions = self.batch_evaluation(
+            dataset,
+            batch_size,
+            collect_predictions=True,
+            only_predictions=not evaluate_performance
+        )
+
+        return eval_metrics, eval_predictions
 
     # todo tf2: reintroduce this functionality
     def collect_activations(
