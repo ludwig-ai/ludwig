@@ -690,32 +690,31 @@ class Conv2DStack(Layer):
         self.stack = []
 
         for i, layer in enumerate(self.layers):
-            with tf.variable_scope('conv_' + str(i)):
-                self.stack.append(
-                    Conv2DLayer(
-                        num_filters=layer['num_filters'],
-                        filter_size=layer['filter_size'],
-                        strides=layer['strides'],
-                        padding=layer['padding'],
-                        dilation_rate=layer['dilation_rate'],
-                        use_bias=layer['use_bias'],
-                        weights_initializer=layer['weights_initializer'],
-                        bias_initializer=layer['bias_initializer'],
-                        weights_regularizer=layer['weights_regularizer'],
-                        bias_regularizer=layer['bias_regularizer'],
-                        activity_regularizer=layer['activity_regularizer'],
-                        # weights_constraint=layer['weights_constraint'],
-                        # bias_constraint=layer['bias_constraint'],
-                        norm=layer['norm'],
-                        norm_params=layer['norm_params'],
-                        activation=layer['activation'],
-                        dropout_rate=layer['dropout_rate'],
-                        pool_function=layer['pool_function'],
-                        pool_size=layer['pool_size'],
-                        pool_strides=layer['pool_strides'],
-                        pool_padding=layer['pool_padding'],
-                    )
+            self.stack.append(
+                Conv2DLayer(
+                    num_filters=layer['num_filters'],
+                    filter_size=layer['filter_size'],
+                    strides=layer['strides'],
+                    padding=layer['padding'],
+                    dilation_rate=layer['dilation_rate'],
+                    use_bias=layer['use_bias'],
+                    weights_initializer=layer['weights_initializer'],
+                    bias_initializer=layer['bias_initializer'],
+                    weights_regularizer=layer['weights_regularizer'],
+                    bias_regularizer=layer['bias_regularizer'],
+                    activity_regularizer=layer['activity_regularizer'],
+                    # weights_constraint=layer['weights_constraint'],
+                    # bias_constraint=layer['bias_constraint'],
+                    norm=layer['norm'],
+                    norm_params=layer['norm_params'],
+                    activation=layer['activation'],
+                    dropout_rate=layer['dropout_rate'],
+                    pool_function=layer['pool_function'],
+                    pool_size=layer['pool_size'],
+                    pool_strides=layer['pool_strides'],
+                    pool_padding=layer['pool_padding'],
                 )
+            )
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -1093,6 +1092,7 @@ class ResNet2(Layer):
         hidden = squeeze(hidden, axes)
 
         return hidden
+
 
 ################################################################################
 # The following code for ResNet is adapted from the TensorFlow implementation
