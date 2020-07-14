@@ -504,6 +504,8 @@ def train(
             model_definition[TRAINING],
             model_definition['preprocessing'],
             use_horovod=use_horovod,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
             random_seed=random_seed,
             debug=debug
         )
