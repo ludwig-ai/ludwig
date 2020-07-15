@@ -459,8 +459,8 @@ def kfold_cross_validate(
             logger.info("training on fold {:d}".format(fold_num))
             (
                 _,  # model
-                _,  # preprocessed_data
-                _,  # experiment_dir_name
+                preprocessed_data,  # preprocessed_data
+                experiment_dir_name,  # experiment_dir_name
                 train_stats,
                 model_definition,
                 test_results
@@ -473,14 +473,30 @@ def kfold_cross_validate(
                 output_directory=os.path.join(temp_dir_name, 'results')
             )
 
+            # todo this works for obtaining the postprocessed prediction
+            #  and replace the raw ones, but some refactoring is needed to
+            #  avoid having to do it
+            postprocessed_output = postprocess(
+                test_results,
+                model_definition['output_features'],
+                metadata=preprocessed_data[3],
+                experiment_dir_name=experiment_dir_name,
+                skip_save_unprocessed_output=True
+            )
+            # todo if we want to save the csv of predictions uncomment block
+            # if is_on_master():
+            #     print_test_results(test_results)
+            #     if not skip_save_test_predictions:
+            #         save_prediction_outputs(
+            #             postprocessed_output,
+            #             experiment_dir_name
+            #         )
+            #     if not skip_save_test_statistics:
+            #         save_test_statistics(test_results, experiment_dir_name)
+
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats['fold_metric'] = {}
-            for metric_category in test_results:
-                train_stats['fold_metric'][metric_category] = {}
-                for metric in test_results[metric_category]:
-                    train_stats['fold_metric'][metric_category][metric] = \
-                        test_results[metric_category][metric]
+            train_stats['fold_test_results'] = test_results
 
             # collect training statistics for this fold
             kfold_cv_stats['fold_' + str(fold_num)] = train_stats
@@ -488,12 +504,13 @@ def kfold_cross_validate(
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
     for fold_name in kfold_cv_stats:
-        for category in kfold_cv_stats[fold_name]['fold_metric']:
-            if category not in raw_kfold_stats:
-                raw_kfold_stats[category] = {}
-            category_stats = \
-                kfold_cv_stats[fold_name]['fold_metric'][category]
-            for metric in category_stats:
+        curr_fold_test_results = kfold_cv_stats[fold_name]['fold_test_results']
+        for of_name in curr_fold_test_results:
+            if of_name not in raw_kfold_stats:
+                raw_kfold_stats[of_name] = {}
+            fold_test_results_of = curr_fold_test_results[of_name]
+
+            for metric in fold_test_results_of:
                 if metric not in {
                     'predictions',
                     'probabilities',
@@ -503,20 +520,21 @@ def kfold_cross_validate(
                     'roc_curve',
                     'precision_recall_curve'
                 }:
-                    if metric not in raw_kfold_stats[category]:
-                        raw_kfold_stats[category][metric] = []
-                    raw_kfold_stats[category][metric] \
-                        .append(category_stats[metric])
+                    if metric not in raw_kfold_stats[of_name]:
+                        raw_kfold_stats[of_name][metric] = []
+                    raw_kfold_stats[of_name][metric].append(
+                        fold_test_results_of[metric]
+                    )
 
     # calculate overall kfold statistics
     overall_kfold_stats = {}
-    for category in raw_kfold_stats:
-        overall_kfold_stats[category] = {}
-        for metric in raw_kfold_stats[category]:
-            mean = np.mean(raw_kfold_stats[category][metric])
-            std = np.std(raw_kfold_stats[category][metric])
-            overall_kfold_stats[category][metric + '_mean'] = mean
-            overall_kfold_stats[category][metric + '_std'] = std
+    for of_name in raw_kfold_stats:
+        overall_kfold_stats[of_name] = {}
+        for metric in raw_kfold_stats[of_name]:
+            mean = np.mean(raw_kfold_stats[of_name][metric])
+            std = np.std(raw_kfold_stats[of_name][metric])
+            overall_kfold_stats[of_name][metric + '_mean'] = mean
+            overall_kfold_stats[of_name][metric + '_std'] = std
 
     kfold_cv_stats['overall'] = overall_kfold_stats
 
