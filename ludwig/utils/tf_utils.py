@@ -14,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import tensorflow as tf
-
 import warnings
 
+import tensorflow as tf
 
 _TF_INIT_PARAMS = None
 
@@ -72,7 +71,7 @@ def initialize_tensorflow(gpus=None,
 
     if isinstance(gpus, int):
         gpus = [gpus]
-    else:
+    elif isinstance(gpus, str):
         gpus = gpus.strip()
         gpus = [int(g) for g in gpus.split(",")]
 
