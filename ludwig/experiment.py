@@ -493,11 +493,11 @@ def kfold_cross_validate(
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
     for fold_name in kfold_cv_stats:
-        for category in kfold_cv_stats[fold_name]['fold_metric']:
-            if category not in raw_kfold_stats:
-                raw_kfold_stats[category] = {}
+        for output_name in kfold_cv_stats[fold_name]['fold_metric']:
+            if output_name not in raw_kfold_stats:
+                raw_kfold_stats[output_name] = {}
             fold_outputs = \
-                kfold_cv_stats[fold_name]['fold_metric'][category]
+                kfold_cv_stats[fold_name]['fold_metric'][output_name]
 
             # todo revisit to see if can use output feature.postprocess_results()
             # convert tensors created during predictions to numpy arrays to
@@ -517,20 +517,20 @@ def kfold_cross_validate(
                     'roc_curve',
                     'precision_recall_curve'
                 }:
-                    if metric not in raw_kfold_stats[category]:
-                        raw_kfold_stats[category][metric] = []
-                    raw_kfold_stats[category][metric] \
+                    if metric not in raw_kfold_stats[output_name]:
+                        raw_kfold_stats[output_name][metric] = []
+                    raw_kfold_stats[output_name][metric] \
                         .append(fold_outputs[metric])
 
     # calculate overall kfold statistics
     overall_kfold_stats = {}
-    for category in raw_kfold_stats:
-        overall_kfold_stats[category] = {}
-        for metric in raw_kfold_stats[category]:
-            mean = np.mean(raw_kfold_stats[category][metric])
-            std = np.std(raw_kfold_stats[category][metric])
-            overall_kfold_stats[category][metric + '_mean'] = mean
-            overall_kfold_stats[category][metric + '_std'] = std
+    for output_name in raw_kfold_stats:
+        overall_kfold_stats[output_name] = {}
+        for metric in raw_kfold_stats[output_name]:
+            mean = np.mean(raw_kfold_stats[output_name][metric])
+            std = np.std(raw_kfold_stats[output_name][metric])
+            overall_kfold_stats[output_name][metric + '_mean'] = mean
+            overall_kfold_stats[output_name][metric + '_std'] = std
 
     kfold_cv_stats['overall'] = overall_kfold_stats
 
