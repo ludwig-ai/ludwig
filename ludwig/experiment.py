@@ -496,18 +496,18 @@ def kfold_cross_validate(
         for category in kfold_cv_stats[fold_name]['fold_metric']:
             if category not in raw_kfold_stats:
                 raw_kfold_stats[category] = {}
-            category_stats = \
+            fold_outputs = \
                 kfold_cv_stats[fold_name]['fold_metric'][category]
 
-            # clear out predictions Tensors
-            # todo revisit to see if we can save predictions output
-            #    not enough structures to use output feature.postprocess_results()
-            keys = [key for key in category_stats
-                    if isinstance(category_stats[key], tf.Tensor)]
-            for key in keys:
-                del category_stats[key]
+            # todo revisit to see if can use output feature.postprocess_results()
+            # convert tensors created during predictions to numpy arrays to
+            # allow saving as json object
+            for key in fold_outputs:
+                if isinstance(fold_outputs[key], tf.Tensor):
+                    fold_outputs[key] = \
+                        fold_outputs[key].numpy()
 
-            for metric in category_stats:
+            for metric in fold_outputs:
                 if metric not in {
                     'predictions',
                     'probabilities',
@@ -520,7 +520,7 @@ def kfold_cross_validate(
                     if metric not in raw_kfold_stats[category]:
                         raw_kfold_stats[category][metric] = []
                     raw_kfold_stats[category][metric] \
-                        .append(category_stats[metric])
+                        .append(fold_outputs[metric])
 
     # calculate overall kfold statistics
     overall_kfold_stats = {}
