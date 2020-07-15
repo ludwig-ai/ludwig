@@ -551,7 +551,6 @@ class LudwigModel:
             skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
             output_directory=output_directory,
-            should_close_session=False,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,

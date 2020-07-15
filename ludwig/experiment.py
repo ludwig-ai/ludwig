@@ -75,7 +75,6 @@ def experiment(
         skip_save_test_predictions=False,  # skipcq: PYL-W0613
         skip_save_test_statistics=False,  # skipcq: PYL-W0613
         output_directory='results',
-        should_close_session=False,
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
@@ -117,7 +116,6 @@ def experiment(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
-        should_close_session=should_close_session,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
@@ -345,7 +343,6 @@ def full_experiment(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
-        should_close_session=False,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
