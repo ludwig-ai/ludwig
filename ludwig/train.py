@@ -77,7 +77,6 @@ def full_train(
         skip_save_log=False,
         skip_save_processed_input=False,
         output_directory='results',
-        should_close_session=True,
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
@@ -175,8 +174,9 @@ def full_train(
     :param output_directory: The directory that will contain the training
            statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
-    :param gpus: List of GPUs that are available for training.
-    :type gpus: List
+    :param gpus: (string, default: `None`) list of GPUs to use (it uses the
+            same syntax of CUDA_VISIBLE_DEVICES)
+    :type gpus: str
     :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
     :type gpu_memory_limit: Integer
     :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
@@ -367,9 +367,6 @@ def full_train(
         TEST: train_testset_stats
     }
 
-    if should_close_session:
-        model.close_session()
-
     # save training statistics
     if is_on_master():
         if not skip_save_training_statistics:
@@ -507,6 +504,8 @@ def train(
             model_definition[TRAINING],
             model_definition['preprocessing'],
             use_horovod=use_horovod,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
             random_seed=random_seed,
             debug=debug
         )
