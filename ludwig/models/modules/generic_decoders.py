@@ -38,6 +38,8 @@ class Regressor(Layer):
             **kwargs
     ):
         super().__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.dense = Dense(
             1,
             use_bias=use_bias,
@@ -47,6 +49,7 @@ class Regressor(Layer):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
+        logger.debug('  {}'.format(self.dense.name))
 
     def call(self, inputs, **kwargs):
         return tf.squeeze(self.dense(inputs))

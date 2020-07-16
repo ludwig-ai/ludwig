@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import math
 
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import BatchNormalization
@@ -70,6 +71,14 @@ class FCLayer(Layer):
 
         if dropout_rate > 0:
             self.layers.append(Dropout(dropout_rate))
+
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
+            for weights_tensor in layer.weights:
+                logger.debug('    {} - shape: {}, params: {}'.format(
+                    weights_tensor.name, weights_tensor.shape,
+                    math.prod(weights_tensor.shape)
+                ))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs

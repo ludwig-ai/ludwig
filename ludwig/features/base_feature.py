@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
@@ -24,6 +25,7 @@ from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.utils.misc import merge_dict, get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
+logger = logging.getLogger(__name__)
 
 class BaseFeature:
     def __init__(self, feature):
@@ -108,6 +110,8 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
         self.overwrite_defaults(feature)
 
+        logger.debug(' output feature fully connected layers')
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,

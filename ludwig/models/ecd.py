@@ -30,7 +30,7 @@ class ECD(tf.keras.Model):
         )
 
         # ================ Combiner ================
-        logger.debug('- Combiner {}'.format(combiner_def[TYPE]))
+        logger.debug('Combiner {}'.format(combiner_def[TYPE]))
         combiner_class = get_combiner_class(combiner_def[TYPE])
         self.combiner = combiner_class(
             input_features=self.input_features,
@@ -201,7 +201,7 @@ def build_inputs(
 
 
 def build_single_input(input_feature_def, other_input_features, **kwargs):
-    logger.debug('- Input {} feature {}'.format(
+    logger.debug('Input {} feature {}'.format(
         input_feature_def[TYPE],
         input_feature_def['name']
     ))
@@ -254,7 +254,7 @@ def build_single_output(
         other_output_features,
         **kwargs
 ):
-    logger.debug('- Output {} feature {}'.format(
+    logger.debug('Output {} feature {}'.format(
         output_feature_def[TYPE],
         output_feature_def['name']
     ))
