@@ -113,18 +113,23 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
     train_set_metadata = {}
     for feature in features:
         get_feature_meta = get_from_registry(
-            feature['type'],
+            feature[TYPE],
             base_type_registry
         ).get_feature_meta
         if 'preprocessing' in feature:
             preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature['type']],
+                global_preprocessing_parameters[feature[TYPE]],
                 feature['preprocessing']
             )
         else:
             preprocessing_parameters = global_preprocessing_parameters[
-                feature['type']
+                feature[TYPE]
             ]
+        handle_missing_values(
+            dataset_df,
+            feature,
+            preprocessing_parameters
+        )
         train_set_metadata[feature['name']] = get_feature_meta(
             dataset_df[feature['name']].astype(str),
             preprocessing_parameters
@@ -141,17 +146,17 @@ def build_data(
     data_dict = {}
     for feature in features:
         add_feature_data = get_from_registry(
-            feature['type'],
+            feature[TYPE],
             base_type_registry
         ).add_feature_data
         if 'preprocessing' in feature:
             preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature['type']],
+                global_preprocessing_parameters[feature[TYPE]],
                 feature['preprocessing']
             )
         else:
             preprocessing_parameters = global_preprocessing_parameters[
-                feature['type']
+                feature[TYPE]
             ]
         handle_missing_values(
             dataset_df,
@@ -185,7 +190,7 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
             dataset_df[feature['name']].value_counts().index[0],
         )
     elif missing_value_strategy == FILL_WITH_MEAN:
-        if feature['type'] != NUMERICAL:
+        if feature[TYPE] != NUMERICAL:
             raise ValueError(
                 'Filling missing values with mean is supported '
                 'only for numerical types',
@@ -245,7 +250,7 @@ def load_data(
     hdf5_data = h5py.File(hdf5_file_path, 'r')
     dataset = {}
     for input_feature in input_features:
-        if input_feature['type'] == TEXT:
+        if input_feature[TYPE] == TEXT:
             text_data_field = text_feature_data_field(input_feature)
             dataset[text_data_field] = hdf5_data[text_data_field][()]
         else:
@@ -253,7 +258,7 @@ def load_data(
                 input_feature['name']
             ][()]
     for output_feature in output_features:
-        if output_feature['type'] == TEXT:
+        if output_feature[TYPE] == TEXT:
             dataset[text_feature_data_field(output_feature)] = hdf5_data[
                 text_feature_data_field(output_feature)
             ][()]
@@ -879,7 +884,7 @@ def preprocess_for_prediction(
 
 def replace_text_feature_level(features, datasets):
     for feature in features:
-        if feature['type'] == TEXT:
+        if feature[TYPE] == TEXT:
             for dataset in datasets:
                 if dataset is not None:
                     dataset[feature['name']] = dataset[
@@ -914,15 +919,15 @@ def get_preprocessing_params(model_definition):
     for feature in features:
         if 'preprocessing' in feature:
             local_preprocessing_parameters = merge_dict(
-                global_preprocessing_parameters[feature['type']],
+                global_preprocessing_parameters[feature[TYPE]],
                 feature['preprocessing']
             )
         else:
             local_preprocessing_parameters = global_preprocessing_parameters[
-                feature['type']
+                feature[TYPE]
             ]
         merged_preprocessing_params.append(
-            (feature['name'], feature['type'], local_preprocessing_parameters)
+            (feature['name'], feature[TYPE], local_preprocessing_parameters)
         )
 
     return merged_preprocessing_params

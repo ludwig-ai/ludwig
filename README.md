@@ -1,4 +1,4 @@
-![Ludwig logo](https://github.com/uber/ludwig/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
+![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
 Ludwig is a toolbox built on top of TensorFlow that allows users to train and test deep learning models without the need to write code.
 
@@ -83,7 +83,7 @@ If you intend to use text features and want to use [spaCy](http://spacy.io) base
 ```
 python -m spacy download <language_code>
 ```
-More details in the [User Guide](https://uber.github.io/ludwig/user_guide/#spacy-based-word-format-options).
+More details in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#spacy-based-word-format-options).
 
 Image features extra packages can be installed with `pip install ludwig[image]` and include:
 
@@ -105,13 +105,15 @@ Model serving extra packages can be installed with `pip install ludwig[serve]` a
 - pydantic
 - python-multipart
 
+Distributed training is supported with [Horovod](https://github.com/horovod/horovod), support for
+which can be installed with `pip install ludwig[horovod]` or `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]`
+for GPU support.  See Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) 
+for full details on available installation options.
+
 Any combination of extra packages can be installed at the same time with `pip install ludwig[extra1,extra2,...]` like for instance `pip install ludwig[text,viz]`.
 The full set of dependencies can be installed with `pip install ludwig[full]`.
 
 Beware that the `tensorflow` package contained in the `requirements.txt` file is the CPU version. If you prefer to install the GPU version, uninstall `tensorflow` and replace it with `tensorflow=gpu` after having installed `ludwig`, being careful at matching the version ludwig requires, as shown in `requirements.txt`.
-
-If you want to train Ludwig models in a distributed way, you need to also install the `horovod` and the `mpi4py` packages.
-Please follow the instructions on [Horovod's repository](https://github.com/uber/horovod) to install it.
 
 
 Basic Principles
@@ -180,7 +182,7 @@ If you prefer to use an RNN encoder and increase the number of epochs you want t
 {input_features: [{name: doc_text, type: text, encoder: rnn}], output_features: [{name: class, type: category}], training: {epochs: 50}}
 ```
 
-Refer to the [User Guide](https://uber.github.io/ludwig/user_guide/) to find out all the options available to you in the model definition and take a look at the [Examples](https://uber.github.io/ludwig/examples/) to see how you can use Ludwig for several different tasks.
+Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) to find out all the options available to you in the model definition and take a look at the [Examples](https://ludwig-ai.github.io/ludwig-docs/examples/) to see how you can use Ludwig for several different tasks.
 
 After training, Ludwig will create a directory under `results` containing the trained model with its hyperparameters and summary statistics of the training process.
 You can visualize them using one of the several visualization options available in the `visualize` tool, for instance:
@@ -191,16 +193,16 @@ ludwig visualize --visualization learning_curves --training_statistics path/to/t
 
 The commands will display a graph that looks like the following, where you can see loss and accuracy as functions of train iteration number:
 
-![Learning Curves](https://github.com/uber/ludwig/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
+![Learning Curves](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/getting_started_learning_curves.png "Learning Curves")
 
-Several visualizations are available, please refer to [Visualizations](https://uber.github.io/ludwig/user_guide/#visualizations) for more details.
+Several visualizations are available, please refer to [Visualizations](https://ludwig-ai.github.io/ludwig-docs/user_guide/#visualizations) for more details.
 
 
 Distributed Training
 --------------------
 
-You can distribute the training of your models using [Horovod](https://github.com/uber/horovod), which allows training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
-Refer to the [User Guide](https://uber.github.io/ludwig/user_guide/#distributed-training) for more details.
+You can distribute the training of your models using [Horovod](https://github.com/horovod/horovod), which allows training on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
+Refer to the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/#distributed-training) for more details.
 
 
 Predict
@@ -219,9 +221,9 @@ Those can be visualized by the `visualize` tool, which can also be used to compa
 ludwig visualize --visualization compare_performance --test_statistics path/to/test_statistics_model_1.json path/to/test_statistics_model_2.json
 ```
 
-will return a bar plot comparing the models on different measures:
+will return a bar plot comparing the models on different metrics:
 
-![Performance Comparison](https://github.com/uber/ludwig/raw/master/docs/images/compare_performance.png "Performance Comparison")
+![Performance Comparison](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/compare_performance.png "Performance Comparison")
 
 A handy `ludwig experiment` command that performs training and prediction one after the other is also available.
 
@@ -249,7 +251,7 @@ model.close()
 ```
 
 `model_definition` is a dictionary containing the same information of the YAML file.
-More details are provided in the [User Guide](https://uber.github.io/ludwig/user_guide/) and in the [API documentation](https://uber.github.io/ludwig/api/).
+More details are provided in the [User Guide](https://ludwig-ai.github.io/ludwig-docs/user_guide/) and in the [API documentation](https://ludwig-ai.github.io/ludwig-docs/api/).
 
 
 Extensibility
@@ -260,10 +262,10 @@ It is easy to add an additional data type that is not currently supported by add
 
 Furthermore, new models, with their own specific hyperparameters, can be easily added by implementing a class that accepts tensors (of a specific rank, depending on the datatype) as inputs and provides tensors as output.
 This encourages reuse and sharing new models with the community.
-Refer to the [Developer Guide](https://uber.github.io/ludwig/developer_guide/) for further details.
+Refer to the [Developer Guide](https://ludwig-ai.github.io/ludwig-docs/developer_guide/) for further details.
 
 
 Full documentation
 ------------------
 
-You can find the full documentation [here](http://uber.github.io/ludwig/).
+You can find the full documentation [here](https://ludwig-ai.github.io/ludwig-docs).

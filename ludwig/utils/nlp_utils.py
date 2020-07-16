@@ -17,7 +17,6 @@
 import logging
 import sys
 
-
 logger = logging.getLogger(__name__)
 
 nlp_pipelines = {
@@ -31,6 +30,11 @@ nlp_pipelines = {
     'el': None,
     'nb': None,
     'lt': None,
+    'da': None,
+    'pl': None,
+    'ro': None,
+    'ja': None,
+    'zh': None,
     'xx': None
 }
 language_module_registry = {
@@ -44,6 +48,11 @@ language_module_registry = {
     'el': 'el_core_news_sm',
     'nb': 'nb_core_news_sm',
     'lt': 'lt_core_news_sm',
+    'da': 'da_core_news_sm',
+    'pl': 'pl_core_news_sm',
+    'ro': 'ro_core_news_sm',
+    'ja': 'ja_core_news_sm',
+    'zh': 'zh_core_web_sm',
     'xx': 'xx_ent_wiki_sm'
 }
 default_characters = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
@@ -93,8 +102,11 @@ def load_nlp_pipeline(language='xx'):
                 '(this will only happen once)'
             )
             from spacy.cli import download
-            download(language)
-            nlp_pipelines[language] = spacy.load(language)
+            download(spacy_module_name)
+            nlp_pipelines[language] = spacy.load(
+                spacy_module_name,
+                disable=['parser', 'tagger', 'ner']
+            )
 
     return nlp_pipelines[language]
 

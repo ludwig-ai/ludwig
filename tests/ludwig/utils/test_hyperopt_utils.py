@@ -17,7 +17,6 @@ import pytest
 
 from ludwig.utils.hyperopt_utils import GridStrategy, RandomStrategy
 
-
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
@@ -76,7 +75,6 @@ HYPEROPT_PARAMS = {
 
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_grid_strategy(key):
-
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     goal = hyperopt_test_params["goal"]
     grid_strategy_params = hyperopt_test_params["parameters"]
@@ -98,14 +96,14 @@ def test_grid_strategy(key):
                 assert value in set(grid_strategy_params[param]["values"])
 
     assert actual_params_keys == expected_params_keys
-    assert grid_strategy.search_space == hyperopt_test_params["expected_search_space"]
+    assert grid_strategy.search_space == hyperopt_test_params[
+        "expected_search_space"]
     assert len(
         grid_strategy.samples) == hyperopt_test_params["expected_len_grids"]
 
 
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
 def test_random_strategy(key):
-
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     goal = hyperopt_test_params["goal"]
     random_strategy_params = hyperopt_test_params["parameters"]

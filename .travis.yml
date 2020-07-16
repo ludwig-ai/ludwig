@@ -3,4 +3,5 @@ python:
   - "3.6"
 install:
   - pip install '.[test]'
-script: pytest
+script:
+  - pytest tests

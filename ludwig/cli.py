@@ -99,7 +99,7 @@ Available sub-commands:
         from ludwig import hyperopt
         ludwig.contrib.contrib_command("hyperopt", *sys.argv)
         hyperopt.cli(sys.argv[2:])
-        
+
     def collect_weights(self):
         from ludwig import collect
         ludwig.contrib.contrib_command("collect_weights", *sys.argv)

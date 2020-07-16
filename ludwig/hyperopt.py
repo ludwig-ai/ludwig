@@ -26,16 +26,19 @@ from pprint import pformat
 
 import yaml
 
-from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, VALIDATION, METRIC
-from ludwig.contrib import contrib_command
+from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, \
+    VALIDATION, METRIC
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.hyperopt_utils import get_build_hyperopt_strategy, get_build_hyperopt_executor, \
+from ludwig.utils.hyperopt_utils import get_build_hyperopt_strategy, \
+    get_build_hyperopt_executor, \
     update_hyperopt_params_with_defaults
 from ludwig.utils.misc import get_from_registry
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig, print_boxed
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig, \
+    print_boxed
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +75,8 @@ def hyperopt(
         skip_save_hyperopt_statistics=False,
         output_directory="results",
         gpus=None,
-        gpu_fraction=1.0,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
         use_horovod=False,
         random_seed=default_random_seed,
         debug=False,
@@ -121,7 +125,8 @@ def hyperopt(
     ######################
     if split == TRAINING:
         if not (data_train_df or data_train_csv or data_train_hdf5) and (
-                model_definition['preprocessing']['split_probabilities'][0] <= 0):
+                model_definition['preprocessing']['split_probabilities'][
+                    0] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -133,7 +138,8 @@ def hyperopt(
                 data_validation_df or
                 data_validation_csv or
                 data_validation_hdf5
-        ) and (model_definition['preprocessing']['split_probabilities'][1] <= 0):
+        ) and (model_definition['preprocessing']['split_probabilities'][
+                   1] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -142,7 +148,8 @@ def hyperopt(
             )
     elif split == TEST:
         if not (data_test_df or data_test_csv or data_test_hdf5) and (
-                model_definition['preprocessing']['split_probabilities'][2] <= 0):
+                model_definition['preprocessing']['split_probabilities'][
+                    2] <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -238,7 +245,8 @@ def hyperopt(
         skip_save_test_statistics=skip_save_test_statistics,
         output_directory=output_directory,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
@@ -310,7 +318,8 @@ def cli(sys_argv):
         help="directory that contains the results",
     )
     parser.add_argument(
-        "--experiment_name", type=str, default="hyperopt", help="experiment name"
+        "--experiment_name", type=str, default="hyperopt",
+        help="experiment name"
     )
     parser.add_argument(
         "--model_name", type=str, default="run", help="name for the model"
@@ -380,7 +389,8 @@ def cli(sys_argv):
     # ----------------
     model_definition = parser.add_mutually_exclusive_group(required=True)
     model_definition.add_argument(
-        "-md", "--model_definition", type=yaml.safe_load, help="model definition"
+        "-md", "--model_definition", type=yaml.safe_load,
+        help="model definition"
     )
     model_definition.add_argument(
         "-mdf",
@@ -419,7 +429,7 @@ def cli(sys_argv):
         default=False,
         help="disables saving weights each time the model imrpoves. "
              "By default Ludwig saves  weights after each epoch "
-             "the validation measure imrpvoes, but  if the model is really big "
+             "the validation metric imrpvoes, but  if the model is really big "
              "that can be time consuming if you do not want to keep "
              "the weights and just find out what performance can a model get "
              "with a set of hyperparameters, use this parameter to skip it",
@@ -457,7 +467,8 @@ def cli(sys_argv):
              "initialization and training set shuffling",
     )
     parser.add_argument(
-        "-g", "--gpus", nargs="+", type=int, default=None, help="list of gpus to use"
+        "-g", "--gpus", nargs="+", type=int, default=None,
+        help="list of gpus to use"
     )
     parser.add_argument(
         "-gf",
@@ -505,5 +516,6 @@ def cli(sys_argv):
 
 
 if __name__ == "__main__":
+    contrib_import()
     contrib_command("hyperopt", *sys.argv)
     cli(sys.argv[1:])

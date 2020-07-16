@@ -17,16 +17,18 @@
 import logging
 
 import tensorflow as tf
+from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.embedding_modules import Embed
 from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.models.modules.recurrent_modules import RecurrentStack
 from ludwig.models.modules.reduction_modules import reduce_sum, reduce_sequence
 
 logger = logging.getLogger(__name__)
 
 
-class H3Embed:
+class H3Embed(Layer):
 
     def __init__(
             self,
@@ -35,11 +37,18 @@ class H3Embed:
             fc_layers=None,
             num_fc_layers=0,
             fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            dropout=False,
-            initializer=None,
-            regularize=True,
+            dropout_rate=0,
             reduce_output='sum',
             **kwargs
     ):
@@ -81,6 +90,8 @@ class H3Embed:
                    is greater than 0).
             :type regularize: Boolean
         """
+        super(H3Embed, self).__init__()
+
         self.embedding_size = embedding_size
         self.reduce_output = reduce_output
 
@@ -92,9 +103,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout_rate=dropout_rate,
+            initializer=weights_initializer,
+            regularizer=weights_regularizer
         )
         self.embed_edge = Embed(
             [str(i) for i in range(7)],
@@ -104,9 +115,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout_rate=dropout_rate,
+            initializer=weights_initializer,
+            regularizer=weights_regularizer
         )
         self.embed_resolution = Embed(
             [str(i) for i in range(16)],
@@ -116,9 +127,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout_rate=dropout_rate,
+            initializer=weights_initializer,
+            regularizer=weights_regularizer
         )
         self.embed_base_cell = Embed(
             [str(i) for i in range(122)],
@@ -128,9 +139,9 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout_rate=dropout_rate,
+            initializer=weights_initializer,
+            regularizer=weights_regularizer
         )
         self.embed_cells = Embed(
             [str(i) for i in range(8)],
@@ -140,83 +151,78 @@ class H3Embed:
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize
+            dropout_rate=dropout_rate,
+            initializer=weights_initializer,
+            regularizer=weights_regularizer
         )
 
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
-    def __call__(
+    def call(
             self,
-            input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            inputs,
+            training=None,
+            mask=None
     ):
         """
             :param input_vector: The input vector fed into the encoder.
                    Shape: [batch x 19], type tf.int8
             :type input_vector: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
-        """
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
+            :param mask: bool tensor encoding masked timesteps in the input
+            :type mask: bool
+         """
+        input_vector = tf.cast(inputs, tf.int32)
+
         # ================ Embeddings ================
-        with tf.compat.v1.variable_scope('mode', reuse=tf.compat.v1.AUTO_REUSE):
-            embedded_mode, _ = self.embed_mode(
-                input_vector[:, 0:1],
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.compat.v1.variable_scope('edge', reuse=tf.compat.v1.AUTO_REUSE):
-            embedded_edge, _ = self.embed_edge(
-                input_vector[:, 1:2],
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
-        with tf.compat.v1.variable_scope('resolution', reuse=tf.compat.v1.AUTO_REUSE):
-            embedded_resolution, _ = self.embed_resolution(
-                input_vector[:, 2:3],
-                regularizer,
-                dropout_rate,
-                is_training=True
-            )
-        with tf.compat.v1.variable_scope('base_cell', reuse=tf.compat.v1.AUTO_REUSE):
-            embedded_base_cell, _ = self.embed_base_cell(
-                input_vector[:, 3:4],
-                regularizer,
-                dropout_rate,
-                is_training=True
-            )
-        with tf.compat.v1.variable_scope('cells', reuse=tf.compat.v1.AUTO_REUSE):
-            embedded_cells, _ = self.embed_cells(
-                input_vector[:, 4:],
-                regularizer,
-                dropout_rate,
-                is_training=is_training
-            )
+        embedded_mode = self.embed_mode(
+            input_vector[:, 0:1],
+            training=training,
+            mask=mask
+        )
+        embedded_edge = self.embed_edge(
+            input_vector[:, 1:2],
+            training=training,
+            mask=mask
+        )
+        embedded_resolution = self.embed_resolution(
+            input_vector[:, 2:3],
+            training=training,
+            mask=mask
+        )
+        embedded_base_cell = self.embed_base_cell(
+            input_vector[:, 3:4],
+            training=training,
+            mask=mask
+        )
+        embedded_cells = self.embed_cells(
+            input_vector[:, 4:],
+            training=training,
+            mask=mask
+        )
 
         # ================ Masking ================
         resolution = input_vector[:, 2]
         mask = tf.cast(
-            tf.expand_dims(tf.sequence_mask(resolution, 15), -1),
+            tf.expand_dims(tf.sequence_mask(resolution, 15),
+                           -1),
             dtype=tf.float32
         )
         masked_embedded_cells = embedded_cells * mask
@@ -230,22 +236,18 @@ class H3Embed:
         hidden = reduce_sequence(concatenated, self.reduce_output)
 
         # ================ FC Stack ================
-        hidden_size = hidden.shape.as_list()[-1]
-        logger.debug('  flatten hidden: {0}'.format(hidden))
+        # logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,
-            hidden_size,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
-        hidden_size = hidden.shape.as_list()[-1]
 
-        return hidden, hidden_size
+        return {'encoder_output': hidden}
 
 
-class H3WeightedSum:
+class H3WeightedSum(Layer):
 
     def __init__(
             self,
@@ -255,11 +257,18 @@ class H3WeightedSum:
             fc_layers=None,
             num_fc_layers=0,
             fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            dropout=False,
-            initializer=None,
-            regularize=True,
+            dropout_rate=0,
             **kwargs
     ):
         """
@@ -300,87 +309,85 @@ class H3WeightedSum:
                    is greater than 0).
             :type regularize: Boolean
         """
+        super(H3WeightedSum, self).__init__()
+
         self.should_softmax = should_softmax
 
         self.h3_embed = H3Embed(
             embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
-            initializer=initializer,
-            regularize=regularize,
+            dropout=dropout_rate,
+            initializer=weights_initializer,
+            regularize=weights_regularizer,
             reduce_output=None,
         )
 
-        self.weights = tf.compat.v1.get_variable(
-            'weights',
-            [19, 1],
-            initializer=initializer
+        self.aggregation_weights = tf.Variable(
+            get_initializer(weights_initializer)([19, 1])
         )
 
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
             default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
-    def __call__(
+    def call(
             self,
-            input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            inputs,
+            training=None,
+            mask=None
     ):
         """
             :param input_vector: The input vector fed into the encoder.
                    Shape: [batch x 19], type tf.int8
             :type input_vector: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
-        """
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
+            :param mask: bool tensor encoding masked timesteps in the input
+            :type mask: bool
+         """
         # ================ Embeddings ================
-        embedded_h3, embedding_size = self.h3_embed(
+        input_vector = inputs
+        embedded_h3 = self.h3_embed(
             input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
 
         # ================ Weighted Sum ================
         if self.should_softmax:
-            weights = tf.nn.softmax(self.weights)
+            weights = tf.nn.softmax(self.aggregation_weights)
         else:
-            weights = self.weights
+            weights = self.aggregation_weights
 
-        hidden = reduce_sum(embedded_h3 * weights)
+        hidden = reduce_sum(embedded_h3['encoder_output'] * weights)
 
         # ================ FC Stack ================
-        hidden_size = hidden.shape.as_list()[-1]
-        logger.debug('  flatten hidden: {0}'.format(hidden))
+        # logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,
-            hidden_size,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
+            training=training,
+            mask=mask
         )
-        hidden_size = hidden.shape.as_list()[-1]
 
-        return hidden, hidden_size
+        return {'encoder_output': hidden}
 
 
-class H3RNN:
+class H3RNN(Layer):
 
     def __init__(
             self,
@@ -390,7 +397,19 @@ class H3RNN:
             state_size=10,
             cell_type='rnn',
             bidirectional=False,
-            dropout=False,
+            activation='tanh',
+            recurrent_activation='sigmoid',
+            use_bias=True,
+            unit_forget_bias=True,
+            weights_initializer='glorot_uniform',
+            recurrent_initializer='orthogonal',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            recurrent_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            dropout_rate=0.0,
+            recurrent_dropout=0.0,
             initializer=None,
             regularize=True,
             reduce_output='last',
@@ -427,9 +446,42 @@ class H3RNN:
                    encoding in the forward and backward direction and
                    their outputs will be concatenated.
             :type bidirectional: Boolean
-            :param dropout: determines if there should be a dropout layer before
+            :param activation: Activation function to use.
+            :type activation: string
+            :param recurrent_activation: Activation function to use for the
+                    recurrent step.
+            :type recurrent_activation: string
+            :param use_bias: bool determines where to use a bias vector
+            :type use_bias: bool
+            :param unit_forget_bias: if True add 1 to the bias forget gate at
+                   initialization.
+            :type unit_forget_bias: bool
+            :param weights_initializer: Initializer for the weights (aka kernel)
+                   matrix
+            :type weights_initializer: string
+            :param recurrent_initializer: Initializer for the recurrent weights
+                   matrix
+            :type recurrent_initializer: string
+            :param bias_initializer: Initializer for the bias vector
+            :type bias_initializer: string
+            :param weights_regularizer: regularizer applied to the weights
+                   (kernal) matrix
+            :type weights_regularizer: string
+            :param recurrent_regularizer: Regularizer for the recurrent weights
+                   matrix
+            :type recurrent_regularizer: string
+            :param bias_regularizer: reguralizer function applied to biase vector.
+            :type bias_regularizer: string
+            :param activity_regularizer: Regularizer applied to the output of the
+                   layer (activation)
+            :type activity_regularizer: string
+            :param dropout_rate: determines if there should be a dropout layer before
                    returning the encoder output.
-            :type dropout: Boolean
+            :type dropout_rate: float
+            :param recurrent_dropout: Float between 0.0 and 1.0.  Fraction of
+                   the units to drop for the linear transformation of the
+                   recurrent state.
+            :type recurrent_dropout: float
             :param initializer: the initializer to use. If `None` it uses
                    `glorot_uniform`. Options are: `constant`, `identity`,
                    `zeros`, `ones`, `orthogonal`, `normal`, `uniform`,
@@ -458,12 +510,14 @@ class H3RNN:
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
+        super(H3RNN, self).__init__()
+
         self.embedding_size = embedding_size
 
         self.h3_embed = H3Embed(
             embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
+            dropout=dropout_rate,
             initializer=initializer,
             regularize=regularize,
             reduce_output=None
@@ -474,45 +528,54 @@ class H3RNN:
             cell_type=cell_type,
             num_layers=num_layers,
             bidirectional=bidirectional,
-            dropout=dropout,
+            activation=activation,
+            recurrent_activation=recurrent_activation,
+            use_bias=use_bias,
+            unit_forget_bias=unit_forget_bias,
+            weights_initializer=weights_initializer,
+            recurrent_initializer=recurrent_initializer,
+            bias_initializer=bias_initializer,
+            weights_regularizer=weights_regularizer,
+            recurrent_regularizer=recurrent_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            dropout=dropout_rate,
+            recurrent_dropout=recurrent_dropout,
             regularize=regularize,
             reduce_output=reduce_output
         )
 
-    def __call__(
+    def call(
             self,
-            input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            inputs,
+            training=None,
+            mask=None
     ):
         """
             :param input_vector: The input vector fed into the encoder.
                    Shape: [batch x 19], type tf.int8
             :type input_vector: Tensor
-            :param regularizer: The regularizer to use for the weights
-                   of the encoder.
-            :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
-            :param is_training: Tesnor (tf.bool) specifying if in training mode
-                   (important for dropout)
-            :type is_training: Tensor
-        """
+            :param training: bool specifying if in training mode (important for dropout)
+            :type training: bool
+            :param mask: bool tensor encoding masked timesteps in the input
+            :type mask: bool
+         """
+
         # ================ Embeddings ================
-        embedded_h3, _ = self.h3_embed(
-            input_vector,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
+        embedded_h3 = self.h3_embed(
+            inputs,
+            training=training,
+            mask=mask
         )
 
         # ================ RNN ================
-        hidden, hidden_size = self.recurrent_stack(
-            embedded_h3,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
+        hidden, final_state = self.recurrent_stack(
+            embedded_h3['encoder_output'],
+            training=training,
+            mask=mask
         )
 
-        return hidden, hidden_size
+        return {
+            'encoder_output': hidden,
+            'encoder_output_state': final_state
+        }

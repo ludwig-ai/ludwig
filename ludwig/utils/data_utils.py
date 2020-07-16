@@ -16,6 +16,7 @@
 # ==============================================================================
 import collections
 import csv
+import functools
 import json
 import logging
 import os.path
@@ -60,7 +61,7 @@ def read_csv(data_fp, header=0, nrows=None, skiprows=None):
     """
 
     separator = ','
-    with open(data_fp, 'r') as csvfile:
+    with open(data_fp, 'r', encoding="utf8") as csvfile:
         try:
             dialect = csv.Sniffer().sniff(csvfile.read(1024 * 100),
                                           delimiters=[',', '\t', '|'])
@@ -195,7 +196,8 @@ def load_pretrained_embeddings(embeddings_path, vocab):
             embeddings_vectors.append(embeddings[word])
         else:
             embeddings_vectors.append(
-                avg_embedding + np.random.uniform(-0.01, 0.01, embeddings_size))
+                avg_embedding + np.random.uniform(-0.01, 0.01, embeddings_size)
+            )
     embeddings_matrix = np.stack(embeddings_vectors)
 
     # let's help the garbage collector free some memory
@@ -204,6 +206,7 @@ def load_pretrained_embeddings(embeddings_path, vocab):
     return embeddings_matrix
 
 
+@functools.lru_cache(1)
 def load_glove(file_path):
     logger.info('  Loading Glove format file {}'.format(file_path))
     embeddings = {}
@@ -465,3 +468,8 @@ def get_path_size(
                     total_size += os.path.getsize(filepath)
 
     return total_size
+
+
+def clear_data_cache():
+    """Clears any cached data objects (e.g., embeddings)"""
+    load_glove.cache_clear()

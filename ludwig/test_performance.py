@@ -23,7 +23,7 @@ import logging
 import sys
 
 from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
-from ludwig.contrib import contrib_command
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import set_on_master, is_on_master, LUDWIG_VERSION
 from ludwig.predict import full_predict
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
@@ -122,17 +122,24 @@ def cli(sys_argv):
         help='list of gpu to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(
@@ -156,6 +163,9 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.test_performance')
+
     set_on_master(args.use_horovod)
 
     if is_on_master():
@@ -165,5 +175,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("test", *sys.argv)
     cli(sys.argv[1:])

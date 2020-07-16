@@ -23,6 +23,21 @@ import sys
 from .contribs import contrib_registry
 
 
+def use_contrib(name, *args, **kwargs):
+    # Import a contrib package and cache its instance, if appropriate
+    contrib_class = contrib_registry["classes"][name]
+    if contrib_class not in [obj.__class__ for obj in
+                             contrib_registry["instances"]]:
+        try:
+            instance = contrib_class.import_call(*args, **kwargs)
+        except Exception:
+            instance = None
+
+        # Save instance in registry
+        if instance:
+            contrib_registry["instances"].append(instance)
+
+
 def contrib_import():
     """
     Checks for contrib flags, and calls static method:
@@ -37,20 +52,11 @@ def contrib_import():
     for contrib_name in contrib_registry["classes"]:
         parameter_name = '--' + contrib_name
         if parameter_name in argv_set:
-            ## Calls ContribClass.import_call(argv_list)
-            ## and return an instance, if appropriate
-            contrib_class = contrib_registry["classes"][contrib_name]
-            if contrib_class not in [
-                obj.__class__ for obj in contrib_registry["instances"]]:
-                try:
-                    instance = contrib_class.import_call(argv_list)
-                except Exception:
-                    instance = None
-                ## Save instance in registry
-                if instance:
-                    contrib_registry["instances"].append(instance)
-            ## Clean up and remove the flag
+            use_contrib(contrib_name, *argv_list)
+
+            # Clean up and remove the flag
             sys.argv.remove(parameter_name)
+
 
 def contrib_command(command, *args, **kwargs):
     """

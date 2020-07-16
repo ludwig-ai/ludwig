@@ -1,6 +1,6 @@
 # MNIST Hand-written Digit Classification
 
-This API example is based on [Ludwig's MNIST Hand-written Digit image classification example](https://uber.github.io/ludwig/examples/#image-classification-mnist). 
+This API example is based on [Ludwig's MNIST Hand-written Digit image classification example](https://ludwig-ai.github.io/ludwig-docs/examples/#image-classification-mnist). 
 
 ### Preparatory Steps
 To create data for training and testing run this command:

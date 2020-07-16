@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
@@ -25,13 +24,16 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.embedding_modules import Embed
-from ludwig.models.modules.initializer_modules import get_initializer
-from ludwig.models.modules.loss_modules import mean_confidence_penalty
-from ludwig.models.modules.loss_modules import sampled_softmax_cross_entropy
-from ludwig.models.modules.loss_modules import weighted_softmax_cross_entropy
-from ludwig.models.modules.measure_modules import accuracy as get_accuracy
-from ludwig.models.modules.measure_modules import hits_at_k as get_hits_at_k
+from ludwig.globals import is_on_master
+from ludwig.models.modules.category_decoders import Classifier
+from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
+from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
+from ludwig.models.modules.generic_encoders import PassthroughEncoder
+from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.metric_modules import CategoryAccuracy
+from ludwig.models.modules.metric_modules import HitsAtKMetric
+from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -44,16 +46,16 @@ logger = logging.getLogger(__name__)
 
 
 class CategoryBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = CATEGORY
-
+    type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
         'lowercase': False,
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -98,33 +100,30 @@ class CategoryBaseFeature(BaseFeature):
 
 
 class CategoryInputFeature(CategoryBaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    encoder = 'dense'
 
-        self.vocab = []
+    def __init__(self, feature, encoder_obj=None):
+        CategoryBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        self.embedding_size = 50
-        self.representation = 'dense'
-        self.embeddings_trainable = True
-        self.pretrained_embeddings = None
-        self.embeddings_on_cpu = False
-        self.dropout = False
-        self.initializer = None
-        self.regularize = True
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
+               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+        assert len(inputs.shape) == 1
 
-        _ = self.overwrite_defaults(feature)
-
-        self.embed = Embed(
-            vocab=self.vocab,
-            embedding_size=self.embedding_size,
-            representation=self.representation,
-            embeddings_trainable=self.embeddings_trainable,
-            pretrained_embeddings=self.pretrained_embeddings,
-            embeddings_on_cpu=self.embeddings_on_cpu,
-            dropout=self.dropout,
-            initializer=self.initializer,
-            regularize=self.regularize
+        if inputs.dtype == tf.int8 or inputs.dtype == tf.int16:
+            inputs = tf.cast(inputs, tf.int32)
+        encoder_output = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
+
+        return {'encoder_output': encoder_output}
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -135,349 +134,106 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     ):
         input_feature['vocab'] = feature_metadata['idx2str']
 
-    def _get_input_placeholder(self):
-        return tf.compat.v1.placeholder(
-            tf.int32,
-            shape=[None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.name)
-        )
-
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  placeholder: {0}'.format(placeholder))
-
-        # ================ Embeddings ================
-        embedded, embedding_size = self.embed(
-            placeholder,
-            regularizer,
-            dropout_rate,
-            is_training=is_training
-        )
-        logger.debug('  feature_representation: {0}'.format(
-            embedded))
-
-        feature_representation = {
-            'name': self.name,
-            'type': self.type,
-            'representation': embedded,
-            'size': embedding_size,
-            'placeholder': placeholder
-        }
-        return feature_representation
-
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, TIED, None)
+
+    encoder_registry = {
+        'dense': CategoricalEmbedEncoder,
+        'sparse': CategoricalSparseEncoder,
+        'passthrough': PassthroughEncoder,
+        'null': PassthroughEncoder,
+        'none': PassthroughEncoder,
+        'None': PassthroughEncoder,
+        None: PassthroughEncoder
+    }
 
 
 class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
+    decoder = 'classifier'
+    num_classes = 0
+    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    top_k = 3
+
     def __init__(self, feature):
-        super().__init__(feature)
+        CategoryBaseFeature.__init__(self, feature)
+        OutputFeature.__init__(self, feature)
+        self.overwrite_defaults(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
+        self._setup_loss()
+        self._setup_metrics()
 
-        self.loss = {'type': SOFTMAX_CROSS_ENTROPY}
-        self.num_classes = 0
-        self.top_k = 3
-        self.initializer = None
-        self.regularize = True
-
-        _ = self.overwrite_defaults(feature)
-
-    default_validation_measure = ACCURACY
-
-    output_config = OrderedDict([
-        (LOSS, {
-            'output': EVAL_LOSS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (ACCURACY, {
-            'output': CORRECT_PREDICTIONS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (HITS_AT_K, {
-            'output': HITS_AT_K,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (PREDICTIONS, {
-            'output': PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        }),
-        (PROBABILITIES, {
-            'output': PROBABILITIES,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        })
-    ])
-
-    def _get_output_placeholder(self):
-        return tf.compat.v1.placeholder(
-            tf.int64,
-            [None],  # None is for dealing with variable batch size
-            name='{}_placeholder'.format(self.name)
-        )
-
-    def _get_predictions(
+    def logits(
             self,
-            hidden,
-            hidden_size,
-            regularizer=None
-    ):
-        if not self.regularize:
-            regularizer = None
-
-        with tf.compat.v1.variable_scope('predictions_{}'.format(self.name)):
-            initializer_obj = get_initializer(self.initializer)
-            weights = tf.compat.v1.get_variable(
-                'weights',
-                initializer=initializer_obj([hidden_size, self.num_classes]),
-                regularizer=regularizer
-            )
-            logger.debug('  class_weights: {0}'.format(weights))
-
-            biases = tf.compat.v1.get_variable(
-                'biases',
-                [self.num_classes]
-            )
-            logger.debug('  class_biases: {0}'.format(biases))
-
-            logits = tf.matmul(hidden, weights) + biases
-            logger.debug('  logits: {0}'.format(logits))
-
-            probabilities = tf.nn.softmax(
-                logits,
-                name='probabilities_{}'.format(self.name)
-            )
-            predictions = tf.argmax(
-                logits,
-                -1,
-                name='predictions_{}'.format(self.name)
-            )
-
-            with tf.device('/cpu:0'):
-                top_k_predictions = tf.nn.top_k(
-                    logits,
-                    k=self.top_k,
-                    sorted=True,
-                    name='top_k_predictions_{}'.format(self.name)
-                )
-
-        return (
-            predictions,
-            top_k_predictions,
-            probabilities,
-            logits,
-            weights,
-            biases
-        )
-
-    def _get_loss(
-            self,
-            targets,
-            hidden,
-            logits,
-            probabilities,
-            class_weights,
-            class_biases
-    ):
-        with tf.compat.v1.variable_scope('loss_{}'.format(self.name)):
-            if ('class_similarities' in self.loss and
-                    self.loss['class_similarities'] is not None):
-
-                class_similarities = self.loss['class_similarities']
-
-                if (class_similarities.shape[0] != self.num_classes or
-                        class_similarities.shape[1] != self.num_classes):
-                    logger.info(
-                        'Class similarities is {} while num classes is {}'.format(
-                            class_similarities.shape,
-                            self.num_classes
-                        )
-                    )
-                    if (class_similarities.shape[0] > self.num_classes and
-                            class_similarities.shape[1] > self.num_classes):
-                        # keep only the first num_classes rows and columns
-                        class_similarities = class_similarities[
-                                             :self.num_classes,
-                                             :self.num_classes
-                                             ]
-                    elif (class_similarities.shape[0] < self.num_classes and
-                          class_similarities.shape[1] < self.num_classes):
-                        # fill the missing parts of the matrix with 0s and 1
-                        # on the diagonal
-                        diag = np.diag((self.num_classes, self.num_classes))
-                        diag[
-                        :class_similarities.shape[0],
-                        :class_similarities.shape[1]
-                        ] = class_similarities
-                        class_similarities = diag
-
-                class_similarities = tf.constant(
-                    class_similarities,
-                    dtype=tf.float32,
-                    name='class_similarities_{}'.format(self.name)
-                )
-                vector_labels = tf.gather(
-                    class_similarities,
-                    targets,
-                    name='vector_labels_{}'.format(self.name)
-                )
-            else:
-                vector_labels = tf.one_hot(
-                    targets,
-                    self.num_classes,
-                    name='vector_labels_{}'.format(self.name)
-                )
-
-            if self.loss['type'] == SAMPLED_SOFTMAX_CROSS_ENTROPY:
-                train_loss, eval_loss = sampled_softmax_cross_entropy(
-                    targets,
-                    hidden,
-                    logits,
-                    vector_labels,
-                    class_weights,
-                    class_biases,
-                    self.loss,
-                    self.num_classes
-                )
-            elif self.loss['type'] == SOFTMAX_CROSS_ENTROPY:
-                train_loss = weighted_softmax_cross_entropy(
-                    logits,
-                    vector_labels,
-                    self.loss
-                )
-                eval_loss = train_loss
-            else:
-                train_mean_loss = None
-                eval_loss = None
-                raise ValueError(
-                    'Unsupported loss type {}'.format(self.loss['type'])
-                )
-
-            if self.loss['robust_lambda'] > 0:
-                train_loss = ((1 - self.loss['robust_lambda']) * train_loss +
-                              self.loss['robust_lambda'] / self.num_classes)
-
-            train_mean_loss = tf.reduce_mean(
-                train_loss,
-                name='train_mean_loss_{}'.format(self.name)
-            )
-
-            if self.loss['confidence_penalty'] > 0:
-                mean_penalty = mean_confidence_penalty(
-                    probabilities,
-                    self.num_classes
-                )
-                train_mean_loss += (
-                        self.loss['confidence_penalty'] * mean_penalty
-                )
-
-        return train_mean_loss, eval_loss
-
-    def _get_measures(self, targets, predictions, logits):
-        with tf.compat.v1.variable_scope('measures_{}'.format(self.name)):
-            accuracy_val, correct_predictions = get_accuracy(
-                targets,
-                predictions,
-                self.name
-            )
-            hits_at_k_val, mean_hits_at_k = get_hits_at_k(
-                targets,
-                logits,
-                self.top_k,
-                self.name
-            )
-
-        return correct_predictions, accuracy_val, hits_at_k_val, mean_hits_at_k
-
-    def build_output(
-            self,
-            hidden,
-            hidden_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=None,
+            inputs,  # hidden
             **kwargs
     ):
-        output_tensors = {}
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
-        # ================ Placeholder ================
-        targets = self._get_output_placeholder()
-        output_tensors[self.name] = targets
-        logger.debug('  targets_placeholder: {0}'.format(targets))
+    def predictions(
+            self,
+            inputs,  # logits
+            **kwargs
+    ):
+        logits = inputs[LOGITS]
 
-        # ================ Predictions ================
-        outs = self._get_predictions(
-            hidden,
-            hidden_size,
-            regularizer=regularizer
-        )
-        (
-            predictions,
-            top_k_predictions,
-            probabilities,
+        probabilities = tf.nn.softmax(
             logits,
-            class_weights,
-            class_biases
-        ) = outs
+            name='probabilities_{}'.format(self.feature_name)
+        )
 
-        output_tensors[PREDICTIONS + '_' + self.name] = predictions
-        output_tensors[TOP_K_PREDICTIONS + '_' + self.name] = top_k_predictions
-        output_tensors[PROBABILITIES + '_' + self.name] = probabilities
-
-        # ================ Measures ================
-        correct_predictions, accuracy, hits_at_k, mean_hits_at_k = \
-            self._get_measures(targets, predictions, logits)
-
-        output_tensors[
-            CORRECT_PREDICTIONS + '_' + self.name
-            ] = correct_predictions
-        output_tensors[ACCURACY + '_' + self.name] = accuracy
-        output_tensors[HITS_AT_K + '_' + self.name] = hits_at_k
-        output_tensors[MEAN_HITS_AT_K + '_' + self.name] = mean_hits_at_k
-
-        if 'sampled' not in self.loss['type']:
-            tf.compat.v1.summary.scalar(
-                'batch_train_mean_accuracy_{}'.format(self.name),
-                accuracy
-            )
-            tf.compat.v1.summary.scalar(
-                'batch_train_mean_hits_at_k_{}'.format(self.name),
-                mean_hits_at_k
-            )
-
-        # ================ Loss ================
-        train_mean_loss, eval_loss = self._get_loss(
-            targets,
-            hidden,
+        predictions = tf.argmax(
             logits,
-            probabilities,
-            class_weights,
-            class_biases
+            -1,
+            name='predictions_{}'.format(self.feature_name)
+        )
+        predictions = tf.cast(predictions, dtype=tf.int64)
+
+        return {
+            PREDICTIONS: predictions,
+            PROBABILITIES: probabilities,
+            LOGITS: logits
+        }
+
+    def _setup_loss(self):
+        if self.loss[TYPE] == 'softmax_cross_entropy':
+            self.train_loss_function = SoftmaxCrossEntropyLoss(
+                num_classes=self.num_classes,
+                feature_loss=self.loss,
+                name='train_loss'
+            )
+        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
+            self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
+                decoder_obj=self.decoder_obj,
+                num_classes=self.num_classes,
+                feature_loss=self.loss,
+                name='train_loss'
+            )
+        else:
+            raise ValueError(
+                "Loss type {} is not supported. Valid values are "
+                "'softmax_cross_entropy' or "
+                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
+            )
+
+        self.eval_loss_function = SoftmaxCrossEntropyMetric(
+            num_classes=self.num_classes,
+            feature_loss=self.loss,
+            name='eval_loss'
         )
 
-        output_tensors[EVAL_LOSS + '_' + self.name] = eval_loss
-        output_tensors[TRAIN_MEAN_LOSS + '_' + self.name] = train_mean_loss
-
-        tf.compat.v1.summary.scalar(
-            'batch_train_mean_loss_{}'.format(self.name),
-            train_mean_loss
+    def _setup_metrics(self):
+        self.metric_functions[LOSS] = self.eval_loss_function
+        self.metric_functions[ACCURACY] = CategoryAccuracy(
+            name='metric_accuracy'
+        )
+        self.metric_functions[HITS_AT_K] = HitsAtKMetric(
+            k=self.top_k,
+            name='metric_top_k_hits'
         )
 
-        return train_mean_loss, eval_loss, output_tensors
+    default_validation_metric = ACCURACY
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -600,7 +356,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     'for feature {}'.format(output_feature['name'])
                 )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             output_feature[LOSS]['class_counts'] = [
                 feature_metadata['str2freq'][cls]
                 for cls in feature_metadata['idx2str']
@@ -633,8 +389,13 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
@@ -652,7 +413,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             del result[PREDICTIONS]
 
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES]
+            probs = result[PROBABILITIES].numpy()
             prob = np.amax(probs, axis=1)
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob
@@ -708,7 +469,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             }
         )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             set_default_values(
                 output_feature[LOSS],
                 {
@@ -736,3 +497,11 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                 'reduce_dependencies': SUM
             }
         )
+
+    decoder_registry = {
+        'classifier': Classifier,
+        'null': Classifier,
+        'none': Classifier,
+        'None': Classifier,
+        None: Classifier
+    }

@@ -14,82 +14,104 @@
 # limitations under the License.
 # ==============================================================================
 import logging
+import math
 
-import tensorflow as tf
-
-from ludwig.models.modules.initializer_modules import get_initializer
-
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import LayerNormalization
 
 logger = logging.getLogger(__name__)
 
 
-def fc_layer(inputs, in_count, out_count,
-             activation='relu', norm=None,
-             is_training=True, weights=None, biases=None,
-             dropout=False, dropout_rate=None,
-             initializer=None, regularizer=None):
-    if weights is None:
-        if initializer is not None:
-            initializer_obj = get_initializer(initializer)
-            weights = tf.compat.v1.get_variable(
-                'weights',
-                initializer=initializer_obj([in_count, out_count]),
-                regularizer=regularizer
-            )
-        else:
-            if activation == 'relu':
-                initializer = get_initializer('he_uniform')
-            elif activation == 'sigmoid' or activation == 'tanh':
-                initializer = get_initializer('glorot_uniform')
-            # if initializer is None, tensorFlow seems to be using
-            # a glorot uniform initializer
-            weights = tf.compat.v1.get_variable(
-                'weights',
-                [in_count, out_count],
-                regularizer=regularizer,
-                initializer=initializer
-            )
+class FCLayer(Layer):
 
-    logger.debug('  fc_weights: {}'.format(weights))
+    def __init__(
+            self,
+            fc_size=256,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
+            norm=None,
+            norm_params=None,
+            activation='relu',
+            dropout_rate=0,
+    ):
+        super(FCLayer, self).__init__()
 
-    if biases is None:
-        biases = tf.compat.v1.get_variable('biases', [out_count],
-                                 initializer=tf.constant_initializer(0.01))
-    logger.debug('  fc_biases: {}'.format(biases))
+        self.layers = []
 
-    hidden = tf.matmul(inputs, weights) + biases
+        self.layers.append(Dense(
+            units=fc_size,
+            use_bias=use_bias,
+            kernel_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            # weights_constraint=weights_constraint,
+            # bias_constraint=bias_constraint,
+        ))
 
-    if norm is not None:
+        if norm and norm_params is None:
+            norm_params = {}
         if norm == 'batch':
-            hidden = tf.contrib.layers.batch_norm(hidden,
-                                                  is_training=is_training)
+            self.layers.append(BatchNormalization(**norm_params))
         elif norm == 'layer':
-            hidden = tf.contrib.layers.layer_norm(hidden)
+            self.layers.append(LayerNormalization(**norm_params))
 
-    if activation:
-        hidden = getattr(tf.nn, activation)(hidden)
+        self.layers.append(Activation(activation))
 
-    if dropout and dropout_rate is not None:
-        hidden = tf.layers.dropout(hidden, rate=dropout_rate,
-                                   training=is_training)
-        logger.debug('  fc_dropout: {}'.format(hidden))
+        if dropout_rate > 0:
+            self.layers.append(Dropout(dropout_rate))
 
-    return hidden
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
+            for weights_tensor in layer.weights:
+                logger.debug('    {} - shape: {}, params: {}'.format(
+                    weights_tensor.name, weights_tensor.shape,
+                    math.prod(weights_tensor.shape)
+                ))
+
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
+
+        return hidden
 
 
-class FCStack:
+class FCStack(Layer):
 
     def __init__(
             self,
             layers=None,
             num_layers=1,
             default_fc_size=256,
-            default_activation='relu',
+            default_use_bias=True,
+            default_weights_initializer='glorot_uniform',
+            default_bias_initializer='zeros',
+            default_weights_regularizer=None,
+            default_bias_regularizer=None,
+            default_activity_regularizer=None,
+            # default_weights_constraint=None,
+            # default_bias_constraint=None,
             default_norm=None,
-            default_dropout=False,
-            default_initializer=None,
-            default_regularize=True
+            default_norm_params=None,
+            default_activation='relu',
+            default_dropout_rate=0,
+            **kwargs
     ):
+        super(FCStack, self).__init__()
+
         if layers is None:
             self.layers = []
             for i in range(num_layers):
@@ -100,43 +122,60 @@ class FCStack:
         for layer in self.layers:
             if 'fc_size' not in layer:
                 layer['fc_size'] = default_fc_size
-            if 'activation' not in layer:
-                layer['activation'] = default_activation
+            if 'use_bias' not in layer:
+                layer['use_bias'] = default_use_bias
+            if 'weights_initializer' not in layer:
+                layer['weights_initializer'] = default_weights_initializer
+            if 'bias_initializer' not in layer:
+                layer['bias_initializer'] = default_bias_initializer
+            if 'weights_regularizer' not in layer:
+                layer['weights_regularizer'] = default_weights_regularizer
+            if 'bias_regularizer' not in layer:
+                layer['bias_regularizer'] = default_bias_regularizer
+            if 'activity_regularizer' not in layer:
+                layer['activity_regularizer'] = default_activity_regularizer
+            # if 'weights_constraint' not in layer:
+            #     layer['weights_constraint'] = default_weights_constraint
+            # if 'bias_constraint' not in layer:
+            #     layer['bias_constraint'] = default_bias_constraint
             if 'norm' not in layer:
                 layer['norm'] = default_norm
-            if 'dropout' not in layer:
-                layer['dropout'] = default_dropout
-            if 'regularize' not in layer:
-                layer['regularize'] = default_regularize
-            if 'initializer' not in layer:
-                layer['initializer'] = default_initializer
-        
-    def __call__(
-            self,
-            inputs,
-            inputs_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=False
-    ):
-        hidden = inputs
+            if 'norm_params' not in layer:
+                layer['norm_params'] = default_norm_params
+            if 'activation' not in layer:
+                layer['activation'] = default_activation
+            if 'dropout_rate' not in layer:
+                layer['dropout_rate'] = default_dropout_rate
+
+        self.stack = []
+
         for i, layer in enumerate(self.layers):
-            with tf.compat.v1.variable_scope('fc_' + str(i)):
-                hidden = fc_layer(
-                    hidden,
-                    inputs_size,
-                    layer['fc_size'],
-                    activation=layer['activation'],
+            self.stack.append(
+                FCLayer(
+                    fc_size=layer['fc_size'],
+                    use_bias=layer['use_bias'],
+                    weights_initializer=layer['weights_initializer'],
+                    bias_initializer=layer['bias_initializer'],
+                    weights_regularizer=layer['weights_regularizer'],
+                    bias_regularizer=layer['bias_regularizer'],
+                    activity_regularizer=layer['activity_regularizer'],
+                    # weights_constraint=layer['weights_constraint'],
+                    # bias_constraint=layer['bias_constraint'],
                     norm=layer['norm'],
-                    dropout=layer['dropout'],
-                    dropout_rate=dropout_rate,
-                    is_training=is_training,
-                    initializer=layer['initializer'],
-                    regularizer=regularizer if layer[
-                        'regularize'] else None
+                    norm_params=layer['norm_params'],
+                    activation=layer['activation'],
+                    dropout_rate=layer['dropout_rate'],
                 )
-                logger.debug('  fc_{}: {}'.format(i, hidden))
+            )
 
-            inputs_size = layer['fc_size']
+    def build(
+            self,
+            input_shape,
+    ):
+        super(FCStack, self).build(input_shape)
 
+    def call(self, inputs, training=None, mask=None):
+        hidden = inputs
+        for layer in self.stack:
+            hidden = layer(hidden, training=training)
         return hidden

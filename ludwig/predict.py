@@ -25,10 +25,11 @@ import sys
 from collections import OrderedDict
 from pprint import pformat
 
+from ludwig.constants import LOGITS, TYPE
 from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
-from ludwig.contrib import contrib_command
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess
-from ludwig.data.preprocessing import preprocess_for_prediction
+from ludwig.data.preprocessing import preprocess_for_prediction, COMBINED
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -56,11 +57,13 @@ def full_predict(
         output_directory='results',
         evaluate_performance=True,
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         debug=False,
         **kwargs
 ):
+    set_on_master(use_horovod)
     if is_on_master():
         logger.info('Dataset path: {}'.format(
             data_csv if data_csv is not None else data_hdf5))
@@ -86,7 +89,10 @@ def full_predict(
     if is_on_master():
         print_boxed('LOADING MODEL')
     model, model_definition = load_model_and_definition(model_path,
-                                                        use_horovod=use_horovod)
+                                                        use_horovod=use_horovod,
+                                                        gpus=gpus,
+                                                        gpu_memory_limit=gpu_memory_limit,
+                                                        allow_parallel_threads=allow_parallel_threads)
 
     prediction_results = predict(
         dataset,
@@ -95,11 +101,9 @@ def full_predict(
         model_definition,
         batch_size,
         evaluate_performance,
-        gpus,
-        gpu_fraction,
         debug
     )
-    model.close_session()
+    # model.close_session()  # todo tf2 code clean -up
 
     if is_on_master():
         # setup directories and file names
@@ -142,8 +146,6 @@ def predict(
         model_definition,
         batch_size=128,
         evaluate_performance=True,
-        gpus=None,
-        gpu_fraction=1.0,
         debug=False
 ):
     """Computes predictions based on the computed model.
@@ -163,8 +165,6 @@ def predict(
                to contain also ground truth for the output features, otherwise
                the metrics cannot be computed.
         :type evaluate_performance: Bool
-        :type gpus: List
-        :type gpu_fraction: Integer
         :param debug: If true turns on tfdbg with inf_or_nan checks.
         :type debug: Boolean
 
@@ -174,13 +174,19 @@ def predict(
         """
     if is_on_master():
         print_boxed('PREDICT')
-    test_stats = model.predict(
+
+    test_stats, test_predictions = model.predict(
         dataset,
         batch_size,
-        evaluate_performance=evaluate_performance,
-        gpus=gpus,
-        gpu_fraction=gpu_fraction
+        evaluate_performance=evaluate_performance
     )
+
+    # combine predictions with the overall metrics
+    for of_name in test_predictions:
+        # remove logits, not needed for overall stats
+        del test_predictions[of_name][LOGITS]
+        test_stats[of_name] = {**test_stats[of_name],
+                               **test_predictions[of_name]}
 
     if evaluate_performance:
         calculate_overall_stats(
@@ -197,7 +203,7 @@ def calculate_overall_stats(test_stats, output_features, dataset,
                             train_set_metadata):
     for output_feature in output_features:
         feature = get_from_registry(
-            output_feature['type'],
+            output_feature[TYPE],
             output_type_registry
         )
         feature.calculate_overall_stats(
@@ -232,19 +238,19 @@ def save_test_statistics(test_stats, experiment_dir_name):
 
 def print_test_results(test_stats):
     for output_field, result in test_stats.items():
-        if (output_field != 'combined' or
-                (output_field == 'combined' and len(test_stats) > 2)):
+        if (output_field != COMBINED or
+                (output_field == COMBINED and len(test_stats) > 2)):
             logger.info('\n===== {} ====='.format(output_field))
-            for measure in sorted(list(result)):
-                if measure != 'confusion_matrix' and measure != 'roc_curve':
-                    value = result[measure]
+            for metric in sorted(list(result)):
+                if metric != 'confusion_matrix' and metric != 'roc_curve':
+                    value = result[metric]
                     if isinstance(value, OrderedDict):
                         value_repr = repr_ordered_dict(value)
                     else:
-                        value_repr = pformat(result[measure], indent=2)
+                        value_repr = pformat(result[metric], indent=2)
                     logger.info(
                         '{0}: {1}'.format(
-                            measure,
+                            metric,
                             value_repr
                         )
                     )
@@ -353,17 +359,24 @@ def cli(sys_argv):
         help='list of gpu to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(
@@ -387,6 +400,9 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.predict')
+
     set_on_master(args.use_horovod)
 
     if is_on_master():
@@ -396,5 +412,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("predict", *sys.argv)
     cli(sys.argv[1:])

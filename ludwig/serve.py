@@ -25,8 +25,9 @@ import sys
 import tempfile
 
 from ludwig.api import LudwigModel
-from ludwig.contrib import contrib_command
-from ludwig.utils.print_utils import logging_level_registry
+from ludwig.contrib import contrib_command, contrib_import
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
@@ -160,10 +161,15 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.serve')
+
+    print_ludwig('Serve', LUDWIG_VERSION)
 
     run_server(args.model_path, args.host, args.port)
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("serve", *sys.argv)
     cli(sys.argv[1:])

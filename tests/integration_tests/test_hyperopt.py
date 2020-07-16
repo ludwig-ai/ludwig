@@ -52,7 +52,6 @@ HYPEROPT_CONFIG = {
     "goal": "minimize"
 }
 
-
 EXECUTORS = [
     {"type": "serial"},
     {"type": "parallel", "num_workers": 4},
@@ -61,9 +60,9 @@ EXECUTORS = [
 
 
 def test_hyperopt_executor(csv_filename):
-
-    input_features = [text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
-                      category_feature(vocab_size=2, reduce_input="sum")]
+    input_features = [
+        text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
+        category_feature(vocab_size=2, reduce_input="sum")]
 
     output_features = [category_feature(vocab_size=2, reduce_input="sum")]
 

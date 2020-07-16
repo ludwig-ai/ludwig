@@ -24,51 +24,45 @@ from __future__ import print_function
 import copy
 import logging
 import os
-import re
+import os.path
 import signal
 import sys
 import threading
 import time
 from collections import OrderedDict
 
-import numpy as np
 import tensorflow as tf
 from tabulate import tabulate
-from tensorflow.python import debug as tf_debug
 from tqdm import tqdm
 
-from ludwig.constants import *
+from ludwig.constants import LOSS, COMBINED, TYPE, TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
-from ludwig.features.feature_registries import output_type_registry
-from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
-from ludwig.globals import MODEL_WEIGHTS_PROGRESS_FILE_NAME
-from ludwig.globals import TRAINING_PROGRESS_FILE_NAME
+from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
+from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
-from ludwig.models.combiners import get_build_combiner
-from ludwig.models.inputs import build_inputs, dynamic_length_encoders
-from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.models.modules.measure_modules import get_improved_fun
-from ludwig.models.modules.measure_modules import get_initial_validation_value
-from ludwig.models.modules.optimization_modules import optimize
-from ludwig.models.outputs import build_outputs, get_all_measures_names, \
-    get_measures_names
+from ludwig.models.ecd import ECD, dynamic_length_encoders
+from ludwig.models.modules.metric_modules import get_improved_fun
+from ludwig.models.modules.metric_modules import get_initial_validation_value
+from ludwig.models.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.defaults import default_training_params
-from ludwig.utils.math_utils import learning_rate_warmup_distributed, \
-    learning_rate_warmup
+from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
+from ludwig.utils.math_utils import learning_rate_warmup, \
+    learning_rate_warmup_distributed
 from ludwig.utils.misc import set_random_seed
 from ludwig.utils.misc import sum_dicts
-from ludwig.utils.tf_utils import get_tf_config
+from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
+
+tf.config.experimental_run_functions_eagerly(True)
 
 
 class Model:
@@ -83,211 +77,117 @@ class Model:
             combiner,
             training,
             preprocessing,
-            use_horovod=False,
+            use_horovod=None,
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
     ):
-        self.horovod = None
-        if use_horovod:
+        self._horovod = None
+        if should_use_horovod(use_horovod):
             import horovod.tensorflow
-            self.horovod = horovod.tensorflow
-            from mpi4py import MPI
-            self.comm = MPI.COMM_WORLD
+            self._horovod = horovod.tensorflow
+            self._horovod.init()
 
-        self.debug = debug
-        self.weights_save_path = None
-        self.hyperparameters = {}
-        self.session = None
+        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads,
+                              self._horovod)
 
-        self.epochs = None
-        self.received_sigint = False
+        self._debug = debug
+        self._weights_save_path = None
+        self._hyperparameters = {}
+        self._output_metrics_cache = None
 
-        self.__build(
-            input_features,
-            output_features,
-            combiner,
-            training,
-            preprocessing,
-            random_seed,
-            **kwargs
+        self._epochs = None
+        self._received_sigint = False
+
+        self._hyperparameters['input_features'] = input_features
+        self._hyperparameters['combiner'] = combiner
+        self._hyperparameters['output_features'] = output_features
+        self._hyperparameters[TRAINING] = training
+        self._hyperparameters['preprocessing'] = preprocessing
+        self._hyperparameters['random_seed'] = random_seed
+        self._hyperparameters.update(kwargs)
+
+        tf.random.set_seed(random_seed)
+
+        # public
+        # NOTE: TensorFlow must be initialized prior to creating the model
+        self.ecd = ECD(input_features, combiner, output_features)
+
+        # ================ Optimizer ================
+        self._optimizer = ClippedOptimizer(
+            **self._hyperparameters[TRAINING]['optimizer']
         )
 
-    def __build(
-            self,
-            input_features,
-            output_features,
-            combiner,
-            training,
-            preprocessing,
-            random_seed,
-            **kwargs
-    ):
-        self.hyperparameters['input_features'] = input_features
-        self.hyperparameters['output_features'] = output_features
-        self.hyperparameters['combiner'] = combiner
-        self.hyperparameters[TRAINING] = training
-        self.hyperparameters['preprocessing'] = preprocessing
-        self.hyperparameters['random_seed'] = random_seed
-        self.hyperparameters.update(kwargs)
-
-        if self.horovod:
-            self.horovod.init()
-
-        tf.compat.v1.reset_default_graph()
-        graph = tf.Graph()
-        with graph.as_default():
-            # ================ Setup ================
-            tf.compat.v1.set_random_seed(random_seed)
-
-            self.global_step = tf.Variable(0, trainable=False)
-            self.regularization_lambda = tf.compat.v1.placeholder(
-                tf.float32,
-                name='regularization_lambda'
+    @tf.function
+    def train_step(self, model, optimizer, inputs, targets,
+                   regularization_lambda=0.0):
+        with tf.GradientTape() as tape:
+            logits = model((inputs, targets), training=True)
+            loss, all_losses = model.train_loss(
+                targets, logits, regularization_lambda
             )
-            regularizer = regularizer_registry[training['regularizer']]
-            self.regularizer = regularizer(self.regularization_lambda)
+        optimizer.minimize_with_tape(
+            tape, loss, model.trainable_variables, self._horovod
+        )
+        # grads = tape.gradient(loss, model.trainable_weights)
+        # optimizer.apply_gradients(zip(grads, model.trainable_weights))
+        return loss, all_losses
 
-            self.learning_rate = tf.compat.v1.placeholder(
-                tf.float32,
-                name='learning_rate'
-            )
-            self.dropout_rate = tf.compat.v1.placeholder(tf.float32,
-                                                         name='dropout_rate')
-            self.is_training = tf.compat.v1.placeholder(tf.bool, [],
-                                                        name='is_training')
+    @tf.function
+    def evaluation_step(self, model, inputs, targets):
+        predictions = model.predictions(inputs, output_features=None)
+        model.update_metrics(targets, predictions)
+        return predictions
 
-            # ================ Inputs ================
-            feature_encodings = build_inputs(
-                input_features,
-                self.regularizer,
-                self.dropout_rate,
-                is_training=self.is_training
-            )
-
-            for fe_name, fe_properties in feature_encodings.items():
-                setattr(self, fe_name, fe_properties['placeholder'])
-
-            # ================ Model ================
-            logger.debug('- Combiner {}'.format(combiner['type']))
-            build_combiner = get_build_combiner(combiner['type'])(**combiner)
-            hidden, hidden_size = build_combiner(
-                feature_encodings,
-                self.regularizer,
-                self.dropout_rate,
-                is_training=self.is_training,
-                **kwargs
-            )
-
-            # ================ Outputs ================
-            outs = build_outputs(
-                output_features,
-                hidden,
-                hidden_size,
-                regularizer=self.regularizer,
-                dropout_rate=self.dropout_rate,
-                is_training=self.is_training
-            )
-
-            (
-                self.train_reg_mean_loss,
-                self.eval_combined_loss,
-                self.regularization_loss,
-                output_tensors
-            ) = outs
-
-            for ot_name, ot in output_tensors.items():
-                setattr(self, ot_name, ot)
-
-            # ================ Optimizer ================
-            self.optimize, self.learning_rate = optimize(
-                self.train_reg_mean_loss,
-                training,
-                self.learning_rate,
-                self.global_step,
-                self.horovod
-            )
-
-            tf.compat.v1.summary.scalar(
-                'combined/batch_train_reg_mean_loss',
-                self.train_reg_mean_loss
-            )
-
-            self.merged_summary = tf.compat.v1.summary.merge_all()
-            self.graph = graph
-            self.graph_initialize = tf.compat.v1.global_variables_initializer()
-            if self.horovod:
-                self.broadcast_op = self.horovod.broadcast_global_variables(0)
-            self.saver = tf.compat.v1.train.Saver()
-
-    def initialize_session(self, gpus=None, gpu_fraction=1):
-        if self.session is None:
-
-            self.session = tf.compat.v1.Session(
-                config=get_tf_config(gpus, gpu_fraction, self.horovod),
-                graph=self.graph
-            )
-            self.session.run(self.graph_initialize)
-
-            if self.debug:
-                session = tf_debug.LocalCLIDebugWrapperSession(self.session)
-                session.add_tensor_filter(
-                    'has_inf_or_nan',
-                    tf_debug.has_inf_or_nan
-                )
-
-        return self.session
-
-    def close_session(self):
-        if self.session is not None:
-            self.session.close()
-            self.session = None
-
-    def feed_dict(
-            self,
-            batch,
-            regularization_lambda=default_training_params[
-                'regularization_lambda'],
-            learning_rate=default_training_params['learning_rate'],
-            dropout_rate=default_training_params['dropout_rate'],
-            is_training=True
-    ):
-        input_features = self.hyperparameters['input_features']
-        output_features = self.hyperparameters['output_features']
-        feed_dict = {
-            self.is_training: is_training,
-            self.regularization_lambda: regularization_lambda,
-            self.learning_rate: learning_rate,
-            self.dropout_rate: dropout_rate
-        }
-        for input_feature in input_features:
-            feed_dict[getattr(self, input_feature['name'])] = batch[
-                input_feature['name']]
-        for output_feature in output_features:
-            if output_feature['name'] in batch:
-                feed_dict[getattr(self, output_feature['name'])] = batch[
-                    output_feature['name']]
-        return feed_dict
+    @tf.function
+    def predict_step(self, model, inputs):
+        return model.predictions(inputs, output_features=None)
 
     @classmethod
-    def add_tensorboard_epoch_summary(cls, stats, prefix, train_writer, step):
-        if not train_writer:
+    def write_epoch_summary(
+            cls,
+            summary_writer,
+            metrics,
+            step
+    ):
+        if not summary_writer:
             return
-        summaries = []
-        for feature_name, output_feature in stats.items():
-            for metric in output_feature:
-                metric_tag = "{}/epoch_{}_{}".format(
-                    feature_name, prefix, metric
-                )
-                metric_val = output_feature[metric][-1]
-                summaries.append(
-                    tf.compat.v1.Summary.Value(
-                        tag=metric_tag,
-                        simple_value=metric_val
+
+        with summary_writer.as_default():
+            for feature_name, output_feature in metrics.items():
+                for metric in output_feature:
+                    metric_tag = "{}/epoch_{}".format(
+                        feature_name, metric
                     )
-                )
-        summary = tf.compat.v1.Summary(value=summaries)
-        train_writer.add_summary(summary, step)
+                    metric_val = output_feature[metric][-1]
+                    tf.summary.scalar(metric_tag, metric_val, step=step)
+        summary_writer.flush()
+
+    @classmethod
+    def write_step_summary(
+            cls,
+            train_summary_writer,
+            combined_loss,
+            all_losses,
+            step
+    ):
+        if not train_summary_writer:
+            return
+
+        with train_summary_writer.as_default():
+            # combined loss
+            loss_tag = "{}/step_training_loss".format("combined")
+            tf.summary.scalar(loss_tag, combined_loss, step=step)
+
+            # all other losses
+            for feature_name, loss in all_losses.items():
+                loss_tag = "{}/step_training_loss".format(feature_name)
+                tf.summary.scalar(loss_tag, loss, step=step)
+
+        train_summary_writer.flush()
 
     def train(
             self,
@@ -295,7 +195,7 @@ class Model:
             validation_set=None,
             test_set=None,
             validation_field=None,
-            validation_measure=None,
+            validation_metric=None,
             save_path='model',
             regularization_lambda=0.0,
             epochs=100,
@@ -303,7 +203,6 @@ class Model:
             batch_size=128,
             eval_batch_size=0,
             bucketing_field=None,
-            dropout_rate=0.0,
             early_stop=20,
             reduce_learning_rate_on_plateau=0,
             reduce_learning_rate_on_plateau_patience=5,
@@ -317,8 +216,6 @@ class Model:
             skip_save_model=False,
             skip_save_progress=False,
             skip_save_log=False,
-            gpus=None,
-            gpu_fraction=1,
             random_seed=default_random_seed,
             **kwargs
     ):
@@ -328,9 +225,9 @@ class Model:
         :param test_set: The test dataset
         :param validation_field: The first output feature, by default it is set
                as the same field of the first output feature.
-        :param validation_measure: Measure used on the validation field, it is
+        :param validation_metric: metric used on the validation field, it is
                accuracy by default
-        :type validation_measure:
+        :type validation_metric:
         :param save_path: The path to save the file
         :type save_path: filepath (str)
         :param regularization_lambda: Strength of the $L2$ regularization
@@ -352,7 +249,7 @@ class Model:
                a neuron in a given layer)
         :type dropout_rate: Float
         :param early_stop: How many epochs without any improvement in the
-               validation_measure triggers the algorithm to stop
+               validation_metric triggers the algorithm to stop
         :type early_stop: Integer
         :param reduce_learning_rate_on_plateau: Reduces the learning rate when
                the algorithm hits a plateau (i.e. the performance on the
@@ -383,7 +280,7 @@ class Model:
         :param skip_save_model: disables
                saving model weights and hyperparameters each time the model
                improves. By default Ludwig saves model weights after each epoch
-               the validation measure imrpvoes, but if the model is really big
+               the validation metric imrpvoes, but if the model is really big
                that can be time consuming if you do not want to keep
                the weights and just find out what performance can a model get
                with a set of hyperparameters, use this parameter to skip it,
@@ -401,27 +298,23 @@ class Model:
                is not needed turning it off can slightly increase the
                overall speed..
         :type skip_save_log: Boolean
-        :param gpus: List of gpus to use
-        :type gpus: List
-        :param gpu_fraction: Percentage of the GPU that is intended to be used
-        :type gpu_fraction: Float
         :param random_seed: Default initialization for the random seeds
         :type: Float
         """
         # ====== General setup =======
-        output_features = self.hyperparameters['output_features']
-        self.epochs = epochs
-        digits_per_epochs = len(str(self.epochs))
-        self.received_sigint = False
+        output_features = self.ecd.output_features
+        self._epochs = epochs
+        digits_per_epochs = len(str(self._epochs))
+        self._received_sigint = False
         # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
         should_validate = validation_set is not None and validation_set.size > 0
         if eval_batch_size < 1:
             eval_batch_size = batch_size
-        stat_names = get_all_measures_names(output_features)
-        if self.horovod:
-            learning_rate *= self.horovod.size()
+        metrics_names = self.get_metrics_names(output_features)
+        if self._horovod:
+            learning_rate *= self._horovod.size()
 
         # check if validation_field is valid
         valid_validation_field = False
@@ -443,73 +336,100 @@ class Model:
                 )
             )
 
-        # check if validation_measure is valid
-        valid_validation_measure = validation_measure in stat_names[
+        # check if validation_metric is valid
+        valid_validation_metric = validation_metric in metrics_names[
             validation_output_feature_name
         ]
-        if not valid_validation_measure:
+        if not valid_validation_metric:
             raise ValueError(
-                'The specificed measure {} is not valid.'
-                'Available measures for {} output features are: {}'.format(
-                    validation_measure,
+                'The specificed metric {} is not valid.'
+                'Available metrics for {} output features are: {}'.format(
+                    validation_metric,
                     validation_output_feature_name,
-                    stat_names[validation_output_feature_name]
+                    metrics_names[validation_output_feature_name]
                 )
             )
 
         # ====== Setup file names =======
+        model_weights_path = model_hyperparameters_path = None
+        training_checkpoints_path = training_checkpoints_prefix_path = training_progress_tracker_path = None
+        tensorboard_log_dir = None
         if is_on_master():
             os.makedirs(save_path, exist_ok=True)
-        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        model_weights_progress_path = os.path.join(
-            save_path,
-            MODEL_WEIGHTS_PROGRESS_FILE_NAME
-        )
-        model_hyperparameters_path = os.path.join(
-            save_path,
-            MODEL_HYPERPARAMETERS_FILE_NAME
-        )
+            model_weights_path = os.path.join(save_path,
+                                              MODEL_WEIGHTS_FILE_NAME)
+            model_hyperparameters_path = os.path.join(
+                save_path, MODEL_HYPERPARAMETERS_FILE_NAME
+            )
+            training_checkpoints_path = os.path.join(
+                save_path, TRAINING_CHECKPOINTS_DIR_PATH
+            )
+            # training_checkpoints_prefix_path = os.path.join(
+            #    training_checkpoints_path, "ckpt"
+            # )
+            training_progress_tracker_path = os.path.join(
+                save_path, TRAINING_PROGRESS_TRACKER_FILE_NAME
+            )
+            tensorboard_log_dir = os.path.join(
+                save_path, 'logs'
+            )
 
         # ====== Setup session =======
-        session = self.initialize_session(gpus, gpu_fraction)
-
-        if self.weights_save_path:
-            self.restore(session, self.weights_save_path)
-
-        train_writer = None
+        checkpoint = checkpoint_manager = None
         if is_on_master():
-            if not skip_save_log:
-                train_writer = tf.compat.v1.summary.FileWriter(
-                    os.path.join(save_path, 'log', 'train'),
-                    session.graph
+            checkpoint = tf.train.Checkpoint(
+                optimizer=self._optimizer,
+                model=self.ecd
+            )
+            checkpoint_manager = tf.train.CheckpointManager(
+                checkpoint, training_checkpoints_path, max_to_keep=1
+            )
+
+        train_summary_writer = None
+        validation_summary_writer = None
+        test_summary_writer = None
+        if is_on_master() and not skip_save_log and tensorboard_log_dir:
+            train_summary_writer = tf.summary.create_file_writer(
+                os.path.join(
+                    tensorboard_log_dir, TRAINING
+                )
+            )
+            if validation_set is not None and validation_set.size > 0:
+                validation_summary_writer = tf.summary.create_file_writer(
+                    os.path.join(
+                        tensorboard_log_dir, VALIDATION
+                    )
+                )
+            if test_set is not None and test_set.size > 0:
+                test_summary_writer = tf.summary.create_file_writer(
+                    os.path.join(
+                        tensorboard_log_dir, TEST
+                    )
                 )
 
-        if self.debug:
-            session = tf_debug.LocalCLIDebugWrapperSession(session)
-            session.add_tensor_filter(
-                'has_inf_or_nan',
-                tf_debug.has_inf_or_nan
-            )
+        # todo tf2: reintroduce debugging mode
+        # if self.debug:
+        #    session = tf_debug.LocalCLIDebugWrapperSession(session)
+        #    session.add_tensor_filter(
+        #        'has_inf_or_nan',
+        #        tf_debug.has_inf_or_nan
+        #    )
 
         # ================ Resume logic ================
         if resume:
-            progress_tracker = self.resume_training(
-                save_path,
-                model_weights_path
+            progress_tracker = self.resume_training_progress_tracker(
+                training_progress_tracker_path
             )
             if is_on_master():
-                self.resume_session(
-                    session,
-                    save_path,
-                    model_weights_path,
-                    model_weights_progress_path
+                self.resume_weights_and_optimzier(
+                    training_checkpoints_path, checkpoint
                 )
         else:
             (
-                train_stats,
-                vali_stats,
-                test_stats
-            ) = self.initialize_training_stats(output_features)
+                train_metrics,
+                vali_metrics,
+                test_metrics
+            ) = self.initialize_training_metrics(output_features)
 
             progress_tracker = ProgressTracker(
                 batch_size=batch_size,
@@ -517,19 +437,15 @@ class Model:
                 steps=0,
                 last_improvement_epoch=0,
                 learning_rate=learning_rate,
-                best_valid_measure=get_initial_validation_value(
-                    validation_measure
+                best_valid_metric=get_initial_validation_value(
+                    validation_metric
                 ),
                 num_reductions_lr=0,
                 num_increases_bs=0,
-                train_stats=train_stats,
-                vali_stats=vali_stats,
-                test_stats=test_stats
+                train_metrics=train_metrics,
+                vali_metrics=vali_metrics,
+                test_metrics=test_metrics
             )
-
-        # horovod broadcasting after init or restore
-        if self.horovod:
-            session.run(self.broadcast_op)
 
         set_random_seed(random_seed)
         batcher = self.initialize_batcher(
@@ -539,7 +455,8 @@ class Model:
         )
 
         # ================ Training Loop ================
-        while progress_tracker.epoch < self.epochs:
+        first_batch = True
+        while progress_tracker.epoch < self._epochs:
             # epoch init
             start_time = time.time()
             if is_on_master():
@@ -551,6 +468,9 @@ class Model:
                 )
             # needed because batch size may change
             batcher.batch_size = progress_tracker.batch_size
+
+            # Reset the metrics at the start of the next epoch
+            self.ecd.reset_metrics()
 
             # ================ Train ================
             if is_on_master():
@@ -564,16 +484,65 @@ class Model:
             # training step loop
             while not batcher.last_batch():
                 batch = batcher.next_batch()
+                inputs = {
+                    i_feat['name']: batch[i_feat['name']]
+                    for i_feat in self._hyperparameters['input_features']
+                }
+                targets = {
+                    o_feat['name']: batch[o_feat['name']]
+                    for o_feat in self._hyperparameters['output_features']
+                }
 
-                if self.horovod:
+                # Reintroduce for tensorboard graph
+                # if first_batch and is_on_master() and not skip_save_log:
+                #    tf.summary.trace_on(graph=True, profiler=True)
+
+                loss, all_losses = self.train_step(
+                    self.ecd,
+                    self._optimizer,
+                    inputs,
+                    targets,
+                    regularization_lambda
+                )
+
+                # Reintroduce for tensorboard graph
+                # if first_batch and is_on_master() and not skip_save_log:
+                #     with train_summary_writer.as_default():
+                #         tf.summary.trace_export(
+                #             name="Model",
+                #             step=0,
+                #             profiler_outdir=tensorboard_log_dir
+                #         )
+
+                if is_on_master() and not skip_save_log:
+                    self.write_step_summary(
+                        train_summary_writer=train_summary_writer,
+                        combined_loss=loss,
+                        all_losses=all_losses,
+                        step=progress_tracker.steps,
+                    )
+
+                if self._horovod and first_batch:
+                    # Horovod: broadcast initial variable states from rank 0 to all other processes.
+                    # This is necessary to ensure consistent initialization of all workers when
+                    # training is started with random weights or restored from a checkpoint.
+                    #
+                    # Note: broadcast should be done after the first gradient step to ensure
+                    # optimizer initialization.
+                    self._horovod.broadcast_variables(self.ecd.variables,
+                                                      root_rank=0)
+                    self._horovod.broadcast_variables(
+                        self._optimizer.variables(), root_rank=0)
+
+                if self._horovod:
                     current_learning_rate = learning_rate_warmup_distributed(
                         progress_tracker.learning_rate,
                         progress_tracker.epoch,
                         learning_rate_warmup_epochs,
-                        self.horovod.size(),
+                        self._horovod.size(),
                         batcher.step,
                         batcher.steps_per_epoch
-                    ) * self.horovod.size()
+                    ) * self._horovod.size()
                 else:
                     current_learning_rate = learning_rate_warmup(
                         progress_tracker.learning_rate,
@@ -582,150 +551,112 @@ class Model:
                         batcher.step,
                         batcher.steps_per_epoch
                     )
-
-                readout_nodes = {'optimize': self.optimize}
-                if not skip_save_log:
-                    readout_nodes['summary'] = self.merged_summary
-
-                output_values = session.run(
-                    readout_nodes,
-                    feed_dict=self.feed_dict(
-                        batch,
-                        regularization_lambda=regularization_lambda,
-                        learning_rate=current_learning_rate,
-                        dropout_rate=dropout_rate,
-                        is_training=True
-                    )
-                )
-
-                if is_on_master():
-                    if not skip_save_log:
-                        # it is initialized only on master
-                        train_writer.add_summary(output_values['summary'],
-                                                 progress_tracker.steps)
+                self._optimizer.set_learning_rate(current_learning_rate)
 
                 progress_tracker.steps += 1
                 if is_on_master():
                     progress_bar.update(1)
+                first_batch = False
 
-            # post training
+            # ================ Post Training Epoch ================
             if is_on_master():
                 progress_bar.close()
 
             progress_tracker.epoch += 1
             batcher.reset()  # todo this may be useless, doublecheck
 
+            # todo tf2 remove when development done
+            # template = f'Epoch {progress_tracker.epoch:d}:'
+            # for metric, metric_fn in output_feature.metric_functions.items():
+            #     if metric_fn is not None:  # todo tf2 test is needed only during development
+            #         template += f' {metric}: {metric_fn.result()}'
+            #
+            # print(template)
+
             # ================ Eval ================
             # init tables
             tables = OrderedDict()
-            for output_feature in output_features:
-                field_name = output_feature['name']
-                tables[field_name] = [
-                    [field_name] + stat_names[field_name]]
-            tables['combined'] = [['combined', LOSS, ACCURACY]]
+            for output_feature_name, output_feature in output_features.items():
+                tables[output_feature_name] = [
+                    [output_feature_name] + metrics_names[output_feature_name]
+                ]
+            tables[COMBINED] = [[COMBINED, LOSS]]
 
-            # eval measures on train set
+            # eval metrics on train
+            # todo: tf2 add back relevant code as needed
             self.evaluation(
-                session,
                 training_set,
-                TRAINING,
-                regularization_lambda,
-                progress_tracker.train_stats,
+                'train',
+                progress_tracker.train_metrics,
                 tables,
                 eval_batch_size,
                 bucketing_field
             )
 
-            if is_on_master() and not skip_save_log:
-                # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
-                # the same way as in the CLI. For each one, progress_tracker.steps has already
-                # been incremented before, so in order to write on the previous summary, we need
-                # to use -1
-                self.add_tensorboard_epoch_summary(
-                    progress_tracker.train_stats,
-                    "training",
-                    train_writer,
-                    progress_tracker.epoch
-                )
+            self.write_epoch_summary(
+                summary_writer=train_summary_writer,
+                metrics=progress_tracker.train_metrics,
+                step=progress_tracker.epoch,
+            )
 
             if validation_set is not None and validation_set.size > 0:
-                # eval measures on validation set
+                # eval metrics on validation set
                 self.evaluation(
-                    session,
                     validation_set,
                     'vali',
-                    regularization_lambda,
-                    progress_tracker.vali_stats,
+                    progress_tracker.vali_metrics,
                     tables,
                     eval_batch_size,
                     bucketing_field
                 )
-                if is_on_master() and not skip_save_log:
-                    # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
-                    # the same way as in the CLI. For each one, progress_tracker.steps has already
-                    # been incremented before, so in order to write on the previous summary, we need
-                    # to use -1
-                    self.add_tensorboard_epoch_summary(
-                        progress_tracker.vali_stats,
-                        "validation",
-                        train_writer,
-                        progress_tracker.epoch
-                    )
+
+                self.write_epoch_summary(
+                    summary_writer=validation_summary_writer,
+                    metrics=progress_tracker.vali_metrics,
+                    step=progress_tracker.epoch,
+                )
 
             if test_set is not None and test_set.size > 0:
-                # eval measures on test set
+                # eval metrics on test set
                 self.evaluation(
-                    session,
                     test_set,
                     TEST,
-                    regularization_lambda,
-                    progress_tracker.test_stats,
+                    progress_tracker.test_metrics,
                     tables,
                     eval_batch_size,
                     bucketing_field
                 )
-                if is_on_master() and not skip_save_log:
-                    # Add a graph within TensorBoard showing the overall loss and accuracy tracked in
-                    # the same way as in the CLI. For each one, progress_tracker.steps has already
-                    # been incremented before, so in order to write on the previous summary, we need
-                    # to use -1
-                    self.add_tensorboard_epoch_summary(
-                        progress_tracker.test_stats,
-                        "test",
-                        train_writer,
-                        progress_tracker.epoch
-                    )
 
-            # mbiu and end of epoch prints
+                self.write_epoch_summary(
+                    summary_writer=test_summary_writer,
+                    metrics=progress_tracker.test_metrics,
+                    step=progress_tracker.epoch,
+                )
+
             elapsed_time = (time.time() - start_time) * 1000.0
 
             if is_on_master():
                 logger.info('Took {time}'.format(
                     time=time_utils.strdelta(elapsed_time)))
 
-            # stat prints
-            for output_feature, table in tables.items():
-                if (
-                        output_feature != 'combined' or
-                        (output_feature == 'combined' and
-                         len(output_features) > 1)
-                ):
-                    if is_on_master():
-                        logger.info(
-                            tabulate(
-                                table,
-                                headers='firstrow',
-                                tablefmt='fancy_grid',
-                                floatfmt='.4f'
-                            )
+            # metric prints
+            if is_on_master():
+                for output_feature, table in tables.items():
+                    logger.info(
+                        tabulate(
+                            table,
+                            headers='firstrow',
+                            tablefmt='fancy_grid',
+                            floatfmt='.4f'
                         )
+                    )
 
+            # ================ Validation Logic ================
             if should_validate:
                 should_break = self.check_progress_on_validation(
                     progress_tracker,
                     validation_field,
-                    validation_measure,
-                    session,
+                    validation_metric,
                     model_weights_path,
                     model_hyperparameters_path,
                     reduce_learning_rate_on_plateau,
@@ -744,25 +675,25 @@ class Model:
                 # there's no validation, so we save the model at each iteration
                 if is_on_master():
                     if not skip_save_model:
-                        self.save_weights(session, model_weights_path)
+                        self.ecd.save_weights(model_weights_path)
                         self.save_hyperparameters(
-                            self.hyperparameters,
+                            self._hyperparameters,
                             model_hyperparameters_path
                         )
 
             # ========== Save training progress ==========
             if is_on_master():
                 if not skip_save_progress:
-                    self.save_weights(session, model_weights_progress_path)
+                    checkpoint_manager.save()
                     progress_tracker.save(
                         os.path.join(
                             save_path,
-                            TRAINING_PROGRESS_FILE_NAME
+                            TRAINING_PROGRESS_TRACKER_FILE_NAME
                         )
                     )
                     if skip_save_model:
                         self.save_hyperparameters(
-                            self.hyperparameters,
+                            self._hyperparameters,
                             model_hyperparameters_path
                         )
 
@@ -770,27 +701,26 @@ class Model:
                 contrib_command("train_epoch_end", progress_tracker)
                 logger.info('')
 
-        if train_writer is not None:
-            train_writer.close()
+        if train_summary_writer is not None:
+            train_summary_writer.close()
+        if validation_summary_writer is not None:
+            validation_summary_writer.close()
+        if test_summary_writer is not None:
+            test_summary_writer.close()
 
         return (
-            progress_tracker.train_stats,
-            progress_tracker.vali_stats,
-            progress_tracker.test_stats
+            progress_tracker.train_metrics,
+            progress_tracker.vali_metrics,
+            progress_tracker.test_metrics
         )
 
     def train_online(
             self,
             dataset,
             batch_size=128,
-            learning_rate=0.01,
-            regularization_lambda=0,
-            dropout_rate=0,
-            bucketing_field=None,
-            gpus=None,
-            gpu_fraction=1
+            regularization_lambda=0.0,
+            bucketing_field=None
     ):
-        session = self.initialize_session(gpus, gpu_fraction)
         batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
 
         # training step loop
@@ -803,90 +733,53 @@ class Model:
 
         while not batcher.last_batch():
             batch = batcher.next_batch()
+            inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in
+                      self._hyperparameters['input_features']}
+            targets = {o_feat['name']: batch[o_feat['name']] for o_feat in
+                       self._hyperparameters['output_features']}
 
-            _ = session.run(
-                [self.optimize],
-                feed_dict=self.feed_dict(
-                    batch,
-                    regularization_lambda=regularization_lambda,
-                    learning_rate=learning_rate,
-                    dropout_rate=dropout_rate,
-                    is_training=True
-                )
+            self.train_step(
+                self.ecd,
+                self._optimizer,
+                inputs,
+                targets,
+                regularization_lambda
             )
+
             progress_bar.update(1)
 
         progress_bar.close()
 
-    def evaluation(
-            self,
-            session,
-            dataset,
-            dataset_name,
-            regularization_lambda,
-            stats,
-            tables,
-            batch_size=128,
-            bucketing_field=None
-    ):
-        results = self.batch_evaluation(
-            session,
-            dataset,
-            batch_size,
-            bucketing_field=bucketing_field,
-            regularization_lambda=regularization_lambda,
-            is_training=False,
-            name=dataset_name
-        )
+    def append_metrics(self, dataset_name, results, metrics_log, tables):
+        for output_feature in self.ecd.output_features:
+            scores = [dataset_name]
 
-        for output_feature in self.hyperparameters['output_features']:
-            of_name = output_feature['name']
-            table_row = [dataset_name]
+            # collect metric names based on output features metrics to
+            # ensure consistent order of reporting metrics
+            metric_names = self.ecd.output_features[output_feature] \
+                .metric_functions.keys()
 
-            for measure in get_measures_names(output_feature['type']):
-                stats[of_name][measure].append(results[of_name][measure])
-                table_row.append(results[of_name][measure])
+            for metric in metric_names:
+                score = results[output_feature][metric]
+                metrics_log[output_feature][metric].append(score)
+                scores.append(score)
 
-            tables[of_name].append(table_row)
+            tables[output_feature].append(scores)
 
-        stats['combined'][LOSS].append(results['combined'][LOSS])
-        stats['combined'][ACCURACY].append(results['combined'][ACCURACY])
-        tables['combined'].append(
-            [
-                dataset_name,
-                results['combined'][LOSS],
-                results['combined'][ACCURACY]
-            ]
-        )
-        return stats, tables
+        metrics_log[COMBINED][LOSS].append(results[COMBINED][LOSS])
+        tables[COMBINED].append([dataset_name, results[COMBINED][LOSS]])
+
+        return metrics_log, tables
 
     def batch_evaluation(
             self,
-            session,
             dataset,
             batch_size,
             bucketing_field=None,
-            regularization_lambda=0.0,
-            is_training=False,
             collect_predictions=False,
             only_predictions=False,
             name=None
     ):
-        output_nodes = self.get_output_nodes(
-            collect_predictions,
-            only_predictions
-        )
-        output_stats = self.get_outputs_stats()
-
-        set_size = dataset.size
-        if set_size == 0:
-            if is_on_master():
-                logger.warning('No datapoints to evaluate on.')
-            return output_stats
-        seq_set_size = {output_feature['name']: {} for output_feature in
-                        self.hyperparameters['output_features'] if
-                        output_feature['type'] in SEQUENCE_TYPES}
-
         batcher = self.initialize_batcher(
             dataset,
             batch_size,
@@ -903,79 +796,111 @@ class Model:
                 disable=is_progressbar_disabled()
             )
 
+        predictions = {}
         while not batcher.last_batch():
             batch = batcher.next_batch()
-            result = session.run(
-                output_nodes,
-                feed_dict=self.feed_dict(
-                    batch,
-                    regularization_lambda=regularization_lambda,
-                    dropout_rate=0.0,
-                    is_training=is_training
-                )
-            )
 
-            output_stats, seq_set_size = self.update_output_stats_batch(
-                output_stats,
-                seq_set_size,
-                collect_predictions,
-                only_predictions,
-                result
-            )
+            # todo: tf2 need to rationalize to reduce redundant code
+            # create array for predictors
+            # todo: tf2 need to handle case of single predictor, e.g., image
+            inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in
+                      self._hyperparameters['input_features']}
+
+            if only_predictions:
+                (
+                    preds
+                ) = self.predict_step(
+                    self.ecd,
+                    inputs
+                )
+            else:
+                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in
+                           self._hyperparameters['output_features']}
+
+                (
+                    preds
+                ) = self.evaluation_step(
+                    self.ecd,
+                    inputs,
+                    targets
+                )
+
+            # accumulate predictions from batch for each output feature
+            for of_name, of_preds in preds.items():
+                if of_name not in predictions:
+                    predictions[of_name] = {}
+                for pred_name, pred_values in of_preds.items():
+                    if pred_name not in predictions[of_name]:
+                        predictions[of_name][pred_name] = [pred_values]
+                    else:
+                        predictions[of_name][pred_name].append(pred_values)
+
             if is_on_master():
                 progress_bar.update(1)
 
         if is_on_master():
             progress_bar.close()
 
-        if self.horovod:
-            output_stats, seq_set_size = self.merge_workers_outputs(
-                output_stats,
-                seq_set_size
-            )
+        # consolidate predictions from each batch to a single tensor
+        for of_name, of_predictions in predictions.items():
+            for pred_name, pred_value_list in of_predictions.items():
+                predictions[of_name][pred_name] = tf.concat(pred_value_list,
+                                                            axis=0)
 
-        output_stats = self.update_output_stats(
-            output_stats,
-            set_size,
-            seq_set_size,
-            collect_predictions,
-            only_predictions
+        if only_predictions:
+            metrics = None
+        else:
+            metrics = self.ecd.get_metrics()
+            if self._horovod:
+                metrics = self.merge_workers_metrics(metrics)
+
+            self.ecd.reset_metrics()
+
+        return metrics, predictions
+
+    def evaluation(
+            self,
+            dataset,
+            dataset_name,
+            metrics_log,
+            tables,
+            batch_size=128,
+            bucketing_field=None
+    ):
+        results, predictions = self.batch_evaluation(
+            dataset,
+            batch_size,
+            bucketing_field=bucketing_field,
+            name=dataset_name
         )
 
-        if 'combined' in output_stats and LOSS in output_stats['combined']:
-            regularization = session.run(
-                [self.regularization_loss],
-                feed_dict={self.regularization_lambda: regularization_lambda}
-            )[0]
-            output_stats['combined'][LOSS] += regularization
+        self.append_metrics(dataset_name, results, metrics_log, tables)
 
-        return output_stats
+        return metrics_log, tables
 
-    def merge_workers_outputs(self, output_stats, seq_set_size):
+    def merge_workers_metrics(self, metrics):
         # gather outputs from all workers
-        all_workers_output_stats = self.comm.allgather(output_stats)
-        all_workers_seq_set_size = self.comm.allgather(seq_set_size)
+        all_workers_output_metrics = allgather_object(metrics)
 
         # merge them into a single one
-        merged_output_stats = sum_dicts(
-            all_workers_output_stats,
+        merged_output_metrics = sum_dicts(
+            all_workers_output_metrics,
             dict_type=OrderedDict
         )
-        merged_seq_set_size = sum_dicts(all_workers_seq_set_size)
 
-        return merged_output_stats, merged_seq_set_size
+        return merged_output_metrics
 
+    # todo tf2: reintroduce this functionality
     def batch_collect_activations(
             self,
-            session,
             dataset,
             batch_size,
             tensor_names,
             bucketing_field=None
     ):
-        output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
-                        for tensor_name in tensor_names}
-        collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
+        # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
+        #                 for tensor_name in tensor_names}
+        # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
 
         batcher = self.initialize_batcher(
             dataset,
@@ -993,240 +918,31 @@ class Model:
 
         while not batcher.last_batch():
             batch = batcher.next_batch()
-            result = session.run(
-                output_nodes,
-                feed_dict=self.feed_dict(
-                    batch,
-                    is_training=False
-                )
-            )
-
-            for tensor_name in result:
-                for row in result[tensor_name]:
-                    collected_tensors[tensor_name].append(row)
+            # result = session.run(
+            #     output_nodes,
+            #     feed_dict=self.feed_dict(
+            #         batch,
+            #         is_training=False
+            #     )
+            # )
+            #
+            # for tensor_name in result:
+            #     for row in result[tensor_name]:
+            #         collected_tensors[tensor_name].append(row)
 
             progress_bar.update(1)
 
         progress_bar.close()
 
+        collected_tensors = None
         return collected_tensors
-
-    def get_output_nodes(self, collect_predictions, only_predictions=False):
-        output_features = self.hyperparameters['output_features']
-        output_nodes = {}
-
-        for output_feature in output_features:
-            field_name = output_feature['name']
-            feature_type = output_feature['type']
-            output_nodes[field_name] = {}
-            output_config = output_type_registry[feature_type].output_config
-
-            for stat in output_config:
-                output_name = output_config[stat]['output']
-                output_type = output_config[stat]['type']
-                if ((output_type == PREDICTION and
-                     (collect_predictions or only_predictions)) or
-                        (output_type == MEASURE and not only_predictions)):
-                    output_nodes[field_name][output_name] = getattr(
-                        self,
-                        output_name + '_' + field_name
-                    )
-
-        if not only_predictions:
-            output_nodes['eval_combined_loss'] = getattr(
-                self,
-                'eval_combined_loss'
-            )
-
-        return output_nodes
-
-    def get_outputs_stats(self):
-        output_features = self.hyperparameters['output_features']
-        output_stats = OrderedDict()
-
-        for output_feature in output_features:
-            field_name = output_feature['name']
-            feature_type = output_feature['type']
-            output_stats[field_name] = {}
-            output_config = output_type_registry[feature_type].output_config
-
-            for stat in output_config:
-                output_value = output_config[stat]['value']
-                if isinstance(output_value, list):
-                    output_stats[field_name][stat] = []
-                else:
-                    output_stats[field_name][stat] = output_value
-
-        output_stats['combined'] = {LOSS: 0, ACCURACY: 0}
-        return output_stats
-
-    def update_output_stats_batch(
-            self,
-            output_stats,
-            seq_set_size,
-            collect_predictions,
-            only_predictions,
-            result
-    ):
-        output_features = self.hyperparameters['output_features']
-        combined_correct_predictions = None
-
-        for output_feature in output_features:
-            field_name = output_feature['name']
-            feature_type = output_feature['type']
-            output_config = output_type_registry[feature_type].output_config
-
-            for stat in output_config:
-                stat_config = output_config[stat]
-                output_type = output_config[stat]['type']
-                if ((output_type == PREDICTION and
-                     (collect_predictions or only_predictions)) or
-                        (output_type == MEASURE and not only_predictions)):
-                    aggregation_method = stat_config['aggregation']
-                    if aggregation_method == SUM:
-                        output_stats[field_name][stat] += (
-                            result[field_name][stat_config['output']].sum()
-                        )
-                    elif aggregation_method == SEQ_SUM:
-                        output_stats[field_name][stat] += (
-                            result[field_name][stat_config['output']].sum()
-                        )
-                        seq_set_size[field_name][stat] = (
-                                seq_set_size[field_name].get(stat, 0) +
-                                len(result[field_name][stat_config['output']])
-                        )
-                    elif aggregation_method == AVG_EXP:
-                        output_stats[field_name][stat] += (
-                            result[field_name][stat_config['output']].sum()
-                        )
-                    elif aggregation_method == APPEND:
-                        output_stats[field_name][stat].append(
-                            result[field_name][stat_config['output']]
-                        )
-
-            if not only_predictions:
-                if feature_type in [CATEGORY, BINARY]:
-                    correct_predictions = \
-                        result[field_name][CORRECT_PREDICTIONS]
-                elif feature_type == SEQUENCE:
-                    correct_predictions = \
-                        result[field_name][CORRECT_ROWWISE_PREDICTIONS]
-                else:
-                    correct_predictions = None
-
-                if correct_predictions is not None:
-                    if combined_correct_predictions is None:
-                        combined_correct_predictions = correct_predictions
-                    else:
-                        combined_correct_predictions = np.logical_and(
-                            combined_correct_predictions,
-                            correct_predictions
-                        )
-
-        if not only_predictions:
-            output_stats['combined'][LOSS] += result['eval_combined_loss'].sum()
-            output_stats['combined'][ACCURACY] += (
-                combined_correct_predictions.sum()
-                if combined_correct_predictions is not None else 0
-            )
-
-        return output_stats, seq_set_size
-
-    def update_output_stats(
-            self,
-            output_stats,
-            set_size,
-            seq_set_size,
-            collect_predictions,
-            only_predictions
-    ):
-        output_features = self.hyperparameters['output_features']
-
-        for i, output_feature in enumerate(output_features):
-            feature_type = output_feature['type']
-            field_name = output_feature['name']
-            output_config = output_type_registry[feature_type].output_config
-
-            for stat in output_config:
-                output_type = output_config[stat]['type']
-                if ((output_type == PREDICTION and
-                     (collect_predictions or only_predictions)) or
-                        (output_type == MEASURE and not only_predictions)):
-
-                    if output_config[stat]['aggregation'] == SUM:
-                        output_stats[field_name][stat] /= set_size
-
-                    elif output_config[stat]['aggregation'] == SEQ_SUM:
-                        output_stats[field_name][stat] /= (
-                            seq_set_size[field_name][stat]
-                        )
-
-                    elif output_config[stat]['aggregation'] == AVG_EXP:
-                        output_stats[field_name][stat] = np.exp(
-                            output_stats[field_name][stat] / set_size
-                        )
-
-                    elif output_config[stat]['aggregation'] == APPEND:
-                        if len(output_stats[field_name][stat]) > 0 and len(
-                                output_stats[field_name][stat][0].shape) > 1:
-                            max_shape = None
-                            for result in output_stats[field_name][stat]:
-                                if max_shape is None:
-                                    max_shape = result.shape
-                                else:
-                                    max_shape = np.maximum(
-                                        max_shape,
-                                        result.shape
-                                    )
-
-                            results = []
-                            for result in output_stats[field_name][stat]:
-                                diff_shape = max_shape - np.array(result.shape)
-                                diff_shape[0] = 0
-                                pad_width = [(0, k) for k in diff_shape]
-                                paded_result = np.pad(
-                                    result,
-                                    pad_width,
-                                    'constant',
-                                    constant_values=0
-                                )
-                                results.append(paded_result)
-                        else:
-                            results = output_stats[field_name][stat]
-
-                        output_stats[field_name][stat] = np.concatenate(
-                            results
-                        )
-
-            if feature_type == SEQUENCE:
-                # trim output sequences
-                if LENGTHS in output_stats[field_name]:
-                    lengths = output_stats[field_name][LENGTHS]
-                    if PREDICTIONS in output_stats[field_name]:
-                        output_stats[field_name][PREDICTIONS] = np.array(
-                            [list(output_stats[field_name][PREDICTIONS][i,
-                                  0:lengths[i]])
-                             for i in range(len(lengths))]
-                        )
-                    if PROBABILITIES in output_stats[field_name]:
-                        output_stats[field_name][PROBABILITIES] = np.array(
-                            [list(output_stats[field_name][PROBABILITIES][i,
-                                  0:lengths[i]]) for i in
-                             range(len(lengths))]
-                        )
-
-        if not only_predictions:
-            output_stats['combined'][LOSS] /= set_size
-            output_stats['combined'][ACCURACY] /= set_size
-
-        return output_stats
 
     def check_progress_on_validation(
             self,
             progress_tracker,
             validation_field,
-            validation_measure,
-            session, model_weights_path,
+            validation_metric,
+            model_weights_path,
             model_hyperparameters_path,
             reduce_learning_rate_on_plateau,
             reduce_learning_rate_on_plateau_patience,
@@ -1240,25 +956,25 @@ class Model:
     ):
         should_break = False
         # record how long its been since an improvement
-        improved = get_improved_fun(validation_measure)
+        improved = get_improved_fun(validation_metric)
         if improved(
-                progress_tracker.vali_stats[validation_field][
-                    validation_measure][-1],
-                progress_tracker.best_valid_measure
+                progress_tracker.vali_metrics[validation_field][
+                    validation_metric][-1],
+                progress_tracker.best_valid_metric
         ):
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
-            progress_tracker.best_valid_measure = progress_tracker.vali_stats[
-                validation_field][validation_measure][-1]
+            progress_tracker.best_valid_metric = progress_tracker.vali_metrics[
+                validation_field][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
-                    self.save_weights(session, model_weights_path)
+                    self.ecd.save_weights(model_weights_path)
                     self.save_hyperparameters(
-                        self.hyperparameters,
+                        self._hyperparameters,
                         model_hyperparameters_path
                     )
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
-                            validation_measure,
+                            validation_metric,
                             validation_field
                         )
                     )
@@ -1271,7 +987,7 @@ class Model:
                 logger.info(
                     'Last improvement of {} on {} happened '
                     '{} epoch{} ago'.format(
-                        validation_measure,
+                        validation_metric,
                         validation_field,
                         progress_tracker.last_improvement,
                         '' if progress_tracker.last_improvement == 1 else 's'
@@ -1317,64 +1033,48 @@ class Model:
             dataset,
             batch_size,
             evaluate_performance=True,
-            gpus=None,
-            gpu_fraction=1,
             **kwargs
     ):
-        if self.session is None:
-            session = self.initialize_session(gpus, gpu_fraction)
-
-            # load parameters
-            if self.weights_save_path:
-                self.restore(session, self.weights_save_path)
-        else:
-            session = self.session
-
         # predict
-        predict_stats = self.batch_evaluation(
-            session,
+        eval_metrics, eval_predictions = self.batch_evaluation(
             dataset,
             batch_size,
-            is_training=False,
             collect_predictions=True,
             only_predictions=not evaluate_performance
         )
 
-        return predict_stats
+        return eval_metrics, eval_predictions
 
+    # todo tf2: reintroduce this functionality
     def collect_activations(
             self,
             dataset,
             tensor_names,
             batch_size,
-            gpus=None,
-            gpu_fraction=1,
             **kwargs
     ):
-        if self.session is None:
-            session = self.initialize_session(gpus, gpu_fraction)
-
-            # load parameters
-            if self.weights_save_path:
-                self.restore(session, self.weights_save_path)
-        else:
-            session = self.session
+        # if self.session is None:
+        #     session = self.initialize_session(gpus, gpu_fraction)
+        #
+        #     # load parameters
+        #     if self.weights_save_path:
+        #         self.restore(session, self.weights_save_path)
+        # else:
+        #     session = self.session
 
         # get operation names
-        operation_names = {
-            t.name for op in self.graph.get_operations() for t in op.values()
-        }
-
-        for tensor_name in tensor_names:
-            if tensor_name not in operation_names:
-                raise ValueError(
-                    'Tensor / operation {} not present in the '
-                    'model graph'.format(tensor_name)
-                )
+        # operation_names = set(
+        #     [t.name for op in self.graph.get_operations() for t in op.values()]
+        # )
+        # for tensor_name in tensor_names:
+        #     if tensor_name not in operation_names:
+        #         raise ValueError(
+        #             'Tensor / operation {} not present in the '
+        #             'model graph'.format(tensor_name)
+        #         )
 
         # collect tensors
         collected_tensors = self.batch_collect_activations(
-            session,
             dataset,
             batch_size,
             tensor_names
@@ -1382,42 +1082,44 @@ class Model:
 
         return collected_tensors
 
+    # todo tf2: reintroduce this functionality
     def collect_weights(
             self,
             tensor_names,
-            gpus=None,
-            gpu_fraction=1,
             **kwargs
     ):
-        if self.session is None:
-            session = self.initialize_session(gpus, gpu_fraction)
+        # todo tf2: reintroduce functionality
+        # if self.session is None:
+        #     session = self.initialize_session(gpus, gpu_fraction)
+        #
+        #     # load parameters
+        #     if self.weights_save_path:
+        #         self.restore(session, self.weights_save_path)
+        # else:
+        #     session = self.session
+        #
+        # operation_names = set(
+        #     [t.name for op in self.graph.get_operations() for t in op.values()]
+        # )
+        # for tensor_name in tensor_names:
+        #     if tensor_name not in operation_names:
+        #         raise ValueError(
+        #             'Tensor / operation {} not present in the '
+        #             'model graph'.format(tensor_name)
+        #         )
+        #
+        # # collect tensors
+        # collected_tensors = {
+        #     tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
+        #     for tensor_name in tensor_names
+        # }
+        #
+        # return collected_tensors
+        pass
 
-            # load parameters
-            if self.weights_save_path:
-                self.restore(session, self.weights_save_path)
-        else:
-            session = self.session
-
-        operation_names = {
-            t.name for op in self.graph.get_operations() for t in op.values()
-        }
-        for tensor_name in tensor_names:
-            if tensor_name not in operation_names:
-                raise ValueError(
-                    'Tensor / operation {} not present in the '
-                    'model graph'.format(tensor_name)
-                )
-
-        # collect tensors
-        collected_tensors = {
-            tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
-            for tensor_name in tensor_names
-        }
-
-        return collected_tensors
-
-    def save_weights(self, session, save_path):
-        self.weights_save_path = self.saver.save(session, save_path)
+    def save_weights(self, save_path):
+        # save model
+        self.ecd.save_weights(save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
@@ -1431,78 +1133,64 @@ class Model:
                 feature['pretrained_embeddings'] = None
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
 
+    # todo tf2: reintroduce this functionality
     def save_savedmodel(self, save_path):
+        # input_tensors = {}
+        # for input_feature in self.hyperparameters['input_features']:
+        #     input_tensors[input_feature['name']] = getattr(
+        #         self, input_feature['name']
+        #     )
+        #
+        # output_tensors = {}
+        # for output_feature in self.hyperparameters['output_features']:
+        #     output_tensors[output_feature['name']] = getattr(
+        #         self,
+        #         output_feature['name']
+        #     )
+        #
+        # session = self.initialize_session()
+        #
+        # builder = saved_model_builder.SavedModelBuilder(save_path)
+        # builder.add_meta_graph_and_variables(
+        #     session,
+        #     [tf.saved_model.tag_constants.SERVING],
+        #     signature_def_map={
+        #         'predict': tf.saved_model.predict_signature_def(
+        #             input_tensors, output_tensors)
+        #     },
+        #     strip_default_attrs=True,
+        #     saver=self.saver,
+        # )
+        # builder.save()
+        pass
 
-        if self.session is None:
-            logger.warning(
-                "The model has no initialized session."
-                "Initializing a news session and restoring the weights "
-                "of the model (if a weights path has been specified)."
-            )
-            self.initialize_session()
-            if self.weights_save_path:
-                self.restore(self.session, self.weights_save_path)
-
-        inputs = {}
-        outputs = {}
-
-        for feature in self.hyperparameters['input_features']:
-            inputs[feature['name']] = getattr(self, feature['name'])
-
-        for feature in self.hyperparameters['output_features']:
-            outputs['predictions_' + feature['name']] = getattr(
-                self, 'predictions_' + feature['name']
-            )
-            if hasattr(self, 'probabilities_' + feature['name']):
-                outputs['probabilities_' + feature['name']] = getattr(
-                    self, 'probabilities_' + feature['name']
-                )
-            if hasattr(self, 'probability_' + feature['name']):
-                outputs['probability_' + feature['name']] = getattr(
-                    self, 'probability_' + feature['name']
-                )
-
-        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(save_path)
-
-        with self.session as session:
-            signature = tf.compat.v1.saved_model.signature_def_utils.predict_signature_def(
-                inputs=inputs,
-                outputs=outputs
-            )
-
-            builder.add_meta_graph_and_variables(
-                sess=session,
-                tags=[tf.saved_model.SERVING],
-                signature_def_map={
-                    tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                        signature
-                })
-
-            builder.save()
-
-    def restore(self, session, weights_path):
-        self.saver.restore(session, weights_path)
+    def restore(self, weights_path):
+        self.ecd.load_weights(weights_path)
 
     @staticmethod
-    def load(load_path, gpus=None, gpu_fraction=1, use_horovod=False):
+    def load(load_path, use_horovod=None, gpus=None, gpu_memory_limit=None,
+             allow_parallel_threads=True):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
         hyperparameters = load_json(hyperparameter_file)
-        model = Model(use_horovod=use_horovod, **hyperparameters)
-        model.weights_save_path = os.path.join(
+        model = Model(use_horovod=use_horovod,
+                      gpus=gpus,
+                      gpu_memory_limit=gpu_memory_limit,
+                      allow_parallel_threads=allow_parallel_threads,
+                      **hyperparameters)
+        weights_save_path = os.path.join(
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
-        model.initialize_session(gpus, gpu_fraction)
-        model.restore(model.session, model.weights_save_path)
+        model.restore(weights_save_path)
         return model
 
     def set_epochs_to_1_or_quit(self, signum, frame):
-        if not self.received_sigint:
-            self.epochs = 1
-            self.received_sigint = True
+        if not self._received_sigint:
+            self._epochs = 1
+            self._received_sigint = True
             logger.critical(
                 '\nReceived SIGINT, will finish this epoch and then conclude '
                 'the training'
@@ -1518,45 +1206,42 @@ class Model:
         logger.critical('Received SIGQUIT, will kill training')
         sys.exit(1)
 
-    def resume_training(self, save_path, model_weights_path):
+    def resume_training_progress_tracker(self, training_progress_tracker_path):
         if is_on_master():
-            logger.info('Resuming training of model: {0}'.format(save_path))
-        self.weights_save_path = model_weights_path
-        progress_tracker = ProgressTracker.load(
-            os.path.join(
-                save_path,
-                TRAINING_PROGRESS_FILE_NAME
-            )
-        )
+            logger.info('Resuming training of model: {0}'.format(
+                training_progress_tracker_path
+            ))
+        progress_tracker = ProgressTracker.load(training_progress_tracker_path)
         return progress_tracker
 
-    def initialize_training_stats(self, output_features):
-        train_stats = OrderedDict()
-        vali_stats = OrderedDict()
-        test_stats = OrderedDict()
+    def initialize_training_metrics(self, output_features):
+        train_metrics = OrderedDict()
+        vali_metrics = OrderedDict()
+        test_metrics = OrderedDict()
 
-        for output_feature in output_features:
-            field_name = output_feature['name']
+        for output_feature_name, output_feature in output_features.items():
+            train_metrics[output_feature_name] = OrderedDict()
+            vali_metrics[output_feature_name] = OrderedDict()
+            test_metrics[output_feature_name] = OrderedDict()
+            for metric in output_feature.metric_functions:
+                train_metrics[output_feature_name][metric] = []
+                vali_metrics[output_feature_name][metric] = []
+                test_metrics[output_feature_name][metric] = []
 
-            train_stats[field_name] = OrderedDict()
-            vali_stats[field_name] = OrderedDict()
-            test_stats[field_name] = OrderedDict()
-            output_config = output_type_registry[
-                output_feature['type']].output_config
+        for metrics in [train_metrics, vali_metrics, test_metrics]:
+            metrics[COMBINED] = {LOSS: []}
 
-            for stat, config in output_config.items():
-                if config['type'] == MEASURE:
-                    train_stats[field_name][stat] = []
-                    vali_stats[field_name][stat] = []
-                    test_stats[field_name][stat] = []
+        return train_metrics, vali_metrics, test_metrics
 
-        for stats in [train_stats, vali_stats, test_stats]:
-            stats['combined'] = {
-                LOSS: [],
-                ACCURACY: []
-            }
-
-        return train_stats, vali_stats, test_stats
+    def get_metrics_names(self, output_features):
+        metrics_names = {}
+        for output_feature_name, output_feature in output_features.items():
+            for metric in output_feature.metric_functions:
+                metrics = metrics_names.get(output_feature_name, [])
+                metrics.append(metric)
+                metrics_names[output_feature_name] = metrics
+        metrics_names[COMBINED] = [LOSS]
+        return metrics_names
 
     def initialize_batcher(
             self,
@@ -1566,17 +1251,17 @@ class Model:
             should_shuffle=True,
             ignore_last=False
     ):
-        if self.horovod:
+        if self._horovod:
             batcher = DistributedBatcher(
                 dataset,
-                self.horovod.rank(),
-                self.horovod,
+                self._horovod.rank(),
+                self._horovod,
                 batch_size,
                 should_shuffle=should_shuffle,
                 ignore_last=ignore_last
             )
         elif bucketing_field is not None:
-            input_features = self.hyperparameters['input_features']
+            input_features = self._hyperparameters['input_features']
             bucketing_feature = [
                 feature for feature in input_features if
                 feature['name'] == bucketing_field
@@ -1594,8 +1279,8 @@ class Model:
             if 'preprocessing' in bucketing_feature:
                 trim_side = bucketing_feature['preprocessing']['padding']
             else:
-                trim_side = self.hyperparameters['preprocessing'][
-                    bucketing_feature['type']]['padding']
+                trim_side = self._hyperparameters['preprocessing'][
+                    bucketing_feature[TYPE]]['padding']
 
             batcher = BucketedBatcher(
                 dataset,
@@ -1616,22 +1301,14 @@ class Model:
             )
         return batcher
 
-    def resume_session(
+    def resume_weights_and_optimzier(
             self,
-            session,
-            save_path,
-            model_weights_path,
-            model_weights_progress_path
+            model_weights_progress_path,
+            checkpoint
     ):
-        num_matching_files = 0
-        pattern = re.compile(MODEL_WEIGHTS_PROGRESS_FILE_NAME)
-        for file_path in os.listdir(save_path):
-            if pattern.match(file_path):
-                num_matching_files += 1
-        if num_matching_files == 3:
-            self.restore(session, model_weights_progress_path)
-        else:
-            self.restore(session, model_weights_path)
+        checkpoint.restore(
+            tf.train.latest_checkpoint(model_weights_progress_path)
+        )
 
     def reduce_learning_rate(
             self,
@@ -1735,13 +1412,13 @@ class ProgressTracker:
             batch_size,
             steps,
             last_improvement_epoch,
-            best_valid_measure,
+            best_valid_metric,
             learning_rate,
             num_reductions_lr,
             num_increases_bs,
-            train_stats,
-            vali_stats,
-            test_stats,
+            train_metrics,
+            vali_metrics,
+            test_metrics,
             last_improvement=0
     ):
         self.batch_size = batch_size
@@ -1750,12 +1427,12 @@ class ProgressTracker:
         self.last_improvement_epoch = last_improvement_epoch
         self.last_improvement = last_improvement
         self.learning_rate = learning_rate
-        self.best_valid_measure = best_valid_measure
+        self.best_valid_metric = best_valid_metric
         self.num_reductions_lr = num_reductions_lr
         self.num_increases_bs = num_increases_bs
-        self.train_stats = train_stats
-        self.vali_stats = vali_stats
-        self.test_stats = test_stats
+        self.train_metrics = train_metrics
+        self.vali_metrics = vali_metrics
+        self.test_metrics = test_metrics
 
     def save(self, filepath):
         save_json(filepath, self.__dict__)
@@ -1766,7 +1443,11 @@ class ProgressTracker:
         return ProgressTracker(**loaded)
 
 
-def load_model_and_definition(model_dir, use_horovod=False):
+def load_model_and_definition(model_dir,
+                              use_horovod=None,
+                              gpus=None,
+                              gpu_memory_limit=None,
+                              allow_parallel_threads=True):
     # Load model definition and weights
     model_definition = load_json(
         os.path.join(
@@ -1774,5 +1455,9 @@ def load_model_and_definition(model_dir, use_horovod=False):
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
     )
-    model = Model.load(model_dir, use_horovod=use_horovod)
+    model = Model.load(model_dir,
+                       use_horovod=use_horovod,
+                       gpus=gpus,
+                       gpu_memory_limit=gpu_memory_limit,
+                       allow_parallel_threads=allow_parallel_threads)
     return model, model_definition

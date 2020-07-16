@@ -16,30 +16,98 @@
 # ==============================================================================
 import copy
 import functools
-import itertools
 import logging
 import math
 import multiprocessing
 import os
 import random
 import signal
+import subprocess as sp
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
-import scipy.stats as ss
-
-from bayesmark.space import JointSpace
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
-from ludwig.constants import COMBINED, EXECUTOR, LOSS, MAXIMIZE, MINIMIZE, STRATEGY, TEST, TRAINING, VALIDATION
+from bayesmark.space import JointSpace
+
+from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, \
+    VALIDATION, MAXIMIZE, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess
-from ludwig.predict import predict, print_test_results, save_prediction_outputs, save_test_statistics
+from ludwig.predict import predict, print_test_results, \
+    save_prediction_outputs, save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc import get_class_attributes, get_from_registry, set_default_value, set_default_values
+from ludwig.utils.misc import get_class_attributes, get_from_registry, \
+    set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
+
+
+def int_sampling_function(low, high, **kwargs):
+    return random.randint(low, high)
+
+
+def float_sampling_function(low, high, scale='linear', base=None, **kwargs):
+    if scale == 'linear':
+        sample = random.uniform(low, high)
+    elif scale == 'log':
+        if base:
+            sample = math.pow(base, random.uniform(low, high))
+        else:
+            sample = math.exp(random.uniform(math.log(low), math.log(high)))
+    else:
+        raise ValueError(
+            'The scale parameter of the float sampling function is "{}". '
+            'Available ones are: {"linear", "log"}'
+        )
+    return sample
+
+
+def category_sampling_function(values, **kwargs):
+    return random.sample(values, 1)[0]
+
+
+def int_grid_function(low: int, high: int, steps=None, **kwargs):
+    if steps is None:
+        steps = high - low + 1
+    samples = np.linspace(low, high, num=steps, dtype=int)
+    return samples.tolist()
+
+
+def float_grid_function(low, high, steps=None, scale='linear', base=None,
+                        **kwargs):
+    if steps is None:
+        steps = int(high - low + 1)
+    if scale == 'linear':
+        samples = np.linspace(low, high, num=steps)
+    elif scale == 'log':
+        if base:
+            samples = np.logspace(low, high, num=steps, base=base)
+        else:
+            samples = np.geomspace(low, high, num=steps)
+    else:
+        raise ValueError(
+            'The scale parameter of the float grid function is "{}". '
+            'Available ones are: {"linear", "log"}'
+        )
+    return samples.tolist()
+
+
+def category_grid_function(values, **kwargs):
+    return values
+
+
+sampling_functions_registry = {
+    'int': int_sampling_function,
+    'float': float_sampling_function,
+    'category': category_sampling_function,
+}
+
+grid_functions_registry = {
+    'int': int_grid_function,
+    'float': float_grid_function,
+    'category': category_grid_function
+}
 
 
 class HyperoptStrategy(ABC):
@@ -163,41 +231,42 @@ class HyperoptExecutor(ABC):
 
     @abstractmethod
     def execute(
-        self,
-        model_definition,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        train_set_metadata_json=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        model_load_path=None,
-        model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
-        output_directory="results",
-        gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
+            self,
+            model_definition,
+            data_df=None,
+            data_train_df=None,
+            data_validation_df=None,
+            data_test_df=None,
+            data_csv=None,
+            data_train_csv=None,
+            data_validation_csv=None,
+            data_test_csv=None,
+            data_hdf5=None,
+            data_train_hdf5=None,
+            data_validation_hdf5=None,
+            data_test_hdf5=None,
+            train_set_metadata_json=None,
+            experiment_name="hyperopt",
+            model_name="run",
+            model_load_path=None,
+            model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,
+            skip_save_test_predictions=False,
+            skip_save_test_statistics=False,
+            output_directory="results",
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            use_horovod=False,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
     ):
         pass
 
@@ -209,41 +278,42 @@ class SerialExecutor(HyperoptExecutor):
         HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature, metric, split)
 
     def execute(
-        self,
-        model_definition,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        train_set_metadata_json=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        # model_load_path=None,
-        # model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
-        output_directory="results",
-        gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
+            self,
+            model_definition,
+            data_df=None,
+            data_train_df=None,
+            data_validation_df=None,
+            data_test_df=None,
+            data_csv=None,
+            data_train_csv=None,
+            data_validation_csv=None,
+            data_test_csv=None,
+            data_hdf5=None,
+            data_train_hdf5=None,
+            data_validation_hdf5=None,
+            data_test_hdf5=None,
+            train_set_metadata_json=None,
+            experiment_name="hyperopt",
+            model_name="run",
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,
+            skip_save_test_predictions=False,
+            skip_save_test_statistics=False,
+            output_directory="results",
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            use_horovod=False,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
     ):
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
@@ -284,7 +354,8 @@ class SerialExecutor(HyperoptExecutor):
                     skip_save_test_statistics=skip_save_test_statistics,
                     output_directory=output_directory,
                     gpus=gpus,
-                    gpu_fraction=gpu_fraction,
+                    gpu_memory_limit=gpu_memory_limit,
+                    allow_parallel_threads=allow_parallel_threads,
                     use_horovod=use_horovod,
                     random_seed=random_seed,
                     debug=debug,
@@ -311,6 +382,7 @@ class SerialExecutor(HyperoptExecutor):
 class ParallelExecutor(HyperoptExecutor):
     num_workers = 2
     epsilon = 0.01
+    epsilon_memory = 300
 
     def __init__(
         self,
@@ -344,14 +416,15 @@ class ParallelExecutor(HyperoptExecutor):
         }
 
     def _train_and_eval_model_gpu(self, hyperopt_dict):
-        gpu_id = self.queue.get()
+        gpu_id_meta = self.queue.get()
         try:
-            parameters = hyperopt_dict["parameters"]
-            hyperopt_dict["gpus"] = gpu_id
+            parameters = hyperopt_dict['parameters']
+            hyperopt_dict["gpus"] = gpu_id_meta["gpu_id"]
+            hyperopt_dict["gpu_memory_limit"] = gpu_id_meta["gpu_memory_limit"]
             train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
             metric_score = self.get_metric_score(eval_stats)
         finally:
-            self.queue.put(gpu_id)
+            self.queue.put(gpu_id_meta)
         return {
             "parameters": parameters,
             "metric_score": metric_score,
@@ -360,41 +433,42 @@ class ParallelExecutor(HyperoptExecutor):
         }
 
     def execute(
-        self,
-        model_definition,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        train_set_metadata_json=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        # model_load_path=None,
-        # model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
-        output_directory="results",
-        gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
+            self,
+            model_definition,
+            data_df=None,
+            data_train_df=None,
+            data_validation_df=None,
+            data_test_df=None,
+            data_csv=None,
+            data_train_csv=None,
+            data_validation_csv=None,
+            data_test_csv=None,
+            data_hdf5=None,
+            data_train_hdf5=None,
+            data_validation_hdf5=None,
+            data_test_hdf5=None,
+            train_set_metadata_json=None,
+            experiment_name="hyperopt",
+            model_name="run",
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,
+            skip_save_test_predictions=False,
+            skip_save_test_statistics=False,
+            output_directory="results",
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            use_horovod=False,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
     ):
         hyperopt_parameters = []
 
@@ -405,7 +479,8 @@ class ParallelExecutor(HyperoptExecutor):
             if self.num_workers > num_available_cpus:
                 logger.warning(
                     "WARNING: Setting num_workers to less "
-                    "or equal to number of available cpus: {} is suggested".format(num_available_cpus)
+                    "or equal to number of available cpus: {} is suggested".format(
+                        num_available_cpus)
                 )
 
             if isinstance(gpus, int):
@@ -414,38 +489,91 @@ class ParallelExecutor(HyperoptExecutor):
             gpu_ids = gpus.split(",")
             total_gpus = len(gpu_ids)
 
+            available_gpu_memory_list = get_available_gpu_memory()
+            gpu_ids_meta = {}
+
             if total_gpus < self.num_workers:
                 fraction = (total_gpus / self.num_workers) - self.epsilon
-                if fraction < gpu_fraction:
-                    if fraction > 0.5:
-                        if gpu_fraction != 1:
-                            logger.warning(
-                                "WARNING: Setting gpu_fraction to 1 as the gpus "
-                                "would be underutilized for the parallel processes."
-                            )
-                        gpu_fraction = 1
-                    else:
-                        logger.warning(
-                            "WARNING: Setting gpu_fraction to {} "
-                            "as the available gpus is {} and the num of workers "
-                            "selected is {}".format(fraction, total_gpus, self.num_workers)
-                        )
-                        gpu_fraction = fraction
-                else:
-                    logger.warning(
-                        "WARNING: gpu_fraction could be increased to {} "
-                        "as the available gpus is {} and the num of workers "
-                        "being set is {}".format(fraction, total_gpus, self.num_workers)
-                    )
+                for gpu_id in gpu_ids:
+                    available_gpu_memory = available_gpu_memory_list[
+                        int(gpu_id)]
+                    required_gpu_memory = fraction * available_gpu_memory
 
-            process_per_gpu = int(1 / gpu_fraction)
+                    if gpu_memory_limit is None:
+                        logger.warning(
+                            'WARNING: Setting gpu_memory_limit to {} '
+                            'as the available gpus is {} and the num of workers '
+                            'being set is {} and the available gpu memory for gpu_id '
+                            '{} is {}'.format(
+                                required_gpu_memory, total_gpus,
+                                self.num_workers,
+                                gpu_id, available_gpu_memory)
+                        )
+                        new_gpu_memory_limit = required_gpu_memory
+                    else:
+                        new_gpu_memory_limit = gpu_memory_limit
+                        if new_gpu_memory_limit > available_gpu_memory:
+                            logger.warning(
+                                'WARNING: Setting gpu_memory_limit to available gpu '
+                                'memory {} with epsilon as the value specified is greater than '
+                                'available gpu memory.'.format(
+                                    available_gpu_memory)
+                            )
+                            new_gpu_memory_limit = available_gpu_memory - self.epsilon_memory
+
+                        if required_gpu_memory < new_gpu_memory_limit:
+                            if required_gpu_memory > 0.5 * available_gpu_memory:
+                                if available_gpu_memory != new_gpu_memory_limit:
+                                    logger.warning(
+                                        'WARNING: Setting gpu_memory_limit to available gpu '
+                                        'memory {} with epsilon as the gpus would be underutilized for '
+                                        'the parallel processes'.format(
+                                            available_gpu_memory)
+                                    )
+                                    new_gpu_memory_limit = available_gpu_memory - self.epsilon_memory
+                            else:
+                                logger.warning(
+                                    'WARNING: Setting gpu_memory_limit to {} '
+                                    'as the available gpus is {} and the num of workers '
+                                    'being set is {} and the available gpu memory for gpu_id '
+                                    '{} is {}'.format(
+                                        required_gpu_memory, total_gpus,
+                                        self.num_workers,
+                                        gpu_id, available_gpu_memory)
+                                )
+                                new_gpu_memory_limit = required_gpu_memory
+                        else:
+                            logger.warning(
+                                'WARNING: gpu_memory_limit could be increased to {} '
+                                'as the available gpus is {} and the num of workers '
+                                'being set is {} and the available gpu memory for gpu_id '
+                                '{} is {}'.format(
+                                    required_gpu_memory, total_gpus,
+                                    self.num_workers,
+                                    gpu_id, available_gpu_memory)
+                            )
+
+                    process_per_gpu = int(
+                        available_gpu_memory / new_gpu_memory_limit)
+                    gpu_ids_meta[gpu_id] = {
+                        "gpu_memory_limit": new_gpu_memory_limit,
+                        "process_per_gpu": process_per_gpu}
+            else:
+                for gpu_id in gpu_ids:
+                    gpu_ids_meta[gpu_id] = {
+                        "gpu_memory_limit": gpu_memory_limit,
+                        "process_per_gpu": 1}
 
             manager = multiprocessing.Manager()
             self.queue = manager.Queue()
 
             for gpu_id in gpu_ids:
+                process_per_gpu = gpu_ids_meta[gpu_id]["process_per_gpu"]
+                gpu_memory_limit = gpu_ids_meta[gpu_id]["gpu_memory_limit"]
                 for _ in range(process_per_gpu):
-                    self.queue.put(gpu_id)
+                    gpu_id_meta = {"gpu_id": gpu_id,
+                                   "gpu_memory_limit": gpu_memory_limit}
+                    self.queue.put(gpu_id_meta)
 
         pool = multiprocessing.Pool(self.num_workers, ParallelExecutor.init_worker)
         hyperopt_results = []
@@ -477,21 +605,22 @@ class ParallelExecutor(HyperoptExecutor):
                         "model_name": model_name,
                         # model_load_path:model_load_path,
                         # model_resume_path:model_resume_path,
-                        "skip_save_training_description": skip_save_training_description,
-                        "skip_save_training_statistics": skip_save_training_statistics,
-                        "skip_save_model": skip_save_model,
-                        "skip_save_progress": skip_save_progress,
-                        "skip_save_log": skip_save_log,
-                        "skip_save_processed_input": skip_save_processed_input,
-                        "skip_save_unprocessed_output": skip_save_unprocessed_output,
-                        "skip_save_test_predictions": skip_save_test_predictions,
-                        "skip_save_test_statistics": skip_save_test_statistics,
-                        "output_directory": output_directory,
-                        "gpus": gpus,
-                        "gpu_fraction": gpu_fraction,
-                        "use_horovod": use_horovod,
-                        "random_seed": random_seed,
-                        "debug": debug,
+                        'skip_save_training_description': skip_save_training_description,
+                        'skip_save_training_statistics': skip_save_training_statistics,
+                        'skip_save_model': skip_save_model,
+                        'skip_save_progress': skip_save_progress,
+                        'skip_save_log': skip_save_log,
+                        'skip_save_processed_input': skip_save_processed_input,
+                        'skip_save_unprocessed_output': skip_save_unprocessed_output,
+                        'skip_save_test_predictions': skip_save_test_predictions,
+                        'skip_save_test_statistics': skip_save_test_statistics,
+                        'output_directory': output_directory,
+                        'gpus': gpus,
+                        'gpu_memory_limit': gpu_memory_limit,
+                        'allow_parallel_threads': allow_parallel_threads,
+                        'use_horovod': use_horovod,
+                        'random_seed': random_seed,
+                        'debug': debug,
                     }
                 )
 
@@ -547,41 +676,42 @@ class FiberExecutor(HyperoptExecutor):
         self.pool = fiber.Pool(num_workers)
 
     def execute(
-        self,
-        model_definition,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        train_set_metadata_json=None,
-        experiment_name="hyperopt",
-        model_name="run",
-        # model_load_path=None,
-        # model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
-        output_directory="results",
-        gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
+            self,
+            model_definition,
+            data_df=None,
+            data_train_df=None,
+            data_validation_df=None,
+            data_test_df=None,
+            data_csv=None,
+            data_train_csv=None,
+            data_validation_csv=None,
+            data_test_csv=None,
+            data_hdf5=None,
+            data_train_hdf5=None,
+            data_validation_hdf5=None,
+            data_test_hdf5=None,
+            train_set_metadata_json=None,
+            experiment_name="hyperopt",
+            model_name="run",
+            # model_load_path=None,
+            # model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,
+            skip_save_test_predictions=False,
+            skip_save_test_statistics=False,
+            output_directory="results",
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            use_horovod=False,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
     ):
         train_func = functools.partial(
             train_and_eval_on_split,
@@ -614,7 +744,8 @@ class FiberExecutor(HyperoptExecutor):
             skip_save_test_statistics=skip_save_test_statistics,
             output_directory=output_directory,
             gpus=gpus,
-            gpu_fraction=gpu_fraction,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
             use_horovod=use_horovod,
             random_seed=random_seed,
             debug=debug,
@@ -736,50 +867,67 @@ def substitute_parameters(model_definition, parameters):
         set_values(output_feature, output_feature["name"], parameters_dict)
     set_values(model_definition["combiner"], "combiner", parameters_dict)
     set_values(model_definition["training"], "training", parameters_dict)
-    set_values(model_definition["preprocessing"], "preprocessing", parameters_dict)
+    set_values(model_definition["preprocessing"], "preprocessing",
+               parameters_dict)
     return model_definition
+
+
+def get_available_gpu_memory():
+    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
+
+    COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
+    try:
+        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[
+                           1:]
+        memory_free_values = [int(x.split()[0])
+                              for i, x in enumerate(memory_free_info)]
+    except Exception as e:
+        print('"nvidia-smi" is probably not installed.', e)
+
+    return memory_free_values
 
 
 # TODo this is duplicate code from experiment,
 #  reorganize experiment to avoid having to do this
 def train_and_eval_on_split(
-    model_definition,
-    eval_split=VALIDATION,
-    data_df=None,
-    data_train_df=None,
-    data_validation_df=None,
-    data_test_df=None,
-    data_csv=None,
-    data_train_csv=None,
-    data_validation_csv=None,
-    data_test_csv=None,
-    data_hdf5=None,
-    data_train_hdf5=None,
-    data_validation_hdf5=None,
-    data_test_hdf5=None,
-    train_set_metadata_json=None,
-    experiment_name="hyperopt",
-    model_name="run",
-    # model_load_path=None,
-    # model_resume_path=None,
-    skip_save_training_description=False,
-    skip_save_training_statistics=False,
-    skip_save_model=False,
-    skip_save_progress=False,
-    skip_save_log=False,
-    skip_save_processed_input=False,
-    skip_save_unprocessed_output=False,
-    skip_save_test_predictions=False,
-    skip_save_test_statistics=False,
-    output_directory="results",
-    gpus=None,
-    gpu_fraction=1.0,
-    use_horovod=False,
-    random_seed=default_random_seed,
-    debug=False,
-    **kwargs
+        model_definition,
+        eval_split=VALIDATION,
+        data_df=None,
+        data_train_df=None,
+        data_validation_df=None,
+        data_test_df=None,
+        data_csv=None,
+        data_train_csv=None,
+        data_validation_csv=None,
+        data_test_csv=None,
+        data_hdf5=None,
+        data_train_hdf5=None,
+        data_validation_hdf5=None,
+        data_test_hdf5=None,
+        train_set_metadata_json=None,
+        experiment_name="hyperopt",
+        model_name="run",
+        # model_load_path=None,
+        # model_resume_path=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
+        skip_save_processed_input=False,
+        skip_save_unprocessed_output=False,
+        skip_save_test_predictions=False,
+        skip_save_test_statistics=False,
+        output_directory="results",
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=False,
+        random_seed=default_random_seed,
+        debug=False,
+        **kwargs
 ):
-    # Collect training and validation losses and measures
+    # Collect training and validation losses and metrics
     # & append it to `results`
     # ludwig_model = LudwigModel(modified_model_definition)
     (model, preprocessed_data, experiment_dir_name, train_stats, model_definition) = full_train(
@@ -809,7 +957,8 @@ def train_and_eval_on_split(
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
@@ -835,9 +984,7 @@ def train_and_eval_on_split(
         model_definition,
         batch_size,
         evaluate_performance=True,
-        gpus=gpus,
-        gpu_fraction=gpu_fraction,
-        debug=debug,
+        debug=debug
     )
     if not (skip_save_unprocessed_output and skip_save_test_predictions and skip_save_test_statistics):
         if not os.path.exists(experiment_dir_name):

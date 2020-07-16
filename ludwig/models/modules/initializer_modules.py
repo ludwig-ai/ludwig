@@ -18,23 +18,23 @@ import tensorflow as tf
 from ludwig.utils.misc import get_from_registry
 
 initializers_registry = {
-    'constant': tf.initializers.constant,
+    'constant': tf.constant_initializer,
     'identity': tf.initializers.identity,
     'zeros': tf.initializers.zeros,
     'ones': tf.initializers.ones,
     'orthogonal': tf.initializers.orthogonal,
-    'normal': tf.initializers.random_normal,
-    'uniform': tf.initializers.random_uniform,
-    'truncated_normal': tf.initializers.truncated_normal,
-    'variance_scaling': tf.initializers.variance_scaling,
+    'normal': tf.random_normal_initializer,
+    'uniform': tf.random_uniform_initializer,
+    'truncated_normal': tf.keras.initializers.TruncatedNormal,
+    'variance_scaling': tf.keras.initializers.VarianceScaling,
     'glorot_normal': tf.initializers.glorot_normal,
     'glorot_uniform': tf.initializers.glorot_uniform,
     'xavier_normal': tf.initializers.glorot_normal,
     'xavier_uniform': tf.initializers.glorot_uniform,
-    'he_normal': tf.compat.v1.initializers.he_normal,
-    'he_uniform': tf.compat.v1.initializers.he_uniform,
-    'lecun_normal': tf.compat.v1.initializers.lecun_normal,
-    'lecun_uniform': tf.compat.v1.initializers.lecun_uniform,
+    'he_normal': tf.initializers.he_normal,
+    'he_uniform': tf.initializers.he_uniform,
+    'lecun_normal': tf.initializers.lecun_normal,
+    'lecun_uniform': tf.initializers.lecun_uniform,
     None: tf.initializers.glorot_uniform
 }
 

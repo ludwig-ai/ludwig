@@ -24,7 +24,7 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.h3_encoders import H3WeightedSum, H3RNN, H3Embed
 from ludwig.utils.h3_util import h3_to_components
-from ludwig.utils.misc import set_default_value, get_from_registry
+from ludwig.utils.misc import set_default_value
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +34,15 @@ H3_PADDING_VALUE = 7
 
 
 class H3BaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = H3
-
+    type = H3
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 576495936675512319
         # mode 1 edge 0 resolution 0 base_cell 0
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -68,65 +68,38 @@ class H3BaseFeature(BaseFeature):
             dataset_df,
             data,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters
     ):
-        data[feature['name']] = np.array(
-            [H3BaseFeature.h3_to_list(row)
-             for row in dataset_df[feature['name']]], dtype=np.uint8
-        )
+        column = dataset_df[feature['name']]
+        if column.dtype == object:
+            column = column.map(int)
+        column = column.map(H3BaseFeature.h3_to_list)
+        data[feature['name']] = np.array(column.tolist(), dtype=np.uint8)
 
 
 class H3InputFeature(H3BaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    encoder = 'embed'
 
-        self.encoder = 'embed'
+    def __init__(self, feature, encoder_obj=None):
+        H3BaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
 
-        encoder_parameters = self.overwrite_defaults(feature)
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        self.encoder_obj = self.get_h3_encoder(encoder_parameters)
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.uint8
+        assert len(inputs.shape) == 2
 
-    def get_h3_encoder(self, encoder_parameters):
-        return get_from_registry(
-            self.encoder, h3_encoder_registry)(
-            **encoder_parameters
+        inputs_encoded = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
 
-    def _get_input_placeholder(self):
-        # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
-            tf.int32,
-            shape=[None, H3_VECTOR_LENGTH],
-            name=self.name
-        )
-
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('placeholder: {0}'.format(placeholder))
-
-        feature_representation, feature_representation_size = self.encoder_obj(
-            placeholder,
-            regularizer=regularizer,
-            dropout_rate=dropout_rate,
-            is_training=is_training
-        )
-        logging.debug('  feature_representation: {0}'.format(
-            feature_representation))
-
-        feature_representation = {
-            'name': self.name,
-            'type': self.type,
-            'representation': feature_representation,
-            'size': feature_representation_size,
-            'placeholder': placeholder
-        }
-        return feature_representation
+        return inputs_encoded
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -139,11 +112,10 @@ class H3InputFeature(H3BaseFeature, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, TIED, None)
 
-
-h3_encoder_registry = {
-    'embed': H3Embed,
-    'weighted_sum': H3WeightedSum,
-    'rnn': H3RNN
-}
+    encoder_registry = {
+        'embed': H3Embed,
+        'weighted_sum': H3WeightedSum,
+        'rnn': H3RNN
+    }

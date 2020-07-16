@@ -17,13 +17,13 @@
 import logging
 import os
 import sys
+from functools import partial
+from multiprocessing import Pool
 
 import h5py
 import numpy as np
 import tensorflow as tf
 
-from functools import partial
-from multiprocessing import Pool
 from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
@@ -40,10 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImageBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = IMAGE
-
+    type = IMAGE
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
         'in_memory': True,
@@ -51,6 +48,9 @@ class ImageBaseFeature(BaseFeature):
         'scaling': 'pixel_normalization',
         'num_processes': 1
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -146,7 +146,7 @@ class ImageBaseFeature(BaseFeature):
                 "or explicit image width and height are expected"
                 "to be provided. "
                 "Additional information: "
-                "https://uber.github.io/ludwig/user_guide/#image-features-preprocessing"
+                "https://ludwig-ai.github.io/ludwig-docs/user_guide/#image-features-preprocessing"
                     .format([img_height, img_width, num_channels], img.shape)
             )
 
@@ -154,8 +154,8 @@ class ImageBaseFeature(BaseFeature):
 
     @staticmethod
     def _finalize_preprocessing_parameters(
-        preprocessing_parameters,
-        first_image_path
+            preprocessing_parameters,
+            first_image_path
     ):
         """
         Helper method to determine the height, width and number of channels for
@@ -252,11 +252,15 @@ class ImageBaseFeature(BaseFeature):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_image_path = dataset_df[feature['name']][0]
-        if csv_path is None and not os.path.isabs(first_image_path):
+        # this is not super nice, but works both and DFs and lists
+        first_path = '.'
+        for first_path in dataset_df[feature['name']]:
+            break
+
+        if csv_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
 
-        first_image_path = get_abs_path(csv_path, first_image_path)
+        first_path = get_abs_path(csv_path, first_path)
 
         (
             should_resize,
@@ -266,7 +270,7 @@ class ImageBaseFeature(BaseFeature):
             user_specified_num_channels,
             first_image
         ) = ImageBaseFeature._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_image_path
+            preprocessing_parameters, first_path
         )
 
         metadata[feature['name']]['preprocessing']['height'] = height
@@ -301,7 +305,7 @@ class ImageBaseFeature(BaseFeature):
             # standard code anyway.
             if num_processes > 1 or num_images > 1:
                 with Pool(num_processes) as pool:
-                    logger.warning(
+                    logger.debug(
                         'Using {} processes for preprocessing images'.format(
                             num_processes
                         )
@@ -309,11 +313,12 @@ class ImageBaseFeature(BaseFeature):
                     data[feature['name']] = np.array(
                         pool.map(read_image_and_resize, all_file_paths)
                     )
-            # If we're not running multiple processes and we are only processing one
-            # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+
             else:
-                logger.warning(
-                        'No process pool initialized. Using one process for preprocessing images'
+                # If we're not running multiple processes and we are only processing one
+                # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+                logger.debug(
+                    'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])
                 data[feature['name']] = np.array([img])
@@ -339,34 +344,33 @@ class ImageBaseFeature(BaseFeature):
 
 
 class ImageInputFeature(ImageBaseFeature, InputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    height = 0
+    width = 0
+    num_channels = 0
+    scaling = 'pixel_normalization'
+    encoder = 'stacked_cnn'
 
-        self.height = 0
-        self.width = 0
-        self.num_channels = 0
-        self.scaling = 'pixel_normalization'
+    def __init__(self, feature, encoder_obj=None):
+        ImageBaseFeature.__init__(self, feature)
+        InputFeature.__init__(self)
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        self.encoder = 'stacked_cnn'
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.uint8
+        # assert len(inputs.shape) == 1
 
-        encoder_parameters = self.overwrite_defaults(feature)
-
-        self.encoder_obj = self.get_image_encoder(encoder_parameters)
-
-    def get_image_encoder(self, encoder_parameters):
-        return get_from_registry(
-            self.encoder, image_encoder_registry)(
-            **encoder_parameters
+        inputs_encoded = self.encoder_obj(
+            inputs, training=training, mask=mask
         )
 
-    def _get_input_placeholder(self):
-        # None dimension is for dealing with variable batch size
-        return tf.compat.v1.placeholder(
-            tf.float32,
-            shape=[None, self.height, self.width, self.num_channels],
-            name=self.name,
-        )
+        return inputs_encoded
 
+    # keep this here for now until it's refactored
     def build_input(
             self,
             regularizer,
@@ -394,7 +398,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
         )
 
         feature_representation = {
-            'name': self.name,
+            'name': self.feature_name,
             'type': self.type,
             'representation': feature_representation,
             'size': feature_representation_size,
@@ -414,14 +418,15 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
 
     @staticmethod
     def populate_defaults(input_feature):
-        set_default_value(input_feature, 'tied_weights', None)
+        set_default_value(input_feature, TIED, None)
         set_default_value(input_feature, 'preprocessing', {})
 
+    encoder_registry = {
+        'stacked_cnn': Stacked2DCNN,
+        'resnet': ResNetEncoder,
+        None: Stacked2DCNN
+    }
 
-image_encoder_registry = {
-    'stacked_cnn': Stacked2DCNN,
-    'resnet': ResNetEncoder
-}
 
 image_scaling_registry = {
     'pixel_normalization': lambda x: x * 1.0 / 255,

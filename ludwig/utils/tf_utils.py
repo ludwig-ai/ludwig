@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import warnings
+
 import tensorflow as tf
-from tensorflow.compat.v1 import GPUOptions, ConfigProto
+
+_TF_INIT_PARAMS = None
 
 
 def sequence_length_3D(sequence):
@@ -41,45 +44,49 @@ def to_sparse(tensor, lengths, max_length):
     return tf.SparseTensor(indices, values, shape)
 
 
-def get_tf_config(gpus=None, gpu_fraction=1, horovod=None,
-                  allow_parallel_threads=True):
-    intra_op_parallelism_threads = 0  # tf determines automatically
-    inter_op_parallelism_threads = 0  # tf determines automatically
-    if not allow_parallel_threads:
-        # this is needed for reproducibility
-        intra_op_parallelism_threads = 1
-        inter_op_parallelism_threads = 1
+def initialize_tensorflow(gpus=None,
+                          gpu_memory_limit=None,
+                          allow_parallel_threads=True,
+                          horovod=None):
+    global _TF_INIT_PARAMS
+
+    use_horovod = horovod is not None
+    param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
+    if _TF_INIT_PARAMS is not None:
+        if _TF_INIT_PARAMS != param_tuple:
+            warnings.warn(
+                'TensorFlow has already been initialized. Changes to `gpus`, '
+                '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
+                'Start a new Python process to modify these values.')
+        return
+
+    # For reproducivility / determinism, set parallel threads to 1.
+    # For performance, set to 0 to allow TensorFlow to select the best value automatically.
+    tf.config.threading.set_intra_op_parallelism_threads(
+        0 if allow_parallel_threads else 1)
+    tf.config.threading.set_inter_op_parallelism_threads(
+        0 if allow_parallel_threads else 1)
+
+    if horovod is not None and gpus is None:
+        gpus = [horovod.local_rank()]
+
+    if isinstance(gpus, int):
+        gpus = [gpus]
+    elif isinstance(gpus, str):
+        gpus = gpus.strip()
+        gpus = [int(g) for g in gpus.split(",")]
 
     if gpus is not None:
-        if gpu_fraction > 0 and gpu_fraction < 1:
-            # this is the source of freezing in tensorflow 1.3.1
-            gpu_options = GPUOptions(
-                per_process_gpu_memory_fraction=gpu_fraction,
-                allow_growth=True)
-        else:
-            gpu_options = GPUOptions(allow_growth=True)
-            # allow_growth=True is needed for a weird behavior with CUDA 10
-            # https://github.com/tensorflow/tensorflow/issues/24828
-        if isinstance(gpus, int):
-            gpus = [gpus]
-        gpu_options.visible_device_list = ','.join(str(g) for g in gpus)
-        tf_config = ConfigProto(
-            allow_soft_placement=True,
-            log_device_placement=False,
-            intra_op_parallelism_threads=intra_op_parallelism_threads,
-            inter_op_parallelism_threads=inter_op_parallelism_threads,
-            gpu_options=gpu_options
-        )
-    else:
-        tf_config = ConfigProto(
-            allow_soft_placement=True,
-            log_device_placement=False,
-            intra_op_parallelism_threads=intra_op_parallelism_threads,
-            inter_op_parallelism_threads=inter_op_parallelism_threads,
-            gpu_options=GPUOptions(allow_growth=True)
-        )
+        gpu_devices = tf.config.list_physical_devices('GPU')
+        for gpu in gpu_devices:
+            tf.config.experimental.set_memory_growth(gpu, True)
+            if gpu_memory_limit is not None:
+                tf.config.set_logical_device_configuration(
+                    gpu,
+                    [tf.config.LogicalDeviceConfiguration(
+                        memory_limit=gpu_memory_limit)])
+        if gpu_devices:
+            local_devices = [gpu_devices[g] for g in gpus]
+            tf.config.set_visible_devices(local_devices, 'GPU')
 
-    if horovod is not None:
-        tf_config.gpu_options.visible_device_list = str(horovod.local_rank())
-
-    return tf_config
+    _TF_INIT_PARAMS = param_tuple

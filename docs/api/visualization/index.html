@@ -1,47 +1,70 @@
 
 
 
+
 <!doctype html>
 <html lang="en" class="no-js">
   <head>
-    
+
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
-      
-        <meta name="description" content="Deep learning toolbox">
-      
-      
-        <link rel="canonical" href="https://uber.github.io/ludwig/api/visualization/">
+      <meta content="ie=edge" http-equiv="x-ua-compatible">
+
+      <meta content="Deep learning toolbox" name="description">
 
 
-      <meta name="author" content="Piero Molino">
+      <link href="https://uber.github.io/ludwig/api/visualization/" rel="canonical">
+
+
+      <meta content="Piero Molino" name="author">
+
+
+      <meta content="Copy to clipboard" name="lang:clipboard.copy">
+
+      <meta content="Copied to clipboard" name="lang:clipboard.copied">
+
+      <meta content="en" name="lang:search.language">
+
+      <meta content="True" name="lang:search.pipeline.stopwords">
+
+      <meta content="True" name="lang:search.pipeline.trimmer">
+
+      <meta content="No matching documents" name="lang:search.result.none">
+
+      <meta content="1 matching document" name="lang:search.result.one">
+
+      <meta content="# matching documents" name="lang:search.result.other">
+
+      <meta content="[\s\-]+" name="lang:search.tokenizer">
 
       <link rel="shortcut icon" href="../../favicon.ico">
-      <meta content="mkdocs-1.1, mkdocs-material-5.0.2" name="generator">
+      <meta content="mkdocs-1.0.4, mkdocs-material-4.6.0" name="generator">
 
 
       <title>Visualization - Ludwig</title>
 
 
-      <link href="../../assets/stylesheets/main.07c9fbf5.min.css"
+      <link href="../../assets/stylesheets/application.1b62728e.css" rel="stylesheet">
+
+      <link href="../../assets/stylesheets/application-palette.a8b3c06d.css" rel="stylesheet">
+
+
+      <meta content="#757575" name="theme-color">
+
+
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+
+
+      <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback"
             rel="stylesheet">
+      <style>
+          body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}
 
-      <link href="../../assets/stylesheets/palette.ecd4686e.min.css"
-            rel="stylesheet">
-
-
-      <meta name="theme-color" content="#757575">
+      </style>
 
 
-      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-      <style>body, input {
-          font-family: "Roboto", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif
-      }
-
-      code, kbd, pre {
-          font-family: "Roboto Mono", SFMono-Regular, Consolas, Menlo, monospace
-      }</style>
+      <link href="../../assets/fonts/material-icons.css" rel="stylesheet">
 
 
       <link rel="stylesheet" href="../../stylesheets/extra.css">
@@ -54,160 +77,135 @@
 
   <body data-md-color-accent="grey" data-md-color-primary="grey" dir="ltr">
 
-  <input autocomplete="off" class="md-toggle" data-md-toggle="drawer"
-         id="__drawer" type="checkbox">
-  <input autocomplete="off" class="md-toggle" data-md-toggle="search"
-         id="__search" type="checkbox">
-  <label class="md-overlay" for="__drawer"></label>
-  <div data-md-component="skip">
+  <svg class="md-svg">
+      <defs>
 
 
-      <a class="md-skip" href="#module-functions">
-          Skip to content
-      </a>
+          <svg height="448" id="__github" viewBox="0 0 416 448" width="416" xmlns="http://www.w3.org/2000/svg">
+              <path d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"
+                    fill="currentColor"/>
+          </svg>
 
-  </div>
-  <div data-md-component="announce">
+      </defs>
+  </svg>
+  <input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox">
+  <input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox">
+  <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
 
-  </div>
+  <a class="md-skip" href="#learning_curves" tabindex="1">
+      Skip to content
+  </a>
+
 
   <header class="md-header" data-md-component="header">
-      <nav aria-label="Header" class="md-header-nav md-grid">
-          <a aria-label="Ludwig" class="md-header-nav__button md-logo"
-             href="https://uber.github.io/ludwig/" title="Ludwig">
-
-              <img alt="logo" src="../../images/ludwig_logo.svg"
-                   style="height:1rem;width:4rem;">
-
-          </a>
-          <label class="md-header-nav__button md-icon" for="__drawer">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
-              </svg>
-          </label>
-          <div class="md-header-nav__title" data-md-component="header-title">
-
-              <div class="md-header-nav__ellipsis">
-          <span class="md-header-nav__topic md-ellipsis">
-            Ludwig
-          </span>
-                  <span class="md-header-nav__topic md-ellipsis">
-            
-              Visualization
-            
-          </span>
+      <nav class="md-header-nav md-grid">
+          <div class="md-flex">
+              <div class="md-flex__cell md-flex__cell--shrink">
+                  <a class="md-header-nav__button md-logo"
+                     href="https://uber.github.io/ludwig/" title="Ludwig">
+                      <img src="../../images/ludwig_logo.svg" style="height:1.4rem;">
+                  </a>
               </div>
+              <div class="md-flex__cell md-flex__cell--shrink">
+                  <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+              </div>
+              <div class="md-flex__cell md-flex__cell--stretch">
+                  <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+                    
+                    <span class="md-header-nav__topic">
+                    Visualization
+                    </span>
 
-          </div>
+                  </div>
+              </div>
+              <div class="md-flex__cell md-flex__cell--shrink">
 
-          <label class="md-header-nav__button md-icon" for="__search">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
-              </svg>
-          </label>
 
-          <div class="md-search" data-md-component="search" role="dialog">
-              <label class="md-search__overlay" for="__search"></label>
-              <div class="md-search__inner" role="search">
-                  <form class="md-search__form" name="search">
-                      <input aria-label="Search" autocapitalize="off"
-                             autocomplete="off" autocorrect="off"
-                             class="md-search__input"
-                             data-md-component="search-query"
-                             data-md-state="active" name="query"
-                             placeholder="Search" spellcheck="false"
-                             type="text">
-                      <label class="md-search__icon md-icon" for="__search">
-                          <svg viewBox="0 0 24 24"
-                               xmlns="http://www.w3.org/2000/svg">
-                              <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
-                          </svg>
-                          <svg viewBox="0 0 24 24"
-                               xmlns="http://www.w3.org/2000/svg">
-                              <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
-                          </svg>
-                      </label>
-                      <button aria-label="Clear" class="md-search__icon md-icon"
-                              data-md-component="search-reset" tabindex="-1"
-                              type="reset">
-                          <svg viewBox="0 0 24 24"
-                               xmlns="http://www.w3.org/2000/svg">
-                              <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-                          </svg>
-                      </button>
-                  </form>
-                  <div class="md-search__output">
-                      <div class="md-search__scrollwrap" data-md-scrollfix>
-                          <div class="md-search-result"
-                               data-md-component="search-result">
-                              <div class="md-search-result__meta">
-                                  Type to start searching
+                  <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+
+                  <div class="md-search" data-md-component="search" role="dialog">
+                      <label class="md-search__overlay" for="__search"></label>
+                      <div class="md-search__inner" role="search">
+                          <form class="md-search__form" name="search">
+                              <input autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input"
+                                     data-md-component="query" data-md-state="active" name="query" placeholder="Search"
+                                     spellcheck="false" type="text">
+                              <label class="md-icon md-search__icon" for="__search"></label>
+                              <button class="md-icon md-search__icon" data-md-component="reset" tabindex="-1"
+                                      type="reset">
+                                  &#xE5CD;
+                              </button>
+                          </form>
+                          <div class="md-search__output">
+                              <div class="md-search__scrollwrap" data-md-scrollfix>
+                                  <div class="md-search-result" data-md-component="result">
+                                      <div class="md-search-result__meta">
+                                          Type to start searching
+                                      </div>
+                                      <ol class="md-search-result__list"></ol>
+                                  </div>
                               </div>
-                              <ol class="md-search-result__list"></ol>
                           </div>
                       </div>
                   </div>
+
+
               </div>
-          </div>
+
+              <div class="md-flex__cell md-flex__cell--shrink">
+                  <div class="md-header-nav__source">
 
 
-          <div class="md-header-nav__source">
+                      <a class="md-source" data-md-source="github" href="https://github.com/uber/ludwig/"
+                         title="Go to repository">
 
-              <a class="md-source" href="https://github.com/uber/ludwig/"
-                 title="Go to repository">
-                  <div class="md-source__icon md-icon">
+                          <div class="md-source__icon">
+                              <svg height="24" viewBox="0 0 24 24" width="24">
+                                  <use height="24" width="24" xlink:href="#__github"></use>
+                              </svg>
+                          </div>
 
-                      <svg viewBox="0 0 448 512"
-                           xmlns="http://www.w3.org/2000/svg">
-                          <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
-                      </svg>
+                          <div class="md-source__repository">
+                              uber/ludwig
+                          </div>
+                      </a>
                   </div>
-                  <div class="md-source__repository">
-                      uber/ludwig
-                  </div>
-              </a>
-          </div>
+              </div>
 
+          </div>
       </nav>
   </header>
 
-  <div class="md-container" data-md-component="container">
+  <div class="md-container">
 
 
-      <main class="md-main" data-md-component="main">
-          <div class="md-main__inner md-grid">
+      <main class="md-main" role="main">
+          <div class="md-main__inner md-grid" data-md-component="container">
 
 
-              <div class="md-sidebar md-sidebar--primary"
-                   data-md-component="navigation">
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
                   <div class="md-sidebar__scrollwrap">
                       <div class="md-sidebar__inner">
-                          <nav aria-label="Navigation"
-                               class="md-nav md-nav--primary"
-                               data-md-level="0">
-                              <label class="md-nav__title" for="__drawer">
-                                  <a aria-label="Ludwig"
-                                     class="md-nav__button md-logo"
-                                     href="https://uber.github.io/ludwig/"
+                          <nav class="md-nav md-nav--primary" data-md-level="0">
+                              <label class="md-nav__title md-nav__title--site" for="__drawer">
+                                  <a class="md-nav__button md-logo" href="https://uber.github.io/ludwig/"
                                      title="Ludwig">
-                                      <img alt="logo"
-                                           src="../../images/ludwig_logo.svg"
-                                           style="width:10rem;height:auto;">
+                                      <img src="../../images/ludwig_logo.svg" style="width: 10rem">
                                   </a>
                               </label>
 
                               <div class="md-nav__source">
 
-                                  <a class="md-source"
-                                     href="https://github.com/uber/ludwig/"
-                                     title="Go to repository">
-                                      <div class="md-source__icon md-icon">
 
-                                          <svg viewBox="0 0 448 512"
-                                               xmlns="http://www.w3.org/2000/svg">
-                                              <path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/>
+                                  <a class="md-source" data-md-source="github" href="https://github.com/uber/ludwig/"
+                                     title="Go to repository">
+
+                                      <div class="md-source__icon">
+                                          <svg height="24" viewBox="0 0 24 24" width="24">
+                                              <use height="24" width="24" xlink:href="#__github"></use>
                                           </svg>
                                       </div>
+
                                       <div class="md-source__repository">
                                           uber/ludwig
                                       </div>
@@ -251,57 +249,37 @@
     </a>
   </li>
 
-        
-        
-        
-        
+
+        <li class="md-nav__item">
+            <a href="../../user_guide/" title="User Guide" class="md-nav__link">
+                User Guide
+            </a>
+        </li>
 
 
-  <li class="md-nav__item">
-    <a href="../../user_guide/" title="User Guide" class="md-nav__link">
-      User Guide
-    </a>
-  </li>
-
-        
-        
-        
-        
-
-
-  <li class="md-nav__item">
-    <a href="../../developer_guide/" title="Developer Guide" class="md-nav__link">
-      Developer Guide
-    </a>
-  </li>
+        <li class="md-nav__item">
+            <a class="md-nav__link" href="../../developer_guide/" title="Developer Guide">
+                Developer Guide
+            </a>
+        </li>
 
 
         <li class="md-nav__item md-nav__item--active md-nav__item--nested">
 
-            <input checked class="md-nav__toggle md-toggle"
-                   data-md-toggle="nav-6" id="nav-6" type="checkbox">
+            <input checked class="md-toggle md-nav__toggle" data-md-toggle="nav-6" id="nav-6" type="checkbox">
 
             <label class="md-nav__link" for="nav-6">
                 API
-                <span class="md-nav__icon md-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
-                d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
-      </span>
             </label>
-            <nav aria-label="API" class="md-nav" data-md-level="1">
+            <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
                 <label class="md-nav__title" for="nav-6">
-        <span class="md-nav__icon md-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
-                  d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
-        </span>
                     API
                 </label>
                 <ul class="md-nav__list" data-md-scrollfix>
 
 
                     <li class="md-nav__item">
-                        <a href="../LudwigModel/" title="LudwigModel"
-                           class="md-nav__link">
+                        <a class="md-nav__link" href="../LudwigModel/" title="LudwigModel">
                             LudwigModel
                         </a>
                     </li>
@@ -309,197 +287,166 @@
 
                     <li class="md-nav__item md-nav__item--active">
 
-                        <input class="md-nav__toggle md-toggle"
-                               data-md-toggle="toc" id="__toc" type="checkbox">
+                        <input class="md-toggle md-nav__toggle" data-md-toggle="toc" id="__toc" type="checkbox">
 
 
-                        <label class="md-nav__link md-nav__link--active"
-                               for="__toc">
+                        <label class="md-nav__link md-nav__link--active" for="__toc">
                             Visualization
-                            <span class="md-nav__icon md-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
-                  d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z"/></svg>
-        </span>
                         </label>
 
-                        <a href="./" title="Visualization"
-                           class="md-nav__link md-nav__link--active">
+                        <a class="md-nav__link md-nav__link--active" href="./" title="Visualization">
                             Visualization
                         </a>
 
 
-                        <nav aria-label="Table of contents"
-                             class="md-nav md-nav--secondary">
+                        <nav class="md-nav md-nav--secondary">
 
 
-                            <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
-                d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
-      </span>
-                                Table of contents
-                            </label>
+                            <label class="md-nav__title" for="__toc">Table of contents</label>
                             <ul class="md-nav__list" data-md-scrollfix>
 
                                 <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#module-functions">
-                                        Module functions
+                                    <a class="md-nav__link" href="#learning_curves">
+                                        learning_curves
                                     </a>
 
-                                    <nav aria-label="Module functions"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                </li>
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#learning_curves">
-                                                    learning_curves
-                                                </a>
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_performance">
+                                        compare_performance
+                                    </a>
 
-                                            </li>
+                                </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#compare_performance"
-                                                   class="md-nav__link">
-                                                    compare_performance
-                                                </a>
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_from_prob">
+                                        compare_classifiers_performance_from_prob
+                                    </a>
 
-                                            </li>
+                                </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#compare_classifiers_performance_from_prob"
-                                                   class="md-nav__link">
-                                                    compare_classifiers_performance_from_prob
-                                                </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_from_pred" class="md-nav__link">
-    compare_classifiers_performance_from_pred
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_subset" class="md-nav__link">
-    compare_classifiers_performance_subset
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_changing_k" class="md-nav__link">
-    compare_classifiers_performance_changing_k
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_multiclass_multimetric" class="md-nav__link">
-    compare_classifiers_multiclass_multimetric
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_predictions" class="md-nav__link">
-    compare_classifiers_predictions
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_2d" class="md-nav__link">
-    confidence_thresholding_2thresholds_2d
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_3d" class="md-nav__link">
-    confidence_thresholding_2thresholds_3d
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding" class="md-nav__link">
-    confidence_thresholding
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
-    confidence_thresholding_data_vs_acc
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc_subset" class="md-nav__link">
-    confidence_thresholding_data_vs_acc_subset
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#binary_threshold_vs_metric" class="md-nav__link">
-    binary_threshold_vs_metric
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#roc_curves" class="md-nav__link">
-    roc_curves
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#roc_curves_from_test_statistics" class="md-nav__link">
-    roc_curves_from_test_statistics
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#calibration_1_vs_all" class="md-nav__link">
-    calibration_1_vs_all
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#calibration_multiclass" class="md-nav__link">
-    calibration_multiclass
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confusion_matrix" class="md-nav__link">
-    confusion_matrix
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#frequency_vs_f1" class="md-nav__link">
-    frequency_vs_f1
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_from_pred">
+                                        compare_classifiers_performance_from_pred
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_subset">
+                                        compare_classifiers_performance_subset
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_performance_changing_k">
+                                        compare_classifiers_performance_changing_k
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_multiclass_multimetric">
+                                        compare_classifiers_multiclass_multimetric
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#compare_classifiers_predictions">
+                                        compare_classifiers_predictions
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_2thresholds_2d">
+                                        confidence_thresholding_2thresholds_2d
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_2thresholds_3d">
+                                        confidence_thresholding_2thresholds_3d
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding">
+                                        confidence_thresholding
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_data_vs_acc">
+                                        confidence_thresholding_data_vs_acc
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confidence_thresholding_data_vs_acc_subset">
+                                        confidence_thresholding_data_vs_acc_subset
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#binary_threshold_vs_metric">
+                                        binary_threshold_vs_metric
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#roc_curves">
+                                        roc_curves
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#roc_curves_from_test_statistics">
+                                        roc_curves_from_test_statistics
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#calibration_1_vs_all">
+                                        calibration_1_vs_all
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#calibration_multiclass">
+                                        calibration_multiclass
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#confusion_matrix">
+                                        confusion_matrix
+                                    </a>
+
+                                </li>
+
+                                <li class="md-nav__item">
+                                    <a class="md-nav__link" href="#frequency_vs_f1">
+                                        frequency_vs_f1
+                                    </a>
+
+                                </li>
+
+
+                            </ul>
   
 </nav>
     
@@ -528,188 +475,164 @@
                   </div>
                 </div>
               </div>
-            
-            
+
+
               <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                    <div class="md-sidebar__inner">
+                  <div class="md-sidebar__scrollwrap">
+                      <div class="md-sidebar__inner">
 
-                        <nav aria-label="Table of contents"
-                             class="md-nav md-nav--secondary">
+                          <nav class="md-nav md-nav--secondary">
 
 
-                            <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path
-                d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/></svg>
-      </span>
-                                Table of contents
-                            </label>
-                            <ul class="md-nav__list" data-md-scrollfix>
+                              <label class="md-nav__title" for="__toc">Table of contents</label>
+                              <ul class="md-nav__list" data-md-scrollfix>
 
-                                <li class="md-nav__item">
-                                    <a class="md-nav__link"
-                                       href="#module-functions">
-                                        Module functions
-                                    </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#learning_curves">
+                                          learning_curves
+                                      </a>
 
-                                    <nav aria-label="Module functions"
-                                         class="md-nav">
-                                        <ul class="md-nav__list">
+                                  </li>
 
-                                            <li class="md-nav__item">
-                                                <a class="md-nav__link"
-                                                   href="#learning_curves">
-                                                    learning_curves
-                                                </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#compare_performance">
+                                          compare_performance
+                                      </a>
 
-                                            </li>
+                                  </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#compare_performance"
-                                                   class="md-nav__link">
-                                                    compare_performance
-                                                </a>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#compare_classifiers_performance_from_prob">
+                                          compare_classifiers_performance_from_prob
+                                      </a>
 
-                                            </li>
+                                  </li>
 
-                                            <li class="md-nav__item">
-                                                <a href="#compare_classifiers_performance_from_prob"
-                                                   class="md-nav__link">
-                                                    compare_classifiers_performance_from_prob
-                                                </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_from_pred" class="md-nav__link">
-    compare_classifiers_performance_from_pred
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_subset" class="md-nav__link">
-    compare_classifiers_performance_subset
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_performance_changing_k" class="md-nav__link">
-    compare_classifiers_performance_changing_k
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_multiclass_multimetric" class="md-nav__link">
-    compare_classifiers_multiclass_multimetric
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compare_classifiers_predictions" class="md-nav__link">
-    compare_classifiers_predictions
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_2d" class="md-nav__link">
-    confidence_thresholding_2thresholds_2d
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_2thresholds_3d" class="md-nav__link">
-    confidence_thresholding_2thresholds_3d
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding" class="md-nav__link">
-    confidence_thresholding
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc" class="md-nav__link">
-    confidence_thresholding_data_vs_acc
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confidence_thresholding_data_vs_acc_subset" class="md-nav__link">
-    confidence_thresholding_data_vs_acc_subset
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#binary_threshold_vs_metric" class="md-nav__link">
-    binary_threshold_vs_metric
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#roc_curves" class="md-nav__link">
-    roc_curves
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#roc_curves_from_test_statistics" class="md-nav__link">
-    roc_curves_from_test_statistics
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#calibration_1_vs_all" class="md-nav__link">
-    calibration_1_vs_all
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#calibration_multiclass" class="md-nav__link">
-    calibration_multiclass
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#confusion_matrix" class="md-nav__link">
-    confusion_matrix
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#frequency_vs_f1" class="md-nav__link">
-    frequency_vs_f1
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#compare_classifiers_performance_from_pred">
+                                          compare_classifiers_performance_from_pred
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#compare_classifiers_performance_subset">
+                                          compare_classifiers_performance_subset
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#compare_classifiers_performance_changing_k">
+                                          compare_classifiers_performance_changing_k
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#compare_classifiers_multiclass_multimetric">
+                                          compare_classifiers_multiclass_multimetric
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#compare_classifiers_predictions">
+                                          compare_classifiers_predictions
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#confidence_thresholding_2thresholds_2d">
+                                          confidence_thresholding_2thresholds_2d
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#confidence_thresholding_2thresholds_3d">
+                                          confidence_thresholding_2thresholds_3d
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#confidence_thresholding">
+                                          confidence_thresholding
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#confidence_thresholding_data_vs_acc">
+                                          confidence_thresholding_data_vs_acc
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#confidence_thresholding_data_vs_acc_subset">
+                                          confidence_thresholding_data_vs_acc_subset
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#binary_threshold_vs_metric">
+                                          binary_threshold_vs_metric
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#roc_curves">
+                                          roc_curves
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#roc_curves_from_test_statistics">
+                                          roc_curves_from_test_statistics
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#calibration_1_vs_all">
+                                          calibration_1_vs_all
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#calibration_multiclass">
+                                          calibration_multiclass
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#confusion_matrix">
+                                          confusion_matrix
+                                      </a>
+
+                                  </li>
+
+                                  <li class="md-nav__item">
+                                      <a class="md-nav__link" href="#frequency_vs_f1">
+                                          frequency_vs_f1
+                                      </a>
+
+                                  </li>
+
+
+                              </ul>
+
+                          </nav>
+                      </div>
                   </div>
-                </div>
               </div>
 
 
@@ -717,75 +640,79 @@
                   <article class="md-content__inner md-typeset">
 
 
-                      <a class="md-content__button md-icon"
+                      <a class="md-icon md-content__icon"
                          href="https://github.com/uber/ludwig/edit/master/mkdocs/docs/api/visualization.md"
-                         title="Edit this page">
-                          <svg viewBox="0 0 24 24"
-                               xmlns="http://www.w3.org/2000/svg">
-                              <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
-                          </svg>
-                      </a>
+                         title="Edit this page">&#xE3C9;</a>
 
 
                       <h1>Visualization</h1>
 
-                      <h2 id="module-functions">Module functions<a
-                              class="headerlink" href="#module-functions"
-                              title="Permanent link">&para;</a></h2>
-                      <hr/>
-                      <h3 id="learning_curves">learning_curves<a
-                              class="headerlink" href="#learning_curves"
-                              title="Permanent link">&para;</a></h3>
-                      <div class="codehilite"><pre><span></span><code><span
-                              class="n">ludwig</span><span
+                      <h3 id="learning_curves">learning_curves<a class="headerlink" href="#learning_curves"
+                                                                 title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
                               class="o">.</span><span class="n">visualize</span><span
-                              class="o">.</span><span
-                              class="n">learning_curves</span><span
-                              class="p">(</span>
+                              class="o">.</span><span class="n">learning_curves</span><span class="p">(</span>
   <span class="n">train_stats_per_model</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span
                                   class="p">,</span>
   <span class="n">output_directory</span><span class="o">=</span><span
-                                  class="kc">None</span><span class="p">,</span>
+                                  class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre>
+</pre>
                       </div>
 
 
-                      <p>Show how model measures change over training and
-                          validation data epochs.</p>
-<p>For each model and for each output feature and measure of the model,
-it produces a line plot showing how that measure changed over the course
-of the epochs of training on the training and validation sets.</p>
-<p><strong>Inputs</strong></p>
-<ul>
-<li><strong>train_stats_per_model</strong> (list): List containing train statistics per model</li>
-<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted
-   and for which is provided ground truth</li>
-<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
-</ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="compare_performance">compare_performance<a class="headerlink" href="#compare_performance" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_performance</span><span class="p">(</span>
+                      <p>Show how model metrics change over training and validation
+                          data epochs.</p>
+                      <p>For each model and for each output feature and metric of the
+                          model,
+                          it produces a line plot showing how that metric changed over
+                          the course
+                          of the epochs of training on the training and validation
+                          sets.</p>
+                      <p><strong>Inputs</strong></p>
+                      <ul>
+                          <li><strong>train_stats_per_model</strong> (list): List
+                              containing train statistics per model
+                          </li>
+                          <li><strong>output_feature_name</strong> (string): Name of
+                              the output feature that is predicted
+                              and for which is provided ground truth
+                          </li>
+                          <li><strong>model_names</strong> (list, default: None): List
+                              of the names of the models to use as labels.
+                          </li>
+                          <li><strong>output_directory</strong> (string, default:
+                              None): Directory where to save plots.
+                              If not specified, plots will be displayed in a window
+                          </li>
+                          <li><strong>file_format</strong> (string, default: 'pdf'):
+                              File format of output plots - pdf or png
+                          </li>
+                      </ul>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="compare_performance">compare_performance<a class="headerlink" href="#compare_performance"
+                                                                         title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_performance</span><span
+                              class="p">(</span>
   <span class="n">test_stats_per_model</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Produces model comparision barplot visualization for each overall metric</p>
+                      <p>Produces model comparision barplot visualization for each overall metric</p>
 <p>For each model (in the aligned lists of test_statistics and model_names)
 it produces bars in a bar plot, one for each overall metric available
 in the test_statistics file for the specified output_feature_name.</p>
@@ -794,26 +721,32 @@ in the test_statistics file for the specified output_feature_name.</p>
 <li><strong>test_stats_per_model</strong> (list): List containing train statistics per model</li>
 <li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="compare_classifiers_performance_from_prob">compare_classifiers_performance_from_prob<a class="headerlink" href="#compare_classifiers_performance_from_prob" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_from_prob</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="compare_classifiers_performance_from_prob">compare_classifiers_performance_from_prob<a
+                              class="headerlink" href="#compare_classifiers_performance_from_prob"
+                              title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_from_prob</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">top_n_classes</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Produces model comparision barplot visualization from probabilities.</p>
@@ -828,27 +761,33 @@ output_feature_name.</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="compare_classifiers_performance_from_pred">compare_classifiers_performance_from_pred<a class="headerlink" href="#compare_classifiers_performance_from_pred" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_from_pred</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="compare_classifiers_performance_from_pred">compare_classifiers_performance_from_pred<a
+                              class="headerlink" href="#compare_classifiers_performance_from_pred"
+                              title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_from_pred</span><span
+                              class="p">(</span>
   <span class="n">predictions_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">metadata</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Produces model comparision barplot visualization from predictions.</p>
@@ -864,27 +803,36 @@ computed on the fly from the predictions for the specified output_feature_name.<
 <li><strong>labels_limit</strong> (labels_limit: Maximum numbers of labels):labels_limit: Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (model_names: List of the names of the models to use as labels):model_names: List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (output_directory: Directory where to save plots):output_directory: Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (file_format: File format of output plots - pdf or p):file_format: File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (output_directory: Directory where to save plots):output_directory: Directory
+        where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (file_format: File format of output plots - pdf or p):file_format: File format of
+        output plots - pdf or png
+    </li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="compare_classifiers_performance_subset">compare_classifiers_performance_subset<a class="headerlink" href="#compare_classifiers_performance_subset" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_subset</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="compare_classifiers_performance_subset">compare_classifiers_performance_subset<a
+                              class="headerlink" href="#compare_classifiers_performance_subset" title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_subset</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">top_n_classes</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
   <span class="n">subset</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Produces model comparision barplot visualization from train subset.</p>
@@ -901,60 +849,91 @@ subset parameters.</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.</li>
 <li><strong>subset</strong> (): Type of the subset filtering</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-    If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="compare_classifiers_performance_changing_k">compare_classifiers_performance_changing_k<a class="headerlink" href="#compare_classifiers_performance_changing_k" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_changing_k</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="compare_classifiers_performance_changing_k">compare_classifiers_performance_changing_k<a
+                              class="headerlink" href="#compare_classifiers_performance_changing_k"
+                              title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_performance_changing_k</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">top_k</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span
+                                  class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span
+                                  class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Produce lineplot that show Hits@K measure while k goes from 1 to top_k.</p>
-<p>For each model it produces a line plot that shows the Hits@K measure
-(that counts a prediction as correct if the model produces it among the
-first k) while changing k from 1 to top_k for the specified output_feature_name.</p>
-<p><strong>Inputs</strong></p>
-<ul>
-<li><strong>probabilities_per_model</strong> (list): List of model probabilities</li>
-<li><strong>ground_truth</strong> (ndarray): NumPy Array containing ground truth data</li>
-<li><strong>top_k</strong> (int): Number of elements in the ranklist to consider</li>
-<li><strong>labels_limit</strong> (int): Maximum numbers of labels.
-     If labels in dataset are higher than this number, "rare" label</li>
-<li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
-</ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="compare_classifiers_multiclass_multimetric">compare_classifiers_multiclass_multimetric<a class="headerlink" href="#compare_classifiers_multiclass_multimetric" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_multiclass_multimetric</span><span class="p">(</span>
+                      <p>Produce lineplot that show Hits@K metric while k goes from 1
+                          to top_k.</p>
+                      <p>For each model it produces a line plot that shows the Hits@K
+                          metric
+                          (that counts a prediction as correct if the model produces
+                          it among the
+                          first k) while changing k from 1 to top_k for the specified
+                          output_feature_name.</p>
+                      <p><strong>Inputs</strong></p>
+                      <ul>
+                          <li><strong>probabilities_per_model</strong> (list): List of
+                              model probabilities
+                          </li>
+                          <li><strong>ground_truth</strong> (ndarray): NumPy Array
+                              containing ground truth data
+                          </li>
+                          <li><strong>top_k</strong> (int): Number of elements in the
+                              ranklist to consider
+                          </li>
+                          <li><strong>labels_limit</strong> (int): Maximum numbers of
+                              labels.
+                              If labels in dataset are higher than this number, "rare"
+                              label
+                          </li>
+                          <li><strong>model_names</strong> (list, default: None): List
+                              of the names of the models to use as labels.
+                          </li>
+                          <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+                              If not specified, plots will be displayed in a window
+                          </li>
+                          <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf
+                              or png
+                          </li>
+                      </ul>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="compare_classifiers_multiclass_multimetric">compare_classifiers_multiclass_multimetric<a
+                              class="headerlink" href="#compare_classifiers_multiclass_multimetric"
+                              title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_multiclass_multimetric</span><span
+                              class="p">(</span>
   <span class="n">test_stats_per_model</span><span class="p">,</span>
   <span class="n">metadata</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
   <span class="n">top_n_classes</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Show the precision, recall and F1 of the model for the specified output_feature_name.</p>
@@ -967,28 +946,35 @@ recall and F1 of the model on several classes for the specified output_feature_n
 <li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
 <li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="compare_classifiers_predictions">compare_classifiers_predictions<a class="headerlink" href="#compare_classifiers_predictions" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_predictions</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="compare_classifiers_predictions">compare_classifiers_predictions<a class="headerlink"
+                                                                                                 href="#compare_classifiers_predictions"
+                                                                                                 title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">compare_classifiers_predictions</span><span
+                              class="p">(</span>
   <span class="n">predictions_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Show two models comparision of their output_feature_name predictions.</p>
+                      <p>Show two models comparision of their output_feature_name predictions.</p>
 <p><strong>Inputs</strong></p>
 <ul>
 <li><strong>predictions_per_model</strong> (list): List containing the model predictions</li>
@@ -996,26 +982,32 @@ recall and F1 of the model on several classes for the specified output_feature_n
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="confidence_thresholding_2thresholds_2d">confidence_thresholding_2thresholds_2d<a class="headerlink" href="#confidence_thresholding_2thresholds_2d" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_2thresholds_2d</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="confidence_thresholding_2thresholds_2d">confidence_thresholding_2thresholds_2d<a
+                              class="headerlink" href="#confidence_thresholding_2thresholds_2d" title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_2thresholds_2d</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truths</span><span class="p">,</span>
   <span class="n">threshold_output_feature_names</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Show confidence trethreshold data vs accuracy for two output_feature_name thresholds</p>
@@ -1033,28 +1025,34 @@ coverage  surface projected onto the accuracy surface.</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (string): Name of the model to use as label.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="confidence_thresholding_2thresholds_3d">confidence_thresholding_2thresholds_3d<a class="headerlink" href="#confidence_thresholding_2thresholds_3d" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_2thresholds_3d</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="confidence_thresholding_2thresholds_3d">confidence_thresholding_2thresholds_3d<a
+                              class="headerlink" href="#confidence_thresholding_2thresholds_3d" title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_2thresholds_3d</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truths</span><span class="p">,</span>
   <span class="n">threshold_output_feature_names</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Show 3d confidence trethreshold data vs accuracy for two output_feature_name thresholds</p>
+                      <p>Show 3d confidence trethreshold data vs accuracy for two output_feature_name thresholds</p>
 <p>The plot shows the 3d surfaces displayed by
 confidence_thresholding_2thresholds_3d that have thresholds on the
 confidence of the predictions of the two threshold_output_feature_names as x and y axes
@@ -1066,28 +1064,34 @@ and either the data coverage percentage or the accuracy as z axis.</p>
 <li><strong>threshold_output_feature_names</strong> (list): List of output_feature_names for 2d threshold</li>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="confidence_thresholding">confidence_thresholding<a class="headerlink" href="#confidence_thresholding" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="confidence_thresholding">confidence_thresholding<a class="headerlink"
+                                                                                 href="#confidence_thresholding"
+                                                                                 title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Show models accuracy and data coverage while increasing treshold</p>
+                      <p>Show models accuracy and data coverage while increasing treshold</p>
 <p>For each model it produces a pair of lines indicating the accuracy of
 the model and the data coverage while increasing a threshold (x axis) on
 the probabilities of predictions for the specified output_feature_name.</p>
@@ -1098,28 +1102,34 @@ the probabilities of predictions for the specified output_feature_name.</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (sting): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (sting): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="confidence_thresholding_data_vs_acc">confidence_thresholding_data_vs_acc<a class="headerlink" href="#confidence_thresholding_data_vs_acc" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_data_vs_acc</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="confidence_thresholding_data_vs_acc">confidence_thresholding_data_vs_acc<a
+                              class="headerlink" href="#confidence_thresholding_data_vs_acc" title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_data_vs_acc</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Show models comparision of confidence treshold data vs accuracy.</p>
+                      <p>Show models comparision of confidence treshold data vs accuracy.</p>
 <p>For each model it produces a line indicating the accuracy of the model
 and the data coverage while increasing a threshold on the probabilities
 of predictions for the specified output_feature_name. The difference with
@@ -1133,27 +1143,33 @@ the threshold.</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="confidence_thresholding_data_vs_acc_subset">confidence_thresholding_data_vs_acc_subset<a class="headerlink" href="#confidence_thresholding_data_vs_acc_subset" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_data_vs_acc_subset</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="confidence_thresholding_data_vs_acc_subset">confidence_thresholding_data_vs_acc_subset<a
+                              class="headerlink" href="#confidence_thresholding_data_vs_acc_subset"
+                              title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confidence_thresholding_data_vs_acc_subset</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">top_n_classes</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
   <span class="n">subset</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Show models comparision of confidence treshold data vs accuracy on a
@@ -1182,26 +1198,33 @@ will be displayed for each model.</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.</li>
 <li><strong>subset</strong> (string): Type of the subset filtering</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="binary_threshold_vs_metric">binary_threshold_vs_metric<a class="headerlink" href="#binary_threshold_vs_metric" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">binary_threshold_vs_metric</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="binary_threshold_vs_metric">binary_threshold_vs_metric<a class="headerlink"
+                                                                                       href="#binary_threshold_vs_metric"
+                                                                                       title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">binary_threshold_vs_metric</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">metrics</span><span class="p">,</span>
   <span class="n">positive_label</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Show confidence of the model against metric for the specified output_feature_name.</p>
@@ -1221,28 +1244,33 @@ JSON file.</p>
             accuracy)</li>
 <li><strong>positive_label</strong> (string): Label of the positive class</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="roc_curves">roc_curves<a class="headerlink" href="#roc_curves" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">roc_curves</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="roc_curves">roc_curves<a class="headerlink" href="#roc_curves" title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">roc_curves</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">positive_label</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Show the roc curves for the specified models output output_feature_name.</p>
+                      <p>Show the roc curves for the specified models output output_feature_name.</p>
 <p>This visualization produces a line chart plotting the roc curves for the
 specified output_feature_name. If output_feature_name is a category feature, positive_label indicates
 which is the class to be considered positive class and all the others will
@@ -1255,27 +1283,34 @@ JSON file.</p>
 <li><strong>ground_truth</strong> (list): List of NumPy Arrays containing ground truth data</li>
 <li><strong>positive_label</strong> (string): Label of the positive class</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink" href="#roc_curves_from_test_statistics" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">roc_curves_from_test_statistics</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="roc_curves_from_test_statistics">roc_curves_from_test_statistics<a class="headerlink"
+                                                                                                 href="#roc_curves_from_test_statistics"
+                                                                                                 title="Permanent link">&para;</a>
+                      </h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">roc_curves_from_test_statistics</span><span
+                              class="p">(</span>
   <span class="n">test_stats_per_model</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Show the roc curves for the specified models output binary output_feature_name.</p>
+                      <p>Show the roc curves for the specified models output binary output_feature_name.</p>
 <p>This visualization uses the output_feature_name, test_statistics and model_names
 parameters. output_feature_name needs to be binary feature. This visualization produces a
 line chart plotting the roc curves for the specified output_feature_name.</p>
@@ -1284,26 +1319,32 @@ line chart plotting the roc curves for the specified output_feature_name.</p>
 <li><strong>test_stats_per_model</strong> (list): List containing train statistics per model</li>
 <li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="calibration_1_vs_all">calibration_1_vs_all<a class="headerlink" href="#calibration_1_vs_all" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">calibration_1_vs_all</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="calibration_1_vs_all">calibration_1_vs_all<a class="headerlink"
+                                                                           href="#calibration_1_vs_all"
+                                                                           title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">calibration_1_vs_all</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">top_n_classes</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Show models probability of predictions for the specified output_feature_name.</p>
@@ -1326,28 +1367,34 @@ probabilities and model_names).</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>String</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="calibration_multiclass">calibration_multiclass<a class="headerlink" href="#calibration_multiclass" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">calibration_multiclass</span><span class="p">(</span>
+                      <p><strong>String</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="calibration_multiclass">calibration_multiclass<a class="headerlink"
+                                                                               href="#calibration_multiclass"
+                                                                               title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">calibration_multiclass</span><span
+                              class="p">(</span>
   <span class="n">probabilities_per_model</span><span class="p">,</span>
   <span class="n">ground_truth</span><span class="p">,</span>
   <span class="n">labels_limit</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
-<p>Show models probability of predictions for each class of the the
+                      <p>Show models probability of predictions for each class of the the
 specified output_feature_name.</p>
 <p><strong>Inputs</strong></p>
 <ul>
@@ -1356,27 +1403,32 @@ specified output_feature_name.</p>
 <li><strong>labels_limit</strong> (int): Maximum numbers of labels.
      If labels in dataset are higher than this number, "rare" label</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="confusion_matrix">confusion_matrix<a class="headerlink" href="#confusion_matrix" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confusion_matrix</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="confusion_matrix">confusion_matrix<a class="headerlink" href="#confusion_matrix"
+                                                                   title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">confusion_matrix</span><span
+                              class="p">(</span>
   <span class="n">test_stats_per_model</span><span class="p">,</span>
   <span class="n">metadata</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
   <span class="n">top_n_classes</span><span class="p">,</span>
   <span class="n">normalize</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Show confision matrix in the models predictions for each output_feature_name.</p>
@@ -1392,59 +1444,64 @@ top_n_classes limits the heatmap to the n most frequent classes.</p>
 <li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
 <li><strong>normalize</strong> (bool): Flag to normalize rows in confusion matrix</li>
 <li><strong>model_names</strong> (list, default: None): List of the names of the models to use as labels.</li>
-<li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
-     If not specified, plots will be displayed in a window</li>
-<li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
+    <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+        If not specified, plots will be displayed in a window
+    </li>
+    <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf or png</li>
 </ul>
-<p><strong>Return</strong></p>
-<ul>
-<li><strong>return</strong> (None):</li>
-</ul>
-<hr />
-<h3 id="frequency_vs_f1">frequency_vs_f1<a class="headerlink" href="#frequency_vs_f1" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code><span class="n">ludwig</span><span class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">frequency_vs_f1</span><span class="p">(</span>
+                      <p><strong>Return</strong></p>
+                      <ul>
+                          <li><strong>return</strong> (None):</li>
+                      </ul>
+                      <hr/>
+                      <h3 id="frequency_vs_f1">frequency_vs_f1<a class="headerlink" href="#frequency_vs_f1"
+                                                                 title="Permanent link">&para;</a></h3>
+                      <div class="codehilite"><pre><span></span><span class="n">ludwig</span><span
+                              class="o">.</span><span class="n">visualize</span><span class="o">.</span><span class="n">frequency_vs_f1</span><span
+                              class="p">(</span>
   <span class="n">test_stats_per_model</span><span class="p">,</span>
   <span class="n">metadata</span><span class="p">,</span>
   <span class="n">output_feature_name</span><span class="p">,</span>
   <span class="n">top_n_classes</span><span class="p">,</span>
-  <span class="n">model_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-  <span class="n">output_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+  <span class="n">model_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+  <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
   <span class="n">file_format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span>
 <span class="p">)</span>
-</code></pre></div>
+</pre>
+                      </div>
 
 
 <p>Show prediction statistics for the specified output_feature_name for each model.</p>
 <p>For each model (in the aligned lists of test_statistics and model_names),
 produces two plots statistics of predictions for the specified output_feature_name.</p>
-<p>The first plot is a line plot with one x axis representing the different
-classes and two vertical axes colored in orange and blue respectively.
-The orange one is the frequency of the class and an orange line is plotted
-to show the trend. The blue one is the F1 score for that class and a blue
-line is plotted to show the trend. The classes on the x axis are sorted by
-f1 score.
-The second plot has the same structure of the first one,
-but the axes are flipped and the classes on the x axis are sorted by
-frequency.</p>
-<p><strong>Inputs</strong></p>
-<ul>
-<li><strong>test_stats_per_model</strong> (list): List containing train statistics per model</li>
-<li><strong>metadata</strong> (dict): Model's input metadata</li>
-<li><strong>output_feature_name</strong> (string): Name of the output feature that is predicted and for which is provided ground truth</li>
-    <li><strong>top_n_classes</strong> (list): List containing the number of
-        classes to plot
-    </li>
-    <li><strong>model_names</strong> (list, default: None): List of the names of
-        the models to use as labels.
-    </li>
-    <li><strong>output_directory</strong> (string, default: None): Directory
-        where to save plots.
-        If not specified, plots will be displayed in a window
-    </li>
-    <li><strong>file_format</strong> (string, default: 'pdf'): File format of
-        output plots - pdf or png
-    </li>
-</ul>
+                      <p>The first plot is a line plot with one x axis representing the different
+                          classes and two vertical axes colored in orange and blue respectively.
+                          The orange one is the frequency of the class and an orange line is plotted
+                          to show the trend. The blue one is the F1 score for that class and a blue
+                          line is plotted to show the trend. The classes on the x axis are sorted by
+                          f1 score.
+                          The second plot has the same structure of the first one,
+                          but the axes are flipped and the classes on the x axis are sorted by
+                          frequency.</p>
+                      <p><strong>Inputs</strong></p>
+                      <ul>
+                          <li><strong>test_stats_per_model</strong> (list): List containing train statistics per model
+                          </li>
+                          <li><strong>metadata</strong> (dict): Model's input metadata</li>
+                          <li><strong>output_feature_name</strong> (string): Name of the output feature that is
+                              predicted and for which is provided ground truth
+                          </li>
+                          <li><strong>top_n_classes</strong> (list): List containing the number of classes to plot</li>
+                          <li><strong>model_names</strong> (list, default: None): List of the names of the models to use
+                              as labels.
+                          </li>
+                          <li><strong>output_directory</strong> (string, default: None): Directory where to save plots.
+                              If not specified, plots will be displayed in a window
+                          </li>
+                          <li><strong>file_format</strong> (string, default: 'pdf'): File format of output plots - pdf
+                              or png
+                          </li>
+                      </ul>
                       <p><strong>Return</strong></p>
                       <ul>
                           <li><strong>return</strong> (None):</li>
@@ -1464,43 +1521,48 @@ frequency.</p>
     <!-- Link to previous and/or next page -->
 
     <div class="md-footer-nav">
-        <nav aria-label="Footer"
-             class="md-footer-nav__inner md-grid">
+        <nav class="md-footer-nav__inner md-grid">
 
-            <a class="md-footer-nav__link md-footer-nav__link--prev"
-               href="../LudwigModel/" rel="prev"
+            <!-- Link to previous page -->
+
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--prev"
+               href="../LudwigModel/"
+               rel="prev"
                title="LudwigModel">
-                <div class="md-footer-nav__button md-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
-                    </svg>
+                <div class="md-flex__cell md-flex__cell--shrink">
+                    <i class="md-icon md-icon--arrow-back
+                    md-footer-nav__button"></i>
                 </div>
-                <div class="md-footer-nav__title">
-                    <div class="md-ellipsis">
-                 <span class="md-footer-nav__direction">
-                   Previous
-                 </span>
-                        LudwigModel
-                    </div>
+                <div class="md-flex__cell md-flex__cell--stretch
+                  md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                LudwigModel
+              </span>
                 </div>
             </a>
 
 
-            <a class="md-footer-nav__link md-footer-nav__link--next"
-               href="../../faq/" rel="next"
+            <!-- Link to next page -->
+
+            <a class="md-flex md-footer-nav__link md-footer-nav__link--next"
+               href="../../faq/"
+               rel="next"
                title="FAQ">
-                <div class="md-footer-nav__title">
-                    <div class="md-ellipsis">
-                 <span class="md-footer-nav__direction">
-                   Next
-                 </span>
-                        FAQ
-                    </div>
+                <div class="md-flex__cell md-flex__cell--stretch
+                  md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                FAQ
+              </span>
                 </div>
-                <div class="md-footer-nav__button md-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"/>
-                    </svg>
+                <div class="md-flex__cell md-flex__cell--shrink">
+                    <i class="md-icon md-icon--arrow-forward
+                    md-footer-nav__button"></i>
                 </div>
             </a>
             
@@ -1536,29 +1598,9 @@ frequency.</p>
 
   </div>
 
-  <script src="../../assets/javascripts/vendor.36cbf620.min.js"></script>
-  <script src="../../assets/javascripts/bundle.00c583dd.min.js"></script>
-  <script id="__lang" type="application/json">{
-      "clipboard.copy": "Copy to clipboard",
-      "clipboard.copied": "Copied to clipboard",
-      "search.config.lang": "en",
-      "search.config.pipeline": "trimmer, stopWordFilter",
-      "search.config.separator": "[\\s\\-]+",
-      "search.result.placeholder": "Type to start searching",
-      "search.result.none": "No matching documents",
-      "search.result.one": "1 matching document",
-      "search.result.other": "# matching documents"
-  }</script>
+  <script src="../../assets/javascripts/application.808e90bb.js"></script>
 
-  <script>
-      app = initialize({
-          base: "../..",
-          features: [],
-          search: Object.assign({
-              worker: "../../assets/javascripts/worker/search.7f7c8775.min.js"
-          }, typeof search !== "undefined" && search)
-      })
-  </script>
+  <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
 
 
   </body>

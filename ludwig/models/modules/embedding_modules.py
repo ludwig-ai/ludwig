@@ -17,6 +17,8 @@ import logging
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
@@ -32,13 +34,13 @@ def embedding_matrix(
         pretrained_embeddings=None,
         force_embedding_size=False,
         initializer=None,
-        regularizer=None
 ):
     vocab_size = len(vocab)
     if representation == 'dense':
         if pretrained_embeddings is not None and pretrained_embeddings is not False:
             embeddings_matrix = load_pretrained_embeddings(
-                pretrained_embeddings, vocab)
+                pretrained_embeddings, vocab
+            )
             if embeddings_matrix.shape[-1] != embedding_size:
                 raise ValueError(
                     'The size of the pretrained embeddings is {}, '
@@ -48,6 +50,7 @@ def embedding_matrix(
                         embedding_size
                     ))
             initializer_obj = tf.constant(embeddings_matrix, dtype=tf.float32)
+
         else:
             if vocab_size < embedding_size and not force_embedding_size:
                 logger.info(
@@ -64,21 +67,24 @@ def embedding_matrix(
                     {'type': 'uniform', 'minval': -1.0, 'maxval': 1.0})
             initializer_obj = initializer_obj_ref([vocab_size, embedding_size])
 
-        embeddings = tf.compat.v1.get_variable('embeddings',
-                                     initializer=initializer_obj,
-                                     trainable=embeddings_trainable,
-                                     regularizer=regularizer)
+        embeddings = tf.Variable(
+            initializer_obj,
+            trainable=embeddings_trainable,
+            name='embeddings'
+        )
 
     elif representation == 'sparse':
         embedding_size = vocab_size
-        embeddings = tf.compat.v1.get_variable('embeddings',
-                                     initializer=get_initializer('identity')(
-                                         [vocab_size, embedding_size]),
-                                     trainable=False)
+        embeddings = tf.Variable(
+            get_initializer('identity')([vocab_size, embedding_size]),
+            trainable=False,
+            name='embeddings'
+        )
 
     else:
         raise Exception(
-            'Embedding representation {} not supported.'.format(representation))
+            'Embedding representation {} not supported.'.format(
+                representation))
 
     return embeddings, embedding_size
 
@@ -86,7 +92,6 @@ def embedding_matrix(
 def embedding_matrix_on_device(
         vocab,
         embedding_size,
-        regularizer,
         representation='dense',
         embeddings_trainable=True,
         pretrained_embeddings=None,
@@ -103,8 +108,7 @@ def embedding_matrix_on_device(
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 force_embedding_size=force_embedding_size,
-                initializer=initializer,
-                regularizer=regularizer
+                initializer=initializer
             )
     else:
         embeddings, embedding_size = embedding_matrix(
@@ -114,16 +118,15 @@ def embedding_matrix_on_device(
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
-            initializer=initializer,
-            regularizer=regularizer
+            initializer=initializer
         )
 
-    logger.debug('  embeddings: {0}'.format(embeddings))
+    # logger.debug('  embeddings: {0}'.format(embeddings))
 
     return embeddings, embedding_size
 
 
-class Embed:
+class Embed(Layer):
     def __init__(
             self,
             vocab,
@@ -133,236 +136,14 @@ class Embed:
             pretrained_embeddings=None,
             force_embedding_size=False,
             embeddings_on_cpu=False,
-            dropout=False,
+            dropout_rate=0.0,
             initializer=None,
-            regularize=True
+            regularizer=None
     ):
-        self.vocab = vocab
-        self.embedding_size = embedding_size
-        self.representation = representation
-        self.embeddings_trainable = embeddings_trainable
-        self.pretrained_embeddings = pretrained_embeddings
-        self.force_embedding_size = force_embedding_size
-        self.embeddings_on_cpu = embeddings_on_cpu
-        self.dropout = dropout
-        self.initializer = initializer
-        self.regularize = regularize
+        super(Embed, self).__init__()
+        self.supports_masking = True
 
-    def __call__(
-            self,
-            input_ids,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        if not self.regularize:
-            regularizer = None
-
-        embeddings, embedding_size = embedding_matrix_on_device(
-            self.vocab,
-            self.embedding_size,
-            regularizer,
-            self.representation,
-            self.embeddings_trainable,
-            self.pretrained_embeddings,
-            self.force_embedding_size,
-            self.embeddings_on_cpu,
-            self.initializer
-        )
-
-        embedded = tf.nn.embedding_lookup(embeddings, input_ids,
-                                          name='embeddings_lookup')
-        logger.debug('  embedded: {0}'.format(embedded))
-
-        if self.dropout and dropout_rate is not None:
-            embedded = tf.layers.dropout(embedded, rate=dropout_rate,
-                                         training=is_training)
-            logger.debug('  embedded_dropout: {}'.format(embedded))
-
-        return embedded, embedding_size
-
-
-class EmbedWeighted:
-    def __init__(
-            self,
-            vocab,
-            embedding_size,
-            representation='dense',
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            force_embedding_size=False,
-            embeddings_on_cpu=False,
-            dropout=False,
-            initializer=None,
-            regularize=True
-    ):
-        self.vocab = vocab
-        self.embedding_size = embedding_size
-        self.representation = representation
-        self.embeddings_trainable = embeddings_trainable
-        self.pretrained_embeddings = pretrained_embeddings
-        self.force_embedding_size = force_embedding_size
-        self.embeddings_on_cpu = embeddings_on_cpu
-        self.dropout = dropout
-        self.initializer = initializer
-        self.regularize = regularize
-
-    def __call__(
-            self,
-            input_ids,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        if not self.regularize:
-            regularizer = None
-
-        embeddings, embedding_size = embedding_matrix_on_device(
-            self.vocab,
-            self.embedding_size,
-            regularizer,
-            self.representation,
-            self.embeddings_trainable,
-            self.pretrained_embeddings,
-            self.force_embedding_size,
-            self.embeddings_on_cpu,
-            self.initializer
-        )
-
-        signed_input = tf.cast(tf.sign(tf.abs(input_ids)), tf.int32)
-        multiple_hot_indexes = tf.multiply(
-            signed_input,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
-        )
-        embedded = tf.nn.embedding_lookup(
-            embeddings,
-            multiple_hot_indexes,
-            name='embeddings_lookup'
-        )
-        logger.debug('  embedded: {0}'.format(embedded))
-
-        # Get the multipliers to embeddings
-        weights_mask = tf.expand_dims(input_ids, -1)
-        weighted_embedded = tf.multiply(embedded, weights_mask)
-        logger.debug('  weighted_embedded: {0}'.format(weighted_embedded))
-
-        embedded_reduced = tf.reduce_sum(weighted_embedded, 1)
-        logger.debug('  embedded_reduced: {0}'.format(embedded_reduced))
-
-        if self.dropout and dropout_rate is not None:
-            embedded = tf.layers.dropout(embedded, rate=dropout_rate,
-                                         training=is_training)
-            logger.debug('  embedded_dropout: {}'.format(embedded))
-
-        return embedded_reduced, embedding_size
-
-
-class EmbedSparse:
-    def __init__(
-            self,
-            vocab,
-            embedding_size,
-            representation='dense',
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            force_embedding_size=False,
-            embeddings_on_cpu=False,
-            reduce_output='sum',
-            dropout=False,
-            initializer=None,
-            regularize=True
-    ):
-        self.vocab = vocab
-        self.embedding_size = embedding_size
-        self.representation = representation
-        self.embeddings_trainable = embeddings_trainable
-        self.pretrained_embeddings = pretrained_embeddings
-        self.force_embedding_size = force_embedding_size
-        self.embeddings_on_cpu = embeddings_on_cpu
-        self.reduce_output = reduce_output
-        self.dropout = dropout
-        self.initializer = initializer
-        self.regularize = regularize
-
-    def __call__(
-            self,
-            input_sparse,
-            regularizer,
-            dropout_rate,
-            is_training=True
-    ):
-        if not self.regularize:
-            regularizer = None
-
-        embeddings, embedding_size = embedding_matrix_on_device(
-            self.vocab,
-            self.embedding_size,
-            regularizer,
-            self.representation,
-            self.embeddings_trainable,
-            self.pretrained_embeddings,
-            self.force_embedding_size,
-            self.embeddings_on_cpu,
-            self.initializer
-        )
-
-        multiple_hot_indexes = tf.multiply(
-            input_sparse,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
-        )
-
-        idx = tf.where(tf.not_equal(multiple_hot_indexes, 0))
-
-        sparse_multiple_hot_indexes = tf.SparseTensor(
-            idx,
-            tf.gather_nd(multiple_hot_indexes, idx),
-            tf.shape(multiple_hot_indexes, out_type=tf.int64)
-        )
-
-        embedded_reduced = tf.nn.embedding_lookup_sparse(
-            embeddings,
-            sparse_multiple_hot_indexes,
-            sp_weights=None,
-            combiner=self.reduce_output
-        )
-        logger.debug('  embedded_reduced: {0}'.format(embedded_reduced))
-
-        # Old dense implementation
-        # embedded = tf.nn.embedding_lookup(
-        #     feature_embeddings,
-        #     multiple_hot_indexes,
-        #     name=input_feature['name'] + '_embeddings_lookup',
-        # )
-        # mask = tf.cast(tf.expand_dims(tf.sign(tf.abs(multiple_hot_indexes)), -1), tf.float32)
-        # masked_embedded = tf.multiply(embedded, mask)
-        # embedded_reduced = tf.reduce_sum(masked_embedded, 1)
-
-        if self.dropout and dropout_rate is not None:
-            embedded_reduced = tf.layers.dropout(embedded_reduced,
-                                                 rate=dropout_rate,
-                                                 training=is_training)
-            logger.debug(
-                '  embedded_reduced_dropout: {}'.format(embedded_reduced))
-
-        return embedded_reduced, embedding_size
-
-
-class EmbedSequence:
-    def __init__(
-            self,
-            vocab,
-            embedding_size,
-            representation='dense',
-            embeddings_trainable=True,
-            pretrained_embeddings=None,
-            force_embedding_size=False,
-            embeddings_on_cpu=False,
-            mask=True,
-            dropout=False,
-            initializer=None,
-            regularize=True
-    ):
-        self.embed = Embed(
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
             vocab,
             embedding_size,
             representation=representation,
@@ -370,32 +151,202 @@ class EmbedSequence:
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout,
             initializer=initializer,
-            regularize=regularize
         )
 
-        self.mask = mask
+        if regularizer:
+            regularizer_obj = tf.keras.regularizers.get(regularizer)
+            self.add_loss(lambda: regularizer_obj(self.embeddings))
 
-    def __call__(
+        if dropout_rate > 0:
+            self.dropout = Dropout(dropout_rate)
+        else:
+            self.dropout = None
+
+    def call(self, inputs, training=None, mask=None):
+        embedded = tf.nn.embedding_lookup(
+            self.embeddings, inputs, name='embeddings_lookup'
+        )
+
+        if self.dropout:
+            embedded = self.dropout(embedded, training=training)
+
+        return embedded
+
+
+class EmbedWeighted(Layer):
+    def __init__(
             self,
-            input_sequence,
-            regularizer,
-            dropout_rate,
-            is_training=True
+            vocab,
+            embedding_size,
+            representation='dense',
+            embeddings_trainable=True,
+            pretrained_embeddings=None,
+            force_embedding_size=False,
+            embeddings_on_cpu=False,
+            dropout_rate=0.0,
+            initializer=None,
+            regularizer=None
     ):
-        embedded, embedding_size = self.embed(
-            input_sequence,
-            regularizer,
-            dropout_rate,
-            is_training=True
+        super(EmbedWeighted, self).__init__()
+
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
+        self.vocab_length = len(vocab)
+
+        if regularizer:
+            regularizer_obj = tf.keras.regularizers.get(regularizer)()
+            self.add_loss(regularizer_obj(self.embeddings))
+
+        if dropout_rate > 0:
+            self.dropout = Dropout(dropout_rate)
+        else:
+            self.dropout = None
+
+    def call(self, inputs, training=None, mask=None):
+        signed_input = tf.cast(tf.sign(tf.abs(inputs)), tf.int32)
+        multiple_hot_indexes = tf.multiply(
+            signed_input,
+            tf.constant(np.array([range(self.vocab_length)], dtype=np.int32))
+        )
+        embedded = tf.nn.embedding_lookup(
+            self.embeddings, multiple_hot_indexes, name='embeddings_lookup'
         )
 
-        if self.mask:
+        # Get the multipliers to embeddings
+        weights_mask = tf.expand_dims(inputs, -1)
+        weighted_embedded = tf.multiply(embedded, weights_mask)
+
+        embedded_reduced = tf.reduce_sum(weighted_embedded, 1)
+
+        if self.dropout:
+            embedded_reduced = self.dropout(embedded_reduced,
+                                            training=training)
+
+        return embedded_reduced
+
+
+class EmbedSparse(Layer):
+    def __init__(
+            self,
+            vocab,
+            embedding_size=50,
+            representation='dense',
+            embeddings_trainable=True,
+            pretrained_embeddings=None,
+            force_embedding_size=False,
+            embeddings_on_cpu=False,
+            dropout_rate=0.0,
+            initializer=None,
+            regularizer=None,
+            reduce_output='sum'
+    ):
+        super(EmbedSparse, self).__init__()
+
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
+
+        if regularizer:
+            regularizer_obj = tf.keras.regularizers.get(regularizer)()
+            self.add_loss(regularizer_obj(self.embeddings))
+
+        if dropout_rate > 0:
+            self.dropout = Dropout(dropout_rate)
+        else:
+            self.dropout = None
+
+        self.reduce_output = reduce_output
+
+    def call(self, inputs, training=None, mask=None):
+        idx = tf.where(tf.equal(inputs, True))
+
+        sparse_multiple_hot_indexes = tf.SparseTensor(
+            idx,
+            idx[:, 1],
+            tf.shape(inputs, out_type=tf.int64)
+        )
+
+        embedded_reduced = tf.nn.embedding_lookup_sparse(
+            self.embeddings,
+            sparse_multiple_hot_indexes,
+            sp_weights=None,
+            combiner=self.reduce_output
+        )
+
+        if self.dropout:
+            embedded_reduced = self.dropout(
+                embedded_reduced, training=training
+            )
+
+        return embedded_reduced
+
+
+class EmbedSequence(Layer):
+    def __init__(
+            self,
+            vocab,
+            embedding_size,
+            representation='dense',
+            embeddings_trainable=True,
+            pretrained_embeddings=None,
+            force_embedding_size=False,
+            embeddings_on_cpu=False,
+            dropout_rate=0.0,
+            initializer=None,
+            regularizer=None
+    ):
+        super(EmbedSequence, self).__init__()
+        self.supports_masking = True
+
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
+
+        if regularizer:
+            regularizer_obj = tf.keras.regularizers.get(regularizer)()
+            self.add_loss(regularizer_obj(self.embeddings))
+
+        if dropout_rate > 0:
+            self.dropout = Dropout(dropout_rate)
+        else:
+            self.dropout = None
+
+    def call(self, inputs, training=None, mask=None):
+        embedded = tf.nn.embedding_lookup(
+            self.embeddings, inputs, name='embeddings_lookup'
+        )
+
+        if mask is not None:
             mask_matrix = tf.cast(
-                tf.expand_dims(tf.sign(tf.abs(input_sequence)), -1),
+                tf.expand_dims(mask, -1),
                 dtype=tf.float32
             )
             embedded = tf.multiply(embedded, mask_matrix)
 
-        return embedded, embedding_size
+        if self.dropout:
+            embedded = self.dropout(embedded, training=training)
+
+        return embedded

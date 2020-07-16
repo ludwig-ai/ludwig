@@ -13,20 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import numpy as np
 import random
+
+import numpy as np
 import tensorflow as tf
 
+from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder
-from ludwig.models.modules.sequence_encoders import EmbedEncoder
-from ludwig.models.modules.sequence_encoders import ParallelCNN
-from ludwig.models.modules.sequence_encoders import StackedCNN
-from ludwig.models.modules.sequence_encoders import StackedParallelCNN
-from ludwig.models.modules.sequence_encoders import RNN
-from ludwig.models.modules.sequence_encoders import CNNRNN
 from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.data.dataset_synthesyzer import build_vocab
-
+from ludwig.models.modules.sequence_encoders import ParallelCNN
+from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
+from ludwig.models.modules.sequence_encoders import StackedCNN
+from ludwig.models.modules.sequence_encoders import StackedCNNRNN
+from ludwig.models.modules.sequence_encoders import StackedParallelCNN
+from ludwig.models.modules.sequence_encoders import StackedRNN
 
 L1_REGULARIZER = regularizer_registry['l1'](0.1)
 L2_REGULARIZER = regularizer_registry['l2'](0.1)
@@ -86,19 +86,13 @@ def encoder_test(
     :param output_data: expected output data (optional)
     :return: returns the encoder object for the caller to run extra checks
     """
-    tf.compat.v1.reset_default_graph()
-
     # Run the encoder
     input_data = tf.convert_to_tensor(input_data)
-    dropout_rate = tf.convert_to_tensor(dropout_rate)
-    is_training = tf.convert_to_tensor(False)
 
-    hidden, _ = encoder(
+    hidden = encoder(
         input_data,
-        regularizer,
-        dropout_rate,
-        is_training=is_training
-    )
+        training=False
+    )['encoder_output']
 
     # Check output shape and type
     assert hidden.dtype == output_dtype
@@ -224,7 +218,7 @@ def test_sequence_encoder_embed():
 
             encoder_args['reduce_output'] = reduce_output
             encoder_args['embeddings_trainable'] = trainable
-            encoder = create_encoder(EmbedEncoder, encoder_args)
+            encoder = create_encoder(SequenceEmbedEncoder, encoder_args)
 
             encoder_test(
                 encoder=encoder,
@@ -279,9 +273,8 @@ def test_sequence_encoders():
             for encoder_type in [ParallelCNN,
                                  StackedCNN,
                                  StackedParallelCNN,
-                                 RNN,
-                                 CNNRNN]:
-
+                                 StackedRNN,
+                                 StackedCNNRNN]:
                 encoder_args['reduce_output'] = reduce_output
                 encoder_args['embeddings_trainable'] = trainable
                 encoder = create_encoder(encoder_type, encoder_args)
@@ -295,9 +288,3 @@ def test_sequence_encoders():
                     output_shape=output_shape,
                     output_data=None
                 )
-
-                embed = encoder.embed_sequence.embed
-                assert embed.representation == 'dense'
-                assert embed.embeddings_trainable == trainable
-                assert embed.regularize is True
-                assert embed.dropout is False

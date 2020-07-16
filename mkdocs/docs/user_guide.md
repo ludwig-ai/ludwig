@@ -8,7 +8,6 @@ Ludwig provides six command line interface entry points
 - test
 - experiment
 - visualize
-- hyperopt
 - collect_weights
 - collect_activations
 - serve
@@ -96,7 +95,7 @@ optional arguments:
   -ssm, --skip_save_model
                         disables saving weights each time the model imrpoves. By
                         default Ludwig saves weights after each epoch the
-                        validation measure improves, but if the model is
+                        validation metric improves, but if the model is
                         really big that can be time consuming if you do not
                         want to keep the weights and just find out what
                         performance can a model get with a set of
@@ -153,7 +152,7 @@ This allows for a few possible input data scenarios:
 - you can provide separate UTF-8 encoded train, validation and test CSVs (`--data_train_csv`, `--data_validation_csv`, `--data_test_csv`).
 
 - the HDF5 and JSON file indications specified in the case of a single CSV file apply also in the multiple files case (`--data_train_hdf5`, `--data_validation_hdf5`, `--data_test_hdf5`), with the only difference that you need to specify only one JSON file (`--metadata_json`) instead of three.
-The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation measure does not improve for a certain amount of epochs.
+The validation set is optional, but if absent the training wil continue until the end of the training epochs, while when there's a validation set the default behavior is to perform early stopping after the validation metric does not improve for a a certain amount of epochs.
 The test set is optional too.
 
 Other optional arguments are `--output_directory`, `--experiment_name` and `--model name`.
@@ -164,7 +163,7 @@ If neither of them is specified the directory will be named `run_0`.
 The directory will contain
 
 - `description.json` - a file containing a description of the training process with all the information to reproduce it.
-- `training_statistics.json` which contains records of all measures and losses for each epoch.
+- `training_statistics.json` which contains records of all metrics and losses for each epoch.
 - `model` - a directory containing model hyperparameters, weights, checkpoints and logs (for TensorBoard).
 - `kfold_training_statistics.json` - an optional file that is created when the `--k_fold` parameter is specified.  This file contains metrics from k-fold cross validation run.  In addition to the metrics for each fold, there is an `overall` key that shows mean and standard deviation for metrics across all folds.
 - `kfold_split_indicies.json` - this file is present if `--k_fold` parameter is specified and `--skip_save_k_fold_split_indices` is not specified.  This file contains for each fold the row index values for the training data that creates the training and hold-out test folds.  These indices can be used to reproduce the fold splits.
@@ -172,7 +171,7 @@ The directory will contain
 The model definition can be provided either as a string (`--model_definition`) or as YAML file (`--model_definition_file`).
 Details on how to write your model definition are provided in the [Model Definition](#model-definition) section.
 
-During training Ludwig saves two sets of weights for the model, one that is the weights at the end of the epoch where the best performance on the validation measure was achieved and one that is the weights at the end of the latest epoch.
+During training Ludwig saves two sets of weights for the model, one that is the weights at the end of the epoch where the best performance on the validation metric was achieved and one that is the weights at the end of the latest epoch.
 The reason for keeping the second set is to be able to resume training in case the training process gets interrupted somehow.
 
 To resume training using the latest weights and the whole history of progress so far you have to specify the `--model_resume_path` argument.
@@ -488,34 +487,26 @@ optional arguments:
                         raw data file
   -g GROUND_TRUTH, --ground_truth GROUND_TRUTH
                         ground truth file
+  -gts GROUND_TRUTH_SPLIT, --ground_truth_split GROUND_TRUTH_SPLIT
+                       ground truth split - 0:train, 1:validation, 2:test split
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -od OUTPUT_DIRECTORY, --output_directory OUTPUT_DIRECTORY
-                        directory where to save plots.If not specified, plots
-                        will be displayed in a window
-  -ff {pdf,png}, --file_format {pdf,png}
-                        file format of output plots
-  -v {binary_threshold_vs_metric,calibration_1_vs_all,calibration_multiclass,compare_classifiers_multiclass_multimetric,compare_classifiers_performance_changing_k,compare_classifiers_performance_from_pred,compare_classifiers_performance_from_prob,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,compare_performance,confidence_thresholding,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confusion_matrix,frequency_vs_f1,hyperopt_hiplot,hyperopt_report,learning_curves,roc_curves,roc_curves_from_test_statistics}, --visualization {binary_threshold_vs_metric,calibration_1_vs_all,calibration_multiclass,compare_classifiers_multiclass_multimetric,compare_classifiers_performance_changing_k,compare_classifiers_performance_from_pred,compare_classifiers_performance_from_prob,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,compare_performance,confidence_thresholding,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confusion_matrix,frequency_vs_f1,hyperopt_hiplot,hyperopt_report,learning_curves,roc_curves,roc_curves_from_test_statistics}
+  -v {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}, --visualization {compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_changing_k,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_2thresholds_2d,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,data_vs_acc_subset,data_vs_acc_subset_per_class,calibration_1_vs_all,calibration_multiclass,confusion_matrix,compare_classifiers_multiclass_multimetric,frequency_vs_f1,learning_curves}
                         type of visualization
-  -f OUTPUT_FEATURE_NAME, --output_feature_name OUTPUT_FEATURE_NAME
-                        name of the output feature to visualize
-  -gts GROUND_TRUTH_SPLIT, --ground_truth_split GROUND_TRUTH_SPLIT
-                        ground truth split - 0:train, 1:validation, 2:test
-                        split
-  -tf THRESHOLD_OUTPUT_FEATURE_NAMES [THRESHOLD_OUTPUT_FEATURE_NAMES ...], --threshold_output_feature_names THRESHOLD_OUTPUT_FEATURE_NAMES [THRESHOLD_OUTPUT_FEATURE_NAMES ...]
-                        names of output features for 2d threshold
+  -f FIELD, --field FIELD
+                        field containing ground truth
+  -tf THRESHOLD_FIELDS [THRESHOLD_FIELDS ...], --threshold_fields THRESHOLD_FIELDS [THRESHOLD_FIELDS ...]
+                        fields for 2d threshold
   -pred PREDICTIONS [PREDICTIONS ...], --predictions PREDICTIONS [PREDICTIONS ...]
                         predictions files
   -prob PROBABILITIES [PROBABILITIES ...], --probabilities PROBABILITIES [PROBABILITIES ...]
                         probabilities files
-  -trs TRAINING_STATISTICS [TRAINING_STATISTICS ...], --training_statistics TRAINING_STATISTICS [TRAINING_STATISTICS ...]
+  -trs TRAINING_STATS [TRAINING_STATS ...], --training_statistics TRAINING_STATS [TRAINING_STATS ...]
                         training stats files
-  -tes TEST_STATISTICS [TEST_STATISTICS ...], --test_statistics TEST_STATISTICS [TEST_STATISTICS ...]
+  -tes TEST_STATS [TEST_STATS ...], --test_statistics TEST_STATS [TEST_STATS ...]
                         test stats files
-  -hs HYPEROPT_STATS_PATH, --hyperopt_stats_path HYPEROPT_STATS_PATH
-                        hyperopt stats file
-  -mn MODEL_NAMES [MODEL_NAMES ...], --model_names MODEL_NAMES [MODEL_NAMES ...]
-                        names of the models to use as labels
+  -alg ALGORITHMS [ALGORITHMS ...], --algorithms ALGORITHMS [ALGORITHMS ...]
+                        names of the algorithms (for better graphs)
   -tn TOP_N_CLASSES [TOP_N_CLASSES ...], --top_n_classes TOP_N_CLASSES [TOP_N_CLASSES ...]
                         number of classes to plot
   -k TOP_K, --top_k TOP_K
@@ -536,112 +527,6 @@ optional arguments:
 
 As the `--visualization` parameters suggests, there is a vast number of visualizations readily available.
 Each of them requires a different subset of this command's arguments, so they will be described one by one in the [Visualizations](#visualizations) section.
-
-hyperopt
----------
-
-This command lets you perform an hyper-parameter search with a given strategy and parameters.
-You can call it with:
-
-```
-ludwig hyperopt [options]
-```
-
-or with
-
-```
-python -m ludwig.hyperopt [options]
-```
-
-from within Ludwig's main directory.
-
-These are the available arguments:
-
-```
-usage: ludwig hyperopt [options]
-
-This script trains and tests a model with sampled hyperparameters with a given strategy and parameters
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --output_directory OUTPUT_DIRECTORY
-                        directory that contains the results
-  --experiment_name EXPERIMENT_NAME
-                        experiment name
-  --model_name MODEL_NAME
-                        name for the model
-  --data_csv DATA_CSV   input data CSV file. If it has a split column, it will
-                        be used for splitting (0: train, 1: validation, 2:
-                        test), otherwise the dataset will be randomly split
-  --data_train_csv DATA_TRAIN_CSV
-                        input train data CSV file
-  --data_validation_csv DATA_VALIDATION_CSV
-                        input validation data CSV file
-  --data_test_csv DATA_TEST_CSV
-                        input test data CSV file
-  --data_hdf5 DATA_HDF5
-                        input data HDF5 file. It is an intermediate preprocess
-                        version of the input CSV created the first time a CSV
-                        file is used in the same directory with the same name
-                        and a hdf5 extension
-  --data_train_hdf5 DATA_TRAIN_HDF5
-                        input train data HDF5 file. It is an intermediate
-                        preprocess version of the input CSV created the first
-                        time a CSV file is used in the same directory with the
-                        same name and a hdf5 extension
-  --data_validation_hdf5 DATA_VALIDATION_HDF5
-                        input validation data HDF5 file. It is an intermediate
-                        preprocess version of the input CSV created the first
-                        time a CSV file is used in the same directory with the
-                        same name and a hdf5 extension
-  --data_test_hdf5 DATA_TEST_HDF5
-                        input test data HDF5 file. It is an intermediate
-                        preprocess version of the input CSV created the first
-                        time a CSV file is used in the same directory with the
-                        same name and a hdf5 extension
-  --train_set_metadata_json TRAIN_SET_METADATA_JSON
-                        input train set metadata JSON file. It is an intermediate
-                        preprocess file containing the mappings of the input
-                        CSV created the first time a CSV file is used in the
-                        same directory with the same name and a json extension
-  -sspi, --skip_save_processed_input
-                        skips saving intermediate HDF5 and JSON files
-  -ssuo, --skip_save_unprocessed_output
-                        skips saving intermediate NPY output files
-  -sshs, --skip_save_hyperopt_statistics
-                        skips saving hyperopt statistics file
-  -md MODEL_DEFINITION, --model_definition MODEL_DEFINITION
-                        model definition
-  -mdf MODEL_DEFINITION_FILE, --model_definition_file MODEL_DEFINITION_FILE
-                        YAML file describing the model. Ignores
-                        --model_hyperparameters
-  -ssp SKIP_SAVE_PROGRESS_WEIGHTS, --skip_save_progress SKIP_SAVE_PROGRESS_WEIGHTS
-                        disables saving weights after each epoch. By default
-                        Ludwig saves weights after each epoch for enabling
-                        resuming of training, but if the model is really big
-                        that can be time consuming and will use twice as much
-                        storage space, use this parameter to skip it.
-  -rs RANDOM_SEED, --random_seed RANDOM_SEED
-                        a random seed that is going to be used anywhere there
-                        is a call to a random number generator: data
-                        splitting, parameter initialization and training set
-                        shuffling
-  -g GPUS [GPUS ...], --gpus GPUS [GPUS ...]
-                        list of gpus to use
-  -gf GPU_FRACTION, --gpu_fraction GPU_FRACTION
-                        fraction of gpu memory to initialize the process with
-  -dbg, --debug         enables debugging mode
-  -l {critical,error,warning,info,debug,notset}, --logging_level {critical,error,warning,info,debug,notset}
-                        the level of logging to use
-```
-
-The parameters combine parameters from both [train](#train) and [test](#test) so refer to those sections for an in depth explanation.
-The output directory will contain a `hyperopt_statistics.json` file that summarizes the results obtained.
-
-In order to perform an hyper-parameter optimization, the `hyperopt` section needs to be provided within the model definition.
-In the `hyperopt` section you will be able to define what metric to optimize, what aprameters, what strategy to use to optimize them and how to execute the optimization.
-For details on the `hyperopt` section see the detailed description in the [Hyper-parameter Optimization](#hyper-parameter-optimization) section.
-
 
 collect_weights
 ---------------
@@ -881,7 +766,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 
 `Set` features are transformed into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
-Then a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -893,7 +778,7 @@ The column name is added to the JSON file, with an associated dictionary contain
 
 `Sequence` features are transformed into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
-Then a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -917,9 +802,9 @@ CSV Format
 
 Ludwig uses Pandas under the hood to read the UTF-8 encoded CSV files.
 Pandas tries to automatically identify the separator (generally `','`) from the data.
-The default escape character is `'/'`.
+The default escape character is `'\'`.
 For example, if `','` is the column separator and one of your data columns has a `','` in it, Pandas would fail to load the data properly.
-To handle such cases, we expect the values in the columns to be escaped with backslashes (replace `','` in the data with `'//,'`).
+To handle such cases, we expect the values in the columns to be escaped with backslashes (replace `','` in the data with `'\\,'`).
 
 
 Data Postprocessing
@@ -1040,36 +925,15 @@ In most machine learning tasks you want to predict only one target variable, but
 
 Instead of having `encoders`, output features have `decoders`, but most of them have only one decoder so you don't have to specify it.
 
-Decoders take the output of the combiner as input, process it further, for instance passing it through fully connected layers, and finally predict values and compute a loss and some measures (depending on the datatype different losses and measures apply).
+Decoders take the output of the combiner as input, process it further, for instance passing it through fully connected layers, and finally predict values and compute a loss and some metrics (depending on the datatype different losses and metrics apply).
 
 Decoders have additional parameters, in particular `loss` that allows you to specify a different loss to optimize for this specific decoder, for instance numerical features support both `mean_squared_error` and `mean_absolute_error` as losses.
 Details about the available decoders and losses alongside with the description of all parameters will be provided in the datatype-specific sections.
 
 For the sake of simplicity you can imagine the input coming from the combiner to be a vector in most of the cases, but there is a `reduce_input` parameter one can specify to change the default behavior.
 
-### Multi-task Learning
-
-As Ludwig allows for multiple output features to be specified and each output feature can be seen as a task the model is learning to perform, by consequence Ludwig supports Multi-task learning natively.
-When multiple output features are specified, the loss that is optimized is a weighted sum of the losses of each individual output feature.
-By default each loss weight is `1`, but it can be changed by specifying a value for the `weight` parameter in the `loss` section of each output feature definition.
-
-For example, given a `category` feature `A` and `numerical` feature `B`, in order to optimize the loss `loss_total = 1.5 * loss_A + 0.8 + loss_B` the `output_feature` section of the model definition should look like:
-
-```yaml
-output_features:
-    -
-        name: A
-        type: category
-        loss:
-          weight: 1.5
-    -
-        name: A
-        type: numerical
-        loss:
-          weight: 0.8
-```
-
-### Output Features Dependencies
+Output Features Dependencies
+----------------------------
 
 An additional feature that Ludwig provides is the concept of dependency between `output_features`.
 You can specify a list of output features as dependencies when you write the dictionary of a specific feature.
@@ -1109,7 +973,7 @@ These are the available training parameters:
 - `batch_size` (default `128`): size of the batch used for training the model.
 - `eval_batch_size` (default `0`): size of the batch used for evaluating the model. If it is `0`, the same value of `batch_size` is used. This is usefult to speedup evaluation with a much bigger batch size than training, if enough memory is available, or to decrease the batch size when `sampled_softmax_cross_entropy` is used as loss for sequential and categorical features with big vocabulary sizes (evaluation needs to be performed on the full vocabulary, so a much smaller batch size may be needed to fit the activation tensors in memory).
 - `epochs` (default `100`): number of epochs the training process will run for.
-- `early_stop` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before the training is stopped.
+- `early_stop` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation metric before the training is stopped.
 - `optimizer` (default `{type: adam, beta1: 0.9, beta2: 0.999, epsilon: 1e-08}`): which optimizer to use with the relative parameters. The available optimizers are: `sgd` (or `stochastic_gradient_descent`, `gd`, `gradient_descent`, they are all the same), `adam`, `adadelta`, `adagrad`, `adagradda`, `momentum`, `ftrl`, `proximalgd`, `proximaladagrad`, `rmsprop`. To know their parameters check [TensorFlow's optimizer documentation](https://www.tensorflow.org/api_docs/python/tf/train).
 - `learning_rate` (default `0.001`): the learning rate to use.
 - `decay` (default `false`): if to use exponential decay of the learning rate or not.
@@ -1118,15 +982,15 @@ These are the available training parameters:
 - `staircase` (default `false`): decays the learning rate at discrete intervals.
 - `regularization_lambda` (default `0`): the lambda parameter used for adding a l2 regularization loss to the overall loss.
 - `dropout_rate` (default `0.0`): the probability to drop neurons in dropout. The `dropout_rate` is used throughout the whole model, but to decide which parts of the model will use it, use the `dropout` boolean parameter available in each encoder, combiner and decoder.
-- `reduce_learning_rate_on_plateau` (default `0`): if there's a validation set, how many times to reduce the learning rate when a plateau of validation measure is reached.
-- `reduce_learning_rate_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before reducing the learning rate.
+- `reduce_learning_rate_on_plateau` (default `0`): if there's a validation set, how many times to reduce the learning rate when a plateau of validation metric is reached.
+- `reduce_learning_rate_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation metric before reducing the learning rate.
 - `reduce_learning_rate_on_plateau_rate` (default `0.5`): if there's a validation set, the reduction rate of the learning rate.
-- `increase_batch_size_on_plateau` (default `0`): if there's a validation set, how many times to increase the batch size when a plateau of validation measure is reached.
-- `increase_batch_size_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation measure before increasing the learning rate.
+- `increase_batch_size_on_plateau` (default `0`): if there's a validation set, how many times to increase the batch size when a plateau of validation metric is reached.
+- `increase_batch_size_on_plateau_patience` (default `5`): if there's a validation set, number of epochs of patience without an improvement on the validation metric before increasing the learning rate.
 - `increase_batch_size_on_plateau_rate` (default `2`): if there's a validation set, the increase rate of the batch size.
 - `increase_batch_size_on_plateau_max` (default `512`): if there's a validation set, the maximum value of batch size.
-- `validation_field` (default `combined`): when there is more than one output feature, which one to use for computing if there was an improvement on validation. The measure to use to determine if there was an improvement can be set with the `validation_measure` parameter. Different datatypes have different available measures, refer to the datatype-specific section for more details. `combined` indicates the use the combination of all features. For instance the combination of `combined` and `loss` as measure uses a decrease in the combined loss of all output features to check for improvement on validation, while `combined` and `accuracy` considers on how many datapoints the predictions for all output features were correct (but consider that for some features, for instance `numeric` there is no accuracy measure, so you should use `accuracy` only if all your output features have an accuracy measure).
-- `validation_measure:` (default `loss`): the measure to use to determine if there was an improvement. The measure is considered for the output feature specified in `validation_field`. Different datatypes have different available measures, refer to the datatype-specific section for more details.
+- `validation_field` (default `combined`): when there is more than one output feature, which one to use for computing if there was an improvement on validation. The metric to use to determine if there was an improvement can be set with the `validation_metric` parameter. Different datatypes have different available metrics, refer to the datatype-specific section for more details. `combined` indicates the use the combination of all features. For instance the combination of `combined` and `loss` as metric uses a decrease in the combined loss of all output features to check for improvement on validation, while `combined` and `accuracy` considers on how many datapoints the predictions for all output features were correct (but consider that for some features, for instance `numeric` there is no accuracy metric, so you should use `accuracy` only if all your output features have an accuracy metric).
+- `validation_metric:` (default `loss`): the metric to use to determine if there was an improvement. The metric is considered for the output feature specified in `validation_field`. Different datatypes have different available metrics, refer to the datatype-specific section for more details.
 - `bucketing_field` (default `null`): when not `null`, when creating batches, instead of shuffling randomly, the length along the last dimension of the matrix of the specified input feature is used for bucketing datapoints and then randomly shuffled datapoints from the same bin are sampled. Padding is trimmed to the longest datapoint in the batch. The specified feature should be either a `sequence` or `text` feature and the encoder encoding it has to be `rnn`. When used, bucketing improves speed of `rnn` encoding up to 1.5x, depending on the length distribution of the inputs.
 - `learning_rate_warmup_epochs` (default `1`): It's the number or training epochs where learning rate warmup will be used. It is calculated as ``described in [Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour](https://arxiv.org/abs/1706.02677). In the paper the authors suggest `6` epochs of warmup, that parameter is suggested for large datasets and big batches.
 
@@ -1223,7 +1087,7 @@ These are the available parameters of a binary output feature
 - `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explanation refer to [Output Features Dependencies](#output-features-dependencies).
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
-- `loss` (default `{type: cross_entropy, confidence_penalty: 0, robust_lambda: 0, positive_class_weight: 1}`): is a dictionary containing a loss `type` and its hyperparameters. The only available loss `type` is `cross_entropy` (cross entropy), and the optional parameters are `confidence_penalty` (an additional term that penalizes too confident predictions by adding a `a * (max_entropy - entropy) / max_entropy` term to the loss, where a is the value of this parameter), `robust_lambda` (replaces the loss with `(1 - robust_lambda) * loss + robust_lambda / 2` which is useful in case of noisy labels) and `positive_class_weight` (multiplies the loss for the positive class, increasing its importance).
+- `loss` (default `{type: cross_entropy, confidence_penalty: 0, robust_lambda: 0}`): is a dictionary containing a loss `type` and its hyperparameters. The only available loss `type` is `cross_entropy` (cross entropy), and the two optional parameters are `confidence_penalty` (an additional term that penalizes too confident predictions by adding a `a * (max_entropy - entropy) / max_entropy` term to the loss, where a is the value of this parameter) and `robust_lambda` (replaces the loss with `(1 - robust_lambda) * loss + robust_lambda / 2` which is useful in case of noisy labels).
 
 These are the available parameters of a binary output feature decoder
 
@@ -1249,7 +1113,6 @@ loss:
     type: cross_entropy
     confidence_penalty: 0
     robust_lambda: 0
-    positive_class_weight: 1
 fc_layers: null
 num_fc_layers: 0
 fc_size: 256
@@ -1261,10 +1124,10 @@ regularize: true
 threshold: 0.5
 ```
 
-### Binary Features Measures
+### Binary Features metrics
 
-The only measures that are calculated every epoch and are available for binary features are the `accuracy` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
+The only metrics that are calculated every epoch and are available for binary features are the `accuracy` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a binary feature.
 
 Numerical Features
 ------------------
@@ -1343,10 +1206,10 @@ initializer: null
 regularize: true
 ```
 
-### Numerical Features Measures
+### Numerical Features metrics
 
-The measures that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
+The metrics that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
 
 Category Features
 -----------------
@@ -1426,7 +1289,7 @@ These are the `loss` parameters
 
 - `confidence_penalty` (default `0`): penalizes overconfident predictions (low entropy) by adding an additional term that penalizes too confident predictions by adding a `a * (max_entropy - entropy) / max_entropy` term to the loss, where a is the value of this parameter. Useful in case of noisy labels.
 - `robust_lambda` (default `0`): replaces the loss with `(1 - robust_lambda) * loss + robust_lambda / c` where `c` is the number of classes, which is useful in case of noisy labels.
-- `class_weights` (default `1`): the value can be a vector of weights, one for each class, that is multiplied to the loss of the datapoints that have that class as ground truth. It is an alternative to oversampling in case of unbalanced class distribution. The ordering of the vector follows the category to integer ID mapping in the JSON metadata file (the `<UNK>` class needs to be included too). Alternatively, the value can be a dictionary with class strings as keys and weights as values, like `{class_a: 0.5, class_b: 0.7, ...}`.
+- `class_weights` (default `1`): the value can be a vector of weights, one of each class, that is multiplied to the loss of the datapoints that have that class as ground truth. It is an alternative to oversampling in case of unbalanced class distribution. The ordering of the vector follows the category to integer ID mapping in the JSON metadata file (the `<UNK>` class needs to be included too).
 - `class_similarities` (default `null`): if not `null` it is a `c x c` matrix in the form of a list of lists that contains the mutual similarity of classes. It is used if `class_similarities_temperature` is greater than 0. The ordering of the vector follows the category to integer ID mapping in the JSON metadata file (the `<UNK>` class needs to be included too).
 - `class_similarities_temperature` (default `0`): is the temperature parameter of the softmax that is performed on each row of `class_similarities`. The output of that softmax is used to determine the supervision vector to provide instead of the one hot vector that would be provided otherwise for each datapoint. The intuition behind it is that errors between similar classes are more tollerable than errors between really different classes.
 - `labels_smoothing` (default `0`): If label_smoothing is nonzero, smooth the labels towards `1/num_classes`: `new_onehot_labels = onehot_labels * (1 - label_smoothing) + label_smoothing / num_classes`.
@@ -1445,7 +1308,7 @@ These are the available parameters of a category output feature decoder
 - `dropout` (default `false`): determines if there should be a dropout layer after each layer.
 - `initializer` (default `null`): the initializer to use. If `null`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
 - `regularize` (default `true`): if `true` the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
-- `top_k` (default `3`): determines the parameter `k`, the number of categories to consider when computing the `top_k` measure. It computes accuracy but considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence.
+- `top_k` (default `3`): determines the parameter `k`, the number of categories to consider when computing the `top_k` metric. It computes accuracy but considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence.
 
 Example category feature entry (with default parameters) in the output features list:
 
@@ -1478,10 +1341,10 @@ regularize: true
 top_k: 3
 ```
 
-### Category Features Measures
+### Category Features metrics
 
-The measures that are calculated every epoch and are available for category features are `accuracy`, `top_k` (computes accuracy considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence) and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a category feature.
+The metrics that are calculated every epoch and are available for category features are `accuracy`, `top_k` (computes accuracy considering as a match if the true category appears in the first `k` predicted categories ranked by decoder's confidence) and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a category feature.
 
 Set Features
 ------------
@@ -1490,7 +1353,7 @@ Set Features
 
 Set features are transformed into a binary (int8 actually) valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the size of the biggest set and a `max_size` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sets are mapped into integers consists in first using a formatter to map from strings to sequences of set items (by default this is done by splitting on spaces).
-Then a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a a dictionary of all the different set item strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -1606,10 +1469,10 @@ regularize: true
 threshold: 0.5
 ```
 
-### Set Features Measures
+### Set Features metrics
 
-The measures that are calculated every epoch and are available for category features are `jaccard_index` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a set feature.
+The metrics that are calculated every epoch and are available for category features are `jaccard_index` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a set feature.
 
 Bag Features
 ------------
@@ -1629,9 +1492,9 @@ The parameters are the same used for set input features with the exception of `r
 
 There is no bag decoder available yet.
 
-### Bag Features Measures
+### Bag Features metrics
 
-As there is no decoder there is also no measure available yet for bag feature.
+As there is no decoder there is also no metric available yet for bag feature.
 
 Sequence Features
 -----------------
@@ -1640,7 +1503,7 @@ Sequence Features
 
 Sequence features are transformed into an integer valued matrix of size `n x l` (where `n` is the size of the dataset and `l` is the minimum of the length of the longest sequence and a `sequence_length_limit` parameter) and added to HDF5 with a key that reflects the name of column in the CSV.
 The way sequences are mapped into integers consists in first using a formatter to map from strings to sequences of tokens (by default this is done by splitting on spaces).
-Then a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
+Then a a dictionary of all the different token strings present in the column of the CSV is collected, then they are ranked by frequency and an increasing integer ID is assigned to them from the most frequent to the most rare (with 0 being assigned to `<PAD>` used for padding and 1 assigned to `<UNK>` item).
 The column name is added to the JSON file, with an associated dictionary containing
 1. the mapping from integer to string (`idx2str`)
 2. the mapping from string to id (`str2idx`)
@@ -2055,7 +1918,7 @@ These are the available parameters of the cnn rnn encoder:
 - `num_filters` (default `256`): if a `num_filters` is not already specified in `conv_layers` this is the default `num_filters` that will be used for each layer. It indicates the number of filters, and by consequence the output channels of the 1d convolution.
 - `pool_size` (default `null`): if a `pool_size` is not already specified in `conv_layers` this is the default `pool_size` that will be used for each layer. It indicates the size of the max pooling that will be performed along the `s` sequence dimension after the convolution operation.
 - `num_rec_layers` (default `1`): the number of stacked recurrent layers.
-- `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
+- `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentstion](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
 - `state_size` (default `256`): the size of the state of the rnn.
 - `bidirectional` (default `false`): if `true` two recurrent networks will perform encoding in the forward and backward direction and their outputs will be concatenated.
 - `dropout` (default `false`): determines if there should be a dropout layer between `conv_layers` and before returning the encoder output.
@@ -2203,7 +2066,7 @@ There are two decoders available for those to tasks names `tagger` and `generato
 
 These are the available parameters of a sequence output feature
 
-- `reduce_inputs` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
+- `reduce_input` (default `sum`): defines how to reduce an input that is not a vector, but a matrix or a higher order tensor, on the first dimension (second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `dependencies` (default `[]`): the output features this one is dependent on. For a detailed explanation refer to [Output Features Dependencies](#output-features-dependencies).
 - `reduce_dependencies` (default `sum`): defines how to reduce the output of a dependent feature that is not a vector, but a matrix or a higher order tensor, on the first dimension 9second if you count the batch dimension). Available values are: `sum`, `mean` or `avg`, `max`, `concat` (concatenates along the first dimension), `last` (returns the last vector of the first dimension).
 - `loss` (default `{type: softmax_cross_entropy, class_similarities_temperature: 0, class_weights: 1, confidence_penalty: 0, distortion: 1, labels_smoothing: 0, negative_samples: 0, robust_lambda: 0, sampler: null, unique: false}`): is a dictionary containing a loss `type`. The available losses `type` are `softmax_cross_entropy` and `sampled_softmax_cross_entropy`. For details on both losses, please refer to the [category feature output feature section](#category-output-features-and-encoders).
@@ -2243,8 +2106,7 @@ Example sequence feature entry using a tagger decoder (with default parameters) 
 ```yaml
 name: sequence_csv_column_name
 type: sequence
-decoder: tagger
-reduce_inputs: null
+reduce_inputs: sum
 dependencies: []
 reduce_dependencies: sum
 loss:
@@ -2300,19 +2162,18 @@ These are the available parameters of a tagger decoder:
 - `dropout` (default `false`): determines if there should be a dropout layer after each layer.
 - `initializer` (default `null`): the initializer to use. If `null`, the default initialized of each variable is used (`glorot_uniform` in most cases). Options are: `constant`, `identity`, `zeros`, `ones`, `orthogonal`, `normal`, `uniform`, `truncated_normal`, `variance_scaling`, `glorot_normal`, `glorot_uniform`, `xavier_normal`, `xavier_uniform`, `he_normal`, `he_uniform`, `lecun_normal`, `lecun_uniform`. Alternatively it is possible to specify a dictionary with a key `type` that identifies the type of initializer and other keys for its parameters, e.g. `{type: normal, mean: 0, stddev: 0}`. To know the parameters of each initializer, please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/keras/initializers).
 - `regularize` (default `true`): if `true` the weights of the layers are added to the set of weights that get regularized by a regularization loss (if the `regularization_lambda` in `training` is greater than 0).
-- `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentation](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
+- `cell_type` (default `rnn`): the type of recurrent cell to use. Available values are: `rnn`, `lstm`, `lstm_block`, `lstm`, `ln`, `lstm_cudnn`, `gru`, `gru_block`, `gru_cudnn`. For reference about the differences between the cells please refer to [TensorFlow's documentstion](https://www.tensorflow.org/api_docs/python/tf/nn/rnn_cell). We suggest to use the `block` variants on CPU and the `cudnn` variants on GPU because of their increased speed.
 - `state_size` (default `256`): the size of the state of the rnn.
 - `tied_embeddings` (default `null`): if `null` the embeddings of the targets are initialized randomly, while if the values is the name of an input feature, the embeddings of that input feature will be used as embeddings of the target. The `vocabulary_size` of that input feature has to be the same of the output feature one and it has to have an embedding matrix (binary and numerical features will not have one, for instance). In this case the `embedding_size` will be the same as the `state_size`. This is useful for implementing autoencoders where the encoding and decoding part of the model share parameters.
 - `embedding_size` (default 256): if `tied_target_embeddings` is `false`, the input embeddings and the weights of the softmax_cross_entropy weights before the softmax_cross_entropy are not tied together and can have different sizes, this parameter describes the size of the embeddings of the inputs of the generator.
 - `beam_width` (default `1`): sampling from the rnn generator is performed using beam search. By default, with a beam of one, only a greedy sequence using always the most probably next token is generated, but the beam size can be increased. This usually leads to better performance at the expense of more computation and slower generation.
 - `attention_mechanism` (default `null`): the recurrent generator may use an attention mechanism. The available ones are `bahdanau` and `luong` (for more information refer to [TensorFlow's documentation](https://www.tensorflow.org/api_guides/python/contrib.seq2seq#Attention)). When `attention` is not `null` the expected size of the input tensor is `b x s x h`, which is the output of a sequence, text or timeseries input feature without reduced outputs or the output of a sequence-based combiner. If a `b x h` input is provided to a generator decoder using an rnn with attention instead, an error will be raised during model building.
 
-Example sequence feature entry using a generator decoder (with default parameters) in the output features list:
+Example sequence feature entry using a tagger decoder (with default parameters) in the output features list:
 
 ```yaml
 name: sequence_csv_column_name
 type: sequence
-decoder: generator
 reduce_inputs: sum
 dependencies: []
 reduce_dependencies: sum
@@ -2344,10 +2205,10 @@ beam_width: 1
 attention_mechanism: null
 ```
 
-### Sequence Features Measures
+### Sequence Features metrics
 
-The measures that are calculated every epoch and are available for category features are `accuracy` (counts the number of datapoints where all the elements of the predicted sequence are correct over the number of all datapoints), `token_accuracy` (computes the number of elements in all the sequences that are correctly predicted over the number of all the elements in all the sequences), `last_accuracy` (accuracy considering only the last element of the sequence, it is useful for being sure special end-of-sequence tokens are generated or tagged), `edit_distance` (the levenshtein distance between the predicted and ground truth sequence), `perplexity` (the perplexity of the ground truth sequence according to the model) and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a sequence feature.
+The metrics that are calculated every epoch and are available for category features are `accuracy` (counts the number of datapoints where all the elements of the predicted sequence are correct over the number of all datapoints), `token_accuracy` (computes the number of elements in all the sequences that are correctly predicted over the number of all the elements in all the sequences), `last_accuracy` (accuracy considering only the last element of the sequence, it is useful for being sure special end-of-sequence tokens are generated or tagged), `edit_distance` (the levenshtein distance between the predicted and ground truth sequence), `perplexity` (the perplexity of the ground truth sequence according to the model) and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a sequence feature.
 
 Text Features
 -------------
@@ -2403,9 +2264,9 @@ The only difference is that you can specify an additional `level` parameter with
 The decoders are the same used for the [Sequence Features](#sequence-output-features-and-decoders).
 The only difference is that you can specify an additional `level` parameter with possible values `word` or `char` to force to use the text words or characters as inputs (by default the encoder will use `word`).
 
-### Text Features Measures
+### Text Features metrics
 
-The measures are the same used for the [Sequence Features](#sequence-features-measures).
+The metrics are the same used for the [Sequence Features](#sequence-features-metrics).
 
 
 Time Series Features
@@ -2425,9 +2286,9 @@ The only difference is that time series features don't have an embedding layer a
 
 There are no time series decoders at the moment (WIP), so time series cannot be used as output features.
 
-### Time Series Features Measures
+### Time Series Features metrics
 
-As no time series decoders are available at the moment, there are also no time series measures.
+As no time series decoders are available at the moment, there are also no time series metrics.
 
 Audio Features
 --------------
@@ -2480,9 +2341,9 @@ The only difference is that time series features don't have an embedding layer a
 
 There are no audio decoders at the moment (WIP), so audio cannot be used as output features.
 
-### Audio Features Measures
+### Audio Features metrics
 
-As no audio decoders are available at the moment, there are also no audio measures.
+As no audio decoders are available at the moment, there are also no audio metrics.
 
 
 Image Features
@@ -2626,9 +2487,9 @@ preprocessing:  # example pre-processing
 
 There are no image decoders at the moment (WIP), so image cannot be used as output features.
 
-### Image Features Measures
+### Image Features metrics
 
-As no image decoders are available at the moment, there are also no image measures.
+As no image decoders are available at the moment, there are also no image metrics.
 
 
 Date Features
@@ -2729,9 +2590,9 @@ regularize: true
 
 There are no date decoders at the moment (WIP), so date cannot be used as output features.
 
-### Date Features Measures
+### Date Features metrics
 
-As no date decoders are available at the moment, there are also no date measures.
+As no date decoders are available at the moment, there are also no date metrics.
 
 
 H3 Features
@@ -2878,9 +2739,9 @@ regularize: true
 
 There are no date decoders at the moment (WIP), so H3 cannot be used as output features.
 
-### H3 Features Measures
+### H3 Features metrics
 
-As no H3 decoders are available at the moment, there are also no date measures.
+As no H3 decoders are available at the moment, there are also no date metrics.
 
 Vector Features
 ---------------
@@ -2983,10 +2844,10 @@ regularize: true
 threshold: 0.5
 ```
 
-### Vector Features Measures
+### Vector Features metrics
 
-The measures that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
-You can set either of them as `validation_measure` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
+The metrics that are calculated every epoch and are available for numerical features are `mean_squared_error`, `mean_absolute_error`, `r2` and the `loss` itself.
+You can set either of them as `validation_metric` in the `training` section of the model definition if you set the `validation_field` to be the name of a numerical feature.
 
 
 Combiners
@@ -3120,272 +2981,46 @@ encoder: parallel_cnn
 Distributed Training
 ====================
 
-You can distribute the training and prediction of your models using [Horovod](https://github.com/uber/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
+You can distribute the training and prediction of your models using [Horovod](https://github.com/horovod/horovod), which allows to train on a single machine with multiple GPUs as well as on multiple machines with multiple GPUs.
 
-In order to use distributed training you have to install Horovod as detailed in [Horovod's installation instructions](https://github.com/uber/horovod#install) (which include installing [OpenMPI](https://www.open-mpi.org) or other [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) implementations or [Gloo](https://github.com/facebookincubator/gloo)) and then install the two packages:
+Support for Horovod enabled by installing Ludwig with `pip install ludwig[horovod]` or `HOROVOD_GPU_OPERATIONS=NCCL pip install ludwig[horovod]`
+for GPU support.  See Horovod's [installation guide](https://horovod.readthedocs.io/en/stable/install_include.html) for full details on available installation options.
 
-```
-pip install horovod mpi4py
-```
+Note that to install Horovod, you must have either CMake or a version of [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) installed (e.g., [OpenMPI](https://www.open-mpi.org)).
 
 Horovod works by, in practice, increasing the batch size and distributing a part of each batch to a different node and collecting the gradients from all the nodes in a smart and scalable way.
 It also adjusts the learning rate to counter balance the increase in the batch size.
 The advantage is that training speed scales almost linearly with the number of nodes.
 
-`experiment`, `train` and `predict` commands accept a `--use_horovod` argument that instructs the model building, training and prediction phases to be conducted using Horovod in a distributed way.
-A `horovodrun` command specifying which machines and / or GPUs to use, together with a few more parameters, must be provided before the call to Ludwig's command.
+Use the `horovodrun` command to specify which machines and how many worker processes (GPUs) to use.  This command must be provided before the call to Ludwig itself.
 For instance, in order to train a Ludwig model on a local machine with four GPUs one you can run:
 
 ```
-horovodrun -np 4 /
-    ludwig train --use_horovod ...other Ludwig parameters...
+horovodrun -np 4 \
+    ludwig train ...Ludwig parameters...
 ```
 
 While for training on four remote machines with four GPUs each you can run:
 
 ```
-horovodrun -np 16 /
-    -H server1:4,server2:4,server3:4,server4:4 /
-    ludwig train --use_horovod ...other Ludwig parameters...
+horovodrun -np 16 \
+    -H server1:4,server2:4,server3:4,server4:4 \
+    ludwig train ...Ludwig parameters...
 ```
 
 The same applies to `experiment`, `predict` and `test`.
 
-More details on Horovod installation and run parameters can be found in [Horovod's documentation](https://github.com/uber/horovod).
+When using `horovodrun`, Ludwig will automatically use Horovod to conduct the model building, training and prediction phases in a distributed way.
 
+When using `mpirun` directly, you may need to additionally pass the `--use_horovod` argument to Ludwig:
 
-Hyper-parameter optimization
-============================
-
-In order to perform hyper-parameter optimization, its configuration has to be provided inside the Ludwig model definition as a root key `hyperopt`.
-Its configuration contains what metric to optimize, which parameters to optimize, strategy to use, how to execute the optimization.
-
-The different parameters that could be defined in the `hyperopt` configuration are:
-- `goal` which indicates if to minimize or maximize a metric or a loss of any of the output features on any of the dataset splits. Available values are: `minimize` (default) or `maximize`.
-- `output_feature` is a `str` containing the name of the output feature that we want to optimize the metric or loss of. Available values are `combined` (default) or the name of any output feature provided in the model definition. `combined` is a special output feature that allows to optimize for the aggregated loss and metrics of all output features.
-- `metric` is the metric that we want to optimize for. The default one is `loss`, but depending on the tye of the feature defined in `output_feature`, different metrics and losses are available. Check the metrics section of the specific output feature type to figure out what metrics are available to use.
-- `split` is the split of data that we want to compute our metric on. By default it is the `validation` split, but you have the flexibility to specify also `train` or `test` splits.
-- `parameters` section consists of a set of hyper-parameters to optimize. They are provided as keys (the names of the parameters) and values associated with them (that define the search space). The values vary depending on the type of the hyper-parameter. Types can be `float`, `int` and `category`.
-- `strategy` section contains the strategy type to be used for sampling hyper-paramters values and its configuration. Currently available strategy types are `grid` and `random`. The strategy configuration parameters modify the strategy behavior, for instance for `random` you can set how many random samples to draw. 
-- `executor` section specifies how to execute the hyper-parameter optimization. The execution could happen locally in a serial manner or in parallely across multiple workers and with GPUs as well if available.
-
-Example:
-```yaml
-hyperopt:
-  goal: minimize
-  output_feature: combined
-  metric: loss
-  split: validation
-  parameters:
-    utterance.cell_type: ...
-    utterance.num_layers: ...
-    combiner.num_fc_layers: ...
-    section.embedding_size: ...
-    preprocessing.text.vocab_size: ...
-    training.learning_rate: ...
-    training.optimizer.type: ...
-    ...
-  strategy:
-    type: grid  # random
-    # strategy parameters...
-  executor:
-    type: serial  # parallel
-    # executor parameters...
+```
+mpirun ... \
+    ludwig train --use_horovod ...other Ludwig parameters...
 ```
 
-In the `parameters` section, `.` is used to reference an parameter nested inside a section of the model definition.
-For instance, to reference the `learning_rate`, one would have to use the name `training.learning_rate`.
-If the parameter to reference is inside in an input or output feature, the name of that feature will be be used as starting point.
-For instance, for referencing the `cell_type` of the `utterance` feature, use the name `utterance.cell_type`.
+More details on Horovod installation and run parameters can be found in [Horovod's documentation](https://horovod.readthedocs.io/en/stable).
 
-
-Hyper-parameters
-----------------
-
-### Float parameters
-
-For a `float` value, the parameters to specify are:
-
-- `low`: minimum value
-- `high`: maximum value
-- `scale`: `linear` (default) or `log`
-- `steps`: OPTIONAL number of steps.
-
-For instance `low: 0.0, high: 1.0, steps: 3` would yield `[0.0, 0.5, 1.0]` as potential values to sample from, while if `steps` is not specified, the full range between `0.0` and `1.0` will be used.
-
-Example:
-```yaml
-training.learning_rate:
-  type: float
-  low: 0.001
-  high: 0.1
-  steps: 4
-  scale: linear
-```
-
-
-### Int parameters
-
-For an `int` value, the parameters to specify are:
-
-- `low`: minimum value
-- `high`: maximum value
-- `steps`: OPTIONAL number of steps. 
-
-For instance `low: 0, high: 10, steps: 3` would yield `[0, 5, 10]` for the search, while if `steps` is not specified, `[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]` will be used.
-
-Example:
-```yaml
-combiner.num_fc_layers:
-  type: int
-  low: 1
-  high: 4
-```
-
-
-### Category parameters
-
-For a `category` value, the parameters to specify are:
-- `values`: a list of possible values. The type of each value of the list is not important (they could be strings, integers, floats and anything else, even entire dictionaries).
-
-Example:
-```yaml
-utterance.cell_type:
-  type: category
-  values: [rnn, gru, lstm]
-```
-
-
-Strategy
---------
-
-### Grid Strategy
-
-The `grid` strategy creates a search space exhaustively selecting all elements from the outer product of all possible values of the hyper-parameters provided in the `parameters` section.
-For `float` parameters, it is required to specify the number of `steps`.
-
-Example:
-```yaml
-strategy:
-  type: grid
-```
-
-### Random Strategy
-
-The `random` strategy samples hyper-parameters values randomly from the parameters search space.
-`num_samples` (default: `10`) can be specified in `strategy` section.
-
-Example:
-```yaml
-strategy:
-  type: random
-  num_samples: 10
-```
-
-
-Executor
---------
-
-### Serial Executor
-
-The `serial`executor performs hyper-parameter optimization locally in a serial manner, executing the elements in the set of sampled parameters obtained by the selected strategy one at a time.
-
-Example:
-```yaml
-executor:
-  type: serial
-```
-
-### Parallel Executor
-
-The `parallel` executor performs hyper-parameter optimization in parallel, executing the elements in the set of sampled parameters obtained by the selected strategy at the same time.
-The maximum numer of parallel workers that train and evaluate models is defined by the parameter `num_workers` (default: `2`).
-
-In case of training with GPUs, the `gpus` argument provided to the command line interface contains the list of GPUs to use, while if no `gpus` parameter is provided, all available GPUs will be used.
-The `gpu_fraction` argument can be provided as well, but it gets modified according to the `num_workers` to execute tasks parallely.
-For example, if `num_workers: 4` and 2 GPUs are available, if the provided `gpu_fraction` is above `0.5`, if will be replaced by `0.5`.
-An `epsilon` (default: `0.01`) parameter is also provided to allow for additional free GPU memory: the GPU franction to use is defined as `(#gpus / #workers) - epsilon`.
-
-Example:
-```yaml
-executor:
-  type: parallel
-  num_workers: 2
-  epsilon: 0.01
-```
-
-
-Full hyper-parameter optimization example
------------------------------------------
-
-Example YAML:
-
-```yaml
-input_features:
-  -
-    name: utterance
-    type: text
-    encoder: rnn
-    cell_type: lstm
-    num_layers: 2
-  -
-    name: section
-    type: category
-    representation: dense
-    embedding_size: 100
-combiner:
-  type: concat
-  num_fc_layers: 1
-output_features:
-  -
-    name: class
-    type: category
-preprocessing:
-  text:
-    word_vocab_size: 10000
-training:
-  learning_rate: 0.001
-  optimizer:
-    type: adam
-hyperopt:
-  goal: maximize
-  output_feature: class
-  metric: accuracy
-  split: validation
-  parameters:
-    training.learning_rate:
-      type: float
-      low: 0.0001
-      high: 0.1
-      steps: 4
-      scale: log
-    training.optimizaer.type:
-      type: category
-      values: [sgd, adam, adagrad]
-    preprocessing.text.word_vocab_size:
-      type: int
-      low: 700
-      high: 1200
-      steps: 5
-    combiner.num_fc_layers:
-      type: int
-      low: 1
-      high: 5
-    utterance.cell_type:
-      type: category
-      values: [rnn, gru, lstm]
-  strategy:
-    type: random
-    num_samples: 12
-  executor:
-    type: parallel
-    num_workers: 4
-```
-
-Example CLI command:
-```
-ludwig hyperopt --data_csv reuters-allcats.csv --model_definition "{input_features: [{name: utterance, type: text, encoder: rnn, cell_type: lstm, num_layers: 2}], output_features: [{name: class, type: category}], training: {learning_rate: 0.001}, hyperopt: {goal: maximize, output_feature: class, metric: accuracy, split: validation, parameters: {training.learning_rate: {type: float, low: 0.0001, high: 0.1, steps: 4, scale: log}, utterance.cell_type: {type: category, values: [rnn, gru, lstm]}}, strategy: {type: grid}, executor: {type: serial}}}"
-```
 
 Integrations
 ============
@@ -3456,7 +3091,7 @@ predictions = model.predict(dataset_df=dataframe)
 
 `predictions` will be a dataframe containing the prediction and confidence score / probability of all output features.
 
-If you want to compute also measures on the quality of the predictions you can run:
+If you want to compute also metrics on the quality of the predictions you can run:
 
 ```python
 predictions, test_stats = model.test(dataset_csv=csv_file_path)
@@ -3464,7 +3099,7 @@ predictions, test_stats = model.test(dataset_csv=csv_file_path)
 predictions, test_stats = model.test(dataset_df=dataframe)
 ```
 
-In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the measures and `test_statistics` will be a dictionary containing several measures of quality depending on the type of each output feature (e.g. `category` features will have an accuracy measure and a confusion matrix, among other measures, associated to them, while `numerical` features will have measures like mean squared loss and R2 among others).
+In this case the CSV / dataframe should also contain columns with the same names of all the output features, as their content is going to be used as ground truth to compare the predictions against and compute the metrics and `test_statistics` will be a dictionary containing several metrics of quality depending on the type of each output feature (e.g. `category` features will have an accuracy metric and a confusion matrix, among other metrics, associated to them, while `numerical` features will have metrics like mean squared loss and R2 among others).
 
 
 Visualizations
@@ -3487,30 +3122,20 @@ optional arguments:
                         ground truth file
   -gm GROUND_TRUTH_METADATA, --ground_truth_metadata GROUND_TRUTH_METADATA
                         input metadata JSON file
-  -od OUTPUT_DIRECTORY, --output_directory OUTPUT_DIRECTORY
-                        directory where to save plots.If not specified, plots
-                        will be displayed in a window
-  -ff {pdf,png}, --file_format {pdf,png}
-                        file format of output plots
-  -v {binary_threshold_vs_metric,calibration_1_vs_all,calibration_multiclass,compare_classifiers_multiclass_multimetric,compare_classifiers_performance_changing_k,compare_classifiers_performance_from_pred,compare_classifiers_performance_from_prob,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,compare_performance,confidence_thresholding,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confusion_matrix,frequency_vs_f1,hyperopt_hiplot,hyperopt_report,learning_curves,roc_curves,roc_curves_from_test_statistics}, --visualization {binary_threshold_vs_metric,calibration_1_vs_all,calibration_multiclass,compare_classifiers_multiclass_multimetric,compare_classifiers_performance_changing_k,compare_classifiers_performance_from_pred,compare_classifiers_performance_from_prob,compare_classifiers_performance_subset,compare_classifiers_predictions,compare_classifiers_predictions_distribution,compare_performance,confidence_thresholding,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confusion_matrix,frequency_vs_f1,hyperopt_hiplot,hyperopt_report,learning_curves,roc_curves,roc_curves_from_test_statistics}
+  -v {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}, --visualization {learning_curves,compare_performance,compare_classifiers_performance_from_prob,compare_classifiers_performance_from_pred,compare_classifiers_performance_subset,compare_classifiers_performance_changing_k,compare_classifiers_multiclass_multimetric,compare_classifiers_predictions,compare_classifiers_predictions_distribution,confidence_thresholding,confidence_thresholding_data_vs_acc,confidence_thresholding_data_vs_acc_subset,confidence_thresholding_data_vs_acc_subset_per_class,confidence_thresholding_2thresholds_2d,confidence_thresholding_2thresholds_3d,binary_threshold_vs_metric,roc_curves,roc_curves_from_test_statistics,calibration_1_vs_all,calibration_multiclass,confusion_matrix,frequency_vs_f1}
                         type of visualization
-  -f OUTPUT_FEATURE_NAME, --output_feature_name OUTPUT_FEATURE_NAME
-                        name of the output feature to visualize
-  -gts GROUND_TRUTH_SPLIT, --ground_truth_split GROUND_TRUTH_SPLIT
-                        ground truth split - 0:train, 1:validation, 2:test
-                        split
-  -tf THRESHOLD_OUTPUT_FEATURE_NAMES [THRESHOLD_OUTPUT_FEATURE_NAMES ...], --threshold_output_feature_names THRESHOLD_OUTPUT_FEATURE_NAMES [THRESHOLD_OUTPUT_FEATURE_NAMES ...]
-                        names of output features for 2d threshold
+  -f FIELD, --field FIELD
+                        field containing ground truth
+  -tf THRESHOLD_FIELDS [THRESHOLD_FIELDS ...], --threshold_fields THRESHOLD_FIELDS [THRESHOLD_FIELDS ...]
+                        fields for 2d threshold
   -pred PREDICTIONS [PREDICTIONS ...], --predictions PREDICTIONS [PREDICTIONS ...]
                         predictions files
   -prob PROBABILITIES [PROBABILITIES ...], --probabilities PROBABILITIES [PROBABILITIES ...]
                         probabilities files
-  -trs TRAINING_STATISTICS [TRAINING_STATISTICS ...], --training_statistics TRAINING_STATISTICS [TRAINING_STATISTICS ...]
+  -trs TRAINING_STATS [TRAINING_STATS ...], --training_statistics TRAINING_STATS [TRAINING_STATS ...]
                         training stats files
-  -tes TEST_STATISTICS [TEST_STATISTICS ...], --test_statistics TEST_STATISTICS [TEST_STATISTICS ...]
+  -tes TEST_STATS [TEST_STATS ...], --test_statistics TEST_STATS [TEST_STATS ...]
                         test stats files
-  -hs HYPEROPT_STATS_PATH, --hyperopt_stats_path HYPEROPT_STATS_PATH
-                        hyperopt stats file
   -mn MODEL_NAMES [MODEL_NAMES ...], --model_names MODEL_NAMES [MODEL_NAMES ...]
                         names of the models to use as labels
   -tn TOP_N_CLASSES [TOP_N_CLASSES ...], --top_n_classes TOP_N_CLASSES [TOP_N_CLASSES ...]
@@ -3548,7 +3173,7 @@ ludwig experiment --experiment_name titanic --model_name Model1 --data_csv train
 ludwig experiment --experiment_name titanic --model_name Model2 --data_csv train.csv -mdf titanic_model2.yaml
 ```
 
-For this, you need to download the [Titanic Kaggle competition dataset](https://www.kaggle.com/c/titanic/) to get `train.csv`.
+For this, you need to download the Kaggle Titanic dataset to get `train.csv`.
 Note that the images associated with each visualization below are not from the Titanic dataset.
 The two models are defined with `titanic_model1.yaml`
 
@@ -3618,12 +3243,12 @@ Learning Curves
 ### learning_curves
 
 This visualization uses the `training_statistics` and `model_names` parameters.
-For each model (in the aligned lists of `training_statistics` and `model_names`) and for each output feature and measure of the model, it produces a line plot showing how that measure changed over the course of the epochs of training on the training and validation sets.
+For each model (in the aligned lists of `training_statistics` and `model_names`) and for each output feature and metric of the model, it produces a line plot showing how that metric changed over the course of the epochs of training on the training and validation sets.
 
 Example command:
 
 ```
-ludwig visualize --visualization learning_curves --model_names Model1 Model2 --training_statistics results/titanic_Model1_0/training_statistics.json results/titanic_Model2_0/training_statistics.json
+ludwig visualize --visualization learning_curves --model_names Model1 Model2 --training_statistics results\titanic_Model1_0\training_statistics.json results\titanic_Model2_0\training_statistics.json
 ```
 
 ![Learning Curves Loss](images/learning_curves_loss.png "Learning Curves Loss")
@@ -3642,7 +3267,7 @@ The value of `top_n_classes` limits the heatmap to the `n` most frequent classes
 
 Example command:
 ```
-ludwig visualize --visualization confusion_matrix --top_n_classes 2 --test_statistics results/titanic_Model1_0/test_statistics.json --ground_truth_metadata results/titanic_Model1_0/model/train_set_metadata.json
+ludwig visualize --visualization confusion_matrix --top_n_classes 2 --test_statistics results\titanic_Model1_0\test_statistics.json --ground_truth_metadata results\titanic_Model1_0\model\train_set_metadata.json
 ```
 
 ![Confusion Matrix](images/confusion_matrix.png "Confusion Matrix")
@@ -3662,7 +3287,7 @@ For each model (in the aligned lists of `test_statistics` and `model_names`) it 
 
 Example command:
 ```
-ludwig visualize --visualization compare_performance --model_names Model1 Model2 --test_statistics results/titanic_Model1_0/test_statistics.json results/titanic_Model2_0/test_statistics.json --field Survived
+ludwig visualize --visualization compare_performance --model_names Model1 Model2 --test_statistics results\titanic_Model1_0\test_statistics.json results\titanic_Model2_0\test_statistics.json --field Survived
 ```
 
 ![Compare Classifiers Performance](images/compare_performance.png "Compare Classifiers Performance")
@@ -3676,7 +3301,7 @@ For each model (in the aligned lists of `probabilities` and `model_names`) it pr
 
 Example command:
 ```
-ludwig visualize --visualization compare_classifiers_performance_from_prob --model_names Model1 Model2 --ground_truth train.hdf5 --field Survived --probabilities results/titanic_Model1_0/Survived_probabilities.csv results/titanic_Model2_0/Survived_probabilities.csv
+ludwig visualize --visualization compare_classifiers_performance_from_prob --model_names Model1 Model2 --ground_truth train.hdf5 --field Survived --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv
 ```
 
 ![Compare Classifiers Performance from Probabilities](images/compare_classifiers_performance_from_prob.png "Compare Classifiers Performance from probabilities")
@@ -3690,7 +3315,7 @@ For each model (in the aligned lists of `predictions` and `model_names`) it prod
 
 Example command:
 ```
-ludwig visualize --visualization compare_classifiers_performance_from_pred --model_names Model1 Model2 --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --predictions results/titanic_Model1_0/Survived_predictions.csv results/titanic_Model2_0/Survived_predictions.csv
+ludwig visualize --visualization compare_classifiers_performance_from_pred --model_names Model1 Model2 --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --predictions results\titanic_Model1_0\Survived_predictions.csv results\titanic_Model2_0\Survived_predictions.csv
 ```
 
 ![Compare Classifiers Performance from Predictions](images/compare_classifiers_performance_from_pred.png "Compare Classifiers Performance from Predictions")
@@ -3707,7 +3332,7 @@ If the values of `subset` is `ground_truth`, then only datapoints where the grou
 
 Example command:
 ```
-ludwig visualize --visualization compare_classifiers_performance_subset --model_names Model1 Model2 --top_n_classes 2 --subset ground_truth --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --probabilities results/titanic_Model1_0/Survived_probabilities.csv results/titanic_Model2_0/Survived_probabilities.csv
+ludwig visualize --visualization compare_classifiers_performance_subset --model_names Model1 Model2 --top_n_classes 2 --subset ground_truth --ground_truth train.hdf5 --field Survived --ground_truth_metadata train.json --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv
 ```
 
 ![Compare Classifiers Performance Subset Ground Truth](images/compare_classifiers_performance_subset_gt.png "Compare Classifiers Performance Subset Ground Truth")
@@ -3721,11 +3346,11 @@ If the values of `subset` is `predictions`, then only datapoints where the the m
 
 This visualization uses the `top_k`, `ground_truth`, `field`, `probabilities` and `model_names` parameters.
 `field` needs to be a category.
-For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line plot that shows the Hits@K measure (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k` for the specified `field`.
+For each model (in the aligned lists of `probabilities` and `model_names`) it produces a line plot that shows the Hits@K metric (that counts a prediction as correct if the model produces it among the first `k`) while changing `k` from 1 to `top_k` for the specified `field`.
 
 Example command:
 ```
-ludwig visualize --visualization compare_classifiers_performance_changing_k --model_names Model1 Model2 --top_k 5 --ground_truth train.hdf5 --field Survived --probabilities results/titanic_Model1_0/Survived_probabilities.csv results/titanic_Model2_0/Survived_probabilities.csv
+ludwig visualize --visualization compare_classifiers_performance_changing_k --model_names Model1 Model2 --top_k 5 --ground_truth train.hdf5 --field Survived --probabilities results\titanic_Model1_0\Survived_probabilities.csv results\titanic_Model2_0\Survived_probabilities.csv
 ```
 
 ![Compare Classifiers Performance Changing K](images/compare_classifiers_performance_changing_k.png "Compare Classifiers Performance Changing K")
@@ -3737,19 +3362,19 @@ This visualization uses the `top_n_classes`, `ground_truth_metadata`, `field`, `
 `field` needs to be a category.
 For each model (in the aligned lists of `test_statistics` and `model_names`) it produces four plots that show the precision, recall and F1 of the model on several classes for the specified `field`.
 
-The first one show the measures on the `n` most frequent classes.
+The first one show the metrics on the `n` most frequent classes.
 
 ![Multiclass Multimetric top k](images/compare_classifiers_multiclass_multimetric_topk.png "Multiclass Multimetric most frequent classes")
 
-The second one shows the measures on the `n` classes where the model performs the best.
+The second one shows the metrics on the `n` classes where the model performs the best.
 
 ![Multiclass Multimetric best k](images/compare_classifiers_multiclass_multimetric_bestk.png "Multiclass Multimetric best classes")
 
-The third one shows the measures on the `n` classes where the model performs the worst.
+The third one shows the metrics on the `n` classes where the model performs the worst.
 
 ![Multiclass Multimetric worst k](images/compare_classifiers_multiclass_multimetric_worstk.png "Multiclass Multimetric worst classes")
 
-The fourth one shows the measures on all the classes, sorted by their frequency. This could become unreadable in case the number of classes is really high.
+The fourth one shows the metrics on all the classes, sorted by their frequency. This could become unreadable in case the number of classes is really high.
 
 ![Multiclass Multimetric sorted](images/compare_classifiers_multiclass_multimetric_sorted.png "Multiclass Multimetric sorted classes")
 
@@ -3765,7 +3390,7 @@ This visualization produces a pie chart comparing the predictions of the two mod
 
 Example command:
 ```
-ludwig visualize --visualization compare_classifiers_predictions --model_names Model1 Model2 --ground_truth train.hdf5 --field Survived --predictions results/titanic_Model1_0/Survived_predictions.csv results/titanic_Model2_0/Survived_predictions.csv
+ludwig visualize --visualization compare_classifiers_predictions --model_names Model1 Model2 --ground_truth train.hdf5 --field Survived --predictions results\titanic_Model1_0\Survived_predictions.csv results\titanic_Model2_0\Survived_predictions.csv
 ```
 ![Compare Classifiers Predictions](images/compare_classifiers_predictions.png "Compare Classifiers Predictions")
 
@@ -3896,9 +3521,9 @@ It needs to be an integer, to figure out the association between classes and int
 
 ### roc_curves_from_test_statistics
 
-This visualization uses the `output_feature_name`, `test_statistics` and `model_names` parameters.
-`output_feature_name` needs to be binary feature.
-This visualization produces a line chart plotting the roc curves for the specified `output_feature_name`.
+This visualization uses the `field`, `test_statistics` and `model_names` parameters.
+`field` needs to be binary feature.
+This visualization produces a line chart plotting the roc curves for the specified `field`.
 
 ![ROC Curves from Prediction Statistics](images/roc_curves_from_test_statistics.png "ROC Curves from Prediction Statistics")
 
@@ -3955,36 +3580,3 @@ The classes on the x axis are sorted by f1 score.
 The second plot has the same structure of the first one, but the axes are flipped and the classes on the x axis are sorted by frequency.
 
 ![Frequency vs F1 sorted by Frequency](images/freq_vs_f1_sorted_freq.png "Frequency vs F1 sorted by Frequency")
-
-
-Hyper-parameter optimization visualization
-------------------------------------------
-
-The examples of the hyper-parameter visualizations shown here are obtained by running a random search with 100 samples on the [ATIS dataset](https://www.kaggle.com/siddhadev/ms-cntk-atis) used for classifying intents given user utterances.
- 
-### hyperopt_report
-
-This visualization uses the `hyperopt_stats_path` parameter.
-
-The visualization creates one plot for each hyper-parameter in the file at `hyperopt_stats_path`, plus an additional one containing a pair plot.
-
-Each plot will show the distribution of the parameters with respect to the metric to optimize.
-For `float` and `int` parameters, a scatter plot is used, while for `category` parameters, a violin plot is used instead. 
-
-![Float hyperopt plot](images/hyperopt_float.png "Float hyperopt plot")
-
-![Int hyperopt plot](images/hyperopt_int.png "Int hyperopt plot")
-
-![Category hyperopt plot](images/hyperopt_category.png "Category hyperopt plot")
-
-The pair plot shows a heatmap of how the values of pairs of hyper-parameters correlate with the metric to optimize.
-
-![Pait hyperopt plot](images/hyperopt_pair.png "Pait hyperopt plot")
-
-### hyperopt_hiplot
-
-This visualization uses the `hyperopt_stats_path` parameter.
-
-The visualization creates an interactive HTML page visualizing all the results from the hyper-parameter optimization at once, using a parallel coordinate plot.
-
-![Hiplot hyperopt plot](images/hyperopt_hiplot.jpeg "Hiplot hyperopt plot")

@@ -61,7 +61,7 @@ def learning_rate_warmup_distributed(
      See https://arxiv.org/pdf/1706.02677.pdf for details.
 
      Inspired by Horovod's implementation:
-     https://github.com/uber/horovod/blob/master/horovod/keras/callbacks.py#L202
+     https://horovod.readthedocs.io/en/stable/api.html#horovod.tensorflow.keras.callbacks.LearningRateWarmupCallback
      Math recap:
                                                    curr_step
             epoch               = full_epochs + ---------------
@@ -78,8 +78,8 @@ def learning_rate_warmup_distributed(
         return learning_rate
     else:
         epoch_adjusted = float(epoch) + (curr_step / steps_per_epoch)
-        return learning_rate / num_workers * \
-               (epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
+        return learning_rate / num_workers * (
+                epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
 
 
 def learning_rate_warmup(

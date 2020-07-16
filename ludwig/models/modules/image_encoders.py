@@ -14,86 +14,121 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.models.modules.convolutional_modules import flatten, ConvStack2D, \
-    ResNet, get_resnet_block_sizes
+import tensorflow as tf
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Layer
+
+from ludwig.models.modules.convolutional_modules import Conv2DStack, \
+    get_resnet_block_sizes
+from ludwig.models.modules.convolutional_modules import ResNet2
 from ludwig.models.modules.fully_connected_modules import FCStack
 
 
-class Stacked2DCNN:
+class Stacked2DCNN(Layer):
     def __init__(
             self,
             conv_layers=None,
             num_conv_layers=None,
             filter_size=3,
             num_filters=32,
-            pool_size=2,
-            stride=1,
-            pool_stride=2,
+            strides=(1, 1),
+            padding='valid',
+            dilation_rate=(1, 1),
+            conv_use_bias=True,
+            conv_weights_initializer='glorot_uniform',
+            conv_bias_initializer='zeros',
+            conv_weights_regularizer=None,
+            conv_bias_regularizer=None,
+            conv_activity_regularizer=None,
+            # conv_weights_constraint=None,
+            # conv_bias_constraint=None,
+            conv_norm=None,
+            conv_norm_params=None,
+            conv_activation='relu',
+            conv_dropout_rate=0,
+            pool_size=(2, 2),
+            pool_strides=None,
             fc_layers=None,
             num_fc_layers=1,
             fc_size=128,
-            norm=None,
-            activation='relu',
-            dropout=True,
-            regularize=True,
-            initializer=None,
+            fc_use_bias=True,
+            fc_weights_initializer='glorot_uniform',
+            fc_bias_initializer='zeros',
+            fc_weights_regularizer=None,
+            fc_bias_regularizer=None,
+            fc_activity_regularizer=None,
+            # fc_weights_constraint=None,
+            # fc_bias_constraint=None,
+            fc_norm=None,
+            fc_norm_params=None,
+            fc_activation='relu',
+            fc_dropout_rate=0,
             **kwargs
     ):
-        self.conv_stack_2d = ConvStack2D(
+        super(Stacked2DCNN, self).__init__()
+
+        self.conv_stack_2d = Conv2DStack(
             layers=conv_layers,
             num_layers=num_conv_layers,
-            default_filter_size=filter_size,
             default_num_filters=num_filters,
+            default_filter_size=filter_size,
+            default_strides=strides,
+            default_padding=padding,
+            default_dilation_rate=dilation_rate,
+            default_use_bias=conv_use_bias,
+            default_weights_initializer=conv_weights_initializer,
+            defaultbias_initializer=conv_bias_initializer,
+            default_weights_regularizer=conv_weights_regularizer,
+            default_bias_regularizer=conv_bias_regularizer,
+            default_activity_regularizer=conv_activity_regularizer,
+            # default_weights_constraint=conv_weights_constraint,
+            # default_bias_constraint=conv_bias_constraint,
+            default_norm=conv_norm,
+            default_norm_params=conv_norm_params,
+            default_activation=conv_activation,
+            default_dropout_rate=conv_dropout_rate,
             default_pool_size=pool_size,
-            default_activation=activation,
-            default_stride=stride,
-            default_pool_stride=pool_stride,
-            default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_pool_strides=pool_strides,
         )
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
             default_fc_size=fc_size,
-            default_activation=activation,
-            default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
+            default_use_bias=fc_use_bias,
+            default_weights_initializer=fc_weights_initializer,
+            default_bias_initializer=fc_bias_initializer,
+            default_weights_regularizer=fc_weights_regularizer,
+            default_bias_regularizer=fc_bias_regularizer,
+            default_activity_regularizer=fc_activity_regularizer,
+            # default_weights_constraint=fc_weights_constraint,
+            # default_bias_constraint=fc_bias_constraint,
+            default_norm=fc_norm,
+            default_norm_params=fc_norm_params,
+            default_activation=fc_activation,
+            default_dropout_rate=fc_dropout_rate,
         )
 
-    def __call__(
-            self,
-            input_image,
-            regularizer,
-            dropout,
-            is_training
-    ):
+    def call(self, inputs, training=None, mask=None):
+        """
+            :param inputs: The inputs fed into the encoder.
+                    Shape: [batch x height x width x channels], type tf.uint8
+        """
+        inputs = tf.cast(inputs, tf.float32)
+
         # ================ Conv Layers ================
         hidden = self.conv_stack_2d(
-            input_image,
-            regularizer,
-            dropout,
-            is_training=is_training
+            inputs,
+            training,
         )
-        hidden, hidden_size = flatten(hidden)
+        hidden = tf.reshape(hidden, [hidden.shape[0], -1])
 
         # ================ Fully Connected ================
-        hidden = self.fc_stack(
-            hidden,
-            hidden_size,
-            regularizer,
-            dropout,
-            is_training=is_training
-        )
-        hidden_size = hidden.shape.as_list()[-1]
+        outputs = self.fc_stack(hidden)
 
-        return hidden, hidden_size
+        return {'encoder_output': outputs}
 
 
-class ResNetEncoder:
+class ResNetEncoder(Layer):
     def __init__(
             self,
             resnet_size=50,
@@ -107,13 +142,22 @@ class ResNetEncoder:
             fc_layers=None,
             num_fc_layers=1,
             fc_size=256,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
             norm=None,
+            norm_params=None,
             activation='relu',
-            dropout=False,
-            regularize=True,
-            initializer=None,
+            dropout_rate=0,
             **kwargs
     ):
+        super(ResNetEncoder, self).__init__()
+
         if resnet_size < 50:
             bottleneck = False
         else:
@@ -122,54 +166,44 @@ class ResNetEncoder:
         block_sizes = get_resnet_block_sizes(resnet_size)
         block_strides = [1, 2, 2, 2][:len(block_sizes)]
 
-        self.resnet = ResNet(
-            resnet_size,
-            bottleneck,
-            num_filters,
-            kernel_size,
-            conv_stride,
-            first_pool_size,
-            first_pool_stride,
-            block_sizes,
-            block_strides,
-            batch_norm_momentum,
-            batch_norm_epsilon
-        )
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_activation=activation,
-            default_norm=norm,
-            default_dropout=dropout,
-            default_regularize=regularize,
-            default_initializer=initializer
-        )
+        self.layers = [
+            ResNet2(
+                resnet_size,
+                bottleneck,
+                num_filters,
+                kernel_size,
+                conv_stride,
+                first_pool_size,
+                first_pool_stride,
+                block_sizes,
+                block_strides,
+                batch_norm_momentum,
+                batch_norm_epsilon
+            ),
+            Flatten(),
+            FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=fc_weights_constraint,
+                # default_bias_constraint=fc_bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
+        ]
 
-    def __call__(
-            self,
-            input_image,
-            regularizer,
-            dropout,
-            is_training
-    ):
-        # ================ Conv Layers ================
-        hidden = self.resnet(
-            input_image,
-            regularizer,
-            dropout,
-            is_training=is_training
-        )
-        hidden, hidden_size = flatten(hidden)
+    def call(self, inputs, training=None, mask=None):
+        hidden = tf.cast(inputs, tf.float32)
 
-        # ================ Fully Connected ================
-        hidden = self.fc_stack(
-            hidden,
-            hidden_size,
-            regularizer,
-            dropout,
-            is_training=is_training
-        )
-        hidden_size = hidden.shape.as_list()[-1]
+        for layer in self.layers:
+            hidden = layer(hidden, training=training)
 
-        return hidden, hidden_size
+        return {'encoder_output': hidden}

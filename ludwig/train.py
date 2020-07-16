@@ -27,8 +27,8 @@ from pprint import pformat
 
 import yaml
 
-from ludwig.constants import TRAINING, VALIDATION, TEST
-from ludwig.contrib import contrib_command
+from ludwig.constants import *
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
@@ -36,7 +36,7 @@ from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.model import Model
 from ludwig.models.model import load_model_and_definition
-from ludwig.models.modules.measure_modules import get_best_function
+from ludwig.models.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
@@ -77,10 +77,10 @@ def full_train(
         skip_save_log=False,
         skip_save_processed_input=False,
         output_directory='results',
-        should_close_session=True,
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         random_seed=42,
         debug=False,
         **kwargs
@@ -148,7 +148,7 @@ def full_train(
     :param skip_save_model: Disables saving model weights
            and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure improves, but if the model is really big
+           the validation metric improves, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -174,11 +174,14 @@ def full_train(
     :param output_directory: The directory that will contain the training
            statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
-    :param gpus: List of GPUs that are available for training.
-    :type gpus: List
-    :param gpu_fraction: Fraction of the memory of each GPU to use at
-           the beginning of the training. The memory may grow elastically.
-    :type gpu_fraction: Integer
+    :param gpus: (string, default: `None`) list of GPUs to use (it uses the
+            same syntax of CUDA_VISIBLE_DEVICES)
+    :type gpus: str
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :type allow_parallel_threads: Boolean
     :param random_seed: Random seed used for weights initialization,
            splits and any other random function.
     :type random_seed: Integer
@@ -186,6 +189,8 @@ def full_train(
     :type debug: Boolean
     :returns: None
     """
+    set_on_master(use_horovod)
+
     # check for model_definition and model_definition_file
     if model_definition is None and model_definition_file is None:
         raise ValueError(
@@ -226,7 +231,7 @@ def full_train(
                 model_name
             )
         else:
-            experiment_dir_name = '.'
+            experiment_dir_name = None
 
     # if model_load_path is not None, load its train_set_metadata
     if model_load_path is not None:
@@ -245,14 +250,14 @@ def full_train(
             skip_save_log and
             skip_save_processed_input
     )
+
+    description_fn = training_stats_fn = model_dir = None
     if is_on_master():
         if should_create_exp_dir:
             if not os.path.exists(experiment_dir_name):
                 os.makedirs(experiment_dir_name)
-
-    description_fn, training_stats_fn, model_dir = get_file_names(
-        experiment_dir_name
-    )
+        description_fn, training_stats_fn, model_dir = get_file_names(
+            experiment_dir_name)
 
     # save description
     description = get_experiment_description(
@@ -349,7 +354,8 @@ def full_train(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug
@@ -362,9 +368,6 @@ def full_train(
         TEST: train_testset_stats
     }
 
-    if should_close_session:
-        model.close_session()
-
     # save training statistics
     if is_on_master():
         if not skip_save_training_statistics:
@@ -372,33 +375,33 @@ def full_train(
 
     # grab the results of the model with highest validation test performance
     validation_field = model_definition[TRAINING]['validation_field']
-    validation_measure = model_definition[TRAINING]['validation_measure']
+    validation_metric = model_definition[TRAINING]['validation_metric']
     validation_field_result = train_valisest_stats[validation_field]
 
-    best_function = get_best_function(validation_measure)
+    best_function = get_best_function(validation_metric)
     # results of the model with highest validation test performance
     if is_on_master() and validation_set is not None:
-        epoch_best_vali_measure, best_vali_measure = best_function(
-            enumerate(validation_field_result[validation_measure]),
+        epoch_best_vali_metric, best_vali_metric = best_function(
+            enumerate(validation_field_result[validation_metric]),
             key=lambda pair: pair[1]
         )
         logger.info(
             'Best validation model epoch: {0}'.format(
-                epoch_best_vali_measure + 1)
+                epoch_best_vali_metric + 1)
         )
         logger.info(
             'Best validation model {0} on validation set {1}: {2}'.format(
-                validation_measure, validation_field, best_vali_measure
+                validation_metric, validation_field, best_vali_metric
             ))
         if test_set is not None:
-            best_vali_measure_epoch_test_measure = train_testset_stats[
-                validation_field][validation_measure][epoch_best_vali_measure]
+            best_vali_metric_epoch_test_metric = train_testset_stats[
+                validation_field][validation_metric][epoch_best_vali_metric]
 
             logger.info(
                 'Best validation model {0} on test set {1}: {2}'.format(
-                    validation_measure,
+                    validation_metric,
                     validation_field,
-                    best_vali_measure_epoch_test_measure
+                    best_vali_metric_epoch_test_metric
                 )
             )
         logger.info('\nFinished: {0}_{1}'.format(experiment_name, model_name))
@@ -427,8 +430,9 @@ def train(
         skip_save_progress=False,
         skip_save_log=False,
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False
 ):
@@ -450,7 +454,7 @@ def train(
     :param skip_save_model: Disables
                saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation measure imrpvoes, but if the model is really big
+           the validation metric imrpvoes, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
@@ -470,9 +474,11 @@ def train(
     :type skip_save_log: Boolean
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of the memory of each GPU to use at
-           the beginning of the training. The memory may grow elastically.
-    :type gpu_fraction: Integer
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :type allow_parallel_threads: Boolean
     :param random_seed: Random seed used for weights initialization,
            splits and any other random function.
     :type random_seed: Integer
@@ -499,6 +505,8 @@ def train(
             model_definition[TRAINING],
             model_definition['preprocessing'],
             use_horovod=use_horovod,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
             random_seed=random_seed,
             debug=debug
         )
@@ -518,7 +526,8 @@ def train(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         random_seed=random_seed,
         **model_definition[TRAINING]
     )
@@ -529,7 +538,7 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
     # model_definition = merge_with_defaults(model_definition)
     for input_feature in model_definition['input_features']:
         feature = get_from_registry(
-            input_feature['type'],
+            input_feature[TYPE],
             input_type_registry
         )
         feature.populate_defaults(input_feature)
@@ -542,7 +551,7 @@ def update_model_definition_with_metadata(model_definition, train_set_metadata):
     # populate output features fields depending on data
     for output_feature in model_definition['output_features']:
         feature = get_from_registry(
-            output_feature['type'],
+            output_feature[TYPE],
             output_type_registry
         )
         feature.populate_defaults(output_feature)
@@ -720,7 +729,7 @@ def cli(sys_argv):
         default=False,
         help='disables saving weights each time the model imrpoves. '
              'By default Ludwig saves  weights after each epoch '
-             'the validation measure imrpvoes, but  if the model is really big '
+             'the validation metric imrpvoes, but  if the model is really big '
              'that can be time consuming if you do not want to keep '
              'the weights and just find out what performance can a model get '
              'with a set of hyperparameters, use this parameter to skip it'
@@ -766,17 +775,24 @@ def cli(sys_argv):
         help='list of gpus to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(
@@ -798,6 +814,9 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.train')
+
     set_on_master(args.use_horovod)
 
     if is_on_master():
@@ -807,5 +826,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("train", *sys.argv)
     cli(sys.argv[1:])

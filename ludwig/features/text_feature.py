@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from collections import OrderedDict
 
 import numpy as np
 import tensorflow as tf
@@ -25,6 +24,7 @@ from ludwig.constants import *
 from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
+from ludwig.globals import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc import set_default_value
@@ -38,9 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class TextBaseFeature(BaseFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = TEXT
+    type = TEXT
 
     preprocessing_defaults = {
         'char_tokenizer': 'characters',
@@ -56,8 +54,11 @@ class TextBaseFeature(BaseFeature):
         'padding': 'right',
         'lowercase': True,
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ''
+        'fill_value': UNKNOWN_SYMBOL
     }
+
+    def __init__(self, feature):
+        super().__init__(feature)
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters):
@@ -183,42 +184,32 @@ class TextBaseFeature(BaseFeature):
 
 
 class TextInputFeature(TextBaseFeature, SequenceInputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
+    encoder = 'parallel_cnn'
+    level = 'word'
+    length = 0
 
-        self.type = TEXT
+    def __init__(self, feature, encoder_obj=None):
+        TextBaseFeature.__init__(self, feature)
+        SequenceInputFeature.__init__(self, feature)
 
-        self.level = 'word'
-        self.length = 0
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
 
-        self.encoder = 'parallel_cnn'
+    def call(self, inputs, training=None, mask=None):
+        assert isinstance(inputs, tf.Tensor)
+        assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
+               inputs.dtype == tf.int32 or inputs.dtype == tf.int64
+        assert len(inputs.shape) == 2
 
-        encoder_parameters = self.overwrite_defaults(feature)
-        self.encoder_obj = self.get_sequence_encoder(encoder_parameters)
-
-    def _get_input_placeholder(self):
-        return tf.compat.v1.placeholder(
-            tf.int32, shape=[None, None],
-            name='{}_placeholder'.format(self.name)
+        inputs_exp = tf.cast(inputs, dtype=tf.int32)
+        encoder_output = self.encoder_obj(
+            inputs_exp, training=training, mask=mask
         )
 
-    def build_input(
-            self,
-            regularizer,
-            dropout_rate,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  targets_placeholder: {0}'.format(placeholder))
-
-        return self.build_sequence_input(
-            placeholder,
-            self.encoder_obj,
-            regularizer,
-            dropout_rate,
-            is_training
-        )
+        return encoder_output
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -239,7 +230,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
         set_default_values(
             input_feature,
             {
-                'tied_weights': None,
+                TIED: None,
                 'encoder': 'parallel_cnn',
                 'level': 'word'
             }
@@ -247,109 +238,25 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
 
 
 class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
-    def __init__(self, feature):
-        super().__init__(feature)
-        self.type = TEXT
+    decoder = 'generator'
+    level = 'word'
+    max_sequence_length = 0
+    loss = {
+        'type': SOFTMAX_CROSS_ENTROPY,
+        'class_weights': 1,
+        'class_similarities_temperature': 0,
+        'weight': 1
+    }
+    num_classes = 0
 
-        self.level = 'word'
-        self.decoder = 'generator'
-        self.max_sequence_length = 0
-        self.loss = {
-            'type': SOFTMAX_CROSS_ENTROPY,
-            'class_weights': 1,
-            'class_similarities_temperature': 0,
-            'weight': 1
-        }
-        self.num_classes = 0
-
-        a = self.overwrite_defaults(feature)
-
-        self.decoder_obj = self.get_sequence_decoder(feature)
-
-    def _get_output_placeholder(self):
-        return tf.compat.v1.placeholder(
-            tf.int32,
-            [None, self.max_sequence_length],
-            name='{}_placeholder'.format(self.name)
-        )
-
-    def build_output(
-            self,
-            hidden,
-            hidden_size,
-            regularizer=None,
-            dropout_rate=None,
-            is_training=None,
-            **kwargs
-    ):
-        train_mean_loss, eval_loss, output_tensors = self.build_sequence_output(
-            self._get_output_placeholder(),
-            self.decoder_obj,
-            hidden,
-            hidden_size,
-            regularizer=regularizer,
-            kwarg=kwargs
-        )
-        return train_mean_loss, eval_loss, output_tensors
-
-    default_validation_measure = LOSS
-
-    output_config = OrderedDict([
-        (LOSS, {
-            'output': EVAL_LOSS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (ACCURACY, {
-            'output': CORRECT_ROWWISE_PREDICTIONS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (TOKEN_ACCURACY, {
-            'output': CORRECT_OVERALL_PREDICTIONS,
-            'aggregation': SEQ_SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (LAST_ACCURACY, {
-            'output': CORRECT_LAST_PREDICTIONS,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (PERPLEXITY, {
-            'output': PERPLEXITY,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (EDIT_DISTANCE, {
-            'output': EDIT_DISTANCE,
-            'aggregation': SUM,
-            'value': 0,
-            'type': MEASURE
-        }),
-        (LAST_PREDICTIONS, {
-            'output': LAST_PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        }),
-        (PREDICTIONS, {
-            'output': PREDICTIONS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        }),
-        (LENGTHS, {
-            'output': LENGTHS,
-            'aggregation': APPEND,
-            'value': [],
-            'type': PREDICTION
-        })
-    ])
+    def __init__(self, feature, decoder_obj=None):
+        TextBaseFeature.__init__(self, feature)
+        SequenceOutputFeature.__init__(self, feature)
+        self.overwrite_defaults(feature)
+        if decoder_obj:
+            self.encoder_obj = decoder_obj
+        else:
+            self.encoder_obj = self.initialize_decoder(feature)
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -397,7 +304,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
                     'for feature {}'.format(output_feature['name'])
                 )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             level_str2freq = '{}_str2freq'.format(output_feature['level'])
             level_idx2str = '{}_idx2str'.format(output_feature['level'])
             output_feature[LOSS]['class_counts'] = [
@@ -437,15 +344,23 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
     ):
         # todo: refactor to reuse SeuuqnceOutputFeature.postprocess_results
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
         level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
             if level_idx2str in metadata:
                 postprocessed[PREDICTIONS] = [
-                    [metadata[level_idx2str][token] for token in pred]
+                    [metadata[level_idx2str][token]
+                     if token < len(
+                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
+                     for token in pred]
                     for pred in preds
                 ]
             else:
@@ -460,8 +375,10 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             last_preds = result[LAST_PREDICTIONS]
             if level_idx2str in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
-                    metadata[level_idx2str][last_pred] for last_pred in
-                    last_preds
+                    metadata[level_idx2str][last_pred]
+                    if last_pred < len(
+                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
+                    for last_pred in last_preds
                 ]
             else:
                 postprocessed[LAST_PREDICTIONS] = last_preds

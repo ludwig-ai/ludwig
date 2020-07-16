@@ -94,7 +94,7 @@ def test_savedmodel(csv_filename):
     ##############################
     # collect weight tensors names
     ##############################
-    with ludwig_model.model.session as sess:
+    with ludwig_model.model._session as sess:
         all_variables = tf.compat.v1.trainable_variables()
         all_variables_names = [v.name for v in all_variables]
     ludwig_model.close()
