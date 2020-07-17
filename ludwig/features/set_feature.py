@@ -47,8 +47,8 @@ class SetBaseFeature(BaseFeature):
         'fill_value': UNKNOWN_SYMBOL
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -152,8 +152,7 @@ class SetOutputFeature(SetBaseFeature, OutputFeature):
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
 
     def __init__(self, feature):
-        SetBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
 
         self.num_classes = 0
         self.threshold = 0.5

@@ -41,8 +41,8 @@ class DateBaseFeature(BaseFeature):
         'datetime_format': None
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -118,8 +118,7 @@ class DateInputFeature(DateBaseFeature, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
-        DateBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
 
         self.overwrite_defaults(feature)
         if encoder_obj:

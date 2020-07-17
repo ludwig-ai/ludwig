@@ -91,8 +91,8 @@ class NumericalBaseFeature(BaseFeature):
         'normalization': None
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -143,8 +143,7 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
     encoder = 'passthrough'
 
     def __init__(self, feature, encoder_obj=None):
-        NumericalBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -192,8 +191,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     clip = None
 
     def __init__(self, feature):
-        NumericalBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()

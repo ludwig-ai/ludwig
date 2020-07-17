@@ -41,8 +41,8 @@ class H3BaseFeature(BaseFeature):
         # mode 1 edge 0 resolution 0 base_cell 0
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -81,8 +81,7 @@ class H3InputFeature(H3BaseFeature, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
-        H3BaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
 
         self.overwrite_defaults(feature)
         if encoder_obj:
