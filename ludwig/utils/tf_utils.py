@@ -17,6 +17,7 @@
 import warnings
 
 import tensorflow as tf
+from tensorflow.python.client import device_lib
 
 _TF_INIT_PARAMS = None
 
@@ -90,3 +91,8 @@ def initialize_tensorflow(gpus=None,
             tf.config.set_visible_devices(local_devices, 'GPU')
 
     _TF_INIT_PARAMS = param_tuple
+
+
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    return [x.name[-1] for x in local_device_protos if x.device_type == 'GPU']
