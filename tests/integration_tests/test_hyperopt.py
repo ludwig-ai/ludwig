@@ -103,4 +103,11 @@ def test_hyperopt_executor(strategy, executor, csv_filename):
         hyperopt_strategy, output_feature, metric, split, **executor)
 
     hyperopt_executor.execute(model_definition, data_csv=rel_path,
-                              gpus=','.join(get_available_gpus()))
+                              gpus=get_gpus_in_cuda_syntax())
+
+
+def get_gpus_in_cuda_syntax():
+    gpus = get_available_gpus()
+    if len(gpus) == 0:
+        return None
+    return ','.join(gpus)

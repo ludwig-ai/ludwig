@@ -26,10 +26,11 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
+from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, \
-    VALIDATION, MAXIMIZE, TRAINING, TEST, CATEGORY, TYPE
+    VALIDATION, MAXIMIZE, TRAINING, TEST, CATEGORY, INT, REAL, TYPE, SPACE
 from ludwig.data.postprocessing import postprocess
 from ludwig.predict import predict, print_test_results, \
     save_prediction_outputs, save_test_statistics
@@ -51,22 +52,22 @@ def int_grid_function(range: tuple, steps=None, **kwargs):
     return samples.tolist()
 
 
-def float_grid_function(range: tuple, steps=None, scale='linear', base=None,
+def float_grid_function(range: tuple, steps=None, space='linear', base=None,
                         **kwargs):
     low = range[0]
     high = range[1]
     if steps is None:
         steps = int(high - low + 1)
-    if scale == 'linear':
+    if space == 'linear':
         samples = np.linspace(low, high, num=steps)
-    elif scale == 'log':
+    elif space == 'log':
         if base:
             samples = np.logspace(low, high, num=steps, base=base)
         else:
             samples = np.geomspace(low, high, num=steps)
     else:
         raise ValueError(
-            'The scale parameter of the float grid function is "{}". '
+            'The space parameter of the float grid function is "{}". '
             'Available ones are: {"linear", "log"}'
         )
     return samples.tolist()
@@ -137,9 +138,12 @@ class RandomStrategy(HyperoptStrategy):
                  **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
-        for param in params_for_join_space:
-            if param[TYPE] == CATEGORY:
-                param[TYPE] = 'cat'
+        for param_values in params_for_join_space.values():
+            if param_values[TYPE] == CATEGORY:
+                param_values[TYPE] = 'cat'
+            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
+                if SPACE not in param_values:
+                    param_values[SPACE] = 'linear'
         self.space = JointSpace(params_for_join_space)
         self.num_samples = num_samples
         self.samples = self._determine_samples()
@@ -224,15 +228,20 @@ class PySOTStrategy(HyperoptStrategy):
                  **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
-        for param in params_for_join_space:
-            if param[TYPE] == CATEGORY:
-                param[TYPE] = 'cat'
-        self.space = JointSpace(params_for_join_space)
+        for param_values in params_for_join_space.values():
+            if param_values[TYPE] == CATEGORY:
+                param_values[TYPE] = 'cat'
+            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
+                if SPACE not in param_values:
+                    param_values[SPACE] = 'linear'
+        self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
         self.sampled_so_far = 0
         self.num_samples = num_samples
 
     def sample(self) -> Dict[str, Any]:
         """Suggest one new point to be evaluated."""
+        if self.sampled_so_far >= self.num_samples:
+            raise IndexError()
         sample = self.pysot_optimizer.suggest(n_suggestions=1)[0]
         self.sampled_so_far += 1
         return sample
