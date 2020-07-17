@@ -16,11 +16,10 @@
 # ==============================================================================
 import copy
 import functools
+import itertools
 import logging
-import math
 import multiprocessing
 import os
-import random
 import signal
 import subprocess as sp
 from abc import ABC, abstractmethod
@@ -43,39 +42,19 @@ from ludwig.utils.misc import get_class_attributes, get_from_registry, \
 logger = logging.getLogger(__name__)
 
 
-def int_sampling_function(low, high, **kwargs):
-    return random.randint(low, high)
-
-
-def float_sampling_function(low, high, scale='linear', base=None, **kwargs):
-    if scale == 'linear':
-        sample = random.uniform(low, high)
-    elif scale == 'log':
-        if base:
-            sample = math.pow(base, random.uniform(low, high))
-        else:
-            sample = math.exp(random.uniform(math.log(low), math.log(high)))
-    else:
-        raise ValueError(
-            'The scale parameter of the float sampling function is "{}". '
-            'Available ones are: {"linear", "log"}'
-        )
-    return sample
-
-
-def category_sampling_function(values, **kwargs):
-    return random.sample(values, 1)[0]
-
-
-def int_grid_function(low: int, high: int, steps=None, **kwargs):
+def int_grid_function(range: tuple, steps=None, **kwargs):
+    low = range[0]
+    high = range[1]
     if steps is None:
         steps = high - low + 1
     samples = np.linspace(low, high, num=steps, dtype=int)
     return samples.tolist()
 
 
-def float_grid_function(low, high, steps=None, scale='linear', base=None,
+def float_grid_function(range: tuple, steps=None, scale='linear', base=None,
                         **kwargs):
+    low = range[0]
+    high = range[1]
     if steps is None:
         steps = int(high - low + 1)
     if scale == 'linear':
@@ -97,16 +76,10 @@ def category_grid_function(values, **kwargs):
     return values
 
 
-sampling_functions_registry = {
-    'int': int_sampling_function,
-    'float': float_sampling_function,
-    'category': category_sampling_function,
-}
-
 grid_functions_registry = {
     'int': int_grid_function,
-    'float': float_grid_function,
-    'category': category_grid_function
+    'real': float_grid_function,
+    'cat': category_grid_function
 }
 
 
@@ -145,7 +118,8 @@ class HyperoptStrategy(ABC):
         # and random, but will be needed by Bayesian)
         pass
 
-    def update_batch(self, parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]):
+    def update_batch(self, parameters_metric_tuples: Iterable[
+        Tuple[Dict[str, Any], float]]):
         for (sampled_parameters, metric_score) in parameters_metric_tuples:
             self.update(sampled_parameters, metric_score)
 
@@ -158,7 +132,8 @@ class HyperoptStrategy(ABC):
 class RandomStrategy(HyperoptStrategy):
     num_samples = 10
 
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs) -> None:
+    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
+                 **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
         self.space = JointSpace(parameters)
         self.num_samples = num_samples
@@ -169,7 +144,8 @@ class RandomStrategy(HyperoptStrategy):
         samples = []
         for _ in range(self.num_samples):
             bnds = self.space.get_bounds()
-            x = bnds[:, 0] + (bnds[:, 1] - bnds[:, 0]) * np.random.rand(1, len(self.space.get_bounds()))
+            x = bnds[:, 0] + (bnds[:, 1] - bnds[:, 0]) * np.random.rand(1, len(
+                self.space.get_bounds()))
             sample = self.space.unwarp(x)[0]
             samples.append(sample)
         return samples
@@ -188,6 +164,49 @@ class RandomStrategy(HyperoptStrategy):
         return self.sampled_so_far >= len(self.samples)
 
 
+class GridStrategy(HyperoptStrategy):
+    def __init__(self, goal: str, parameters: Dict[str, Any],
+                 **kwargs) -> None:
+        HyperoptStrategy.__init__(self, goal, parameters)
+        self.search_space = self._create_search_space()
+        self.samples = self._get_grids()
+        self.sampled_so_far = 0
+
+    def _create_search_space(self):
+        search_space = {}
+        for hp_name, hp_params in self.parameters.items():
+            grid_function = get_from_registry(
+                hp_params['type'], grid_functions_registry
+            )
+            search_space[hp_name] = grid_function(**hp_params)
+        return search_space
+
+    def _get_grids(self):
+        hp_params = sorted(self.search_space)
+        grids = [dict(zip(hp_params, prod)) for prod in itertools.product(
+            *(self.search_space[hp_name] for hp_name in hp_params))]
+
+        return grids
+
+    def sample(self) -> Dict[str, Any]:
+        if self.sampled_so_far >= len(self.samples):
+            raise IndexError()
+        sample = self.samples[self.sampled_so_far]
+        self.sampled_so_far += 1
+        return sample
+
+    def update(
+            self,
+            sampled_parameters: Dict[str, Any],
+            statistics: Dict[str, Any]
+    ):
+        # actual implementation ...
+        pass
+
+    def finished(self) -> bool:
+        return self.sampled_so_far >= len(self.samples)
+
+
 class PySOTStrategy(HyperoptStrategy):
     """pySOT: Surrogate optimization in Python.
 
@@ -195,7 +214,9 @@ class PySOTStrategy(HyperoptStrategy):
         David Eriksson, David Bindel, Christine Shoemaker
         pySOT and POAP: An event-driven asynchronous framework for surrogate optimization
     """
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10, **kwargs) -> None:
+
+    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
+                 **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
         self.pysot_optimizer = PySOTOptimizer(parameters)
         self.sampled_so_far = 0
@@ -215,7 +236,8 @@ class PySOTStrategy(HyperoptStrategy):
 
 
 class HyperoptExecutor(ABC):
-    def __init__(self, hyperopt_strategy: HyperoptStrategy, output_feature: str, metric: str, split: str) -> None:
+    def __init__(self, hyperopt_strategy: HyperoptStrategy,
+                 output_feature: str, metric: str, split: str) -> None:
         self.hyperopt_strategy = hyperopt_strategy
         self.output_feature = output_feature
         self.metric = metric
@@ -226,7 +248,8 @@ class HyperoptExecutor(ABC):
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
-            hyperopt_results, key=lambda hp_res: hp_res["metric_score"], reverse=self.hyperopt_strategy.goal == MAXIMIZE
+            hyperopt_results, key=lambda hp_res: hp_res["metric_score"],
+            reverse=self.hyperopt_strategy.goal == MAXIMIZE
         )
 
     @abstractmethod
@@ -273,9 +296,11 @@ class HyperoptExecutor(ABC):
 
 class SerialExecutor(HyperoptExecutor):
     def __init__(
-        self, hyperopt_strategy: HyperoptStrategy, output_feature: str, metric: str, split: str, **kwargs
+            self, hyperopt_strategy: HyperoptStrategy, output_feature: str,
+            metric: str, split: str, **kwargs
     ) -> None:
-        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature, metric, split)
+        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+                                  metric, split)
 
     def execute(
             self,
@@ -321,7 +346,8 @@ class SerialExecutor(HyperoptExecutor):
             metric_scores = []
 
             for parameters in sampled_parameters:
-                modified_model_definition = substitute_parameters(copy.deepcopy(model_definition), parameters)
+                modified_model_definition = substitute_parameters(
+                    copy.deepcopy(model_definition), parameters)
 
                 train_stats, eval_stats = train_and_eval_on_split(
                     modified_model_definition,
@@ -372,7 +398,8 @@ class SerialExecutor(HyperoptExecutor):
                     }
                 )
 
-            self.hyperopt_strategy.update_batch(zip(sampled_parameters, metric_scores))
+            self.hyperopt_strategy.update_batch(
+                zip(sampled_parameters, metric_scores))
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
 
@@ -385,16 +412,17 @@ class ParallelExecutor(HyperoptExecutor):
     epsilon_memory = 300
 
     def __init__(
-        self,
-        hyperopt_strategy: HyperoptStrategy,
-        output_feature: str,
-        metric: str,
-        split: str,
-        num_workers: int = 2,
-        epsilon: int = 0.01,
-        **kwargs
+            self,
+            hyperopt_strategy: HyperoptStrategy,
+            output_feature: str,
+            metric: str,
+            split: str,
+            num_workers: int = 2,
+            epsilon: int = 0.01,
+            **kwargs
     ) -> None:
-        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature, metric, split)
+        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+                                  metric, split)
         self.num_workers = num_workers
         self.epsilon = epsilon
         self.queue = None
@@ -575,13 +603,15 @@ class ParallelExecutor(HyperoptExecutor):
                                    "gpu_memory_limit": gpu_memory_limit}
                     self.queue.put(gpu_id_meta)
 
-        pool = multiprocessing.Pool(self.num_workers, ParallelExecutor.init_worker)
+        pool = multiprocessing.Pool(self.num_workers,
+                                    ParallelExecutor.init_worker)
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
 
             for parameters in sampled_parameters:
-                modified_model_definition = substitute_parameters(copy.deepcopy(model_definition), parameters)
+                modified_model_definition = substitute_parameters(
+                    copy.deepcopy(model_definition), parameters)
 
                 hyperopt_parameters.append(
                     {
@@ -625,12 +655,15 @@ class ParallelExecutor(HyperoptExecutor):
                 )
 
             if gpus is not None:
-                batch_results = pool.map(self._train_and_eval_model_gpu, hyperopt_parameters)
+                batch_results = pool.map(self._train_and_eval_model_gpu,
+                                         hyperopt_parameters)
             else:
-                batch_results = pool.map(self._train_and_eval_model, hyperopt_parameters)
+                batch_results = pool.map(self._train_and_eval_model,
+                                         hyperopt_parameters)
 
             self.hyperopt_strategy.update_batch(
-                (result["parameters"], result["metric_score"]) for result in batch_results
+                (result["parameters"], result["metric_score"]) for result in
+                batch_results
             )
 
             hyperopt_results.extend(batch_results)
@@ -644,20 +677,21 @@ class FiberExecutor(HyperoptExecutor):
     fiber_backend = "local"
 
     def __init__(
-        self,
-        hyperopt_strategy: HyperoptStrategy,
-        output_feature: str,
-        metric: str,
-        split: str,
-        num_workers: int = 2,
-        num_cpus_per_worker: int = -1,
-        num_gpus_per_worker: int = -1,
-        fiber_backend: str = "local",
-        **kwargs
+            self,
+            hyperopt_strategy: HyperoptStrategy,
+            output_feature: str,
+            metric: str,
+            split: str,
+            num_workers: int = 2,
+            num_cpus_per_worker: int = -1,
+            num_gpus_per_worker: int = -1,
+            fiber_backend: str = "local",
+            **kwargs
     ) -> None:
         import fiber
 
-        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature, metric, split)
+        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+                                  metric, split)
 
         fiber.init(backend=fiber_backend)
         self.fiber_meta = fiber.meta
@@ -762,7 +796,8 @@ class FiberExecutor(HyperoptExecutor):
             stats_batch = self.pool.map(
                 train_func,
                 [
-                    substitute_parameters(copy.deepcopy(model_definition), parameters)
+                    substitute_parameters(copy.deepcopy(model_definition),
+                                          parameters)
                     for parameters in sampled_parameters
                 ],
             )
@@ -781,7 +816,8 @@ class FiberExecutor(HyperoptExecutor):
                     }
                 )
 
-            self.hyperopt_strategy.update_batch(zip(sampled_parameters, metric_scores))
+            self.hyperopt_strategy.update_batch(
+                zip(sampled_parameters, metric_scores))
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
 
@@ -797,6 +833,7 @@ def get_build_hyperopt_executor(executor_type):
 
 
 strategy_registry = {
+    "grid": GridStrategy,
     "random": RandomStrategy,
     "pysot": PySOTStrategy,
 }
@@ -818,16 +855,20 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
 
     set_default_values(hyperopt_params[STRATEGY], {"type": "random"})
 
-    strategy = get_from_registry(hyperopt_params[STRATEGY]["type"], strategy_registry)
-    strategy_defaults = {k: v for k, v in strategy.__dict__.items() if k in get_class_attributes(strategy)}
+    strategy = get_from_registry(hyperopt_params[STRATEGY]["type"],
+                                 strategy_registry)
+    strategy_defaults = {k: v for k, v in strategy.__dict__.items() if
+                         k in get_class_attributes(strategy)}
     set_default_values(
         hyperopt_params[STRATEGY], strategy_defaults,
     )
 
     set_default_values(hyperopt_params[EXECUTOR], {"type": "serial"})
 
-    executor = get_from_registry(hyperopt_params[EXECUTOR]["type"], executor_registry)
-    executor_defaults = {k: v for k, v in executor.__dict__.items() if k in get_class_attributes(executor)}
+    executor = get_from_registry(hyperopt_params[EXECUTOR]["type"],
+                                 executor_registry)
+    executor_defaults = {k: v for k, v in executor.__dict__.items() if
+                         k in get_class_attributes(executor)}
     set_default_values(
         hyperopt_params[EXECUTOR], executor_defaults,
     )
@@ -930,7 +971,8 @@ def train_and_eval_on_split(
     # Collect training and validation losses and metrics
     # & append it to `results`
     # ludwig_model = LudwigModel(modified_model_definition)
-    (model, preprocessed_data, experiment_dir_name, train_stats, model_definition) = full_train(
+    (model, preprocessed_data, experiment_dir_name, train_stats,
+     model_definition) = full_train(
         model_definition=model_definition,
         data_df=data_df,
         data_train_df=data_train_df,
@@ -963,7 +1005,8 @@ def train_and_eval_on_split(
         random_seed=random_seed,
         debug=debug,
     )
-    (training_set, validation_set, test_set, train_set_metadata) = preprocessed_data
+    (training_set, validation_set, test_set,
+     train_set_metadata) = preprocessed_data
     if model_definition[TRAINING]["eval_batch_size"] > 0:
         batch_size = model_definition[TRAINING]["eval_batch_size"]
     else:
@@ -986,7 +1029,8 @@ def train_and_eval_on_split(
         evaluate_performance=True,
         debug=debug
     )
-    if not (skip_save_unprocessed_output and skip_save_test_predictions and skip_save_test_statistics):
+    if not (
+            skip_save_unprocessed_output and skip_save_test_predictions and skip_save_test_statistics):
         if not os.path.exists(experiment_dir_name):
             os.makedirs(experiment_dir_name)
 
