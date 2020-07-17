@@ -291,3 +291,5 @@ def test_sequence_encoders():
                     output_shape=output_shape,
                     output_data=None
                 )
+
+                assert isinstance(encoder, encoder_type)
