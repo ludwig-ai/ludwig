@@ -396,6 +396,7 @@ def test_sequence_tagger(
     # run the experiment
     run_experiment(input_features, output_features, data_csv=rel_path)
 
+
 @pytest.mark.parametrize('sequence_combiner_encoder', ENCODERS[:-2])
 def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
     # Sequence combiner
@@ -594,6 +595,7 @@ def test_image_resizing_num_channel_handling(csv_filename):
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
 
+
 @pytest.mark.parametrize('encoder', ['wave', 'embed'])
 def test_experiment_date(encoder, csv_filename):
     input_features = [date_feature()]
@@ -604,6 +606,7 @@ def test_experiment_date(encoder, csv_filename):
 
     input_features[0]['encoder'] = encoder
     run_experiment(input_features, output_features, data_csv=rel_path)
+
 
 @pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
 def test_experiment_h3(encoder, csv_filename):

@@ -11,7 +11,6 @@ import argparse
 import os
 import shutil
 import sys
-
 from unittest.mock import patch, Mock
 
 import ludwig.contrib

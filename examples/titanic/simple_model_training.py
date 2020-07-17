@@ -8,10 +8,10 @@
 
 # Import required libraries
 
-from ludwig.api import LudwigModel
 import logging
 import shutil
 
+from ludwig.api import LudwigModel
 
 # clean out prior results
 try:

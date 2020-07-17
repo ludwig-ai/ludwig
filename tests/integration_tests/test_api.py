@@ -153,6 +153,7 @@ def run_api_experiment_separated_datasets(
     model.predict(data_df=data_df)
     shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
+
 def test_api_intent_classification(csv_filename):
     # Single sequence input, single category output
     input_features = [sequence_feature(reduce_output='sum')]

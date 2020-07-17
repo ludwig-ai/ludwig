@@ -111,7 +111,8 @@ class Comet():
         config = comet_ml.get_config()
         self._save_config(config, directory=experiment_directory)
 
-    def train_model(self, model, model_definition, model_definition_path, *args, **kwargs):
+    def train_model(self, model, model_definition, model_definition_path,
+                    *args, **kwargs):
         logger.info("comet.train_model() called......")
         if self.cometml_experiment:
             # TODO tf2: currently no clear way to set model graph
@@ -143,18 +144,24 @@ class Comet():
         """
         logger.info("comet.train_epoch_end() called......")
         if self.cometml_experiment:
-            for item_name in ["batch_size", "epoch", "steps", "last_improvement_epoch",
-                              "learning_rate", "best_valid_metric", "num_reductions_lr",
-                              "num_increases_bs", "train_stats", "vali_stats", "test_stats"]:
+            for item_name in ["batch_size", "epoch", "steps",
+                              "last_improvement_epoch",
+                              "learning_rate", "best_valid_metric",
+                              "num_reductions_lr",
+                              "num_increases_bs", "train_stats", "vali_stats",
+                              "test_stats"]:
                 try:
                     item = getattr(progress_tracker, item_name)
                     if isinstance(item, dict):
                         for key in item:
                             if isinstance(item[key], dict):
                                 for key2 in item[key]:
-                                    self.cometml_experiment.log_metric(item_name + "." + key + "." + key2, item[key][key2][-1])
+                                    self.cometml_experiment.log_metric(
+                                        item_name + "." + key + "." + key2,
+                                        item[key][key2][-1])
                             else:
-                                self.cometml_experiment.log_metric(item_name + "." + key, item[key][-1])
+                                self.cometml_experiment.log_metric(
+                                    item_name + "." + key, item[key][-1])
                     elif item is not None:
                         self.cometml_experiment.log_metric(item_name, item)
                 except Exception:

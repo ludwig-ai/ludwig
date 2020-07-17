@@ -91,7 +91,8 @@ class Model:
             self._horovod = horovod.tensorflow
             self._horovod.init()
 
-        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads, self._horovod)
+        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads,
+                              self._horovod)
 
         self._debug = debug
         self._weights_save_path = None
@@ -1167,7 +1168,8 @@ class Model:
         self.ecd.load_weights(weights_path)
 
     @staticmethod
-    def load(load_path, use_horovod=None, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True):
+    def load(load_path, use_horovod=None, gpus=None, gpu_memory_limit=None,
+             allow_parallel_threads=True):
         hyperparameter_file = os.path.join(
             load_path,
             MODEL_HYPERPARAMETERS_FILE_NAME

@@ -181,9 +181,10 @@ class SequenceLoss(tf.keras.losses.Loss):
             y_true = tf.concat([y_true, pad], axis=1)
 
         longest_sequence_length = tf.maximum(sequence_length_2D(y_true),
-                                         sequence_length_3D(y_pred))
+                                             sequence_length_3D(y_pred))
         longest_sequence_length += 1  # for EOS
-        longest_sequence_length = tf.minimum(longest_sequence_length, y_true.shape[1])
+        longest_sequence_length = tf.minimum(longest_sequence_length,
+                                             y_true.shape[1])
         mask = tf.sequence_mask(
             longest_sequence_length,
             maxlen=y_true.shape[1],
@@ -325,13 +326,14 @@ def sampled_softmax_cross_entropy(
                                              unique,
                                              class_counts,
                                              distortion)
-    train_loss = tf.nn.sampled_softmax_loss(weights=tf.transpose(decoder_weights),
-                                            biases=decoder_biases,
-                                            labels=output_exp,
-                                            inputs=last_hidden,
-                                            num_sampled=negative_samples,
-                                            num_classes=num_classes,
-                                            sampled_values=sampled_values)
+    train_loss = tf.nn.sampled_softmax_loss(
+        weights=tf.transpose(decoder_weights),
+        biases=decoder_biases,
+        labels=output_exp,
+        inputs=last_hidden,
+        num_sampled=negative_samples,
+        num_classes=num_classes,
+        sampled_values=sampled_values)
     # todo tf2 need to determine how to handle this, possible in separate function
     # eval_loss = tf.losses.softmax_cross_entropy(
     #     onehot_labels=tf.cast(
@@ -489,7 +491,8 @@ regularizer_registry = {'l1': lambda x: None,
                         None: lambda x: None}
 
 
-def obtained_sampled_values(num_classes, output_exp, sampler, negative_samples, unique, class_counts, distortion):
+def obtained_sampled_values(num_classes, output_exp, sampler, negative_samples,
+                            unique, class_counts, distortion):
     """returns sampled_values using the chosen sampler"""
     if sampler == 'fixed_unigram':
         sampled_values = tf.random.fixed_unigram_candidate_sampler(

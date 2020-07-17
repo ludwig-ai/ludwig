@@ -154,7 +154,8 @@ def test_model_progress_save(
         files = [f for f in os.listdir(model_dir) if
                  re.match(r'model_weights', f)]
         assert len(files) == 2
-        assert os.path.isfile(os.path.join(exp_dir_name, 'model', 'checkpoint'))
+        assert os.path.isfile(
+            os.path.join(exp_dir_name, 'model', 'checkpoint'))
 
     if skip_save_progress:
         assert not os.path.isdir(
@@ -225,6 +226,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     print('y_pred2', y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
 
+
 # work-in-progress
 # def test_model_save_resume(generated_data, tmp_path):
 #
@@ -269,9 +271,10 @@ OPTIMIZER_REGISTRY = [
     'sgd', 'stochastic_gradient_descent', 'gd', 'gradient_descent',
     'adam', 'adadelta', 'adagrad', 'ftrl', 'rmsprop'
 ]
+
+
 @pytest.mark.parametrize('optimizer_type', OPTIMIZER_REGISTRY)
 def test_optimizers(optimizer_type, generated_data, tmp_path):
-
     input_features, output_features = get_feature_definitions()
 
     model_definition = {

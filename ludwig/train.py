@@ -256,7 +256,8 @@ def full_train(
         if should_create_exp_dir:
             if not os.path.exists(experiment_dir_name):
                 os.makedirs(experiment_dir_name)
-        description_fn, training_stats_fn, model_dir = get_file_names(experiment_dir_name)
+        description_fn, training_stats_fn, model_dir = get_file_names(
+            experiment_dir_name)
 
     # save description
     description = get_experiment_description(

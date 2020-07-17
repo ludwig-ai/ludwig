@@ -187,7 +187,8 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[ACCURACY] = BinaryAccuracy(name='metric_accuracy')
+        self.metric_functions[ACCURACY] = BinaryAccuracy(
+            name='metric_accuracy')
 
     # def update_metrics(self, targets, predictions):
     #     for metric, metric_fn in self.metric_functions.items():

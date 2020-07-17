@@ -10,11 +10,9 @@ import argparse
 import os
 import shutil
 import sys
-
 from unittest.mock import Mock
 
 import ludwig.contrib
-
 from ludwig.contribs.wandb import Wandb
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))

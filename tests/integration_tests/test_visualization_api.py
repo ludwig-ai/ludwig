@@ -681,7 +681,8 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
     test_stats = model.test(data_df=data_df)[1][0]
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(viz_output)
+        vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(
+            viz_output)
         visualize.roc_curves_from_test_statistics(
             [test_stats, test_stats],
             output_feature_name,

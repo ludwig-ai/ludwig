@@ -44,7 +44,6 @@ class DateBaseFeature(BaseFeature):
     def __init__(self, feature):
         super().__init__(feature)
 
-
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
         return {
@@ -150,7 +149,6 @@ class DateInputFeature(DateBaseFeature, InputFeature):
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
-
 
     encoder_registry = {
         'embed': DateEmbed,

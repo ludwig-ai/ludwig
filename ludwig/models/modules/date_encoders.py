@@ -425,7 +425,7 @@ class DateWave(Layer):
             axis=1)
 
         # ================ FC Stack ================
-        #logger.debug('  flatten hidden: {0}'.format(hidden))
+        # logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,

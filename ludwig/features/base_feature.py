@@ -259,7 +259,8 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
                 if len(hidden.shape) > 2:
                     if len(dependency_final_hidden.shape) > 2:
                         # matrix matrix -> concat
-                        assert hidden.shape[1] == dependency_final_hidden.shape[1]
+                        assert hidden.shape[1] == \
+                               dependency_final_hidden.shape[1]
                         dependencies_hidden.append(dependency_final_hidden)
                     else:
                         # matrix vector -> tile concat

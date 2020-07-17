@@ -26,7 +26,8 @@ from .contribs import contrib_registry
 def use_contrib(name, *args, **kwargs):
     # Import a contrib package and cache its instance, if appropriate
     contrib_class = contrib_registry["classes"][name]
-    if contrib_class not in [obj.__class__ for obj in contrib_registry["instances"]]:
+    if contrib_class not in [obj.__class__ for obj in
+                             contrib_registry["instances"]]:
         try:
             instance = contrib_class.import_call(*args, **kwargs)
         except Exception:

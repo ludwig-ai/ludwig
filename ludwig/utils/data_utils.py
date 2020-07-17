@@ -16,13 +16,13 @@
 # ==============================================================================
 import collections
 import csv
+import functools
 import json
 import logging
 import os.path
 import pickle
 import random
 import re
-import functools
 
 import h5py
 import numpy as np

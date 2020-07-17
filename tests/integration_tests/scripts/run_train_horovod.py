@@ -60,8 +60,10 @@ def run_api_experiment(input_features, output_features, data_csv, **kwargs):
             shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
 
-def test_horovod_intent_classification(rel_path, input_features, output_features, **kwargs):
-    run_api_experiment(input_features, output_features, data_csv=rel_path, **kwargs)
+def test_horovod_intent_classification(rel_path, input_features,
+                                       output_features, **kwargs):
+    run_api_experiment(input_features, output_features, data_csv=rel_path,
+                       **kwargs)
 
     # Horovod should be initialized following training. If not, this will raise an exception.
     assert hvd.size() == 2

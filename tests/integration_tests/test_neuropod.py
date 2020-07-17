@@ -67,7 +67,8 @@ def _test_neuropod(csv_filename):
     ]
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, csv_filename)
+    data_csv_path = generate_data(input_features, output_features,
+                                  csv_filename)
 
     #############
     # Train model
@@ -142,7 +143,8 @@ def _test_neuropod(csv_filename):
 
         if (output_feature_name + "_predictions" in preds and
                 output_feature_name + "_predictions" in original_predictions_df):
-            neuropod_pred = preds[output_feature_name + "_predictions"].tolist()
+            neuropod_pred = preds[
+                output_feature_name + "_predictions"].tolist()
             if output_feature_type == BINARY:
                 neuropod_pred = list(map(lambda x: str2bool(x), neuropod_pred))
             if output_feature_type in {SEQUENCE, TEXT, SET}:
@@ -155,10 +157,12 @@ def _test_neuropod(csv_filename):
 
         if (output_feature_name + "_probability" in preds and
                 output_feature_name + "_probability" in original_predictions_df):
-            neuropod_prob = preds[output_feature_name + "_probability"].tolist()
+            neuropod_prob = preds[
+                output_feature_name + "_probability"].tolist()
             if output_feature_type in {SEQUENCE, TEXT, SET}:
                 neuropod_prob = list(
-                    map(lambda x: [float(n) for n in x.split()], neuropod_prob))
+                    map(lambda x: [float(n) for n in x.split()],
+                        neuropod_prob))
             if any(isinstance(el, list) for el in neuropod_prob):
                 neuropod_prob = np.array(list(
                     itertools.zip_longest(*neuropod_prob, fillvalue=0)

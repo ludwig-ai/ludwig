@@ -258,7 +258,6 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
         else:
             self.encoder_obj = self.initialize_decoder(feature)
 
-
     @staticmethod
     def update_model_definition_with_metadata(
             output_feature,
@@ -359,7 +358,8 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
             if level_idx2str in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata[level_idx2str][token]
-                     if token < len(metadata[level_idx2str]) else UNKNOWN_SYMBOL
+                     if token < len(
+                        metadata[level_idx2str]) else UNKNOWN_SYMBOL
                      for token in pred]
                     for pred in preds
                 ]

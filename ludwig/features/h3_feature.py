@@ -24,7 +24,7 @@ from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.h3_encoders import H3WeightedSum, H3RNN, H3Embed
 from ludwig.utils.h3_util import h3_to_components
-from ludwig.utils.misc import set_default_value, get_from_registry
+from ludwig.utils.misc import set_default_value
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,6 @@ class H3InputFeature(H3BaseFeature, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.uint8
@@ -101,7 +100,6 @@ class H3InputFeature(H3BaseFeature, InputFeature):
         )
 
         return inputs_encoded
-
 
     @staticmethod
     def update_model_definition_with_metadata(

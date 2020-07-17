@@ -208,7 +208,8 @@ class LudwigModel:
         return data_df
 
     @staticmethod
-    def load(model_dir, gpus=None, gpu_memory_limit=None, allow_parallel_threads=True):
+    def load(model_dir, gpus=None, gpu_memory_limit=None,
+             allow_parallel_threads=True):
         """This function allows for loading pretrained models
 
 

@@ -376,7 +376,7 @@ class H3WeightedSum(Layer):
         hidden = reduce_sum(embedded_h3['encoder_output'] * weights)
 
         # ================ FC Stack ================
-        #logger.debug('  flatten hidden: {0}'.format(hidden))
+        # logger.debug('  flatten hidden: {0}'.format(hidden))
 
         hidden = self.fc_stack(
             hidden,

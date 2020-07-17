@@ -838,7 +838,8 @@ def compare_performance(
                 metrics_names,
                 model_names_list,
                 adaptive=min_val < 0 or max_val > 1,
-                title='Performance comparison on {}'.format(output_feature_name),
+                title='Performance comparison on {}'.format(
+                    output_feature_name),
                 filename=filename
             )
 

@@ -20,6 +20,7 @@ from ludwig.utils.horovod_utils import allgather_object
 
 try:
     from horovod.run.runner import run as horovodrun
+
     USE_HOROVOD = True
 except ImportError:
     USE_HOROVOD = False

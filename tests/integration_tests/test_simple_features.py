@@ -74,14 +74,14 @@ def run_experiment(input_features, output_features, **kwargs):
         # numerical features
         (numerical_feature(), numerical_feature(), None),
         (
-            numerical_feature(normalization='minmax'),
-            numerical_feature(),
-            {'loss': {'type':'mean_squared_error'}}
-         ),
+                numerical_feature(normalization='minmax'),
+                numerical_feature(),
+                {'loss': {'type': 'mean_squared_error'}}
+        ),
         (
-            numerical_feature(normalization='zscore'),
-            numerical_feature(),
-            {'loss': {'type':'mean_absolute_error'}}
+                numerical_feature(normalization='zscore'),
+                numerical_feature(),
+                {'loss': {'type': 'mean_absolute_error'}}
         ),
 
         # binary feature
@@ -90,53 +90,54 @@ def run_experiment(input_features, output_features, **kwargs):
         # Categorical feature
         (category_feature(), category_feature(), None),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {'type':'softmax_cross_entropy'}}
+                category_feature(),
+                category_feature(),
+                {'loss': {'type': 'softmax_cross_entropy'}}
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'fixed_unigram',
-                        'negative_samples': 10
-                      }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'fixed_unigram',
+                    'negative_samples': 10
+                }
+                }
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'uniform',
-                        'negative_samples': 10
-                    }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'uniform',
+                    'negative_samples': 10
+                }
+                }
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'log_uniform',
-                        'negative_samples': 10
-                    }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'log_uniform',
+                    'negative_samples': 10
+                }
+                }
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'learned_unigram',
-                        'negative_samples': 10
-                    }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'learned_unigram',
+                    'negative_samples': 10
+                }
+                }
         )
     ]
 )
-def test_feature(input_test_feature, output_test_feature, output_loss_parameter, csv_filename):
+def test_feature(input_test_feature, output_test_feature,
+                 output_loss_parameter, csv_filename):
     input_features = [
         input_test_feature
     ]
@@ -147,8 +148,7 @@ def test_feature(input_test_feature, output_test_feature, output_loss_parameter,
     output_features = [of_test_feature]
 
     # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename, 1001)
+    rel_path = generate_data(input_features, output_features, csv_filename,
+                             1001)
 
     run_experiment(input_features, output_features, data_csv=rel_path)
-
-

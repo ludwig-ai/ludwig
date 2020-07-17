@@ -185,7 +185,8 @@ def predict(
     for of_name in test_predictions:
         # remove logits, not needed for overall stats
         del test_predictions[of_name][LOGITS]
-        test_stats[of_name] = {**test_stats[of_name], **test_predictions[of_name]}
+        test_stats[of_name] = {**test_stats[of_name],
+                               **test_predictions[of_name]}
 
     if evaluate_performance:
         calculate_overall_stats(

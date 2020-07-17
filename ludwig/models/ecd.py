@@ -65,7 +65,8 @@ class ECD(tf.keras.Model):
         encoder_outputs = {}
         for input_feature_name, input_values in inputs.items():
             encoder = self.input_features[input_feature_name]
-            encoder_output = encoder(input_values, training=training, mask=mask)
+            encoder_output = encoder(input_values, training=training,
+                                     mask=mask)
             encoder_outputs[input_feature_name] = encoder_output
 
         combiner_outputs = self.combiner(encoder_outputs)
@@ -76,7 +77,8 @@ class ECD(tf.keras.Model):
             # use presence or absence of targets to signal training or prediction
             if targets is not None:
                 # doing training
-                target_to_use = tf.cast(targets[output_feature_name], dtype=tf.int32)
+                target_to_use = tf.cast(targets[output_feature_name],
+                                        dtype=tf.int32)
             else:
                 # doing prediction
                 target_to_use = None
@@ -91,7 +93,8 @@ class ECD(tf.keras.Model):
             )
             output_logits[output_feature_name] = {}
             output_logits[output_feature_name][LOGITS] = decoder_logits
-            output_logits[output_feature_name][LAST_HIDDEN] = decoder_last_hidden
+            output_logits[output_feature_name][
+                LAST_HIDDEN] = decoder_last_hidden
             output_last_hidden[output_feature_name] = decoder_last_hidden
 
         return output_logits
@@ -139,15 +142,16 @@ class ECD(tf.keras.Model):
 
         return predictions
 
-
     def train_loss(self, targets, predictions, regularization_lambda=0.0):
         train_loss = 0
         of_train_losses = {}
         for of_name, of_obj in self.output_features.items():
-            of_train_loss = of_obj.train_loss(targets[of_name], predictions[of_name])
+            of_train_loss = of_obj.train_loss(targets[of_name],
+                                              predictions[of_name])
             train_loss += of_obj.loss['weight'] * of_train_loss
             of_train_losses[of_name] = of_train_loss
-        train_loss += regularization_lambda * sum(self.losses)  # regularization / other losses
+        train_loss += regularization_lambda * sum(
+            self.losses)  # regularization / other losses
         return train_loss, of_train_losses
 
     def eval_loss(self, targets, predictions):
@@ -184,13 +188,13 @@ class ECD(tf.keras.Model):
         self.eval_loss_metric.reset_states()
 
 
-
 def build_inputs(
         input_features_def,
         **kwargs
 ):
     input_features = OrderedDict()
-    input_features_def = topological_sort_feature_dependencies(input_features_def)
+    input_features_def = topological_sort_feature_dependencies(
+        input_features_def)
     for input_feature_def in input_features_def:
         input_features[input_feature_def['name']] = build_single_input(
             input_feature_def,
@@ -211,7 +215,8 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
     if input_feature_def.get(TIED, None) is not None:
         tied_input_feature_name = input_feature_def[TIED]
         if tied_input_feature_name in other_input_features:
-            encoder_obj = other_input_features[tied_input_feature_name].encoder_obj
+            encoder_obj = other_input_features[
+                tied_input_feature_name].encoder_obj
 
     input_feature_class = get_from_registry(
         input_feature_def[TYPE],
@@ -233,7 +238,8 @@ def build_outputs(
         combiner,
         **kwargs
 ):
-    output_features_def = topological_sort_feature_dependencies(output_features_def)
+    output_features_def = topological_sort_feature_dependencies(
+        output_features_def)
     output_features = {}
 
     for output_feature_def in output_features_def:
@@ -271,4 +277,3 @@ def build_single_output(
     # )
 
     return output_feature_obj
-

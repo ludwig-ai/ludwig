@@ -1787,7 +1787,7 @@ class StackedCNNRNN(Layer):
 
         return {
             'encoder_output': hidden,
-            'encoder_output_state':  final_state
+            'encoder_output_state': final_state
         }
 
 

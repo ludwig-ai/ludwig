@@ -4,28 +4,27 @@ import os.path
 import tempfile
 from collections import namedtuple
 
-import yaml
 import pytest
+import yaml
 
 from ludwig.api import kfold_cross_validate
 from ludwig.experiment import full_kfold_cross_validate
 from ludwig.utils.data_utils import load_json
+from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
-from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import sequence_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-
 FeaturesToUse = namedtuple('FeaturesToUse', 'input_features output_features')
 
 FEATURES_TO_TEST = [
     FeaturesToUse(
-        #input feature
+        # input feature
         [
             numerical_feature(normalization='zscore'),
             numerical_feature(normalization='zscore')
@@ -67,7 +66,7 @@ FEATURES_TO_TEST = [
                 cell_type='lstm',
                 reduce_output=None
             )
-         ],
+        ],
         # output feature
         [
             sequence_feature(
@@ -103,6 +102,7 @@ FEATURES_TO_TEST = [
     )
 ]
 
+
 @pytest.mark.parametrize('features_to_use', FEATURES_TO_TEST)
 def test_kfold_cv_cli(features_to_use):
     # k-fold cross validation cli
@@ -120,7 +120,6 @@ def test_kfold_cv_cli(features_to_use):
 
         # generate synthetic data for the test
         input_features = features_to_use.input_features
-
 
         output_features = features_to_use.output_features
 

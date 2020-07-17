@@ -602,6 +602,7 @@ class SequenceGeneratorDecoder(Layer):
             LOGITS: logits
         }
 
+
 class SequenceTaggerDecoder(Layer):
     def __init__(
             self,

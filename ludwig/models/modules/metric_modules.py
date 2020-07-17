@@ -173,7 +173,6 @@ class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
         super().update_state(self.sigmoid_cross_entropy_function(y, y_hat))
 
 
-
 class SequenceLossMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
         super(SequenceLossMetric, self).__init__(name=name)
@@ -189,6 +188,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     """
     Sequence accuracy based on last token in the sequence
     """
+
     def __init__(self, name=None):
         super(SequenceLastAccuracyMetric, self).__init__(name=name)
 
@@ -282,7 +282,7 @@ class CategoryAccuracy(tf.keras.metrics.Accuracy):
 
 class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
     def __init__(self, k=3, name=None):
-        super(HitsAtKMetric, self).__init__(k=k,name=name)
+        super(HitsAtKMetric, self).__init__(k=k, name=name)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
@@ -321,6 +321,7 @@ def accuracy(targets, predictions, output_feature_name):
         tf.cast(correct_predictions, tf.float32),
         name='accuracy_{}'.format(output_feature_name))
     return accuracy, correct_predictions
+
 
 # TODO TF2 refactor to better adapt for TF2 port
 def masked_accuracy(targets, predictions, sequence_lengths):
@@ -410,7 +411,8 @@ def absolute_error(targets, predictions, output_feature_name):
 def squared_error(targets, predictions, output_feature_name):
     # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
-    return tf.pow(error, 2, name='squared_error_{}'.format(output_feature_name))
+    return tf.pow(error, 2,
+                  name='squared_error_{}'.format(output_feature_name))
 
 
 def r2(targets, predictions, output_feature_name):

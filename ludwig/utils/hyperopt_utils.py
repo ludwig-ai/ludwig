@@ -18,16 +18,16 @@ import copy
 import functools
 import itertools
 import logging
-import math
 import multiprocessing
 import os
-import random
 import signal
 import subprocess as sp
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple, Iterable
+from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
+from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
+from bayesmark.space import JointSpace
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, \
     VALIDATION, MAXIMIZE, TRAINING, TEST
@@ -36,45 +36,25 @@ from ludwig.predict import predict, print_test_results, \
     save_prediction_outputs, save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc import get_from_registry, set_default_values, \
-    set_default_value, get_class_attributes
+from ludwig.utils.misc import get_class_attributes, get_from_registry, \
+    set_default_value, set_default_values
 
 logger = logging.getLogger(__name__)
 
 
-def int_sampling_function(low, high, **kwargs):
-    return random.randint(low, high)
-
-
-def float_sampling_function(low, high, scale='linear', base=None, **kwargs):
-    if scale == 'linear':
-        sample = random.uniform(low, high)
-    elif scale == 'log':
-        if base:
-            sample = math.pow(base, random.uniform(low, high))
-        else:
-            sample = math.exp(random.uniform(math.log(low), math.log(high)))
-    else:
-        raise ValueError(
-            'The scale parameter of the float sampling function is "{}". '
-            'Available ones are: {"linear", "log"}'
-        )
-    return sample
-
-
-def category_sampling_function(values, **kwargs):
-    return random.sample(values, 1)[0]
-
-
-def int_grid_function(low: int, high: int, steps=None, **kwargs):
+def int_grid_function(range: tuple, steps=None, **kwargs):
+    low = range[0]
+    high = range[1]
     if steps is None:
         steps = high - low + 1
     samples = np.linspace(low, high, num=steps, dtype=int)
     return samples.tolist()
 
 
-def float_grid_function(low, high, steps=None, scale='linear', base=None,
+def float_grid_function(range: tuple, steps=None, scale='linear', base=None,
                         **kwargs):
+    low = range[0]
+    high = range[1]
     if steps is None:
         steps = int(high - low + 1)
     if scale == 'linear':
@@ -96,22 +76,17 @@ def category_grid_function(values, **kwargs):
     return values
 
 
-sampling_functions_registry = {
-    'int': int_sampling_function,
-    'float': float_sampling_function,
-    'category': category_sampling_function,
-}
-
 grid_functions_registry = {
     'int': int_grid_function,
-    'float': float_grid_function,
-    'category': category_grid_function
+    'real': float_grid_function,
+    'cat': category_grid_function
 }
 
 
 class HyperoptStrategy(ABC):
     def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
-        self.goal = goal  # useful for bayesian stratiegy
+        assert goal in [MINIMIZE, MAXIMIZE]
+        self.goal = goal  # useful for Bayesian strategy
         self.parameters = parameters
 
     @abstractmethod
@@ -126,7 +101,7 @@ class HyperoptStrategy(ABC):
             try:
                 samples.append(self.sample())
             except IndexError:
-                # Logic: is samples is empty it means that we encoutnered
+                # Logic: is samples is empty it means that we encountered
                 # the IndexError the first time we called self.sample()
                 # so we should raise the exception. If samples is not empty
                 # we should just return it, even if it will contain
@@ -137,20 +112,14 @@ class HyperoptStrategy(ABC):
         return samples
 
     @abstractmethod
-    def update(
-            self,
-            sampled_parameters: Dict[str, Any],
-            metric_score: float
-    ):
+    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
         # Given the results of previous computation, it updates
         # the strategy (not needed for stateless strategies like "grid"
-        # and random, but will be needed by bayesian)
+        # and random, but will be needed by Bayesian)
         pass
 
-    def update_batch(
-            self,
-            parameters_metric_tuples: Iterable[Tuple[Dict[str, Any], float]]
-    ):
+    def update_batch(self, parameters_metric_tuples: Iterable[
+        Tuple[Dict[str, Any], float]]):
         for (sampled_parameters, metric_score) in parameters_metric_tuples:
             self.update(sampled_parameters, metric_score)
 
@@ -163,14 +132,10 @@ class HyperoptStrategy(ABC):
 class RandomStrategy(HyperoptStrategy):
     num_samples = 10
 
-    def __init__(
-            self,
-            goal: str,
-            parameters: Dict[str, Any],
-            num_samples=10,
-            **kwargs
-    ) -> None:
+    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
+                 **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
+        self.space = JointSpace(parameters)
         self.num_samples = num_samples
         self.samples = self._determine_samples()
         self.sampled_so_far = 0
@@ -178,12 +143,10 @@ class RandomStrategy(HyperoptStrategy):
     def _determine_samples(self):
         samples = []
         for _ in range(self.num_samples):
-            sample = {}
-            for hp_name, hp_params in self.parameters.items():
-                sampling_function = get_from_registry(
-                    hp_params['type'], sampling_functions_registry
-                )
-                sample[hp_name] = sampling_function(**hp_params)
+            bnds = self.space.get_bounds()
+            x = bnds[:, 0] + (bnds[:, 1] - bnds[:, 0]) * np.random.rand(1, len(
+                self.space.get_bounds()))
+            sample = self.space.unwarp(x)[0]
             samples.append(sample)
         return samples
 
@@ -194,11 +157,7 @@ class RandomStrategy(HyperoptStrategy):
         self.sampled_so_far += 1
         return sample
 
-    def update(
-            self,
-            sampled_parameters: Dict[str, Any],
-            statistics: Dict[str, Any]
-    ):
+    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
         pass
 
     def finished(self) -> bool:
@@ -248,14 +207,37 @@ class GridStrategy(HyperoptStrategy):
         return self.sampled_so_far >= len(self.samples)
 
 
+class PySOTStrategy(HyperoptStrategy):
+    """pySOT: Surrogate optimization in Python.
+
+    This is a wrapper around the pySOT package (https://github.com/dme65/pySOT):
+        David Eriksson, David Bindel, Christine Shoemaker
+        pySOT and POAP: An event-driven asynchronous framework for surrogate optimization
+    """
+
+    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
+                 **kwargs) -> None:
+        HyperoptStrategy.__init__(self, goal, parameters)
+        self.pysot_optimizer = PySOTOptimizer(parameters)
+        self.sampled_so_far = 0
+        self.num_samples = num_samples
+
+    def sample(self) -> Dict[str, Any]:
+        """Suggest one new point to be evaluated."""
+        sample = self.pysot_optimizer.suggest(n_suggestions=1)[0]
+        self.sampled_so_far += 1
+        return sample
+
+    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
+        self.pysot_optimizer.observe([sampled_parameters], [metric_score])
+
+    def finished(self) -> bool:
+        return self.sampled_so_far >= self.num_samples
+
+
 class HyperoptExecutor(ABC):
-    def __init__(
-            self,
-            hyperopt_strategy: HyperoptStrategy,
-            output_feature: str,
-            metric: str,
-            split: str
-    ) -> None:
+    def __init__(self, hyperopt_strategy: HyperoptStrategy,
+                 output_feature: str, metric: str, split: str) -> None:
         self.hyperopt_strategy = hyperopt_strategy
         self.output_feature = output_feature
         self.metric = metric
@@ -266,8 +248,7 @@ class HyperoptExecutor(ABC):
 
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
-            hyperopt_results,
-            key=lambda hp_res: hp_res['metric_score'],
+            hyperopt_results, key=lambda hp_res: hp_res["metric_score"],
             reverse=self.hyperopt_strategy.goal == MAXIMIZE
         )
 
@@ -315,16 +296,11 @@ class HyperoptExecutor(ABC):
 
 class SerialExecutor(HyperoptExecutor):
     def __init__(
-            self,
-            hyperopt_strategy: HyperoptStrategy,
-            output_feature: str,
-            metric: str,
-            split: str,
-            **kwargs
+            self, hyperopt_strategy: HyperoptStrategy, output_feature: str,
+            metric: str, split: str, **kwargs
     ) -> None:
-        HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, metric, split
-        )
+        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+                                  metric, split)
 
     def execute(
             self,
@@ -371,8 +347,7 @@ class SerialExecutor(HyperoptExecutor):
 
             for parameters in sampled_parameters:
                 modified_model_definition = substitute_parameters(
-                    copy.deepcopy(model_definition), parameters
-                )
+                    copy.deepcopy(model_definition), parameters)
 
                 train_stats, eval_stats = train_and_eval_on_split(
                     modified_model_definition,
@@ -414,16 +389,17 @@ class SerialExecutor(HyperoptExecutor):
                 metric_score = self.get_metric_score(eval_stats)
                 metric_scores.append(metric_score)
 
-                hyperopt_results.append({
-                    'parameters': parameters,
-                    'metric_score': metric_score,
-                    'training_stats': train_stats,
-                    'eval_stats': eval_stats
-                })
+                hyperopt_results.append(
+                    {
+                        "parameters": parameters,
+                        "metric_score": metric_score,
+                        "training_stats": train_stats,
+                        "eval_stats": eval_stats,
+                    }
+                )
 
             self.hyperopt_strategy.update_batch(
-                zip(sampled_parameters, metric_scores)
-            )
+                zip(sampled_parameters, metric_scores))
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
 
@@ -445,9 +421,8 @@ class ParallelExecutor(HyperoptExecutor):
             epsilon: int = 0.01,
             **kwargs
     ) -> None:
-        HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, metric, split
-        )
+        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+                                  metric, split)
         self.num_workers = num_workers
         self.epsilon = epsilon
         self.queue = None
@@ -457,15 +432,15 @@ class ParallelExecutor(HyperoptExecutor):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     def _train_and_eval_model(self, hyperopt_dict):
-        parameters = hyperopt_dict['parameters']
+        parameters = hyperopt_dict["parameters"]
         train_stats, eval_stats = train_and_eval_on_split(**hyperopt_dict)
         metric_score = self.get_metric_score(eval_stats)
 
         return {
-            'parameters': parameters,
-            'metric_score': metric_score,
-            'training_stats': train_stats,
-            'eval_stats': eval_stats
+            "parameters": parameters,
+            "metric_score": metric_score,
+            "training_stats": train_stats,
+            "eval_stats": eval_stats,
         }
 
     def _train_and_eval_model_gpu(self, hyperopt_dict):
@@ -479,10 +454,10 @@ class ParallelExecutor(HyperoptExecutor):
         finally:
             self.queue.put(gpu_id_meta)
         return {
-            'parameters': parameters,
-            'metric_score': metric_score,
-            'training_stats': train_stats,
-            'eval_stats': eval_stats
+            "parameters": parameters,
+            "metric_score": metric_score,
+            "training_stats": train_stats,
+            "eval_stats": eval_stats,
         }
 
     def execute(
@@ -531,15 +506,15 @@ class ParallelExecutor(HyperoptExecutor):
 
             if self.num_workers > num_available_cpus:
                 logger.warning(
-                    'WARNING: Setting num_workers to less '
-                    'or equal to number of available cpus: {} is suggested'.format(
+                    "WARNING: Setting num_workers to less "
+                    "or equal to number of available cpus: {} is suggested".format(
                         num_available_cpus)
                 )
 
             if isinstance(gpus, int):
                 gpus = str(gpus)
             gpus = gpus.strip()
-            gpu_ids = gpus.split(',')
+            gpu_ids = gpus.split(",")
             total_gpus = len(gpu_ids)
 
             available_gpu_memory_list = get_available_gpu_memory()
@@ -548,7 +523,8 @@ class ParallelExecutor(HyperoptExecutor):
             if total_gpus < self.num_workers:
                 fraction = (total_gpus / self.num_workers) - self.epsilon
                 for gpu_id in gpu_ids:
-                    available_gpu_memory = available_gpu_memory_list[int(gpu_id)]
+                    available_gpu_memory = available_gpu_memory_list[
+                        int(gpu_id)]
                     required_gpu_memory = fraction * available_gpu_memory
 
                     if gpu_memory_limit is None:
@@ -557,7 +533,8 @@ class ParallelExecutor(HyperoptExecutor):
                             'as the available gpus is {} and the num of workers '
                             'being set is {} and the available gpu memory for gpu_id '
                             '{} is {}'.format(
-                                required_gpu_memory, total_gpus, self.num_workers,
+                                required_gpu_memory, total_gpus,
+                                self.num_workers,
                                 gpu_id, available_gpu_memory)
                         )
                         new_gpu_memory_limit = required_gpu_memory
@@ -588,7 +565,8 @@ class ParallelExecutor(HyperoptExecutor):
                                     'as the available gpus is {} and the num of workers '
                                     'being set is {} and the available gpu memory for gpu_id '
                                     '{} is {}'.format(
-                                        required_gpu_memory, total_gpus, self.num_workers,
+                                        required_gpu_memory, total_gpus,
+                                        self.num_workers,
                                         gpu_id, available_gpu_memory)
                                 )
                                 new_gpu_memory_limit = required_gpu_memory
@@ -598,16 +576,22 @@ class ParallelExecutor(HyperoptExecutor):
                                 'as the available gpus is {} and the num of workers '
                                 'being set is {} and the available gpu memory for gpu_id '
                                 '{} is {}'.format(
-                                    required_gpu_memory, total_gpus, self.num_workers,
+                                    required_gpu_memory, total_gpus,
+                                    self.num_workers,
                                     gpu_id, available_gpu_memory)
                             )
 
-                    process_per_gpu = int(available_gpu_memory / new_gpu_memory_limit)
-                    gpu_ids_meta[gpu_id] = {"gpu_memory_limit": new_gpu_memory_limit, "process_per_gpu": process_per_gpu}
+                    process_per_gpu = int(
+                        available_gpu_memory / new_gpu_memory_limit)
+                    gpu_ids_meta[gpu_id] = {
+                        "gpu_memory_limit": new_gpu_memory_limit,
+                        "process_per_gpu": process_per_gpu}
             else:
                 for gpu_id in gpu_ids:
-                    gpu_ids_meta[gpu_id] = {"gpu_memory_limit": gpu_memory_limit, "process_per_gpu": 1}
-                    
+                    gpu_ids_meta[gpu_id] = {
+                        "gpu_memory_limit": gpu_memory_limit,
+                        "process_per_gpu": 1}
+
             manager = multiprocessing.Manager()
             self.queue = manager.Queue()
 
@@ -619,38 +603,36 @@ class ParallelExecutor(HyperoptExecutor):
                                    "gpu_memory_limit": gpu_memory_limit}
                     self.queue.put(gpu_id_meta)
 
-        pool = multiprocessing.Pool(
-            self.num_workers, ParallelExecutor.init_worker
-        )
+        pool = multiprocessing.Pool(self.num_workers,
+                                    ParallelExecutor.init_worker)
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
 
             for parameters in sampled_parameters:
                 modified_model_definition = substitute_parameters(
-                    copy.deepcopy(model_definition), parameters
-                )
+                    copy.deepcopy(model_definition), parameters)
 
                 hyperopt_parameters.append(
                     {
-                        'parameters': parameters,
-                        'model_definition': modified_model_definition,
-                        'eval_split': self.split,
-                        'data_df': data_df,
-                        'data_train_df': data_train_df,
-                        'data_validation_df': data_validation_df,
-                        'data_test_df': data_test_df,
-                        'data_csv': data_csv,
-                        'data_train_csv': data_train_csv,
-                        'data_validation_csv': data_validation_csv,
-                        'data_test_csv': data_test_csv,
-                        'data_hdf5': data_hdf5,
-                        'data_train_hdf5': data_train_hdf5,
-                        'data_validation_hdf5': data_validation_hdf5,
-                        'data_test_hdf5': data_test_hdf5,
-                        'train_set_metadata_json': train_set_metadata_json,
-                        'experiment_name': experiment_name,
-                        'model_name': model_name,
+                        "parameters": parameters,
+                        "model_definition": modified_model_definition,
+                        "eval_split": self.split,
+                        "data_df": data_df,
+                        "data_train_df": data_train_df,
+                        "data_validation_df": data_validation_df,
+                        "data_test_df": data_test_df,
+                        "data_csv": data_csv,
+                        "data_train_csv": data_train_csv,
+                        "data_validation_csv": data_validation_csv,
+                        "data_test_csv": data_test_csv,
+                        "data_hdf5": data_hdf5,
+                        "data_train_hdf5": data_train_hdf5,
+                        "data_validation_hdf5": data_validation_hdf5,
+                        "data_test_hdf5": data_test_hdf5,
+                        "train_set_metadata_json": train_set_metadata_json,
+                        "experiment_name": experiment_name,
+                        "model_name": model_name,
                         # model_load_path:model_load_path,
                         # model_resume_path:model_resume_path,
                         'skip_save_training_description': skip_save_training_description,
@@ -665,7 +647,7 @@ class ParallelExecutor(HyperoptExecutor):
                         'output_directory': output_directory,
                         'gpus': gpus,
                         'gpu_memory_limit': gpu_memory_limit,
-                        'allow_parallel_threads' : allow_parallel_threads,
+                        'allow_parallel_threads': allow_parallel_threads,
                         'use_horovod': use_horovod,
                         'random_seed': random_seed,
                         'debug': debug,
@@ -673,17 +655,15 @@ class ParallelExecutor(HyperoptExecutor):
                 )
 
             if gpus is not None:
-                batch_results = pool.map(
-                    self._train_and_eval_model_gpu, hyperopt_parameters
-                )
+                batch_results = pool.map(self._train_and_eval_model_gpu,
+                                         hyperopt_parameters)
             else:
-                batch_results = pool.map(
-                    self._train_and_eval_model, hyperopt_parameters
-                )
+                batch_results = pool.map(self._train_and_eval_model,
+                                         hyperopt_parameters)
 
             self.hyperopt_strategy.update_batch(
-                (result['parameters'], result['metric_score'])
-                for result in batch_results
+                (result["parameters"], result["metric_score"]) for result in
+                batch_results
             )
 
             hyperopt_results.extend(batch_results)
@@ -709,9 +689,9 @@ class FiberExecutor(HyperoptExecutor):
             **kwargs
     ) -> None:
         import fiber
-        HyperoptExecutor.__init__(
-            self, hyperopt_strategy, output_feature, metric, split
-        )
+
+        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+                                  metric, split)
 
         fiber.init(backend=fiber_backend)
         self.fiber_meta = fiber.meta
@@ -816,11 +796,10 @@ class FiberExecutor(HyperoptExecutor):
             stats_batch = self.pool.map(
                 train_func,
                 [
-                    substitute_parameters(
-                        copy.deepcopy(model_definition), parameters
-                    )
+                    substitute_parameters(copy.deepcopy(model_definition),
+                                          parameters)
                     for parameters in sampled_parameters
-                ]
+                ],
             )
 
             for stats, parameters in zip(stats_batch, sampled_parameters):
@@ -828,16 +807,17 @@ class FiberExecutor(HyperoptExecutor):
                 metric_score = self.get_metric_score(eval_stats)
                 metric_scores.append(metric_score)
 
-                hyperopt_results.append({
-                    'parameters': parameters,
-                    'metric_score': metric_score,
-                    'training_stats': train_stats,
-                    'eval_stats': eval_stats
-                })
+                hyperopt_results.append(
+                    {
+                        "parameters": parameters,
+                        "metric_score": metric_score,
+                        "training_stats": train_stats,
+                        "eval_stats": eval_stats,
+                    }
+                )
 
             self.hyperopt_strategy.update_batch(
-                zip(sampled_parameters, metric_scores)
-            )
+                zip(sampled_parameters, metric_scores))
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
 
@@ -845,20 +825,17 @@ class FiberExecutor(HyperoptExecutor):
 
 
 def get_build_hyperopt_strategy(strategy_type):
-    return get_from_registry(
-        strategy_type, strategy_registry
-    )
+    return get_from_registry(strategy_type, strategy_registry)
 
 
 def get_build_hyperopt_executor(executor_type):
-    return get_from_registry(
-        executor_type, executor_registry
-    )
+    return get_from_registry(executor_type, executor_registry)
 
 
 strategy_registry = {
+    "grid": GridStrategy,
     "random": RandomStrategy,
-    "grid": GridStrategy
+    "pysot": PySOTStrategy,
 }
 
 executor_registry = {
@@ -871,47 +848,29 @@ executor_registry = {
 def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_value(hyperopt_params, STRATEGY, {})
     set_default_value(hyperopt_params, EXECUTOR, {})
-    set_default_value(hyperopt_params, 'split', VALIDATION)
-    set_default_value(hyperopt_params, 'output_feature', COMBINED)
-    set_default_value(hyperopt_params, 'metric', LOSS)
-    set_default_value(hyperopt_params, 'goal', MINIMIZE)
+    set_default_value(hyperopt_params, "split", VALIDATION)
+    set_default_value(hyperopt_params, "output_feature", COMBINED)
+    set_default_value(hyperopt_params, "metric", LOSS)
+    set_default_value(hyperopt_params, "goal", MINIMIZE)
 
-    set_default_values(
-        hyperopt_params[STRATEGY],
-        {
-            "type": "random"
-        }
-    )
+    set_default_values(hyperopt_params[STRATEGY], {"type": "random"})
 
-    strategy = get_from_registry(
-        hyperopt_params[STRATEGY]["type"], strategy_registry
-    )
-    strategy_defaults = {
-        k: v for k, v in strategy.__dict__.items()
-        if k in get_class_attributes(strategy)
-    }
+    strategy = get_from_registry(hyperopt_params[STRATEGY]["type"],
+                                 strategy_registry)
+    strategy_defaults = {k: v for k, v in strategy.__dict__.items() if
+                         k in get_class_attributes(strategy)}
     set_default_values(
-        hyperopt_params[STRATEGY],
-        strategy_defaults,
+        hyperopt_params[STRATEGY], strategy_defaults,
     )
 
-    set_default_values(
-        hyperopt_params[EXECUTOR],
-        {
-            "type": "serial"
-        }
-    )
+    set_default_values(hyperopt_params[EXECUTOR], {"type": "serial"})
 
-    executor = get_from_registry(
-        hyperopt_params[EXECUTOR]["type"], executor_registry
-    )
-    executor_defaults = {
-        k: v for k, v in executor.__dict__.items()
-        if k in get_class_attributes(executor)
-    }
+    executor = get_from_registry(hyperopt_params[EXECUTOR]["type"],
+                                 executor_registry)
+    executor_defaults = {k: v for k, v in executor.__dict__.items() if
+                         k in get_class_attributes(executor)}
     set_default_values(
-        hyperopt_params[EXECUTOR],
-        executor_defaults,
+        hyperopt_params[EXECUTOR], executor_defaults,
     )
 
 
@@ -949,8 +908,8 @@ def substitute_parameters(model_definition, parameters):
         set_values(output_feature, output_feature["name"], parameters_dict)
     set_values(model_definition["combiner"], "combiner", parameters_dict)
     set_values(model_definition["training"], "training", parameters_dict)
-    set_values(model_definition["preprocessing"],
-               "preprocessing", parameters_dict)
+    set_values(model_definition["preprocessing"], "preprocessing",
+               parameters_dict)
     return model_definition
 
 
@@ -959,12 +918,13 @@ def get_available_gpu_memory():
 
     COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
     try:
-        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[1:]
+        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[
+                           1:]
         memory_free_values = [int(x.split()[0])
-                            for i, x in enumerate(memory_free_info)]
+                              for i, x in enumerate(memory_free_info)]
     except Exception as e:
         print('"nvidia-smi" is probably not installed.', e)
-        
+
     return memory_free_values
 
 
@@ -1011,13 +971,8 @@ def train_and_eval_on_split(
     # Collect training and validation losses and metrics
     # & append it to `results`
     # ludwig_model = LudwigModel(modified_model_definition)
-    (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
-        train_stats,
-        model_definition
-    ) = full_train(
+    (model, preprocessed_data, experiment_dir_name, train_stats,
+     model_definition) = full_train(
         model_definition=model_definition,
         data_df=data_df,
         data_train_df=data_train_df,
@@ -1050,14 +1005,12 @@ def train_and_eval_on_split(
         random_seed=random_seed,
         debug=debug,
     )
-    (training_set,
-     validation_set,
-     test_set,
+    (training_set, validation_set, test_set,
      train_set_metadata) = preprocessed_data
-    if model_definition[TRAINING]['eval_batch_size'] > 0:
-        batch_size = model_definition[TRAINING]['eval_batch_size']
+    if model_definition[TRAINING]["eval_batch_size"] > 0:
+        batch_size = model_definition[TRAINING]["eval_batch_size"]
     else:
-        batch_size = model_definition[TRAINING]['batch_size']
+        batch_size = model_definition[TRAINING]["batch_size"]
 
     eval_set = validation_set
     if eval_split == TRAINING:
@@ -1077,28 +1030,22 @@ def train_and_eval_on_split(
         debug=debug
     )
     if not (
-            skip_save_unprocessed_output and
-            skip_save_test_predictions and
-            skip_save_test_statistics
-    ):
+            skip_save_unprocessed_output and skip_save_test_predictions and skip_save_test_statistics):
         if not os.path.exists(experiment_dir_name):
             os.makedirs(experiment_dir_name)
 
     # postprocess
     postprocessed_output = postprocess(
         test_results,
-        model_definition['output_features'],
+        model_definition["output_features"],
         train_set_metadata,
         experiment_dir_name,
-        skip_save_unprocessed_output
+        skip_save_unprocessed_output,
     )
 
     print_test_results(test_results)
     if not skip_save_test_predictions:
-        save_prediction_outputs(
-            postprocessed_output,
-            experiment_dir_name
-        )
+        save_prediction_outputs(postprocessed_output, experiment_dir_name)
     if not skip_save_test_statistics:
         save_test_statistics(test_results, experiment_dir_name)
     return train_stats, test_results

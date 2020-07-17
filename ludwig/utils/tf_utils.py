@@ -54,9 +54,10 @@ def initialize_tensorflow(gpus=None,
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
     if _TF_INIT_PARAMS is not None:
         if _TF_INIT_PARAMS != param_tuple:
-            warnings.warn('TensorFlow has already been initialized. Changes to `gpus`, '
-                          '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
-                          'Start a new Python process to modify these values.')
+            warnings.warn(
+                'TensorFlow has already been initialized. Changes to `gpus`, '
+                '`gpu_memory_limit`, and `allow_parallel_threads` will be ignored. '
+                'Start a new Python process to modify these values.')
         return
 
     # For reproducivility / determinism, set parallel threads to 1.
