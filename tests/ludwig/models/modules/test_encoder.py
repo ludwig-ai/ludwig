@@ -233,11 +233,11 @@ def test_sequence_encoder_embed():
                 output_data=None
             )
 
-            embed = encoder.embed_sequence.embed
+            embed = encoder.embed_sequence.embeddings
             #assert embed.representation == 'dense'
-            assert embed.embeddings_trainable == trainable
-            assert embed.regularize is True
-            assert embed.dropout is False
+            assert embed.trainable == trainable
+            # assert embed.regularize is True
+            assert encoder.embed_sequence.dropout is None
 
 
 def test_sequence_encoders():
