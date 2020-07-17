@@ -26,11 +26,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
-from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
 
 from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, \
-    VALIDATION, MAXIMIZE, TRAINING, TEST
+    VALIDATION, MAXIMIZE, TRAINING, TEST, CATEGORY, TYPE
 from ludwig.data.postprocessing import postprocess
 from ludwig.predict import predict, print_test_results, \
     save_prediction_outputs, save_test_statistics
@@ -79,6 +78,7 @@ def category_grid_function(values, **kwargs):
 grid_functions_registry = {
     'int': int_grid_function,
     'real': float_grid_function,
+    'category': category_grid_function,
     'cat': category_grid_function
 }
 
@@ -135,7 +135,11 @@ class RandomStrategy(HyperoptStrategy):
     def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
                  **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
-        self.space = JointSpace(parameters)
+        params_for_join_space = copy.deepcopy(parameters)
+        for param in params_for_join_space:
+            if param[TYPE] == CATEGORY:
+                param[TYPE] = 'cat'
+        self.space = JointSpace(params_for_join_space)
         self.num_samples = num_samples
         self.samples = self._determine_samples()
         self.sampled_so_far = 0
@@ -218,7 +222,11 @@ class PySOTStrategy(HyperoptStrategy):
     def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
                  **kwargs) -> None:
         HyperoptStrategy.__init__(self, goal, parameters)
-        self.pysot_optimizer = PySOTOptimizer(parameters)
+        params_for_join_space = copy.deepcopy(parameters)
+        for param in params_for_join_space:
+            if param[TYPE] == CATEGORY:
+                param[TYPE] = 'cat'
+        self.space = JointSpace(params_for_join_space)
         self.sampled_so_far = 0
         self.num_samples = num_samples
 
