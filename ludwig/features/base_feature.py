@@ -27,8 +27,14 @@ from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
 
-class BaseFeature:
-    def __init__(self, feature):
+
+class BaseFeature(object):
+    """Base class for all features.
+
+    Note that this class follows cooperative multiple-inheritance best practices.
+    """
+    def __init__(self, feature, *args, **kwargs):
+        super().__init__(*args, feature=feature, **kwargs)
         if 'name' not in feature:
             raise ValueError('Missing feature name')
 
@@ -49,7 +55,14 @@ class BaseFeature:
                     setattr(self, k, feature[k])
 
 
-class InputFeature(ABC, tf.keras.Model):
+class InputFeature(tf.keras.Model, ABC):
+    """Mixin for input features.
+
+    Note that this class is not cooperative (does not forward kwargs), and as such must be placed
+    at the end of the class list.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__()
 
     @staticmethod
     @abstractmethod
@@ -77,11 +90,14 @@ class InputFeature(ABC, tf.keras.Model):
         )
 
 
-class OutputFeature(ABC, BaseFeature, tf.keras.Model):
+class OutputFeature(tf.keras.Model, ABC):
+    """Mixin for output features.
 
-    def __init__(self, feature):
-        BaseFeature.__init__(self, feature)
-        tf.keras.Model.__init__(self)
+    Note that this class is not cooperative (does not forward kwargs), and as such must be placed
+    at the end of the class list.
+    """
+    def __init__(self, feature, *args, **kwargs):
+        super().__init__()
 
         self.loss = None
         self.train_loss_function = None

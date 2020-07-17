@@ -93,8 +93,8 @@ class VectorBaseFeature(BaseFeature):
         'fill_value': ""
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -150,8 +150,7 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
     encoder = 'dense'
 
     def __init__(self, feature, encoder_obj=None):
-        VectorBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super.__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -200,8 +199,7 @@ class VectorOutputFeature(VectorBaseFeature, OutputFeature):
     vector_size = 0
 
     def __init__(self, feature):
-        VectorBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()

@@ -40,8 +40,8 @@ class TimeseriesBaseFeature(BaseFeature):
         'fill_value': ''
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -133,8 +133,7 @@ class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
     length = 0
 
     def __init__(self, feature, encoder_obj=None):
-        TimeseriesBaseFeature.__init__(self, feature)
-        SequenceInputFeature.__init__(self, feature)
+        super().__init__(feature)
 
         self.overwrite_defaults(feature)
         if encoder_obj:

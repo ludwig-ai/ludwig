@@ -57,8 +57,8 @@ class TextBaseFeature(BaseFeature):
         'fill_value': UNKNOWN_SYMBOL
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters):
@@ -189,8 +189,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
     length = 0
 
     def __init__(self, feature, encoder_obj=None):
-        TextBaseFeature.__init__(self, feature)
-        SequenceInputFeature.__init__(self, feature)
+        super().__init__(feature)
 
         self.overwrite_defaults(feature)
         if encoder_obj:
@@ -250,8 +249,7 @@ class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
     num_classes = 0
 
     def __init__(self, feature, decoder_obj=None):
-        TextBaseFeature.__init__(self, feature)
-        SequenceOutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if decoder_obj:
             self.encoder_obj = decoder_obj

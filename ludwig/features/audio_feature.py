@@ -54,8 +54,8 @@ class AudioBaseFeature(BaseFeature):
         }
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -351,8 +351,7 @@ class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
-        AudioBaseFeature.__init__(self, feature)
-        SequenceInputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.length = None
         self.embedding_size = None
         self.overwrite_defaults(feature)

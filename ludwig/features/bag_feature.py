@@ -42,8 +42,8 @@ class BagBaseFeature(BaseFeature):
         'fill_value': UNKNOWN_SYMBOL
     }
 
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -100,9 +100,6 @@ class BagInputFeature(BagBaseFeature, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-
-        BagBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
