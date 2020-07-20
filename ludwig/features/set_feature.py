@@ -22,7 +22,6 @@ import tensorflow as tf
 from tensorflow.keras.metrics import MeanIoU
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
@@ -37,7 +36,7 @@ from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 logger = logging.getLogger(__name__)
 
 
-class SetBaseFeature(BaseFeature):
+class SetFeatureMixin(object):
     type = SET
     preprocessing_defaults = {
         'tokenizer': 'space',
@@ -46,9 +45,6 @@ class SetBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -96,20 +92,20 @@ class SetBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters,
     ):
-        data[feature['name']] = SetBaseFeature.feature_data(
+        data[feature['name']] = SetFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters
         )
 
 
-class SetInputFeature(SetBaseFeature, InputFeature):
+class SetInputFeature(SetFeatureMixin, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
 
-        SetBaseFeature.__init__(self, feature)
+        SetFeatureMixin.__init__(self, feature)
         InputFeature.__init__(self)
         self.overwrite_defaults(feature)
         if encoder_obj:
@@ -146,7 +142,7 @@ class SetInputFeature(SetBaseFeature, InputFeature):
     }
 
 
-class SetOutputFeature(SetBaseFeature, OutputFeature):
+class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}

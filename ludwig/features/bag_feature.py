@@ -21,7 +21,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.models.modules.bag_encoders import BagEmbedWeightedEncoder
@@ -31,7 +30,7 @@ from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 logger = logging.getLogger(__name__)
 
 
-class BagBaseFeature(BaseFeature):
+class BagFeatureMixin(object):
     type = BAG
 
     preprocessing_defaults = {
@@ -41,9 +40,6 @@ class BagBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -88,14 +84,14 @@ class BagBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = BagBaseFeature.feature_data(
+        data[feature['name']] = BagFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters
         )
 
 
-class BagInputFeature(BagBaseFeature, InputFeature):
+class BagInputFeature(BagFeatureMixin, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):

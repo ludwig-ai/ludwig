@@ -21,7 +21,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -45,7 +44,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class CategoryBaseFeature(BaseFeature):
+class CategoryFeatureMixin(object):
     type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
@@ -53,9 +52,6 @@ class CategoryBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -93,13 +89,13 @@ class CategoryBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = CategoryBaseFeature.feature_data(
+        data[feature['name']] = CategoryFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']]
         )
 
 
-class CategoryInputFeature(CategoryBaseFeature, InputFeature):
+class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = 'dense'
 
     def __init__(self, feature, encoder_obj=None):
@@ -148,7 +144,7 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     }
 
 
-class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
+class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}

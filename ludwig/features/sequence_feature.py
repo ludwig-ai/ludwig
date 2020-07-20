@@ -21,7 +21,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -53,7 +52,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class SequenceBaseFeature(BaseFeature):
+class SequenceFeatureMixin(object):
     type = SEQUENCE
 
     preprocessing_defaults = {
@@ -68,9 +67,6 @@ class SequenceBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -125,7 +121,7 @@ class SequenceBaseFeature(BaseFeature):
         data[feature['name']] = sequence_data
 
 
-class SequenceInputFeature(SequenceBaseFeature, InputFeature):
+class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
@@ -181,7 +177,7 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
     }
 
 
-class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
+class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = 'tagger'
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
 
