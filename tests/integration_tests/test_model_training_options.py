@@ -153,7 +153,8 @@ def test_model_progress_save(
         model_dir = os.path.join(exp_dir_name, 'model')
         files = [f for f in os.listdir(model_dir) if
                  re.match(r'model_weights', f)]
-        assert len(files) == 2
+        # at least one .index and one .data file, but .data may be more
+        assert len(files) >= 2
         assert os.path.isfile(
             os.path.join(exp_dir_name, 'model', 'checkpoint'))
 
