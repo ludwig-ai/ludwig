@@ -16,10 +16,12 @@
 import pandas as pd
 import numpy as np
 
-from ludwig.features.numerical_feature import NumericalBaseFeature
+from ludwig.features.numerical_feature import NumericalFeatureMixin
+
 
 def numerical_feature():
     return {'name': 'x' , 'type': 'numerical'}
+
 
 data_df = pd.DataFrame(pd.Series([
     2,
@@ -37,14 +39,12 @@ data = pd.DataFrame(pd.Series([
     10
 ]), columns=['x'])
 
-feature_1 = NumericalBaseFeature(numerical_feature())
-feature_2 = NumericalBaseFeature(numerical_feature())
 
 def test_norm():
-    feature_1_meta = feature_1.get_feature_meta(
+    feature_1_meta = NumericalFeatureMixin.get_feature_meta(
         data_df['x'], {'normalization': 'zscore'}
     )
-    feature_2_meta = feature_1.get_feature_meta(
+    feature_2_meta = NumericalFeatureMixin.get_feature_meta(
         data_df['x'], {'normalization': 'minmax'}
     )
     
@@ -53,7 +53,7 @@ def test_norm():
     assert feature_2_meta['max'] == 10
     
     # value checks after normalization
-    feature_1.add_feature_data(
+    NumericalFeatureMixin.add_feature_data(
         feature=numerical_feature(),
         dataset_df=data_df,
         data=data,
@@ -64,7 +64,7 @@ def test_norm():
         np.array([-1.26491106, -0.63245553,  0,  0.63245553,  1.26491106])
     )
 
-    feature_2.add_feature_data(
+    NumericalFeatureMixin.add_feature_data(
         feature=numerical_feature(),
         dataset_df=data_df,
         data=data,

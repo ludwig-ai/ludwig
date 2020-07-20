@@ -31,10 +31,14 @@ logger = logging.getLogger(__name__)
 class BaseFeature(object):
     """Base class for all features.
 
-    Note that this class follows cooperative multiple-inheritance best practices.
+    Note that this class is not-cooperative (does not forward kwargs), so when constructing
+    feature class hierarchies, there should be only one parent class that derives from base
+    feature.  Other functionality should be put into mixin classes to avoid the diamond
+    pattern.
     """
     def __init__(self, feature, *args, **kwargs):
-        super().__init__(*args, feature=feature, **kwargs)
+        super().__init__()
+
         if 'name' not in feature:
             raise ValueError('Missing feature name')
 
@@ -55,14 +59,10 @@ class BaseFeature(object):
                     setattr(self, k, feature[k])
 
 
-class InputFeature(tf.keras.Model, ABC):
-    """Mixin for input features.
-
-    Note that this class is not cooperative (does not forward kwargs), and as such must be placed
-    at the end of the class list.
-    """
+class InputFeature(BaseFeature, tf.keras.Model, ABC):
+    """Parent class for all input features."""
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     @abstractmethod
@@ -90,14 +90,10 @@ class InputFeature(tf.keras.Model, ABC):
         )
 
 
-class OutputFeature(tf.keras.Model, ABC):
-    """Mixin for output features.
-
-    Note that this class is not cooperative (does not forward kwargs), and as such must be placed
-    at the end of the class list.
-    """
+class OutputFeature(BaseFeature, tf.keras.Model, ABC):
+    """Parent class for all output features."""
     def __init__(self, feature, *args, **kwargs):
-        super().__init__()
+        super().__init__(*args, feature=feature, **kwargs)
 
         self.loss = None
         self.train_loss_function = None

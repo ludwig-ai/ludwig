@@ -23,7 +23,6 @@ import tensorflow as tf
 from dateutil.parser import parse
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.date_encoders import DateEmbed, DateWave
 from ludwig.utils.misc import set_default_value
@@ -33,16 +32,13 @@ logger = logging.getLogger(__name__)
 DATE_VECTOR_LENGTH = 9
 
 
-class DateBaseFeature(BaseFeature):
+class DateFeatureMixin(object):
     type = DATE
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': '',
         'datetime_format': None
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -106,7 +102,7 @@ class DateBaseFeature(BaseFeature):
     ):
         datetime_format = preprocessing_parameters['datetime_format']
         dates_to_lists = [
-            np.array(DateBaseFeature.date_to_list(
+            np.array(DateFeatureMixin.date_to_list(
                 row, datetime_format, preprocessing_parameters
             ))
             for row in dataset_df[feature['name']]
@@ -114,7 +110,7 @@ class DateBaseFeature(BaseFeature):
         data[feature['name']] = np.array(dates_to_lists, dtype=np.int16)
 
 
-class DateInputFeature(DateBaseFeature, InputFeature):
+class DateInputFeature(DateFeatureMixin, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):

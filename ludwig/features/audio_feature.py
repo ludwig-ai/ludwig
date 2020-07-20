@@ -22,7 +22,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import calculate_incr_mean
 from ludwig.utils.audio_utils import calculate_incr_var
@@ -40,7 +39,7 @@ from ludwig.utils.misc import set_default_values
 logger = logging.getLogger(__name__)
 
 
-class AudioBaseFeature(BaseFeature):
+class AudioFeatureMixin(object):
     type = AUDIO
 
     preprocessing_defaults = {
@@ -53,9 +52,6 @@ class AudioBaseFeature(BaseFeature):
             'type': 'raw',
         }
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -73,11 +69,11 @@ class AudioBaseFeature(BaseFeature):
         first_audio_file_path = column[0]
         _, sampling_rate_in_hz = soundfile.read(first_audio_file_path)
 
-        feature_dim = AudioBaseFeature._get_feature_dim(audio_feature_dict,
-                                                        sampling_rate_in_hz)
+        feature_dim = AudioFeatureMixin._get_feature_dim(audio_feature_dict,
+                                                         sampling_rate_in_hz)
         audio_file_length_limit_in_s = preprocessing_parameters[
             'audio_file_length_limit_in_s']
-        max_length = AudioBaseFeature._get_max_length_feature(
+        max_length = AudioFeatureMixin._get_max_length_feature(
             audio_feature_dict, sampling_rate_in_hz,
             audio_file_length_limit_in_s)
         return {
@@ -130,15 +126,15 @@ class AudioBaseFeature(BaseFeature):
 
         feature_type = audio_feature_dict[TYPE]
         audio, sampling_rate_in_hz = soundfile.read(filepath)
-        AudioBaseFeature._update(audio_stats, audio, sampling_rate_in_hz)
+        AudioFeatureMixin._update(audio_stats, audio, sampling_rate_in_hz)
 
         if feature_type == 'raw':
             audio_feature = np.expand_dims(audio, axis=-1)
         elif feature_type in ['stft', 'stft_phase', 'group_delay', 'fbank']:
             audio_feature = np.transpose(
-                AudioBaseFeature._get_2D_feature(audio, feature_type,
-                                                 audio_feature_dict,
-                                                 sampling_rate_in_hz))
+                AudioFeatureMixin._get_2D_feature(audio, feature_type,
+                                                  audio_feature_dict,
+                                                  sampling_rate_in_hz))
         else:
             raise ValueError('{} is not recognized.'.format(feature_type))
 
@@ -290,7 +286,7 @@ class AudioBaseFeature(BaseFeature):
                     csv_path,
                     path
                 )
-                audio_feature = AudioBaseFeature._read_audio_and_transform_to_feature(
+                audio_feature = AudioFeatureMixin._read_audio_and_transform_to_feature(
                     filepath, audio_feature_dict, feature_dim, max_length,
                     padding_value, normalization_type, audio_stats
                 )
@@ -347,7 +343,7 @@ class AudioBaseFeature(BaseFeature):
             raise ValueError('{} is not recognized.'.format(feature_type))
 
 
-class AudioInputFeature(AudioBaseFeature, SequenceInputFeature):
+class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):

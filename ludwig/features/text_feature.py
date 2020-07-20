@@ -21,7 +21,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.globals import is_on_master
@@ -37,7 +36,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class TextBaseFeature(BaseFeature):
+class TextFeatureMixin(object):
     type = TEXT
 
     preprocessing_defaults = {
@@ -56,9 +55,6 @@ class TextBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def feature_meta(column, preprocessing_parameters):
@@ -102,7 +98,7 @@ class TextBaseFeature(BaseFeature):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        tf_meta = TextBaseFeature.feature_meta(
+        tf_meta = TextFeatureMixin.feature_meta(
             column, preprocessing_parameters
         )
         (
@@ -175,7 +171,7 @@ class TextBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        chars_data, words_data = TextBaseFeature.feature_data(
+        chars_data, words_data = TextFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']], preprocessing_parameters
         )
@@ -183,7 +179,7 @@ class TextBaseFeature(BaseFeature):
         data['{}_word'.format(feature['name'])] = words_data
 
 
-class TextInputFeature(TextBaseFeature, SequenceInputFeature):
+class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     encoder = 'parallel_cnn'
     level = 'word'
     length = 0
@@ -236,7 +232,7 @@ class TextInputFeature(TextBaseFeature, SequenceInputFeature):
         )
 
 
-class TextOutputFeature(TextBaseFeature, SequenceOutputFeature):
+class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     decoder = 'generator'
     level = 'word'
     max_sequence_length = 0

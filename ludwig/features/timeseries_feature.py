@@ -20,7 +20,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
@@ -28,7 +27,7 @@ from ludwig.utils.strings_utils import tokenizer_registry
 logger = logging.getLogger(__name__)
 
 
-class TimeseriesBaseFeature(BaseFeature):
+class TimeseriesFeatureMixin(object):
     type = TIMESERIES
 
     preprocessing_defaults = {
@@ -39,9 +38,6 @@ class TimeseriesBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ''
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -104,7 +100,7 @@ class TimeseriesBaseFeature(BaseFeature):
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters):
-        timeseries_data = TimeseriesBaseFeature.build_matrix(
+        timeseries_data = TimeseriesFeatureMixin.build_matrix(
             column,
             preprocessing_parameters['tokenizer'],
             metadata['max_timeseries_length'],
@@ -120,7 +116,7 @@ class TimeseriesBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters
     ):
-        timeseries_data = TimeseriesBaseFeature.feature_data(
+        timeseries_data = TimeseriesFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters
@@ -128,7 +124,7 @@ class TimeseriesBaseFeature(BaseFeature):
         data[feature['name']] = timeseries_data
 
 
-class TimeseriesInputFeature(TimeseriesBaseFeature, SequenceInputFeature):
+class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     encoder = 'parallel_cnn'
     length = 0
 

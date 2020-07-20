@@ -26,7 +26,6 @@ from tensorflow.keras.metrics import \
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -83,16 +82,13 @@ class MAEMetric(MeanAbsoluteErrorMetric):
         )
 
 
-class NumericalBaseFeature(BaseFeature):
+class NumericalFeatureMixin(object):
     type = NUMERICAL
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0,
         'normalization': None
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -139,7 +135,7 @@ class NumericalBaseFeature(BaseFeature):
                 data[feature['name']] = (values - min_) / (max_ - min_)
 
 
-class NumericalInputFeature(NumericalBaseFeature, InputFeature):
+class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     encoder = 'passthrough'
 
     def __init__(self, feature, encoder_obj=None):
@@ -185,7 +181,7 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
     }
 
 
-class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
+class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     decoder = 'regressor'
     loss = {TYPE: MEAN_SQUARED_ERROR}
     clip = None

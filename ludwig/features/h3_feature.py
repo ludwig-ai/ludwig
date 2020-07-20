@@ -20,7 +20,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.h3_encoders import H3WeightedSum, H3RNN, H3Embed
 from ludwig.utils.h3_util import h3_to_components
@@ -33,16 +32,13 @@ H3_VECTOR_LENGTH = MAX_H3_RESOLUTION + 4
 H3_PADDING_VALUE = 7
 
 
-class H3BaseFeature(BaseFeature):
+class H3FeatureMixin(object):
     type = H3
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 576495936675512319
         # mode 1 edge 0 resolution 0 base_cell 0
     }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -73,11 +69,11 @@ class H3BaseFeature(BaseFeature):
         column = dataset_df[feature['name']]
         if column.dtype == object:
             column = column.map(int)
-        column = column.map(H3BaseFeature.h3_to_list)
+        column = column.map(H3FeatureMixin.h3_to_list)
         data[feature['name']] = np.array(column.tolist(), dtype=np.uint8)
 
 
-class H3InputFeature(H3BaseFeature, InputFeature):
+class H3InputFeature(H3FeatureMixin, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
