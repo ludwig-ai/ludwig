@@ -344,12 +344,12 @@ class AudioFeatureMixin(object):
 
 
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
+    length = None
+    embedding_size = None
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.length = None
-        self.embedding_size = None
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
