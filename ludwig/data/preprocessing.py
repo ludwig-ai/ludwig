@@ -28,7 +28,7 @@ from ludwig.data.concatenate_datasets import concatenate_csv
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, is_on_master
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels, csv_contains_column
 from ludwig.utils.data_utils import file_exists_with_diff_extension
@@ -618,7 +618,7 @@ def _preprocess_csv_for_training(
             train_set_metadata=train_set_metadata,
             random_seed=random_seed
         )
-        if not skip_save_processed_input:
+        if is_on_master() and not skip_save_processed_input:
             logger.info('Writing dataset')
             data_hdf5_fp = replace_file_extension(data_csv, 'hdf5')
             data_utils.save_hdf5(data_hdf5_fp, data, train_set_metadata)
@@ -663,7 +663,7 @@ def _preprocess_csv_for_training(
             data,
             data[SPLIT]
         )
-        if not skip_save_processed_input:
+        if is_on_master() and not skip_save_processed_input:
             logger.info('Writing dataset')
             data_train_hdf5_fp = replace_file_extension(data_train_csv, 'hdf5')
             data_utils.save_hdf5(
