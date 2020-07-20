@@ -104,9 +104,6 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-
-        SetFeatureMixin.__init__(self, feature)
-        InputFeature.__init__(self)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
