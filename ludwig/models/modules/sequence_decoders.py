@@ -270,7 +270,6 @@ class SequenceGeneratorDecoder(Layer):
     ):
         # ================ Setup ================
         batch_size = encoder_output.shape[0]
-        encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # Prepare target for decoding
         target_sequence_length = sequence_length_2D(target)
@@ -290,6 +289,7 @@ class SequenceGeneratorDecoder(Layer):
 
         # Setting up decoder memory from encoder output
         if self.attention_mechanism is not None:
+            encoder_sequence_length = sequence_length_3D(encoder_output)
             self.attention_mechanism.setup_memory(
                 encoder_output,
                 memory_sequence_length=encoder_sequence_length
@@ -450,7 +450,6 @@ class SequenceGeneratorDecoder(Layer):
     ):
         # ================ Setup ================
         batch_size = encoder_output.shape[0]
-        encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # ================ predictions =================
         greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
@@ -461,6 +460,7 @@ class SequenceGeneratorDecoder(Layer):
         decoder_inp_emb = self.decoder_embedding(decoder_input)
 
         if self.attention_mechanism is not None:
+            encoder_sequence_length = sequence_length_3D(encoder_output)
             self.attention_mechanism.setup_memory(
                 encoder_output,
                 memory_sequence_length=encoder_sequence_length
