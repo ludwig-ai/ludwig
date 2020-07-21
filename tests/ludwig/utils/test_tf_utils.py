@@ -20,12 +20,6 @@ from unittest.mock import Mock, patch
 
 from ludwig.utils.tf_utils import initialize_tensorflow, _get_tf_init_params, _set_tf_init_params
 
-try:
-    import horovod.tensorflow as hvd
-    USE_HOROVOD = True
-except ImportError:
-    USE_HOROVOD = False
-
 
 @contextlib.contextmanager
 def clean_params():
