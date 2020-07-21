@@ -114,7 +114,7 @@ def test_initialize_tensorflow_with_horovod_bad_local_rank(mock_tf_config, mock_
     with clean_params():
         initialize_tensorflow(horovod=mock_hvd)
 
-    mock_tf_config.set_visible_devices.assert_not_called()
+    mock_tf_config.set_visible_devices.assert_called_with([], 'GPU')
     mock_warnings.warn.assert_called()
 
 

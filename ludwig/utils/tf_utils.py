@@ -72,6 +72,7 @@ def initialize_tensorflow(gpus=None,
                           f'{horovod.local_size()} worker processes but only {len(gpu_devices)} '
                           f'GPUs. To enable GPU training, reduce the number of worker processes '
                           f'on this host to match the number of GPUs.')
+            gpus = [-1]
         else:
             gpus = [horovod.local_rank()]
 
