@@ -8,6 +8,6 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y cmake
 install:
-  - HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install --no-cache-dir -e .[test]
+  - HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install --no-cache-dir '.[test]'
 script:
   - pytest tests
