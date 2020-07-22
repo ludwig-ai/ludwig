@@ -48,8 +48,6 @@ def initialize_tensorflow(gpus=None,
                           gpu_memory_limit=None,
                           allow_parallel_threads=True,
                           horovod=None):
-    global _TF_INIT_PARAMS
-
     use_horovod = horovod is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
     if _TF_INIT_PARAMS is not None:
@@ -67,8 +65,16 @@ def initialize_tensorflow(gpus=None,
     tf.config.threading.set_inter_op_parallelism_threads(
         0 if allow_parallel_threads else 1)
 
+    gpu_devices = tf.config.list_physical_devices('GPU')
     if horovod is not None and gpus is None:
-        gpus = [horovod.local_rank()]
+        if 0 < len(gpu_devices) < horovod.local_size():
+            warnings.warn(f'Horovod: disabling GPU support! This host is running with '
+                          f'{horovod.local_size()} worker processes but only {len(gpu_devices)} '
+                          f'GPUs. To enable GPU training, reduce the number of worker processes '
+                          f'on this host to match the number of GPUs.')
+            gpus = [-1]
+        else:
+            gpus = [horovod.local_rank()]
 
     if isinstance(gpus, int):
         gpus = [gpus]
@@ -76,17 +82,35 @@ def initialize_tensorflow(gpus=None,
         gpus = gpus.strip()
         gpus = [int(g) for g in gpus.split(",")]
 
-    if gpus is not None:
-        gpu_devices = tf.config.list_physical_devices('GPU')
-        for gpu in gpu_devices:
-            tf.config.experimental.set_memory_growth(gpu, True)
-            if gpu_memory_limit is not None:
-                tf.config.set_logical_device_configuration(
-                    gpu,
-                    [tf.config.LogicalDeviceConfiguration(
-                        memory_limit=gpu_memory_limit)])
-        if gpu_devices:
-            local_devices = [gpu_devices[g] for g in gpus]
-            tf.config.set_visible_devices(local_devices, 'GPU')
+    if gpus:
+        if len(gpus) == 1 and gpus[0] == -1:
+            # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
+            tf.config.set_visible_devices([], 'GPU')
+        else:
+            # Allow memory growth and set memory limit. Regardless of whether we do this
+            # before or after setting visible devices, TensorFlow will allocate a small
+            # amount of memory per device.
+            for gpu in gpu_devices:
+                tf.config.experimental.set_memory_growth(gpu, True)
+                if gpu_memory_limit is not None:
+                    tf.config.set_logical_device_configuration(
+                        gpu,
+                        [tf.config.LogicalDeviceConfiguration(
+                            memory_limit=gpu_memory_limit)])
 
-    _TF_INIT_PARAMS = param_tuple
+            # Set visible devices so GPU utilization is isolated
+            # (no GPU contention between workers).
+            if gpu_devices:
+                local_devices = [gpu_devices[g] for g in gpus]
+                tf.config.set_visible_devices(local_devices, 'GPU')
+
+    _set_tf_init_params(param_tuple)
+
+
+def _set_tf_init_params(params):
+    global _TF_INIT_PARAMS
+    _TF_INIT_PARAMS = params
+
+
+def _get_tf_init_params():
+    return _TF_INIT_PARAMS
