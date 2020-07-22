@@ -52,7 +52,7 @@ class Regressor(Layer):
         logger.debug('  {}'.format(self.dense.name))
 
     def call(self, inputs, **kwargs):
-        return tf.squeeze(self.dense(inputs))
+        return tf.squeeze(self.dense(inputs), axis=1)
 
 
 class Projector(Layer):
