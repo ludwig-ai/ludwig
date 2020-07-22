@@ -136,16 +136,15 @@ def test_image_encoders_resnet():
     )
 
     assert encoder is not None
-    assert encoder.layers is not None
-    assert encoder.layers[0].__class__.__name__ == 'ResNet2'
-    assert encoder.layers[1].__class__.__name__ == 'Flatten'
-    assert encoder.layers[2].__class__.__name__ == 'FCStack'
-    assert encoder.layers[0].filter_size == 3
-    assert encoder.layers[2].layers[0]['fc_size'] == 28
-    assert len(encoder.layers[2].layers) == 1
-    assert encoder.layers[2].layers[0]['activation'] == 'relu'
-    assert encoder.layers[0].num_filters == 8
-    assert encoder.layers[0].resnet_size == 8
+    assert encoder.resnet.__class__.__name__ == 'ResNet2'
+    assert encoder.resnet.num_filters == 8
+    assert encoder.resnet.resnet_size == 8
+    assert encoder.resnet.filter_size == 3
+    assert encoder.flatten.__class__.__name__ == 'Flatten'
+    assert encoder.fc_stack.__class__.__name__ == 'FCStack'
+    assert len(encoder.fc_stack.layers) == 1
+    assert encoder.fc_stack.layers[0]['fc_size'] == 28
+    assert encoder.fc_stack.layers[0]['activation'] == 'relu'
 
 
 def test_image_encoders_stacked_2dcnn():

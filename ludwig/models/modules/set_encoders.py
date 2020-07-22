@@ -19,6 +19,7 @@ import logging
 from tensorflow.keras.layers import Layer
 
 from ludwig.models.modules.embedding_modules import EmbedSparse
+from ludwig.models.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +34,28 @@ class SetSparseEncoder(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
+            fc_layers=None,
+            num_fc_layers=0,
+            fc_size=10,
+            use_bias=True,
+            weights_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            weights_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            # weights_constraint=None,
+            # bias_constraint=None,
+            norm=None,
+            norm_params=None,
+            activation='relu',
             dropout_rate=0.0,
-            initializer=None,
-            regularizer=None,
             reduce_output='sum',
             **kwargs
     ):
         super(SetSparseEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
+        logger.debug('  EmbedSparse')
         self.embed_sparse = EmbedSparse(
             vocab,
             embedding_size,
@@ -49,9 +64,28 @@ class SetSparseEncoder(Layer):
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=initializer,
-            regularizer=regularizer,
+            initializer=weights_initializer,
+            regularizer=weights_regularizer,
             reduce_output=reduce_output,
+        )
+
+        logger.debug('  FCStack')
+        self.fc_stack = FCStack(
+            layers=fc_layers,
+            num_layers=num_fc_layers,
+            default_fc_size=fc_size,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=weights_constraint,
+            # default_bias_constraint=bias_constraint,
+            default_norm=norm,
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
         )
 
     def call(self, inputs, training=None, mask=None):
@@ -61,7 +95,7 @@ class SetSparseEncoder(Layer):
 
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
-        embedded = self.embed_sparse(
-            inputs, training=None, mask=None
-        )
-        return embedded
+        hidden = self.embed_sparse(inputs, training=training, mask=mask)
+        hidden = self.fc_stack(hidden, training=training, mask=mask)
+
+        return hidden

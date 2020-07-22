@@ -50,6 +50,8 @@ class SequencePassthroughEncoder(Layer):
             :type reduce_output: str
         """
         super(SequencePassthroughEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.reduce_output = reduce_output
         if self.reduce_output is None:
             self.supports_masking = True
@@ -174,11 +176,13 @@ class SequenceEmbedEncoder(Layer):
 
         """
         super(SequenceEmbedEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
         if self.reduce_output is None:
             self.supports_masking = True
 
+        logger.debug('  EmbedSequence')
         self.embed_sequence = EmbedSequence(
             vocab,
             embedding_size,
@@ -381,6 +385,7 @@ class ParallelCNN(Layer):
             :type reduce_output: str
         """
         super(ParallelCNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -424,7 +429,9 @@ class ParallelCNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -437,6 +444,7 @@ class ParallelCNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  parallelConv1D')
         self.parallel_conv1d = ParallelConv1D(
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -459,6 +467,7 @@ class ParallelCNN(Layer):
         )
 
         if self.reduce_output is not None:
+            logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 layers=fc_layers,
                 num_layers=num_fc_layers,
@@ -696,6 +705,7 @@ class StackedCNN(Layer):
             :type reduce_output: str
         """
         super(StackedCNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -765,7 +775,9 @@ class StackedCNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -778,6 +790,7 @@ class StackedCNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  Conv1DStack')
         self.conv1d_stack = Conv1DStack(
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -804,6 +817,7 @@ class StackedCNN(Layer):
         )
 
         if self.reduce_output is not None:
+            logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 layers=fc_layers,
                 num_layers=num_fc_layers,
@@ -1049,6 +1063,7 @@ class StackedParallelCNN(Layer):
             :type reduce_output: str
         """
         super(StackedParallelCNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if stacked_layers is not None and num_stacked_layers is None:
             # use custom-defined layers
@@ -1106,7 +1121,9 @@ class StackedParallelCNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -1119,6 +1136,7 @@ class StackedParallelCNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  ParallelConv1DStack')
         self.parallel_conv1d_stack = ParallelConv1DStack(
             stacked_layers=self.stacked_layers,
             default_num_filters=num_filters,
@@ -1140,6 +1158,7 @@ class StackedParallelCNN(Layer):
         )
 
         if self.reduce_output is not None:
+            logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 layers=fc_layers,
                 num_layers=num_fc_layers,
@@ -1371,6 +1390,7 @@ class StackedRNN(Layer):
             :type reduce_output: str
         """
         super(StackedRNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
         if self.reduce_output is None:
@@ -1380,6 +1400,7 @@ class StackedRNN(Layer):
         self.embed_sequence = None
 
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -1392,6 +1413,7 @@ class StackedRNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
             state_size=state_size,
             cell_type=cell_type,
@@ -1416,6 +1438,7 @@ class StackedRNN(Layer):
         )
 
         if self.reduce_output is not None:
+            logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 layers=fc_layers,
                 num_layers=num_fc_layers,
@@ -1629,6 +1652,7 @@ class StackedCNNRNN(Layer):
             :type reduce_output: str
         """
         super(StackedCNNRNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -1654,7 +1678,9 @@ class StackedCNNRNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -1667,6 +1693,7 @@ class StackedCNNRNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  Conv1DStack')
         self.conv1d_stack = Conv1DStack(
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -1692,6 +1719,7 @@ class StackedCNNRNN(Layer):
             default_pool_padding=pool_padding,
         )
 
+        logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
             state_size=state_size,
             cell_type=cell_type,
@@ -1716,6 +1744,7 @@ class StackedCNNRNN(Layer):
         )
 
         if self.reduce_output is not None:
+            logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 layers=fc_layers,
                 num_layers=num_fc_layers,

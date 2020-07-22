@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
+
 import tensorflow as tf
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Layer
@@ -23,8 +25,11 @@ from ludwig.models.modules.convolutional_modules import Conv2DStack, \
 from ludwig.models.modules.convolutional_modules import ResNet2
 from ludwig.models.modules.fully_connected_modules import FCStack
 
+logger = logging.getLogger(__name__)
+
 
 class Stacked2DCNN(Layer):
+
     def __init__(
             self,
             conv_layers=None,
@@ -67,6 +72,9 @@ class Stacked2DCNN(Layer):
     ):
         super(Stacked2DCNN, self).__init__()
 
+        logger.debug(' {}'.format(self.name))
+
+        logger.debug('  Conv2DStack')
         self.conv_stack_2d = Conv2DStack(
             layers=conv_layers,
             num_layers=num_conv_layers,
@@ -90,6 +98,8 @@ class Stacked2DCNN(Layer):
             default_pool_size=pool_size,
             default_pool_strides=pool_strides,
         )
+
+        logger.debug('  FCStacl')
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -129,6 +139,7 @@ class Stacked2DCNN(Layer):
 
 
 class ResNetEncoder(Layer):
+
     def __init__(
             self,
             resnet_size=50,
@@ -157,6 +168,7 @@ class ResNetEncoder(Layer):
             **kwargs
     ):
         super(ResNetEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if resnet_size < 50:
             bottleneck = False
@@ -166,44 +178,47 @@ class ResNetEncoder(Layer):
         block_sizes = get_resnet_block_sizes(resnet_size)
         block_strides = [1, 2, 2, 2][:len(block_sizes)]
 
-        self.layers = [
-            ResNet2(
-                resnet_size,
-                bottleneck,
-                num_filters,
-                kernel_size,
-                conv_stride,
-                first_pool_size,
-                first_pool_stride,
-                block_sizes,
-                block_strides,
-                batch_norm_momentum,
-                batch_norm_epsilon
-            ),
-            Flatten(),
-            FCStack(
-                layers=fc_layers,
-                num_layers=num_fc_layers,
-                default_fc_size=fc_size,
-                default_use_bias=use_bias,
-                default_weights_initializer=weights_initializer,
-                default_bias_initializer=bias_initializer,
-                default_weights_regularizer=weights_regularizer,
-                default_bias_regularizer=bias_regularizer,
-                default_activity_regularizer=activity_regularizer,
-                # default_weights_constraint=fc_weights_constraint,
-                # default_bias_constraint=fc_bias_constraint,
-                default_norm=norm,
-                default_norm_params=norm_params,
-                default_activation=activation,
-                default_dropout_rate=dropout_rate,
-            )
-        ]
+        logger.debug('  ResNet2')
+        self.resnet = ResNet2(
+            resnet_size,
+            bottleneck,
+            num_filters,
+            kernel_size,
+            conv_stride,
+            first_pool_size,
+            first_pool_stride,
+            block_sizes,
+            block_strides,
+            batch_norm_momentum,
+            batch_norm_epsilon
+        )
+
+        self.flatten = Flatten()
+
+        logger.debug('  FCStack')
+        self.fc_stack = FCStack(
+            layers=fc_layers,
+            num_layers=num_fc_layers,
+            default_fc_size=fc_size,
+            default_use_bias=use_bias,
+            default_weights_initializer=weights_initializer,
+            default_bias_initializer=bias_initializer,
+            default_weights_regularizer=weights_regularizer,
+            default_bias_regularizer=bias_regularizer,
+            default_activity_regularizer=activity_regularizer,
+            # default_weights_constraint=fc_weights_constraint,
+            # default_bias_constraint=fc_bias_constraint,
+            default_norm=norm,
+            default_norm_params=norm_params,
+            default_activation=activation,
+            default_dropout_rate=dropout_rate,
+        )
 
     def call(self, inputs, training=None, mask=None):
         hidden = tf.cast(inputs, tf.float32)
 
-        for layer in self.layers:
-            hidden = layer(hidden, training=training)
+        hidden = self.resnet(hidden, training=training)
+        hidden = self.flatten(hidden, training=training)
+        hidden = self.fc_stack(hidden, training=training)
 
         return {'encoder_output': hidden}

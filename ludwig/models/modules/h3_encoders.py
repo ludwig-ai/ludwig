@@ -91,10 +91,12 @@ class H3Embed(Layer):
             :type regularize: Boolean
         """
         super(H3Embed, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.embedding_size = embedding_size
         self.reduce_output = reduce_output
 
+        logger.debug('  mode Embed')
         self.embed_mode = Embed(
             [str(i) for i in range(3)],
             embedding_size,
@@ -107,6 +109,8 @@ class H3Embed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  edge Embed')
         self.embed_edge = Embed(
             [str(i) for i in range(7)],
             embedding_size,
@@ -119,6 +123,8 @@ class H3Embed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  resolution Embed')
         self.embed_resolution = Embed(
             [str(i) for i in range(16)],
             embedding_size,
@@ -131,6 +137,8 @@ class H3Embed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  base cell Embed')
         self.embed_base_cell = Embed(
             [str(i) for i in range(122)],
             embedding_size,
@@ -143,6 +151,8 @@ class H3Embed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  cells Embed')
         self.embed_cells = Embed(
             [str(i) for i in range(8)],
             embedding_size,
@@ -156,6 +166,7 @@ class H3Embed(Layer):
             regularizer=weights_regularizer
         )
 
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -237,7 +248,6 @@ class H3Embed(Layer):
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
-
         hidden = self.fc_stack(
             hidden,
             training=training,
@@ -310,6 +320,7 @@ class H3WeightedSum(Layer):
             :type regularize: Boolean
         """
         super(H3WeightedSum, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.should_softmax = should_softmax
 
@@ -326,6 +337,7 @@ class H3WeightedSum(Layer):
             get_initializer(weights_initializer)([19, 1])
         )
 
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -377,7 +389,6 @@ class H3WeightedSum(Layer):
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
-
         hidden = self.fc_stack(
             hidden,
             training=training,
@@ -511,6 +522,7 @@ class H3RNN(Layer):
             :type reduce_output: str
         """
         super(H3RNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.embedding_size = embedding_size
 
@@ -523,6 +535,7 @@ class H3RNN(Layer):
             reduce_output=None
         )
 
+        logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
             state_size=state_size,
             cell_type=cell_type,
