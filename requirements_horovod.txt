@@ -1,2 +1,2 @@
-horovod>=0.19
+horovod[tensorflow]>=0.19
 cloudpickle
