@@ -62,10 +62,9 @@ class DenseEncoder(Layer):
             **kwargs
     ):
         super(DenseEncoder, self).__init__()
-
         logger.debug(' {}'.format(self.name))
-        logger.debug('  FCStack')
 
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=layers,
             num_layers=num_layers,

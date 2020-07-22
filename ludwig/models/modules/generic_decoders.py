@@ -40,6 +40,7 @@ class Regressor(Layer):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        logger.debug('  Dense')
         self.dense = Dense(
             1,
             use_bias=use_bias,
@@ -49,7 +50,6 @@ class Regressor(Layer):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
-        logger.debug('  {}'.format(self.dense.name))
 
     def call(self, inputs, **kwargs):
         return tf.squeeze(self.dense(inputs), axis=-1)
@@ -71,6 +71,9 @@ class Projector(Layer):
             **kwargs
     ):
         super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        logger.debug('  Dense')
         self.dense = Dense(
             vector_size,
             use_bias=use_bias,
@@ -106,3 +109,35 @@ class Projector(Layer):
         if self.clip:
             values = self.clip(values)
         return values
+
+
+# todo maybe unify Projector and Classifier in a single class
+class Classifier(Layer):
+
+    def __init__(
+            self,
+            num_classes,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            **kwargs
+    ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        logger.debug('  Dense')
+        self.dense = Dense(
+            num_classes,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
+
+    def call(self, inputs, **kwargs):
+        return self.dense(inputs)

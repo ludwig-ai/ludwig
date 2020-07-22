@@ -26,9 +26,9 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.globals import is_on_master
+from ludwig.models.modules.generic_decoders import Classifier
 from ludwig.models.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.models.modules.metric_modules import SigmoidCrossEntropyMetric
-from ludwig.models.modules.set_decoders import Classifier
 from ludwig.models.modules.set_encoders import SetSparseEncoder
 from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL

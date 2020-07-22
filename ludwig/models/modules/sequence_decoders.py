@@ -46,6 +46,7 @@ rnn_layers_registry = {
 
 
 class SequenceGeneratorDecoder(Layer):
+
     def __init__(
             self,
             num_classes,
@@ -70,6 +71,7 @@ class SequenceGeneratorDecoder(Layer):
             **kwargs
     ):
         super(SequenceGeneratorDecoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.cell_type = cell_type
         self.state_size = state_size
@@ -373,7 +375,7 @@ class SequenceGeneratorDecoder(Layer):
             output_layer=self.dense_layer
 
         )
-        # ================generate logits ==================
+        # ================ generate logits ==================
         maximum_iterations = self.max_sequence_length
 
         # initialize inference decoder
@@ -478,7 +480,7 @@ class SequenceGeneratorDecoder(Layer):
             output_layer=self.dense_layer
         )
 
-        # ================generate logits ==================
+        # ================ generate logits ==================
         maximum_iterations = self.max_sequence_length
 
         # initialize inference decoder
@@ -604,6 +606,7 @@ class SequenceGeneratorDecoder(Layer):
 
 
 class SequenceTaggerDecoder(Layer):
+
     def __init__(
             self,
             num_classes,
@@ -618,11 +621,14 @@ class SequenceTaggerDecoder(Layer):
             **kwargs
     ):
         super(SequenceTaggerDecoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.attention = attention
 
         if is_timeseries:
             num_classes = 1
 
+        logger.debug('  Dense')
         self.projection_layer = Dense(
             units=num_classes,
             use_bias=use_bias,

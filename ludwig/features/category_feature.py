@@ -24,9 +24,9 @@ from ludwig.constants import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.models.modules.category_decoders import Classifier
 from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
 from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
+from ludwig.models.modules.generic_decoders import Classifier
 from ludwig.models.modules.generic_encoders import PassthroughEncoder
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
