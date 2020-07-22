@@ -1162,7 +1162,7 @@ class Model:
         #     saver=self.saver,
         # )
         # builder.save()
-        pass
+        self.ecd.save(save_path)
 
     def restore(self, weights_path):
         self.ecd.load_weights(weights_path)

@@ -271,7 +271,7 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None or self.model._session is None or
+        if (self.model is None or
                 self.model_definition is None or self.train_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
