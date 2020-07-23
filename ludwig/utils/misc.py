@@ -19,7 +19,8 @@ import os
 import random
 import subprocess
 import sys
-from collections import OrderedDict, Mapping
+from collections import OrderedDict
+from collections.abc import Mapping
 
 import numpy
 
