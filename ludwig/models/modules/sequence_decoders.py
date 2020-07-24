@@ -99,14 +99,18 @@ class SequenceGeneratorDecoder(Layer):
         self.GO_SYMBOL = self.vocab_size
         self.END_SYMBOL = 0
 
+        logger.debug('  project input Dense')
         self.project = Dense(state_size)
 
+        logger.debug('  Embedding')
         self.decoder_embedding = Embedding(
             input_dim=self.num_classes + 1,  # account for GO_SYMBOL
             output_dim=embedding_size)
+        logger.debug('  project output Dense')
         self.dense_layer = Dense(num_classes)
         self.decoder_rnncell = \
             get_from_registry(cell_type, rnn_layers_registry)(state_size)
+        logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
@@ -117,12 +121,14 @@ class SequenceGeneratorDecoder(Layer):
                 self.attention_mechanism = LuongAttention(units=state_size)
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
+            logger.debug('  {}'.format(self.attention_mechanism))
 
             self.decoder_rnncell = AttentionWrapper(
                 self.decoder_rnncell,
                 self.attention_mechanism,
                 attention_layer_size=state_size
             )
+            logger.debug('  {}'.format(self.decoder_rnncell))
 
     def _logits_training(self, inputs, target, training=None):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
