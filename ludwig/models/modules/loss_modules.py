@@ -296,7 +296,7 @@ def cross_entropy_sequence_loss(logits, targets, sequence_length):
 
 def sampled_softmax_cross_entropy(
         labels,
-        logits,
+        last_hidden,
         num_classes=1,
         decoder_weights=None,
         decoder_biases=None,
@@ -318,7 +318,7 @@ def sampled_softmax_cross_entropy(
         weights=tf.transpose(decoder_weights),
         biases=decoder_biases,
         labels=labels,
-        inputs=logits,
+        inputs=last_hidden,
         num_sampled=negative_samples,
         num_classes=num_classes,
         sampled_values=sampled_values)
