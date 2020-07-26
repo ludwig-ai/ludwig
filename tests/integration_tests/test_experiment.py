@@ -638,6 +638,21 @@ def test_experiment_vector_feature_2(csv_filename):
     run_experiment(input_features, output_features, data_csv=rel_path)
 
 
+def test_experiment_sampled_softmax(csv_filename):
+    # Multiple inputs, Single category output
+    input_features = [text_feature(vocab_size=10, min_len=1)]
+    output_features = [category_feature(
+        vocab_size=500,
+        loss={'type': 'sampled_softmax_cross_entropy'}
+    )]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename,
+                             num_examples=10000)
+
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
 if __name__ == '__main__':
     """
     To run tests individually, run:
