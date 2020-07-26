@@ -22,6 +22,8 @@ from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Layer
 
+from ludwig.constants import LOSS, TYPE
+
 logger = logging.getLogger(__name__)
 
 
@@ -139,5 +141,23 @@ class Classifier(Layer):
             activity_regularizer=activity_regularizer
         )
 
-    def call(self, inputs, **kwargs):
-        return self.dense(inputs)
+        self.sampled_loss = False
+        if LOSS in kwargs:
+            if TYPE in kwargs[LOSS]:
+                self.sampled_loss = kwargs[LOSS][TYPE].startswith('sampled')
+
+        # this is needed because TF2 initialzies the weights at the first call
+        # so the first time we need to compute the full dense,
+        # otherwise the weights of the Dense layer would not be initialized
+        self.first_call = True
+
+    def call(self, inputs, training=None, **kwargs):
+        if training and self.sampled_loss and not self.first_call:
+            # this is needed because at training time is the loss is sampled
+            # we should not compute the last dense projection,
+            # otherwise we defet the purpose of the samples loss
+            # which is not to compute the full final projection
+            return None
+        else:
+            self.first_call = False
+            return self.dense(inputs)
