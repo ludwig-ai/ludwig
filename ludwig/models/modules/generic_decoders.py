@@ -143,7 +143,7 @@ class Classifier(Layer):
 
         self.sampled_loss = False
         if LOSS in kwargs:
-            if TYPE in kwargs[LOSS]:
+            if TYPE in kwargs[LOSS] and kwargs[LOSS][TYPE] is not None:
                 self.sampled_loss = kwargs[LOSS][TYPE].startswith('sampled')
 
         # this is needed because TF2 initialzies the weights at the first call
