@@ -16,8 +16,6 @@
 
 import pytest
 
-from ludwig.utils.horovod_utils import allgather_object
-
 try:
     from horovod.run.runner import run as horovodrun
 
@@ -30,6 +28,7 @@ except ImportError:
 def test_allgather_object():
     def fn():
         import horovod.tensorflow as hvd
+        from ludwig.utils.horovod_utils import allgather_object
         hvd.init()
         d = {'metric_val_1': hvd.rank()}
         if hvd.rank() == 1:
