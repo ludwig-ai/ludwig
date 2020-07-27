@@ -3,7 +3,7 @@ os:
 dist: bionic
 language: python
 python:
-  - "3.6"
+  - "3.7"
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y cmake libsndfile1
