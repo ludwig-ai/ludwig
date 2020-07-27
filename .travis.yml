@@ -10,4 +10,4 @@ before_install:
 install:
   - HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install --no-cache-dir '.[test]'
 script:
-  - pytest tests
+  - pytest tests --ignore-glob "*experiment.py"
