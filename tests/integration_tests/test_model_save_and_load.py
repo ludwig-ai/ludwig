@@ -1,8 +1,9 @@
-import logging
 import os.path
+import tempfile
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import get_split
@@ -14,6 +15,8 @@ from tests.integration_tests.utils import binary_feature, numerical_feature, \
 
 
 def test_model_save_reload_API(csv_filename, tmp_path):
+    tf.random.set_seed(1234)
+
     dir_path = os.path.dirname(csv_filename)
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
     audio_dest_folder = os.path.join(os.getcwd(), 'generated_audio')
@@ -40,8 +43,8 @@ def test_model_save_reload_API(csv_filename, tmp_path):
         binary_feature(),
         numerical_feature(),
         category_feature(vocab_size=3),
-        # sequence_feature(vocab_size=3),
-        # text_feature(vocab_size=3),
+        sequence_feature(vocab_size=3),
+        text_feature(vocab_size=3),
         set_feature(vocab_size=3),
         vector_feature(),
     ]
@@ -73,7 +76,7 @@ def test_model_save_reload_API(csv_filename, tmp_path):
     results_dir.mkdir()
 
     # perform initial model training
-    ludwig_model1 = LudwigModel(model_definition, logging_level=logging.DEBUG)
+    ludwig_model1 = LudwigModel(model_definition)
     train_stats = ludwig_model1.train(
         data_train_df=training_set,
         data_validation_df=validation_set,
@@ -83,36 +86,45 @@ def test_model_save_reload_API(csv_filename, tmp_path):
 
     preds_1 = ludwig_model1.predict(data_df=validation_set)
 
-    # load saved model
-    ludwig_model2 = LudwigModel.load(
+    def check_model_equal(ludwig_model2):
+        # Compare model predictions
+        preds_2 = ludwig_model2.predict(data_df=validation_set)
+        assert set(preds_1.keys()) == set(preds_2.keys())
+        for key in preds_1:
+            assert preds_1[key].dtype == preds_2[key].dtype, key
+            assert list(preds_1[key]) == list(preds_2[key]), key
+            # assert preds_2[key].dtype == preds_3[key].dtype, key
+            # assert list(preds_2[key]) == list(preds_3[key]), key
+
+        # Compare model weights
+        # this has to be done after predicts because of TF2 lazy restoration
+        for if_name in ludwig_model1.model.ecd.input_features:
+            if1 = ludwig_model1.model.ecd.input_features[if_name]
+            if2 = ludwig_model2.model.ecd.input_features[if_name]
+            for if1_w, if2_w in zip(if1.encoder_obj.weights,
+                                    if2.encoder_obj.weights):
+                assert np.allclose(if1_w.numpy(), if2_w.numpy())
+
+        c1 = ludwig_model1.model.ecd.combiner
+        c2 = ludwig_model2.model.ecd.combiner
+        for c1_w, c2_w in zip(c1.weights, c2.weights):
+            assert np.allclose(c1_w.numpy(), c2_w.numpy())
+
+        for of_name in ludwig_model1.model.ecd.output_features:
+            of1 = ludwig_model1.model.ecd.output_features[of_name]
+            of2 = ludwig_model2.model.ecd.output_features[of_name]
+            for of1_w, of2_w in zip(of1.decoder_obj.weights,
+                                    of2.decoder_obj.weights):
+                assert np.allclose(of1_w.numpy(), of2_w.numpy())
+
+    # Test saving and loading the model explicitly
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ludwig_model1.save(tmpdir)
+        ludwig_model_loaded = LudwigModel.load(tmpdir)
+        check_model_equal(ludwig_model_loaded)
+
+    # Test loading the model from the experiment directory
+    ludwig_model_exp = LudwigModel.load(
         os.path.join(ludwig_model1.exp_dir_name, 'model')
     )
-
-    preds_2 = ludwig_model2.predict(data_df=validation_set)
-
-    # Compare model predictions
-    assert set(preds_1.keys()) == set(preds_2.keys())
-    for key in preds_1:
-        assert preds_1[key].dtype == preds_2[key].dtype
-        assert preds_1[key].equals(preds_2[key])
-
-    # Compare model weights
-    # this has to be done after predicts because of TF2 lazy restoration
-    for if_name in ludwig_model1.model.ecd.input_features:
-        if1 = ludwig_model1.model.ecd.input_features[if_name]
-        if2 = ludwig_model2.model.ecd.input_features[if_name]
-        for if1_w, if2_w in zip(if1.encoder_obj.weights,
-                                if2.encoder_obj.weights):
-            assert np.allclose(if1_w.numpy(), if2_w.numpy())
-
-    c1 = ludwig_model1.model.ecd.combiner
-    c2 = ludwig_model2.model.ecd.combiner
-    for c1_w, c2_w in zip(c1.weights, c2.weights):
-        assert np.allclose(c1_w.numpy(), c2_w.numpy())
-
-    for of_name in ludwig_model1.model.ecd.output_features:
-        of1 = ludwig_model1.model.ecd.output_features[of_name]
-        of2 = ludwig_model2.model.ecd.output_features[of_name]
-        for of1_w, of2_w in zip(of1.decoder_obj.weights,
-                                of2.decoder_obj.weights):
-            assert np.allclose(of1_w.numpy(), of2_w.numpy())
+    check_model_equal(ludwig_model_exp)
