@@ -93,6 +93,9 @@ class RecurrentStack(Layer):
 
             self.layers.append(layer)
 
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
+
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
         final_state = None

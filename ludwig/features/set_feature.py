@@ -272,7 +272,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(output_feature, LOSS, {'weight': 1, 'type': None})
+        set_default_value(output_feature, LOSS,
+                          {'weight': 1, 'type': SIGMOID_CROSS_ENTROPY})
         set_default_value(output_feature[LOSS], 'weight', 1)
 
         set_default_value(output_feature, 'threshold', 0.5)

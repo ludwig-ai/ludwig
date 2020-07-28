@@ -450,10 +450,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             output_feature[LOSS],
             {
                 'type': 'softmax_cross_entropy',
-                'sampler': None,
-                'negative_samples': 0,
-                'distortion': 1,
-                'unique': False,
                 'labels_smoothing': 0,
                 'class_weights': 1,
                 'robust_lambda': 0,
@@ -468,17 +464,9 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 output_feature[LOSS],
                 {
                     'sampler': 'log_uniform',
+                    'unique': False,
                     'negative_samples': 25,
                     'distortion': 0.75
-                }
-            )
-        else:
-            set_default_values(
-                output_feature[LOSS],
-                {
-                    'sampler': None,
-                    'negative_samples': 0,
-                    'distortion': 1
                 }
             )
 

@@ -271,8 +271,7 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None or
-                self.model_definition is None or self.train_set_metadata is None):
+        if self.model is None or self.model_definition is None or self.train_set_metadata is None:
             raise ValueError('Model has not been initialized or loaded')
 
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)

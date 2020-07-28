@@ -14,9 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-import pytest
+import os
+import subprocess
+import sys
 
-from ludwig.utils.horovod_utils import allgather_object
+import pytest
 
 try:
     from horovod.run.runner import run as horovodrun
@@ -25,21 +27,24 @@ try:
 except ImportError:
     USE_HOROVOD = False
 
+# This script will run the actual test model training in parallel
+TEST_SCRIPT = os.path.join(os.path.dirname(__file__), 'scripts',
+                           'run_horovod_utils.py')
+
+
+def _run_horovod(test_name):
+    """Execute the training script across multiple workers in parallel."""
+    cmdline = [
+        'horovodrun',
+        '-np', '2',
+        sys.executable, TEST_SCRIPT,
+        '--test-name', test_name,
+    ]
+    exit_code = subprocess.call(' '.join(cmdline), shell=True,
+                                env=os.environ.copy())
+    assert exit_code == 0
+
 
 @pytest.mark.skipif(not USE_HOROVOD, reason='Horovod is not available')
 def test_allgather_object():
-    def fn():
-        import horovod.tensorflow as hvd
-        hvd.init()
-        d = {'metric_val_1': hvd.rank()}
-        if hvd.rank() == 1:
-            d['metric_val_2'] = 42
-        return allgather_object(d)
-
-    results = horovodrun(fn, np=2)
-    assert len(results) == 2
-    assert results[0] == results[1]
-    assert results[0] == [
-        {'metric_val_1': 0},
-        {'metric_val_1': 1, 'metric_val_2': 42}
-    ]
+    _run_horovod('test_allgather_object')

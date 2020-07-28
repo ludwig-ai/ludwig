@@ -101,6 +101,9 @@ class Conv1DLayer(Layer):
                 pool_size=pool_size, strides=pool_strides, padding=pool_padding
             ))
 
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
+
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
 
@@ -210,6 +213,7 @@ class Conv1DStack(Layer):
         self.stack = []
 
         for i, layer in enumerate(self.layers):
+            logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv1DLayer(
                     num_filters=layer['num_filters'],
@@ -343,6 +347,7 @@ class ParallelConv1D(Layer):
         self.parallel_layers = []
 
         for i, layer in enumerate(self.layers):
+            logger.debug('   parallel layer {}'.format(i))
             self.parallel_layers.append(
                 Conv1DLayer(
                     num_filters=layer['num_filters'],
@@ -499,6 +504,7 @@ class ParallelConv1DStack(Layer):
         self.stack = []
 
         for i, parallel_layers in enumerate(self.stacked_parallel_layers):
+            logger.debug('   stack layer {}'.format(i))
             self.stack.append(ParallelConv1D(layers=parallel_layers))
 
     def call(self, inputs, training=None, mask=None):
@@ -586,6 +592,9 @@ class Conv2DLayer(Layer):
             self.layers.append(pool(
                 pool_size=pool_size, strides=pool_strides, padding=pool_padding
             ))
+
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -690,6 +699,7 @@ class Conv2DStack(Layer):
         self.stack = []
 
         for i, layer in enumerate(self.layers):
+            logger.debug('   stack layer {}'.format(i))
             self.stack.append(
                 Conv2DLayer(
                     num_filters=layer['num_filters'],
@@ -753,6 +763,9 @@ class Conv2DLayerFixedPadding(Layer):
             )
         )
 
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
+
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
 
@@ -812,6 +825,10 @@ class ResNetBlock(Layer):
             strides=1,
             weights_regularizer=weights_regularizer
         )
+
+        for layer in [self.norm1, self.activation1, self.conv1,
+                      self.norm2, self.activation2, self.conv2]:
+            logger.debug('   {}'.format(layer.name))
 
     def call(self, inputs, training=None, mask=None):
         shortcut = inputs
@@ -901,6 +918,11 @@ class ResNetBottleneckBlock(Layer):
             weights_regularizer=weights_regularizer
         )
 
+        for layer in [self.norm1, self.activation1, self.conv1,
+                      self.norm2, self.activation2, self.conv2,
+                      self.norm3, self.activation3, self.conv3]:
+            logger.debug('   {}'.format(layer.name))
+
     def call(self, inputs, training=None, mask=None):
         shortcut = inputs
 
@@ -967,6 +989,9 @@ class ResNetBlockLayer(Layer):
                     batch_norm_epsilon=batch_norm_epsilon
                 )
             )
+
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
@@ -1080,6 +1105,9 @@ class ResNet2(Layer):
                 )
             )
             self.layers.append(Activation('relu'))
+
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
 
     def call(self, inputs, training=None, mask=None):
         hidden = inputs

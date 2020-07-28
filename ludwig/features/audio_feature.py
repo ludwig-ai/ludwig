@@ -350,11 +350,6 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
-        self.overwrite_defaults(feature)
-        if encoder_obj:
-            self.encoder_obj = encoder_obj
-        else:
-            self.encoder_obj = self.initialize_encoder(feature)
         if not self.embedding_size:
             raise ValueError(
                 'embedding_size has to be defined - '

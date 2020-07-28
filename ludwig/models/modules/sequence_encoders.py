@@ -444,7 +444,7 @@ class ParallelCNN(Layer):
                 regularizer=weights_regularizer
             )
 
-        logger.debug('  parallelConv1D')
+        logger.debug('  ParallelConv1D')
         self.parallel_conv1d = ParallelConv1D(
             layers=self.conv_layers,
             default_num_filters=num_filters,
