@@ -18,15 +18,16 @@ import logging
 import os
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
+from ludwig.globals import is_on_master
 from ludwig.models.modules.generic_decoders import Regressor
-from ludwig.models.modules.generic_encoders import PassthroughEncoder, DenseEncoder
+from ludwig.models.modules.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
 from ludwig.models.modules.loss_modules import BWCEWLoss
 from ludwig.models.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -34,21 +35,19 @@ from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
 from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc import set_default_value, get_from_registry
+from ludwig.utils.misc import set_default_value
 from ludwig.utils.misc import set_default_values
+from ludwig.utils.strings_utils import str2bool
 
 logger = logging.getLogger(__name__)
 
 
-class BinaryBaseFeature(BaseFeature):
+class BinaryFeatureMixin(object):
     type = BINARY
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -62,28 +61,24 @@ class BinaryBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = dataset_df[feature['name']].astype(
-            np.bool_).values
+        column = dataset_df[feature['name']]
+        if column.dtype == object:
+            column = column.map(str2bool)
+        data[feature['name']] = column.astype(np.bool_).values
 
 
-class BinaryInputFeature(BinaryBaseFeature, InputFeature):
+class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     encoder = 'passthrough'
     norm = None
     dropout = False
 
     def __init__(self, feature, encoder_obj=None):
-        BinaryBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
-            self.encoder_obj = self.get_binary_encoder(feature)
-
-    def get_binary_encoder(self, encoder_parameters):
-        return get_from_registry(self.encoder, self.encoder_registry)(
-            **encoder_parameters
-        )
+            self.encoder_obj = self.initialize_encoder(feature)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -121,7 +116,7 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
     }
 
 
-class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
+class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = 'regressor'
     loss = {
         'robust_lambda': 0,
@@ -132,22 +127,24 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     threshold = 0.5
 
     def __init__(self, feature):
-        BinaryBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
-        self.decoder = self.initialize_decoder(feature)
+        self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
         self._setup_metrics()
 
     def logits(
             self,
-            inputs  # hidden
+            inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
-            inputs  # hidden
+            inputs,  # hidden
+            **kwargs
     ):
         logits = inputs[LOGITS]
 
@@ -184,14 +181,15 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
-        self.metric_functions[ACCURACY] = BinaryAccuracy(name='metric_accuracy')
+        self.metric_functions[ACCURACY] = BinaryAccuracy(
+            name='metric_accuracy')
 
     # def update_metrics(self, targets, predictions):
     #     for metric, metric_fn in self.metric_functions.items():
     #         if metric == LOSS:
     #             metric_fn.update_state(targets, predictions[LOGITS])
     #         else:
-    #             metric_fn.update_state(targets, predictions['predictions'])
+    #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
     default_validation_metric = ACCURACY
 
@@ -273,8 +271,13 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
@@ -298,9 +301,10 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
 
     @staticmethod
     def populate_defaults(output_feature):
-        set_default_value(
-            output_feature,
-            LOSS,
+        # If Loss is not defined, set an empty dictionary
+        set_default_value(output_feature, LOSS, {})
+        set_default_values(
+            output_feature[LOSS],
             {
                 'robust_lambda': 0,
                 'confidence_penalty': 0,

@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.models.modules.attention_modules import \
     reduce_feed_forward_attention

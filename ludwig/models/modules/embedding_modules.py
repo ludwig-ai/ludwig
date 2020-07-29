@@ -83,7 +83,45 @@ def embedding_matrix(
 
     else:
         raise Exception(
-            'Embedding representation {} not supported.'.format(representation))
+            'Embedding representation {} not supported.'.format(
+                representation))
+
+    return embeddings, embedding_size
+
+
+def embedding_matrix_on_device(
+        vocab,
+        embedding_size,
+        representation='dense',
+        embeddings_trainable=True,
+        pretrained_embeddings=None,
+        force_embedding_size=False,
+        embeddings_on_cpu=False,
+        initializer=None
+):
+    if embeddings_on_cpu:
+        with tf.device('/cpu:0'):
+            embeddings, embedding_size = embedding_matrix(
+                vocab,
+                embedding_size,
+                representation=representation,
+                embeddings_trainable=embeddings_trainable,
+                pretrained_embeddings=pretrained_embeddings,
+                force_embedding_size=force_embedding_size,
+                initializer=initializer
+            )
+    else:
+        embeddings, embedding_size = embedding_matrix(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            initializer=initializer
+        )
+
+    # logger.debug('  embeddings: {0}'.format(embeddings))
 
     return embeddings, embedding_size
 
@@ -103,28 +141,18 @@ class Embed(Layer):
             regularizer=None
     ):
         super(Embed, self).__init__()
+        self.supports_masking = True
 
-        if embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                self.embeddings, self.embedding_size = embedding_matrix(
-                    vocab,
-                    embedding_size,
-                    representation=representation,
-                    embeddings_trainable=embeddings_trainable,
-                    pretrained_embeddings=pretrained_embeddings,
-                    force_embedding_size=force_embedding_size,
-                    initializer=initializer,
-                )
-        else:
-            self.embeddings, self.embedding_size = embedding_matrix(
-                vocab,
-                embedding_size,
-                representation=representation,
-                embeddings_trainable=embeddings_trainable,
-                pretrained_embeddings=pretrained_embeddings,
-                force_embedding_size=force_embedding_size,
-                initializer=initializer,
-            )
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
 
         if regularizer:
             regularizer_obj = tf.keras.regularizers.get(regularizer)
@@ -162,27 +190,17 @@ class EmbedWeighted(Layer):
     ):
         super(EmbedWeighted, self).__init__()
 
-        if embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                self.embeddings, self.embedding_size = embedding_matrix(
-                    vocab,
-                    embedding_size,
-                    representation=representation,
-                    embeddings_trainable=embeddings_trainable,
-                    pretrained_embeddings=pretrained_embeddings,
-                    force_embedding_size=force_embedding_size,
-                    initializer=initializer,
-                )
-        else:
-            self.embeddings, self.embedding_size = embedding_matrix(
-                vocab,
-                embedding_size,
-                representation=representation,
-                embeddings_trainable=embeddings_trainable,
-                pretrained_embeddings=pretrained_embeddings,
-                force_embedding_size=force_embedding_size,
-                initializer=initializer,
-            )
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
+        self.vocab_length = len(vocab)
 
         if regularizer:
             regularizer_obj = tf.keras.regularizers.get(regularizer)()
@@ -197,7 +215,7 @@ class EmbedWeighted(Layer):
         signed_input = tf.cast(tf.sign(tf.abs(inputs)), tf.int32)
         multiple_hot_indexes = tf.multiply(
             signed_input,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
+            tf.constant(np.array([range(self.vocab_length)], dtype=np.int32))
         )
         embedded = tf.nn.embedding_lookup(
             self.embeddings, multiple_hot_indexes, name='embeddings_lookup'
@@ -210,7 +228,8 @@ class EmbedWeighted(Layer):
         embedded_reduced = tf.reduce_sum(weighted_embedded, 1)
 
         if self.dropout:
-            embedded_reduced = self.dropout(embedded_reduced, training=training)
+            embedded_reduced = self.dropout(embedded_reduced,
+                                            training=training)
 
         return embedded_reduced
 
@@ -219,7 +238,7 @@ class EmbedSparse(Layer):
     def __init__(
             self,
             vocab,
-            embedding_size,
+            embedding_size=50,
             representation='dense',
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -227,31 +246,21 @@ class EmbedSparse(Layer):
             embeddings_on_cpu=False,
             dropout_rate=0.0,
             initializer=None,
-            regularizer=None
+            regularizer=None,
+            reduce_output='sum'
     ):
         super(EmbedSparse, self).__init__()
 
-        if embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                self.embeddings, self.embedding_size = embedding_matrix(
-                    vocab,
-                    embedding_size,
-                    representation=representation,
-                    embeddings_trainable=embeddings_trainable,
-                    pretrained_embeddings=pretrained_embeddings,
-                    force_embedding_size=force_embedding_size,
-                    initializer=initializer,
-                )
-        else:
-            self.embeddings, self.embedding_size = embedding_matrix(
-                vocab,
-                embedding_size,
-                representation=representation,
-                embeddings_trainable=embeddings_trainable,
-                pretrained_embeddings=pretrained_embeddings,
-                force_embedding_size=force_embedding_size,
-                initializer=initializer,
-            )
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
 
         if regularizer:
             regularizer_obj = tf.keras.regularizers.get(regularizer)()
@@ -262,18 +271,15 @@ class EmbedSparse(Layer):
         else:
             self.dropout = None
 
-    def call(self, inputs, training=None, mask=None):
-        multiple_hot_indexes = tf.multiply(
-            inputs,
-            tf.constant(np.array([range(len(self.vocab))], dtype=np.int32))
-        )
+        self.reduce_output = reduce_output
 
-        idx = tf.where(tf.not_equal(multiple_hot_indexes, 0))
+    def call(self, inputs, training=None, mask=None):
+        idx = tf.where(tf.equal(inputs, True))
 
         sparse_multiple_hot_indexes = tf.SparseTensor(
             idx,
-            tf.gather_nd(multiple_hot_indexes, idx),
-            tf.shape(multiple_hot_indexes, out_type=tf.int64)
+            idx[:, 1],
+            tf.shape(inputs, out_type=tf.int64)
         )
 
         embedded_reduced = tf.nn.embedding_lookup_sparse(
@@ -284,7 +290,9 @@ class EmbedSparse(Layer):
         )
 
         if self.dropout:
-            embedded_reduced = self.dropout(embedded_reduced, training=training)
+            embedded_reduced = self.dropout(
+                embedded_reduced, training=training
+            )
 
         return embedded_reduced
 
@@ -304,28 +312,18 @@ class EmbedSequence(Layer):
             regularizer=None
     ):
         super(EmbedSequence, self).__init__()
+        self.supports_masking = True
 
-        if embeddings_on_cpu:
-            with tf.device('/cpu:0'):
-                self.embeddings, self.embedding_size = embedding_matrix(
-                    vocab,
-                    embedding_size,
-                    representation=representation,
-                    embeddings_trainable=embeddings_trainable,
-                    pretrained_embeddings=pretrained_embeddings,
-                    force_embedding_size=force_embedding_size,
-                    initializer=initializer,
-                )
-        else:
-            self.embeddings, self.embedding_size = embedding_matrix(
-                vocab,
-                embedding_size,
-                representation=representation,
-                embeddings_trainable=embeddings_trainable,
-                pretrained_embeddings=pretrained_embeddings,
-                force_embedding_size=force_embedding_size,
-                initializer=initializer,
-            )
+        self.embeddings, self.embedding_size = embedding_matrix_on_device(
+            vocab,
+            embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            initializer=initializer,
+        )
 
         if regularizer:
             regularizer_obj = tf.keras.regularizers.get(regularizer)()
@@ -341,10 +339,9 @@ class EmbedSequence(Layer):
             self.embeddings, inputs, name='embeddings_lookup'
         )
 
-        # TODO use tf2 mechanism for masking
-        if mask:
+        if mask is not None:
             mask_matrix = tf.cast(
-                tf.expand_dims(tf.sign(tf.abs(inputs)), -1),
+                tf.expand_dims(mask, -1),
                 dtype=tf.float32
             )
             embedded = tf.multiply(embedded, mask_matrix)

@@ -13,20 +13,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
-from ludwig.constants import LOSS
+from ludwig.constants import *
 from ludwig.models.modules.fully_connected_modules import FCStack
 from ludwig.models.modules.reduction_modules import reduce_sequence
 from ludwig.utils.misc import merge_dict, get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
+logger = logging.getLogger(__name__)
 
-class BaseFeature:
-    def __init__(self, feature):
+
+class BaseFeature(object):
+    """Base class for all features.
+
+    Note that this class is not-cooperative (does not forward kwargs), so when constructing
+    feature class hierarchies, there should be only one parent class that derives from base
+    feature.  Other functionality should be put into mixin classes to avoid the diamond
+    pattern.
+    """
+    def __init__(self, feature, *args, **kwargs):
+        super().__init__()
+
         if 'name' not in feature:
             raise ValueError('Missing feature name')
 
@@ -47,7 +59,10 @@ class BaseFeature:
                     setattr(self, k, feature[k])
 
 
-class InputFeature(ABC, tf.keras.Model):
+class InputFeature(BaseFeature, tf.keras.Model, ABC):
+    """Parent class for all input features."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     @abstractmethod
@@ -75,11 +90,10 @@ class InputFeature(ABC, tf.keras.Model):
         )
 
 
-class OutputFeature(ABC, BaseFeature, tf.keras.Model):
-
-    def __init__(self, feature):
-        BaseFeature.__init__(self, feature)
-        tf.keras.Model.__init__(self)
+class OutputFeature(BaseFeature, tf.keras.Model, ABC):
+    """Parent class for all output features."""
+    def __init__(self, feature, *args, **kwargs):
+        super().__init__(*args, feature=feature, **kwargs)
 
         self.loss = None
         self.train_loss_function = None
@@ -108,6 +122,8 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
         self.overwrite_defaults(feature)
 
+        logger.debug(' output feature fully connected layers')
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=self.fc_layers,
             num_layers=self.num_fc_layers,
@@ -144,10 +160,10 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
-            if metric == LOSS:
+            if metric == LOSS or metric == HITS_AT_K:
                 metric_fn.update_state(targets, predictions)
             else:
-                metric_fn.update_state(targets, predictions['predictions'])
+                metric_fn.update_state(targets, predictions[PREDICTIONS])
 
     def get_metrics(self):
         metric_vals = {}
@@ -162,12 +178,21 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
 
     def call(
             self,
-            inputs,  # hidden, other_output_hidden
+            inputs,  # ((hidden, other_output_hidden), target)
             training=None,
             mask=None
     ):
-        combiner_output, other_output_hidden = inputs
+        # account for output feature target
+        if isinstance(inputs, tuple):
+            local_inputs, target = inputs
+        else:
+            local_inputs = inputs
+            target = None
 
+        combiner_outputs, other_output_hidden = local_inputs
+
+        # extract the combined hidden layer
+        combiner_output = combiner_outputs['combiner_output']
         hidden = self.prepare_decoder_inputs(
             combiner_output,
             other_output_hidden,
@@ -176,7 +201,20 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
         )
 
         # ================ Predictions ================
-        logits = self.logits(hidden)
+        logits_input = {
+            HIDDEN: hidden
+        }
+        if 'encoder_output_state' in combiner_outputs:
+            logits_input['encoder_output_state'] = \
+                combiner_outputs['encoder_output_state']
+        logits = self.logits(logits_input, target=target, training=training)
+
+        # most of the cases the output of self.logits is a tensor
+        # in some cases like for sequence features, it can be  tuple of
+        # logits, predictions, scores
+        # The first element will be the logits tensor
+        if isinstance(logits, tuple):
+            logits = logits[0]
 
         return logits, hidden
 
@@ -233,7 +271,8 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
                 if len(hidden.shape) > 2:
                     if len(dependency_final_hidden.shape) > 2:
                         # matrix matrix -> concat
-                        assert hidden.shape[1] == dependency_final_hidden.shape[1]
+                        assert hidden.shape[1] == \
+                               dependency_final_hidden.shape[1]
                         dependencies_hidden.append(dependency_final_hidden)
                     else:
                         # matrix vector -> tile concat
@@ -368,6 +407,5 @@ class OutputFeature(ABC, BaseFeature, tf.keras.Model):
             training=training,
             mask=mask
         )
-        other_output_features[self.feature_name] = feature_hidden
 
         return feature_hidden

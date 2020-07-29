@@ -19,7 +19,8 @@ import os
 import random
 import subprocess
 import sys
-from collections import OrderedDict, Mapping
+from collections import OrderedDict
+from collections.abc import Mapping
 
 import numpy
 
@@ -144,6 +145,7 @@ def set_default_values(dictionary, default_value_dictionary):
     for key, value in default_value_dictionary.items():
         set_default_value(dictionary, key, value)
 
+
 def find_non_existing_dir_by_adding_suffix(directory_name):
     curr_directory_name = directory_name
     suffix = 0
@@ -151,3 +153,10 @@ def find_non_existing_dir_by_adding_suffix(directory_name):
         curr_directory_name = directory_name + '_' + str(suffix)
         suffix += 1
     return curr_directory_name
+
+
+def get_class_attributes(c):
+    return set(
+        i for i in dir(c)
+        if not callable(getattr(c, i)) and not i.startswith("_")
+    )

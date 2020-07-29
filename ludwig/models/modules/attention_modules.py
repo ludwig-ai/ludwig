@@ -15,11 +15,11 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 
-
+# todo tf2: port all these functions to tf2
 def reduce_feed_forward_attention(current_inputs, hidden_size=256):
     with tf.variable_scope('reduce_ff_attention'):
         weights_1 = tf.get_variable('weights_1',

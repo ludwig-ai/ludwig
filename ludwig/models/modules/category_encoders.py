@@ -27,7 +27,7 @@ class CategoricalEmbedEncoder(Layer):
 
     def __init__(
             self,
-            vocab=None,
+            vocab,
             embedding_size=50,
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -38,7 +38,9 @@ class CategoricalEmbedEncoder(Layer):
             **kwargs
     ):
         super(CategoricalEmbedEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
+        logger.debug('  Embed')
         self.embed = Embed(
             vocab=vocab,
             embedding_size=embedding_size,
@@ -68,7 +70,7 @@ class CategoricalSparseEncoder(Layer):
 
     def __init__(
             self,
-            vocab=None,
+            vocab,
             embedding_size=50,
             embeddings_trainable=True,
             pretrained_embeddings=None,
@@ -79,7 +81,9 @@ class CategoricalSparseEncoder(Layer):
             **kwargs
     ):
         super(CategoricalSparseEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
+        logger.debug('  Embed')
         self.embed = Embed(
             vocab=vocab,
             embedding_size=embedding_size,
@@ -100,6 +104,6 @@ class CategoricalSparseEncoder(Layer):
             :param return: embeddings of shape [batch x embed size], type tf.float32
         """
         embedded = self.embed(
-            inputs, training=None, mask=None
+            inputs, training=training, mask=mask
         )
         return embedded

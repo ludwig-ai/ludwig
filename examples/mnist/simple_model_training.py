@@ -2,17 +2,18 @@
 # coding: utf-8
 
 # # Simple Model Training Example
-# 
+#
 # This example is the API example for this Ludwig command line example
-# (https://uber.github.io/ludwig/examples/#image-classification-mnist).
+# (https://ludwig-ai.github.io/ludwig-docs/examples/#image-classification-mnist).
 
 # Import required libraries
 
-from ludwig.api import LudwigModel
 import logging
 import shutil
+
 import yaml
 
+from ludwig.api import LudwigModel
 
 # clean out prior results
 try:
@@ -29,7 +30,7 @@ with open('./model_definition.yaml','r') as f:
 model = LudwigModel(model_definition,
                     logging_level=logging.INFO)
 
-# initiate model training 
+# initiate model training
 train_stats = model.train(data_train_csv='./data/mnist_dataset_training.csv',
                           data_test_csv='./data/mnist_dataset_testing.csv',
                          experiment_name='simple_image_experiment',

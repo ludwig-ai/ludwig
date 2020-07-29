@@ -18,21 +18,21 @@ import logging
 import os
 
 import numpy as np
-import tensorflow.compat.v1 as tf
-from tensorflow.keras.metrics import Accuracy
+import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.models.modules.category_decoders import Classifier
+from ludwig.globals import is_on_master
 from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
 from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
+from ludwig.models.modules.generic_decoders import Classifier
 from ludwig.models.modules.generic_encoders import PassthroughEncoder
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.models.modules.metric_modules import CategoryAccuracy
+from ludwig.models.modules.metric_modules import HitsAtKMetric
+from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -44,7 +44,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class CategoryBaseFeature(BaseFeature):
+class CategoryFeatureMixin(object):
     type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
@@ -52,9 +52,6 @@ class CategoryBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -92,18 +89,17 @@ class CategoryBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = CategoryBaseFeature.feature_data(
+        data[feature['name']] = CategoryFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']]
         )
 
 
-class CategoryInputFeature(CategoryBaseFeature, InputFeature):
+class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = 'dense'
 
     def __init__(self, feature, encoder_obj=None):
-        CategoryBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -148,15 +144,14 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     }
 
 
-class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
+class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
-    loss = {'type': SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     top_k = 3
 
     def __init__(self, feature):
-        CategoryBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
@@ -165,12 +160,15 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         logits = inputs[LOGITS]
 
@@ -193,13 +191,13 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         }
 
     def _setup_loss(self):
-        if self.loss['type'] == 'softmax_cross_entropy':
+        if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SoftmaxCrossEntropyLoss(
                 num_classes=self.num_classes,
                 feature_loss=self.loss,
                 name='train_loss'
             )
-        elif self.loss['type'] == 'sampled_softmax_cross_entropy':
+        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
             self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
@@ -210,7 +208,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
                 "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss['type'])
+                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
         self.eval_loss_function = SoftmaxCrossEntropyMetric(
@@ -223,6 +221,10 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[ACCURACY] = CategoryAccuracy(
             name='metric_accuracy'
+        )
+        self.metric_functions[HITS_AT_K] = HitsAtKMetric(
+            k=self.top_k,
+            name='metric_top_k_hits'
         )
 
     default_validation_metric = ACCURACY
@@ -254,6 +256,28 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                         output_feature['name']
                     )
                 )
+
+        if isinstance(output_feature[LOSS]['class_weights'], dict):
+            if (
+                    feature_metadata['str2idx'].keys() !=
+                    output_feature[LOSS]['class_weights'].keys()
+            ):
+                raise ValueError(
+                    'The class_weights keys ({}) are not compatible with '
+                    'the classes ({}) of feature {}. '
+                    'Check the metadata JSON file to see the classes '
+                    'and consider there needs to be a weight '
+                    'for the <UNK> class too.'.format(
+                        output_feature[LOSS]['class_weights'].keys(),
+                        feature_metadata['str2idx'].keys(),
+                        output_feature['name']
+                    )
+                )
+            else:
+                class_weights = output_feature[LOSS]['class_weights']
+                idx2str = feature_metadata['idx2str']
+                class_weights_list = [class_weights[s] for s in idx2str]
+                output_feature[LOSS]['class_weights'] = class_weights_list
 
         if output_feature[LOSS]['class_similarities_temperature'] > 0:
             if 'class_similarities' in output_feature[LOSS]:
@@ -326,7 +350,7 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                     'for feature {}'.format(output_feature['name'])
                 )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             output_feature[LOSS]['class_counts'] = [
                 feature_metadata['str2freq'][cls]
                 for cls in feature_metadata['idx2str']
@@ -359,8 +383,13 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
@@ -421,10 +450,6 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             output_feature[LOSS],
             {
                 'type': 'softmax_cross_entropy',
-                'sampler': None,
-                'negative_samples': 0,
-                'distortion': 1,
-                'unique': False,
                 'labels_smoothing': 0,
                 'class_weights': 1,
                 'robust_lambda': 0,
@@ -434,22 +459,14 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             }
         )
 
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
+        if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
             set_default_values(
                 output_feature[LOSS],
                 {
                     'sampler': 'log_uniform',
+                    'unique': False,
                     'negative_samples': 25,
                     'distortion': 0.75
-                }
-            )
-        else:
-            set_default_values(
-                output_feature[LOSS],
-                {
-                    'sampler': None,
-                    'negative_samples': 0,
-                    'distortion': 1
                 }
             )
 

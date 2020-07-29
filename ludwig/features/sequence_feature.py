@@ -21,9 +21,9 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
+from ludwig.globals import is_on_master
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
 from ludwig.models.modules.metric_modules import EditDistanceMetric
@@ -47,12 +47,12 @@ from ludwig.utils.misc import set_default_value
 from ludwig.utils.strings_utils import PADDING_SYMBOL, get_tokenizer
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
-from ludwig.utils.tf_utils import sequence_length_2D
+from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
 
 
-class SequenceBaseFeature(BaseFeature):
+class SequenceFeatureMixin(object):
     type = SEQUENCE
 
     preprocessing_defaults = {
@@ -66,11 +66,8 @@ class SequenceBaseFeature(BaseFeature):
         'lowercase': False,
         'vocab_file': None,
         'missing_value_strategy': FILL_WITH_CONST,
-        'fill_value': ''
+        'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -140,12 +137,11 @@ class SequenceBaseFeature(BaseFeature):
         data[feature['name']] = sequence_data
 
 
-class SequenceInputFeature(SequenceBaseFeature, InputFeature):
+class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
-        SequenceBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -159,11 +155,12 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
+        inputs_mask = tf.not_equal(inputs, 0)
         encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
+            inputs_exp, training=training, mask=inputs_mask
         )
 
-        return {'encoder_output': encoder_output}
+        return encoder_output
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -216,9 +213,9 @@ class SequenceInputFeature(SequenceBaseFeature, InputFeature):
     }
 
 
-class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
+class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = 'tagger'
-    loss = {'type': SOFTMAX_CROSS_ENTROPY}
+    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
 
     def __init__(self, feature):
         super().__init__(feature)
@@ -248,9 +245,9 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         self._setup_metrics()
 
     def _setup_loss(self):
-        if self.loss['type'] == 'softmax_cross_entropy':
+        if self.loss[TYPE] == 'softmax_cross_entropy':
             self.train_loss_function = SequenceLoss()
-        elif self.loss['type'] == 'sampled_softmax_cross_entropy':
+        elif self.loss[TYPE] == 'sampled_softmax_cross_entropy':
             self.train_loss_function = SampledSoftmaxCrossEntropyLoss(
                 decoder_obj=self.decoder_obj,
                 num_classes=self.num_classes,
@@ -261,7 +258,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             raise ValueError(
                 "Loss type {} is not supported. Valid values are "
                 "'softmax_cross_entropy' or "
-                "'sampled_softmax_cross_entropy'".format(self.loss['type'])
+                "'sampled_softmax_cross_entropy'".format(self.loss[TYPE])
             )
 
         self.eval_loss_function = SequenceLossMetric()
@@ -273,7 +270,7 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
         self.metric_functions[PERPLEXITY] = PerplexityMetric()
         self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
 
-    # over ride super class OutputFeature.update_metrics() method
+    # overrides super class OutputFeature.update_metrics() method
     def update_metrics(self, targets, predictions):
         for metric, metric_fn in self.metric_functions.items():
             if metric == LOSS or metric == PERPLEXITY:
@@ -283,56 +280,110 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             else:
                 metric_fn.update_state(targets, predictions[PREDICTIONS])
 
+    # def logits(
+    #         self,
+    #         inputs,  # {'hidden': hidden, 'encoder_output_state': encoder_output_state}
+    #         target=None  # target sequence [batch_size, seq_size]
+    # ):
+    #     # 'hidden' shape [batch_size, seq_size, hidden_size]
+    #     # 'encoder_output_state' dependent on cell_type:
+    #     #      lstm: list (shape [batch_size, state_size], shape [batch_size, state_size])
+    #     #      rnn, gru: list [shape [batch_size, state_size]]
+    #     # return logits shape [batch_size, seq_size, num_classes]
+    #
+    #     return self.decoder_obj(inputs, target=target)
+
     def logits(
             self,
-            inputs  # hidden
+            inputs,
+            target=None,
+            training=None
     ):
-        return self.decoder_obj(inputs)
-
-    def predictions(
-            self,
-            inputs  # logits
-    ):
-
-        logits = inputs[LOGITS]
-
-        probabilities = tf.nn.softmax(
-            logits,
-            name='probabilities_{}'.format(self.name)
-        )
-        predictions = tf.argmax(
-            logits,
-            -1,
-            name='predictions_{}'.format(self.name),
-            output_type=tf.int64
-        )
-
-        if self.decoder == 'generator':
-            additional = 1  # because of eos symbol
-        elif self.decoder == 'tagger':
-            additional = 0
-        else:
-            additional = 0
-
-        predictions_sequence_length = sequence_length_2D(predictions)
-        last_predictions = tf.gather_nd(
-            predictions,
-            tf.stack(
-                [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(
-                     predictions_sequence_length - 1 - additional,
-                     0
-                 )],
-                axis=1
+        if training:
+            return self.decoder_obj._logits_training(
+                inputs,
+                target=target,
+                training=training
             )
-        )
+        else:
+            return inputs
 
-        return {
-            PREDICTIONS: predictions,
-            LAST_PREDICTIONS: last_predictions,
-            PROBABILITIES: probabilities,
-            LOGITS: logits
-        }
+    def predictions(self, inputs, training=None):
+        # Generator Decoder
+        if training:
+            return self._predictions_training(inputs, training=training)
+        else:
+            return self.decoder_obj._predictions_eval(inputs,
+                                                      training=training)
+
+    # todo tf2 need to determine if the section of code is needed
+    def _predictions_training(self, inputs, training=None):  # not executed
+        # inputs == logits
+        probs = softmax(inputs)
+        preds = tf.argmax(inputs)
+        return {PREDICTIONS: preds, PROBABILITIES: probs}
+
+    # def _predictions_eval(
+    #         self,
+    #         inputs,  # encoder_output, encoder_output_state
+    #         training=None
+    # ):
+    #     decoder_outputs = self.decoder_obj(inputs, training=training)
+    #     logits, predictions, last_predictions, probabilities = decoder_outputs
+    #
+    #     # todo piero don't expect logits from beam search
+    #     #  expect scores from beam search,
+    #     #  in that case don't recompute probabilities
+    #     probabilities = tf.nn.softmax(
+    #         logits,
+    #         name='probabilities_{}'.format(self.name)
+    #     )
+    #
+    #     if predictions is None:
+    #         predictions = tf.argmax(
+    #             logits,
+    #             -1,
+    #             name='predictions_{}'.format(self.name),
+    #             output_type=tf.int64
+    #         )
+    #
+    #     # if self.decoder == 'generator':
+    #     #    additional = 1  # because of eos symbol
+    #     # elif self.decoder == 'tagger':
+    #     #    additional = 0
+    #     # else:
+    #     #    additional = 0
+    #
+    #     # todo: for the tagger always take the last
+    #     generated_sequence_lengths = sequence_length_2D(predictions)
+    #     last_predictions = tf.gather_nd(
+    #         predictions,
+    #         tf.stack(
+    #             [tf.range(tf.shape(predictions)[0]),
+    #              tf.maximum(
+    #                  generated_sequence_lengths - 1,
+    #                  0
+    #              )],
+    #             axis=1
+    #         ),
+    #         name='last_predictions_{}'.format(self.name)
+    #     )
+    #
+    #     # mask logits
+    #     mask = tf.sequence_mask(
+    #         generated_sequence_lengths,
+    #         maxlen=logits.shape[1],
+    #         dtype=tf.float32
+    #     )
+    #
+    #     logits = logits * mask[:, :, tf.newaxis]
+    #
+    #     return {
+    #         PREDICTIONS: predictions,
+    #         LAST_PREDICTIONS: last_predictions,
+    #         PROBABILITIES: probabilities,
+    #         LOGITS: logits
+    #     }
 
     default_validation_metric = LOSS
 
@@ -468,14 +519,21 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
-                    [metadata['idx2str'][token] for token in pred]
+                    [metadata['idx2str'][token]
+                     if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
+                     for token in pred]
                     for pred in preds
                 ]
             else:
@@ -490,13 +548,16 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
             last_preds = result[LAST_PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
-                    metadata['idx2str'][last_pred] for last_pred in last_preds
+                    metadata['idx2str'][last_pred]
+                    if last_pred < len(metadata['idx2str']) else UNKNOWN_SYMBOL
+                    for last_pred in last_preds
                 ]
             else:
                 postprocessed[LAST_PREDICTIONS] = last_preds
 
             if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS), last_preds)
+                np.save(npy_filename.format(name, LAST_PREDICTIONS),
+                        last_preds)
 
             del result[LAST_PREDICTIONS]
 
@@ -552,7 +613,8 @@ class SequenceOutputFeature(SequenceBaseFeature, OutputFeature):
                 'weight': 1
             }
         )
-        set_default_value(output_feature[LOSS], 'type', 'softmax_cross_entropy')
+        set_default_value(output_feature[LOSS], 'type',
+                          'softmax_cross_entropy')
         set_default_value(output_feature[LOSS], 'labels_smoothing', 0)
         set_default_value(output_feature[LOSS], 'class_weights', 1)
         set_default_value(output_feature[LOSS], 'robust_lambda', 0)

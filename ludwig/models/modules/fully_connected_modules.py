@@ -71,6 +71,9 @@ class FCLayer(Layer):
         if dropout_rate > 0:
             self.layers.append(Dropout(dropout_rate))
 
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
+
     def call(self, inputs, training=None, mask=None):
         hidden = inputs
 

@@ -22,7 +22,7 @@ import yaml
 
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import full_experiment
-from ludwig.features.h3_feature import h3_encoder_registry
+from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
@@ -169,10 +169,7 @@ def test_experiment_multi_input_intent_classification(csv_filename):
     # Multiple inputs, Single category output
     input_features = [
         text_feature(vocab_size=10, min_len=1, representation='sparse'),
-        category_feature(
-            vocab_size=10,
-            loss='sampled_softmax_cross_entropy'
-        )
+        category_feature(vocab_size=10)
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
@@ -233,8 +230,8 @@ def test_experiment_image_inputs(csv_filename):
             encoder='resnet',
             preprocessing={
                 'in_memory': True,
-                'height': 8,
-                'width': 8,
+                'height': 12,
+                'width': 12,
                 'num_channels': 3,
                 'num_processes': 5
             },
@@ -318,52 +315,107 @@ def test_experiment_tied_weights(csv_filename):
         run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def test_experiment_attention(csv_filename):
-    # Machine translation with attention
+@pytest.mark.parametrize('dec_beam_width', [1, 3])
+@pytest.mark.parametrize('dec_attention', ['bahdanau', 'luong', None])
+@pytest.mark.parametrize('dec_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize('enc_encoder', ENCODERS)
+def test_sequence_generator(
+        enc_encoder,
+        enc_cell_type,
+        dec_cell_type,
+        dec_attention,
+        dec_beam_width,
+        csv_filename
+):
+    # Define input and output features
     input_features = [
-        sequence_feature(encoder='rnn', cell_type='lstm', max_len=10)
+        sequence_feature(
+            min_len=5,
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )
     ]
     output_features = [
         sequence_feature(
+            min_len=5,
             max_len=10,
-            cell_type='lstm',
             decoder='generator',
-            attention='bahdanau'
+            cell_type='lstm',
+            attention='bahdanau',
+            reduce_input=None
         )
     ]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    for attention in ['bahdanau', 'luong']:
-        output_features[0]['attention'] = attention
-        run_experiment(input_features, output_features, data_csv=rel_path)
+    # setup encoder specification
+    input_features[0]['encoder'] = enc_encoder
+    input_features[0]['cell_type'] = enc_cell_type
+
+    # setup decoder specification
+    output_features[0]['cell_type'] = dec_cell_type
+    output_features[0]['attention'] = dec_attention
+    output_features[0]['beam_width'] = dec_beam_width
+
+    # run the experiment
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def test_experiment_sequence_combiner(csv_filename):
+@pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
+def test_sequence_tagger(
+        enc_cell_type,
+        csv_filename
+):
+    # Define input and output features
+    input_features = [
+        sequence_feature(
+            max_len=10,
+            encoder='rnn',
+            cell_type='lstm',
+            reduce_output=None
+        )
+    ]
+    output_features = [
+        sequence_feature(
+            max_len=10,
+            decoder='tagger',
+            reduce_input=None
+        )
+    ]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    # setup encoder specification
+    input_features[0]['cell_type'] = enc_cell_type
+
+    # run the experiment
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+@pytest.mark.parametrize('sequence_combiner_encoder', ENCODERS[:-2])
+def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
     # Sequence combiner
     input_features = [
         sequence_feature(
-            name='english',
+            name='seq1',
             min_len=5,
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None,
-            preprocessing={
-                'tokenizer': 'english_tokenize'
-            }
+            reduce_output=None
         ),
         sequence_feature(
-            name='spanish',
+            name='seq2',
             min_len=5,
             max_len=5,
             encoder='rnn',
             cell_type='lstm',
-            reduce_output=None,
-            preprocessing = {
-                'tokenizer': 'spanish_tokenize'
-            }
+            reduce_output=None
         ),
         category_feature(vocab_size=5)
     ]
@@ -378,9 +430,10 @@ def test_experiment_sequence_combiner(csv_filename):
             'epochs': 2
         },
         'combiner': {
-            'type': 'sequence_concat',
+            'type': 'sequence',
             'encoder': 'rnn',
-            'main_sequence_feature': 'random_sequence'
+            'main_sequence_feature': 'seq1',
+            'reduce_output': None,
         }
     }
 
@@ -543,27 +596,28 @@ def test_image_resizing_num_channel_handling(csv_filename):
     shutil.rmtree(image_dest_folder)
 
 
-def test_experiment_date(csv_filename):
+@pytest.mark.parametrize('encoder', ['wave', 'embed'])
+def test_experiment_date(encoder, csv_filename):
     input_features = [date_feature()]
     output_features = [category_feature(vocab_size=2)]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    encoders = ['wave', 'embed']
-    for encoder in encoders:
-        input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+
+    input_features[0]['encoder'] = encoder
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def test_experiment_h3(csv_filename):
+@pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
+def test_experiment_h3(encoder, csv_filename):
     input_features = [h3_feature()]
     output_features = [binary_feature()]
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    for encoder in h3_encoder_registry:
-        input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+
+    input_features[0]['encoder'] = encoder
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 
 def test_experiment_vector_feature_1(csv_filename):
@@ -580,6 +634,21 @@ def test_experiment_vector_feature_2(csv_filename):
     output_features = [vector_feature()]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
+
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+def test_experiment_sampled_softmax(csv_filename):
+    # Multiple inputs, Single category output
+    input_features = [text_feature(vocab_size=10, min_len=1)]
+    output_features = [category_feature(
+        vocab_size=500,
+        loss={'type': 'sampled_softmax_cross_entropy'}
+    )]
+
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename,
+                             num_examples=10000)
 
     run_experiment(input_features, output_features, data_csv=rel_path)
 

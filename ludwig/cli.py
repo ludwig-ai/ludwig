@@ -35,6 +35,8 @@ class CLI(object):
       representation
     - collect_activations - For each datapoint, there exists a corresponding
       tensor representation which are collected through this method
+    - hyperopt - Performs an hyper-parameter search
+      with a given strategy and parameters
     """
 
     def __init__(self):
@@ -93,6 +95,11 @@ Available sub-commands:
         ludwig.contrib.contrib_command("visualize", *sys.argv)
         visualize.cli(sys.argv[2:])
 
+    def hyperopt(self):
+        from ludwig import hyperopt
+        ludwig.contrib.contrib_command("hyperopt", *sys.argv)
+        hyperopt.cli(sys.argv[2:])
+
     def collect_weights(self):
         from ludwig import collect
         ludwig.contrib.contrib_command("collect_weights", *sys.argv)
@@ -102,6 +109,16 @@ Available sub-commands:
         from ludwig import collect
         ludwig.contrib.contrib_command("collect_activations", *sys.argv)
         collect.cli_collect_activations(sys.argv[2:])
+
+    def export(self):
+        from ludwig import export
+        ludwig.contrib.contrib_command("export", *sys.argv)
+        export.cli(sys.argv[2:])
+
+    def saved_model_predict(self):
+        from ludwig import export
+        ludwig.contrib.contrib_command("saved_model_predict", *sys.argv)
+        export.cli(sys.argv[2:])
 
 
 def main():

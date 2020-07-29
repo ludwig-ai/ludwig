@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
 from ludwig.features.feature_utils import SEQUENCE_TYPES
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class ConcatCombiner(tf.keras.Model):
     def __init__(
             self,
-            input_features,
+            input_features=None,
             fc_layers=None,
             num_fc_layers=None,
             fc_size=256,
@@ -54,7 +54,8 @@ class ConcatCombiner(tf.keras.Model):
             dropout_rate=0,
             **kwargs
     ):
-        tf.keras.Model.__init__(self)
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.fc_stack = None
 
@@ -66,6 +67,7 @@ class ConcatCombiner(tf.keras.Model):
                 fc_layers.append({'fc_size': fc_size})
 
         if fc_layers is not None:
+            logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 layers=fc_layers,
                 num_layers=num_fc_layers,
@@ -83,6 +85,9 @@ class ConcatCombiner(tf.keras.Model):
                 default_activation=activation,
                 default_dropout_rate=dropout_rate,
             )
+
+        if input_features and len(input_features) == 1 and fc_layers is None:
+            self.supports_masking = True
 
     def call(
             self,
@@ -106,31 +111,43 @@ class ConcatCombiner(tf.keras.Model):
                 mask=mask
             )
 
-        return hidden
+        return_data = {'combiner_output': hidden}
+
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
+
+        return return_data
 
 
-class SequenceConcatCombiner:
+class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
             reduce_output=None,
             main_sequence_feature=None,
             **kwargs
     ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.reduce_output = reduce_output
+        if self.reduce_output is None:
+            self.supports_masking = True
         self.main_sequence_feature = main_sequence_feature
 
     def __call__(
             self,
-            feature_encodings,
-            regularizer,
-            dropout_rate,
+            inputs,  # encoder outputs
+            training=None,
+            mask=None,
             **kwargs
     ):
         if (self.main_sequence_feature is None or
-                self.main_sequence_feature not in feature_encodings):
-            for fe_name, fe_properties in feature_encodings.items():
-                if fe_properties['type'] in SEQUENCE_TYPES:
-                    self.main_sequence_feature = fe_name
+                self.main_sequence_feature not in inputs):
+            for if_name, if_outputs in inputs.items():
+                if if_outputs['type'] in SEQUENCE_TYPES:
+                    self.main_sequence_feature = if_name
                     break
 
         if self.main_sequence_feature is None:
@@ -138,128 +155,111 @@ class SequenceConcatCombiner:
                 'No sequence feature available for sequence combiner'
             )
 
-        main_sequence_feature_encoding = \
-            feature_encodings[self.main_sequence_feature]
+        main_sequence_feature_encoding = inputs[self.main_sequence_feature]
 
-        representation = main_sequence_feature_encoding['representation']
-        representations_size = representation.shape[2]
+        representation = main_sequence_feature_encoding['encoder_output']
         representations = [representation]
 
-        scope_name = 'sequence_concat_combiner'
+        sequence_max_length = representation.shape[1]
         sequence_length = sequence_length_3D(representation)
 
-        with tf.variable_scope(scope_name):
-            # ================ Concat ================
-            for fe_name, fe_properties in feature_encodings.items():
-                if fe_name is not self.main_sequence_feature:
-                    if fe_properties['type'] in SEQUENCE_TYPES and \
-                            len(fe_properties['representation'].shape) == 3:
-                        # The following check makes sense when
-                        # both representations have a specified
-                        # sequence length dimension. If they do not,
-                        # then this check is simply checking if None == None
-                        # and will not catch discrepancies in the different
-                        # feature length dimension. Those errors will show up
-                        # at training time. Possible solutions to this is
-                        # to enforce a length second dimension in
-                        # sequential feature placeholders, but that
-                        # does not work with BucketedBatcher that requires
-                        # the second dimension to be undefined in order to be
-                        # able to trim the data points and speed up computation.
-                        # So for now we are keeping things like this, make sure
-                        # to write in the documentation that training time
-                        # dimensions mismatch may occur if the sequential
-                        # features have different lengths for some data points.
-                        if fe_properties['representation'].shape[1] != \
-                                representation.shape[1]:
-                            raise ValueError(
-                                'The sequence length of the input feature {} '
-                                'is {} and is different from the sequence '
-                                'length of the main sequence feature {} which '
-                                'is {}.\n Shape of {}: {}, shape of {}: {}.\n'
-                                'Sequence lengths of all sequential features '
-                                'must be the same  in order to be concatenated '
-                                'by the sequence concat combiner. '
-                                'Try to impose the same max sequence length '
-                                'as a preprocessing parameter to both features '
-                                'or to reduce the output of {}.'.format(
-                                    fe_properties['name'],
-                                    fe_properties['representation'].shape[1],
-                                    self.main_sequence_feature,
-                                    representations_size,
-                                    fe_properties['name'],
-                                    fe_properties['representation'].shape,
-                                    fe_properties['name'],
-                                    representation.shape,
-                                    fe_properties['name']
-                                )
-                            )
-                        # this assumes all sequence representations have the
-                        # same sequence length, 2nd dimension
-                        representations.append(fe_properties['representation'])
-
-                    elif len(fe_properties['representation'].shape) == 2:
-                        sequence_max_length = tf.shape(representation)[1]
-                        multipliers = tf.concat(
-                            [[1], tf.expand_dims(sequence_max_length, -1), [1]],
-                            0
-                        )
-                        tiled_representation = tf.tile(
-                            tf.expand_dims(fe_properties['representation'], 1),
-                            multipliers
-                        )
-                        logger.debug('  tiled_representation: {0}'.format(
-                            tiled_representation))
-
-                        mask = tf.sequence_mask(
-                            sequence_length,
-                            sequence_max_length
-                        )
-                        tiled_representation = tf.multiply(
-                            tiled_representation,
-                            tf.cast(tf.expand_dims(mask, -1), dtype=tf.float32)
-                        )
-
-                        representations.append(tiled_representation)
-
-                    else:
+        # ================ Concat ================
+        for if_name, if_outputs in inputs.items():
+            if if_name is not self.main_sequence_feature:
+                if_representation = if_outputs['encoder_output']
+                if len(if_representation.shape) == 3:
+                    # The following check makes sense when
+                    # both representations have a specified
+                    # sequence length dimension. If they do not,
+                    # then this check is simply checking if None == None
+                    # and will not catch discrepancies in the different
+                    # feature length dimension. Those errors will show up
+                    # at training time. Possible solutions to this is
+                    # to enforce a length second dimension in
+                    # sequential feature placeholders, but that
+                    # does not work with BucketedBatcher that requires
+                    # the second dimension to be undefined in order to be
+                    # able to trim the data points and speed up computation.
+                    # So for now we are keeping things like this, make sure
+                    # to write in the documentation that training time
+                    # dimensions mismatch may occur if the sequential
+                    # features have different lengths for some data points.
+                    if if_representation.shape[1] != representation.shape[1]:
                         raise ValueError(
-                            'The representation of {} has rank {} and cannot be'
-                            ' concatenated by a sequence concat combiner. '
-                            'Only rank 2 and rank 3 tensors are supported.'.format(
-                                fe_properties['name'],
-                                len(fe_properties['representation'].shape)
+                            'The sequence length of the input feature {} '
+                            'is {} and is different from the sequence '
+                            'length of the main sequence feature {} which '
+                            'is {}.\n Shape of {}: {}, shape of {}: {}.\n'
+                            'Sequence lengths of all sequential features '
+                            'must be the same  in order to be concatenated '
+                            'by the sequence concat combiner. '
+                            'Try to impose the same max sequence length '
+                            'as a preprocessing parameter to both features '
+                            'or to reduce the output of {}.'.format(
+                                if_name,
+                                if_representation.shape[1],
+                                self.main_sequence_feature,
+                                representation.shape[1],
+                                if_name,
+                                if_representation.shape,
+                                if_name,
+                                representation.shape,
+                                if_name
                             )
                         )
+                    # this assumes all sequence representations have the
+                    # same sequence length, 2nd dimension
+                    representations.append(if_representation)
 
-                    representations_size += fe_properties['size']
+                elif len(if_representation.shape) == 2:
+                    multipliers = tf.constant([1, sequence_max_length, 1])
+                    tiled_representation = tf.tile(
+                        tf.expand_dims(if_representation, 1),
+                        multipliers
+                    )
+                    representations.append(tiled_representation)
 
-            hidden = tf.concat(representations, 2)
-            logger.debug('  concat_hidden: {0}'.format(hidden))
-            hidden_size = representations_size
+                else:
+                    raise ValueError(
+                        'The representation of {} has rank {} and cannot be'
+                        ' concatenated by a sequence concat combiner. '
+                        'Only rank 2 and rank 3 tensors are supported.'.format(
+                            if_outputs['name'],
+                            len(if_representation.shape)
+                        )
+                    )
 
-            # ================ Mask ================
-            mask_matrix = tf.cast(
-                tf.sign(
-                    tf.reduce_sum(tf.abs(representation), -1, keep_dims=True)
-                ),
-                dtype=tf.float32
-            )
-            hidden = tf.multiply(hidden, mask_matrix)
+        hidden = tf.concat(representations, 2)
+        logger.debug('  concat_hidden: {0}'.format(hidden))
 
-            # ================ Reduce ================
-            hidden = reduce_sequence(
-                hidden,
-                self.reduce_output
-            )
-            logger.debug('  reduced_concat_hidden: {0}'.format(hidden))
+        # ================ Mask ================
+        # todo tf2 use tf2 masking
+        sequence_mask = tf.sequence_mask(
+            sequence_length,
+            sequence_max_length
+        )
+        hidden = tf.multiply(
+            hidden,
+            tf.cast(tf.expand_dims(sequence_mask, -1), dtype=tf.float32)
+        )
 
-            hidden = tf.identity(hidden, name=scope_name)
+        # ================ Reduce ================
+        hidden = reduce_sequence(
+            hidden,
+            self.reduce_output
+        )
 
-        return hidden, hidden_size
+        return_data = {'combiner_output': hidden}
+
+        if len(inputs) == 1:
+            for key, value in [d for d in inputs.values()][0].items():
+                if key != 'encoder_output':
+                    return_data[key] = value
+
+        return return_data
 
 
-class SequenceCombiner:
+class SequenceCombiner(tf.keras.Model):
     def __init__(
             self,
             reduce_output=None,
@@ -267,47 +267,52 @@ class SequenceCombiner:
             encoder=None,
             **kwargs
     ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.combiner = SequenceConcatCombiner(
-            reduce_output=reduce_output,
+            reduce_output=None,
             main_sequence_feature=main_sequence_feature
         )
 
         self.encoder_obj = get_from_registry(
             encoder, sequence_encoder_registry)(
             should_embed=False,
+            reduce_output=reduce_output,
             **kwargs
         )
 
+        if (hasattr(self.encoder_obj, 'supports_masking') and
+                self.encoder_obj.supports_masking):
+            self.supports_masking = True
+
     def __call__(
             self,
-            feature_encodings,
-            regularizer,
-            dropout_rate,
-            is_training=True,
+            inputs,  # encoder outputs
+            training=None,
+            mask=None,
             **kwargs
     ):
-        scope_name = 'sequence_combiner'
-        with tf.variable_scope(scope_name):
-            # ================ Concat ================
-            hidden, hidden_size = self.combiner(
-                feature_encodings,
-                regularizer,
-                dropout_rate,
-                **kwargs
-            )
+        # ================ Concat ================
+        hidden = self.combiner(
+            inputs,  # encoder outputs
+            training=training,
+            **kwargs
+        )
 
-            # ================ Sequence encoding ================
-            hidden, hidden_size = self.encoder_obj(
-                input_sequence=hidden,
-                regularizer=regularizer,
-                dropout_rate=dropout_rate,
-                is_training=is_training
-            )
-            logger.debug('  sequence_hidden: {0}'.format(hidden))
+        # ================ Sequence encoding ================
+        hidden = self.encoder_obj(
+            hidden['combiner_output'],
+            training=training,
+            **kwargs
+        )
 
-            hidden = tf.identity(hidden, name=scope_name)
+        return_data = {'combiner_output': hidden['encoder_output']}
+        for key, value in hidden.items():
+            if key != 'encoder_output':
+                return_data[key] = value
 
-        return hidden, hidden_size
+        return return_data
 
 
 def get_combiner_class(combiner_type):

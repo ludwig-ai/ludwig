@@ -15,14 +15,15 @@
 # ==============================================================================
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.models.modules.loss_modules import BWCEWLoss
-from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.models.modules.loss_modules import BWCEWLoss, \
+    SigmoidCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SequenceLoss
+from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.utils.tf_utils import sequence_length_2D
 from ludwig.utils.tf_utils import to_sparse
-from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
 
 metrics = {ACCURACY, TOKEN_ACCURACY, HITS_AT_K, R2, JACCARD, EDIT_DISTANCE,
            MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR,
@@ -43,7 +44,7 @@ class R2Score(tf.keras.metrics.Metric):
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, name='r2_score'):
+    def __init__(self, name='r2_score', **kwargs):
         super(R2Score, self).__init__(name=name)
         self._reset_states()
 
@@ -81,7 +82,7 @@ class ErrorScore(tf.keras.metrics.Metric):
 
     # todo tf2 - convert to tensors?
 
-    def __init__(self, name='error_score'):
+    def __init__(self, name='error_score', **kwargs):
         super(ErrorScore, self).__init__(name=name)
         self._reset_states()
 
@@ -158,6 +159,20 @@ class SoftmaxCrossEntropyMetric(tf.keras.metrics.Mean):
         super().update_state(self.softmax_cross_entropy_function(y, y_hat))
 
 
+class SigmoidCrossEntropyMetric(tf.keras.metrics.Mean):
+    def __init__(
+            self,
+            feature_loss=None,
+            name='sigmoid_cross_entropy_metric'
+    ):
+        super(SigmoidCrossEntropyMetric, self).__init__(name=name)
+
+        self.sigmoid_cross_entropy_function = SigmoidCrossEntropyLoss()
+
+    def update_state(self, y, y_hat):
+        super().update_state(self.sigmoid_cross_entropy_function(y, y_hat))
+
+
 class SequenceLossMetric(tf.keras.metrics.Mean):
     def __init__(self, name=None):
         super(SequenceLossMetric, self).__init__(name=name)
@@ -173,6 +188,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     """
     Sequence accuracy based on last token in the sequence
     """
+
     def __init__(self, name=None):
         super(SequenceLastAccuracyMetric, self).__init__(name=name)
 
@@ -264,7 +280,16 @@ class CategoryAccuracy(tf.keras.metrics.Accuracy):
         )
 
 
-# end of custom classes
+class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
+    def __init__(self, k=3, name=None):
+        super(HitsAtKMetric, self).__init__(k=k, name=name)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true,
+            y_pred[LOGITS],
+            sample_weight=sample_weight
+        )
 
 
 def get_improved_fun(metric):
@@ -296,6 +321,7 @@ def accuracy(targets, predictions, output_feature_name):
         tf.cast(correct_predictions, tf.float32),
         name='accuracy_{}'.format(output_feature_name))
     return accuracy, correct_predictions
+
 
 # TODO TF2 refactor to better adapt for TF2 port
 def masked_accuracy(targets, predictions, sequence_lengths):
@@ -385,7 +411,8 @@ def absolute_error(targets, predictions, output_feature_name):
 def squared_error(targets, predictions, output_feature_name):
     # error = tf.get_variable('error_{}'.format(output_feature_name), initializer=tf.subtract(targets, predictions))
     error = tf.subtract(targets, predictions)
-    return tf.pow(error, 2, name='squared_error_{}'.format(output_feature_name))
+    return tf.pow(error, 2,
+                  name='squared_error_{}'.format(output_feature_name))
 
 
 def r2(targets, predictions, output_feature_name):

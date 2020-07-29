@@ -2,7 +2,7 @@
 
 Please provide the following:
 
-- a clear explanation of what your code dose
+- a clear explanation of what your code does
 - if applicable, a reference to an issue
 - a reproducible test for your PR (code, model definition and data sample)
 

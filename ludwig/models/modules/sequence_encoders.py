@@ -50,7 +50,11 @@ class SequencePassthroughEncoder(Layer):
             :type reduce_output: str
         """
         super(SequencePassthroughEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.reduce_output = reduce_output
+        if self.reduce_output is None:
+            self.supports_masking = True
 
     def call(
             self,
@@ -73,7 +77,7 @@ class SequencePassthroughEncoder(Layer):
             )
         hidden = reduce_sequence(input_sequence, self.reduce_output)
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class SequenceEmbedEncoder(Layer):
@@ -172,9 +176,13 @@ class SequenceEmbedEncoder(Layer):
 
         """
         super(SequenceEmbedEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
+        if self.reduce_output is None:
+            self.supports_masking = True
 
+        logger.debug('  EmbedSequence')
         self.embed_sequence = EmbedSequence(
             vocab,
             embedding_size,
@@ -203,7 +211,7 @@ class SequenceEmbedEncoder(Layer):
 
         hidden = reduce_sequence(embedded_sequence, self.reduce_output)
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class ParallelCNN(Layer):
@@ -377,6 +385,7 @@ class ParallelCNN(Layer):
             :type reduce_output: str
         """
         super(ParallelCNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -420,7 +429,9 @@ class ParallelCNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -433,6 +444,7 @@ class ParallelCNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  ParallelConv1D')
         self.parallel_conv1d = ParallelConv1D(
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -454,23 +466,25 @@ class ParallelCNN(Layer):
             default_pool_padding='same',
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout_rate=dropout_rate,
-        )
+        if self.reduce_output is not None:
+            logger.debug('  FCStack')
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -511,7 +525,7 @@ class ParallelCNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class StackedCNN(Layer):
@@ -691,6 +705,7 @@ class StackedCNN(Layer):
             :type reduce_output: str
         """
         super(StackedCNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -760,7 +775,9 @@ class StackedCNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -773,6 +790,7 @@ class StackedCNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  Conv1DStack')
         self.conv1d_stack = Conv1DStack(
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -798,23 +816,25 @@ class StackedCNN(Layer):
             default_pool_padding=pool_padding,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout_rate=dropout_rate,
-        )
+        if self.reduce_output is not None:
+            logger.debug('  FCStack')
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -861,7 +881,7 @@ class StackedCNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class StackedParallelCNN(Layer):
@@ -1043,6 +1063,7 @@ class StackedParallelCNN(Layer):
             :type reduce_output: str
         """
         super(StackedParallelCNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if stacked_layers is not None and num_stacked_layers is None:
             # use custom-defined layers
@@ -1100,7 +1121,9 @@ class StackedParallelCNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -1113,6 +1136,7 @@ class StackedParallelCNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  ParallelConv1DStack')
         self.parallel_conv1d_stack = ParallelConv1DStack(
             stacked_layers=self.stacked_layers,
             default_num_filters=num_filters,
@@ -1133,23 +1157,25 @@ class StackedParallelCNN(Layer):
             default_pool_size=pool_size,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=activation,
-            default_dropout_rate=dropout_rate,
-        )
+        if self.reduce_output is not None:
+            logger.debug('  FCStack')
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=activation,
+                default_dropout_rate=dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -1196,7 +1222,7 @@ class StackedParallelCNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class StackedRNN(Layer):
@@ -1364,11 +1390,17 @@ class StackedRNN(Layer):
             :type reduce_output: str
         """
         super(StackedRNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
+        if self.reduce_output is None:
+            self.supports_masking = True
+
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -1381,6 +1413,7 @@ class StackedRNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
             state_size=state_size,
             cell_type=cell_type,
@@ -1404,23 +1437,25 @@ class StackedRNN(Layer):
             recurrent_dropout=recurrent_dropout,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=fc_activation,
-            default_dropout_rate=fc_dropout_rate,
-        )
+        if self.reduce_output is not None:
+            logger.debug('  FCStack')
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=fc_activation,
+                default_dropout_rate=fc_dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -1450,7 +1485,7 @@ class StackedRNN(Layer):
         hidden = embedded_sequence
 
         # ================ Recurrent Layers ================
-        hidden = self.recurrent_stack(
+        hidden, final_state = self.recurrent_stack(
             hidden,
             training=training,
             mask=mask
@@ -1467,7 +1502,10 @@ class StackedRNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {
+            'encoder_output': hidden,
+            'encoder_output_state': final_state
+        }
 
 
 class StackedCNNRNN(Layer):
@@ -1614,6 +1652,7 @@ class StackedCNNRNN(Layer):
             :type reduce_output: str
         """
         super(StackedCNNRNN, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
             # use custom-defined layers
@@ -1639,7 +1678,9 @@ class StackedCNNRNN(Layer):
         self.reduce_output = reduce_output
         self.should_embed = should_embed
         self.embed_sequence = None
+
         if self.should_embed:
+            logger.debug('  EmbedSequence')
             self.embed_sequence = EmbedSequence(
                 vocab,
                 embedding_size,
@@ -1652,6 +1693,7 @@ class StackedCNNRNN(Layer):
                 regularizer=weights_regularizer
             )
 
+        logger.debug('  Conv1DStack')
         self.conv1d_stack = Conv1DStack(
             layers=self.conv_layers,
             default_num_filters=num_filters,
@@ -1677,6 +1719,7 @@ class StackedCNNRNN(Layer):
             default_pool_padding=pool_padding,
         )
 
+        logger.debug('  RecurrentStack')
         self.recurrent_stack = RecurrentStack(
             state_size=state_size,
             cell_type=cell_type,
@@ -1700,23 +1743,25 @@ class StackedCNNRNN(Layer):
             recurrent_dropout=recurrent_dropout,
         )
 
-        self.fc_stack = FCStack(
-            layers=fc_layers,
-            num_layers=num_fc_layers,
-            default_fc_size=fc_size,
-            default_use_bias=use_bias,
-            default_weights_initializer=weights_initializer,
-            default_bias_initializer=bias_initializer,
-            default_weights_regularizer=weights_regularizer,
-            default_bias_regularizer=bias_regularizer,
-            default_activity_regularizer=activity_regularizer,
-            # default_weights_constraint=weights_constraint,
-            # default_bias_constraint=bias_constraint,
-            default_norm=norm,
-            default_norm_params=norm_params,
-            default_activation=fc_activation,
-            default_dropout_rate=fc_dropout_rate,
-        )
+        if self.reduce_output is not None:
+            logger.debug('  FCStack')
+            self.fc_stack = FCStack(
+                layers=fc_layers,
+                num_layers=num_fc_layers,
+                default_fc_size=fc_size,
+                default_use_bias=use_bias,
+                default_weights_initializer=weights_initializer,
+                default_bias_initializer=bias_initializer,
+                default_weights_regularizer=weights_regularizer,
+                default_bias_regularizer=bias_regularizer,
+                default_activity_regularizer=activity_regularizer,
+                # default_weights_constraint=weights_constraint,
+                # default_bias_constraint=bias_constraint,
+                default_norm=norm,
+                default_norm_params=norm_params,
+                default_activation=fc_activation,
+                default_dropout_rate=fc_dropout_rate,
+            )
 
     def call(self, inputs, training=None, mask=None):
         """
@@ -1753,10 +1798,9 @@ class StackedCNNRNN(Layer):
         )
 
         # ================ Recurrent Layers ================
-        hidden = self.recurrent_stack(
+        hidden, final_state = self.recurrent_stack(
             hidden,
-            training=training,
-            mask=mask
+            training=training
         )
 
         # ================ Sequence Reduction ================
@@ -1770,7 +1814,10 @@ class StackedCNNRNN(Layer):
                 mask=mask
             )
 
-        return hidden
+        return {
+            'encoder_output': hidden,
+            'encoder_output_state': final_state
+        }
 
 
 class BERT:

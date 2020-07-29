@@ -28,14 +28,15 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from ludwig.contrib import contrib_command
+from ludwig.constants import TRAINING
+from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.predict import predict
 from ludwig.predict import print_test_results
 from ludwig.predict import save_prediction_outputs
 from ludwig.predict import save_test_statistics
-from ludwig.train import full_train, logger
+from ludwig.train import full_train
 from ludwig.utils.data_utils import save_json, generate_kfold_splits
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
@@ -74,10 +75,10 @@ def experiment(
         skip_save_test_predictions=False,  # skipcq: PYL-W0613
         skip_save_test_statistics=False,  # skipcq: PYL-W0613
         output_directory='results',
-        should_close_session=False,
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -115,9 +116,9 @@ def experiment(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
-        should_close_session=should_close_session,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
@@ -130,10 +131,10 @@ def experiment(
      train_set_metadata) = preprocessed_data
 
     if test_set is not None:
-        if model_definition['training']['eval_batch_size'] > 0:
-            batch_size = model_definition['training']['eval_batch_size']
+        if model_definition[TRAINING]['eval_batch_size'] > 0:
+            batch_size = model_definition[TRAINING]['eval_batch_size']
         else:
-            batch_size = model_definition['training']['batch_size']
+            batch_size = model_definition[TRAINING]['batch_size']
 
         # predict
         test_results = predict(
@@ -143,8 +144,6 @@ def experiment(
             model_definition,
             batch_size,
             evaluate_performance=True,
-            gpus=gpus,
-            gpu_fraction=gpu_fraction,
             debug=debug
         )
     else:
@@ -191,8 +190,9 @@ def full_experiment(
         skip_save_test_statistics=False,
         output_directory='results',
         gpus=None,
-        gpu_fraction=1.0,
-        use_horovod=False,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
@@ -294,9 +294,11 @@ def full_experiment(
     :type output_directory: filepath (str)
     :param gpus: List of GPUs that are available for training.
     :type gpus: List
-    :param gpu_fraction: Fraction of the memory of each GPU to use at
-           the beginning of the training. The memory may grow elastically.
-    :type gpu_fraction: Integer
+    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
+    :type gpu_memory_limit: Integer
+    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
+           to improve performance at the cost of determinism.
+    :type allow_parallel_threads: Boolean
     :param use_horovod: Flag for using horovod
     :type use_horovod: Boolean
     :param random_seed: Random seed used for weights initialization,
@@ -305,6 +307,7 @@ def full_experiment(
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
     """
+    set_on_master(use_horovod)
 
     (
         model,
@@ -340,9 +343,9 @@ def full_experiment(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
-        should_close_session=False,
         gpus=gpus,
-        gpu_fraction=gpu_fraction,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
         use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
@@ -456,8 +459,8 @@ def kfold_cross_validate(
             logger.info("training on fold {:d}".format(fold_num))
             (
                 _,  # model
-                _,  # preprocessed_data
-                _,  # experiment_dir_name
+                preprocessed_data,  # preprocessed_data
+                experiment_dir_name,  # experiment_dir_name
                 train_stats,
                 model_definition,
                 test_results
@@ -470,14 +473,30 @@ def kfold_cross_validate(
                 output_directory=os.path.join(temp_dir_name, 'results')
             )
 
+            # todo this works for obtaining the postprocessed prediction
+            #  and replace the raw ones, but some refactoring is needed to
+            #  avoid having to do it
+            postprocessed_output = postprocess(
+                test_results,
+                model_definition['output_features'],
+                metadata=preprocessed_data[3],
+                experiment_dir_name=experiment_dir_name,
+                skip_save_unprocessed_output=True
+            )
+            # todo if we want to save the csv of predictions uncomment block
+            # if is_on_master():
+            #     print_test_results(test_results)
+            #     if not skip_save_test_predictions:
+            #         save_prediction_outputs(
+            #             postprocessed_output,
+            #             experiment_dir_name
+            #         )
+            #     if not skip_save_test_statistics:
+            #         save_test_statistics(test_results, experiment_dir_name)
+
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats['fold_metric'] = {}
-            for metric_category in test_results:
-                train_stats['fold_metric'][metric_category] = {}
-                for metric in test_results[metric_category]:
-                    train_stats['fold_metric'][metric_category][metric] = \
-                        test_results[metric_category][metric]
+            train_stats['fold_test_results'] = test_results
 
             # collect training statistics for this fold
             kfold_cv_stats['fold_' + str(fold_num)] = train_stats
@@ -485,12 +504,13 @@ def kfold_cross_validate(
     # consolidate raw fold metrics across all folds
     raw_kfold_stats = {}
     for fold_name in kfold_cv_stats:
-        for category in kfold_cv_stats[fold_name]['fold_metric']:
-            if category not in raw_kfold_stats:
-                raw_kfold_stats[category] = {}
-            category_stats = \
-                kfold_cv_stats[fold_name]['fold_metric'][category]
-            for metric in category_stats:
+        curr_fold_test_results = kfold_cv_stats[fold_name]['fold_test_results']
+        for of_name in curr_fold_test_results:
+            if of_name not in raw_kfold_stats:
+                raw_kfold_stats[of_name] = {}
+            fold_test_results_of = curr_fold_test_results[of_name]
+
+            for metric in fold_test_results_of:
                 if metric not in {
                     'predictions',
                     'probabilities',
@@ -500,20 +520,21 @@ def kfold_cross_validate(
                     'roc_curve',
                     'precision_recall_curve'
                 }:
-                    if metric not in raw_kfold_stats[category]:
-                        raw_kfold_stats[category][metric] = []
-                    raw_kfold_stats[category][metric] \
-                        .append(category_stats[metric])
+                    if metric not in raw_kfold_stats[of_name]:
+                        raw_kfold_stats[of_name][metric] = []
+                    raw_kfold_stats[of_name][metric].append(
+                        fold_test_results_of[metric]
+                    )
 
     # calculate overall kfold statistics
     overall_kfold_stats = {}
-    for category in raw_kfold_stats:
-        overall_kfold_stats[category] = {}
-        for metric in raw_kfold_stats[category]:
-            mean = np.mean(raw_kfold_stats[category][metric])
-            std = np.std(raw_kfold_stats[category][metric])
-            overall_kfold_stats[category][metric + '_mean'] = mean
-            overall_kfold_stats[category][metric + '_std'] = std
+    for of_name in raw_kfold_stats:
+        overall_kfold_stats[of_name] = {}
+        for metric in raw_kfold_stats[of_name]:
+            mean = np.mean(raw_kfold_stats[of_name][metric])
+            std = np.std(raw_kfold_stats[of_name][metric])
+            overall_kfold_stats[of_name][metric + '_mean'] = mean
+            overall_kfold_stats[of_name][metric + '_std'] = std
 
     kfold_cv_stats['overall'] = overall_kfold_stats
 
@@ -796,17 +817,24 @@ def cli(sys_argv):
         help='list of GPUs to use'
     )
     parser.add_argument(
-        '-gf',
-        '--gpu_fraction',
-        type=float,
-        default=1.0,
-        help='fraction of gpu memory to initialize the process with'
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
+    )
+    parser.add_argument(
+        '-dpt',
+        '--disable_parallel_threads',
+        action='store_false',
+        dest='allow_parallel_threads',
+        help='disable TensorFlow from using multithreading for reproducibility'
     )
     parser.add_argument(
         '-uh',
         '--use_horovod',
         action='store_true',
-        default=False,
+        default=None,
         help='uses horovod for distributed training'
     )
     parser.add_argument(
@@ -829,6 +857,8 @@ def cli(sys_argv):
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
     )
+    global logger
+    logger = logging.getLogger('ludwig.experiment')
 
     set_on_master(args.use_horovod)
 
@@ -842,5 +872,6 @@ def cli(sys_argv):
 
 
 if __name__ == '__main__':
+    contrib_import()
     contrib_command("experiment", *sys.argv)
     cli(sys.argv[1:])

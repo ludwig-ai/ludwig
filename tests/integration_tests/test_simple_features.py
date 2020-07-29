@@ -14,32 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import os
 import shutil
 
 import pytest
-import yaml
 
-from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import full_experiment
-from ludwig.features.h3_feature import h3_encoder_registry
-from ludwig.predict import full_predict
-from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import ENCODERS
-from tests.integration_tests.utils import audio_feature
-from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
-from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import h3_feature
-from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
-from tests.integration_tests.utils import sequence_feature
-from tests.integration_tests.utils import set_feature
-from tests.integration_tests.utils import text_feature
-from tests.integration_tests.utils import timeseries_feature
-from tests.integration_tests.utils import vector_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -91,14 +74,14 @@ def run_experiment(input_features, output_features, **kwargs):
         # numerical features
         (numerical_feature(), numerical_feature(), None),
         (
-            numerical_feature(normalization='minmax'),
-            numerical_feature(),
-            {'loss': {'type':'mean_squared_error'}}
-         ),
+                numerical_feature(normalization='minmax'),
+                numerical_feature(),
+                {'loss': {'type': 'mean_squared_error'}}
+        ),
         (
-            numerical_feature(normalization='zscore'),
-            numerical_feature(),
-            {'loss': {'type':'mean_absolute_error'}}
+                numerical_feature(normalization='zscore'),
+                numerical_feature(),
+                {'loss': {'type': 'mean_absolute_error'}}
         ),
 
         # binary feature
@@ -107,53 +90,54 @@ def run_experiment(input_features, output_features, **kwargs):
         # Categorical feature
         (category_feature(), category_feature(), None),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {'type':'softmax_cross_entropy'}}
+                category_feature(),
+                category_feature(),
+                {'loss': {'type': 'softmax_cross_entropy'}}
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'fixed_unigram',
-                        'negative_samples': 10
-                      }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'fixed_unigram',
+                    'negative_samples': 10
+                }
+                }
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'uniform',
-                        'negative_samples': 10
-                    }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'uniform',
+                    'negative_samples': 10
+                }
+                }
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'log_uniform',
-                        'negative_samples': 10
-                    }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'log_uniform',
+                    'negative_samples': 10
+                }
+                }
         ),
         (
-            category_feature(),
-            category_feature(),
-            {'loss': {
-                        'type': 'sampled_softmax_cross_entropy',
-                        'sampler': 'learned_unigram',
-                        'negative_samples': 10
-                    }
-            }
+                category_feature(),
+                category_feature(),
+                {'loss': {
+                    'type': 'sampled_softmax_cross_entropy',
+                    'sampler': 'learned_unigram',
+                    'negative_samples': 10
+                }
+                }
         )
     ]
 )
-def test_feature(input_test_feature, output_test_feature, output_loss_parameter, csv_filename):
+def test_feature(input_test_feature, output_test_feature,
+                 output_loss_parameter, csv_filename):
     input_features = [
         input_test_feature
     ]
@@ -164,8 +148,7 @@ def test_feature(input_test_feature, output_test_feature, output_loss_parameter,
     output_features = [of_test_feature]
 
     # Generate test data
-    rel_path = generate_data(input_features, output_features, csv_filename, 1001)
+    rel_path = generate_data(input_features, output_features, csv_filename,
+                             1001)
 
     run_experiment(input_features, output_features, data_csv=rel_path)
-
-

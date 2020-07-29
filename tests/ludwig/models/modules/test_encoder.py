@@ -16,13 +16,13 @@
 import random
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
-from ludwig.data.dataset_synthesyzer import build_vocab
+from ludwig.data.dataset_synthesizer import build_vocab
 from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder
 from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.models.modules.sequence_encoders import EmbedEncoder
 from ludwig.models.modules.sequence_encoders import ParallelCNN
+from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
 from ludwig.models.modules.sequence_encoders import StackedCNN
 from ludwig.models.modules.sequence_encoders import StackedCNNRNN
 from ludwig.models.modules.sequence_encoders import StackedParallelCNN
@@ -86,19 +86,13 @@ def encoder_test(
     :param output_data: expected output data (optional)
     :return: returns the encoder object for the caller to run extra checks
     """
-    tf.reset_default_graph()
-
     # Run the encoder
     input_data = tf.convert_to_tensor(input_data)
-    dropout_rate = tf.convert_to_tensor(dropout_rate)
-    is_training = tf.convert_to_tensor(False)
 
-    hidden, _ = encoder(
+    hidden = encoder(
         input_data,
-        regularizer,
-        dropout_rate,
-        is_training=is_training
-    )
+        training=False
+    )['encoder_output']
 
     # Check output shape and type
     assert hidden.dtype == output_dtype
@@ -142,13 +136,15 @@ def test_image_encoders_resnet():
     )
 
     assert encoder is not None
-    assert encoder.resnet is not None
-    assert encoder.resnet.kernel_size == 3
-    assert encoder.fc_stack.layers[0]['fc_size'] == 28
-    assert len(encoder.fc_stack.layers) == 1
-    assert encoder.fc_stack.layers[0]['activation'] == 'relu'
+    assert encoder.resnet.__class__.__name__ == 'ResNet2'
     assert encoder.resnet.num_filters == 8
     assert encoder.resnet.resnet_size == 8
+    assert encoder.resnet.filter_size == 3
+    assert encoder.flatten.__class__.__name__ == 'Flatten'
+    assert encoder.fc_stack.__class__.__name__ == 'FCStack'
+    assert len(encoder.fc_stack.layers) == 1
+    assert encoder.fc_stack.layers[0]['fc_size'] == 28
+    assert encoder.fc_stack.layers[0]['activation'] == 'relu'
 
 
 def test_image_encoders_stacked_2dcnn():
@@ -164,12 +160,12 @@ def test_image_encoders_stacked_2dcnn():
     assert encoder.fc_stack.layers[0]['fc_size'] == 28
     assert len(encoder.fc_stack.layers) == 1
     assert encoder.conv_stack_2d.layers[0]['num_filters'] == 16
-    assert encoder.conv_stack_2d.layers[0]['pool_size'] == 2
-    assert encoder.conv_stack_2d.layers[0]['stride'] == 1
-    assert encoder.conv_stack_2d.layers[0]['pool_stride'] == 2
+    assert encoder.conv_stack_2d.layers[0]['pool_size'] == (2, 2)
+    assert encoder.conv_stack_2d.layers[0]['strides'] == (1, 1)
+    assert encoder.conv_stack_2d.layers[0]['pool_strides'] is None
     assert encoder.conv_stack_2d.layers[0]['norm'] is None
     assert encoder.fc_stack.layers[0]['activation'] == 'relu'
-    assert encoder.conv_stack_2d.layers[-1]['dropout'] is True
+    assert encoder.conv_stack_2d.layers[-1]['dropout_rate'] == 0
 
     output_shape = [1, 28]
     input_image = generate_images(image_size, 1)
@@ -224,7 +220,7 @@ def test_sequence_encoder_embed():
 
             encoder_args['reduce_output'] = reduce_output
             encoder_args['embeddings_trainable'] = trainable
-            encoder = create_encoder(EmbedEncoder, encoder_args)
+            encoder = create_encoder(SequenceEmbedEncoder, encoder_args)
 
             encoder_test(
                 encoder=encoder,
@@ -236,11 +232,11 @@ def test_sequence_encoder_embed():
                 output_data=None
             )
 
-            embed = encoder.embed_sequence.embed
-            assert embed.representation == 'dense'
-            assert embed.embeddings_trainable == trainable
-            assert embed.regularize is True
-            assert embed.dropout is False
+            embed = encoder.embed_sequence.embeddings
+            #assert embed.representation == 'dense'
+            assert embed.trainable == trainable
+            # assert embed.regularize is True
+            assert encoder.embed_sequence.dropout is None
 
 
 def test_sequence_encoders():
@@ -295,8 +291,4 @@ def test_sequence_encoders():
                     output_data=None
                 )
 
-                embed = encoder.embed_sequence.embed
-                assert embed.representation == 'dense'
-                assert embed.embeddings_trainable == trainable
-                assert embed.regularize is True
-                assert embed.dropout is False
+                assert isinstance(encoder, encoder_type)

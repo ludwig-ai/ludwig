@@ -18,18 +18,20 @@ import logging
 import os
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from tensorflow.keras.losses import MeanAbsoluteError
 from tensorflow.keras.losses import MeanSquaredError
-from tensorflow.keras.metrics import MeanAbsoluteError as MeanAbsoluteErrorMetric
+from tensorflow.keras.metrics import \
+    MeanAbsoluteError as MeanAbsoluteErrorMetric
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
+from ludwig.globals import is_on_master
 from ludwig.models.modules.generic_decoders import Regressor
-from ludwig.models.modules.generic_encoders import PassthroughEncoder, DenseEncoder
+from ludwig.models.modules.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
 from ludwig.models.modules.metric_modules import ErrorScore
 from ludwig.models.modules.metric_modules import R2Score
 from ludwig.utils.misc import set_default_value
@@ -37,7 +39,8 @@ from ludwig.utils.misc import set_default_values
 
 logger = logging.getLogger(__name__)
 
-# TODO TF2 can we eliminate use of these customer wrapper classes?
+
+# TODO TF2 can we eliminate use of these custom wrapper classes?
 # custom class to handle how Ludwig stores predictions
 class MSELoss(MeanSquaredError):
     def __init__(self, **kwargs):
@@ -55,7 +58,7 @@ class MSEMetric(MeanSquaredErrorMetric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
-            y_true, y_pred['predictions'], sample_weight=sample_weight
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
 
 
@@ -75,20 +78,17 @@ class MAEMetric(MeanAbsoluteErrorMetric):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         super().update_state(
-            y_true, y_pred['predictions'], sample_weight=sample_weight
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
 
 
-class NumericalBaseFeature(BaseFeature):
+class NumericalFeatureMixin(object):
     type = NUMERICAL
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0,
         'normalization': None
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -135,12 +135,11 @@ class NumericalBaseFeature(BaseFeature):
                 data[feature['name']] = (values - min_) / (max_ - min_)
 
 
-class NumericalInputFeature(NumericalBaseFeature, InputFeature):
+class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     encoder = 'passthrough'
 
     def __init__(self, feature, encoder_obj=None):
-        NumericalBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -182,14 +181,13 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
     }
 
 
-class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
+class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     decoder = 'regressor'
-    loss = {'type': MEAN_SQUARED_ERROR}
+    loss = {TYPE: MEAN_SQUARED_ERROR}
     clip = None
 
     def __init__(self, feature):
-        NumericalBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
@@ -198,12 +196,15 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
     def logits(
             self,
             inputs,  # hidden
+            **kwargs
     ):
-        return self.decoder_obj(inputs)
+        hidden = inputs[HIDDEN]
+        return self.decoder_obj(hidden)
 
     def predictions(
             self,
             inputs,  # logits
+            **kwargs
     ):
         logits = inputs[LOGITS]
         predictions = logits
@@ -254,7 +255,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
 
     # def update_metrics(self, targets, predictions):
     #     for metric in self.metric_functions.values():
-    #         metric.update_state(targets, predictions['predictions'])
+    #         metric.update_state(targets, predictions[PREDICTIONS])
 
     default_validation_metric = MEAN_SQUARED_ERROR
 
@@ -285,8 +286,13 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
         name = output_feature['name']
+
+        npy_filename = None
+        if is_on_master():
+            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+        else:
+            skip_save_unprocessed_output = True
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
@@ -313,7 +319,7 @@ class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
         set_default_value(
             output_feature,
             LOSS,
-            {'type': 'mean_squared_error', 'weight': 1}
+            {TYPE: 'mean_squared_error', 'weight': 1}
         )
         set_default_value(output_feature[LOSS], TYPE, 'mean_squared_error')
         set_default_value(output_feature[LOSS], 'weight', 1)

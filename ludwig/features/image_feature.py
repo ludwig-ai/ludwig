@@ -22,10 +22,9 @@ from multiprocessing import Pool
 
 import h5py
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
@@ -39,7 +38,7 @@ from ludwig.utils.misc import set_default_value
 logger = logging.getLogger(__name__)
 
 
-class ImageBaseFeature(BaseFeature):
+class ImageFeatureMixin(object):
     type = IMAGE
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
@@ -48,9 +47,6 @@ class ImageBaseFeature(BaseFeature):
         'scaling': 'pixel_normalization',
         'num_processes': 1
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -146,7 +142,7 @@ class ImageBaseFeature(BaseFeature):
                 "or explicit image width and height are expected"
                 "to be provided. "
                 "Additional information: "
-                "https://uber.github.io/ludwig/user_guide/#image-features-preprocessing"
+                "https://ludwig-ai.github.io/ludwig-docs/user_guide/#image-features-preprocessing"
                     .format([img_height, img_width, num_channels], img.shape)
             )
 
@@ -252,11 +248,15 @@ class ImageBaseFeature(BaseFeature):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        first_image_path = dataset_df[feature['name']][0]
-        if csv_path is None and not os.path.isabs(first_image_path):
+        # this is not super nice, but works both and DFs and lists
+        first_path = '.'
+        for first_path in dataset_df[feature['name']]:
+            break
+
+        if csv_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
 
-        first_image_path = get_abs_path(csv_path, first_image_path)
+        first_path = get_abs_path(csv_path, first_path)
 
         (
             should_resize,
@@ -265,8 +265,8 @@ class ImageBaseFeature(BaseFeature):
             num_channels,
             user_specified_num_channels,
             first_image
-        ) = ImageBaseFeature._finalize_preprocessing_parameters(
-            preprocessing_parameters, first_image_path
+        ) = ImageFeatureMixin._finalize_preprocessing_parameters(
+            preprocessing_parameters, first_path
         )
 
         metadata[feature['name']]['preprocessing']['height'] = height
@@ -275,7 +275,7 @@ class ImageBaseFeature(BaseFeature):
             'num_channels'] = num_channels
 
         read_image_and_resize = partial(
-            ImageBaseFeature._read_image_and_resize,
+            ImageFeatureMixin._read_image_and_resize,
             img_width=width,
             img_height=height,
             should_resize=should_resize,
@@ -301,7 +301,7 @@ class ImageBaseFeature(BaseFeature):
             # standard code anyway.
             if num_processes > 1 or num_images > 1:
                 with Pool(num_processes) as pool:
-                    logger.warning(
+                    logger.debug(
                         'Using {} processes for preprocessing images'.format(
                             num_processes
                         )
@@ -309,10 +309,11 @@ class ImageBaseFeature(BaseFeature):
                     data[feature['name']] = np.array(
                         pool.map(read_image_and_resize, all_file_paths)
                     )
-            # If we're not running multiple processes and we are only processing one
-            # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+
             else:
-                logger.warning(
+                # If we're not running multiple processes and we are only processing one
+                # image just use this faster shortcut, bypassing multiprocessing.Pool.map
+                logger.debug(
                     'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])
@@ -338,7 +339,7 @@ class ImageBaseFeature(BaseFeature):
             data[feature['name']] = np.arange(num_images)
 
 
-class ImageInputFeature(ImageBaseFeature, InputFeature):
+class ImageInputFeature(ImageFeatureMixin, InputFeature):
     height = 0
     width = 0
     num_channels = 0
@@ -346,8 +347,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
     encoder = 'stacked_cnn'
 
     def __init__(self, feature, encoder_obj=None):
-        ImageBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
