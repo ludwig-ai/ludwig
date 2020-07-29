@@ -14,9 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import multiprocessing
 import warnings
-
-from multiprocessing import Process, Queue
 
 import tensorflow as tf
 from tensorflow.python.client import device_lib
@@ -103,8 +102,9 @@ def get_available_gpus_child_process(gpus_list_queue):
 
 
 def get_available_gpus():
-    gpus_list_queue = Queue()
-    proc_get_gpus = Process(
+    ctx = multiprocessing.get_context('spawn')
+    gpus_list_queue = ctx.Queue()
+    proc_get_gpus = ctx.Process(
         target=get_available_gpus_child_process, args=(gpus_list_queue,))
     proc_get_gpus.start()
     proc_get_gpus.join()

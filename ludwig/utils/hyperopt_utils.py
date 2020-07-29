@@ -218,7 +218,6 @@ class GridStrategy(HyperoptStrategy):
 
 class PySOTStrategy(HyperoptStrategy):
     """pySOT: Surrogate optimization in Python.
-
     This is a wrapper around the pySOT package (https://github.com/dme65/pySOT):
         David Eriksson, David Bindel, Christine Shoemaker
         pySOT and POAP: An event-driven asynchronous framework for surrogate optimization
@@ -516,6 +515,8 @@ class ParallelExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ):
+        ctx = multiprocessing.get_context('spawn')
+
         hyperopt_parameters = []
 
         if gpus is None:
@@ -525,7 +526,7 @@ class ParallelExecutor(HyperoptExecutor):
 
         if gpus is not None:
 
-            num_available_cpus = multiprocessing.cpu_count()
+            num_available_cpus = ctx.cpu_count()
 
             if self.num_workers > num_available_cpus:
                 logger.warning(
@@ -615,7 +616,7 @@ class ParallelExecutor(HyperoptExecutor):
                         "gpu_memory_limit": gpu_memory_limit,
                         "process_per_gpu": 1}
 
-            manager = multiprocessing.Manager()
+            manager = ctx.Manager()
             self.queue = manager.Queue()
 
             for gpu_id in gpu_ids:
@@ -626,8 +627,8 @@ class ParallelExecutor(HyperoptExecutor):
                                    "gpu_memory_limit": gpu_memory_limit}
                     self.queue.put(gpu_id_meta)
 
-        pool = multiprocessing.Pool(self.num_workers,
-                                    ParallelExecutor.init_worker)
+        pool = ctx.Pool(self.num_workers,
+                        ParallelExecutor.init_worker)
         hyperopt_results = []
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
