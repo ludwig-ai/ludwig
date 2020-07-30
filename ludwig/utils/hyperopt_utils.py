@@ -427,6 +427,7 @@ class ParallelExecutor(HyperoptExecutor):
     num_workers = 2
     epsilon = 0.01
     epsilon_memory = 300
+    TF_REQUIRED_MEMORY_PER_WORKER = 20
 
     def __init__(
             self,
@@ -561,7 +562,8 @@ class ParallelExecutor(HyperoptExecutor):
                                 self.num_workers,
                                 gpu_id, available_gpu_memory)
                         )
-                        new_gpu_memory_limit = required_gpu_memory
+                        new_gpu_memory_limit = required_gpu_memory - \
+                            (self.TF_REQUIRED_MEMORY_PER_WORKER * self.num_workers)
                     else:
                         new_gpu_memory_limit = gpu_memory_limit
                         if new_gpu_memory_limit > available_gpu_memory:
