@@ -426,8 +426,8 @@ class SerialExecutor(HyperoptExecutor):
 class ParallelExecutor(HyperoptExecutor):
     num_workers = 2
     epsilon = 0.01
-    epsilon_memory = 300
-    TF_REQUIRED_MEMORY_PER_WORKER = 20
+    epsilon_memory = 100
+    TF_REQUIRED_MEMORY_PER_WORKER = 100
 
     def __init__(
             self,
