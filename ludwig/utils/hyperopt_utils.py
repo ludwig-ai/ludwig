@@ -436,7 +436,7 @@ class ParallelExecutor(HyperoptExecutor):
             metric: str,
             split: str,
             num_workers: int = 2,
-            epsilon: int = 0.01,
+            epsilon: float = 0.01,
             **kwargs
     ) -> None:
         HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
@@ -531,22 +531,24 @@ class ParallelExecutor(HyperoptExecutor):
 
             if self.num_workers > num_available_cpus:
                 logger.warning(
-                    "WARNING: Setting num_workers to less "
-                    "or equal to number of available cpus: {} is suggested".format(
-                        num_available_cpus)
+                    "WARNING: num_workers={}, num_available_cpus={}. "
+                    "To avoid bottlenecks setting num workers to be less "
+                    "or equal to number of available cpus is suggested".format(
+                        self.num_workers, num_available_cpus
+                    )
                 )
 
             if isinstance(gpus, int):
                 gpus = str(gpus)
             gpus = gpus.strip()
             gpu_ids = gpus.split(",")
-            total_gpus = len(gpu_ids)
+            num_gpus = len(gpu_ids)
 
             available_gpu_memory_list = get_available_gpu_memory()
             gpu_ids_meta = {}
 
-            if total_gpus < self.num_workers:
-                fraction = (total_gpus / self.num_workers) - self.epsilon
+            if num_gpus < self.num_workers:
+                fraction = (num_gpus / self.num_workers) - self.epsilon
                 for gpu_id in gpu_ids:
                     available_gpu_memory = available_gpu_memory_list[
                         int(gpu_id)]
@@ -555,10 +557,11 @@ class ParallelExecutor(HyperoptExecutor):
                     if gpu_memory_limit is None:
                         logger.warning(
                             'WARNING: Setting gpu_memory_limit to {} '
-                            'as the available gpus is {} and the num of workers '
-                            'being set is {} and the available gpu memory for gpu_id '
+                            'as there available gpus are {} '
+                            'and the num of workers is {} '
+                            'and the available gpu memory for gpu_id '
                             '{} is {}'.format(
-                                required_gpu_memory, total_gpus,
+                                required_gpu_memory, num_gpus,
                                 self.num_workers,
                                 gpu_id, available_gpu_memory)
                         )
@@ -569,7 +572,7 @@ class ParallelExecutor(HyperoptExecutor):
                         if new_gpu_memory_limit > available_gpu_memory:
                             logger.warning(
                                 'WARNING: Setting gpu_memory_limit to available gpu '
-                                'memory {} with epsilon as the value specified is greater than '
+                                'memory {} minus an epsilon as the value specified is greater than '
                                 'available gpu memory.'.format(
                                     available_gpu_memory)
                             )
@@ -580,18 +583,18 @@ class ParallelExecutor(HyperoptExecutor):
                                 if available_gpu_memory != new_gpu_memory_limit:
                                     logger.warning(
                                         'WARNING: Setting gpu_memory_limit to available gpu '
-                                        'memory {} with epsilon as the gpus would be underutilized for '
-                                        'the parallel processes'.format(
+                                        'memory {} minus an epsilon as the gpus would be underutilized for '
+                                        'the parallel processes otherwise'.format(
                                             available_gpu_memory)
                                     )
                                     new_gpu_memory_limit = available_gpu_memory - self.epsilon_memory
                             else:
                                 logger.warning(
                                     'WARNING: Setting gpu_memory_limit to {} '
-                                    'as the available gpus is {} and the num of workers '
-                                    'being set is {} and the available gpu memory for gpu_id '
+                                    'as the available gpus are {} and the num of workers '
+                                    'are {} and the available gpu memory for gpu_id '
                                     '{} is {}'.format(
-                                        required_gpu_memory, total_gpus,
+                                        required_gpu_memory, num_gpus,
                                         self.num_workers,
                                         gpu_id, available_gpu_memory)
                                 )
@@ -599,10 +602,10 @@ class ParallelExecutor(HyperoptExecutor):
                         else:
                             logger.warning(
                                 'WARNING: gpu_memory_limit could be increased to {} '
-                                'as the available gpus is {} and the num of workers '
-                                'being set is {} and the available gpu memory for gpu_id '
+                                'as the available gpus are {} and the num of workers '
+                                'are {} and the available gpu memory for gpu_id '
                                 '{} is {}'.format(
-                                    required_gpu_memory, total_gpus,
+                                    required_gpu_memory, num_gpus,
                                     self.num_workers,
                                     gpu_id, available_gpu_memory)
                             )
