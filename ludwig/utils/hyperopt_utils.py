@@ -521,8 +521,6 @@ class ParallelExecutor(HyperoptExecutor):
     ):
         ctx = multiprocessing.get_context('spawn')
 
-        hyperopt_parameters = []
-
         if gpus is None:
             gpus = get_available_gpus_cuda_string()
 
@@ -640,6 +638,7 @@ class ParallelExecutor(HyperoptExecutor):
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
 
+            hyperopt_parameters = []
             for i, parameters in enumerate(sampled_parameters):
                 modified_model_definition = substitute_parameters(
                     copy.deepcopy(model_definition), parameters)
