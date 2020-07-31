@@ -18,7 +18,6 @@ import multiprocessing
 import warnings
 
 import tensorflow as tf
-from tensorflow.python.client import device_lib
 
 _TF_INIT_PARAMS = None
 
@@ -50,8 +49,6 @@ def initialize_tensorflow(gpus=None,
                           gpu_memory_limit=None,
                           allow_parallel_threads=True,
                           horovod=None):
-    global _TF_INIT_PARAMS
-
     use_horovod = horovod is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
     if _TF_INIT_PARAMS is not None:
@@ -121,11 +118,10 @@ def _get_tf_init_params():
     return _TF_INIT_PARAMS
 
 
-def get_available_gpus_child_process(gpus_list_queue):
-    local_device_protos = device_lib.list_local_devices()
-    gpus_list = [x.name[-1]
-                 for x in local_device_protos if x.device_type == 'GPU']
-    gpus_list_queue.put(gpus_list)
+def get_available_gpus_child_process(gpus_ids_queue):
+    gpu_devices = tf.config.list_physical_devices('GPU')
+    gpu_ids = [gpu.name.split(':')[-1] for gpu in gpu_devices]
+    gpus_ids_queue.put(gpu_ids)
 
 
 def get_available_gpus():
@@ -137,3 +133,10 @@ def get_available_gpus():
     proc_get_gpus.join()
     gpus_list = gpus_list_queue.get()
     return gpus_list
+
+
+def get_available_gpus_cuda_string():
+    gpus = get_available_gpus()
+    if len(gpus) == 0:
+        return None
+    return ','.join(gpus)
