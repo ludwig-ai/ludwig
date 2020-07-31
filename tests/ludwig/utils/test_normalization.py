@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from ludwig.features.numerical_feature import NumericalFeatureMixin
 
 
 def numerical_feature():
-    return {'name': 'x' , 'type': 'numerical'}
+    return {'name': 'x', 'type': 'numerical'}
 
 
 data_df = pd.DataFrame(pd.Series([

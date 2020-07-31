@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import multiprocessing
 import warnings
 
 import tensorflow as tf
+from tensorflow.python.client import device_lib
 
 _TF_INIT_PARAMS = None
 
@@ -48,6 +50,8 @@ def initialize_tensorflow(gpus=None,
                           gpu_memory_limit=None,
                           allow_parallel_threads=True,
                           horovod=None):
+    global _TF_INIT_PARAMS
+
     use_horovod = horovod is not None
     param_tuple = (gpus, gpu_memory_limit, allow_parallel_threads, use_horovod)
     if _TF_INIT_PARAMS is not None:
@@ -68,10 +72,11 @@ def initialize_tensorflow(gpus=None,
     gpu_devices = tf.config.list_physical_devices('GPU')
     if horovod is not None and gpus is None:
         if 0 < len(gpu_devices) < horovod.local_size():
-            warnings.warn(f'Horovod: disabling GPU support! This host is running with '
-                          f'{horovod.local_size()} worker processes but only {len(gpu_devices)} '
-                          f'GPUs. To enable GPU training, reduce the number of worker processes '
-                          f'on this host to match the number of GPUs.')
+            warnings.warn(
+                f'Horovod: disabling GPU support! This host is running with '
+                f'{horovod.local_size()} worker processes but only {len(gpu_devices)} '
+                f'GPUs. To enable GPU training, reduce the number of worker processes '
+                f'on this host to match the number of GPUs.')
             gpus = [-1]
         else:
             gpus = [horovod.local_rank()]
@@ -114,3 +119,21 @@ def _set_tf_init_params(params):
 
 def _get_tf_init_params():
     return _TF_INIT_PARAMS
+
+
+def get_available_gpus_child_process(gpus_list_queue):
+    local_device_protos = device_lib.list_local_devices()
+    gpus_list = [x.name[-1]
+                 for x in local_device_protos if x.device_type == 'GPU']
+    gpus_list_queue.put(gpus_list)
+
+
+def get_available_gpus():
+    ctx = multiprocessing.get_context('spawn')
+    gpus_list_queue = ctx.Queue()
+    proc_get_gpus = ctx.Process(
+        target=get_available_gpus_child_process, args=(gpus_list_queue,))
+    proc_get_gpus.start()
+    proc_get_gpus.join()
+    gpus_list = gpus_list_queue.get()
+    return gpus_list

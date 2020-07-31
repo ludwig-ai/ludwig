@@ -36,6 +36,7 @@ class BaseFeature(object):
     feature.  Other functionality should be put into mixin classes to avoid the diamond
     pattern.
     """
+
     def __init__(self, feature, *args, **kwargs):
         super().__init__()
 
@@ -61,6 +62,7 @@ class BaseFeature(object):
 
 class InputFeature(BaseFeature, tf.keras.Model, ABC):
     """Parent class for all input features."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -92,6 +94,7 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
 
 class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     """Parent class for all output features."""
+
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
 
