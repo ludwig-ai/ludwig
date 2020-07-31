@@ -358,14 +358,16 @@ class SerialExecutor(HyperoptExecutor):
             **kwargs
     ):
         hyperopt_results = []
+        trials = 0
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
             metric_scores = []
 
-            for parameters in sampled_parameters:
+            for i, parameters in enumerate(sampled_parameters):
                 modified_model_definition = substitute_parameters(
                     copy.deepcopy(model_definition), parameters)
 
+                trial_id = trials + i
                 train_stats, eval_stats = train_and_eval_on_split(
                     modified_model_definition,
                     eval_split=self.split,
@@ -382,7 +384,7 @@ class SerialExecutor(HyperoptExecutor):
                     data_validation_hdf5=data_validation_hdf5,
                     data_test_hdf5=data_test_hdf5,
                     train_set_metadata_json=train_set_metadata_json,
-                    experiment_name=experiment_name,
+                    experiment_name=f'{experiment_name}_{trial_id}',
                     model_name=model_name,
                     # model_load_path=model_load_path,
                     # model_resume_path=model_resume_path,
@@ -414,6 +416,7 @@ class SerialExecutor(HyperoptExecutor):
                         "eval_stats": eval_stats,
                     }
                 )
+            trials += len(sampled_parameters)
 
             self.hyperopt_strategy.update_batch(
                 zip(sampled_parameters, metric_scores))
@@ -633,13 +636,15 @@ class ParallelExecutor(HyperoptExecutor):
         pool = ctx.Pool(self.num_workers,
                         ParallelExecutor.init_worker)
         hyperopt_results = []
+        trials = 0
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
 
-            for parameters in sampled_parameters:
+            for i, parameters in enumerate(sampled_parameters):
                 modified_model_definition = substitute_parameters(
                     copy.deepcopy(model_definition), parameters)
 
+                trial_id = trials + i
                 hyperopt_parameters.append(
                     {
                         "parameters": parameters,
@@ -658,7 +663,7 @@ class ParallelExecutor(HyperoptExecutor):
                         "data_validation_hdf5": data_validation_hdf5,
                         "data_test_hdf5": data_test_hdf5,
                         "train_set_metadata_json": train_set_metadata_json,
-                        "experiment_name": experiment_name,
+                        "experiment_name": f'{experiment_name}_{trial_id}',
                         "model_name": model_name,
                         # model_load_path:model_load_path,
                         # model_resume_path:model_resume_path,
@@ -680,6 +685,7 @@ class ParallelExecutor(HyperoptExecutor):
                         'debug': debug,
                     }
                 )
+            trials += len(sampled_parameters)
 
             if gpus is not None:
                 batch_results = pool.map(self._train_and_eval_model_gpu,
@@ -774,8 +780,7 @@ class FiberExecutor(HyperoptExecutor):
             debug=False,
             **kwargs
     ):
-        train_func = functools.partial(
-            train_and_eval_on_split,
+        train_kwargs = dict(
             eval_split=self.split,
             data_df=data_df,
             data_train_df=data_train_df,
@@ -790,7 +795,6 @@ class FiberExecutor(HyperoptExecutor):
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
             train_set_metadata_json=train_set_metadata_json,
-            experiment_name=experiment_name,
             model_name=model_name,
             # model_load_path=model_load_path,
             # model_resume_path=model_resume_path,
@@ -812,22 +816,29 @@ class FiberExecutor(HyperoptExecutor):
             debug=debug,
         )
 
+        train_fn = _train_and_eval_on_split_unary
         if self.resource_limits:
-            train_func = self.fiber_meta(**self.resource_limits)(train_func)
+            train_fn = self.fiber_meta(**self.resource_limits)(train_fn)
 
         hyperopt_results = []
+        trials = 0
         while not self.hyperopt_strategy.finished():
             sampled_parameters = self.hyperopt_strategy.sample_batch()
             metric_scores = []
 
             stats_batch = self.pool.map(
-                train_func,
+                train_fn,
                 [
-                    substitute_parameters(copy.deepcopy(model_definition),
-                                          parameters)
-                    for parameters in sampled_parameters
+                    {
+                        'model_definition': substitute_parameters(
+                            copy.deepcopy(model_definition), parameters),
+                        'experiment_name': f'{experiment_name}_{trials + i}',
+                        **train_kwargs
+                    }
+                    for i, parameters in enumerate(sampled_parameters)
                 ],
             )
+            trials += len(sampled_parameters)
 
             for stats, parameters in zip(stats_batch, sampled_parameters):
                 train_stats, eval_stats = stats
@@ -1076,3 +1087,8 @@ def train_and_eval_on_split(
     if not skip_save_test_statistics:
         save_test_statistics(test_results, experiment_dir_name)
     return train_stats, test_results
+
+
+def _train_and_eval_on_split_unary(kwargs):
+    """Unary function is needed by Fiber to map a list of args."""
+    return train_and_eval_on_split(**kwargs)
