@@ -98,7 +98,9 @@ class DateEmbed(Layer):
 
         """
         super(DateEmbed, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
+        logger.debug('  year FCStack')
         self.year_fc = FCStack(
             num_layers=1,
             default_fc_size=1,
@@ -115,6 +117,8 @@ class DateEmbed(Layer):
             default_activation=None,
             default_dropout_rate=dropout_rate,
         )
+
+        logger.debug('  month Embed')
         self.embed_month = Embed(
             [str(i) for i in range(12)],
             embedding_size,
@@ -126,6 +130,8 @@ class DateEmbed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  day Embed')
         self.embed_day = Embed(
             [str(i) for i in range(31)],
             embedding_size,
@@ -137,6 +143,8 @@ class DateEmbed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  weekday Embed')
         self.embed_weekday = Embed(
             [str(i) for i in range(7)],
             embedding_size,
@@ -148,6 +156,8 @@ class DateEmbed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  yearday Embed')
         self.embed_yearday = Embed(
             [str(i) for i in range(366)],
             embedding_size,
@@ -159,6 +169,8 @@ class DateEmbed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  hour Embed')
         self.embed_hour = Embed(
             [str(i) for i in range(24)],
             embedding_size,
@@ -170,6 +182,8 @@ class DateEmbed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  minute Embed')
         self.embed_minute = Embed(
             [str(i) for i in range(60)],
             embedding_size,
@@ -181,6 +195,8 @@ class DateEmbed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  second Embed')
         self.embed_second = Embed(
             [str(i) for i in range(60)],
             embedding_size,
@@ -192,6 +208,8 @@ class DateEmbed(Layer):
             initializer=weights_initializer,
             regularizer=weights_regularizer
         )
+
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,
@@ -349,7 +367,9 @@ class DateWave(Layer):
             :type dropout_rate: float
         """
         super(DateWave, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
+        logger.debug('  year FCStack')
         self.year_fc = FCStack(
             num_layers=1,
             default_fc_size=1,
@@ -366,6 +386,8 @@ class DateWave(Layer):
             default_activation=None,
             default_dropout_rate=dropout_rate,
         )
+
+        logger.debug('  FCStack')
         self.fc_stack = FCStack(
             layers=fc_layers,
             num_layers=num_fc_layers,

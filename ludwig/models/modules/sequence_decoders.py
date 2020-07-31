@@ -46,6 +46,7 @@ rnn_layers_registry = {
 
 
 class SequenceGeneratorDecoder(Layer):
+
     def __init__(
             self,
             num_classes,
@@ -70,6 +71,7 @@ class SequenceGeneratorDecoder(Layer):
             **kwargs
     ):
         super(SequenceGeneratorDecoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.cell_type = cell_type
         self.state_size = state_size
@@ -97,14 +99,18 @@ class SequenceGeneratorDecoder(Layer):
         self.GO_SYMBOL = self.vocab_size
         self.END_SYMBOL = 0
 
+        logger.debug('  project input Dense')
         self.project = Dense(state_size)
 
+        logger.debug('  Embedding')
         self.decoder_embedding = Embedding(
             input_dim=self.num_classes + 1,  # account for GO_SYMBOL
             output_dim=embedding_size)
+        logger.debug('  project output Dense')
         self.dense_layer = Dense(num_classes)
         self.decoder_rnncell = \
             get_from_registry(cell_type, rnn_layers_registry)(state_size)
+        logger.debug('  {}'.format(self.decoder_rnncell))
 
         # Sampler
         self.sampler = tfa.seq2seq.sampler.TrainingSampler()
@@ -115,12 +121,14 @@ class SequenceGeneratorDecoder(Layer):
                 self.attention_mechanism = LuongAttention(units=state_size)
             elif attention == 'bahdanau':
                 self.attention_mechanism = BahdanauAttention(units=state_size)
+            logger.debug('  {}'.format(self.attention_mechanism))
 
             self.decoder_rnncell = AttentionWrapper(
                 self.decoder_rnncell,
                 self.attention_mechanism,
                 attention_layer_size=state_size
             )
+            logger.debug('  {}'.format(self.decoder_rnncell))
 
     def _logits_training(self, inputs, target, training=None):
         input = inputs['hidden']  # shape [batch_size, seq_size, state_size]
@@ -270,7 +278,6 @@ class SequenceGeneratorDecoder(Layer):
     ):
         # ================ Setup ================
         batch_size = encoder_output.shape[0]
-        encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # Prepare target for decoding
         target_sequence_length = sequence_length_2D(target)
@@ -290,6 +297,7 @@ class SequenceGeneratorDecoder(Layer):
 
         # Setting up decoder memory from encoder output
         if self.attention_mechanism is not None:
+            encoder_sequence_length = sequence_length_3D(encoder_output)
             self.attention_mechanism.setup_memory(
                 encoder_output,
                 memory_sequence_length=encoder_sequence_length
@@ -373,7 +381,7 @@ class SequenceGeneratorDecoder(Layer):
             output_layer=self.dense_layer
 
         )
-        # ================generate logits ==================
+        # ================ generate logits ==================
         maximum_iterations = self.max_sequence_length
 
         # initialize inference decoder
@@ -450,7 +458,6 @@ class SequenceGeneratorDecoder(Layer):
     ):
         # ================ Setup ================
         batch_size = encoder_output.shape[0]
-        encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # ================ predictions =================
         greedy_sampler = tfa.seq2seq.GreedyEmbeddingSampler()
@@ -461,6 +468,7 @@ class SequenceGeneratorDecoder(Layer):
         decoder_inp_emb = self.decoder_embedding(decoder_input)
 
         if self.attention_mechanism is not None:
+            encoder_sequence_length = sequence_length_3D(encoder_output)
             self.attention_mechanism.setup_memory(
                 encoder_output,
                 memory_sequence_length=encoder_sequence_length
@@ -478,7 +486,7 @@ class SequenceGeneratorDecoder(Layer):
             output_layer=self.dense_layer
         )
 
-        # ================generate logits ==================
+        # ================ generate logits ==================
         maximum_iterations = self.max_sequence_length
 
         # initialize inference decoder
@@ -604,6 +612,7 @@ class SequenceGeneratorDecoder(Layer):
 
 
 class SequenceTaggerDecoder(Layer):
+
     def __init__(
             self,
             num_classes,
@@ -618,11 +627,14 @@ class SequenceTaggerDecoder(Layer):
             **kwargs
     ):
         super(SequenceTaggerDecoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.attention = attention
 
         if is_timeseries:
             num_classes = 1
 
+        logger.debug('  Dense')
         self.projection_layer = Dense(
             units=num_classes,
             use_bias=use_bias,

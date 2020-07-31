@@ -108,21 +108,15 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         self.feature_loss = feature_loss
 
     def call(self, y, y_pred):
-        vector_labels = tf.one_hot(
-            tf.cast(y, dtype=tf.int64),
-            self.num_classes
-        )
-
         decoder_weights = self.decoder_obj.get_weights()[0]
         decoder_biases = self.decoder_obj.get_weights()[1]
 
-        loss, _ = sampled_softmax_cross_entropy(
+        loss = sampled_softmax_cross_entropy(
             y,
-            y_pred[LOGITS],
+            y_pred[LAST_HIDDEN],
             num_classes=self.num_classes,
             decoder_weights=decoder_weights,
             decoder_biases=decoder_biases,
-            last_hidden=y_pred[LAST_HIDDEN],
             **self.feature_loss
         )
 
@@ -301,49 +295,35 @@ def cross_entropy_sequence_loss(logits, targets, sequence_length):
 
 
 def sampled_softmax_cross_entropy(
-        vector_labels,
-        logits,
+        labels,
+        last_hidden,
         num_classes=1,
         decoder_weights=None,
         decoder_biases=None,
-        last_hidden=None,
         sampler=None,
         negative_samples=0,
         class_counts=0,
         distortion=1,
         unique=False,
-        labels_smoothing=0,
         **kwargs
 ):
-    output_exp = tf.cast(
-        tf.expand_dims(vector_labels, -1),
+    labels = tf.cast(
+        tf.expand_dims(labels, -1),
         tf.int64
     )
-    sampled_values = obtained_sampled_values(num_classes,
-                                             output_exp,
-                                             sampler,
-                                             negative_samples,
-                                             unique,
-                                             class_counts,
-                                             distortion)
+    sampled_values = sample_values_from_classes(labels, sampler, num_classes,
+                                                negative_samples, unique,
+                                                class_counts, distortion)
     train_loss = tf.nn.sampled_softmax_loss(
         weights=tf.transpose(decoder_weights),
         biases=decoder_biases,
-        labels=output_exp,
+        labels=labels,
         inputs=last_hidden,
         num_sampled=negative_samples,
         num_classes=num_classes,
         sampled_values=sampled_values)
-    # todo tf2 need to determine how to handle this, possible in separate function
-    # eval_loss = tf.losses.softmax_cross_entropy(
-    #     onehot_labels=tf.cast(
-    #         tf.cast(tf.one_hot(vector_labels, num_classes, axis=-1), dtype=tf.int16)
-    #     ),
-    #     logits=logits,
-    #     label_smoothing=labels_smoothing,
-    #     reduction=Reduction.NONE
-    # )
-    return train_loss, None  # , eval_loss todo tf2 clean-up code
+
+    return train_loss
 
 
 def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
@@ -367,13 +347,12 @@ def sequence_sampled_softmax_cross_entropy(targets, targets_sequence_length,
     # unpadded_targets = targets[:, :batch_max_seq_length]
     # output_exp = tf.cast(tf.reshape(unpadded_targets, [-1, 1]), tf.int64)
     output_exp = tf.cast(tf.reshape(targets, [-1, 1]), tf.int64)
-    sampled_values = obtained_sampled_values(num_classes,
-                                             output_exp,
-                                             loss['sampler'],
-                                             loss['negative_samples'],
-                                             loss['unique'],
-                                             loss['class_counts'],
-                                             loss['distortion'])
+    sampled_values = sample_values_from_classes(output_exp, loss['sampler'],
+                                                num_classes,
+                                                loss['negative_samples'],
+                                                loss['unique'],
+                                                loss['class_counts'],
+                                                loss['distortion'])
 
     def _sampled_loss(labels, logits):
         labels = tf.cast(labels, tf.int64)
@@ -491,12 +470,12 @@ regularizer_registry = {'l1': lambda x: None,
                         None: lambda x: None}
 
 
-def obtained_sampled_values(num_classes, output_exp, sampler, negative_samples,
-                            unique, class_counts, distortion):
+def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
+                               unique, class_counts, distortion):
     """returns sampled_values using the chosen sampler"""
     if sampler == 'fixed_unigram':
         sampled_values = tf.random.fixed_unigram_candidate_sampler(
-            true_classes=output_exp,
+            true_classes=labels,
             num_true=1,
             num_sampled=negative_samples,
             unique=unique,
@@ -506,7 +485,7 @@ def obtained_sampled_values(num_classes, output_exp, sampler, negative_samples,
         )
     elif sampler == 'uniform':
         sampled_values = tf.random.uniform_candidate_sampler(
-            true_classes=output_exp,
+            true_classes=labels,
             num_true=1,
             num_sampled=negative_samples,
             unique=unique,
@@ -514,7 +493,7 @@ def obtained_sampled_values(num_classes, output_exp, sampler, negative_samples,
         )
     elif sampler == 'log_uniform':
         sampled_values = tf.random.log_uniform_candidate_sampler(
-            true_classes=output_exp,
+            true_classes=labels,
             num_true=1,
             num_sampled=negative_samples,
             unique=unique,
@@ -522,7 +501,7 @@ def obtained_sampled_values(num_classes, output_exp, sampler, negative_samples,
         )
     elif sampler == 'learned_unigram':
         sampled_values = tf.random.fixed_unigram_candidate_sampler(
-            true_classes=output_exp,
+            true_classes=labels,
             num_true=1,
             num_sampled=negative_samples,
             unique=unique,

@@ -22,6 +22,8 @@ from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Layer
 
+from ludwig.constants import LOSS, TYPE
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +42,7 @@ class Regressor(Layer):
         super().__init__()
         logger.debug(' {}'.format(self.name))
 
+        logger.debug('  Dense')
         self.dense = Dense(
             1,
             use_bias=use_bias,
@@ -49,10 +52,9 @@ class Regressor(Layer):
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer
         )
-        logger.debug('  {}'.format(self.dense.name))
 
     def call(self, inputs, **kwargs):
-        return tf.squeeze(self.dense(inputs))
+        return tf.squeeze(self.dense(inputs), axis=-1)
 
 
 class Projector(Layer):
@@ -71,6 +73,9 @@ class Projector(Layer):
             **kwargs
     ):
         super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        logger.debug('  Dense')
         self.dense = Dense(
             vector_size,
             use_bias=use_bias,
@@ -106,3 +111,53 @@ class Projector(Layer):
         if self.clip:
             values = self.clip(values)
         return values
+
+
+# todo maybe unify Projector and Classifier in a single class
+class Classifier(Layer):
+
+    def __init__(
+            self,
+            num_classes,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            **kwargs
+    ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
+        logger.debug('  Dense')
+        self.dense = Dense(
+            num_classes,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
+
+        self.sampled_loss = False
+        if LOSS in kwargs:
+            if TYPE in kwargs[LOSS] and kwargs[LOSS][TYPE] is not None:
+                self.sampled_loss = kwargs[LOSS][TYPE].startswith('sampled')
+
+        # this is needed because TF2 initialzies the weights at the first call
+        # so the first time we need to compute the full dense,
+        # otherwise the weights of the Dense layer would not be initialized
+        self.first_call = True
+
+    def call(self, inputs, training=None, **kwargs):
+        if training and self.sampled_loss and not self.first_call:
+            # this is needed because at training time is the loss is sampled
+            # we should not compute the last dense projection,
+            # otherwise we defet the purpose of the samples loss
+            # which is not to compute the full final projection
+            return None
+        else:
+            self.first_call = False
+            return self.dense(inputs)

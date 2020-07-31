@@ -29,6 +29,7 @@ class BinaryPassthroughEncoder(Layer):
             **kwargs
     ):
         super(BinaryPassthroughEncoder, self).__init__()
+        logger.debug(' {}'.format(self.name))
 
     def call(self, inputs, training=None, mask=None):
         """

@@ -54,7 +54,8 @@ class ConcatCombiner(tf.keras.Model):
             dropout_rate=0,
             **kwargs
     ):
-        tf.keras.Model.__init__(self)
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
 
         self.fc_stack = None
 
@@ -66,6 +67,7 @@ class ConcatCombiner(tf.keras.Model):
                 fc_layers.append({'fc_size': fc_size})
 
         if fc_layers is not None:
+            logger.debug('  FCStack')
             self.fc_stack = FCStack(
                 layers=fc_layers,
                 num_layers=num_fc_layers,
@@ -119,13 +121,16 @@ class ConcatCombiner(tf.keras.Model):
         return return_data
 
 
-class SequenceConcatCombiner:
+class SequenceConcatCombiner(tf.keras.Model):
     def __init__(
             self,
             reduce_output=None,
             main_sequence_feature=None,
             **kwargs
     ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.reduce_output = reduce_output
         if self.reduce_output is None:
             self.supports_masking = True
@@ -254,7 +259,7 @@ class SequenceConcatCombiner:
         return return_data
 
 
-class SequenceCombiner:
+class SequenceCombiner(tf.keras.Model):
     def __init__(
             self,
             reduce_output=None,
@@ -262,6 +267,9 @@ class SequenceCombiner:
             encoder=None,
             **kwargs
     ):
+        super().__init__()
+        logger.debug(' {}'.format(self.name))
+
         self.combiner = SequenceConcatCombiner(
             reduce_output=None,
             main_sequence_feature=main_sequence_feature

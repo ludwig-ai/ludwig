@@ -21,13 +21,12 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.models.modules.category_decoders import Classifier
 from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
 from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
+from ludwig.models.modules.generic_decoders import Classifier
 from ludwig.models.modules.generic_encoders import PassthroughEncoder
 from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
@@ -45,7 +44,7 @@ from ludwig.utils.strings_utils import create_vocabulary
 logger = logging.getLogger(__name__)
 
 
-class CategoryBaseFeature(BaseFeature):
+class CategoryFeatureMixin(object):
     type = CATEGORY
     preprocessing_defaults = {
         'most_common': 10000,
@@ -53,9 +52,6 @@ class CategoryBaseFeature(BaseFeature):
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': UNKNOWN_SYMBOL
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -93,18 +89,17 @@ class CategoryBaseFeature(BaseFeature):
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = CategoryBaseFeature.feature_data(
+        data[feature['name']] = CategoryFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']]
         )
 
 
-class CategoryInputFeature(CategoryBaseFeature, InputFeature):
+class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
     encoder = 'dense'
 
     def __init__(self, feature, encoder_obj=None):
-        CategoryBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -149,15 +144,14 @@ class CategoryInputFeature(CategoryBaseFeature, InputFeature):
     }
 
 
-class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
+class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     top_k = 3
 
     def __init__(self, feature):
-        CategoryBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
@@ -456,10 +450,6 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
             output_feature[LOSS],
             {
                 'type': 'softmax_cross_entropy',
-                'sampler': None,
-                'negative_samples': 0,
-                'distortion': 1,
-                'unique': False,
                 'labels_smoothing': 0,
                 'class_weights': 1,
                 'robust_lambda': 0,
@@ -474,17 +464,9 @@ class CategoryOutputFeature(CategoryBaseFeature, OutputFeature):
                 output_feature[LOSS],
                 {
                     'sampler': 'log_uniform',
+                    'unique': False,
                     'negative_samples': 25,
                     'distortion': 0.75
-                }
-            )
-        else:
-            set_default_values(
-                output_feature[LOSS],
-                {
-                    'sampler': None,
-                    'negative_samples': 0,
-                    'distortion': 1
                 }
             )
 

@@ -26,7 +26,6 @@ from tensorflow.keras.metrics import \
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -86,15 +85,12 @@ class MAEMetric(MeanAbsoluteErrorMetric):
         )
 
 
-class VectorBaseFeature(BaseFeature):
+class VectorFeatureMixin(object):
     type = VECTOR
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': ""
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -146,12 +142,11 @@ class VectorBaseFeature(BaseFeature):
         metadata[feature['name']]['vector_size'] = vector_size
 
 
-class VectorInputFeature(VectorBaseFeature, InputFeature):
+class VectorInputFeature(VectorFeatureMixin, InputFeature):
     encoder = 'dense'
 
     def __init__(self, feature, encoder_obj=None):
-        VectorBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -194,14 +189,13 @@ class VectorInputFeature(VectorBaseFeature, InputFeature):
     }
 
 
-class VectorOutputFeature(VectorBaseFeature, OutputFeature):
+class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = 'projector'
     loss = {'type': MEAN_SQUARED_ERROR}
     vector_size = 0
 
     def __init__(self, feature):
-        VectorBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()

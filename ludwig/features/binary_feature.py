@@ -22,7 +22,6 @@ import tensorflow as tf
 from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -43,15 +42,12 @@ from ludwig.utils.strings_utils import str2bool
 logger = logging.getLogger(__name__)
 
 
-class BinaryBaseFeature(BaseFeature):
+class BinaryFeatureMixin(object):
     type = BINARY
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -71,14 +67,13 @@ class BinaryBaseFeature(BaseFeature):
         data[feature['name']] = column.astype(np.bool_).values
 
 
-class BinaryInputFeature(BinaryBaseFeature, InputFeature):
+class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
     encoder = 'passthrough'
     norm = None
     dropout = False
 
     def __init__(self, feature, encoder_obj=None):
-        BinaryBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -121,7 +116,7 @@ class BinaryInputFeature(BinaryBaseFeature, InputFeature):
     }
 
 
-class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
+class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = 'regressor'
     loss = {
         'robust_lambda': 0,
@@ -132,8 +127,7 @@ class BinaryOutputFeature(BinaryBaseFeature, OutputFeature):
     threshold = 0.5
 
     def __init__(self, feature):
-        BinaryBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()

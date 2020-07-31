@@ -25,7 +25,6 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.models.modules.image_encoders import ResNetEncoder
 from ludwig.models.modules.image_encoders import Stacked2DCNN
@@ -39,7 +38,7 @@ from ludwig.utils.misc import set_default_value
 logger = logging.getLogger(__name__)
 
 
-class ImageBaseFeature(BaseFeature):
+class ImageFeatureMixin(object):
     type = IMAGE
     preprocessing_defaults = {
         'missing_value_strategy': BACKFILL,
@@ -48,9 +47,6 @@ class ImageBaseFeature(BaseFeature):
         'scaling': 'pixel_normalization',
         'num_processes': 1
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -269,7 +265,7 @@ class ImageBaseFeature(BaseFeature):
             num_channels,
             user_specified_num_channels,
             first_image
-        ) = ImageBaseFeature._finalize_preprocessing_parameters(
+        ) = ImageFeatureMixin._finalize_preprocessing_parameters(
             preprocessing_parameters, first_path
         )
 
@@ -279,7 +275,7 @@ class ImageBaseFeature(BaseFeature):
             'num_channels'] = num_channels
 
         read_image_and_resize = partial(
-            ImageBaseFeature._read_image_and_resize,
+            ImageFeatureMixin._read_image_and_resize,
             img_width=width,
             img_height=height,
             should_resize=should_resize,
@@ -343,7 +339,7 @@ class ImageBaseFeature(BaseFeature):
             data[feature['name']] = np.arange(num_images)
 
 
-class ImageInputFeature(ImageBaseFeature, InputFeature):
+class ImageInputFeature(ImageFeatureMixin, InputFeature):
     height = 0
     width = 0
     num_channels = 0
@@ -351,8 +347,7 @@ class ImageInputFeature(ImageBaseFeature, InputFeature):
     encoder = 'stacked_cnn'
 
     def __init__(self, feature, encoder_obj=None):
-        ImageBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj

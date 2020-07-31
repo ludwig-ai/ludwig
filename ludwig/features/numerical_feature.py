@@ -26,7 +26,6 @@ from tensorflow.keras.metrics import \
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
-from ludwig.features.base_feature import BaseFeature
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -83,16 +82,13 @@ class MAEMetric(MeanAbsoluteErrorMetric):
         )
 
 
-class NumericalBaseFeature(BaseFeature):
+class NumericalFeatureMixin(object):
     type = NUMERICAL
     preprocessing_defaults = {
         'missing_value_strategy': FILL_WITH_CONST,
         'fill_value': 0,
         'normalization': None
     }
-
-    def __init__(self, feature):
-        super().__init__(feature)
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
@@ -139,12 +135,11 @@ class NumericalBaseFeature(BaseFeature):
                 data[feature['name']] = (values - min_) / (max_ - min_)
 
 
-class NumericalInputFeature(NumericalBaseFeature, InputFeature):
+class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
     encoder = 'passthrough'
 
     def __init__(self, feature, encoder_obj=None):
-        NumericalBaseFeature.__init__(self, feature)
-        InputFeature.__init__(self)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         if encoder_obj:
             self.encoder_obj = encoder_obj
@@ -186,14 +181,13 @@ class NumericalInputFeature(NumericalBaseFeature, InputFeature):
     }
 
 
-class NumericalOutputFeature(NumericalBaseFeature, OutputFeature):
+class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     decoder = 'regressor'
     loss = {TYPE: MEAN_SQUARED_ERROR}
     clip = None
 
     def __init__(self, feature):
-        NumericalBaseFeature.__init__(self, feature)
-        OutputFeature.__init__(self, feature)
+        super().__init__(feature)
         self.overwrite_defaults(feature)
         self.decoder_obj = self.initialize_decoder(feature)
         self._setup_loss()
