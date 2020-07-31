@@ -55,8 +55,8 @@ HYPEROPT_CONFIG = {
 
 STRATEGIES = [
     {"type": "grid"},
-    # {"type": "random", "num_samples": 5},
-    # {"type": "pySOT", "num_samples": 5},
+    {"type": "random", "num_samples": 5},
+    {"type": "pySOT", "num_samples": 5},
 ]
 
 EXECUTORS = [
