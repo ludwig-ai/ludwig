@@ -132,6 +132,8 @@ def test_savedmodel(csv_filename):
 
     data_to_predict = (
         {if_name: tf.convert_to_tensor(dataset.dataset[if_name])},
+        # todo tf2: next is work-around allow matching function signature by
+        # tf2, need to determine if this can be eliminated
         {of_name: tf.zeros([num_values, ], dtype=tf.int8)}
     )
 
