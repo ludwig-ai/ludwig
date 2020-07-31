@@ -399,72 +399,76 @@ class ParallelExecutor(HyperoptExecutor):
 
         pool = ctx.Pool(self.num_workers,
                         ParallelExecutor.init_worker)
-        hyperopt_results = []
-        trials = 0
-        while not self.hyperopt_strategy.finished():
-            sampled_parameters = self.hyperopt_strategy.sample_batch()
+        try:
+            hyperopt_results = []
+            trials = 0
+            while not self.hyperopt_strategy.finished():
+                sampled_parameters = self.hyperopt_strategy.sample_batch()
 
-            hyperopt_parameters = []
-            for i, parameters in enumerate(sampled_parameters):
-                modified_model_definition = substitute_parameters(
-                    copy.deepcopy(model_definition), parameters)
+                hyperopt_parameters = []
+                for i, parameters in enumerate(sampled_parameters):
+                    modified_model_definition = substitute_parameters(
+                        copy.deepcopy(model_definition), parameters)
 
-                trial_id = trials + i
-                hyperopt_parameters.append(
-                    {
-                        "parameters": parameters,
-                        "model_definition": modified_model_definition,
-                        "eval_split": self.split,
-                        "data_df": data_df,
-                        "data_train_df": data_train_df,
-                        "data_validation_df": data_validation_df,
-                        "data_test_df": data_test_df,
-                        "data_csv": data_csv,
-                        "data_train_csv": data_train_csv,
-                        "data_validation_csv": data_validation_csv,
-                        "data_test_csv": data_test_csv,
-                        "data_hdf5": data_hdf5,
-                        "data_train_hdf5": data_train_hdf5,
-                        "data_validation_hdf5": data_validation_hdf5,
-                        "data_test_hdf5": data_test_hdf5,
-                        "train_set_metadata_json": train_set_metadata_json,
-                        "experiment_name": f'{experiment_name}_{trial_id}',
-                        "model_name": model_name,
-                        # model_load_path:model_load_path,
-                        # model_resume_path:model_resume_path,
-                        'skip_save_training_description': skip_save_training_description,
-                        'skip_save_training_statistics': skip_save_training_statistics,
-                        'skip_save_model': skip_save_model,
-                        'skip_save_progress': skip_save_progress,
-                        'skip_save_log': skip_save_log,
-                        'skip_save_processed_input': skip_save_processed_input,
-                        'skip_save_unprocessed_output': skip_save_unprocessed_output,
-                        'skip_save_test_predictions': skip_save_test_predictions,
-                        'skip_save_test_statistics': skip_save_test_statistics,
-                        'output_directory': output_directory,
-                        'gpus': gpus,
-                        'gpu_memory_limit': gpu_memory_limit,
-                        'allow_parallel_threads': allow_parallel_threads,
-                        'use_horovod': use_horovod,
-                        'random_seed': random_seed,
-                        'debug': debug,
-                    }
+                    trial_id = trials + i
+                    hyperopt_parameters.append(
+                        {
+                            "parameters": parameters,
+                            "model_definition": modified_model_definition,
+                            "eval_split": self.split,
+                            "data_df": data_df,
+                            "data_train_df": data_train_df,
+                            "data_validation_df": data_validation_df,
+                            "data_test_df": data_test_df,
+                            "data_csv": data_csv,
+                            "data_train_csv": data_train_csv,
+                            "data_validation_csv": data_validation_csv,
+                            "data_test_csv": data_test_csv,
+                            "data_hdf5": data_hdf5,
+                            "data_train_hdf5": data_train_hdf5,
+                            "data_validation_hdf5": data_validation_hdf5,
+                            "data_test_hdf5": data_test_hdf5,
+                            "train_set_metadata_json": train_set_metadata_json,
+                            "experiment_name": f'{experiment_name}_{trial_id}',
+                            "model_name": model_name,
+                            # model_load_path:model_load_path,
+                            # model_resume_path:model_resume_path,
+                            'skip_save_training_description': skip_save_training_description,
+                            'skip_save_training_statistics': skip_save_training_statistics,
+                            'skip_save_model': skip_save_model,
+                            'skip_save_progress': skip_save_progress,
+                            'skip_save_log': skip_save_log,
+                            'skip_save_processed_input': skip_save_processed_input,
+                            'skip_save_unprocessed_output': skip_save_unprocessed_output,
+                            'skip_save_test_predictions': skip_save_test_predictions,
+                            'skip_save_test_statistics': skip_save_test_statistics,
+                            'output_directory': output_directory,
+                            'gpus': gpus,
+                            'gpu_memory_limit': gpu_memory_limit,
+                            'allow_parallel_threads': allow_parallel_threads,
+                            'use_horovod': use_horovod,
+                            'random_seed': random_seed,
+                            'debug': debug,
+                        }
+                    )
+                trials += len(sampled_parameters)
+
+                if gpus is not None:
+                    batch_results = pool.map(self._train_and_eval_model_gpu,
+                                             hyperopt_parameters)
+                else:
+                    batch_results = pool.map(self._train_and_eval_model,
+                                             hyperopt_parameters)
+
+                self.hyperopt_strategy.update_batch(
+                    (result["parameters"], result["metric_score"]) for result in
+                    batch_results
                 )
-            trials += len(sampled_parameters)
 
-            if gpus is not None:
-                batch_results = pool.map(self._train_and_eval_model_gpu,
-                                         hyperopt_parameters)
-            else:
-                batch_results = pool.map(self._train_and_eval_model,
-                                         hyperopt_parameters)
-
-            self.hyperopt_strategy.update_batch(
-                (result["parameters"], result["metric_score"]) for result in
-                batch_results
-            )
-
-            hyperopt_results.extend(batch_results)
+                hyperopt_results.extend(batch_results)
+        finally:
+            pool.close()
+            pool.join()
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
         return hyperopt_results
