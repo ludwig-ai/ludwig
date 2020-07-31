@@ -31,11 +31,11 @@ from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, \
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
+from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.sampling import get_build_hyperopt_strategy
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.hyperopt_utils import get_build_hyperopt_strategy, \
-    get_build_hyperopt_executor, \
-    update_hyperopt_params_with_defaults
 from ludwig.utils.misc import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig, \
     print_boxed
