@@ -22,7 +22,7 @@ from ludwig.hyperopt import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.hyperopt_utils import (get_build_hyperopt_executor,
                                          get_build_hyperopt_strategy)
-from ludwig.utils.tf_utils import get_available_gpus
+from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature
@@ -103,11 +103,4 @@ def test_hyperopt_executor(strategy, executor, csv_filename):
         hyperopt_strategy, output_feature, metric, split, **executor)
 
     hyperopt_executor.execute(model_definition, data_csv=rel_path,
-                              gpus=get_available_gpus_cuda_syntax())
-
-
-def get_available_gpus_cuda_syntax():
-    gpus = get_available_gpus()
-    if len(gpus) == 0:
-        return None
-    return ','.join(gpus)
+                              gpus=get_available_gpus_cuda_string())

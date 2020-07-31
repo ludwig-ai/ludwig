@@ -38,7 +38,7 @@ from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc import get_class_attributes, get_from_registry, \
     set_default_value, set_default_values
-from ludwig.utils.tf_utils import get_available_gpus
+from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 logger = logging.getLogger(__name__)
 
@@ -521,9 +521,7 @@ class ParallelExecutor(HyperoptExecutor):
         hyperopt_parameters = []
 
         if gpus is None:
-            available_gpus = get_available_gpus()
-            if len(available_gpus) > 0:
-                gpus = ','.join(available_gpus)
+            gpus = get_available_gpus_cuda_string()
 
         if gpus is not None:
 
