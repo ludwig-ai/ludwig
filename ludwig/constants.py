@@ -16,6 +16,9 @@
 # ==============================================================================
 BINARY = 'binary'
 CATEGORY = 'category'
+INT = 'int'
+REAL = 'real'
+SPACE = 'space'
 NUMERICAL = 'numerical'
 SET = 'set'
 BAG = 'bag'

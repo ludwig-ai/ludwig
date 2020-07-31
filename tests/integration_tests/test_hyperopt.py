@@ -55,14 +55,14 @@ HYPEROPT_CONFIG = {
 
 STRATEGIES = [
     {"type": "grid"},
-    {"type": "random", "num_samples": 5},
-    {"type": "pySOT", "num_samples": 5},
+    # {"type": "random", "num_samples": 5},
+    # {"type": "pySOT", "num_samples": 5},
 ]
 
 EXECUTORS = [
     {"type": "serial"},
     {"type": "parallel", "num_workers": 4},
-    {"type": "fiber", "num_workers": 4},
+    # {"type": "fiber", "num_workers": 4},
 ]
 
 
@@ -103,4 +103,11 @@ def test_hyperopt_executor(strategy, executor, csv_filename):
         hyperopt_strategy, output_feature, metric, split, **executor)
 
     hyperopt_executor.execute(model_definition, data_csv=rel_path,
-                              gpus=','.join(get_available_gpus()))
+                              gpus=get_available_gpus_cuda_syntax())
+
+
+def get_available_gpus_cuda_syntax():
+    gpus = get_available_gpus()
+    if len(gpus) == 0:
+        return None
+    return ','.join(gpus)

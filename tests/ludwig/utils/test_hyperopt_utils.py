@@ -15,22 +15,20 @@
 # ==============================================================================
 import pytest
 
-from ludwig.utils.hyperopt_utils import GridStrategy, RandomStrategy
+from ludwig.utils.hyperopt_utils import GridStrategy, RandomStrategy, PySOTStrategy
 
 HYPEROPT_PARAMS = {
     "test_1": {
         "parameters": {
             "training.learning_rate": {
-                "type": "float",
-                "low": 0.0001,
-                "high": 0.1,
+                "type": "real",
+                "range": (0.0001, 0.1),
                 "steps": 4,
-                "scale": "log"
+                "space": "log"
             },
             "combiner.num_fc_layers": {
                 "type": "int",
-                "low": 1,
-                "high": 4
+                "range": (1, 4)
             },
             "utterance.cell_type": {
                 "type": "category",
@@ -49,16 +47,14 @@ HYPEROPT_PARAMS = {
     "test_2": {
         "parameters": {
             "training.learning_rate": {
-                "type": "float",
-                "low": 0.001,
-                "high": 0.1,
+                "type": "real",
+                "range": (0.001, 0.1),
                 "steps": 4,
-                "scale": "linear"
+                "space": "linear"
             },
             "combiner.num_fc_layers": {
                 "type": "int",
-                "low": 2,
-                "high": 6,
+                "range": (2, 6),
                 "steps": 3
             }
         },
@@ -88,9 +84,8 @@ def test_grid_strategy(key):
         for param in actual_params_keys:
             value = sample[param]
             param_type = grid_strategy_params[param]["type"]
-            if param_type == "int" or param_type == "float":
-                low = grid_strategy_params[param]["low"]
-                high = grid_strategy_params[param]["high"]
+            if param_type == "int" or param_type == "real":
+                low, high = grid_strategy_params[param]["range"]
                 assert value >= low and value <= high
             else:
                 assert value in set(grid_strategy_params[param]["values"])
@@ -119,12 +114,42 @@ def test_random_strategy(key):
         for param in actual_params_keys:
             value = sample[param]
             param_type = random_strategy_params[param]["type"]
-            if param_type == "int" or param_type == "float":
-                low = random_strategy_params[param]["low"]
-                high = random_strategy_params[param]["high"]
+            if param_type == "int" or param_type == "real":
+                low, high = random_strategy_params[param]["range"]
                 assert value >= low and value <= high
             else:
                 assert value in set(random_strategy_params[param]["values"])
 
     assert actual_params_keys == expected_params_keys
     assert len(random_strategy.samples) == num_samples
+
+
+@pytest.mark.parametrize("key", ["test_1", "test_2"])
+def test_pysot_strategy(key):
+    hyperopt_test_params = HYPEROPT_PARAMS[key]
+    goal = hyperopt_test_params["goal"]
+    pysot_strategy_params = hyperopt_test_params["parameters"]
+    num_samples = hyperopt_test_params["num_samples"]
+
+    pysot_strategy = PySOTStrategy(
+        goal=goal, parameters=pysot_strategy_params, num_samples=num_samples)
+
+    actual_params_keys = pysot_strategy.sample().keys()
+    expected_params_keys = pysot_strategy_params.keys()
+
+    pysot_strategy_samples = 1
+
+    for _ in range(num_samples - 1):
+        sample = pysot_strategy.sample()
+        for param in actual_params_keys:
+            value = sample[param]
+            param_type = pysot_strategy_params[param]["type"]
+            if param_type == "int" or param_type == "real":
+                low, high = pysot_strategy_params[param]["range"]
+                assert value >= low and value <= high
+            else:
+                assert value in set(pysot_strategy_params[param]["values"])
+        pysot_strategy_samples += 1
+
+    assert actual_params_keys == expected_params_keys
+    assert pysot_strategy_samples == num_samples
