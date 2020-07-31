@@ -18,10 +18,10 @@ import logging
 
 import pytest
 
-from ludwig.hyperopt import update_hyperopt_params_with_defaults
+from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.sampling import (get_build_hyperopt_strategy)
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.hyperopt_utils import (get_build_hyperopt_executor,
-                                         get_build_hyperopt_strategy)
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data

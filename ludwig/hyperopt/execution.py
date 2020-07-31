@@ -1,259 +1,23 @@
-#! /usr/bin/env python
-# coding=utf-8
-# Copyright (c) 2019 Uber Technologies, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
 import copy
-import functools
-import itertools
-import logging
 import multiprocessing
 import os
 import signal
-import subprocess as sp
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Tuple
 
-import numpy as np
-from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
-from bayesmark.space import JointSpace
-
-from ludwig.constants import EXECUTOR, STRATEGY, MINIMIZE, COMBINED, LOSS, \
-    VALIDATION, MAXIMIZE, TRAINING, TEST, CATEGORY, INT, REAL, TYPE, SPACE
+from ludwig.constants import MAXIMIZE, VALIDATION, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess
+from ludwig.hyperopt.sampling import HyperoptSamplingStrategy, \
+    logger
 from ludwig.predict import predict, print_test_results, \
     save_prediction_outputs, save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc import get_class_attributes, get_from_registry, \
-    set_default_value, set_default_values
+from ludwig.utils.misc import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
-
-logger = logging.getLogger(__name__)
-
-
-def int_grid_function(range: tuple, steps=None, **kwargs):
-    low = range[0]
-    high = range[1]
-    if steps is None:
-        steps = high - low + 1
-    samples = np.linspace(low, high, num=steps, dtype=int)
-    return samples.tolist()
-
-
-def float_grid_function(range: tuple, steps=None, space='linear', base=None,
-                        **kwargs):
-    low = range[0]
-    high = range[1]
-    if steps is None:
-        steps = int(high - low + 1)
-    if space == 'linear':
-        samples = np.linspace(low, high, num=steps)
-    elif space == 'log':
-        if base:
-            samples = np.logspace(low, high, num=steps, base=base)
-        else:
-            samples = np.geomspace(low, high, num=steps)
-    else:
-        raise ValueError(
-            'The space parameter of the float grid function is "{}". '
-            'Available ones are: {"linear", "log"}'
-        )
-    return samples.tolist()
-
-
-def category_grid_function(values, **kwargs):
-    return values
-
-
-grid_functions_registry = {
-    'int': int_grid_function,
-    'real': float_grid_function,
-    'category': category_grid_function,
-    'cat': category_grid_function
-}
-
-
-class HyperoptStrategy(ABC):
-    def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
-        assert goal in [MINIMIZE, MAXIMIZE]
-        self.goal = goal  # useful for Bayesian strategy
-        self.parameters = parameters
-
-    @abstractmethod
-    def sample(self) -> Dict[str, Any]:
-        # Yields a set of parameters names and their values.
-        # Define `build_hyperopt_strategy` which would take paramters as inputs
-        pass
-
-    def sample_batch(self, batch_size: int = 1) -> List[Dict[str, Any]]:
-        samples = []
-        for _ in range(batch_size):
-            try:
-                samples.append(self.sample())
-            except IndexError:
-                # Logic: is samples is empty it means that we encountered
-                # the IndexError the first time we called self.sample()
-                # so we should raise the exception. If samples is not empty
-                # we should just return it, even if it will contain
-                # less samples than the specified batch_size.
-                # This is fine as from now on finished() will return True.
-                if not samples:
-                    raise IndexError
-        return samples
-
-    @abstractmethod
-    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
-        # Given the results of previous computation, it updates
-        # the strategy (not needed for stateless strategies like "grid"
-        # and random, but will be needed by Bayesian)
-        pass
-
-    def update_batch(self, parameters_metric_tuples: Iterable[
-        Tuple[Dict[str, Any], float]]):
-        for (sampled_parameters, metric_score) in parameters_metric_tuples:
-            self.update(sampled_parameters, metric_score)
-
-    @abstractmethod
-    def finished(self) -> bool:
-        # Should return true when all samples have been sampled
-        pass
-
-
-class RandomStrategy(HyperoptStrategy):
-    num_samples = 10
-
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
-                 **kwargs) -> None:
-        HyperoptStrategy.__init__(self, goal, parameters)
-        params_for_join_space = copy.deepcopy(parameters)
-        for param_values in params_for_join_space.values():
-            if param_values[TYPE] == CATEGORY:
-                param_values[TYPE] = 'cat'
-            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
-                if SPACE not in param_values:
-                    param_values[SPACE] = 'linear'
-        self.space = JointSpace(params_for_join_space)
-        self.num_samples = num_samples
-        self.samples = self._determine_samples()
-        self.sampled_so_far = 0
-
-    def _determine_samples(self):
-        samples = []
-        for _ in range(self.num_samples):
-            bnds = self.space.get_bounds()
-            x = bnds[:, 0] + (bnds[:, 1] - bnds[:, 0]) * np.random.rand(1, len(
-                self.space.get_bounds()))
-            sample = self.space.unwarp(x)[0]
-            samples.append(sample)
-        return samples
-
-    def sample(self) -> Dict[str, Any]:
-        if self.sampled_so_far >= len(self.samples):
-            raise IndexError()
-        sample = self.samples[self.sampled_so_far]
-        self.sampled_so_far += 1
-        return sample
-
-    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
-        pass
-
-    def finished(self) -> bool:
-        return self.sampled_so_far >= len(self.samples)
-
-
-class GridStrategy(HyperoptStrategy):
-    def __init__(self, goal: str, parameters: Dict[str, Any],
-                 **kwargs) -> None:
-        HyperoptStrategy.__init__(self, goal, parameters)
-        self.search_space = self._create_search_space()
-        self.samples = self._get_grids()
-        self.sampled_so_far = 0
-
-    def _create_search_space(self):
-        search_space = {}
-        for hp_name, hp_params in self.parameters.items():
-            grid_function = get_from_registry(
-                hp_params['type'], grid_functions_registry
-            )
-            search_space[hp_name] = grid_function(**hp_params)
-        return search_space
-
-    def _get_grids(self):
-        hp_params = sorted(self.search_space)
-        grids = [dict(zip(hp_params, prod)) for prod in itertools.product(
-            *(self.search_space[hp_name] for hp_name in hp_params))]
-
-        return grids
-
-    def sample(self) -> Dict[str, Any]:
-        if self.sampled_so_far >= len(self.samples):
-            raise IndexError()
-        sample = self.samples[self.sampled_so_far]
-        self.sampled_so_far += 1
-        return sample
-
-    def update(
-            self,
-            sampled_parameters: Dict[str, Any],
-            statistics: Dict[str, Any]
-    ):
-        # actual implementation ...
-        pass
-
-    def finished(self) -> bool:
-        return self.sampled_so_far >= len(self.samples)
-
-
-class PySOTStrategy(HyperoptStrategy):
-    """pySOT: Surrogate optimization in Python.
-    This is a wrapper around the pySOT package (https://github.com/dme65/pySOT):
-        David Eriksson, David Bindel, Christine Shoemaker
-        pySOT and POAP: An event-driven asynchronous framework for surrogate optimization
-    """
-
-    def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
-                 **kwargs) -> None:
-        HyperoptStrategy.__init__(self, goal, parameters)
-        params_for_join_space = copy.deepcopy(parameters)
-        for param_values in params_for_join_space.values():
-            if param_values[TYPE] == CATEGORY:
-                param_values[TYPE] = 'cat'
-            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
-                if SPACE not in param_values:
-                    param_values[SPACE] = 'linear'
-        self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
-        self.sampled_so_far = 0
-        self.num_samples = num_samples
-
-    def sample(self) -> Dict[str, Any]:
-        """Suggest one new point to be evaluated."""
-        if self.sampled_so_far >= self.num_samples:
-            raise IndexError()
-        sample = self.pysot_optimizer.suggest(n_suggestions=1)[0]
-        self.sampled_so_far += 1
-        return sample
-
-    def update(self, sampled_parameters: Dict[str, Any], metric_score: float):
-        self.pysot_optimizer.observe([sampled_parameters], [metric_score])
-
-    def finished(self) -> bool:
-        return self.sampled_so_far >= self.num_samples
 
 
 class HyperoptExecutor(ABC):
-    def __init__(self, hyperopt_strategy: HyperoptStrategy,
+    def __init__(self, hyperopt_strategy: HyperoptSamplingStrategy,
                  output_feature: str, metric: str, split: str) -> None:
         self.hyperopt_strategy = hyperopt_strategy
         self.output_feature = output_feature
@@ -313,7 +77,8 @@ class HyperoptExecutor(ABC):
 
 class SerialExecutor(HyperoptExecutor):
     def __init__(
-            self, hyperopt_strategy: HyperoptStrategy, output_feature: str,
+            self, hyperopt_strategy: HyperoptSamplingStrategy,
+            output_feature: str,
             metric: str, split: str, **kwargs
     ) -> None:
         HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
@@ -434,7 +199,7 @@ class ParallelExecutor(HyperoptExecutor):
 
     def __init__(
             self,
-            hyperopt_strategy: HyperoptStrategy,
+            hyperopt_strategy: HyperoptSamplingStrategy,
             output_feature: str,
             metric: str,
             split: str,
@@ -565,7 +330,8 @@ class ParallelExecutor(HyperoptExecutor):
                                 gpu_id, available_gpu_memory)
                         )
                         new_gpu_memory_limit = required_gpu_memory - \
-                            (self.TF_REQUIRED_MEMORY_PER_WORKER * self.num_workers)
+                                               (
+                                                       self.TF_REQUIRED_MEMORY_PER_WORKER * self.num_workers)
                     else:
                         new_gpu_memory_limit = gpu_memory_limit
                         if new_gpu_memory_limit > available_gpu_memory:
@@ -710,7 +476,7 @@ class FiberExecutor(HyperoptExecutor):
 
     def __init__(
             self,
-            hyperopt_strategy: HyperoptStrategy,
+            hyperopt_strategy: HyperoptSamplingStrategy,
             output_feature: str,
             metric: str,
             split: str,
@@ -861,54 +627,15 @@ class FiberExecutor(HyperoptExecutor):
         return hyperopt_results
 
 
-def get_build_hyperopt_strategy(strategy_type):
-    return get_from_registry(strategy_type, strategy_registry)
-
-
 def get_build_hyperopt_executor(executor_type):
     return get_from_registry(executor_type, executor_registry)
 
-
-strategy_registry = {
-    "grid": GridStrategy,
-    "random": RandomStrategy,
-    "pysot": PySOTStrategy,
-}
 
 executor_registry = {
     "serial": SerialExecutor,
     "parallel": ParallelExecutor,
     "fiber": FiberExecutor,
 }
-
-
-def update_hyperopt_params_with_defaults(hyperopt_params):
-    set_default_value(hyperopt_params, STRATEGY, {})
-    set_default_value(hyperopt_params, EXECUTOR, {})
-    set_default_value(hyperopt_params, "split", VALIDATION)
-    set_default_value(hyperopt_params, "output_feature", COMBINED)
-    set_default_value(hyperopt_params, "metric", LOSS)
-    set_default_value(hyperopt_params, "goal", MINIMIZE)
-
-    set_default_values(hyperopt_params[STRATEGY], {"type": "random"})
-
-    strategy = get_from_registry(hyperopt_params[STRATEGY]["type"],
-                                 strategy_registry)
-    strategy_defaults = {k: v for k, v in strategy.__dict__.items() if
-                         k in get_class_attributes(strategy)}
-    set_default_values(
-        hyperopt_params[STRATEGY], strategy_defaults,
-    )
-
-    set_default_values(hyperopt_params[EXECUTOR], {"type": "serial"})
-
-    executor = get_from_registry(hyperopt_params[EXECUTOR]["type"],
-                                 executor_registry)
-    executor_defaults = {k: v for k, v in executor.__dict__.items() if
-                         k in get_class_attributes(executor)}
-    set_default_values(
-        hyperopt_params[EXECUTOR], executor_defaults,
-    )
 
 
 def set_values(model_dict, name, parameters_dict):
@@ -950,22 +677,7 @@ def substitute_parameters(model_definition, parameters):
     return model_definition
 
 
-def get_available_gpu_memory():
-    _output_to_list = lambda x: x.decode('ascii').split('\n')[:-1]
-
-    COMMAND = "nvidia-smi --query-gpu=memory.free --format=csv"
-    try:
-        memory_free_info = _output_to_list(sp.check_output(COMMAND.split()))[
-                           1:]
-        memory_free_values = [int(x.split()[0])
-                              for i, x in enumerate(memory_free_info)]
-    except Exception as e:
-        print('"nvidia-smi" is probably not installed.', e)
-
-    return memory_free_values
-
-
-# TODo this is duplicate code from experiment,
+# TODO this is duplicate code from experiment,
 #  reorganize experiment to avoid having to do this
 def train_and_eval_on_split(
         model_definition,

@@ -15,7 +15,8 @@
 # ==============================================================================
 import pytest
 
-from ludwig.utils.hyperopt_utils import GridStrategy, RandomStrategy, PySOTStrategy
+from ludwig.hyperopt.sampling import GridStrategy, RandomStrategy, \
+    PySOTStrategy
 
 HYPEROPT_PARAMS = {
     "test_1": {
