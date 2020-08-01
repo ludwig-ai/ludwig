@@ -24,26 +24,22 @@ import numpy as np
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
 
-from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, REAL, TYPE, \
-    SPACE
+from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, TYPE, \
+    SPACE, FLOAT
 from ludwig.utils.misc import get_from_registry
 
 logger = logging.getLogger(__name__)
 
 
-def int_grid_function(range: tuple, steps=None, **kwargs):
-    low = range[0]
-    high = range[1]
+def int_grid_function(low: int, high: int, steps=None, **kwargs):
     if steps is None:
         steps = high - low + 1
     samples = np.linspace(low, high, num=steps, dtype=int)
     return samples.tolist()
 
 
-def float_grid_function(range: tuple, steps=None, space='linear', base=None,
-                        **kwargs):
-    low = range[0]
-    high = range[1]
+def float_grid_function(low: float, high: float, steps=None, space='linear',
+                        base=None, **kwargs):
     if steps is None:
         steps = int(high - low + 1)
     if space == 'linear':
@@ -67,13 +63,12 @@ def category_grid_function(values, **kwargs):
 
 grid_functions_registry = {
     'int': int_grid_function,
-    'real': float_grid_function,
+    'float': float_grid_function,
     'category': category_grid_function,
-    'cat': category_grid_function
 }
 
 
-class HyperoptSamplingStrategy(ABC):
+class HyperoptSampler(ABC):
     def __init__(self, goal: str, parameters: Dict[str, Any]) -> None:
         assert goal in [MINIMIZE, MAXIMIZE]
         self.goal = goal  # useful for Bayesian strategy
@@ -119,19 +114,26 @@ class HyperoptSamplingStrategy(ABC):
         pass
 
 
-class RandomStrategy(HyperoptSamplingStrategy):
+class RandomSampler(HyperoptSampler):
     num_samples = 10
 
     def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
                  **kwargs) -> None:
-        HyperoptSamplingStrategy.__init__(self, goal, parameters)
+        HyperoptSampler.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
         for param_values in params_for_join_space.values():
             if param_values[TYPE] == CATEGORY:
                 param_values[TYPE] = 'cat'
-            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
+            if param_values[TYPE] == FLOAT:
+                param_values[TYPE] = 'real'
+            if param_values[TYPE] == INT or param_values[TYPE] == 'real':
                 if SPACE not in param_values:
                     param_values[SPACE] = 'linear'
+                param_values['range'] = (param_values['low'],
+                                         param_values['high'])
+                del param_values['low']
+                del param_values['high']
+
         self.space = JointSpace(params_for_join_space)
         self.num_samples = num_samples
         self.samples = self._determine_samples()
@@ -161,10 +163,10 @@ class RandomStrategy(HyperoptSamplingStrategy):
         return self.sampled_so_far >= len(self.samples)
 
 
-class GridStrategy(HyperoptSamplingStrategy):
+class GridSampler(HyperoptSampler):
     def __init__(self, goal: str, parameters: Dict[str, Any],
                  **kwargs) -> None:
-        HyperoptSamplingStrategy.__init__(self, goal, parameters)
+        HyperoptSampler.__init__(self, goal, parameters)
         self.search_space = self._create_search_space()
         self.samples = self._get_grids()
         self.sampled_so_far = 0
@@ -204,7 +206,7 @@ class GridStrategy(HyperoptSamplingStrategy):
         return self.sampled_so_far >= len(self.samples)
 
 
-class PySOTStrategy(HyperoptSamplingStrategy):
+class PySOTSampler(HyperoptSampler):
     """pySOT: Surrogate optimization in Python.
     This is a wrapper around the pySOT package (https://github.com/dme65/pySOT):
         David Eriksson, David Bindel, Christine Shoemaker
@@ -213,14 +215,21 @@ class PySOTStrategy(HyperoptSamplingStrategy):
 
     def __init__(self, goal: str, parameters: Dict[str, Any], num_samples=10,
                  **kwargs) -> None:
-        HyperoptSamplingStrategy.__init__(self, goal, parameters)
+        HyperoptSampler.__init__(self, goal, parameters)
         params_for_join_space = copy.deepcopy(parameters)
         for param_values in params_for_join_space.values():
             if param_values[TYPE] == CATEGORY:
                 param_values[TYPE] = 'cat'
-            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
+            if param_values[TYPE] == FLOAT:
+                param_values[TYPE] = 'real'
+            if param_values[TYPE] == INT or param_values[TYPE] == 'real':
                 if SPACE not in param_values:
                     param_values[SPACE] = 'linear'
+                param_values['range'] = (param_values['low'],
+                                         param_values['high'])
+                del param_values['low']
+                del param_values['high']
+
         self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
         self.sampled_so_far = 0
         self.num_samples = num_samples
@@ -240,12 +249,12 @@ class PySOTStrategy(HyperoptSamplingStrategy):
         return self.sampled_so_far >= self.num_samples
 
 
-def get_build_hyperopt_strategy(strategy_type):
-    return get_from_registry(strategy_type, strategy_registry)
+def get_build_hyperopt_sampler(strategy_type):
+    return get_from_registry(strategy_type, sampler_registry)
 
 
-strategy_registry = {
-    "grid": GridStrategy,
-    "random": RandomStrategy,
-    "pysot": PySOTStrategy,
+sampler_registry = {
+    "grid": GridSampler,
+    "random": RandomSampler,
+    "pysot": PySOTSampler,
 }

@@ -17,7 +17,7 @@
 BINARY = 'binary'
 CATEGORY = 'category'
 INT = 'int'
-REAL = 'real'
+FLOAT = 'float'
 SPACE = 'space'
 NUMERICAL = 'numerical'
 SET = 'set'
