@@ -16,10 +16,13 @@
 
 import logging
 
-from ludwig.hyperopt import update_hyperopt_params_with_defaults
+import pytest
+
+from ludwig.hyperopt.execution import get_build_hyperopt_executor
+from ludwig.hyperopt.sampling import (get_build_hyperopt_strategy)
+from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.hyperopt_utils import (get_build_hyperopt_executor,
-                                         get_build_hyperopt_strategy)
+from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import text_feature
@@ -29,28 +32,32 @@ logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
 HYPEROPT_CONFIG = {
-    "strategy": {
-        "type": "pySOT",
-        "num_samples": 10
-    },
     "parameters": {
         "training.learning_rate": {
             "type": "real",
             "range": (0.0001, 0.1),
             "space": "log",
+            "steps": 3,
         },
         "combiner.num_fc_layers": {
             "type": "int",
             "range": (1, 4),
             "space": "linear",
+            "steps": 3,
         },
         "utterance.cell_type": {
-            "type": "cat",
+            "type": "category",
             "values": ["rnn", "gru", "lstm"]
         }
     },
     "goal": "minimize"
 }
+
+STRATEGIES = [
+    {"type": "grid"},
+    {"type": "random", "num_samples": 5},
+    {"type": "pySOT", "num_samples": 5},
+]
 
 EXECUTORS = [
     {"type": "serial"},
@@ -59,7 +66,9 @@ EXECUTORS = [
 ]
 
 
-def test_hyperopt_executor(csv_filename):
+@pytest.mark.parametrize('strategy', STRATEGIES)
+@pytest.mark.parametrize('executor', EXECUTORS)
+def test_hyperopt_executor(strategy, executor, csv_filename):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -77,13 +86,10 @@ def test_hyperopt_executor(csv_filename):
 
     model_definition = merge_with_defaults(model_definition)
 
-    input_features = model_definition["input_features"]
-    output_features = model_definition["output_features"]
-    hyperopt_config = HYPEROPT_CONFIG
+    hyperopt_config = HYPEROPT_CONFIG.copy()
 
     update_hyperopt_params_with_defaults(hyperopt_config)
 
-    strategy = hyperopt_config["strategy"]
     parameters = hyperopt_config["parameters"]
     split = hyperopt_config["split"]
     output_feature = hyperopt_config["output_feature"]
@@ -93,8 +99,8 @@ def test_hyperopt_executor(csv_filename):
     hyperopt_strategy = get_build_hyperopt_strategy(
         strategy["type"])(goal, parameters, **strategy)
 
-    for executor in EXECUTORS:
-        hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-            hyperopt_strategy, output_feature, metric, split, **executor)
+    hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
+        hyperopt_strategy, output_feature, metric, split, **executor)
 
-        hyperopt_executor.execute(model_definition, data_csv=rel_path)
+    hyperopt_executor.execute(model_definition, data_csv=rel_path,
+                              gpus=get_available_gpus_cuda_string())

@@ -15,19 +15,27 @@
 # ==============================================================================
 from ludwig.constants import BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMERICAL, \
     SEQUENCE, SET, TEXT, TIMESERIES, VECTOR, AUDIO
+from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.features.bag_feature import BagFeatureMixin, BagInputFeature
-from ludwig.features.binary_feature import BinaryFeatureMixin, BinaryInputFeature, BinaryOutputFeature
-from ludwig.features.category_feature import CategoryFeatureMixin, CategoryInputFeature, CategoryOutputFeature
+from ludwig.features.binary_feature import BinaryFeatureMixin, \
+    BinaryInputFeature, BinaryOutputFeature
+from ludwig.features.category_feature import CategoryFeatureMixin, \
+    CategoryInputFeature, CategoryOutputFeature
 from ludwig.features.date_feature import DateFeatureMixin, DateInputFeature
 from ludwig.features.h3_feature import H3FeatureMixin, H3InputFeature
 from ludwig.features.image_feature import ImageFeatureMixin, ImageInputFeature
-from ludwig.features.numerical_feature import NumericalFeatureMixin, NumericalInputFeature, NumericalOutputFeature
-from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
-from ludwig.features.sequence_feature import SequenceFeatureMixin, SequenceInputFeature, SequenceOutputFeature
-from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, SetOutputFeature
-from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, TextOutputFeature
-from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, TimeseriesInputFeature
-from ludwig.features.vector_feature import VectorFeatureMixin, VectorInputFeature, VectorOutputFeature
+from ludwig.features.numerical_feature import NumericalFeatureMixin, \
+    NumericalInputFeature, NumericalOutputFeature
+from ludwig.features.sequence_feature import SequenceFeatureMixin, \
+    SequenceInputFeature, SequenceOutputFeature
+from ludwig.features.set_feature import SetFeatureMixin, SetInputFeature, \
+    SetOutputFeature
+from ludwig.features.text_feature import TextFeatureMixin, TextInputFeature, \
+    TextOutputFeature
+from ludwig.features.timeseries_feature import TimeseriesFeatureMixin, \
+    TimeseriesInputFeature
+from ludwig.features.vector_feature import VectorFeatureMixin, \
+    VectorInputFeature, VectorOutputFeature
 
 base_type_registry = {
     TEXT: TextFeatureMixin,
