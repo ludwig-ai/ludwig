@@ -34,14 +34,16 @@ logging.getLogger("ludwig").setLevel(logging.INFO)
 HYPEROPT_CONFIG = {
     "parameters": {
         "training.learning_rate": {
-            "type": "real",
-            "range": (0.0001, 0.1),
+            "type": "float",
+            "low": 0.0001,
+            "high": 0.1,
             "space": "log",
             "steps": 3,
         },
         "combiner.num_fc_layers": {
             "type": "int",
-            "range": (1, 4),
+            "low": 1,
+            "high": 4,
             "space": "linear",
             "steps": 3,
         },
@@ -56,7 +58,7 @@ HYPEROPT_CONFIG = {
 SAMPLERS = [
     {"type": "grid"},
     {"type": "random", "num_samples": 5},
-    {"type": "pySOT", "num_samples": 5},
+    {"type": "pysot", "num_samples": 5},
 ]
 
 EXECUTORS = [
