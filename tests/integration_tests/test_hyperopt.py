@@ -19,7 +19,7 @@ import logging
 import pytest
 
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
-from ludwig.hyperopt.sampling import (get_build_hyperopt_strategy)
+from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.defaults import merge_with_defaults
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -53,7 +53,7 @@ HYPEROPT_CONFIG = {
     "goal": "minimize"
 }
 
-STRATEGIES = [
+SAMPLERS = [
     {"type": "grid"},
     {"type": "random", "num_samples": 5},
     {"type": "pySOT", "num_samples": 5},
@@ -66,9 +66,9 @@ EXECUTORS = [
 ]
 
 
-@pytest.mark.parametrize('strategy', STRATEGIES)
+@pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(strategy, executor, csv_filename):
+def test_hyperopt_executor(sampler, executor, csv_filename):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -96,11 +96,11 @@ def test_hyperopt_executor(strategy, executor, csv_filename):
     metric = hyperopt_config["metric"]
     goal = hyperopt_config["goal"]
 
-    hyperopt_strategy = get_build_hyperopt_strategy(
-        strategy["type"])(goal, parameters, **strategy)
+    hyperopt_sampler = get_build_hyperopt_sampler(
+        sampler["type"])(goal, parameters, **sampler)
 
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
-        hyperopt_strategy, output_feature, metric, split, **executor)
+        hyperopt_sampler, output_feature, metric, split, **executor)
 
     hyperopt_executor.execute(model_definition, data_csv=rel_path,
                               gpus=get_available_gpus_cuda_string())

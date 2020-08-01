@@ -1,7 +1,7 @@
 from ludwig.constants import STRATEGY, EXECUTOR, VALIDATION, COMBINED, LOSS, \
     MINIMIZE
 from ludwig.hyperopt.execution import executor_registry
-from ludwig.hyperopt.sampling import strategy_registry
+from ludwig.hyperopt.sampling import sampler_registry
 from ludwig.utils.misc import set_default_value, set_default_values, \
     get_from_registry, get_class_attributes
 
@@ -17,7 +17,7 @@ def update_hyperopt_params_with_defaults(hyperopt_params):
     set_default_values(hyperopt_params[STRATEGY], {"type": "random"})
 
     strategy = get_from_registry(hyperopt_params[STRATEGY]["type"],
-                                 strategy_registry)
+                                 sampler_registry)
     strategy_defaults = {k: v for k, v in strategy.__dict__.items() if
                          k in get_class_attributes(strategy)}
     set_default_values(

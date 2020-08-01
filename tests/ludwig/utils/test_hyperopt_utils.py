@@ -15,8 +15,8 @@
 # ==============================================================================
 import pytest
 
-from ludwig.hyperopt.sampling import GridStrategy, RandomStrategy, \
-    PySOTStrategy
+from ludwig.hyperopt.sampling import GridSampler, RandomSampler, \
+    PySOTSampler
 
 HYPEROPT_PARAMS = {
     "test_1": {
@@ -76,7 +76,7 @@ def test_grid_strategy(key):
     goal = hyperopt_test_params["goal"]
     grid_strategy_params = hyperopt_test_params["parameters"]
 
-    grid_strategy = GridStrategy(goal=goal, parameters=grid_strategy_params)
+    grid_strategy = GridSampler(goal=goal, parameters=grid_strategy_params)
 
     actual_params_keys = grid_strategy.sample().keys()
     expected_params_keys = grid_strategy_params.keys()
@@ -105,7 +105,7 @@ def test_random_strategy(key):
     random_strategy_params = hyperopt_test_params["parameters"]
     num_samples = hyperopt_test_params["num_samples"]
 
-    random_strategy = RandomStrategy(
+    random_strategy = RandomSampler(
         goal=goal, parameters=random_strategy_params, num_samples=num_samples)
 
     actual_params_keys = random_strategy.sample().keys()
@@ -132,7 +132,7 @@ def test_pysot_strategy(key):
     pysot_strategy_params = hyperopt_test_params["parameters"]
     num_samples = hyperopt_test_params["num_samples"]
 
-    pysot_strategy = PySOTStrategy(
+    pysot_strategy = PySOTSampler(
         goal=goal, parameters=pysot_strategy_params, num_samples=num_samples)
 
     actual_params_keys = pysot_strategy.sample().keys()
