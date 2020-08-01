@@ -24,26 +24,22 @@ import numpy as np
 from bayesmark.builtin_opt.pysot_optimizer import PySOTOptimizer
 from bayesmark.space import JointSpace
 
-from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, REAL, TYPE, \
-    SPACE
+from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, TYPE, \
+    SPACE, FLOAT
 from ludwig.utils.misc import get_from_registry
 
 logger = logging.getLogger(__name__)
 
 
-def int_grid_function(range: tuple, steps=None, **kwargs):
-    low = range[0]
-    high = range[1]
+def int_grid_function(low: int, high: int, steps=None, **kwargs):
     if steps is None:
         steps = high - low + 1
     samples = np.linspace(low, high, num=steps, dtype=int)
     return samples.tolist()
 
 
-def float_grid_function(range: tuple, steps=None, space='linear', base=None,
-                        **kwargs):
-    low = range[0]
-    high = range[1]
+def float_grid_function(low: float, high: float, steps=None, space='linear',
+                        base=None, **kwargs):
     if steps is None:
         steps = int(high - low + 1)
     if space == 'linear':
@@ -68,9 +64,7 @@ def category_grid_function(values, **kwargs):
 grid_functions_registry = {
     'int': int_grid_function,
     'float': float_grid_function,
-    'real': float_grid_function,
     'category': category_grid_function,
-    'cat': category_grid_function
 }
 
 
@@ -130,9 +124,16 @@ class RandomSampler(HyperoptSampler):
         for param_values in params_for_join_space.values():
             if param_values[TYPE] == CATEGORY:
                 param_values[TYPE] = 'cat'
-            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
+            if param_values[TYPE] == FLOAT:
+                param_values[TYPE] = 'real'
+            if param_values[TYPE] == INT or param_values[TYPE] == 'real':
                 if SPACE not in param_values:
                     param_values[SPACE] = 'linear'
+                param_values['range'] = (param_values['low'],
+                                         param_values['high'])
+                del param_values['low']
+                del param_values['high']
+
         self.space = JointSpace(params_for_join_space)
         self.num_samples = num_samples
         self.samples = self._determine_samples()
@@ -219,9 +220,16 @@ class PySOTSampler(HyperoptSampler):
         for param_values in params_for_join_space.values():
             if param_values[TYPE] == CATEGORY:
                 param_values[TYPE] = 'cat'
-            if param_values[TYPE] == INT or param_values[TYPE] == REAL:
+            if param_values[TYPE] == FLOAT:
+                param_values[TYPE] = 'real'
+            if param_values[TYPE] == INT or param_values[TYPE] == 'real':
                 if SPACE not in param_values:
                     param_values[SPACE] = 'linear'
+                param_values['range'] = (param_values['low'],
+                                         param_values['high'])
+                del param_values['low']
+                del param_values['high']
+
         self.pysot_optimizer = PySOTOptimizer(params_for_join_space)
         self.sampled_so_far = 0
         self.num_samples = num_samples
