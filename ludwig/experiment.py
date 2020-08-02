@@ -648,7 +648,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '--metadata_json',
+        '--train_set_metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file'
              ' containing the mappings of the input CSV created the first time '
              'a CSV file is used in the same directory with the same name and a'
