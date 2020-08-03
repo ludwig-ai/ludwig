@@ -95,7 +95,7 @@ def test_savedmodel(csv_filename):
     # collect weight tensors names
     ##############################
     original_predictions_df = ludwig_model.predict(data_csv=data_csv_path)
-    original_weights = deepcopy(ludwig_model.model.ecd.trainable_variables)
+    original_weights = deepcopy(ludwig_model.model.model.trainable_variables)
     ludwig_model.close()
 
     ###################################################
@@ -103,7 +103,7 @@ def test_savedmodel(csv_filename):
     ###################################################
     ludwig_model = LudwigModel.load(ludwigmodel_path)
     loaded_prediction_df = ludwig_model.predict(data_csv=data_csv_path)
-    loaded_weights = deepcopy(ludwig_model.model.ecd.trainable_variables)
+    loaded_weights = deepcopy(ludwig_model.model.model.trainable_variables)
 
 
     #################################################
@@ -134,7 +134,7 @@ def test_savedmodel(csv_filename):
         {if_name: tf.convert_to_tensor(dataset.dataset[if_name])},
         # todo tf2: next is work-around allow matching function signature by
         # tf2, need to determine if this can be eliminated
-        {of_name: tf.zeros([num_values, ], dtype=tf.int8)}
+        #{of_name: tf.zeros([num_values, ], dtype=tf.int8)}
     )
 
     logits = restored_model(data_to_predict, False, None)
