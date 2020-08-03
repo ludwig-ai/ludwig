@@ -34,15 +34,15 @@ from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.model import Model
-from ludwig.models.model import load_model_and_definition
-from ludwig.models.modules.metric_modules import get_best_function
+from ludwig.models.trainer import Trainer
+from ludwig.models.trainer import load_model_and_definition
+from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.misc import get_experiment_description, \
+from ludwig.utils.misc_utils import get_experiment_description, \
     find_non_existing_dir_by_adding_suffix
-from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
@@ -498,7 +498,7 @@ def train(
         if is_on_master():
             print_boxed('BUILDING MODEL', print_fun=logger.debug)
 
-        model = Model(
+        model = Trainer(
             model_definition['input_features'],
             model_definition['output_features'],
             model_definition['combiner'],

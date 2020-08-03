@@ -22,12 +22,12 @@ import sys
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.convolutional_modules import Conv1DStack, \
+from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D
-from ludwig.models.modules.embedding_modules import EmbedSequence
-from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.recurrent_modules import RecurrentStack
-from ludwig.models.modules.reduction_modules import reduce_sequence
+from ludwig.modules.embedding_modules import EmbedSequence
+from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.recurrent_modules import RecurrentStack
+from ludwig.modules.reduction_modules import reduce_sequence
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class SequencePassthroughEncoder(Layer):
             self,
             input_sequence,
             training=True,
-            mask=None  # todo tf2 needed?
+            mask=None
     ):
         """
             :param input_sequence: The input sequence fed into the encoder.

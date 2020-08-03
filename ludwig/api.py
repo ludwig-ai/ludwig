@@ -52,8 +52,8 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.globals import set_disable_progressbar
-from ludwig.models.model import Model
-from ludwig.models.model import load_model_and_definition
+from ludwig.models.trainer import Trainer
+from ludwig.models.trainer import load_model_and_definition
 from ludwig.predict import calculate_overall_stats
 from ludwig.train import full_train
 from ludwig.train import update_model_definition_with_metadata
@@ -281,7 +281,7 @@ class LudwigModel:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
 
-        self.model.ecd.save_weights(model_weights_path)
+        self.model.model.save_weights(model_weights_path)
 
         train_set_metadata_path = os.path.join(
             save_path,
@@ -614,7 +614,7 @@ class LudwigModel:
             train_set_metadata)
 
         # build model
-        model = Model(
+        model = Trainer(
             self.model_definition['input_features'],
             self.model_definition['output_features'],
             self.model_definition['combiner'],

@@ -44,9 +44,9 @@ from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
 from ludwig.models.ecd import ECD, dynamic_length_encoders
-from ludwig.models.modules.metric_modules import get_improved_fun
-from ludwig.models.modules.metric_modules import get_initial_validation_value
-from ludwig.models.modules.optimization_modules import ClippedOptimizer
+from ludwig.modules.metric_modules import get_improved_fun
+from ludwig.modules.metric_modules import get_initial_validation_value
+from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
 from ludwig.utils.batcher import Batcher
 from ludwig.utils.batcher import BucketedBatcher
@@ -56,8 +56,8 @@ from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed
-from ludwig.utils.misc import set_random_seed
-from ludwig.utils.misc import sum_dicts
+from ludwig.utils.misc_utils import set_random_seed
+from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 tf.config.experimental_run_functions_eagerly(True)
 
 
-class Model:
+class Trainer:
     """
     Model is a class that builds the model that Ludwig uses
     """
@@ -114,37 +114,13 @@ class Model:
 
         # public
         # NOTE: TensorFlow must be initialized prior to creating the model
-        self.ecd = ECD(input_features, combiner, output_features)
+        self.model = ECD(input_features, combiner, output_features)
 
         # ================ Optimizer ================
         self._optimizer = ClippedOptimizer(
+            horovod=self._horovod,
             **self._hyperparameters[TRAINING]['optimizer']
         )
-
-    @tf.function
-    def train_step(self, model, optimizer, inputs, targets,
-                   regularization_lambda=0.0):
-        with tf.GradientTape() as tape:
-            logits = model((inputs, targets), training=True)
-            loss, all_losses = model.train_loss(
-                targets, logits, regularization_lambda
-            )
-        optimizer.minimize_with_tape(
-            tape, loss, model.trainable_variables, self._horovod
-        )
-        # grads = tape.gradient(loss, model.trainable_weights)
-        # optimizer.apply_gradients(zip(grads, model.trainable_weights))
-        return loss, all_losses
-
-    @tf.function
-    def evaluation_step(self, model, inputs, targets):
-        predictions = model.predictions(inputs, output_features=None)
-        model.update_metrics(targets, predictions)
-        return predictions
-
-    @tf.function
-    def predict_step(self, model, inputs):
-        return model.predictions(inputs, output_features=None)
 
     @classmethod
     def write_epoch_summary(
@@ -302,7 +278,7 @@ class Model:
         :type: Float
         """
         # ====== General setup =======
-        output_features = self.ecd.output_features
+        output_features = self.model.output_features
         self._epochs = epochs
         digits_per_epochs = len(str(self._epochs))
         self._received_sigint = False
@@ -379,7 +355,7 @@ class Model:
         if is_on_master():
             checkpoint = tf.train.Checkpoint(
                 optimizer=self._optimizer,
-                model=self.ecd
+                model=self.model
             )
             checkpoint_manager = tf.train.CheckpointManager(
                 checkpoint, training_checkpoints_path, max_to_keep=1
@@ -470,7 +446,7 @@ class Model:
             batcher.batch_size = progress_tracker.batch_size
 
             # Reset the metrics at the start of the next epoch
-            self.ecd.reset_metrics()
+            self.model.reset_metrics()
 
             # ================ Train ================
             if is_on_master():
@@ -497,8 +473,7 @@ class Model:
                 # if first_batch and is_on_master() and not skip_save_log:
                 #    tf.summary.trace_on(graph=True, profiler=True)
 
-                loss, all_losses = self.train_step(
-                    self.ecd,
+                loss, all_losses = self.model.train_step(
                     self._optimizer,
                     inputs,
                     targets,
@@ -529,7 +504,7 @@ class Model:
                     #
                     # Note: broadcast should be done after the first gradient step to ensure
                     # optimizer initialization.
-                    self._horovod.broadcast_variables(self.ecd.variables,
+                    self._horovod.broadcast_variables(self.model.variables,
                                                       root_rank=0)
                     self._horovod.broadcast_variables(
                         self._optimizer.variables(), root_rank=0)
@@ -565,14 +540,6 @@ class Model:
             progress_tracker.epoch += 1
             batcher.reset()  # todo this may be useless, doublecheck
 
-            # todo tf2 remove when development done
-            # template = f'Epoch {progress_tracker.epoch:d}:'
-            # for metric, metric_fn in output_feature.metric_functions.items():
-            #     if metric_fn is not None:  # todo tf2 test is needed only during development
-            #         template += f' {metric}: {metric_fn.result()}'
-            #
-            # print(template)
-
             # ================ Eval ================
             # init tables
             tables = OrderedDict()
@@ -583,7 +550,6 @@ class Model:
             tables[COMBINED] = [[COMBINED, LOSS]]
 
             # eval metrics on train
-            # todo: tf2 add back relevant code as needed
             self.evaluation(
                 training_set,
                 'train',
@@ -675,7 +641,7 @@ class Model:
                 # there's no validation, so we save the model at each iteration
                 if is_on_master():
                     if not skip_save_model:
-                        self.ecd.save_weights(model_weights_path)
+                        self.model.save_weights(model_weights_path)
                         self.save_hyperparameters(
                             self._hyperparameters,
                             model_hyperparameters_path
@@ -738,8 +704,7 @@ class Model:
             targets = {o_feat['name']: batch[o_feat['name']] for o_feat in
                        self._hyperparameters['output_features']}
 
-            self.train_step(
-                self.ecd,
+            self.model.train_step(
                 self._optimizer,
                 inputs,
                 targets,
@@ -751,12 +716,12 @@ class Model:
         progress_bar.close()
 
     def append_metrics(self, dataset_name, results, metrics_log, tables):
-        for output_feature in self.ecd.output_features:
+        for output_feature in self.model.output_features:
             scores = [dataset_name]
 
             # collect metric names based on output features metrics to
             # ensure consistent order of reporting metrics
-            metric_names = self.ecd.output_features[output_feature] \
+            metric_names = self.model.output_features[output_feature] \
                 .metric_functions.keys()
 
             for metric in metric_names:
@@ -809,8 +774,7 @@ class Model:
             if only_predictions:
                 (
                     preds
-                ) = self.predict_step(
-                    self.ecd,
+                ) = self.model.predict_step(
                     inputs
                 )
             else:
@@ -819,8 +783,7 @@ class Model:
 
                 (
                     preds
-                ) = self.evaluation_step(
-                    self.ecd,
+                ) = self.model.evaluation_step(
                     inputs,
                     targets
                 )
@@ -850,11 +813,11 @@ class Model:
         if only_predictions:
             metrics = None
         else:
-            metrics = self.ecd.get_metrics()
+            metrics = self.model.get_metrics()
             if self._horovod:
                 metrics = self.merge_workers_metrics(metrics)
 
-            self.ecd.reset_metrics()
+            self.model.reset_metrics()
 
         return metrics, predictions
 
@@ -967,7 +930,7 @@ class Model:
                 validation_field][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
-                    self.ecd.save_weights(model_weights_path)
+                    self.model.save_weights(model_weights_path)
                     self.save_hyperparameters(
                         self._hyperparameters,
                         model_hyperparameters_path
@@ -1088,7 +1051,6 @@ class Model:
             tensor_names,
             **kwargs
     ):
-        # todo tf2: reintroduce functionality
         # if self.session is None:
         #     session = self.initialize_session(gpus, gpu_fraction)
         #
@@ -1119,7 +1081,7 @@ class Model:
 
     def save_weights(self, save_path):
         # save model
-        self.ecd.save_weights(save_path)
+        self.model.save_weights(save_path)
 
     def save_hyperparameters(self, hyperparameters, save_path):
         # removing pretrained embeddings paths from hyperparameters
@@ -1165,7 +1127,7 @@ class Model:
         self.ecd.save(save_path)
 
     def restore(self, weights_path):
-        self.ecd.load_weights(weights_path)
+        self.model.load_weights(weights_path)
 
     @staticmethod
     def load(load_path, use_horovod=None, gpus=None, gpu_memory_limit=None,
@@ -1175,11 +1137,11 @@ class Model:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
         hyperparameters = load_json(hyperparameter_file)
-        model = Model(use_horovod=use_horovod,
-                      gpus=gpus,
-                      gpu_memory_limit=gpu_memory_limit,
-                      allow_parallel_threads=allow_parallel_threads,
-                      **hyperparameters)
+        model = Trainer(use_horovod=use_horovod,
+                        gpus=gpus,
+                        gpu_memory_limit=gpu_memory_limit,
+                        allow_parallel_threads=allow_parallel_threads,
+                        **hyperparameters)
         weights_save_path = os.path.join(
             load_path,
             MODEL_WEIGHTS_FILE_NAME
@@ -1455,9 +1417,9 @@ def load_model_and_definition(model_dir,
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
     )
-    model = Model.load(model_dir,
-                       use_horovod=use_horovod,
-                       gpus=gpus,
-                       gpu_memory_limit=gpu_memory_limit,
-                       allow_parallel_threads=allow_parallel_threads)
+    model = Trainer.load(model_dir,
+                         use_horovod=use_horovod,
+                         gpus=gpus,
+                         gpu_memory_limit=gpu_memory_limit,
+                         allow_parallel_threads=allow_parallel_threads)
     return model, model_definition

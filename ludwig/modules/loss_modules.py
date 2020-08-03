@@ -92,7 +92,7 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         return loss
 
 
-# todo tf2: work-in-progress partial implementation
+# todo tf2: wait for fix to https://github.com/tensorflow/tensorflow/issues/41792
 class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,

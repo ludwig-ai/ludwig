@@ -21,9 +21,9 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.features.base_feature import InputFeature
-from ludwig.models.modules.h3_encoders import H3WeightedSum, H3RNN, H3Embed
+from ludwig.modules.h3_encoders import H3Embed, H3WeightedSum, H3RNN
 from ludwig.utils.h3_util import h3_to_components
-from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 

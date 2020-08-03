@@ -20,7 +20,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.initializer_modules import get_initializer
+from ludwig.modules.initializer_modules import get_initializer
 from ludwig.utils.data_utils import load_pretrained_embeddings
 
 logger = logging.getLogger(__name__)

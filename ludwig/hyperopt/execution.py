@@ -6,20 +6,20 @@ from abc import ABC, abstractmethod
 
 from ludwig.constants import MAXIMIZE, VALIDATION, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess
-from ludwig.hyperopt.sampling import HyperoptSamplingStrategy, \
+from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
 from ludwig.predict import predict, print_test_results, \
     save_prediction_outputs, save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc import get_available_gpu_memory, get_from_registry
+from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 
 class HyperoptExecutor(ABC):
-    def __init__(self, hyperopt_strategy: HyperoptSamplingStrategy,
+    def __init__(self, hyperopt_sampler: HyperoptSampler,
                  output_feature: str, metric: str, split: str) -> None:
-        self.hyperopt_strategy = hyperopt_strategy
+        self.hyperopt_sampler = hyperopt_sampler
         self.output_feature = output_feature
         self.metric = metric
         self.split = split
@@ -30,7 +30,7 @@ class HyperoptExecutor(ABC):
     def sort_hyperopt_results(self, hyperopt_results):
         return sorted(
             hyperopt_results, key=lambda hp_res: hp_res["metric_score"],
-            reverse=self.hyperopt_strategy.goal == MAXIMIZE
+            reverse=self.hyperopt_sampler.goal == MAXIMIZE
         )
 
     @abstractmethod
@@ -77,11 +77,11 @@ class HyperoptExecutor(ABC):
 
 class SerialExecutor(HyperoptExecutor):
     def __init__(
-            self, hyperopt_strategy: HyperoptSamplingStrategy,
+            self, hyperopt_sampler: HyperoptSampler,
             output_feature: str,
             metric: str, split: str, **kwargs
     ) -> None:
-        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
 
     def execute(
@@ -124,8 +124,8 @@ class SerialExecutor(HyperoptExecutor):
     ):
         hyperopt_results = []
         trials = 0
-        while not self.hyperopt_strategy.finished():
-            sampled_parameters = self.hyperopt_strategy.sample_batch()
+        while not self.hyperopt_sampler.finished():
+            sampled_parameters = self.hyperopt_sampler.sample_batch()
             metric_scores = []
 
             for i, parameters in enumerate(sampled_parameters):
@@ -183,7 +183,7 @@ class SerialExecutor(HyperoptExecutor):
                 )
             trials += len(sampled_parameters)
 
-            self.hyperopt_strategy.update_batch(
+            self.hyperopt_sampler.update_batch(
                 zip(sampled_parameters, metric_scores))
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)
@@ -199,7 +199,7 @@ class ParallelExecutor(HyperoptExecutor):
 
     def __init__(
             self,
-            hyperopt_strategy: HyperoptSamplingStrategy,
+            hyperopt_sampler: HyperoptSampler,
             output_feature: str,
             metric: str,
             split: str,
@@ -207,7 +207,7 @@ class ParallelExecutor(HyperoptExecutor):
             epsilon: float = 0.01,
             **kwargs
     ) -> None:
-        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
         self.num_workers = num_workers
         self.epsilon = epsilon
@@ -402,8 +402,8 @@ class ParallelExecutor(HyperoptExecutor):
         try:
             hyperopt_results = []
             trials = 0
-            while not self.hyperopt_strategy.finished():
-                sampled_parameters = self.hyperopt_strategy.sample_batch()
+            while not self.hyperopt_sampler.finished():
+                sampled_parameters = self.hyperopt_sampler.sample_batch()
 
                 hyperopt_parameters = []
                 for i, parameters in enumerate(sampled_parameters):
@@ -460,7 +460,7 @@ class ParallelExecutor(HyperoptExecutor):
                     batch_results = pool.map(self._train_and_eval_model,
                                              hyperopt_parameters)
 
-                self.hyperopt_strategy.update_batch(
+                self.hyperopt_sampler.update_batch(
                     (result["parameters"], result["metric_score"]) for result in
                     batch_results
                 )
@@ -480,7 +480,7 @@ class FiberExecutor(HyperoptExecutor):
 
     def __init__(
             self,
-            hyperopt_strategy: HyperoptSamplingStrategy,
+            hyperopt_sampler: HyperoptSampler,
             output_feature: str,
             metric: str,
             split: str,
@@ -492,7 +492,7 @@ class FiberExecutor(HyperoptExecutor):
     ) -> None:
         import fiber
 
-        HyperoptExecutor.__init__(self, hyperopt_strategy, output_feature,
+        HyperoptExecutor.__init__(self, hyperopt_sampler, output_feature,
                                   metric, split)
 
         fiber.init(backend=fiber_backend)
@@ -591,8 +591,8 @@ class FiberExecutor(HyperoptExecutor):
 
         hyperopt_results = []
         trials = 0
-        while not self.hyperopt_strategy.finished():
-            sampled_parameters = self.hyperopt_strategy.sample_batch()
+        while not self.hyperopt_sampler.finished():
+            sampled_parameters = self.hyperopt_sampler.sample_batch()
             metric_scores = []
 
             stats_batch = self.pool.map(
@@ -623,7 +623,7 @@ class FiberExecutor(HyperoptExecutor):
                     }
                 )
 
-            self.hyperopt_strategy.update_batch(
+            self.hyperopt_sampler.update_batch(
                 zip(sampled_parameters, metric_scores))
 
         hyperopt_results = self.sort_hyperopt_results(hyperopt_results)

@@ -18,7 +18,7 @@ import logging
 
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
