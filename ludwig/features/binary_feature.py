@@ -25,18 +25,18 @@ from ludwig.constants import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.models.modules.generic_decoders import Regressor
-from ludwig.models.modules.generic_encoders import PassthroughEncoder, \
+from ludwig.modules.generic_decoders import Regressor
+from ludwig.modules.generic_encoders import PassthroughEncoder, \
     DenseEncoder
-from ludwig.models.modules.loss_modules import BWCEWLoss
-from ludwig.models.modules.metric_modules import BWCEWLMetric
+from ludwig.modules.loss_modules import BWCEWLoss
+from ludwig.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
 from ludwig.utils.metrics_utils import roc_auc_score
 from ludwig.utils.metrics_utils import roc_curve
-from ludwig.utils.misc import set_default_value
-from ludwig.utils.misc import set_default_values
+from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import str2bool
 
 logger = logging.getLogger(__name__)

@@ -17,9 +17,9 @@ import logging
 
 import tensorflow as tf
 
-from ludwig.models.modules.attention_modules import \
+from ludwig.modules.attention_modules import \
     reduce_feed_forward_attention
-from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)

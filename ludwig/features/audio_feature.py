@@ -33,8 +33,8 @@ from ludwig.utils.audio_utils import get_non_symmetric_length
 from ludwig.utils.audio_utils import get_phase_stft_magnitude
 from ludwig.utils.audio_utils import get_stft_magnitude
 from ludwig.utils.data_utils import get_abs_path
-from ludwig.utils.misc import set_default_value
-from ludwig.utils.misc import set_default_values
+from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_values
 
 logger = logging.getLogger(__name__)
 

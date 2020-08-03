@@ -18,10 +18,10 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.models.modules.loss_modules import BWCEWLoss, \
+from ludwig.modules.loss_modules import BWCEWLoss, \
     SigmoidCrossEntropyLoss
-from ludwig.models.modules.loss_modules import SequenceLoss
-from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SequenceLoss
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.utils.tf_utils import sequence_length_2D
 from ludwig.utils.tf_utils import to_sparse
 

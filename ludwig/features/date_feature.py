@@ -24,8 +24,8 @@ from dateutil.parser import parse
 
 from ludwig.constants import *
 from ludwig.features.base_feature import InputFeature
-from ludwig.models.modules.date_encoders import DateEmbed, DateWave
-from ludwig.utils.misc import set_default_value
+from ludwig.modules.date_encoders import DateEmbed, DateWave
+from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 

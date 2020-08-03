@@ -26,7 +26,7 @@ from bayesmark.space import JointSpace
 
 from ludwig.constants import MINIMIZE, MAXIMIZE, CATEGORY, INT, TYPE, \
     SPACE, FLOAT
-from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 

@@ -18,9 +18,9 @@ from ludwig.constants import *
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_registries import input_type_registry
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.utils.misc import get_from_registry
-from ludwig.utils.misc import merge_dict
-from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import set_default_value
 
 default_random_seed = 42
 

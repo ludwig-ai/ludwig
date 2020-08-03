@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.features.sequence_feature import SequenceInputFeature
-from ludwig.utils.misc import get_from_registry, set_default_values
+from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
 
 logger = logging.getLogger(__name__)

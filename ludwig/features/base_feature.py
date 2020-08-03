@@ -20,9 +20,9 @@ from collections import OrderedDict
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.reduction_modules import reduce_sequence
-from ludwig.utils.misc import merge_dict, get_from_registry
+from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
@@ -289,7 +289,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                             multipliers
                         )
 
-                        # todo tf2: modify this with TF2 mask mechanics
+                        # todo tf2: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
                         mask = tf.sequence_mask(
                             sequence_length,

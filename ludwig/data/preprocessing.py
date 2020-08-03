@@ -40,9 +40,9 @@ from ludwig.utils.data_utils import text_feature_data_field
 from ludwig.utils.defaults import default_preprocessing_parameters, \
     merge_with_defaults
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc import get_from_registry
-from ludwig.utils.misc import merge_dict
-from ludwig.utils.misc import set_random_seed
+from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.misc_utils import merge_dict
+from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
 

@@ -12,7 +12,7 @@ from ludwig.predict import predict, print_test_results, \
     save_prediction_outputs, save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc import get_available_gpu_memory, get_from_registry
+from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 
 
