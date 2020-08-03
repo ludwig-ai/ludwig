@@ -19,14 +19,14 @@ import logging
 import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
+from ludwig.encoders.sequence_encoders import ParallelCNN
+from ludwig.encoders.sequence_encoders import StackedCNN
+from ludwig.encoders.sequence_encoders import StackedCNNRNN
+from ludwig.encoders.sequence_encoders import StackedParallelCNN
+from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import reduce_sequence
-from ludwig.modules.sequence_encoders import ParallelCNN
-from ludwig.modules.sequence_encoders import StackedCNN
-from ludwig.modules.sequence_encoders import StackedCNNRNN
-from ludwig.modules.sequence_encoders import StackedParallelCNN
-from ludwig.modules.sequence_encoders import StackedRNN
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 

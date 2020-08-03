@@ -22,14 +22,14 @@ import tensorflow as tf
 from tensorflow.keras.metrics import MeanIoU
 
 from ludwig.constants import *
+from ludwig.decoders.generic_decoders import Classifier
+from ludwig.encoders.set_encoders import SetSparseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
 from ludwig.globals import is_on_master
-from ludwig.modules.generic_decoders import Classifier
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
-from ludwig.modules.set_encoders import SetSparseEncoder
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 

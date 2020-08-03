@@ -26,12 +26,12 @@ from tensorflow.keras.metrics import \
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
+from ludwig.decoders.generic_decoders import Projector
+from ludwig.encoders.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.modules.generic_decoders import Projector
-from ludwig.modules.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import ErrorScore, \
     SoftmaxCrossEntropyMetric

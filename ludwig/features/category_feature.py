@@ -21,13 +21,13 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.decoders.generic_decoders import Classifier
+from ludwig.encoders.category_encoders import CategoricalEmbedEncoder
+from ludwig.encoders.category_encoders import CategoricalSparseEncoder
+from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.modules.category_encoders import CategoricalEmbedEncoder
-from ludwig.modules.category_encoders import CategoricalSparseEncoder
-from ludwig.modules.generic_decoders import Classifier
-from ludwig.modules.generic_encoders import PassthroughEncoder
 from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import CategoryAccuracy
