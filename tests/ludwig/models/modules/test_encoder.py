@@ -28,6 +28,8 @@ from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.modules.loss_modules import regularizer_registry
 
+# todo tf2: fix these tests to work with the TF2 way
+#  of doing regularization at init time
 L1_REGULARIZER = regularizer_registry['l1'](0.1)
 L2_REGULARIZER = regularizer_registry['l2'](0.1)
 NO_REGULARIZER = None
