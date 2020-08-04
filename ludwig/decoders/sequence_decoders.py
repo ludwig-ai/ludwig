@@ -386,55 +386,28 @@ class SequenceGeneratorDecoder(Layer):
 
         # initialize inference decoder
         decoder_embedding_matrix = self.decoder_embedding.variables[0]
-        (
-            first_finished,
-            first_inputs,
-            first_state
-        ) = decoder.initialize(
-            decoder_embedding_matrix,
-            start_tokens=start_tokens,
-            end_token=end_token,
-            # following construct required to work around inconsistent handling
-            # of encoder_end_state by tfa
-            initial_state=decoder_initial_state \
-                if len(decoder_initial_state) != 1 \
-                else decoder_initial_state[0]
-        )
-
-        inputs = first_inputs
-        state = first_state
-
-        # create empty logits tensor
-        logits = tf.convert_to_tensor(
-            np.array([]).reshape([batch_size, 0, self.num_classes]),
-            dtype=tf.float32
-        )
-        # create empty predictions tensor
-        predictions = tf.convert_to_tensor(
-            np.array([]).reshape([batch_size, 0]),
-            dtype=tf.int32  # todo tf2 need to change to tf.int64
-        )
-        # create lengths tensor
-        lengths = tf.zeros([batch_size], dtype=tf.int32)
 
         # beam search
-        for j in range(maximum_iterations):
-            outputs, next_state, next_inputs, finished = decoder.step(
-                j, inputs, state, training=training)
-            inputs = next_inputs
-            state = next_state
-            # logtis don't work, temporary workaround
-            one_logit = tf.zeros([batch_size, 1, self.num_classes])
-            logits = tf.concat([logits, one_logit], axis=1)
-            one_predicted_token = tf.expand_dims(outputs.predicted_ids[:, 0],
-                                                 axis=1)
-            predictions = tf.concat([predictions, one_predicted_token], axis=1)
+        decoder_output, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
+            decoder=decoder,
+            output_time_major=False,
+            impute_finished=False,
+            maximum_iterations=maximum_iterations,
+            decoder_init_input=decoder_embedding_matrix,
+            decoder_init_kwargs=dict(
+                start_tokens=start_tokens,
+                end_token=end_token,
+                # following construct required to work around inconsistent handling
+                # of encoder_end_state by tfa
+                initial_state=decoder_initial_state \
+                    if len(decoder_initial_state) != 1 \
+                    else decoder_initial_state[0]
+            ),
+        )
 
-        # todo tf2: we should first run all the iterations and only at the end
-        #  collect logits and predictions. The current implementation is WRONG
-
-        # todo tf2: solve cases when predictions become 0 and then return
-        #  to be a number, which confuses the last_predictions later
+        predictions = decoder_output.beam_search_decoder_output.predicted_ids[:, :, 0]
+        logits = decoder_output.beam_search_decoder_output.all_scores[:, :, 0, :]
+        lengths = decoder_lengths[:, 0]
 
         last_predictions = tf.gather_nd(
             predictions,
@@ -446,7 +419,7 @@ class SequenceGeneratorDecoder(Layer):
             name='last_predictions_{}'.format(self.name)
         )
 
-        probabilities = tf.zeros_like(logits)
+        probabilities = tf.nn.softmax(logits)
 
         return logits, lengths, predictions, last_predictions, probabilities
 
