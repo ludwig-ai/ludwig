@@ -464,49 +464,22 @@ class SequenceGeneratorDecoder(Layer):
 
         # initialize inference decoder
         decoder_embedding_matrix = self.decoder_embedding.variables[0]
-        (
-            first_finished,
-            first_inputs,
-            first_state
-        ) = decoder.initialize(
-            decoder_embedding_matrix,
-            start_tokens=start_tokens,
-            end_token=end_token,
-            initial_state=decoder_initial_state
+        decoder_output, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
+            decoder=decoder,
+            output_time_major=False,
+            impute_finished=False,
+            maximum_iterations=maximum_iterations,
+            decoder_init_input=decoder_embedding_matrix,
+            decoder_init_kwargs=dict(
+                start_tokens=start_tokens,
+                end_token=end_token,
+                initial_state=decoder_initial_state,
+            ),
         )
 
-        inputs = first_inputs
-        state = first_state
-
-        # create empty logits tensor
-        logits = tf.convert_to_tensor(
-            np.array([]).reshape([batch_size, 0, self.num_classes]),
-            dtype=tf.float32
-        )
-        # create empty predictions tensor
-        predictions = tf.convert_to_tensor(
-            np.array([]).reshape([batch_size, 0]),
-            dtype=tf.int32  # todo tf2 need to change to tf.int64
-        )
-        # create lengths tensor
-        lengths = tf.zeros([batch_size], dtype=tf.int32)
-        already_finished = tf.cast(tf.zeros([batch_size], dtype=tf.int8),
-                                   dtype=tf.bool)
-
-        # build up logits
-        for j in range(maximum_iterations):
-            outputs, next_state, next_inputs, finished = decoder.step(
-                j, inputs, state, training=training)
-            inputs = next_inputs
-            state = next_state
-            one_logit = tf.expand_dims(outputs.rnn_output, axis=1)
-            logits = tf.concat([logits, one_logit], axis=1)
-            one_prediction = tf.expand_dims(outputs.sample_id, axis=1)
-            predictions = tf.concat([predictions, one_prediction], axis=1)
-
-            already_finished = tf.logical_or(already_finished, finished)
-            lengths += tf.cast(tf.logical_not(already_finished),
-                               dtype=tf.int32)
+        predictions = decoder_output.sample_id
+        logits = decoder_output.rnn_output
+        lengths = decoder_lengths
 
         probabilities = tf.nn.softmax(
             logits,
