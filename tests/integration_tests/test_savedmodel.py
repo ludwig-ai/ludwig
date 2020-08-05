@@ -30,7 +30,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def _test_savedmodel(csv_filename):
+def test_savedmodel(csv_filename):
     #######
     # Setup
     #######
