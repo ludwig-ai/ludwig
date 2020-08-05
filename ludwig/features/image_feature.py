@@ -25,8 +25,8 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.encoders.image_encoders import Stacked2DCNN, ResNetEncoder
 from ludwig.features.base_feature import InputFeature
-from ludwig.modules.image_encoders import Stacked2DCNN, ResNetEncoder
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image

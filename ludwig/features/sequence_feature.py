@@ -21,6 +21,16 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
+from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
+from ludwig.encoders.sequence_encoders import BERT
+from ludwig.encoders.sequence_encoders import ParallelCNN
+from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
+from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
+from ludwig.encoders.sequence_encoders import StackedCNN
+from ludwig.encoders.sequence_encoders import StackedCNNRNN
+from ludwig.encoders.sequence_encoders import StackedParallelCNN
+from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -31,16 +41,6 @@ from ludwig.modules.metric_modules import PerplexityMetric
 from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.modules.metric_modules import SequenceLossMetric
 from ludwig.modules.metric_modules import TokenAccuracyMetric
-from ludwig.modules.sequence_decoders import SequenceGeneratorDecoder
-from ludwig.modules.sequence_decoders import SequenceTaggerDecoder
-from ludwig.modules.sequence_encoders import BERT
-from ludwig.modules.sequence_encoders import ParallelCNN
-from ludwig.modules.sequence_encoders import SequenceEmbedEncoder
-from ludwig.modules.sequence_encoders import SequencePassthroughEncoder
-from ludwig.modules.sequence_encoders import StackedCNN
-from ludwig.modules.sequence_encoders import StackedCNNRNN
-from ludwig.modules.sequence_encoders import StackedParallelCNN
-from ludwig.modules.sequence_encoders import StackedRNN
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value

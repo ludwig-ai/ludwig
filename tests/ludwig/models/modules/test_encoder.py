@@ -19,15 +19,17 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.data.dataset_synthesizer import build_vocab
-from ludwig.modules.image_encoders import ResNetEncoder, Stacked2DCNN
+from ludwig.encoders.image_encoders import ResNetEncoder, Stacked2DCNN
+from ludwig.encoders.sequence_encoders import ParallelCNN
+from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
+from ludwig.encoders.sequence_encoders import StackedCNN
+from ludwig.encoders.sequence_encoders import StackedCNNRNN
+from ludwig.encoders.sequence_encoders import StackedParallelCNN
+from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.modules.loss_modules import regularizer_registry
-from ludwig.modules.sequence_encoders import ParallelCNN
-from ludwig.modules.sequence_encoders import SequenceEmbedEncoder
-from ludwig.modules.sequence_encoders import StackedCNN
-from ludwig.modules.sequence_encoders import StackedCNNRNN
-from ludwig.modules.sequence_encoders import StackedParallelCNN
-from ludwig.modules.sequence_encoders import StackedRNN
 
+# todo tf2: fix these tests to work with the TF2 way
+#  of doing regularization at init time
 L1_REGULARIZER = regularizer_registry['l1'](0.1)
 L2_REGULARIZER = regularizer_registry['l2'](0.1)
 NO_REGULARIZER = None

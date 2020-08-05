@@ -22,12 +22,12 @@ import tensorflow as tf
 from tensorflow.keras.metrics import Accuracy as BinaryAccuracy
 
 from ludwig.constants import *
+from ludwig.decoders.generic_decoders import Regressor
+from ludwig.encoders.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.modules.generic_decoders import Regressor
-from ludwig.modules.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix

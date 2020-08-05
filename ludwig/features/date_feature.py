@@ -23,8 +23,8 @@ import tensorflow as tf
 from dateutil.parser import parse
 
 from ludwig.constants import *
+from ludwig.encoders.date_encoders import DateEmbed, DateWave
 from ludwig.features.base_feature import InputFeature
-from ludwig.modules.date_encoders import DateEmbed, DateWave
 from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)

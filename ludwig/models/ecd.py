@@ -3,10 +3,10 @@ from collections import OrderedDict
 
 import tensorflow as tf
 
+from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
-from ludwig.modules.combiners import get_combiner_class
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry

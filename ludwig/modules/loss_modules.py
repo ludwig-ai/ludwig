@@ -227,8 +227,9 @@ def mean_confidence_penalty(probabilities, num_classes):
     max_entropy = tf.constant(np.log(num_classes), dtype=tf.float32)
     # clipping needed for avoiding log(0) = -inf
     entropy_per_class = tf.maximum(- probabilities *
-                                   tf.log(tf.clip_by_value(probabilities, 1e-10,
-                                                           1)), 0)
+                                   tf.log(
+                                       tf.clip_by_value(probabilities, 1e-10,
+                                                        1)), 0)
     entropy = tf.reduce_sum(entropy_per_class, -1)
     penalty = (max_entropy - entropy) / max_entropy
     return tf.reduce_mean(penalty)
@@ -457,7 +458,8 @@ def mean_squared_error(y, y_hat, weight=1.0):
     return tf.reduce_mean(tf.multiply(squared_loss(y, y_hat), weight))
 
 
-# todo tf2: fix this!
+# todo tf2: TF2 requires regularization to be done at init time
+#  so this dictionary is useless, remove it and fix the tests that use it
 # regularizer_registry = {'l1': tf2.keras.regularizers.l1,
 #                         'l2': tf2.keras.regularizers.l2,
 #                         'l1_l2': tf2.keras.regularizers.l1_l2,
