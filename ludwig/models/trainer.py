@@ -1124,7 +1124,7 @@ class Trainer:
         #     saver=self.saver,
         # )
         # builder.save()
-        pass
+        self.model.save(save_path)
 
     def restore(self, weights_path):
         self.model.load_weights(weights_path)

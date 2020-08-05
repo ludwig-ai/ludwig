@@ -15,9 +15,9 @@
 # ==============================================================================
 import os
 import shutil
+from copy import deepcopy
 
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
@@ -29,7 +29,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def _test_savedmodel(csv_filename):
+def test_savedmodel(csv_filename):
     #######
     # Setup
     #######
@@ -39,23 +39,15 @@ def _test_savedmodel(csv_filename):
     sf = sequence_feature()
     sf['encoder'] = 'parallel_cnn'
     input_features = [sf]
-    input_feature_name = input_features[0]['name']
-    input_feature_tensor_name = '{}/{}_placeholder:0'.format(
-        input_feature_name,
-        input_feature_name
-    )
+
     output_features = [category_feature(vocab_size=2)]
-    output_feature_name = output_features[0]['name']
-    output_feature_tensor_name = '{}/predictions_{}/predictions_{}:0'.format(
-        output_feature_name,
-        output_feature_name,
-        output_feature_name
-    )
-    predictions_column_name = '{}_predictions'.format(output_feature_name)
-    weight_tensor_name = '{}/fc_0/weights:0'.format(input_feature_name)
+
+    predictions_column_name = '{}_predictions'.format(
+        output_features[0]['name'])
 
     # Generate test data
-    data_csv_path = generate_data(input_features, output_features, csv_filename)
+    data_csv_path = generate_data(input_features, output_features,
+                                  csv_filename)
 
     #############
     # Train model
@@ -75,7 +67,6 @@ def _test_savedmodel(csv_filename):
         skip_save_log=True,
         skip_save_processed_input=True,
     )
-    original_predictions_df = ludwig_model.predict(data_csv=data_csv_path)
 
     ###################
     # save Ludwig model
@@ -94,21 +85,19 @@ def _test_savedmodel(csv_filename):
     ##############################
     # collect weight tensors names
     ##############################
-    with ludwig_model.model._session as sess:
-        all_variables = tf.compat.v1.trainable_variables()
-        all_variables_names = [v.name for v in all_variables]
+    original_predictions_df = ludwig_model.predict(data_csv=data_csv_path)
+    original_weights = deepcopy(ludwig_model.model.model.trainable_variables)
     ludwig_model.close()
 
     ###################################################
     # load Ludwig model, obtain predictions and weights
     ###################################################
     ludwig_model = LudwigModel.load(ludwigmodel_path)
-    ludwig_prediction_df = ludwig_model.predict(data_csv=data_csv_path)
-    ludwig_weights = ludwig_model.model.collect_weights(all_variables_names)
-    ludwig_model.close()
+    loaded_prediction_df = ludwig_model.predict(data_csv=data_csv_path)
+    loaded_weights = deepcopy(ludwig_model.model.model.trainable_variables)
 
     #################################################
-    # load savedmodel, obtain predictions and weights
+    # restore savedmodel, obtain predictions and weights
     #################################################
     train_set_metadata_json_fp = os.path.join(
         ludwigmodel_path,
@@ -123,25 +112,34 @@ def _test_savedmodel(csv_filename):
         evaluate_performance=False
     )
 
-    with tf.compat.v1.Session() as sess:
-        tf.saved_model.loader.load(
-            sess,
-            [tf.saved_model.SERVING],
-            savedmodel_path
-        )
+    restored_model = tf.saved_model.load(savedmodel_path)
 
-        predictions = sess.run(
-            output_feature_tensor_name,
-            feed_dict={
-                input_feature_tensor_name: dataset.get(input_feature_name),
-            }
-        )
+    if_name = list(restored_model.input_features.keys())[0]
+    of_name = list(restored_model.output_features.keys())[0]
 
-        savedmodel_prediction_df = pd.DataFrame(
-            data=[train_set_metadata[output_feature_name]["idx2str"][p] for p in
-                  predictions], columns=[predictions_column_name])
+    num_values = tf.convert_to_tensor(dataset.dataset[if_name]).shape[0]
 
-        savedmodel_weights = sess.run({n: n for n in all_variables_names})
+    data_to_predict = (
+        {if_name: tf.convert_to_tensor(dataset.dataset[if_name])},
+        # todo tf2: next is work-around allow matching function signature by
+        # tf2, need to determine if this can be eliminated
+        {of_name: tf.zeros([num_values, ], dtype=tf.int8)}
+    )
+
+    logits = restored_model(data_to_predict, False, None)
+
+    restored_predictions = tf.argmax(
+        logits[of_name]['logits'],
+        -1,
+        name='predictions_{}'.format(of_name)
+    )
+    restored_predictions = tf.map_fn(
+        lambda idx: train_set_metadata[of_name]['idx2str'][idx],
+        restored_predictions,
+        dtype=tf.string
+    )
+
+    restored_weights = deepcopy(restored_model.trainable_variables)
 
     #########
     # Cleanup
@@ -153,33 +151,33 @@ def _test_savedmodel(csv_filename):
     # Check if weights and predictions are the same
     ###############################################
 
-    for var in all_variables_names:
-        print(
-            "Are the weights in {} identical?".format(var),
-            np.all(ludwig_weights[var] == savedmodel_weights[var])
-        )
-    print(
-        "Are loaded model predictions identical to original ones?",
-        np.all(
-            original_predictions_df[predictions_column_name] == \
-            ludwig_prediction_df[predictions_column_name]
-        )
+    # check for same number of weights as original model
+    assert len(original_weights) == len(loaded_weights)
+    assert len(original_weights) == len(restored_weights)
+
+    # check to ensure weight valuess match the original model
+    loaded_weights_match = np.all(
+        [np.all(np.isclose(original_weights[i].numpy(),
+                           loaded_weights[i].numpy())) for i in
+         range(len(original_weights))]
     )
-    print(
-        "Are savedmodel predictions identical to loaded model?",
-        np.all(
-            ludwig_prediction_df[predictions_column_name] == \
-            savedmodel_prediction_df[predictions_column_name]
-        )
+    restored_weights_match = np.all(
+        [np.all(np.isclose(original_weights[i].numpy(),
+                           restored_weights[i].numpy())) for i in
+         range(len(original_weights))]
     )
 
-    for var in all_variables_names:
-        assert np.all(ludwig_weights[var] == savedmodel_weights[var])
-    assert np.all(
-        original_predictions_df[predictions_column_name] == \
-        ludwig_prediction_df[predictions_column_name]
+    assert loaded_weights_match and restored_weights_match
+
+    #  Are predictions identical to original ones?
+    loaded_predictions_match = np.all(
+        original_predictions_df[predictions_column_name] ==
+        loaded_prediction_df[predictions_column_name]
     )
-    assert np.all(
-        ludwig_prediction_df[predictions_column_name] == \
-        savedmodel_prediction_df[predictions_column_name]
+
+    restored_predictions_match = np.all(
+        original_predictions_df[predictions_column_name] ==
+        restored_predictions.numpy().astype('str')
     )
+
+    assert loaded_predictions_match and restored_predictions_match
