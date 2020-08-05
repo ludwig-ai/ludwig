@@ -26,8 +26,8 @@ from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
-from ludwig.models.modules.reduction_modules import reduce_sequence
-from ludwig.utils.misc import get_from_registry
+from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
 # todo tf2 clean up

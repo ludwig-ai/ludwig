@@ -25,15 +25,14 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.encoders.image_encoders import Stacked2DCNN, ResNetEncoder
 from ludwig.features.base_feature import InputFeature
-from ludwig.models.modules.image_encoders import ResNetEncoder
-from ludwig.models.modules.image_encoders import Stacked2DCNN
 from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
-from ludwig.utils.misc import get_from_registry
-from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 import shutil
-import sys
 
 import numpy as np
 
@@ -23,7 +22,6 @@ class LudwigNeuropodModelWrapper:
         self.ludwig_model = LudwigModel.load(data_root)
 
     def __call__(self, **kwargs):
-        print('__call__', file=sys.stderr)
         data_dict = kwargs
         for key in data_dict:
             data_dict[key] = np.squeeze(data_dict[key], axis=1)
@@ -37,7 +35,6 @@ class LudwigNeuropodModelWrapper:
 
 
 def get_model(data_root):
-    print('get_model()', data_root, file=sys.stderr)
     return LudwigNeuropodModelWrapper(data_root)
 
 
@@ -117,15 +114,13 @@ def export_neuropod(
         ludwig_model_path,
         neuropod_path,
         neuropod_model_name="ludwig_model",
-        package_as_dir=False
 ):
     try:
         from neuropod.backends.python.packager import create_python_neuropod
     except ImportError:
-        logger.error(
+        raise RuntimeError(
             'The "neuropod" package is not installed in your environment.'
         )
-        sys.exit(-1)
 
     data_paths = [
         {
@@ -291,7 +286,6 @@ def export_neuropod(
         }],
         entrypoint_package="ludwig.utils.neuropod_utils",
         entrypoint="get_model",
-        # test_deps=['torch', 'numpy'],
         skip_virtualenv=True,
         input_spec=input_spec,
         output_spec=output_spec
@@ -352,10 +346,8 @@ def cli():
         args.ludwig_model_path,
         args.neuropod_path,
         args.neuropod_model_name,
-        args.package_as_dir
     )
 
 
 if __name__ == '__main__':
-    # contrib_command("neuropod", *sys.argv)
     cli()

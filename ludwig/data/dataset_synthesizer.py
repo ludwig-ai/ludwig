@@ -28,7 +28,7 @@ import yaml
 from ludwig.constants import VECTOR, TYPE
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
-from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 

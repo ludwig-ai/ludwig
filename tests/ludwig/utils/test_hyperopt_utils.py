@@ -15,7 +15,8 @@
 # ==============================================================================
 import pytest
 
-from ludwig.utils.hyperopt_utils import GridStrategy, RandomStrategy
+from ludwig.hyperopt.sampling import GridSampler, RandomSampler, \
+    PySOTSampler
 
 HYPEROPT_PARAMS = {
     "test_1": {
@@ -25,7 +26,7 @@ HYPEROPT_PARAMS = {
                 "low": 0.0001,
                 "high": 0.1,
                 "steps": 4,
-                "scale": "log"
+                "space": "log"
             },
             "combiner.num_fc_layers": {
                 "type": "int",
@@ -53,7 +54,7 @@ HYPEROPT_PARAMS = {
                 "low": 0.001,
                 "high": 0.1,
                 "steps": 4,
-                "scale": "linear"
+                "space": "linear"
             },
             "combiner.num_fc_layers": {
                 "type": "int",
@@ -77,54 +78,86 @@ HYPEROPT_PARAMS = {
 def test_grid_strategy(key):
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     goal = hyperopt_test_params["goal"]
-    grid_strategy_params = hyperopt_test_params["parameters"]
+    grid_sampler_params = hyperopt_test_params["parameters"]
 
-    grid_strategy = GridStrategy(goal=goal, parameters=grid_strategy_params)
+    grid_sampler = GridSampler(goal=goal, parameters=grid_sampler_params)
 
-    actual_params_keys = grid_strategy.sample().keys()
-    expected_params_keys = grid_strategy_params.keys()
+    actual_params_keys = grid_sampler.sample().keys()
+    expected_params_keys = grid_sampler_params.keys()
 
-    for sample in grid_strategy.samples:
+    for sample in grid_sampler.samples:
         for param in actual_params_keys:
             value = sample[param]
-            param_type = grid_strategy_params[param]["type"]
+            param_type = grid_sampler_params[param]["type"]
             if param_type == "int" or param_type == "float":
-                low = grid_strategy_params[param]["low"]
-                high = grid_strategy_params[param]["high"]
+                low = grid_sampler_params[param]["low"]
+                high = grid_sampler_params[param]["high"]
                 assert value >= low and value <= high
             else:
-                assert value in set(grid_strategy_params[param]["values"])
+                assert value in set(grid_sampler_params[param]["values"])
 
     assert actual_params_keys == expected_params_keys
-    assert grid_strategy.search_space == hyperopt_test_params[
+    assert grid_sampler.search_space == hyperopt_test_params[
         "expected_search_space"]
     assert len(
-        grid_strategy.samples) == hyperopt_test_params["expected_len_grids"]
+        grid_sampler.samples) == hyperopt_test_params["expected_len_grids"]
 
 
 @pytest.mark.parametrize("key", ["test_1", "test_2"])
-def test_random_strategy(key):
+def test_random_sampler(key):
     hyperopt_test_params = HYPEROPT_PARAMS[key]
     goal = hyperopt_test_params["goal"]
-    random_strategy_params = hyperopt_test_params["parameters"]
+    random_sampler_params = hyperopt_test_params["parameters"]
     num_samples = hyperopt_test_params["num_samples"]
 
-    random_strategy = RandomStrategy(
-        goal=goal, parameters=random_strategy_params, num_samples=num_samples)
+    random_sampler = RandomSampler(
+        goal=goal, parameters=random_sampler_params, num_samples=num_samples)
 
-    actual_params_keys = random_strategy.sample().keys()
-    expected_params_keys = random_strategy_params.keys()
+    actual_params_keys = random_sampler.sample().keys()
+    expected_params_keys = random_sampler_params.keys()
 
-    for sample in random_strategy.samples:
+    for sample in random_sampler.samples:
         for param in actual_params_keys:
             value = sample[param]
-            param_type = random_strategy_params[param]["type"]
+            param_type = random_sampler_params[param]["type"]
             if param_type == "int" or param_type == "float":
-                low = random_strategy_params[param]["low"]
-                high = random_strategy_params[param]["high"]
+                low = random_sampler_params[param]["low"]
+                high = random_sampler_params[param]["high"]
                 assert value >= low and value <= high
             else:
-                assert value in set(random_strategy_params[param]["values"])
+                assert value in set(random_sampler_params[param]["values"])
 
     assert actual_params_keys == expected_params_keys
-    assert len(random_strategy.samples) == num_samples
+    assert len(random_sampler.samples) == num_samples
+
+
+@pytest.mark.parametrize("key", ["test_1", "test_2"])
+def test_pysot_sampler(key):
+    hyperopt_test_params = HYPEROPT_PARAMS[key]
+    goal = hyperopt_test_params["goal"]
+    pysot_sampler_params = hyperopt_test_params["parameters"]
+    num_samples = hyperopt_test_params["num_samples"]
+
+    pysot_sampler = PySOTSampler(
+        goal=goal, parameters=pysot_sampler_params, num_samples=num_samples)
+
+    actual_params_keys = pysot_sampler.sample().keys()
+    expected_params_keys = pysot_sampler_params.keys()
+
+    pysot_sampler_samples = 1
+
+    for _ in range(num_samples - 1):
+        sample = pysot_sampler.sample()
+        for param in actual_params_keys:
+            value = sample[param]
+            param_type = pysot_sampler_params[param]["type"]
+            if param_type == "int" or param_type == "float":
+                low = pysot_sampler_params[param]["low"]
+                high = pysot_sampler_params[param]["high"]
+                assert value >= low and value <= high
+            else:
+                assert value in set(pysot_sampler_params[param]["values"])
+        pysot_sampler_samples += 1
+
+    assert actual_params_keys == expected_params_keys
+    assert pysot_sampler_samples == num_samples

@@ -19,15 +19,15 @@ import logging
 import tensorflow as tf
 from tensorflow.keras.layers import concatenate
 
+from ludwig.encoders.sequence_encoders import ParallelCNN
+from ludwig.encoders.sequence_encoders import StackedCNN
+from ludwig.encoders.sequence_encoders import StackedCNNRNN
+from ludwig.encoders.sequence_encoders import StackedParallelCNN
+from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.features.feature_utils import SEQUENCE_TYPES
-from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.reduction_modules import reduce_sequence
-from ludwig.models.modules.sequence_encoders import ParallelCNN
-from ludwig.models.modules.sequence_encoders import StackedCNN
-from ludwig.models.modules.sequence_encoders import StackedCNNRNN
-from ludwig.models.modules.sequence_encoders import StackedParallelCNN
-from ludwig.models.modules.sequence_encoders import StackedRNN
-from ludwig.utils.misc import get_from_registry
+from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
@@ -233,7 +233,7 @@ class SequenceConcatCombiner(tf.keras.Model):
         logger.debug('  concat_hidden: {0}'.format(hidden))
 
         # ================ Mask ================
-        # todo tf2 use tf2 masking
+        # todo tf2: maybe use tf2 masking
         sequence_mask = tf.sequence_mask(
             sequence_length,
             sequence_max_length

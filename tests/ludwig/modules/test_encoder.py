@@ -19,15 +19,17 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.data.dataset_synthesizer import build_vocab
-from ludwig.models.modules.image_encoders import Stacked2DCNN, ResNetEncoder
-from ludwig.models.modules.loss_modules import regularizer_registry
-from ludwig.models.modules.sequence_encoders import ParallelCNN
-from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
-from ludwig.models.modules.sequence_encoders import StackedCNN
-from ludwig.models.modules.sequence_encoders import StackedCNNRNN
-from ludwig.models.modules.sequence_encoders import StackedParallelCNN
-from ludwig.models.modules.sequence_encoders import StackedRNN
+from ludwig.encoders.image_encoders import ResNetEncoder, Stacked2DCNN
+from ludwig.encoders.sequence_encoders import ParallelCNN
+from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
+from ludwig.encoders.sequence_encoders import StackedCNN
+from ludwig.encoders.sequence_encoders import StackedCNNRNN
+from ludwig.encoders.sequence_encoders import StackedParallelCNN
+from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.modules.loss_modules import regularizer_registry
 
+# todo tf2: fix these tests to work with the TF2 way
+#  of doing regularization at init time
 L1_REGULARIZER = regularizer_registry['l1'](0.1)
 L2_REGULARIZER = regularizer_registry['l2'](0.1)
 NO_REGULARIZER = None
@@ -233,7 +235,7 @@ def test_sequence_encoder_embed():
             )
 
             embed = encoder.embed_sequence.embeddings
-            #assert embed.representation == 'dense'
+            # assert embed.representation == 'dense'
             assert embed.trainable == trainable
             # assert embed.regularize is True
             assert encoder.embed_sequence.dropout is None

@@ -18,7 +18,8 @@
 import contextlib
 from unittest.mock import Mock, patch
 
-from ludwig.utils.tf_utils import initialize_tensorflow, _get_tf_init_params, _set_tf_init_params
+from ludwig.utils.tf_utils import initialize_tensorflow, _get_tf_init_params, \
+    _set_tf_init_params
 
 
 @contextlib.contextmanager
@@ -33,7 +34,8 @@ def clean_params():
 
 @patch('ludwig.utils.tf_utils.tf.config')
 def test_initialize_tensorflow_only_once(mock_tf_config):
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
     with clean_params():
         # During first time initialization, set TensorFlow parallelism
         initialize_tensorflow()
@@ -57,23 +59,28 @@ def test_initialize_tensorflow_only_once(mock_tf_config):
 def test_initialize_tensorflow_with_gpu_list(mock_tf_config):
     # For test purposes, these devices can be anything, we just need to be able to uniquely
     # identify them.
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
     with clean_params():
         initialize_tensorflow(gpus=[1, 2])
-    mock_tf_config.set_visible_devices.assert_called_with(['gpu1', 'gpu2'], 'GPU')
+    mock_tf_config.set_visible_devices.assert_called_with(['gpu1', 'gpu2'],
+                                                          'GPU')
 
 
 @patch('ludwig.utils.tf_utils.tf.config')
 def test_initialize_tensorflow_with_gpu_string(mock_tf_config):
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
     with clean_params():
         initialize_tensorflow(gpus='1,2')
-    mock_tf_config.set_visible_devices.assert_called_with(['gpu1', 'gpu2'], 'GPU')
+    mock_tf_config.set_visible_devices.assert_called_with(['gpu1', 'gpu2'],
+                                                          'GPU')
 
 
 @patch('ludwig.utils.tf_utils.tf.config')
 def test_initialize_tensorflow_with_gpu_int(mock_tf_config):
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
     with clean_params():
         initialize_tensorflow(gpus=1)
     mock_tf_config.set_visible_devices.assert_called_with(['gpu1'], 'GPU')
@@ -81,7 +88,8 @@ def test_initialize_tensorflow_with_gpu_int(mock_tf_config):
 
 @patch('ludwig.utils.tf_utils.tf.config')
 def test_initialize_tensorflow_without_gpu(mock_tf_config):
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
     with clean_params():
         initialize_tensorflow(gpus=-1)
     mock_tf_config.set_visible_devices.assert_called_with([], 'GPU')
@@ -89,7 +97,8 @@ def test_initialize_tensorflow_without_gpu(mock_tf_config):
 
 @patch('ludwig.utils.tf_utils.tf.config')
 def test_initialize_tensorflow_with_horovod(mock_tf_config):
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
 
     mock_hvd = Mock()
     mock_hvd.local_rank.return_value = 1
@@ -103,9 +112,11 @@ def test_initialize_tensorflow_with_horovod(mock_tf_config):
 
 @patch('ludwig.utils.tf_utils.warnings')
 @patch('ludwig.utils.tf_utils.tf.config')
-def test_initialize_tensorflow_with_horovod_bad_local_rank(mock_tf_config, mock_warnings):
+def test_initialize_tensorflow_with_horovod_bad_local_rank(mock_tf_config,
+                                                           mock_warnings):
     """In this scenario, the local_size 5 is out of the bounds of the GPU indices."""
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
 
     mock_hvd = Mock()
     mock_hvd.local_rank.return_value = 1
@@ -120,7 +131,8 @@ def test_initialize_tensorflow_with_horovod_bad_local_rank(mock_tf_config, mock_
 
 @patch('ludwig.utils.tf_utils.tf.config')
 def test_initialize_tensorflow_with_horovod_explicit_gpus(mock_tf_config):
-    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1', 'gpu2', 'gpu3']
+    mock_tf_config.list_physical_devices.return_value = ['gpu0', 'gpu1',
+                                                         'gpu2', 'gpu3']
 
     mock_hvd = Mock()
     mock_hvd.local_rank.return_value = 1

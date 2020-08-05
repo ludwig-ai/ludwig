@@ -21,10 +21,10 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.encoders.bag_encoders import BagEmbedWeightedEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.models.modules.bag_encoders import BagEmbedWeightedEncoder
-from ludwig.utils.misc import set_default_value
+from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
 logger = logging.getLogger(__name__)

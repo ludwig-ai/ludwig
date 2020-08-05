@@ -16,12 +16,13 @@
 # ==============================================================================
 import logging
 
-from tensorflow.keras.layers import Layer
-from transformers import TFBertModel, TFOpenAIGPTModel, TFGPT2Model, TFTransfoXLModel, TFXLNetModel, TFXLMModel, \
-    TFRobertaModel, TFDistilBertModel, TFCTRLModel, TFCamembertModel, TFAlbertModel, TFT5Model, TFXLMRobertaModel, \
-    TFFlaubertModel, TFElectraModel, TFAutoModel
-
 from ludwig.models.modules.reduction_modules import reduce_sequence
+from tensorflow.keras.layers import Layer
+from transformers import TFBertModel, TFOpenAIGPTModel, TFGPT2Model, \
+    TFTransfoXLModel, TFXLNetModel, TFXLMModel, \
+    TFRobertaModel, TFDistilBertModel, TFCTRLModel, TFCamembertModel, \
+    TFAlbertModel, TFT5Model, TFXLMRobertaModel, \
+    TFFlaubertModel, TFElectraModel, TFAutoModel
 
 logger = logging.getLogger(__name__)
 

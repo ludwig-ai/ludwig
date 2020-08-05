@@ -26,16 +26,16 @@ from tensorflow.keras.metrics import \
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
+from ludwig.decoders.generic_decoders import Regressor
+from ludwig.encoders.generic_encoders import PassthroughEncoder, \
+    DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.models.modules.generic_decoders import Regressor
-from ludwig.models.modules.generic_encoders import PassthroughEncoder, \
-    DenseEncoder
-from ludwig.models.modules.metric_modules import ErrorScore
-from ludwig.models.modules.metric_modules import R2Score
-from ludwig.utils.misc import set_default_value
-from ludwig.utils.misc import set_default_values
+from ludwig.modules.metric_modules import ErrorScore
+from ludwig.modules.metric_modules import R2Score
+from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_values
 
 logger = logging.getLogger(__name__)
 

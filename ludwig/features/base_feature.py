@@ -20,9 +20,9 @@ from collections import OrderedDict
 import tensorflow as tf
 
 from ludwig.constants import *
-from ludwig.models.modules.fully_connected_modules import FCStack
-from ludwig.models.modules.reduction_modules import reduce_sequence
-from ludwig.utils.misc import merge_dict, get_from_registry
+from ludwig.modules.fully_connected_modules import FCStack
+from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ class BaseFeature(object):
     feature.  Other functionality should be put into mixin classes to avoid the diamond
     pattern.
     """
+
     def __init__(self, feature, *args, **kwargs):
         super().__init__()
 
@@ -61,6 +62,7 @@ class BaseFeature(object):
 
 class InputFeature(BaseFeature, tf.keras.Model, ABC):
     """Parent class for all input features."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -92,6 +94,7 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
 
 class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     """Parent class for all output features."""
+
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
 
@@ -286,7 +289,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                             multipliers
                         )
 
-                        # todo tf2: modify this with TF2 mask mechanics
+                        # todo tf2: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
                         mask = tf.sequence_mask(
                             sequence_length,

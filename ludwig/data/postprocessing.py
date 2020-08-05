@@ -19,7 +19,7 @@ import pandas as pd
 from ludwig.constants import TYPE
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
-from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry
 
 
 def postprocess_results(

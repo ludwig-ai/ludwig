@@ -18,7 +18,7 @@ import logging
 
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.embedding_modules import Embed
+from ludwig.modules.embedding_modules import Embed
 
 logger = logging.getLogger(__name__)
 

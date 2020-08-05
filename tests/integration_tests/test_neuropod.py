@@ -32,7 +32,7 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def _test_neuropod(csv_filename):
+def test_neuropod(csv_filename):
     #######
     # Setup
     #######
@@ -101,6 +101,7 @@ def _test_neuropod(csv_filename):
     # build neuropod
     ################
     neuropod_path = os.path.join(dir_path, 'neuropod')
+    shutil.rmtree(neuropod_path, ignore_errors=True)
     export_neuropod(ludwigmodel_path, neuropod_path=neuropod_path)
 
     ########################
@@ -116,7 +117,7 @@ def _test_neuropod(csv_filename):
     }
 
     from neuropod.loader import load_neuropod
-    neuropod_model = load_neuropod(neuropod_path)
+    neuropod_model = load_neuropod(neuropod_path, _always_use_native=False)
     preds = neuropod_model.infer(if_dict)
 
     for key in preds:

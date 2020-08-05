@@ -30,8 +30,8 @@ from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.model import load_model_and_definition
-from ludwig.utils.misc import find_non_existing_dir_by_adding_suffix
+from ludwig.models.trainer import load_model_and_definition
+from ludwig.utils.misc_utils import find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig

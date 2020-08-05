@@ -21,33 +21,31 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
+from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
+from ludwig.encoders.sequence_encoders import ParallelCNN
+from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
+from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
+from ludwig.encoders.sequence_encoders import StackedCNN
+from ludwig.encoders.sequence_encoders import StackedCNNRNN
+from ludwig.encoders.sequence_encoders import StackedParallelCNN
+from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-from ludwig.models.modules.loss_modules import SequenceLoss
-from ludwig.models.modules.metric_modules import EditDistanceMetric
-from ludwig.models.modules.metric_modules import PerplexityMetric
-from ludwig.models.modules.metric_modules import SequenceLastAccuracyMetric
-from ludwig.models.modules.metric_modules import SequenceLossMetric
-from ludwig.models.modules.metric_modules import TokenAccuracyMetric
-from ludwig.models.modules.sequence_decoders import SequenceGeneratorDecoder
-from ludwig.models.modules.sequence_decoders import SequenceTaggerDecoder
-from ludwig.models.modules.sequence_encoders import ParallelCNN
-from ludwig.models.modules.sequence_encoders import SequenceEmbedEncoder
-from ludwig.models.modules.sequence_encoders import SequencePassthroughEncoder
-from ludwig.models.modules.sequence_encoders import StackedCNN
-from ludwig.models.modules.sequence_encoders import StackedCNNRNN
-from ludwig.models.modules.sequence_encoders import StackedParallelCNN
-from ludwig.models.modules.sequence_encoders import StackedRNN
-from ludwig.models.modules.text_encoders import DistilBERTEncoder, BERTEncoder
+from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SequenceLoss
+from ludwig.modules.metric_modules import EditDistanceMetric
+from ludwig.modules.metric_modules import PerplexityMetric
+from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
+from ludwig.modules.metric_modules import SequenceLossMetric
+from ludwig.modules.metric_modules import TokenAccuracyMetric
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
-from ludwig.utils.misc import set_default_value
-from ludwig.utils.strings_utils import PADDING_SYMBOL, get_tokenizer
+from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
-from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
 

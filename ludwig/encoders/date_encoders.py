@@ -20,8 +20,8 @@ import math
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.embedding_modules import Embed
-from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.modules.embedding_modules import Embed
+from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 

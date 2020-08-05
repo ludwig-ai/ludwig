@@ -21,23 +21,23 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.decoders.generic_decoders import Classifier
+from ludwig.encoders.category_encoders import CategoricalEmbedEncoder
+from ludwig.encoders.category_encoders import CategoricalSparseEncoder
+from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
-from ludwig.models.modules.category_encoders import CategoricalEmbedEncoder
-from ludwig.models.modules.category_encoders import CategoricalSparseEncoder
-from ludwig.models.modules.generic_decoders import Classifier
-from ludwig.models.modules.generic_encoders import PassthroughEncoder
-from ludwig.models.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
-from ludwig.models.modules.loss_modules import SoftmaxCrossEntropyLoss
-from ludwig.models.modules.metric_modules import CategoryAccuracy
-from ludwig.models.modules.metric_modules import HitsAtKMetric
-from ludwig.models.modules.metric_modules import SoftmaxCrossEntropyMetric
+from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
+from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
+from ludwig.modules.metric_modules import CategoryAccuracy
+from ludwig.modules.metric_modules import HitsAtKMetric
+from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
-from ludwig.utils.misc import set_default_value
-from ludwig.utils.misc import set_default_values
+from ludwig.utils.misc_utils import set_default_value
+from ludwig.utils.misc_utils import set_default_values
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import create_vocabulary
 

@@ -3,18 +3,19 @@ from collections import OrderedDict
 
 import tensorflow as tf
 
+from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
-from ludwig.models.modules.combiners import get_combiner_class
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.data_utils import clear_data_cache
-from ludwig.utils.misc import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
 
 class ECD(tf.keras.Model):
+
     def __init__(
             self,
             input_features_def,
@@ -50,6 +51,7 @@ class ECD(tf.keras.Model):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
+    @tf.function
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
@@ -99,6 +101,7 @@ class ECD(tf.keras.Model):
 
         return output_logits
 
+    @tf.function
     def predictions(self, inputs, output_features=None):
         # check validity of output_features
         if output_features is None:
@@ -141,6 +144,31 @@ class ECD(tf.keras.Model):
             )
 
         return predictions
+
+    @tf.function
+    def train_step(self, optimizer, inputs, targets,
+                   regularization_lambda=0.0):
+        with tf.GradientTape() as tape:
+            logits = self((inputs, targets), training=True)
+            loss, all_losses = self.train_loss(
+                targets, logits, regularization_lambda
+            )
+        optimizer.minimize_with_tape(
+            tape, loss, self.trainable_variables
+        )
+        # grads = tape.gradient(loss, model.trainable_weights)
+        # optimizer.apply_gradients(zip(grads, model.trainable_weights))
+        return loss, all_losses
+
+    @tf.function
+    def evaluation_step(self, inputs, targets):
+        predictions = self.predictions(inputs, output_features=None)
+        self.update_metrics(targets, predictions)
+        return predictions
+
+    @tf.function
+    def predict_step(self, inputs):
+        return self.predictions(inputs, output_features=None)
 
     def train_loss(self, targets, predictions, regularization_lambda=0.0):
         train_loss = 0
@@ -210,7 +238,7 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
         input_feature_def['name']
     ))
 
-    # todo tf2: tied encoder mechanism to be tested
+    # todo tf2: tied encoder mechanism needs to be tested
     encoder_obj = None
     if input_feature_def.get(TIED, None) is not None:
         tied_input_feature_name = input_feature_def[TIED]

@@ -33,10 +33,10 @@ from ludwig.data.preprocessing import preprocess_for_prediction, COMBINED
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.model import load_model_and_definition
+from ludwig.models.trainer import load_model_and_definition
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.data_utils import save_json
-from ludwig.utils.misc import get_from_registry, \
+from ludwig.utils.misc_utils import get_from_registry, \
     find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry, repr_ordered_dict
 from ludwig.utils.print_utils import print_boxed
@@ -103,8 +103,6 @@ def full_predict(
         evaluate_performance,
         debug
     )
-    # model.close_session()  # todo tf2 code clean -up
-
     if is_on_master():
         # setup directories and file names
         experiment_dir_name = find_non_existing_dir_by_adding_suffix(output_directory)

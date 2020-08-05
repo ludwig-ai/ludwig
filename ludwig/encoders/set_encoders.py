@@ -18,8 +18,8 @@ import logging
 
 from tensorflow.keras.layers import Layer
 
-from ludwig.models.modules.embedding_modules import EmbedSparse
-from ludwig.models.modules.fully_connected_modules import FCStack
+from ludwig.modules.embedding_modules import EmbedSparse
+from ludwig.modules.fully_connected_modules import FCStack
 
 logger = logging.getLogger(__name__)
 
