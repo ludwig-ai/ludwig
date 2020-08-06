@@ -364,10 +364,8 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         assert inputs.dtype == tf.float32
         assert len(inputs.shape) == 3
 
-        inputs_exp = tf.cast(inputs,
-                             dtype=tf.float32)  # TODO: this should not be needed
         encoder_output = self.encoder_obj(
-            inputs_exp, training=training, mask=mask
+            inputs, training=training, mask=mask
         )
 
         return encoder_output
