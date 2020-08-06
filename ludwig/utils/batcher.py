@@ -18,7 +18,10 @@ import math
 
 import numpy as np
 
-from ludwig.utils.data_utils import shuffle_dict_unison_inplace, shuffle_inplace
+from ludwig.constants import TYPE
+from ludwig.models.ecd import dynamic_length_encoders
+from ludwig.utils.data_utils import shuffle_dict_unison_inplace, \
+    shuffle_inplace
 
 
 class Batcher(object):
@@ -217,3 +220,55 @@ class DistributedBatcher(object):
     def reset(self):
         self.index = self.partition[0]
         self.step = 0
+
+
+def initialize_batcher(dataset, batch_size=128, bucketing_field=None,
+                       input_features=None, preprocessing=None,
+                       should_shuffle=True, ignore_last=False, horovod=None):
+    if horovod:
+        batcher = DistributedBatcher(
+            dataset,
+            horovod.rank(),
+            horovod,
+            batch_size,
+            should_shuffle=should_shuffle,
+            ignore_last=ignore_last
+        )
+    elif bucketing_field is not None:
+        bucketing_feature = [
+            feature for feature in input_features if
+            feature['name'] == bucketing_field
+        ]
+        if not bucketing_feature:
+            raise ValueError(
+                'Bucketing field {} not present in input features'.format(
+                    bucketing_field
+                )
+            )
+        else:
+            bucketing_feature = bucketing_feature[0]
+        should_trim = bucketing_feature[
+                          'encoder'] in dynamic_length_encoders
+        if 'preprocessing' in bucketing_feature:
+            trim_side = bucketing_feature['preprocessing']['padding']
+        else:
+            trim_side = preprocessing[bucketing_feature[TYPE]]['padding']
+
+        batcher = BucketedBatcher(
+            dataset,
+            bucketing_field=bucketing_field,
+            batch_size=batch_size,
+            buckets=10,
+            ignore_last=ignore_last,
+            should_shuffle=should_shuffle,
+            should_trim=should_trim,
+            trim_side=trim_side
+        )
+    else:
+        batcher = Batcher(
+            dataset,
+            batch_size,
+            should_shuffle=should_shuffle,
+            ignore_last=ignore_last
+        )
+    return batcher

@@ -35,7 +35,7 @@ import tensorflow as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED, TYPE, TRAINING, VALIDATION, TEST
+from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -43,14 +43,12 @@ from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
-from ludwig.models.ecd import ECD, dynamic_length_encoders
+from ludwig.models.ecd import ECD
 from ludwig.modules.metric_modules import get_improved_fun
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.modules.optimization_modules import ClippedOptimizer
 from ludwig.utils import time_utils
-from ludwig.utils.batcher import Batcher
-from ludwig.utils.batcher import BucketedBatcher
-from ludwig.utils.batcher import DistributedBatcher
+from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
@@ -424,10 +422,11 @@ class Trainer:
             )
 
         set_random_seed(random_seed)
-        batcher = self.initialize_batcher(
-            training_set,
-            batch_size,
-            bucketing_field
+        batcher = initialize_batcher(
+            training_set, batch_size, bucketing_field,
+            input_features=self._hyperparameters['input_features'],
+            preprocessing=self._hyperparameters['preprocessing'],
+            horovod=self._horovod
         )
 
         # ================ Training Loop ================
@@ -687,7 +686,12 @@ class Trainer:
             regularization_lambda=0.0,
             bucketing_field=None
     ):
-        batcher = self.initialize_batcher(dataset, batch_size, bucketing_field)
+        batcher = initialize_batcher(
+            dataset, batch_size, bucketing_field,
+            input_features=self._hyperparameters['input_features'],
+            preprocessing=self._hyperparameters['preprocessing'],
+            horovod=self._horovod
+        )
 
         # training step loop
         progress_bar = tqdm(
@@ -745,11 +749,12 @@ class Trainer:
             only_predictions=False,
             name=None
     ):
-        batcher = self.initialize_batcher(
-            dataset,
-            batch_size,
-            bucketing_field,
-            should_shuffle=False
+        batcher = initialize_batcher(
+            dataset, batch_size, bucketing_field,
+            input_features=self._hyperparameters['input_features'],
+            preprocessing=self._hyperparameters['preprocessing'],
+            should_shuffle=False,
+            horovod=self._horovod
         )
 
         if is_on_master():
@@ -865,11 +870,12 @@ class Trainer:
         #                 for tensor_name in tensor_names}
         # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
 
-        batcher = self.initialize_batcher(
-            dataset,
-            batch_size,
-            bucketing_field,
-            should_shuffle=False
+        batcher = initialize_batcher(
+            dataset, batch_size, bucketing_field,
+            input_features=self._hyperparameters['input_features'],
+            preprocessing=self._hyperparameters['preprocessing'],
+            should_shuffle=False,
+            horovod=self._horovod
         )
 
         progress_bar = tqdm(
@@ -1137,17 +1143,17 @@ class Trainer:
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
         hyperparameters = load_json(hyperparameter_file)
-        model = Trainer(use_horovod=use_horovod,
-                        gpus=gpus,
-                        gpu_memory_limit=gpu_memory_limit,
-                        allow_parallel_threads=allow_parallel_threads,
-                        **hyperparameters)
+        trainer = Trainer(use_horovod=use_horovod,
+                          gpus=gpus,
+                          gpu_memory_limit=gpu_memory_limit,
+                          allow_parallel_threads=allow_parallel_threads,
+                          **hyperparameters)
         weights_save_path = os.path.join(
             load_path,
             MODEL_WEIGHTS_FILE_NAME
         )
-        model.restore(weights_save_path)
-        return model
+        trainer.restore(weights_save_path)
+        return trainer
 
     def set_epochs_to_1_or_quit(self, signum, frame):
         if not self._received_sigint:
@@ -1204,64 +1210,6 @@ class Trainer:
                 metrics_names[output_feature_name] = metrics
         metrics_names[COMBINED] = [LOSS]
         return metrics_names
-
-    def initialize_batcher(
-            self,
-            dataset,
-            batch_size=128,
-            bucketing_field=None,
-            should_shuffle=True,
-            ignore_last=False
-    ):
-        if self._horovod:
-            batcher = DistributedBatcher(
-                dataset,
-                self._horovod.rank(),
-                self._horovod,
-                batch_size,
-                should_shuffle=should_shuffle,
-                ignore_last=ignore_last
-            )
-        elif bucketing_field is not None:
-            input_features = self._hyperparameters['input_features']
-            bucketing_feature = [
-                feature for feature in input_features if
-                feature['name'] == bucketing_field
-            ]
-            if not bucketing_feature:
-                raise ValueError(
-                    'Bucketing field {} not present in input features'.format(
-                        bucketing_field
-                    )
-                )
-            else:
-                bucketing_feature = bucketing_feature[0]
-            should_trim = bucketing_feature[
-                              'encoder'] in dynamic_length_encoders
-            if 'preprocessing' in bucketing_feature:
-                trim_side = bucketing_feature['preprocessing']['padding']
-            else:
-                trim_side = self._hyperparameters['preprocessing'][
-                    bucketing_feature[TYPE]]['padding']
-
-            batcher = BucketedBatcher(
-                dataset,
-                bucketing_field=bucketing_field,
-                batch_size=batch_size,
-                buckets=10,
-                ignore_last=ignore_last,
-                should_shuffle=should_shuffle,
-                should_trim=should_trim,
-                trim_side=trim_side
-            )
-        else:
-            batcher = Batcher(
-                dataset,
-                batch_size,
-                should_shuffle=should_shuffle,
-                ignore_last=ignore_last
-            )
-        return batcher
 
     def resume_weights_and_optimzier(
             self,
@@ -1417,9 +1365,9 @@ def load_model_and_definition(model_dir,
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
     )
-    model = Trainer.load(model_dir,
-                         use_horovod=use_horovod,
-                         gpus=gpus,
-                         gpu_memory_limit=gpu_memory_limit,
-                         allow_parallel_threads=allow_parallel_threads)
-    return model, model_definition
+    trainer = Trainer.load(model_dir,
+                           use_horovod=use_horovod,
+                           gpus=gpus,
+                           gpu_memory_limit=gpu_memory_limit,
+                           allow_parallel_threads=allow_parallel_threads)
+    return trainer, model_definition
