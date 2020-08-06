@@ -77,6 +77,9 @@ def get_experiment_description(model_definition,
         description['input_metadata'] = metadata_json
     description['model_definition'] = model_definition
 
+    from tensorflow.version import VERSION as tf_version
+    description['tf_version'] = tf_version
+
     return description
 
 
