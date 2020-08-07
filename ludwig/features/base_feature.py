@@ -270,7 +270,6 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 # because we did the topological sort of the features before
                 dependency_final_hidden = other_features_hidden[dependency]
 
-                # todo tf2: test all 4 branches, for now only vector x vector is tested
                 if len(hidden.shape) > 2:
                     if len(dependency_final_hidden.shape) > 2:
                         # matrix matrix -> concat
@@ -281,7 +280,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                         # matrix vector -> tile concat
                         sequence_max_length = hidden.shape[1]
                         multipliers = tf.concat(
-                            [[1], sequence_max_length[:, tf.newaxis], [1]],
+                            [[1], [sequence_max_length], [1]],
                             0
                         )
                         tiled_representation = tf.tile(
@@ -297,7 +296,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                         )
                         tiled_representation = tf.multiply(
                             tiled_representation,
-                            tf.cast(mask[:, tf.newaxis], dtype=tf.float32)
+                            tf.cast(mask[:, :, tf.newaxis], dtype=tf.float32)
                         )
 
                         dependencies_hidden.append(tiled_representation)
