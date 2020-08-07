@@ -21,7 +21,7 @@ HIDDEN_SIZE = 128
 OTHER_HIDDEN_SIZE = 32
 OTHER_HIDDEN_SIZE2 = 18
 
-
+# unit test for single dependency
 @pytest.mark.parametrize(
     'dependent_hidden_shape', [
         [BATCH_SIZE, OTHER_HIDDEN_SIZE],
@@ -68,6 +68,7 @@ def test_single_dependencies(hidden_shape, dependent_hidden_shape):
                [BATCH_SIZE, HIDDEN_SIZE + OTHER_HIDDEN_SIZE]
 
 
+# unit test for multiple dependencies
 @pytest.mark.parametrize(
     'dependent_hidden_shape2', [
         [BATCH_SIZE, OTHER_HIDDEN_SIZE2],
