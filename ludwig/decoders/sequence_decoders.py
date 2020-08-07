@@ -378,8 +378,8 @@ class SequenceGeneratorDecoder(Layer):
         decoder = tfa.seq2seq.beam_search_decoder.BeamSearchDecoder(
             cell=self.decoder_rnncell,
             beam_width=self.beam_width,
-            output_layer=self.dense_layer
-
+            output_layer=self.dense_layer,
+            output_all_scores=True,
         )
         # ================ generate logits ==================
         maximum_iterations = self.max_sequence_length
@@ -406,7 +406,7 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         predictions = decoder_output.beam_search_decoder_output.predicted_ids[:, :, 0]
-        logits = decoder_output.beam_search_decoder_output.all_scores[:, :, 0, :]
+        logits = decoder_output.beam_search_decoder_output.scores[:, :, 0, :]
         lengths = decoder_lengths[:, 0]
 
         last_predictions = tf.gather_nd(
