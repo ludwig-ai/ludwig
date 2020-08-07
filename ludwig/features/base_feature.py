@@ -281,7 +281,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                         # matrix vector -> tile concat
                         sequence_max_length = hidden.shape[1]
                         multipliers = tf.concat(
-                            [[1], sequence_max_length[:, tf.newaxis], [1]],
+                            [[1], [sequence_max_length], [1]],
                             0
                         )
                         tiled_representation = tf.tile(
