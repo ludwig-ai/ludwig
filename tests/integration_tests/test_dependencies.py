@@ -1,9 +1,6 @@
 import logging
-import os
-import shutil
 
 import pytest
-import yaml
 
 import tensorflow as tf
 
