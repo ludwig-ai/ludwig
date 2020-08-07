@@ -224,8 +224,13 @@ class ECD(tf.keras.Model):
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
 
-    def batch_predict(self, dataset, batch_size, horovod,
-                      dataset_name=None):
+    def batch_predict(
+            self,
+            dataset,
+            batch_size,
+            horovod=None,
+            dataset_name=None
+    ):
         batcher = initialize_batcher(
             dataset, batch_size,
             should_shuffle=False,
@@ -344,12 +349,13 @@ class ECD(tf.keras.Model):
             return metrics
 
     # todo tf2: reintroduce this functionality
-    def batch_collect_activations(self,
-                                  dataset,
-                                  batch_size,
-                                  tensor_names,
-                                  horovod=None
-                                  ):
+    def batch_collect_activations(
+            self,
+            dataset,
+            batch_size,
+            tensor_names,
+            horovod=None
+    ):
         # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
         #                 for tensor_name in tensor_names}
         # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
@@ -427,6 +433,7 @@ class ECD(tf.keras.Model):
     def save_savedmodel(self, save_path):
         self.model.save(save_path)
 
+
 def build_inputs(
         input_features_def,
         **kwargs
@@ -464,6 +471,7 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
     input_feature_obj = input_feature_class(input_feature_def, encoder_obj)
 
     return input_feature_obj
+
 
 dynamic_length_encoders = {
     'rnn',
