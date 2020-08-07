@@ -83,6 +83,8 @@ class Trainer:
             debug=False,
             **kwargs
     ):
+        # todo refcotirng: horovod should be initialzied in LudwigModel and
+        #  tf should be initialized there too
         self._horovod = None
         if should_use_horovod(use_horovod):
             import horovod.tensorflow
@@ -424,8 +426,6 @@ class Trainer:
         set_random_seed(random_seed)
         batcher = initialize_batcher(
             training_set, batch_size, bucketing_field,
-            input_features=self._hyperparameters['input_features'],
-            preprocessing=self._hyperparameters['preprocessing'],
             horovod=self._horovod
         )
 
@@ -555,7 +555,6 @@ class Trainer:
                 progress_tracker.train_metrics,
                 tables,
                 eval_batch_size,
-                bucketing_field
             )
 
             self.write_epoch_summary(
@@ -572,7 +571,6 @@ class Trainer:
                     progress_tracker.vali_metrics,
                     tables,
                     eval_batch_size,
-                    bucketing_field
                 )
 
                 self.write_epoch_summary(
@@ -589,7 +587,6 @@ class Trainer:
                     progress_tracker.test_metrics,
                     tables,
                     eval_batch_size,
-                    bucketing_field
                 )
 
                 self.write_epoch_summary(
@@ -688,8 +685,6 @@ class Trainer:
     ):
         batcher = initialize_batcher(
             dataset, batch_size, bucketing_field,
-            input_features=self._hyperparameters['input_features'],
-            preprocessing=self._hyperparameters['preprocessing'],
             horovod=self._horovod
         )
 
@@ -740,92 +735,6 @@ class Trainer:
 
         return metrics_log, tables
 
-    def batch_evaluation(
-            self,
-            dataset,
-            batch_size,
-            bucketing_field=None,
-            collect_predictions=False,
-            only_predictions=False,
-            name=None
-    ):
-        batcher = initialize_batcher(
-            dataset, batch_size, bucketing_field,
-            input_features=self._hyperparameters['input_features'],
-            preprocessing=self._hyperparameters['preprocessing'],
-            should_shuffle=False,
-            horovod=self._horovod
-        )
-
-        if is_on_master():
-            progress_bar = tqdm(
-                desc='Evaluation' if name is None
-                else 'Evaluation {0: <5.5}'.format(name),
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled()
-            )
-
-        predictions = {}
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-
-            # todo: tf2 need to rationalize to reduce redundant code
-            # create array for predictors
-            # todo: tf2 need to handle case of single predictor, e.g., image
-            inputs = {i_feat['name']: batch[i_feat['name']] for i_feat in
-                      self._hyperparameters['input_features']}
-
-            if only_predictions:
-                (
-                    preds
-                ) = self.model.predict_step(
-                    inputs
-                )
-            else:
-                targets = {o_feat['name']: batch[o_feat['name']] for o_feat in
-                           self._hyperparameters['output_features']}
-
-                (
-                    preds
-                ) = self.model.evaluation_step(
-                    inputs,
-                    targets
-                )
-
-            # accumulate predictions from batch for each output feature
-            for of_name, of_preds in preds.items():
-                if of_name not in predictions:
-                    predictions[of_name] = {}
-                for pred_name, pred_values in of_preds.items():
-                    if pred_name not in predictions[of_name]:
-                        predictions[of_name][pred_name] = [pred_values]
-                    else:
-                        predictions[of_name][pred_name].append(pred_values)
-
-            if is_on_master():
-                progress_bar.update(1)
-
-        if is_on_master():
-            progress_bar.close()
-
-        # consolidate predictions from each batch to a single tensor
-        for of_name, of_predictions in predictions.items():
-            for pred_name, pred_value_list in of_predictions.items():
-                predictions[of_name][pred_name] = tf.concat(pred_value_list,
-                                                            axis=0)
-
-        if only_predictions:
-            metrics = None
-        else:
-            metrics = self.model.get_metrics()
-            if self._horovod:
-                metrics = self.merge_workers_metrics(metrics)
-
-            self.model.reset_metrics()
-
-        return metrics, predictions
-
     def evaluation(
             self,
             dataset,
@@ -833,13 +742,12 @@ class Trainer:
             metrics_log,
             tables,
             batch_size=128,
-            bucketing_field=None
     ):
-        results, predictions = self.batch_evaluation(
+        results = self.model.batch_evaluation(
             dataset,
             batch_size,
-            bucketing_field=bucketing_field,
-            name=dataset_name
+            collect_predictions=False,
+            dataset_name=dataset_name
         )
 
         self.append_metrics(dataset_name, results, metrics_log, tables)
@@ -857,54 +765,6 @@ class Trainer:
         )
 
         return merged_output_metrics
-
-    # todo tf2: reintroduce this functionality
-    def batch_collect_activations(
-            self,
-            dataset,
-            batch_size,
-            tensor_names,
-            bucketing_field=None
-    ):
-        # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
-        #                 for tensor_name in tensor_names}
-        # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
-
-        batcher = initialize_batcher(
-            dataset, batch_size, bucketing_field,
-            input_features=self._hyperparameters['input_features'],
-            preprocessing=self._hyperparameters['preprocessing'],
-            should_shuffle=False,
-            horovod=self._horovod
-        )
-
-        progress_bar = tqdm(
-            desc='Collecting Tensors',
-            total=batcher.steps_per_epoch,
-            file=sys.stdout,
-            disable=is_progressbar_disabled()
-        )
-
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-            # result = session.run(
-            #     output_nodes,
-            #     feed_dict=self.feed_dict(
-            #         batch,
-            #         is_training=False
-            #     )
-            # )
-            #
-            # for tensor_name in result:
-            #     for row in result[tensor_name]:
-            #         collected_tensors[tensor_name].append(row)
-
-            progress_bar.update(1)
-
-        progress_bar.close()
-
-        collected_tensors = None
-        return collected_tensors
 
     def check_progress_on_validation(
             self,
@@ -1001,89 +861,11 @@ class Trainer:
             self,
             dataset,
             batch_size,
-            evaluate_performance=True,
             **kwargs
     ):
         # predict
-        eval_metrics, eval_predictions = self.batch_evaluation(
-            dataset,
-            batch_size,
-            collect_predictions=True,
-            only_predictions=not evaluate_performance
-        )
-
-        return eval_metrics, eval_predictions
-
-    # todo tf2: reintroduce this functionality
-    def collect_activations(
-            self,
-            dataset,
-            tensor_names,
-            batch_size,
-            **kwargs
-    ):
-        # if self.session is None:
-        #     session = self.initialize_session(gpus, gpu_fraction)
-        #
-        #     # load parameters
-        #     if self.weights_save_path:
-        #         self.restore(session, self.weights_save_path)
-        # else:
-        #     session = self.session
-
-        # get operation names
-        # operation_names = set(
-        #     [t.name for op in self.graph.get_operations() for t in op.values()]
-        # )
-        # for tensor_name in tensor_names:
-        #     if tensor_name not in operation_names:
-        #         raise ValueError(
-        #             'Tensor / operation {} not present in the '
-        #             'model graph'.format(tensor_name)
-        #         )
-
-        # collect tensors
-        collected_tensors = self.batch_collect_activations(
-            dataset,
-            batch_size,
-            tensor_names
-        )
-
-        return collected_tensors
-
-    # todo tf2: reintroduce this functionality
-    def collect_weights(
-            self,
-            tensor_names,
-            **kwargs
-    ):
-        # if self.session is None:
-        #     session = self.initialize_session(gpus, gpu_fraction)
-        #
-        #     # load parameters
-        #     if self.weights_save_path:
-        #         self.restore(session, self.weights_save_path)
-        # else:
-        #     session = self.session
-        #
-        # operation_names = set(
-        #     [t.name for op in self.graph.get_operations() for t in op.values()]
-        # )
-        # for tensor_name in tensor_names:
-        #     if tensor_name not in operation_names:
-        #         raise ValueError(
-        #             'Tensor / operation {} not present in the '
-        #             'model graph'.format(tensor_name)
-        #         )
-        #
-        # # collect tensors
-        # collected_tensors = {
-        #     tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
-        #     for tensor_name in tensor_names
-        # }
-        #
-        # return collected_tensors
-        pass
+        return self.model.batch_predict(dataset, batch_size,
+                                        horovod=self._horovod)
 
     def save_weights(self, save_path):
         # save model
@@ -1100,37 +882,6 @@ class Trainer:
             if 'pretrained_embeddings' in feature:
                 feature['pretrained_embeddings'] = None
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
-
-    # todo tf2: reintroduce this functionality
-    def save_savedmodel(self, save_path):
-        # input_tensors = {}
-        # for input_feature in self.hyperparameters['input_features']:
-        #     input_tensors[input_feature['name']] = getattr(
-        #         self, input_feature['name']
-        #     )
-        #
-        # output_tensors = {}
-        # for output_feature in self.hyperparameters['output_features']:
-        #     output_tensors[output_feature['name']] = getattr(
-        #         self,
-        #         output_feature['name']
-        #     )
-        #
-        # session = self.initialize_session()
-        #
-        # builder = saved_model_builder.SavedModelBuilder(save_path)
-        # builder.add_meta_graph_and_variables(
-        #     session,
-        #     [tf.saved_model.tag_constants.SERVING],
-        #     signature_def_map={
-        #         'predict': tf.saved_model.predict_signature_def(
-        #             input_tensors, output_tensors)
-        #     },
-        #     strip_default_attrs=True,
-        #     saver=self.saver,
-        # )
-        # builder.save()
-        self.model.save(save_path)
 
     def restore(self, weights_path):
         self.model.load_weights(weights_path)

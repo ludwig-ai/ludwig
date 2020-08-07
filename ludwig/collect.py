@@ -30,6 +30,7 @@ from ludwig.contrib import contrib_command
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
+from ludwig.models.ecd import collect_weights
 from ludwig.models.trainer import load_model_and_definition
 from ludwig.utils.misc_utils import find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry
@@ -140,7 +141,7 @@ def collect_weights(
 
     # collect weights
     print_boxed('COLLECT WEIGHTS')
-    collected_tensors = model.collect_weights(tensors)
+    collected_tensors = collect_weights(tensors)
     model.close_session()
 
     # saving

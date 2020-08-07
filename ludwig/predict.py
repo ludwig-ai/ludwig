@@ -173,6 +173,7 @@ def predict(
     if is_on_master():
         print_boxed('PREDICT')
 
+    # todo refct: use eval orpredict depending on evaluate performance
     test_stats, test_predictions = model.predict(
         dataset,
         batch_size,

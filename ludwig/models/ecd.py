@@ -1,13 +1,17 @@
 import logging
+import sys
 from collections import OrderedDict
 
 import tensorflow as tf
+from tqdm import tqdm
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
+from ludwig.globals import is_on_master, is_progressbar_disabled
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
+from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 
@@ -170,6 +174,11 @@ class ECD(tf.keras.Model):
     def predict_step(self, inputs):
         return self.predictions(inputs, output_features=None)
 
+    @tf.function
+    def collect_activations_step(self, inputs):
+        # todo tf2: to implement
+        pass
+
     def train_loss(self, targets, predictions, regularization_lambda=0.0):
         train_loss = 0
         of_train_losses = {}
@@ -215,6 +224,208 @@ class ECD(tf.keras.Model):
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
 
+    def batch_predict(self, dataset, batch_size, horovod,
+                      dataset_name=None):
+        batcher = initialize_batcher(
+            dataset, batch_size,
+            should_shuffle=False,
+            horovod=horovod
+        )
+
+        if is_on_master():
+            progress_bar = tqdm(
+                desc='Prediction' if dataset_name is None
+                else 'Prediction {0: <5.5}'.format(dataset_name),
+                total=batcher.steps_per_epoch,
+                file=sys.stdout,
+                disable=is_progressbar_disabled()
+            )
+
+        predictions = {}
+        while not batcher.last_batch():
+            batch = batcher.next_batch()
+
+            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
+                      for i_feat in self.input_features}
+
+            preds = self.predict_step(inputs)
+
+            # accumulate predictions from batch for each output feature
+            for of_name, of_preds in preds.items():
+                if of_name not in predictions:
+                    predictions[of_name] = {}
+                for pred_name, pred_values in of_preds.items():
+                    if pred_name not in predictions[of_name]:
+                        predictions[of_name][pred_name] = [pred_values]
+                    else:
+                        predictions[of_name][pred_name].append(pred_values)
+
+            if is_on_master():
+                progress_bar.update(1)
+
+        if is_on_master():
+            progress_bar.close()
+
+        # consolidate predictions from each batch to a single tensor
+        for of_name, of_predictions in predictions.items():
+            for pred_name, pred_value_list in of_predictions.items():
+                predictions[of_name][pred_name] = tf.concat(pred_value_list,
+                                                            axis=0)
+
+        return predictions
+
+    def batch_evaluation(
+            self,
+            dataset,
+            batch_size,
+            collect_predictions=False,
+            horovod=None,
+            dataset_name=None
+    ):
+        batcher = initialize_batcher(
+            dataset, batch_size,
+            should_shuffle=False,
+            horovod=horovod
+        )
+
+        if is_on_master():
+            progress_bar = tqdm(
+                desc='Evaluation' if dataset_name is None
+                else 'Evaluation {0: <5.5}'.format(dataset_name),
+                total=batcher.steps_per_epoch,
+                file=sys.stdout,
+                disable=is_progressbar_disabled()
+            )
+
+        predictions = {}
+        while not batcher.last_batch():
+            batch = batcher.next_batch()
+
+            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
+                      for i_feat in self.input_features}
+            targets = {o_feat.feature_name: batch[o_feat.feature_name]
+                       for o_feat in self.output_features}
+
+            preds = self.evaluation_step(inputs, targets)
+
+            # accumulate predictions from batch for each output feature
+            if collect_predictions:
+                for of_name, of_preds in preds.items():
+                    if of_name not in predictions:
+                        predictions[of_name] = {}
+                    for pred_name, pred_values in of_preds.items():
+                        if pred_name not in predictions[of_name]:
+                            predictions[of_name][pred_name] = [pred_values]
+                        else:
+                            predictions[of_name][pred_name].append(pred_values)
+
+            if is_on_master():
+                progress_bar.update(1)
+
+        if is_on_master():
+            progress_bar.close()
+
+        # consolidate predictions from each batch to a single tensor
+        if collect_predictions:
+            for of_name, of_predictions in predictions.items():
+                for pred_name, pred_value_list in of_predictions.items():
+                    predictions[of_name][pred_name] = tf.concat(
+                        pred_value_list, axis=0
+                    )
+
+        metrics = self.model.get_metrics()
+        if self._horovod:
+            metrics = self.merge_workers_metrics(metrics)
+        self.model.reset_metrics()
+
+        if collect_predictions:
+            return metrics, predictions
+        else:
+            return metrics
+
+    # todo tf2: reintroduce this functionality
+    def batch_collect_activations(self,
+                                  dataset,
+                                  batch_size,
+                                  tensor_names,
+                                  horovod=None
+                                  ):
+        # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
+        #                 for tensor_name in tensor_names}
+        # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
+
+        batcher = initialize_batcher(
+            dataset, batch_size,
+            should_shuffle=False,
+            horovod=horovod
+        )
+
+        progress_bar = tqdm(
+            desc='Collecting Tensors',
+            total=batcher.steps_per_epoch,
+            file=sys.stdout,
+            disable=is_progressbar_disabled()
+        )
+
+        while not batcher.last_batch():
+            batch = batcher.next_batch()
+
+            self.collect_activations_step(batch)
+            # result = session.run(
+            #     output_nodes,
+            #     feed_dict=self.feed_dict(
+            #         batch,
+            #         is_training=False
+            #     )
+            # )
+            #
+            # for tensor_name in result:
+            #     for row in result[tensor_name]:
+            #         collected_tensors[tensor_name].append(row)
+
+            progress_bar.update(1)
+
+        progress_bar.close()
+
+        collected_tensors = None
+        return collected_tensors
+
+    # todo tf2: reintroduce this functionality
+    def collect_weights(
+            self,
+            tensor_names,
+            **kwargs
+    ):
+        # if self.session is None:
+        #     session = self.initialize_session(gpus, gpu_fraction)
+        #
+        #     # load parameters
+        #     if self.weights_save_path:
+        #         self.restore(session, self.weights_save_path)
+        # else:
+        #     session = self.session
+        #
+        # operation_names = set(
+        #     [t.name for op in self.graph.get_operations() for t in op.values()]
+        # )
+        # for tensor_name in tensor_names:
+        #     if tensor_name not in operation_names:
+        #         raise ValueError(
+        #             'Tensor / operation {} not present in the '
+        #             'model graph'.format(tensor_name)
+        #         )
+        #
+        # # collect tensors
+        # collected_tensors = {
+        #     tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
+        #     for tensor_name in tensor_names
+        # }
+        #
+        # return collected_tensors
+        pass
+
+    def save_savedmodel(self, save_path):
+        self.model.save(save_path)
 
 def build_inputs(
         input_features_def,
@@ -253,7 +464,6 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
     input_feature_obj = input_feature_class(input_feature_def, encoder_obj)
 
     return input_feature_obj
-
 
 dynamic_length_encoders = {
     'rnn',
