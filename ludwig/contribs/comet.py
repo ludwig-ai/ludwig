@@ -148,8 +148,8 @@ class Comet():
                               "last_improvement_epoch",
                               "learning_rate", "best_valid_metric",
                               "num_reductions_lr",
-                              "num_increases_bs", "train_stats", "vali_stats",
-                              "test_stats"]:
+                              "num_increases_bs", "train_metrics", "vali_metrics",
+                              "test_metrics"]:
                 try:
                     item = getattr(progress_tracker, item_name)
                     if isinstance(item, dict):
