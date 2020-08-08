@@ -146,7 +146,10 @@ class SequenceConcatCombiner(tf.keras.Model):
         if (self.main_sequence_feature is None or
                 self.main_sequence_feature not in inputs):
             for if_name, if_outputs in inputs.items():
-                if if_outputs['type'] in SEQUENCE_TYPES:
+                # todo: when https://github.com/uber/ludwig/issues/810 is closed
+                #       convert following test from using shape to use explicit
+                #       if_outputs['type'] values for sequence features
+                if len(if_outputs['encoder_output'].shape) == 3:
                     self.main_sequence_feature = if_name
                     break
 
@@ -165,7 +168,7 @@ class SequenceConcatCombiner(tf.keras.Model):
 
         # ================ Concat ================
         for if_name, if_outputs in inputs.items():
-            if if_name is not self.main_sequence_feature:
+            if if_name != self.main_sequence_feature:
                 if_representation = if_outputs['encoder_output']
                 if len(if_representation.shape) == 3:
                     # The following check makes sense when
