@@ -218,6 +218,63 @@ def test_experiment_multiple_seq_seq(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
 
+    #
+    # dependencies test section
+    #
+    # single dependency
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+        sequence_feature(vocab_size=10, max_len=5),
+        numerical_feature()
+    ]
+    # retrieve output feature names
+    cat_name = output_features[0]['name']
+    seq_name = output_features[1]['name']
+    num_name = output_features[2]['name']
+
+    # setup up a dependency from categorical to numeric
+    output_features[2]['dependencies'] = [cat_name]
+
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+    # multiple dependency
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+        sequence_feature(vocab_size=10, max_len=5),
+        numerical_feature()
+    ]
+    # retrieve output feature names
+    cat_name = output_features[0]['name']
+    seq_name = output_features[1]['name']
+    num_name = output_features[2]['name']
+
+    # setup up a dependency from categorical to numeric
+    output_features[2]['dependencies'] = [cat_name, seq_name]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+    # multiple dependency
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+        sequence_feature(vocab_size=10, max_len=5, decoder='generator'),
+        numerical_feature()
+    ]
+    # retrieve output feature names
+    cat_name = output_features[0]['name']
+    seq_name = output_features[1]['name']
+    num_name = output_features[2]['name']
+
+    # setup up a dependency from categorical to numeric
+    output_features[1]['dependencies'] = [cat_name, num_name]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+
 
 def test_experiment_image_inputs(csv_filename):
     # Image Inputs
