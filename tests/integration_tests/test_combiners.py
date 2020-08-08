@@ -19,6 +19,7 @@ HIDDEN_SIZE = 128
 OTHER_HIDDEN_SIZE = 32
 FC_SIZE = 64
 
+
 # set up simulated encoder outputs
 @pytest.fixture
 def encoder_outputs():
@@ -50,6 +51,7 @@ def encoder_outputs():
     return encoder_outputs
 
 
+# test for simple concatenation combiner
 @pytest.mark.parametrize(
     'fc_layer',
     [None, [{'fc_size': 64}, {'fc_size':64}]]
@@ -79,6 +81,8 @@ def test_concat_combiner(encoder_outputs, fc_layer):
             hidden_size += encoder_outputs[k]['encoder_output'].shape[1]
         assert results['combiner_output'].shape.as_list() == [BATCH_SIZE, hidden_size]
 
+
+# test for sequence concatenation combiner
 @pytest.mark.parametrize('reduce_output', [None, 'sum'])
 @pytest.mark.parametrize('main_sequence_feature', [None, 'feature_3'])
 def test_sequence_concat_combiner(encoder_outputs, main_sequence_feature,
