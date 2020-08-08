@@ -23,6 +23,11 @@ FC_SIZE = 64
 # set up simulated encoder outputs
 @pytest.fixture
 def encoder_outputs():
+    # generates simulated encoder outputs dictionary:
+    #   feature_1: shape [b, h1] tensor
+    #   feature_2: shape [b, h2] tensor
+    #   feature_3: shape [b, s, h1] tensor
+    #   feature_4: shape [b, sh, h2] tensor
 
     encoder_outputs = {}
     shapes_list = [
@@ -67,6 +72,7 @@ def test_concat_combiner(encoder_outputs, fc_layer):
         fc_layers=fc_layer
     )
 
+    # concatenate encoder outputs
     results = combiner(encoder_outputs)
 
     # required key present
@@ -76,9 +82,11 @@ def test_concat_combiner(encoder_outputs, fc_layer):
     if fc_layer:
         assert results['combiner_output'].shape.as_list() == [BATCH_SIZE, FC_SIZE]
     else:
+        # calculate expected hidden size for concatenated tensors
         hidden_size = 0
         for k in encoder_outputs:
             hidden_size += encoder_outputs[k]['encoder_output'].shape[1]
+
         assert results['combiner_output'].shape.as_list() == [BATCH_SIZE, hidden_size]
 
 
@@ -93,10 +101,12 @@ def test_sequence_concat_combiner(encoder_outputs, main_sequence_feature,
         reduce_output=reduce_output
     )
 
+    # calculate expected hidden size for concatenated tensors
     hidden_size = 0
     for k in encoder_outputs:
         hidden_size += encoder_outputs[k]['encoder_output'].shape[-1]
 
+    # concatenate encoder outputs
     results = combiner(encoder_outputs)
 
     # required key present
