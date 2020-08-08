@@ -511,6 +511,19 @@ def train(
             debug=debug
         )
 
+    model = Trainer(
+        model_definition['input_features'],
+        model_definition['output_features'],
+        model_definition['combiner'],
+        model_definition[TRAINING],
+        model_definition['preprocessing'],
+        use_horovod=use_horovod,
+        gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
+        random_seed=random_seed,
+        debug=debug
+    )
+
     contrib_command("train_model", model, model_definition, model_load_path)
 
     # Train model
