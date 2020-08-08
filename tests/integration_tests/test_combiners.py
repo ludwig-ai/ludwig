@@ -6,7 +6,9 @@ import pytest
 
 import tensorflow as tf
 
-from ludwig.combiners.combiners import ConcatCombiner, SequenceConcatCombiner
+from ludwig.combiners.combiners import \
+    ConcatCombiner, SequenceConcatCombiner, SequenceCombiner, \
+    sequence_encoder_registry
 
 
 logger = logging.getLogger(__name__)
@@ -119,3 +121,56 @@ def test_sequence_concat_combiner(encoder_outputs, main_sequence_feature,
     else:
         assert results['combiner_output'].shape.as_list() == \
                [BATCH_SIZE, hidden_size]
+
+
+# test for sequence combiner
+@pytest.mark.parametrize('reduce_output', [None, 'sum'])
+@pytest.mark.parametrize('encoder', sequence_encoder_registry)
+@pytest.mark.parametrize('main_sequence_feature', [None, 'feature_3'])
+def test_sequence_combiner(encoder_outputs, main_sequence_feature,
+                                  encoder, reduce_output):
+
+    combiner = SequenceCombiner(
+        main_sequence_feature=main_sequence_feature,
+        encoder=encoder,
+        reduce_output=reduce_output
+    )
+
+    # calculate expected hidden size for concatenated tensors
+    hidden_size = 0
+    for k in encoder_outputs:
+        hidden_size += encoder_outputs[k]['encoder_output'].shape[-1]
+
+    # concatenate encoder outputs
+    results = combiner(encoder_outputs)
+
+    # required key present
+    assert 'combiner_output' in results
+
+    combiner_shape = results['combiner_output'].shape
+    # test for correct dimension
+    if reduce_output:
+        assert len(combiner_shape) == 2
+    else:
+        assert len(combiner_shape) == 3
+
+    # Shape test assumes on Ludwig sequence encoder defaults
+    #   parallel encoders: # layers = 4, fc_size=256
+    #   non-parallel encoders: fc_size=256
+    # if defaults change, then this test has to be updated
+    default_layer = 4
+    default_fc_size = 256
+
+    if 'parallel' in encoder:
+        combiner_shape[-1] == default_layer * default_fc_size
+    else:
+        combiner_shape[-1] == default_fc_size
+
+
+
+
+
+
+
+
+
