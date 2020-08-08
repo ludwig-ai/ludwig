@@ -101,7 +101,7 @@ def test_sequence_concat_combiner(encoder_outputs, main_sequence_feature,
     # confirm correct shape
     if reduce_output is None:
         assert results['combiner_output'].shape.as_list() == \
-               [BATCH_SIZE, hidden_size]
+               [BATCH_SIZE, SEQ_SIZE, hidden_size]
     else:
         assert results['combiner_output'].shape.as_list() == \
-               [BATCH_SIZE, SEQ_SIZE, hidden_size]
+               [BATCH_SIZE, hidden_size]
