@@ -169,7 +169,8 @@ class TextFeatureMixin(object):
             dataset_df,
             data,
             metadata,
-            preprocessing_parameters
+            preprocessing_parameters={},
+            global_preprocessing_parameters={}
     ):
         chars_data, words_data = TextFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),

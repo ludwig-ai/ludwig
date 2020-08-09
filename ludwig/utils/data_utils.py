@@ -473,3 +473,7 @@ def get_path_size(
 def clear_data_cache():
     """Clears any cached data objects (e.g., embeddings)"""
     load_glove.cache_clear()
+
+
+def sampling(selection, offset=0, limit=None):
+    return selection[offset:(limit + offset if limit is not None else None)]

@@ -136,7 +136,6 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
         )
     return train_set_metadata
 
-
 def build_data(
         dataset_df,
         features,
@@ -173,8 +172,20 @@ def build_data(
             dataset_df,
             data_dict,
             train_set_metadata,
-            preprocessing_parameters
+            preprocessing_parameters,
+            global_preprocessing_parameters
         )
+
+    if global_preprocessing_parameters.get('offset'):
+        offset = global_preprocessing_parameters['offset']
+        limit = global_preprocessing_parameters.get('limit', len(dataset_df))
+
+        logger.info('Dataset offset: %s; limit: %s' % (offset, limit))
+
+        # slice the subset of rows from the dict keys
+        for (k, v) in data_dict.items():
+            data_dict[k] = data_utils.sampling(v, offset, limit)
+
     return data_dict
 
 

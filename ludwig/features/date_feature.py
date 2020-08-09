@@ -98,7 +98,8 @@ class DateFeatureMixin(object):
             dataset_df,
             data,
             metadata,
-            preprocessing_parameters=None
+            preprocessing_parameters={},
+            global_preprocessing_parameters={}
     ):
         datetime_format = preprocessing_parameters['datetime_format']
         dates_to_lists = [
