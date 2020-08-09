@@ -59,7 +59,8 @@ def build_dataset(
 ):
     dataset_df = read_csv(dataset_csv)
     dataset_df.csv = dataset_csv
-    return build_dataset_df(
+
+    data, _, train_set_metadata = build_dataset_df(
         dataset_df,
         features,
         global_preprocessing_parameters,
@@ -67,6 +68,8 @@ def build_dataset(
         random_seed,
         **kwargs
     )
+
+    return data, train_set_metadata
 
 
 def build_dataset_df(
@@ -106,7 +109,7 @@ def build_dataset_df(
         random_seed=random_seed
     )
 
-    return data_val, train_set_metadata
+    return data_val, dataset_df, train_set_metadata
 
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
@@ -666,7 +669,8 @@ def _preprocess_csv_for_training(
             data_test_csv
         )
         concatenated_df.csv = data_train_csv
-        data, train_set_metadata = build_dataset_df(
+
+        data, _, train_set_metadata = build_dataset_df(
             concatenated_df,
             features,
             preprocessing_params,
@@ -752,7 +756,7 @@ def _preprocess_df_for_training(
             data_test_df
         )
 
-    data, train_set_metadata = build_dataset_df(
+    data, _, train_set_metadata = build_dataset_df(
         data_df,
         features,
         preprocessing_params,
