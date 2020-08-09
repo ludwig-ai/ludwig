@@ -89,7 +89,7 @@ def build_dataset_df(
             global_preprocessing_parameters
         )
 
-    data_val = build_data(
+    data_val, dataset_df = build_data(
         dataset_df,
         features,
         train_set_metadata,
@@ -176,17 +176,18 @@ def build_data(
             global_preprocessing_parameters
         )
 
-    if global_preprocessing_parameters.get('offset'):
-        offset = global_preprocessing_parameters['offset']
-        limit = global_preprocessing_parameters.get('limit', len(dataset_df))
+    offset = global_preprocessing_parameters.get('offset', 0)
+    limit = global_preprocessing_parameters.get('limit', len(dataset_df))
 
-        logger.info('Dataset offset: %s; limit: %s' % (offset, limit))
+    logger.info('Dataset offset: %s; limit: %s' % (offset, limit))
 
-        # slice the subset of rows from the dict keys
-        for (k, v) in data_dict.items():
-            data_dict[k] = data_utils.sampling(v, offset, limit)
+    # slice the subset of rows from the dict keys
+    for (k, v) in data_dict.items():
+        data_dict[k] = data_utils.sampling(v, offset, limit)
 
-    return data_dict
+    dataset_df = dataset_df.iloc[offset:limit + offset]
+
+    return data_dict, dataset_df
 
 
 def handle_missing_values(dataset_df, feature, preprocessing_parameters):

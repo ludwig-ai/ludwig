@@ -710,7 +710,7 @@ class LudwigModel:
         logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
         features_to_load = (self.model_definition['input_features'] +
                             self.model_definition['output_features'])
-        preprocessed_data = build_data(
+        preprocessed_data, _ = build_data(
             data_df,
             features_to_load,
             self.train_set_metadata,
@@ -776,7 +776,7 @@ class LudwigModel:
                 'Using in_memory = False is not supported for Ludwig API.'
             )
 
-        preprocessed_data = build_data(
+        preprocessed_data, _ = build_data(
             data_df,
             features_to_load,
             self.train_set_metadata,
