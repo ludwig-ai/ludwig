@@ -1,3 +1,4 @@
+import copy
 import logging
 import sys
 from collections import OrderedDict
@@ -28,6 +29,11 @@ class ECD(tf.keras.Model):
             **kwargs
     ):
         super().__init__()
+
+        # ================ Keep Definition ================
+        self.input_features_def = input_features_def
+        self.combiner_def = combiner_def
+        self.output_features_def = output_features_def
 
         # ================ Inputs ================
         self.input_features = build_inputs(
@@ -432,6 +438,22 @@ class ECD(tf.keras.Model):
 
     def save_savedmodel(self, save_path):
         self.model.save(save_path)
+
+    def save_definition(self, save_path):
+        # removing pretrained embeddings paths from hyperparameters
+        # because the weights are already saved in the model, no need to reload
+        # from their path when loading the model next time
+
+        definition = copy.deepcopy({
+            'input_features': self.input_features_def,
+            'combiner': self.cobiner_def,
+            'output_features': self.output_features_def,
+        })
+        for feature in (definition['input_features'] +
+                        definition['output_features']):
+            if 'pretrained_embeddings' in feature:
+                feature['pretrained_embeddings'] = None
+        save_json(save_path, definition, sort_keys=True, indent=4)
 
 
 def build_inputs(
