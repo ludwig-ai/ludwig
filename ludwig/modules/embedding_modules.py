@@ -203,8 +203,8 @@ class EmbedWeighted(Layer):
         self.vocab_length = len(vocab)
 
         if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)()
-            self.add_loss(regularizer_obj(self.embeddings))
+            regularizer_obj = tf.keras.regularizers.get(regularizer)
+            self.add_loss(lambda: regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)
@@ -263,8 +263,8 @@ class EmbedSparse(Layer):
         )
 
         if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)()
-            self.add_loss(regularizer_obj(self.embeddings))
+            regularizer_obj = tf.keras.regularizers.get(regularizer)
+            self.add_loss(lambda: regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)
@@ -326,8 +326,8 @@ class EmbedSequence(Layer):
         )
 
         if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)()
-            self.add_loss(regularizer_obj(self.embeddings))
+            regularizer_obj = tf.keras.regularizers.get(regularizer)
+            self.add_loss(lambda: regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)
