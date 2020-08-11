@@ -439,16 +439,19 @@ class ECD(tf.keras.Model):
     def save_savedmodel(self, save_path):
         self.model.save(save_path)
 
+    def get_definition(self):
+        return {
+            'input_features': self.input_features_def,
+            'combiner': self.cobiner_def,
+            'output_features': self.output_features_def,
+        }
+
     def save_definition(self, save_path):
         # removing pretrained embeddings paths from hyperparameters
         # because the weights are already saved in the model, no need to reload
         # from their path when loading the model next time
 
-        definition = copy.deepcopy({
-            'input_features': self.input_features_def,
-            'combiner': self.cobiner_def,
-            'output_features': self.output_features_def,
-        })
+        definition = copy.deepcopy(self.get_definition())
         for feature in (definition['input_features'] +
                         definition['output_features']):
             if 'pretrained_embeddings' in feature:

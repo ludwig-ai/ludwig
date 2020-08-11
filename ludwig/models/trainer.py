@@ -75,6 +75,8 @@ class Trainer:
             batch_size=128,
             eval_batch_size=0,
             bucketing_field=None,
+            validation_field='combined',
+            validation_metric='loss',
             early_stop=20,
             reduce_learning_rate_on_plateau=0,
             reduce_learning_rate_on_plateau_patience=5,
@@ -119,6 +121,11 @@ class Trainer:
                length of a field together. Bucketing on text length speeds up
                training of RNNs consistently, 30% in some cases
         :type bucketing_field:
+        :param validation_field: The first output feature, by default it is set
+               as the same field of the first output feature.
+        :param validation_metric: metric used on the validation field, it is
+               accuracy by default
+        :type validation_metric:
         :param dropout_rate: dropout_rate probability (probability of dropping
                a neuron in a given layer)
         :type dropout_rate: Float
@@ -181,6 +188,8 @@ class Trainer:
         self._batch_size = batch_size
         self._eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
         self._bucketing_field = bucketing_field
+        self._validation_field = validation_field
+        self._validation_metric = validation_metric
         self._early_stop = early_stop
         self._reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
         self._reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
@@ -257,8 +266,6 @@ class Trainer:
             training_set,
             validation_set=None,
             test_set=None,
-            validation_field=None,
-            validation_metric=None,
             save_path='model',
             **kwargs
     ):
@@ -266,11 +273,6 @@ class Trainer:
         :param training_set: The training set
         :param validation_set: The validation dataset
         :param test_set: The test dataset
-        :param validation_field: The first output feature, by default it is set
-               as the same field of the first output feature.
-        :param validation_metric: metric used on the validation field, it is
-               accuracy by default
-        :type validation_metric:
         """
         # ====== General setup =======
         tf.random.set_seed(self._random_seed)
@@ -287,32 +289,32 @@ class Trainer:
         # check if validation_field is valid
         valid_validation_field = False
         validation_output_feature_name = None
-        if validation_field == 'combined':
+        if self._validation_field == 'combined':
             valid_validation_field = True
             validation_output_feature_name = 'combined'
         else:
             for output_feature in output_features:
-                if validation_field == output_feature['name']:
+                if self._validation_field == output_feature['name']:
                     valid_validation_field = True
                     validation_output_feature_name = output_feature['name']
         if not valid_validation_field:
             raise ValueError(
                 'The specificed validation_field {} is not valid.'
                 'Available ones are: {}'.format(
-                    validation_field,
+                    self._validation_field,
                     [of['name'] for of in output_features] + ['combined']
                 )
             )
 
         # check if validation_metric is valid
-        valid_validation_metric = validation_metric in metrics_names[
+        valid_validation_metric = self._validation_metric in metrics_names[
             validation_output_feature_name
         ]
         if not valid_validation_metric:
             raise ValueError(
                 'The specificed metric {} is not valid.'
                 'Available metrics for {} output features are: {}'.format(
-                    validation_metric,
+                    self._validation_metric,
                     validation_output_feature_name,
                     metrics_names[validation_output_feature_name]
                 )
@@ -406,7 +408,7 @@ class Trainer:
                 last_improvement_epoch=0,
                 learning_rate=self._learning_rate,
                 best_valid_metric=get_initial_validation_value(
-                    validation_metric
+                    self._validation_metric
                 ),
                 num_reductions_lr=0,
                 num_increases_bs=0,
@@ -613,8 +615,8 @@ class Trainer:
                 should_break = self.check_progress_on_validation(
                     model,
                     progress_tracker,
-                    validation_field,
-                    validation_metric,
+                    self._validation_field,
+                    self._validation_metric,
                     model_weights_path,
                     model_hyperparameters_path,
                     self._reduce_learning_rate_on_plateau,
