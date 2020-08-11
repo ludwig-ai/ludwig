@@ -15,6 +15,7 @@ from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.models.ecd import build_single_input, build_single_output
+from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import image_feature
@@ -76,6 +77,15 @@ TestCase = namedtuple('TestCase', 'syn_data XCoder_other_parms regularizer_parm_
             ]
         ),
 
+        # Categorical encoder
+        TestCase(
+            SyntheticData(BATCH_SIZE, category_feature, (), {}),
+            {'representation': 'dense'},
+            [
+                'regularizer',
+            ]
+        ),
+
         # ParallelCNN Encoder
         TestCase(
             SyntheticData(BATCH_SIZE, sequence_feature, (), {}),
@@ -134,9 +144,10 @@ def test_encoder(test_case):
 
         # combine other other keyword parameters
         x_coder_kwargs.update(test_case.XCoder_other_parms)
-
         features[0].update(x_coder_kwargs)
-        if features[0]['type'] in SEQUENCE_TYPES:
+
+        # shim code to support sequence/sequence like features
+        if features[0]['type'] in SEQUENCE_TYPES.union({'category'}):
             features[0]['vocab'] = train_set_metadata[feature_name]['idx2str']
             training_set.dataset[feature_name] = \
                 training_set.dataset[feature_name].astype(np.int32)
@@ -144,6 +155,7 @@ def test_encoder(test_case):
         input_def_obj = build_single_input(features[0], None)
 
         inputs = training_set.dataset[feature_name]
+        # make sure we are at least rank 2 tensor
         if len(inputs.shape) == 1:
             inputs = inputs.reshape(-1, 1)
 
