@@ -22,6 +22,8 @@ from collections import Counter
 
 import numpy as np
 
+from transformers import AutoTokenizer
+
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
@@ -94,23 +96,28 @@ def create_vocabulary(
         num_most_frequent=None,
         vocab_file=None,
         unknown_symbol=UNKNOWN_SYMBOL,
-        padding_symbol=PADDING_SYMBOL
+        padding_symbol=PADDING_SYMBOL,
+        pretrained_model_name_or_path=None
 ):
     vocab = None
     max_line_length = 0
     unit_counts = Counter()
 
-    if tokenizer_type == 'bert':
-        vocab = load_vocabulary(vocab_file)
+    tokenizer = get_from_registry(
+        tokenizer_type,
+        tokenizer_registry
+    )(
+        vocab_file=vocab_file,
+        pretrained_model_name_or_path=pretrained_model_name_or_path
+    )
+
+    if tokenizer_type == 'hf_tokenizer':
+        vocab = tokenizer.tokenizer.get_vocab()
         add_unknown = False
         add_padding = False
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
-    tokenizer = get_from_registry(
-        tokenizer_type,
-        tokenizer_registry
-    )(vocab_file=vocab_file)
     for line in data:
         processed_line = tokenizer(line.lower() if lowercase else line)
         unit_counts.update(processed_line)
@@ -180,9 +187,13 @@ def build_sequence_matrix(
         unknown_symbol=UNKNOWN_SYMBOL,
         lowercase=True,
         tokenizer_vocab_file=None,
+        pretrained_model_name_or_path=None
+
 ):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
-        vocab_file=tokenizer_vocab_file
+        vocab_file=tokenizer_vocab_file,
+        max_length=length_limit,
+        pretrained_model_name_or_path=pretrained_model_name_or_path
     )
     format_dtype = int_type(len(inverse_vocabulary) - 1)
 
@@ -695,6 +706,8 @@ class GreekLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
         )
 
 
+
+
 class NorwegianTokenizer(BaseTokenizer):
     def __call__(self, text):
         return process_text(text, load_nlp_pipeline('nb'))
@@ -1111,26 +1124,29 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
         )
 
 
-class BERTTokenizer(BaseTokenizer):
-    def __init__(self, vocab_file=None, **kwargs):
+class HFTokenizer(BaseTokenizer):
+    def __init__(self, 
+            pretrained_model_name_or_path,
+            max_length, 
+            **kwargs
+    ):
         super().__init__()
-        if vocab_file is None:
-            raise ValueError(
-                'Vocabulary file is required to initialize BERT tokenizer'
-            )
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path
+        )
+        self.vocab = self.tokenizer.vocab
+        self.max_model_input_size = self.tokenizer.max_model_input_sizes[
+            pretrained_model_name_or_path
+        ]
+        self.max_length = self.get_max_length(max_length)
 
-        try:
-            from bert.tokenization import FullTokenizer
-        except ImportError:
-            raise ValueError(
-                "Please install bert-tensorflow: pip install bert-tensorflow"
-            )
-
-        self.tokenizer = FullTokenizer(vocab_file)
+    def get_max_length(self, max_length):
+        self.max_length = min(self.max_length, self.max_model_input_size)
+        self.max_length += self.tokenizer.num_special_tokens_to_add()
+        return self.max_length
 
     def __call__(self, text):
-        return ['[CLS]'] + self.tokenizer.tokenize(text) + ['[SEP]']
-
+        return self.tokenizer.encode(text)
 
 tokenizer_registry = {
     'characters': CharactersToListTokenizer,
@@ -1236,5 +1252,5 @@ tokenizer_registry = {
     'multi_lemmatize': MultiLemmatizeTokenizer,
     'multi_lemmatize_filter': MultiLemmatizeFilterTokenizer,
     'multi_lemmatize_remove_stopwords': MultiLemmatizeRemoveStopwordsTokenizer,
-    'bert': BERTTokenizer
+    'hf_tokenizer' : HFTokenizer
 }

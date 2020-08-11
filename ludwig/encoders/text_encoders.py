@@ -15,9 +15,10 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-
+import tensorflow as tf
 from ludwig.models.modules.reduction_modules import reduce_sequence
 from tensorflow.keras.layers import Layer
+
 from transformers import TFBertModel, TFOpenAIGPTModel, TFGPT2Model, \
     TFTransfoXLModel, TFXLNetModel, TFXLMModel, \
     TFRobertaModel, TFDistilBertModel, TFCTRLModel, TFCamembertModel, \
@@ -42,13 +43,19 @@ class BERTEncoder(Layer):
         self.reduce_output = reduce_output
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=tf.sign(tf.abs(inputs)),
+            token_type_ids=tf.zeros_like(inputs)
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+
+        return {'encoder_output': hidden}
 
 
 class GPTEncoder(Layer):

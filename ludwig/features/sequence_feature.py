@@ -23,6 +23,7 @@ import tensorflow as tf
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
+#from ludwig.encoders.sequence_encoders import BERT
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
 from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
@@ -30,6 +31,7 @@ from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.encoders.text_encoders import BERTEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -46,6 +48,7 @@ from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
+from ludwig.utils.strings_utils import create_vocabulary
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +61,9 @@ class SequenceFeatureMixin(object):
         'most_common': 20000,
         'padding_symbol': PADDING_SYMBOL,
         'unknown_symbol': UNKNOWN_SYMBOL,
-        'padding': 'post',
+        'padding': 'right',
         'tokenizer': 'space',
-        'pretrained_model_name_or_path': None,
+        'pretrained_model_name_or_path' : None,
         'lowercase': False,
         'vocab_file': None,
         'missing_value_strategy': FILL_WITH_CONST,
@@ -69,55 +72,47 @@ class SequenceFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        tokenizer = get_tokenizer(
-            tokenizer_type=preprocessing_parameters['tokenizer'],
+        idx2str, str2idx, str2freq, max_length = create_vocabulary(
+            column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
-            add_unknown=True,
-            add_padding=True,
+            num_most_frequent=preprocessing_parameters['most_common'],
             vocab_file=preprocessing_parameters['vocab_file'],
+            unknown_symbol=preprocessing_parameters['unknown_symbol'],
+            padding_symbol=preprocessing_parameters['padding_symbol'],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
+            ],
         )
-        if not tokenizer.vocab:
-            tokenizer.fit_vocab(
-                column, preprocessing_parameters['most_common']
-            )
-        if not tokenizer.max_length:
-            tokenizer.fit_max_length(column)
-
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
-            tokenizer.max_length
+            max_length
         )
         return {
-            'idx2str': tokenizer.symbols,
-            'str2idx': tokenizer.vocab,
-            'vocab_size': len(tokenizer.vocab),
+            'idx2str': idx2str,
+            'str2idx': str2idx,
+            'str2freq': str2freq,
+            'vocab_size': len(idx2str),
             'max_sequence_length': max_length
         }
 
     @staticmethod
     def feature_data(column, metadata, preprocessing_parameters):
-        tokenizer = get_tokenizer(
+        sequence_data = build_sequence_matrix(
+            sequences=column,
+            inverse_vocabulary=metadata['str2idx'],
             tokenizer_type=preprocessing_parameters['tokenizer'],
+            length_limit=metadata['max_sequence_length'],
+            padding_symbol=preprocessing_parameters['padding_symbol'],
+            padding=preprocessing_parameters['padding'],
+            unknown_symbol=preprocessing_parameters['unknown_symbol'],
             lowercase=preprocessing_parameters['lowercase'],
-            add_unknown=True,
-            add_padding=True,
-            vocab=metadata['str2idx'],
-            symbols=metadata['idx2str'],
-            max_length=metadata['max_sequence_length'],
-            vocab_file=preprocessing_parameters['vocab_file'],
+            tokenizer_vocab_file=preprocessing_parameters[
+                'vocab_file'
+            ],
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
-            ]
-        )
-        seuqneces = [tokenizer.tokenize_id(line) for line in column]
-        sequence_data = build_sequence_matrix(
-            sequences=seuqneces,
-            max_length=metadata['max_sequence_length'],
-            vocab_size=metadata['vocab_size'],
-            padding=preprocessing_parameters['padding'],
+            ],
+
         )
         return sequence_data
 
@@ -182,27 +177,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         'rnn': StackedRNN,
         'cnnrnn': StackedCNNRNN,
         'embed': SequenceEmbedEncoder,
-
         'bert': BERTEncoder,
-        # 'gpt': GPTEncoder,
-        # 'gpt2': GPT2Encoder,
-        # 'transformerxl': TransformerXLEncoder,
-
-        # 'xlnet': XLNetEncoder,
-        # 'xlm': XLMEncoder,
-        # 'roberta': RoBERTaEncoder,
-        'distilbert': DistilBERTEncoder,
-        # 'ctrl': CTRLEncoder,
-        # 'camembert': CamemBERTEncoder,
-        # 'albert': ALBERTEncoder,
-        # 't5': T5Encoder,
-        # 'xlm_roberta': XLMRoBERTaEncoder,
-        # 'flaubert': FlauBERTEncoder,
-        # 'bart': BartEncoder,
-        # 'dialogpt': DialoGPTEncoder,
-        # 'electra': ELECTRAEncoder,
-        # 'auto': AutoTransformerEncoder,
-
         'passthrough': SequencePassthroughEncoder,
         'null': SequencePassthroughEncoder,
         'none': SequencePassthroughEncoder,
