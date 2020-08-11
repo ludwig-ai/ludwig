@@ -19,6 +19,7 @@ from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import image_feature
+from tests.integration_tests.utils import set_feature
 
 
 BATCH_SIZE = 32
@@ -50,7 +51,7 @@ TestCase = namedtuple('TestCase', 'syn_data XCoder_other_parms regularizer_parm_
 @pytest.mark.parametrize(
     'test_case',
     [
-        # # DenseEncoder
+        # DenseEncoder
         TestCase(
             SyntheticData(BATCH_SIZE, numerical_feature, (), {}),
             {'num_layers': 2, 'encoder': 'dense', 'preprocessing':{'normalization': 'zscore'}},
@@ -90,7 +91,20 @@ TestCase = namedtuple('TestCase', 'syn_data XCoder_other_parms regularizer_parm_
         TestCase(
             SyntheticData(BATCH_SIZE, sequence_feature, (), {}),
             {'encoder': 'parallel_cnn', 'cell_type': 'gru'},
-            ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
+            [
+                'activity_regularizer', 'weights_regularizer',
+                'bias_regularizer',
+            ]
+        ),
+
+        # Set Encoder
+        TestCase(
+            SyntheticData(BATCH_SIZE, set_feature, (), {}),
+            {},
+            [
+                'activity_regularizer', 'weights_regularizer',
+                'bias_regularizer',
+            ]
         ),
 
     ]
@@ -147,7 +161,7 @@ def test_encoder(test_case):
         features[0].update(x_coder_kwargs)
 
         # shim code to support sequence/sequence like features
-        if features[0]['type'] in SEQUENCE_TYPES.union({'category'}):
+        if features[0]['type'] in SEQUENCE_TYPES.union({'category', 'set'}):
             features[0]['vocab'] = train_set_metadata[feature_name]['idx2str']
             training_set.dataset[feature_name] = \
                 training_set.dataset[feature_name].astype(np.int32)
@@ -184,7 +198,7 @@ def test_encoder(test_case):
 @pytest.mark.parametrize(
     'test_case',
     [
-        # # DenseEncoder
+        # regressor decoder
         TestCase(
             SyntheticData(BATCH_SIZE, numerical_feature, (), {}),
             {
@@ -195,10 +209,18 @@ def test_encoder(test_case):
             ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
         ),
 
-        # # ParallelCNN Encoder
+        # Tagger Decoder
+        TestCase(
+            SyntheticData(BATCH_SIZE, sequence_feature, (), {'max_len': SEQ_SIZE}),
+            {'decoder': 'tagger'},
+            ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
+        ),
+
+        # # Generator Decoder todo need to propogate regularizers to layers
         # TestCase(
-        #     SyntheticData(BATCH_SIZE, sequence_feature, (), {}),
-        #     {'decoder': 'tagger'},
+        #     SyntheticData(BATCH_SIZE, sequence_feature, (),
+        #                   {'max_len': SEQ_SIZE}),
+        #     {'decoder': 'generator', 'cell_type': 'gru'},
         #     ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
         # ),
 
@@ -225,8 +247,19 @@ def test_decoder(test_case):
     df = pd.DataFrame({data_list[0][0]: raw_data})
 
     # create synthetic combiner layer
-    combiner_outputs = {
+    combiner_outputs_rank2 = {
             'combiner_output': tf.random.normal(
+                [BATCH_SIZE, HIDDEN_SIZE],
+                dtype=tf.float32
+            )
+        }
+
+    combiner_outputs_rank3 = {
+            'combiner_output': tf.random.normal(
+                [BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
+                dtype=tf.float32
+            ),
+            'encoder_output_state': tf.random.normal(
                 [BATCH_SIZE, HIDDEN_SIZE],
                 dtype=tf.float32
             )
@@ -260,9 +293,12 @@ def test_decoder(test_case):
 
         features[0].update(x_coder_kwargs)
         if features[0]['type'] in SEQUENCE_TYPES:
-            features[0]['vocab'] = train_set_metadata[feature_name]['idx2str']
+            features[0]['num_classes'] = train_set_metadata[feature_name]['vocab_size'] + 1
             training_set.dataset[feature_name] = \
                 training_set.dataset[feature_name].astype(np.int32)
+            combiner_outputs = combiner_outputs_rank3
+        else:
+            combiner_outputs = combiner_outputs_rank2
 
         output_def_obj = build_single_output(features[0], None, None)
 
