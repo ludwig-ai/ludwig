@@ -160,6 +160,17 @@ def save_tensors(collected_tensors, experiment_dir_name):
     return filenames
 
 
+def print_weight_names(
+        model_path,
+        **kwargs
+):
+    model, model_definition = load_model_and_definition(model_path)
+    collected_tensors = model.collect_weights()
+    names = [name for name, w in collected_tensors]
+    for name in names:
+        print(name)
+
+
 def cli_collect_activations(sys_argv):
     """Command Line Interface to communicate with the collection of tensors and
     there are several options that can specified when calling this function:
@@ -368,6 +379,53 @@ def cli_collect_weights(sys_argv):
     collect_weights(**vars(args))
 
 
+def cli_collect_names(sys_argv):
+    """Command Line Interface to collecting the weight names of the model
+    --m: Input model that is necessary to collect to the tensors, this is a
+         required *option*
+    --v: Verbose: Defines the logging level that the user will be exposed to
+    """
+    parser = argparse.ArgumentParser(
+        description='This script loads a pretrained model '
+                    'and uses it collect weight names.',
+        prog='ludwig collect_names',
+        usage='%(prog)s [options]'
+    )
+
+    # ----------------
+    # Model parameters
+    # ----------------
+    parser.add_argument(
+        '-m',
+        '--model_path',
+        help='model to load',
+        required=True
+    )
+
+    # ------------------
+    # Runtime parameters
+    # ------------------
+    parser.add_argument(
+        '-l',
+        '--logging_level',
+        default='info',
+        help='the level of logging to use',
+        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
+    )
+
+    args = parser.parse_args(sys_argv)
+
+    logging.getLogger('ludwig').setLevel(
+        logging_level_registry[args.logging_level]
+    )
+    global logger
+    logger = logging.getLogger('ludwig.collect')
+
+    print_ludwig('Collect Names', LUDWIG_VERSION)
+
+    print_weight_names(**vars(args))
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'activations':
@@ -376,6 +434,9 @@ if __name__ == '__main__':
         elif sys.argv[1] == 'weights':
             contrib_command("collect_weights", *sys.argv)
             cli_collect_weights(sys.argv[2:])
+        elif sys.argv[1] == 'names':
+            contrib_command("collect_names", *sys.argv)
+            cli_collect_names(sys.argv[2:])
         else:
             print('Unrecognized command')
     else:
