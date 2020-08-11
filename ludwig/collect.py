@@ -113,8 +113,6 @@ def collect_activations(
         batch_size
     )
 
-    model.close_session()
-
     # saving
     os.makedirs(experiment_dir_name)
     save_tensors(collected_tensors, experiment_dir_name)
@@ -141,22 +139,25 @@ def collect_weights(
     # collect weights
     print_boxed('COLLECT WEIGHTS')
     collected_tensors = model.collect_weights(tensors)
-    model.close_session()
 
     # saving
     os.makedirs(experiment_dir_name)
-    save_tensors(collected_tensors, experiment_dir_name)
+    saved_filenames = save_tensors(collected_tensors, experiment_dir_name)
 
     logger.info('Saved to: {0}'.format(experiment_dir_name))
+    return saved_filenames
 
 
 def save_tensors(collected_tensors, experiment_dir_name):
-    for tensor_name, tensor_values in collected_tensors.items():
+    filenames = []
+    for tensor_name, tensor_value in collected_tensors:
         np_filename = os.path.join(
             experiment_dir_name,
             make_safe_filename(tensor_name) + '.npy'
         )
-        np.save(np_filename, tensor_values)
+        np.save(np_filename, tensor_value.numpy())
+        filenames.append(np_filename)
+    return filenames
 
 
 def cli_collect_activations(sys_argv):
