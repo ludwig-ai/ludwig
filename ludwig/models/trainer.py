@@ -383,13 +383,16 @@ class Trainer:
                     )
                 )
 
-        # todo tf2: reintroduce debugging mode
-        # if self.debug:
-        #    session = tf_debug.LocalCLIDebugWrapperSession(session)
-        #    session.add_tensor_filter(
-        #        'has_inf_or_nan',
-        #        tf_debug.has_inf_or_nan
-        #    )
+        if self._debug and is_on_master():
+            # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
+            debug_path = os.path.join(
+                save_path, 'debug'
+            )
+            tf.debugging.experimental.enable_dump_debug_info(
+                debug_path,
+                tensor_debug_mode='FULL_HEALTH',
+                circular_buffer_size=-1,
+            )
 
         # ================ Resume logic ================
         if resume:
