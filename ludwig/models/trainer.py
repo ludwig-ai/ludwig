@@ -383,13 +383,16 @@ class Trainer:
                     )
                 )
 
-        # todo tf2: reintroduce debugging mode
-        # if self.debug:
-        #    session = tf_debug.LocalCLIDebugWrapperSession(session)
-        #    session.add_tensor_filter(
-        #        'has_inf_or_nan',
-        #        tf_debug.has_inf_or_nan
-        #    )
+        if self._debug and is_on_master():
+            # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
+            debug_path = os.path.join(
+                save_path, 'debug'
+            )
+            tf.debugging.experimental.enable_dump_debug_info(
+                debug_path,
+                tensor_debug_mode='FULL_HEALTH',
+                circular_buffer_size=-1,
+            )
 
         # ================ Resume logic ================
         if resume:
@@ -1045,39 +1048,33 @@ class Trainer:
 
         return collected_tensors
 
-    # todo tf2: reintroduce this functionality
     def collect_weights(
             self,
-            tensor_names,
+            tensor_names=None,
             **kwargs
     ):
-        # if self.session is None:
-        #     session = self.initialize_session(gpus, gpu_fraction)
-        #
-        #     # load parameters
-        #     if self.weights_save_path:
-        #         self.restore(session, self.weights_save_path)
-        # else:
-        #     session = self.session
-        #
-        # operation_names = set(
-        #     [t.name for op in self.graph.get_operations() for t in op.values()]
-        # )
-        # for tensor_name in tensor_names:
-        #     if tensor_name not in operation_names:
-        #         raise ValueError(
-        #             'Tensor / operation {} not present in the '
-        #             'model graph'.format(tensor_name)
-        #         )
-        #
-        # # collect tensors
-        # collected_tensors = {
-        #     tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
-        #     for tensor_name in tensor_names
-        # }
-        #
-        # return collected_tensors
-        pass
+        def recurse_weights(model, prefix=None):
+            results = []
+            for layer in model.layers:
+                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
+                if isinstance(layer, tf.keras.Model):
+                    results += recurse_weights(layer, layer_prefix)
+                else:
+                    results += [(f'{layer_prefix}/{w.name}', w) for w in layer.weights]
+            return results
+
+        weights = recurse_weights(self.model)
+        if tensor_names:
+            # Check for bad tensor names
+            weight_set = set(name for name, w in weights)
+            for name in tensor_names:
+                if name not in weight_set:
+                    raise ValueError(f'Tensor {name} not present in the model graph')
+
+            # Filter the weights
+            tensor_set = set(tensor_names)
+            weights = [(name, w) for name, w in weights if name in tensor_set]
+        return weights
 
     def save_weights(self, save_path):
         # save model
