@@ -83,7 +83,7 @@ TestCase = namedtuple('TestCase', 'syn_data XCoder_other_parms regularizer_parm_
             SyntheticData(BATCH_SIZE, category_feature, (), {}),
             {'representation': 'dense'},
             [
-                'regularizer',
+                'embedding_regularizer',
             ]
         ),
 
@@ -216,13 +216,13 @@ def test_encoder(test_case):
             ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
         ),
 
-        # # Generator Decoder todo need to propogate regularizers to layers
-        # TestCase(
-        #     SyntheticData(BATCH_SIZE, sequence_feature, (),
-        #                   {'max_len': SEQ_SIZE}),
-        #     {'decoder': 'generator', 'cell_type': 'gru'},
-        #     ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
-        # ),
+        # Generator Decoder
+        TestCase(
+            SyntheticData(BATCH_SIZE, sequence_feature, (),
+                          {'max_len': SEQ_SIZE}),
+            {'decoder': 'generator', 'cell_type': 'gru'},
+            ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
+        ),
 
     ]
 
