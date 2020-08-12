@@ -191,8 +191,8 @@ class SequenceEmbedEncoder(Layer):
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
     def call(self, inputs, training=None, mask=None):
@@ -440,8 +440,8 @@ class ParallelCNN(Layer):
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout_rate=dropout_rate,
-                initializer=weights_initializer,
-                regularizer=weights_regularizer
+                embedding_initializer=weights_initializer,
+                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  ParallelConv1D')
@@ -786,8 +786,8 @@ class StackedCNN(Layer):
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout_rate=dropout_rate,
-                initializer=weights_initializer,
-                regularizer=weights_regularizer
+                embedding_initializer=weights_initializer,
+                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  Conv1DStack')
@@ -1132,8 +1132,8 @@ class StackedParallelCNN(Layer):
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout_rate=dropout_rate,
-                initializer=weights_initializer,
-                regularizer=weights_regularizer
+                embedding_initializer=weights_initializer,
+                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  ParallelConv1DStack')
@@ -1409,8 +1409,8 @@ class StackedRNN(Layer):
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout_rate=fc_dropout_rate,
-                initializer=weights_initializer,
-                regularizer=weights_regularizer
+                embedding_initializer=weights_initializer,
+                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  RecurrentStack')
@@ -1689,8 +1689,8 @@ class StackedCNNRNN(Layer):
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
                 dropout_rate=fc_dropout_rate,
-                initializer=weights_initializer,
-                regularizer=weights_regularizer
+                embedding_initializer=weights_initializer,
+                embedding_regularizer=weights_regularizer
             )
 
         logger.debug('  Conv1DStack')
