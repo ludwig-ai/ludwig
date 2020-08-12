@@ -16,6 +16,7 @@ from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.models.ecd import build_single_input, build_single_output
 from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import image_feature
@@ -84,6 +85,16 @@ TestCase = namedtuple('TestCase', 'syn_data XCoder_other_parms regularizer_parm_
             {'representation': 'dense'},
             [
                 'embedding_regularizer',
+            ]
+        ),
+
+        # Date encoder
+        TestCase(
+            SyntheticData(BATCH_SIZE, date_feature, (), {}),
+            {},
+            [
+                'activity_regularizer', 'weights_regularizer',
+                'bias_regularizer',
             ]
         ),
 
