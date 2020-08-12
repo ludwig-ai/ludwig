@@ -64,8 +64,8 @@ class SetSparseEncoder(Layer):
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer,
             reduce_output=reduce_output,
         )
 

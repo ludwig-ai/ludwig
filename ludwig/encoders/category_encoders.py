@@ -33,8 +33,8 @@ class CategoricalEmbedEncoder(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=False,
             dropout_rate=0.0,
-            initializer=None,
-            regularizer=None,
+            embedding_initializer=None,
+            embedding_regularizer=None,
             **kwargs
     ):
         super(CategoricalEmbedEncoder, self).__init__()
@@ -49,8 +49,8 @@ class CategoricalEmbedEncoder(Layer):
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=initializer,
-            regularizer=regularizer
+            embedding_initializer=embedding_initializer,
+            embedding_regularizer=embedding_regularizer
         )
 
     def call(self, inputs, training=None, mask=None):
