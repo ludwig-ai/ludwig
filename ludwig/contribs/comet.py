@@ -204,7 +204,7 @@ class Comet():
         cli = self._make_command_line(args)
         self._log_html(cli)
 
-    def test(self, *args, **kwargs):
+    def evaluate(self, *args, **kwargs):
         import comet_ml
         try:
             self.cometml_experiment = comet_ml.ExistingExperiment()
@@ -213,7 +213,7 @@ class Comet():
             logger.error("Ignored --comet. No '.comet.config' file")
             return
 
-        logger.info("comet.test() called......")
+        logger.info("comet.evaluate() called......")
         cli = self._make_command_line(args)
         self._log_html(cli)
 

@@ -22,23 +22,19 @@ import argparse
 import logging
 import os
 import sys
-from collections import OrderedDict
-from pprint import pformat
 
-from ludwig.constants import LOGITS, TYPE
+from ludwig.constants import LOGITS
 from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess
-from ludwig.data.preprocessing import preprocess_for_prediction, COMBINED
-from ludwig.features.feature_registries import output_type_registry
+from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
+from ludwig.models.prediction_helpers import calculate_overall_stats, \
+    save_prediction_outputs, save_test_statistics, print_test_results
 from ludwig.models.trainer import load_model_and_definition
-from ludwig.utils.data_utils import save_csv
-from ludwig.utils.data_utils import save_json
-from ludwig.utils.misc_utils import get_from_registry, \
-    find_non_existing_dir_by_adding_suffix
-from ludwig.utils.print_utils import logging_level_registry, repr_ordered_dict
+from ludwig.utils.misc_utils import find_non_existing_dir_by_adding_suffix
+from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
 
@@ -203,63 +199,6 @@ def predict(
         )
 
     return test_stats
-
-
-def calculate_overall_stats(test_stats, output_features, dataset,
-                            train_set_metadata):
-    for output_feature in output_features:
-        feature = get_from_registry(
-            output_feature[TYPE],
-            output_type_registry
-        )
-        feature.calculate_overall_stats(
-            test_stats, output_feature, dataset, train_set_metadata
-        )
-
-
-def save_prediction_outputs(
-        postprocessed_output,
-        experiment_dir_name,
-        skip_output_types=None
-):
-    if skip_output_types is None:
-        skip_output_types = set()
-    csv_filename = os.path.join(experiment_dir_name, '{}_{}.csv')
-    for output_field, outputs in postprocessed_output.items():
-        for output_type, values in outputs.items():
-            if output_type not in skip_output_types:
-                save_csv(
-                    csv_filename.format(output_field, output_type),
-                    values
-                )
-
-
-def save_test_statistics(test_stats, experiment_dir_name):
-    test_stats_fn = os.path.join(
-        experiment_dir_name,
-        'test_statistics.json'
-    )
-    save_json(test_stats_fn, test_stats)
-
-
-def print_test_results(test_stats):
-    for output_field, result in test_stats.items():
-        if (output_field != COMBINED or
-                (output_field == COMBINED and len(test_stats) > 2)):
-            logger.info('\n===== {} ====='.format(output_field))
-            for metric in sorted(list(result)):
-                if metric != 'confusion_matrix' and metric != 'roc_curve':
-                    value = result[metric]
-                    if isinstance(value, OrderedDict):
-                        value_repr = repr_ordered_dict(value)
-                    else:
-                        value_repr = pformat(result[metric], indent=2)
-                    logger.info(
-                        '{0}: {1}'.format(
-                            metric,
-                            value_repr
-                        )
-                    )
 
 
 def cli(sys_argv):

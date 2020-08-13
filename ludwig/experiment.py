@@ -32,10 +32,9 @@ from ludwig.constants import TRAINING
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
+from ludwig.models.prediction_helpers import save_prediction_outputs, \
+    save_test_statistics, print_test_results
 from ludwig.predict import predict
-from ludwig.predict import print_test_results
-from ludwig.predict import save_prediction_outputs
-from ludwig.predict import save_test_statistics
 from ludwig.train import full_train
 from ludwig.utils.data_utils import save_json, generate_kfold_splits
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults

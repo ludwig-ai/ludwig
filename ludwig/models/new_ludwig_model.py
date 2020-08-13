@@ -502,6 +502,12 @@ class NewLudwigModel:
 
         return train_stats
 
+    def predict_pseudo(self, data):
+        preproc_data = preprocess_data(data)
+        preds = self.model.batch_predict(preproc_data)
+        postproc_preds = postprocess_data(preds)
+        return postproc_preds
+
     def predict(self, data):
         preproc_data = preprocess_data(data)
         preds = self.model.batch_predict(preproc_data)

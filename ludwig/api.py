@@ -54,7 +54,7 @@ from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.globals import set_disable_progressbar
 from ludwig.models.trainer import Trainer
 from ludwig.models.trainer import load_model_and_definition
-from ludwig.predict import calculate_overall_stats
+from ludwig.models.prediction_helpers import calculate_overall_stats
 from ludwig.train import full_train
 from ludwig.features.feature_utils import update_model_definition_with_metadata
 from ludwig.utils.data_utils import override_in_memory_flag

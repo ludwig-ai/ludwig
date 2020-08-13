@@ -34,9 +34,9 @@ logger = logging.getLogger(__name__)
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
-                    'and tests its performance by comparing'
+                    'and evaluates its performance by comparing'
                     'its predictions with ground truth.',
-        prog='ludwig test',
+        prog='ludwig evaluate',
         usage='%(prog)s [options]'
     )
 
@@ -176,5 +176,5 @@ def cli(sys_argv):
 
 if __name__ == '__main__':
     contrib_import()
-    contrib_command("test", *sys.argv)
+    contrib_command("evaluate", *sys.argv)
     cli(sys.argv[1:])

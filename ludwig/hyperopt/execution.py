@@ -8,8 +8,9 @@ from ludwig.constants import MAXIMIZE, VALIDATION, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess
 from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
-from ludwig.predict import predict, print_test_results, \
-    save_prediction_outputs, save_test_statistics
+from ludwig.models.prediction_helpers import save_prediction_outputs, \
+    save_test_statistics, print_test_results
+from ludwig.predict import predict
 from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
