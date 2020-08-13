@@ -27,8 +27,6 @@ from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
 
-# todo tf2: fix these tests to work with the TF2 way
-#  of doing regularization at init time
 L1_REGULARIZER = 'l1'
 L2_REGULARIZER = 'l2'
 NO_REGULARIZER = None
