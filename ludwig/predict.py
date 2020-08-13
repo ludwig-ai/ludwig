@@ -340,7 +340,6 @@ def cli(sys_argv):
     )
 
     args = parser.parse_args(sys_argv)
-    args.evaluate_performance = False
 
     logging.getLogger('ludwig').setLevel(
         logging_level_registry[args.logging_level]
@@ -352,6 +351,10 @@ def cli(sys_argv):
 
     if is_on_master():
         print_ludwig('Predict', LUDWIG_VERSION)
+        logger.info('Dataset path: {}'.format(
+            data_csv if data_csv is not None else data_hdf5))
+        logger.info('Model path: {}'.format(model_path))
+        logger.info('')
 
     full_predict(**vars(args))
 

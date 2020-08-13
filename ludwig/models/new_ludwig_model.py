@@ -7,21 +7,26 @@ import pandas as pd
 import tensorflow as tf
 import yaml
 
-from ludwig.constants import TRAINING, VALIDATION, TEST
+from ludwig.constants import TRAINING, VALIDATION, TEST, LOGITS
 from ludwig.contrib import contrib_command
-from ludwig.data.preprocessing import load_metadata, preprocess_for_training
+from ludwig.data.postprocessing import postprocess, postprocess_df
+from ludwig.data.preprocessing import load_metadata, preprocess_for_training, \
+    preprocess_for_prediction
 from ludwig.features.feature_utils import update_model_definition_with_metadata
 from ludwig.globals import set_disable_progressbar, \
     MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, set_on_master, is_on_master
 from ludwig.models.ecd import ECD
+from ludwig.models.prediction_helpers import calculate_overall_stats, \
+    save_prediction_outputs, print_test_results, save_test_statistics
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import load_json, save_json
+from ludwig.utils.data_utils import load_json, save_json, \
+    override_in_memory_flag
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.horovod_utils import should_use_horovod
 from ludwig.utils.misc_utils import get_experiment_dir_name, get_file_names, \
-    get_experiment_description
+    get_experiment_description, find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.tf_utils import initialize_tensorflow
 
@@ -499,6 +504,7 @@ class NewLudwigModel:
         contrib_command("train_save", experiment_dir_name)
 
         self.train_set_metadata = preprocessed_data[-1]
+        self.exp_dir_name = experiment_dir_name
 
         return train_stats
 
@@ -508,13 +514,133 @@ class NewLudwigModel:
         postproc_preds = postprocess_data(preds)
         return postproc_preds
 
-    def predict(self, data):
-        preproc_data = preprocess_data(data)
-        preds = self.model.batch_predict(preproc_data)
-        postproc_preds = postprocess_data(preds)
-        return postproc_preds
+    def predict(
+            self,
+            data_csv=None,
+            data_hdf5=None,
+            data_df=None,
+            data_dict=None,
+            batch_size=128,
+            skip_save_unprocessed_output=True,
+            skip_save_predictions=True,
+            skip_save_eval_statis=True,
+            output_directory='results',
+            evaluate_performance=True,
+            return_type=pd.DataFrame,
+            debug=False,
+            **kwargs
+    ):
+        if (self.model is None or self.model_definition is None or
+                self.train_set_metadata is None):
+            raise ValueError('Model has not been trained or loaded')
 
-    def evaluate(self, data, return_preds=False):
+        # todo refactoring: check if needed
+        set_on_master(use_horovod)
+
+        if is_on_master() and not self.exp_dir_name:
+            # setup directories and file names
+            self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
+                output_directory)
+
+        if data_df is None:
+            data_df = self._read_data(data_csv, data_dict)
+
+        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        # Added [:] to next line, before I was just assigning,
+        # this way I'm copying the list. If you don't do it, you are actually
+        # modifying the input feature list when you add output features,
+        # which you definitely don't want to do
+        features_to_load = self.model_definition['input_features'][:]
+
+        # todo refactoring: this is needed for image features as we expect all
+        #  inputs to predict to be in memory, but doublecheck
+        num_overrides = override_in_memory_flag(
+            self.model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported for Ludwig API.'
+            )
+
+        # preprocessing
+        dataset, train_set_metadata = preprocess_for_prediction(
+            self.model_definition,
+            data_df=data_df,
+            data_csv=data_csv,
+            data_hdf5=data_hdf5,
+            train_set_metadata=self.train_set_metadata,
+            include_outputs=False,
+        )
+
+        logger.debug('Predicting')
+        predictions = self.model.batch_predict(
+            dataset,
+            batch_size,
+            horovod=self._horovod
+        )
+
+        logger.debug('Postprocessing')
+        if (
+                return_type == 'dict' or
+                return_type == 'dictionary' or
+                return_type == dict
+        ):
+            postprocessed_predictions = postprocess(
+                predictions,
+                self.model_definition['output_features'],
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+        elif (
+                return_type == 'dataframe' or
+                return_type == 'df' or
+                return_type == pd.DataFrame
+        ):
+            postprocessed_predictions = postprocess_df(
+                predictions,
+                self.model_definition['output_features'],
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+        else:
+            logger.warning(
+                'Unrecognized return_type: {}. '
+                'Returning dict.'.format(return_type)
+            )
+            postprocessed_predictions = postprocess(
+                predictions,
+                self.model_definition['output_features'],
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+
+        if is_on_master():
+            # if we are skipping all saving,
+            # there is no need to create a directory that will remain empty
+            should_create_exp_dir = not (
+                    skip_save_unprocessed_output and
+                    skip_save_predictions and
+                    skip_save_eval_statis
+            )
+            if should_create_exp_dir:
+                os.makedirs(self.exp_dir_name, exist_ok=True)
+
+            if not skip_save_predictions:
+                save_prediction_outputs(postprocessed_predictions,
+                                        self.exp_dir_name)
+
+                logger.info('Saved to: {0}'.format(self.exp_dir_name))
+
+        return postprocessed_predictions
+
+    def evaluate_pseudo(self, data, return_preds=False):
         preproc_data = preprocess_data(data)
         if return_preds:
             eval_stats, preds = self.model.batch_evaluate(
@@ -527,6 +653,164 @@ class NewLudwigModel:
                 preproc_data, return_preds=return_preds
             )
             return eval_stats
+
+    def evaluate(
+            self,
+            data_csv=None,
+            data_hdf5=None,
+            data_df=None,
+            data_dict=None,
+            batch_size=128,
+            skip_save_unprocessed_output=True,
+            skip_save_predictions=True,
+            skip_save_eval_stats=True,
+            output_directory='results',
+            collect_predictions=False,
+            return_type=pd.DataFrame,
+            debug=False,
+            **kwargs
+    ):
+        if (self.model is None or self.model_definition is None or
+                self.train_set_metadata is None):
+            raise ValueError('Model has not been trained or loaded')
+
+        # todo refactoring: check if needed
+        set_on_master(use_horovod)
+
+        if is_on_master() and not self.exp_dir_name:
+            # setup directories and file names
+            self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
+                output_directory)
+
+        if data_df is None:
+            data_df = self._read_data(data_csv, data_dict)
+
+        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        # Added [:] to next line, before I was just assigning,
+        # this way I'm copying the list. If you don't do it, you are actually
+        # modifying the input feature list when you add output features,
+        # which you definitely don't want to do
+        features_to_load = self.model_definition['input_features'] + \
+                           self.model_definition['output_features']
+
+        # todo refactoring: this is needed for image features as we expect all
+        #  inputs to predict to be in memory, but doublecheck
+        num_overrides = override_in_memory_flag(
+            self.model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported for Ludwig API.'
+            )
+
+        # preprocessing
+        # todo refactoring: maybe replace the self.model_definition paramter
+        #  here with features_to_load
+        dataset, train_set_metadata = preprocess_for_prediction(
+            self.model_definition,
+            data_df=data_df,
+            data_csv=data_csv,
+            data_hdf5=data_hdf5,
+            train_set_metadata=self.train_set_metadata,
+            include_outputs=True,
+        )
+
+        logger.debug('Predicting')
+        stats, predictions = self.model.batch_evaluate(
+            dataset,
+            batch_size,
+            collect_predictions=collect_predictions,
+        )
+
+        # combine predictions with the overall metrics
+        for of_name in predictions:
+            # todo refactoring: remove logits from predictions will happen inside exc.batch_evaluate()
+            # remove logits, not needed for overall stats
+            del predictions[of_name][LOGITS]
+
+            if of_name not in stats:
+                stats[of_name] = {}
+
+            stats[of_name] = {**stats[of_name],
+                              **predictions[of_name]}
+
+            # todo refactoring: change so that it is called inside ecd.btch_evaluate()
+            calculate_overall_stats(
+                stats,
+                self.model_definition['output_features'],
+                dataset,
+                self.train_set_metadata
+            )
+
+        logger.debug('Postprocessing')
+        if (
+                return_type == 'dict' or
+                return_type == 'dictionary' or
+                return_type == dict
+        ):
+            postprocessed_stats = postprocess(
+                stats,
+                self.model_definition['output_features'],
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+        elif (
+                return_type == 'dataframe' or
+                return_type == 'df' or
+                return_type == pd.DataFrame
+        ):
+            postprocessed_stats = postprocess_df(
+                stats,
+                self.model_definition['output_features'],
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+        else:
+            logger.warning(
+                'Unrecognized return_type: {}. '
+                'Returning dict.'.format(return_type)
+            )
+            postprocessed_stats = postprocess(
+                stats,
+                self.model_definition['output_features'],
+                self.train_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+
+        if is_on_master():
+            # if we are skipping all saving,
+            # there is no need to create a directory that will remain empty
+            should_create_exp_dir = not (
+                    skip_save_unprocessed_output and
+                    skip_save_predictions and
+                    skip_save_eval_stats
+            )
+            if should_create_exp_dir:
+                os.makedirs(self.exp_dir_name, exist_ok=True)
+
+            if predictions and not skip_save_predictions:
+                save_prediction_outputs(predictions,
+                                        self.exp_dir_name)
+
+            print_test_results(postprocessed_stats)
+            if not skip_save_eval_stats:
+                save_test_statistics(stats,
+                                     self.exp_dir_name)
+
+            if not skip_save_predictions or not skip_save_eval_stats:
+                logger.info('Saved to: {0}'.format(self.exp_dir_name))
+
+        # todo refactoring: after having modified calculate_overall_stats,
+        #  split predictions and stats into two entitied and return both
+        #  or only stats depending on the colelct_predictions parameter
+        return postprocessed_stats
 
     @staticmethod
     def load(model_dir,

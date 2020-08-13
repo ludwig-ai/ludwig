@@ -28,11 +28,10 @@ from ludwig.data.concatenate_datasets import concatenate_csv
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, is_on_master
+from ludwig.globals import is_on_master
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import collapse_rare_labels, csv_contains_column
+from ludwig.utils.data_utils import collapse_rare_labels
 from ludwig.utils.data_utils import file_exists_with_diff_extension
-from ludwig.utils.data_utils import load_json
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
 from ludwig.utils.data_utils import split_dataset_tvt
@@ -753,12 +752,13 @@ def _preprocess_df_for_training(
 
 
 def preprocess_for_prediction(
-        model_path,
-        split,
+        model_definition,
+        data_df=None,
         data_csv=None,
         data_hdf5=None,
         train_set_metadata=None,
-        evaluate_performance=True
+        train_set_metadata_json=None,
+        include_outputs=True,
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
     Ludwig core
@@ -772,9 +772,6 @@ def preprocess_for_prediction(
         :param evaluate_performance: If False does not load output features
         :returns: Dataset, Train set metadata
         """
-    model_definition = load_json(
-        os.path.join(model_path, MODEL_HYPERPARAMETERS_FILE_NAME)
-    )
     for input_feature in model_definition['input_features']:
         if 'preprocessing' in input_feature:
             if 'in_memory' in input_feature['preprocessing']:
@@ -790,7 +787,7 @@ def preprocess_for_prediction(
         model_definition['preprocessing']
     )
     output_features = model_definition[
-        'output_features'] if evaluate_performance else []
+        'output_features'] if include_outputs else []
     features = model_definition['input_features'] + output_features
 
     # Check if hdf5 file already exists
@@ -802,70 +799,33 @@ def preprocess_for_prediction(
             data_csv = None
             data_hdf5 = data_hdf5_fp
     else:
-        data_hdf5_fp = None
+        data_hdf5 = None
 
     # Load data
-    train_set_metadata = load_metadata(train_set_metadata)
-    if split == FULL:
-        if data_hdf5 is not None:
-            dataset = load_data(
-                data_hdf5,
-                model_definition['input_features'],
-                output_features,
-                split_data=False, shuffle_training=False
-            )
-        else:
-            dataset, train_set_metadata = build_dataset(
-                data_csv,
-                features,
-                preprocessing_params,
-                train_set_metadata=train_set_metadata
-            )
+    if not train_set_metadata:
+        train_set_metadata = load_metadata(train_set_metadata_json)
+
+    if data_hdf5 is not None:
+        dataset = load_data(
+            data_hdf5,
+            model_definition['input_features'],
+            output_features,
+            split_data=False, shuffle_training=False
+        )
+    elif data_df is not None:
+        dataset, train_set_metadata = build_dataset_df(
+            data_df,
+            features,
+            preprocessing_params,
+            train_set_metadata=train_set_metadata
+        )
     else:
-        if data_hdf5 is not None:
-            training_set, test_set, validation_set = load_data(
-                data_hdf5,
-                model_definition['input_features'],
-                output_features,
-                shuffle_training=False
-            )
-
-            if split == TRAINING:
-                dataset = training_set
-            elif split == VALIDATION:
-                dataset = validation_set
-            else:  # if split == TEST:
-                dataset = test_set
-
-        else:
-            dataset, train_set_metadata = build_dataset(
-                data_csv,
-                features,
-                preprocessing_params,
-                train_set_metadata=train_set_metadata
-            )
-            # build_dataset adds a split column if there is none in the csv
-            # so if we want to check if the csv contained a split column
-            # we have to check in the csv not in the built dataset.
-            # The logic is that if there is no split in the original csv
-            # we treat the split parameter as if it was == full
-            if csv_contains_column(data_csv, SPLIT):
-                training_set, test_set, validation_set = split_dataset_tvt(
-                    dataset,
-                    dataset[SPLIT]
-                )
-                if split == TRAINING:
-                    dataset = training_set
-                elif split == VALIDATION:
-                    dataset = validation_set
-                else:  # if split == TEST:
-                    dataset = test_set
-            else:
-                logger.warning(
-                    'You requested the {} split, but the data CSV '
-                    'does not contain a "split" column, so the '
-                    'full data will be used instead'
-                )
+        dataset, train_set_metadata = build_dataset(
+            data_csv,
+            features,
+            preprocessing_params,
+            train_set_metadata=train_set_metadata
+        )
 
     replace_text_feature_level(
         features,

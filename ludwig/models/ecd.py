@@ -283,6 +283,8 @@ class ECD(tf.keras.Model):
                 predictions[of_name][pred_name] = tf.concat(pred_value_list,
                                                             axis=0)
 
+        # todo refactoring: remove logits from predictions
+
         return predictions
 
     def batch_evaluation(
@@ -319,6 +321,8 @@ class ECD(tf.keras.Model):
 
             preds = self.evaluation_step(inputs, targets)
 
+            # todo refactoring: remove logits from predictions
+
             # accumulate predictions from batch for each output feature
             if collect_predictions:
                 for of_name, of_preds in preds.items():
@@ -349,10 +353,18 @@ class ECD(tf.keras.Model):
             metrics = self.merge_workers_metrics(metrics)
         self.model.reset_metrics()
 
-        if collect_predictions:
-            return metrics, predictions
-        else:
-            return metrics
+        # todo refactoring: after hacing modified calculate_overall_stats
+        #  insert it here
+        # calculate_overall_stats(
+        #    metrics,
+        #    self.model_definition['output_features'],
+        #    dataset,
+        #    self.train_set_metadata
+        # )
+
+        # todo refactoring: remove logits from predictions
+
+        return metrics, predictions
 
     # todo tf2: reintroduce this functionality
     def batch_collect_activations(

@@ -236,6 +236,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     ):
         pass
 
+    # todo refactor: modify this to require
+    #  predictions (preds and probs), targets, metadata and return a dict
     @staticmethod
     @abstractmethod
     def calculate_overall_stats(

@@ -453,6 +453,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 for cls in feature_metadata['idx2str']
             ]
 
+    # todo: make clear that the overall stats are bout the last prediction
     @staticmethod
     def calculate_overall_stats(
             test_stats,
