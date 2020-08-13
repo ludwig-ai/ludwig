@@ -33,7 +33,7 @@ def embedding_matrix(
         embeddings_trainable=True,
         pretrained_embeddings=None,
         force_embedding_size=False,
-        initializer=None,
+        embedding_initializer=None,
 ):
     vocab_size = len(vocab)
     if representation == 'dense':
@@ -49,7 +49,7 @@ def embedding_matrix(
                         embeddings_matrix.shape[-1],
                         embedding_size
                     ))
-            initializer_obj = tf.constant(embeddings_matrix, dtype=tf.float32)
+            embedding_initializer_obj = tf.constant(embeddings_matrix, dtype=tf.float32)
 
         else:
             if vocab_size < embedding_size and not force_embedding_size:
@@ -60,15 +60,15 @@ def embedding_matrix(
                     ))
                 embedding_size = vocab_size
 
-            if initializer is not None:
-                initializer_obj_ref = get_initializer(initializer)
+            if embedding_initializer is not None:
+                embedding_initializer_obj_ref = get_initializer(embedding_initializer)
             else:
-                initializer_obj_ref = get_initializer(
+                embedding_initializer_obj_ref = get_initializer(
                     {'type': 'uniform', 'minval': -1.0, 'maxval': 1.0})
-            initializer_obj = initializer_obj_ref([vocab_size, embedding_size])
+            embedding_initializer_obj = embedding_initializer_obj_ref([vocab_size, embedding_size])
 
         embeddings = tf.Variable(
-            initializer_obj,
+            embedding_initializer_obj,
             trainable=embeddings_trainable,
             name='embeddings'
         )
@@ -97,7 +97,7 @@ def embedding_matrix_on_device(
         pretrained_embeddings=None,
         force_embedding_size=False,
         embeddings_on_cpu=False,
-        initializer=None
+        embedding_initializer=None
 ):
     if embeddings_on_cpu:
         with tf.device('/cpu:0'):
@@ -108,7 +108,7 @@ def embedding_matrix_on_device(
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 force_embedding_size=force_embedding_size,
-                initializer=initializer
+                embedding_initializer=embedding_initializer
             )
     else:
         embeddings, embedding_size = embedding_matrix(
@@ -118,7 +118,7 @@ def embedding_matrix_on_device(
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
-            initializer=initializer
+            embedding_initializer=embedding_initializer
         )
 
     # logger.debug('  embeddings: {0}'.format(embeddings))
@@ -137,8 +137,8 @@ class Embed(Layer):
             force_embedding_size=False,
             embeddings_on_cpu=False,
             dropout_rate=0.0,
-            initializer=None,
-            regularizer=None
+            embedding_initializer=None,
+            embedding_regularizer=None
     ):
         super(Embed, self).__init__()
         self.supports_masking = True
@@ -151,12 +151,12 @@ class Embed(Layer):
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            initializer=initializer,
+            embedding_initializer=embedding_initializer,
         )
 
-        if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)
-            self.add_loss(lambda: regularizer_obj(self.embeddings))
+        if embedding_regularizer:
+            embedding_regularizer_obj = tf.keras.regularizers.get(embedding_regularizer)
+            self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)
@@ -185,8 +185,8 @@ class EmbedWeighted(Layer):
             force_embedding_size=False,
             embeddings_on_cpu=False,
             dropout_rate=0.0,
-            initializer=None,
-            regularizer=None
+            embedding_initializer=None,
+            embedding_regularizer=None
     ):
         super(EmbedWeighted, self).__init__()
 
@@ -198,13 +198,13 @@ class EmbedWeighted(Layer):
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            initializer=initializer,
+            embedding_initializer=embedding_initializer,
         )
         self.vocab_length = len(vocab)
 
-        if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)()
-            self.add_loss(regularizer_obj(self.embeddings))
+        if embedding_regularizer:
+            embedding_regularizer_obj = tf.keras.regularizers.get(embedding_regularizer)
+            self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)
@@ -245,8 +245,8 @@ class EmbedSparse(Layer):
             force_embedding_size=False,
             embeddings_on_cpu=False,
             dropout_rate=0.0,
-            initializer=None,
-            regularizer=None,
+            embedding_initializer=None,
+            embedding_regularizer=None,
             reduce_output='sum'
     ):
         super(EmbedSparse, self).__init__()
@@ -259,12 +259,12 @@ class EmbedSparse(Layer):
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            initializer=initializer,
+            embedding_initializer=embedding_initializer,
         )
 
-        if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)()
-            self.add_loss(regularizer_obj(self.embeddings))
+        if embedding_regularizer:
+            embedding_regularizer_obj = tf.keras.regularizers.get(embedding_regularizer)
+            self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)
@@ -308,8 +308,8 @@ class EmbedSequence(Layer):
             force_embedding_size=False,
             embeddings_on_cpu=False,
             dropout_rate=0.0,
-            initializer=None,
-            regularizer=None
+            embedding_initializer=None,
+            embedding_regularizer=None
     ):
         super(EmbedSequence, self).__init__()
         self.supports_masking = True
@@ -322,12 +322,12 @@ class EmbedSequence(Layer):
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            initializer=initializer,
+            embedding_initializer=embedding_initializer,
         )
 
-        if regularizer:
-            regularizer_obj = tf.keras.regularizers.get(regularizer)()
-            self.add_loss(regularizer_obj(self.embeddings))
+        if embedding_regularizer:
+            embedding_regularizer_obj = tf.keras.regularizers.get(embedding_regularizer)
+            self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
         if dropout_rate > 0:
             self.dropout = Dropout(dropout_rate)

@@ -26,12 +26,9 @@ from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
-from ludwig.modules.loss_modules import regularizer_registry
 
-# todo tf2: fix these tests to work with the TF2 way
-#  of doing regularization at init time
-L1_REGULARIZER = regularizer_registry['l1'](0.1)
-L2_REGULARIZER = regularizer_registry['l2'](0.1)
+L1_REGULARIZER = 'l1'
+L2_REGULARIZER = 'l2'
 NO_REGULARIZER = None
 DROPOUT_RATE = 0.5
 
@@ -71,8 +68,6 @@ def generate_random_sentences(num_sentences=10, max_len=10, vocab_size=10):
 def encoder_test(
         encoder,
         input_data,
-        regularizer,
-        dropout_rate,
         output_dtype,
         output_shape,
         output_data=None,
@@ -81,8 +76,6 @@ def encoder_test(
     Helper method to test different kinds of encoders
     :param encoder: encoder object
     :param input_data: data to encode
-    :param regularizer: regularizer
-    :param dropout_rate: dropout rate
     :param output_dtype: expected data type of the output (optional)
     :param output_shape: expected shape of the encoder output (optional)
     :param output_data: expected output data (optional)
@@ -107,7 +100,13 @@ def encoder_test(
 
 def test_image_encoders_resnet():
     # Test the resnet encoder for images
-    encoder_args = {'resnet_size': 8, 'num_filters': 8, 'fc_size': 28}
+    encoder_args = {
+        'resnet_size': 8, 'num_filters': 8, 'fc_size': 28,
+        'weights_regularizer': L1_REGULARIZER,
+        'bias_regularizer': L1_REGULARIZER,
+        'activity_regularizer': L1_REGULARIZER,
+        'dropout_rate': DROPOUT_RATE
+    }
     image_size = (10, 10, 3)
 
     output_shape = [1, 28]
@@ -117,8 +116,6 @@ def test_image_encoders_resnet():
     encoder_test(
         encoder=encoder,
         input_data=input_image,
-        regularizer=L1_REGULARIZER,
-        dropout_rate=DROPOUT_RATE,
         output_dtype=np.float,
         output_shape=output_shape,
         output_data=None
@@ -130,8 +127,6 @@ def test_image_encoders_resnet():
     encoder_test(
         encoder=encoder,
         input_data=input_images,
-        regularizer=L1_REGULARIZER,
-        dropout_rate=DROPOUT_RATE,
         output_dtype=np.float,
         output_shape=output_shape,
         output_data=None
@@ -151,7 +146,17 @@ def test_image_encoders_resnet():
 
 def test_image_encoders_stacked_2dcnn():
     # Test the resnet encoder for images
-    encoder_args = {'num_conv_layers': 2, 'num_filters': 16, 'fc_size': 28}
+    encoder_args = {
+        'num_conv_layers': 2, 'num_filters': 16, 'fc_size': 28,
+        'conv_activity_regularizer': L1_REGULARIZER,
+        'conv_weights_regularizer': L1_REGULARIZER,
+        'conv_bias_regularizer': L1_REGULARIZER,
+        'fc_activity_regularizer': L1_REGULARIZER,
+        'fc_weights_regularizer': L1_REGULARIZER,
+        'fc_bias_regularizer': L1_REGULARIZER,
+        'dropout_rate': DROPOUT_RATE
+
+    }
     image_size = (10, 10, 3)
 
     encoder = create_encoder(Stacked2DCNN, encoder_args)
@@ -175,8 +180,6 @@ def test_image_encoders_stacked_2dcnn():
     encoder_test(
         encoder=encoder,
         input_data=input_image,
-        regularizer=L1_REGULARIZER,
-        dropout_rate=DROPOUT_RATE,
         output_dtype=np.float,
         output_shape=output_shape,
         output_data=None
@@ -188,8 +191,6 @@ def test_image_encoders_stacked_2dcnn():
     encoder_test(
         encoder=encoder,
         input_data=input_images,
-        regularizer=L1_REGULARIZER,
-        dropout_rate=DROPOUT_RATE,
         output_dtype=np.float,
         output_shape=output_shape,
         output_data=None
@@ -222,23 +223,21 @@ def test_sequence_encoder_embed():
 
             encoder_args['reduce_output'] = reduce_output
             encoder_args['embeddings_trainable'] = trainable
+            encoder_args['weights_regularizer'] = L1_REGULARIZER
+            encoder_args['dropout_rate'] = DROPOUT_RATE
             encoder = create_encoder(SequenceEmbedEncoder, encoder_args)
 
             encoder_test(
                 encoder=encoder,
                 input_data=text,
-                regularizer=L1_REGULARIZER,
-                dropout_rate=DROPOUT_RATE,
                 output_dtype=np.float,
                 output_shape=output_shape,
                 output_data=None
             )
 
             embed = encoder.embed_sequence.embeddings
-            # assert embed.representation == 'dense'
             assert embed.trainable == trainable
-            # assert embed.regularize is True
-            assert encoder.embed_sequence.dropout is None
+            assert encoder.embed_sequence.dropout is not None
 
 
 def test_sequence_encoders():
@@ -281,13 +280,18 @@ def test_sequence_encoders():
                                  StackedCNNRNN]:
                 encoder_args['reduce_output'] = reduce_output
                 encoder_args['embeddings_trainable'] = trainable
+                encoder_args['weights_regularizer'] = L1_REGULARIZER
+                encoder_args['bias_regularizer'] = L1_REGULARIZER
+                encoder_args['activity_regularizer'] = L1_REGULARIZER
+                encoder_args['dropout_rate'] = DROPOUT_RATE
+                encoder_args['dropout'] = DROPOUT_RATE
+                encoder_args['recurrent_dropout_rate'] = DROPOUT_RATE
+                encoder_args['fc_dropout_rate'] = DROPOUT_RATE
                 encoder = create_encoder(encoder_type, encoder_args)
 
                 encoder_test(
                     encoder=encoder,
                     input_data=text,
-                    regularizer=L1_REGULARIZER,
-                    dropout_rate=DROPOUT_RATE,
                     output_dtype=np.float,
                     output_shape=output_shape,
                     output_data=None

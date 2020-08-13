@@ -106,8 +106,8 @@ class H3Embed(Layer):
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  edge Embed')
@@ -120,8 +120,8 @@ class H3Embed(Layer):
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  resolution Embed')
@@ -134,8 +134,8 @@ class H3Embed(Layer):
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  base cell Embed')
@@ -148,8 +148,8 @@ class H3Embed(Layer):
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  cells Embed')
@@ -162,8 +162,8 @@ class H3Embed(Layer):
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  FCStack')
