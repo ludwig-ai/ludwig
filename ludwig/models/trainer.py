@@ -298,6 +298,17 @@ class Trainer:
         if validation_field == 'combined':
             valid_validation_field = True
             validation_output_feature_name = 'combined'
+            if validation_metric is not LOSS and len(output_features) == 1:
+                only_of = output_features[0]
+                if validation_metric in metrics_names[only_of]:
+                    validation_output_feature_name = only_of
+                    logger.warning(
+                        "Replacing 'combined' validation field "
+                        "with '{}' as the specified validation "
+                        "metric {} is invalid for 'combined' "
+                        "but is valid for '{}'.".format(
+                            only_of, validation_metric, only_of
+                        ))
         else:
             for output_feature in output_features:
                 if validation_field == output_feature:
@@ -1060,7 +1071,8 @@ class Trainer:
                 if isinstance(layer, tf.keras.Model):
                     results += recurse_weights(layer, layer_prefix)
                 else:
-                    results += [(f'{layer_prefix}/{w.name}', w) for w in layer.weights]
+                    results += [(f'{layer_prefix}/{w.name}', w) for w in
+                                layer.weights]
             return results
 
         weights = recurse_weights(self.model)
@@ -1069,7 +1081,8 @@ class Trainer:
             weight_set = set(name for name, w in weights)
             for name in tensor_names:
                 if name not in weight_set:
-                    raise ValueError(f'Tensor {name} not present in the model graph')
+                    raise ValueError(
+                        f'Tensor {name} not present in the model graph')
 
             # Filter the weights
             tensor_set = set(tensor_names)
