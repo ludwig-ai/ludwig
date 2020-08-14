@@ -300,9 +300,9 @@ class Trainer:
             validation_output_feature_name = 'combined'
         else:
             for output_feature in output_features:
-                if validation_field == output_feature['name']:
+                if validation_field == output_feature:
                     valid_validation_field = True
-                    validation_output_feature_name = output_feature['name']
+                    validation_output_feature_name = validation_field
         if not valid_validation_field:
             raise ValueError(
                 'The specificed validation_field {} is not valid.'
@@ -318,8 +318,8 @@ class Trainer:
         ]
         if not valid_validation_metric:
             raise ValueError(
-                'The specificed metric {} is not valid.'
-                'Available metrics for {} output features are: {}'.format(
+                'The specificed metric {} is not valid. '
+                'Available metrics for {} output feature are: {}'.format(
                     validation_metric,
                     validation_output_feature_name,
                     metrics_names[validation_output_feature_name]
@@ -624,7 +624,7 @@ class Trainer:
             if should_validate:
                 should_break = self.check_progress_on_validation(
                     progress_tracker,
-                    validation_field,
+                    validation_output_feature_name,
                     validation_metric,
                     model_weights_path,
                     model_hyperparameters_path,
@@ -906,7 +906,7 @@ class Trainer:
     def check_progress_on_validation(
             self,
             progress_tracker,
-            validation_field,
+            validation_output_feature_name,
             validation_metric,
             model_weights_path,
             model_hyperparameters_path,
@@ -924,13 +924,13 @@ class Trainer:
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
         if improved(
-                progress_tracker.vali_metrics[validation_field][
+                progress_tracker.vali_metrics[validation_output_feature_name][
                     validation_metric][-1],
                 progress_tracker.best_valid_metric
         ):
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
             progress_tracker.best_valid_metric = progress_tracker.vali_metrics[
-                validation_field][validation_metric][-1]
+                validation_output_feature_name][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
                     self.model.save_weights(model_weights_path)
@@ -941,7 +941,7 @@ class Trainer:
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
                             validation_metric,
-                            validation_field
+                            validation_output_feature_name
                         )
                     )
 
@@ -954,7 +954,7 @@ class Trainer:
                     'Last improvement of {} on {} happened '
                     '{} epoch{} ago'.format(
                         validation_metric,
-                        validation_field,
+                        validation_output_feature_name,
                         progress_tracker.last_improvement,
                         '' if progress_tracker.last_improvement == 1 else 's'
                     )
