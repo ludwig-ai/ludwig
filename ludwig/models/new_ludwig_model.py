@@ -586,9 +586,9 @@ class NewLudwigModel:
                 return_type == 'dictionary' or
                 return_type == dict
         ):
-            postprocessed_predictions = postprocess(
+            postproc_predictions = postprocess(
                 predictions,
-                self.model_definition['output_features'],
+                self.model.output_features,
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
@@ -599,9 +599,9 @@ class NewLudwigModel:
                 return_type == 'df' or
                 return_type == pd.DataFrame
         ):
-            postprocessed_predictions = postprocess_df(
+            postproc_predictions = postprocess_df(
                 predictions,
-                self.model_definition['output_features'],
+                self.model.output_features,
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
@@ -612,9 +612,9 @@ class NewLudwigModel:
                 'Unrecognized return_type: {}. '
                 'Returning dict.'.format(return_type)
             )
-            postprocessed_predictions = postprocess(
+            postproc_predictions = postprocess(
                 predictions,
-                self.model_definition['output_features'],
+                self.model.output_features,
                 self.train_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
@@ -633,12 +633,12 @@ class NewLudwigModel:
                 os.makedirs(self.exp_dir_name, exist_ok=True)
 
             if not skip_save_predictions:
-                save_prediction_outputs(postprocessed_predictions,
+                save_prediction_outputs(postproc_predictions,
                                         self.exp_dir_name)
 
                 logger.info('Saved to: {0}'.format(self.exp_dir_name))
 
-        return postprocessed_predictions
+        return postproc_predictions
 
     def evaluate_pseudo(self, data, return_preds=False):
         preproc_data = preprocess_data(data)
