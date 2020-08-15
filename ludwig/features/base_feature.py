@@ -250,11 +250,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     @staticmethod
     @abstractmethod
     def postprocess_results(
+            predictions,
             output_feature,
-            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False,
+            skip_save_unprocessed_output=False
     ):
         pass
 

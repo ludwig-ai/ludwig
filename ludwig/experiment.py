@@ -478,7 +478,7 @@ def kfold_cross_validate(
             postprocessed_output = postprocess(
                 test_results,
                 model_definition['output_features'],
-                metadata=preprocessed_data[3],
+                train_set_metadata=preprocessed_data[3],
                 experiment_dir_name=experiment_dir_name,
                 skip_save_unprocessed_output=True
             )

@@ -390,11 +390,11 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def postprocess_results(
+            predictions,
             output_feature,
-            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False,
+            skip_save_unprocessed_output=False
     ):
         postprocessed = {}
         name = output_feature['name']
@@ -405,8 +405,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            preds = predictions[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token]
@@ -420,10 +420,11 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PREDICTIONS), preds)
 
-            del result[PREDICTIONS]
+            del predictions[PREDICTIONS]
 
-        if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS]
+        if LAST_PREDICTIONS in predictions and len(
+                predictions[LAST_PREDICTIONS]) > 0:
+            last_preds = predictions[LAST_PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
                     metadata['idx2str'][last_pred]
@@ -437,10 +438,11 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 np.save(npy_filename.format(name, LAST_PREDICTIONS),
                         last_preds)
 
-            del result[LAST_PREDICTIONS]
+            del predictions[LAST_PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES].numpy()
+        if PROBABILITIES in predictions and len(
+                predictions[PROBABILITIES]) > 0:
+            probs = predictions[PROBABILITIES].numpy()
             if probs is not None:
 
                 if len(probs) > 0 and isinstance(probs[0], list):
@@ -466,10 +468,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     # np.save(npy_filename.format(name, PROBABILITIES), probs)
                     np.save(npy_filename.format(name, PROBABILITY), prob)
 
-            del result[PROBABILITIES]
+            del predictions[PROBABILITIES]
 
-        if LENGTHS in result:
-            del result[LENGTHS]
+        if LENGTHS in predictions:
+            del predictions[LENGTHS]
 
         return postprocessed
 

@@ -263,11 +263,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @staticmethod
     def postprocess_results(
+            predictions,
             output_feature,
-            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False,
+            skip_save_unprocessed_output=False
     ):
         postprocessed = {}
         name = output_feature['name']
@@ -278,23 +278,24 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            postprocessed[PREDICTIONS] = predictions[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    result[PREDICTIONS]
+                    predictions[PREDICTIONS]
                 )
-            del result[PREDICTIONS]
+            del predictions[PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
+        if PROBABILITIES in predictions and len(
+                predictions[PROBABILITIES]) > 0:
+            postprocessed[PROBABILITIES] = predictions[PROBABILITIES].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
-                    result[PROBABILITIES]
+                    predictions[PROBABILITIES]
                 )
-            del result[PROBABILITIES]
+            del predictions[PROBABILITIES]
 
         return postprocessed
 

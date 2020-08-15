@@ -271,11 +271,11 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @staticmethod
     def postprocess_results(
+            predictions,
             output_feature,
-            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False,
+            skip_save_unprocessed_output=False
     ):
         postprocessed = {}
         name = output_feature['name']
@@ -286,14 +286,14 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            postprocessed[PREDICTIONS] = predictions[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    result[PREDICTIONS]
+                    predictions[PREDICTIONS]
                 )
-            del result[PREDICTIONS]
+            del predictions[PREDICTIONS]
 
         return postprocessed
 

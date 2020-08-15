@@ -223,11 +223,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @staticmethod
     def postprocess_results(
+            predictions,
             output_feature,
-            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False,
+            skip_save_unprocessed_output=False
     ):
         postprocessed = {}
         name = output_feature['name']
@@ -238,8 +238,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            preds = predictions[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
@@ -251,10 +251,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PREDICTIONS), preds)
 
-            del result[PREDICTIONS]
+            del predictions[PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES].numpy()
+        if PROBABILITIES in predictions and len(
+                predictions[PROBABILITIES]) > 0:
+            probs = predictions[PROBABILITIES].numpy()
             prob = [[prob for prob in prob_set if
                      prob >= output_feature['threshold']] for prob_set in
                     probs]
@@ -265,7 +266,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
                 np.save(npy_filename.format(name, PROBABILITIES), probs)
                 np.save(npy_filename.format(name, PROBABILITY), probs)
 
-            del result[PROBABILITIES]
+            del predictions[PROBABILITIES]
 
         return postprocessed
 

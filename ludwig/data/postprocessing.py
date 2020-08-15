@@ -23,7 +23,7 @@ from ludwig.utils.misc_utils import get_from_registry
 
 
 def postprocess_results(
-        result,
+        predictions,
         output_feature,
         metadata,
         experiment_dir_name='',
@@ -32,28 +32,25 @@ def postprocess_results(
     feature = get_from_registry(
         output_feature[TYPE], output_type_registry
     )
-    return feature.postprocess_results(
-        output_feature,
-        result,
-        metadata,
-        experiment_dir_name,
-        skip_save_unprocessed_output=skip_save_unprocessed_output,
-    )
+    return feature.postprocess_results(predictions, output_feature, metadata,
+                                       experiment_dir_name,
+                                       skip_save_unprocessed_output=skip_save_unprocessed_output)
 
 
 def postprocess(
-        results,
+        predictions,
         output_features,
-        metadata,
+        train_set_metadata,
         experiment_dir_name='',
         skip_save_unprocessed_output=False,
 ):
     postprocessed = {}
     for output_feature in output_features:
-        postprocessed[output_feature['name']] = postprocess_results(
-            results[output_feature['name']],
+        of_name = output_feature['name']
+        postprocessed[of_name] = postprocess_results(
+            predictions[of_name],
             output_feature,
-            metadata.get(output_feature['name'], {}),
+            train_set_metadata.get(of_name, {}),
             experiment_dir_name=experiment_dir_name,
             skip_save_unprocessed_output=skip_save_unprocessed_output,
         )
