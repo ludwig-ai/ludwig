@@ -244,19 +244,6 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             else:
                 metric_fn.update_state(targets, predictions[PREDICTIONS])
 
-    # def logits(
-    #         self,
-    #         inputs,  # {'hidden': hidden, 'encoder_output_state': encoder_output_state}
-    #         target=None  # target sequence [batch_size, seq_size]
-    # ):
-    #     # 'hidden' shape [batch_size, seq_size, hidden_size]
-    #     # 'encoder_output_state' dependent on cell_type:
-    #     #      lstm: list (shape [batch_size, state_size], shape [batch_size, state_size])
-    #     #      rnn, gru: list [shape [batch_size, state_size]]
-    #     # return logits shape [batch_size, seq_size, num_classes]
-    #
-    #     return self.decoder_obj(inputs, target=target)
-
     def logits(
             self,
             inputs,
@@ -274,80 +261,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     def predictions(self, inputs, training=None):
         # Generator Decoder
-        if training:
-            return self._predictions_training(inputs, training=training)
-        else:
-            return self.decoder_obj._predictions_eval(inputs,
-                                                      training=training)
-
-    # todo tf2 need to determine if the section of code is needed
-    def _predictions_training(self, inputs, training=None):  # not executed
-        # inputs == logits
-        probs = softmax(inputs)
-        preds = tf.argmax(inputs)
-        return {PREDICTIONS: preds, PROBABILITIES: probs}
-
-    # def _predictions_eval(
-    #         self,
-    #         inputs,  # encoder_output, encoder_output_state
-    #         training=None
-    # ):
-    #     decoder_outputs = self.decoder_obj(inputs, training=training)
-    #     logits, predictions, last_predictions, probabilities = decoder_outputs
-    #
-    #     # todo piero don't expect logits from beam search
-    #     #  expect scores from beam search,
-    #     #  in that case don't recompute probabilities
-    #     probabilities = tf.nn.softmax(
-    #         logits,
-    #         name='probabilities_{}'.format(self.name)
-    #     )
-    #
-    #     if predictions is None:
-    #         predictions = tf.argmax(
-    #             logits,
-    #             -1,
-    #             name='predictions_{}'.format(self.name),
-    #             output_type=tf.int64
-    #         )
-    #
-    #     # if self.decoder == 'generator':
-    #     #    additional = 1  # because of eos symbol
-    #     # elif self.decoder == 'tagger':
-    #     #    additional = 0
-    #     # else:
-    #     #    additional = 0
-    #
-    #     # todo: for the tagger always take the last
-    #     generated_sequence_lengths = sequence_length_2D(predictions)
-    #     last_predictions = tf.gather_nd(
-    #         predictions,
-    #         tf.stack(
-    #             [tf.range(tf.shape(predictions)[0]),
-    #              tf.maximum(
-    #                  generated_sequence_lengths - 1,
-    #                  0
-    #              )],
-    #             axis=1
-    #         ),
-    #         name='last_predictions_{}'.format(self.name)
-    #     )
-    #
-    #     # mask logits
-    #     mask = tf.sequence_mask(
-    #         generated_sequence_lengths,
-    #         maxlen=logits.shape[1],
-    #         dtype=tf.float32
-    #     )
-    #
-    #     logits = logits * mask[:, :, tf.newaxis]
-    #
-    #     return {
-    #         PREDICTIONS: predictions,
-    #         LAST_PREDICTIONS: last_predictions,
-    #         PROBABILITIES: probabilities,
-    #         LOGITS: logits
-    #     }
+        return self.decoder_obj._predictions_eval(inputs, training=training)
 
     default_validation_metric = LOSS
 

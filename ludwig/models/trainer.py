@@ -292,11 +292,23 @@ class Trainer:
         if self._validation_field == 'combined':
             valid_validation_field = True
             validation_output_feature_name = 'combined'
+            if self._validation_metric is not LOSS and len(
+                    output_features) == 1:
+                only_of = output_features[0]
+                if self._validation_metric in metrics_names[only_of]:
+                    validation_output_feature_name = only_of
+                    logger.warning(
+                        "Replacing 'combined' validation field "
+                        "with '{}' as the specified validation "
+                        "metric {} is invalid for 'combined' "
+                        "but is valid for '{}'.".format(
+                            only_of, self._validation_metric, only_of
+                        ))
         else:
             for output_feature in output_features:
-                if self._validation_field == output_feature['name']:
+                if self._validation_field == output_feature:
                     valid_validation_field = True
-                    validation_output_feature_name = output_feature['name']
+                    validation_output_feature_name = self._validation_field
         if not valid_validation_field:
             raise ValueError(
                 'The specificed validation_field {} is not valid.'
@@ -312,9 +324,9 @@ class Trainer:
         ]
         if not valid_validation_metric:
             raise ValueError(
-                'The specificed metric {} is not valid.'
-                'Available metrics for {} output features are: {}'.format(
-                    self._validation_metric,
+                'The specificed metric {} is not valid. '
+                'Available metrics for {} output feature are: {}'.format(
+                    validation_metric,
                     validation_output_feature_name,
                     metrics_names[validation_output_feature_name]
                 )
@@ -377,13 +389,16 @@ class Trainer:
                     )
                 )
 
-        # todo tf2: reintroduce debugging mode
-        # if self.debug:
-        #    session = tf_debug.LocalCLIDebugWrapperSession(session)
-        #    session.add_tensor_filter(
-        #        'has_inf_or_nan',
-        #        tf_debug.has_inf_or_nan
-        #    )
+        if self._debug and is_on_master():
+            # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
+            debug_path = os.path.join(
+                save_path, 'debug'
+            )
+            tf.debugging.experimental.enable_dump_debug_info(
+                debug_path,
+                tensor_debug_mode='FULL_HEALTH',
+                circular_buffer_size=-1,
+            )
 
         # ================ Resume logic ================
         if self._resume:
@@ -615,7 +630,7 @@ class Trainer:
                 should_break = self.check_progress_on_validation(
                     model,
                     progress_tracker,
-                    self._validation_field,
+                    validation_output_feature_name,
                     self._validation_metric,
                     model_weights_path,
                     model_hyperparameters_path,
@@ -777,7 +792,7 @@ class Trainer:
             self,
             model,
             progress_tracker,
-            validation_field,
+            validation_output_feature_name,
             validation_metric,
             model_weights_path,
             model_hyperparameters_path,
@@ -795,13 +810,13 @@ class Trainer:
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
         if improved(
-                progress_tracker.vali_metrics[validation_field][
+                progress_tracker.vali_metrics[validation_output_feature_name][
                     validation_metric][-1],
                 progress_tracker.best_valid_metric
         ):
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
             progress_tracker.best_valid_metric = progress_tracker.vali_metrics[
-                validation_field][validation_metric][-1]
+                validation_output_feature_name][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
                     model.save_weights(model_weights_path)
@@ -813,7 +828,7 @@ class Trainer:
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
                             validation_metric,
-                            validation_field
+                            validation_output_feature_name
                         )
                     )
 
@@ -826,7 +841,7 @@ class Trainer:
                     'Last improvement of {} on {} happened '
                     '{} epoch{} ago'.format(
                         validation_metric,
-                        validation_field,
+                        validation_output_feature_name,
                         progress_tracker.last_improvement,
                         '' if progress_tracker.last_improvement == 1 else 's'
                     )
@@ -867,17 +882,48 @@ class Trainer:
         return should_break
 
     # todo refactoring: should use ECD.batch_predict
-    # def predict(
-    #         self,
-    #         dataset,
-    #         batch_size,
-    #         **kwargs
-    # ):
-    #     # predict
-    #     return self.model.batch_predict(dataset, batch_size,
-    #                                     horovod=self._horovod)
+        # def predict(
+        #         self,
+        #         dataset,
+        #         batch_size,
+        #         **kwargs
+        # ):
+        #     # predict
+        #     return self.model.batch_predict(dataset, batch_size,
+        #                                     horovod=self._horovod)
 
-    # todo refactoring: should use ECD.save_weights
+        return collected_tensors
+
+    def collect_weights(
+            self,
+            tensor_names=None,
+            **kwargs
+    ):
+        def recurse_weights(model, prefix=None):
+            results = []
+            for layer in model.layers:
+                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
+                if isinstance(layer, tf.keras.Model):
+                    results += recurse_weights(layer, layer_prefix)
+                else:
+                    results += [(f'{layer_prefix}/{w.name}', w) for w in
+                                layer.weights]
+            return results
+
+        weights = recurse_weights(self.model)
+        if tensor_names:
+            # Check for bad tensor names
+            weight_set = set(name for name, w in weights)
+            for name in tensor_names:
+                if name not in weight_set:
+                    raise ValueError(
+                        f'Tensor {name} not present in the model graph')
+
+            # Filter the weights
+            tensor_set = set(tensor_names)
+            weights = [(name, w) for name, w in weights if name in tensor_set]
+        return weights
+
     def save_weights(self, save_path):
         # save model
         self.model.save_weights(save_path)

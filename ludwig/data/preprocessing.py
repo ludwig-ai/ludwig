@@ -201,6 +201,8 @@ def handle_missing_values(dataset_df, feature, preprocessing_parameters):
         dataset_df[feature['name']] = dataset_df[feature['name']].fillna(
             method=missing_value_strategy,
         )
+    elif missing_value_strategy == DROP_ROW:
+        dataset_df.dropna(subset=[feature['name']], inplace=True)
     else:
         raise ValueError('Invalid missing value strategy')
 

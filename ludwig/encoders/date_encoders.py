@@ -127,8 +127,8 @@ class DateEmbed(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  day Embed')
@@ -140,8 +140,8 @@ class DateEmbed(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  weekday Embed')
@@ -153,8 +153,8 @@ class DateEmbed(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  yearday Embed')
@@ -166,8 +166,8 @@ class DateEmbed(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  hour Embed')
@@ -179,8 +179,8 @@ class DateEmbed(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  minute Embed')
@@ -192,8 +192,8 @@ class DateEmbed(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  second Embed')
@@ -205,8 +205,8 @@ class DateEmbed(Layer):
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
             dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  FCStack')

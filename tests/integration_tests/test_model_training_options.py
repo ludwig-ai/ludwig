@@ -6,10 +6,14 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import pytest
+import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
 from ludwig.experiment import full_experiment
 from ludwig.utils.data_utils import load_json
+
+RANDOM_SEED = 42
+NUMBER_OBSERVATIONS = 500
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
@@ -32,7 +36,7 @@ def get_feature_definitions():
 def generated_data():
     # function generates simple training data that guarantee convergence
     # within 30 epochs for suitable model definition
-    NUMBER_OBSERVATIONS = 500
+
 
     # generate data
     np.random.seed(43)
@@ -325,3 +329,80 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
 
     # ensure train loss for last epoch is less than first epoch
     assert train_losses[last_epoch - 1] < train_losses[0]
+
+
+def test_regularization(generated_data, tmp_path):
+    input_features, output_features = get_feature_definitions()
+
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {
+            'type': 'concat'
+        },
+        'training': {
+            'epochs': 5,
+            'batch_size': 16,
+            'regularization_lambda': 1
+        }
+    }
+
+    # create sub-directory to store results
+    results_dir = tmp_path / 'results'
+    results_dir.mkdir()
+
+    regularization_losses = []
+    for regularizer in [None, 'l1', 'l2', 'l1_l2']:
+        tf.keras.backend.clear_session()
+        np.random.seed(RANDOM_SEED)
+        tf.random.set_seed(RANDOM_SEED)
+
+        # setup regularization parameters
+        model_definition['output_features'][0][
+            'weights_regularizer'] = regularizer
+        model_definition['output_features'][0][
+            'bias_regularizer'] = regularizer
+        model_definition['output_features'][0][
+            'activity_regularizer'] = regularizer
+
+        # run experiment
+        exp_dir_name = full_experiment(
+            data_train_df=generated_data.train_df,
+            data_validation_df=generated_data.validation_df,
+            data_test_df=generated_data.test_df,
+            output_directory=str(results_dir),
+            model_definition=model_definition,
+            experiment_name='regularization',
+            model_name=str(regularizer),
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True,
+            skip_save_model=True,
+            skip_save_log=True
+        )
+
+        # test existence of required files
+        train_stats_fp = os.path.join(exp_dir_name, 'training_statistics.json')
+        metadata_fp = os.path.join(exp_dir_name, 'description.json')
+        assert os.path.isfile(train_stats_fp)
+        assert os.path.isfile(metadata_fp)
+
+        # retrieve results so we can compare training loss with regularization
+        with open(train_stats_fp, 'r') as f:
+            train_stats = json.load(f)
+
+        # retrieve training losses for all epochs
+        train_losses = np.array(train_stats['training']['combined']['loss'])
+        regularization_losses.append(train_losses)
+
+    # prepare for comparing training losses
+    regularization_losses = np.array(regularization_losses).T
+
+    # extract training losses w/o regularization
+    reg_loss_none = regularization_losses[:, 0].reshape(-1, 1)
+
+    # extract training losses with regularization
+    reg_loss_l1_l2_l1l2 = regularization_losses[:, 1:]
+
+    # ensure loss value for l1, l2 and l1_l2 are greater than None
+    assert np.all(reg_loss_none < reg_loss_l1_l2_l1l2)

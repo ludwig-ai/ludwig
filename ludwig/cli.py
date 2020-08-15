@@ -96,9 +96,9 @@ Available sub-commands:
         visualize.cli(sys.argv[2:])
 
     def hyperopt(self):
-        from ludwig import hyperopt
+        from ludwig import hyperopt_cli
         ludwig.contrib.contrib_command("hyperopt", *sys.argv)
-        hyperopt.cli(sys.argv[2:])
+        hyperopt_cli.cli(sys.argv[2:])
 
     def collect_weights(self):
         from ludwig import collect

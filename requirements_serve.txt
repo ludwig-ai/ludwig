@@ -1,5 +1,5 @@
 uvicorn
 fastapi
-pydantic==0.32.2
+pydantic
 python-multipart
 neuropod
