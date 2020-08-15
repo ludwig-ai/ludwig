@@ -18,6 +18,7 @@ from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
 
+EXCLUE_PRED_SET = {LOGITS}
 
 class ECD(tf.keras.Model):
 
@@ -265,11 +266,15 @@ class ECD(tf.keras.Model):
             for of_name, of_preds in preds.items():
                 if of_name not in predictions:
                     predictions[of_name] = {}
+                    # todo refactoring: remove logits from predictions will happen inside exc.batch_evaluate()
+                    # remove logits, not needed for overall stats
+                    del predictions[of_name][LOGITS]
                 for pred_name, pred_values in of_preds.items():
-                    if pred_name not in predictions[of_name]:
-                        predictions[of_name][pred_name] = [pred_values]
-                    else:
-                        predictions[of_name][pred_name].append(pred_values)
+                    if pred_name not in EXCLUE_PRED_SET:
+                        if pred_name not in predictions[of_name]:
+                            predictions[of_name][pred_name] = [pred_values]
+                        else:
+                            predictions[of_name][pred_name].append(pred_values)
 
             if is_on_master():
                 progress_bar.update(1)
@@ -282,8 +287,6 @@ class ECD(tf.keras.Model):
             for pred_name, pred_value_list in of_predictions.items():
                 predictions[of_name][pred_name] = tf.concat(pred_value_list,
                                                             axis=0)
-
-        # todo refactoring: remove logits from predictions
 
         return predictions
 
@@ -329,10 +332,12 @@ class ECD(tf.keras.Model):
                     if of_name not in predictions:
                         predictions[of_name] = {}
                     for pred_name, pred_values in of_preds.items():
-                        if pred_name not in predictions[of_name]:
-                            predictions[of_name][pred_name] = [pred_values]
-                        else:
-                            predictions[of_name][pred_name].append(pred_values)
+                        if pred_name not in EXCLUE_PRED_SET:
+                            if pred_name not in predictions[of_name]:
+                                predictions[of_name][pred_name] = [pred_values]
+                            else:
+                                predictions[of_name][pred_name].append(
+                                    pred_values)
 
             if is_on_master():
                 progress_bar.update(1)
@@ -352,17 +357,6 @@ class ECD(tf.keras.Model):
         if self._horovod:
             metrics = self.merge_workers_metrics(metrics)
         self.model.reset_metrics()
-
-        # todo refactoring: after hacing modified calculate_overall_stats
-        #  insert it here
-        # calculate_overall_stats(
-        #    metrics,
-        #    self.model_definition['output_features'],
-        #    dataset,
-        #    self.train_set_metadata
-        # )
-
-        # todo refactoring: remove logits from predictions
 
         return metrics, predictions
 

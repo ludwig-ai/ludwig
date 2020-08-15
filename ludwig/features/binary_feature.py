@@ -204,63 +204,62 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
-            train_set_metadata
+            predictions,
+            targets,
+            feature_metadata
     ):
-        feature_name = output_feature['name']
-        stats = test_stats[feature_name]
-
         confusion_matrix = ConfusionMatrix(
-            dataset.get(feature_name),
-            stats[PREDICTIONS],
-            labels=['False', 'True']
+            targets,
+            predictions[PREDICTIONS],
+            labels=['False', 'True'],
         )
+        stats = {}
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
         stats['per_class_stats'] = confusion_matrix.per_class_stats()
+
         fpr, tpr, thresholds = roc_curve(
-            dataset.get(feature_name),
-            stats[PROBABILITIES]
+            targets,
+            predictions[PROBABILITIES]
         )
         stats['roc_curve'] = {
             'false_positive_rate': fpr.tolist(),
             'true_positive_rate': tpr.tolist()
         }
         stats['roc_auc_macro'] = roc_auc_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+            targets,
+            predictions[PROBABILITIES],
             average='macro'
         )
         stats['roc_auc_micro'] = roc_auc_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+            targets,
+            predictions[PROBABILITIES],
             average='micro'
         )
         ps, rs, thresholds = precision_recall_curve(
-            dataset.get(feature_name),
-            stats[PROBABILITIES]
+            targets,
+            predictions[PROBABILITIES]
         )
         stats['precision_recall_curve'] = {
             'precisions': ps.tolist(),
             'recalls': rs.tolist()
         }
         stats['average_precision_macro'] = average_precision_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+            targets,
+            predictions[PROBABILITIES],
             average='macro'
         )
         stats['average_precision_micro'] = average_precision_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+            targets,
+            predictions[PROBABILITIES],
             average='micro'
         )
         stats['average_precision_samples'] = average_precision_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+            targets,
+            predictions[PROBABILITIES],
             average='samples'
         )
+        return stats
 
     @staticmethod
     def postprocess_results(

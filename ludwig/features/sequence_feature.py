@@ -367,27 +367,26 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 for cls in feature_metadata['idx2str']
             ]
 
-    # todo: make clear that the overall stats are bout the last prediction
+    # todo tf2: make clear that the overall stats are bout the last prediction
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
-            train_set_metadata
+            predictions,
+            targets,
+            feature_metadata
     ):
-        feature_name = output_feature['name']
-        sequences = dataset.get(feature_name)
-        last_elem_sequence = sequences[np.arange(sequences.shape[0]),
-                                       (sequences != 0).cumsum(1).argmax(1)]
-        stats = test_stats[feature_name]
+        last_elem_sequence = targets[np.arange(targets.shape[0]),
+                                     (targets != 0).cumsum(1).argmax(1)]
         confusion_matrix = ConfusionMatrix(
             last_elem_sequence,
-            stats[LAST_PREDICTIONS],
-            labels=train_set_metadata[feature_name]['idx2str']
+            predictions[LAST_PREDICTIONS],
+            labels=feature_metadata['idx2str'],
         )
+
+        stats = {}
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
         stats['per_class_stats'] = confusion_matrix.per_class_stats()
+        return stats
 
     @staticmethod
     def postprocess_results(

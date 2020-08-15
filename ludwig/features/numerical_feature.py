@@ -270,10 +270,9 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
-            train_set_metadata
+            predictions,
+            targets,
+            feature_metadata
     ):
         pass
 

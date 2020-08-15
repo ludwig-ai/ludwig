@@ -7,7 +7,7 @@ import pandas as pd
 import tensorflow as tf
 import yaml
 
-from ludwig.constants import TRAINING, VALIDATION, TEST, LOGITS
+from ludwig.constants import TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess, postprocess_df
 from ludwig.data.preprocessing import load_metadata, preprocess_for_training, \
@@ -666,6 +666,7 @@ class NewLudwigModel:
             skip_save_eval_stats=True,
             output_directory='results',
             collect_predictions=False,
+            collect_overall_stats=False,
             return_type=pd.DataFrame,
             debug=False,
             **kwargs
@@ -717,31 +718,21 @@ class NewLudwigModel:
         )
 
         logger.debug('Predicting')
-        stats, predictions = self.model.batch_evaluate(
+        stats, predictions = self.model.batch_evaluation(
             dataset,
             batch_size,
-            collect_predictions=collect_predictions,
+            collect_predictions=collect_predictions or collect_overall_stats,
         )
 
-        # combine predictions with the overall metrics
-        for of_name in predictions:
-            # todo refactoring: remove logits from predictions will happen inside exc.batch_evaluate()
-            # remove logits, not needed for overall stats
-            del predictions[of_name][LOGITS]
-
-            if of_name not in stats:
-                stats[of_name] = {}
-
-            stats[of_name] = {**stats[of_name],
-                              **predictions[of_name]}
-
-            # todo refactoring: change so that it is called inside ecd.btch_evaluate()
-            calculate_overall_stats(
-                stats,
-                self.model_definition['output_features'],
-                dataset,
-                self.train_set_metadata
-            )
+        # calculate the overall metrics
+        overall_stats = calculate_overall_stats(
+            self.model.output_features,
+            predictions,
+            dataset,
+            train_set_metadata
+        )
+        stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
+                 for of_name in stats}
 
         logger.debug('Postprocessing')
         if (
