@@ -18,7 +18,7 @@ from ludwig.globals import set_disable_progressbar, \
     TRAIN_SET_METADATA_FILE_NAME, set_on_master, is_on_master
 from ludwig.models.ecd import ECD
 from ludwig.models.prediction_helpers import calculate_overall_stats, \
-    save_prediction_outputs, print_test_results, save_test_statistics
+    save_prediction_outputs, print_evaluation_stats, save_evaluation_stats
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import load_json, save_json, \
@@ -725,55 +725,59 @@ class NewLudwigModel:
         )
 
         # calculate the overall metrics
-        overall_stats = calculate_overall_stats(
-            self.model.output_features,
-            predictions,
-            dataset,
-            train_set_metadata
-        )
-        stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
-                 for of_name in stats}
+        if collect_overall_stats:
+            overall_stats = calculate_overall_stats(
+                self.model.output_features,
+                predictions,
+                dataset,
+                train_set_metadata
+            )
+            stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
+                     for of_name in stats}
 
-        logger.debug('Postprocessing')
-        if (
-                return_type == 'dict' or
-                return_type == 'dictionary' or
-                return_type == dict
-        ):
-            postprocessed_stats = postprocess(
-                stats,
-                self.model_definition['output_features'],
-                self.train_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            )
-        elif (
-                return_type == 'dataframe' or
-                return_type == 'df' or
-                return_type == pd.DataFrame
-        ):
-            postprocessed_stats = postprocess_df(
-                stats,
-                self.model_definition['output_features'],
-                self.train_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            )
+        if collect_predictions:
+            logger.debug('Postprocessing')
+            if (
+                    return_type == 'dict' or
+                    return_type == 'dictionary' or
+                    return_type == dict
+            ):
+                postproc_predictions = postprocess(
+                    predictions,
+                    self.model.output_features,
+                    self.train_set_metadata,
+                    experiment_dir_name=self.exp_dir_name,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output
+                                                 or not is_on_master(),
+                )
+            elif (
+                    return_type == 'dataframe' or
+                    return_type == 'df' or
+                    return_type == pd.DataFrame
+            ):
+                postproc_predictions = postprocess_df(
+                    predictions,
+                    self.model.output_features,
+                    self.train_set_metadata,
+                    experiment_dir_name=self.exp_dir_name,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output
+                                                 or not is_on_master(),
+                )
+            else:
+                logger.warning(
+                    'Unrecognized return_type: {}. '
+                    'Returning dict.'.format(return_type)
+                )
+                postproc_predictions = postprocess(
+                    predictions,
+                    self.model.output_features,
+                    self.train_set_metadata,
+                    experiment_dir_name=self.exp_dir_name,
+                    skip_save_unprocessed_output=skip_save_unprocessed_output
+                                                 or not is_on_master(),
+                )
         else:
-            logger.warning(
-                'Unrecognized return_type: {}. '
-                'Returning dict.'.format(return_type)
-            )
-            postprocessed_stats = postprocess(
-                stats,
-                self.model_definition['output_features'],
-                self.train_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            )
+            postproc_predictions = predictions  # = {}
 
         if is_on_master():
             # if we are skipping all saving,
@@ -786,22 +790,18 @@ class NewLudwigModel:
             if should_create_exp_dir:
                 os.makedirs(self.exp_dir_name, exist_ok=True)
 
-            if predictions and not skip_save_predictions:
-                save_prediction_outputs(predictions,
+            if postproc_predictions and not skip_save_predictions:
+                save_prediction_outputs(postproc_predictions,
                                         self.exp_dir_name)
 
-            print_test_results(postprocessed_stats)
+            print_evaluation_stats(stats)
             if not skip_save_eval_stats:
-                save_test_statistics(stats,
-                                     self.exp_dir_name)
+                save_evaluation_stats(stats, self.exp_dir_name)
 
             if not skip_save_predictions or not skip_save_eval_stats:
                 logger.info('Saved to: {0}'.format(self.exp_dir_name))
 
-        # todo refactoring: after having modified calculate_overall_stats,
-        #  split predictions and stats into two entitied and return both
-        #  or only stats depending on the colelct_predictions parameter
-        return postprocessed_stats
+        return stats, postproc_predictions
 
     @staticmethod
     def load(model_dir,

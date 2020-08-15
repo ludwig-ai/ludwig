@@ -33,7 +33,7 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.models.prediction_helpers import save_prediction_outputs, \
-    save_test_statistics, print_test_results
+    save_evaluation_stats, print_evaluation_stats
 from ludwig.predict import predict
 from ludwig.train import full_train
 from ludwig.utils.data_utils import save_json, generate_kfold_splits
@@ -377,14 +377,14 @@ def full_experiment(
         )
 
         if is_on_master():
-            print_test_results(test_results)
+            print_evaluation_stats(test_results)
             if not skip_save_test_predictions:
                 save_prediction_outputs(
                     postprocessed_output,
                     experiment_dir_name
                 )
             if not skip_save_test_statistics:
-                save_test_statistics(test_results, experiment_dir_name)
+                save_evaluation_stats(test_results, experiment_dir_name)
 
     if is_on_master():
         logger.info('\nFinished: {0}_{1}'.format(

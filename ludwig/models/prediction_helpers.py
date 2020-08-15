@@ -50,7 +50,7 @@ def save_prediction_outputs(
                 )
 
 
-def save_test_statistics(test_stats, experiment_dir_name):
+def save_evaluation_stats(test_stats, experiment_dir_name):
     test_stats_fn = os.path.join(
         experiment_dir_name,
         'test_statistics.json'
@@ -58,7 +58,7 @@ def save_test_statistics(test_stats, experiment_dir_name):
     save_json(test_stats_fn, test_stats)
 
 
-def print_test_results(test_stats):
+def print_evaluation_stats(test_stats):
     for output_field, result in test_stats.items():
         if (output_field != COMBINED or
                 (output_field == COMBINED and len(test_stats) > 2)):

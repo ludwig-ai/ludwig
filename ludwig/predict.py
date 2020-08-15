@@ -31,7 +31,7 @@ from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from ludwig.models.prediction_helpers import calculate_overall_stats, \
-    save_prediction_outputs, save_test_statistics, print_test_results
+    save_prediction_outputs, save_evaluation_stats, print_evaluation_stats
 from ludwig.models.trainer import load_model_and_definition
 from ludwig.utils.misc_utils import find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry
@@ -126,9 +126,9 @@ def full_predict(
             save_prediction_outputs(postprocessed_output, experiment_dir_name)
 
         if evaluate_performance:
-            print_test_results(prediction_results)
+            print_evaluation_stats(prediction_results)
             if not skip_save_test_statistics:
-                save_test_statistics(prediction_results, experiment_dir_name)
+                save_evaluation_stats(prediction_results, experiment_dir_name)
 
         logger.info('Saved to: {0}'.format(experiment_dir_name))
 
