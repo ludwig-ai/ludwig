@@ -3,10 +3,8 @@ from collections import OrderedDict
 from pprint import pformat
 
 from ludwig.constants import COMBINED
-from ludwig.features.feature_registries import output_type_registry
 from ludwig.predict import logger
 from ludwig.utils.data_utils import save_csv, save_json
-from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import repr_ordered_dict
 
 
@@ -21,11 +19,7 @@ def calculate_overall_stats(
         of_name = output_feature.feature_name
         if of_name not in overall_stats:
             overall_stats[of_name] = {}
-        feature = get_from_registry(
-            output_feature.type,
-            output_type_registry
-        )
-        feature.calculate_overall_stats(
+        output_feature.calculate_overall_stats(
             predictions[of_name],
             dataset.get(of_name),
             train_set_metadata[of_name]

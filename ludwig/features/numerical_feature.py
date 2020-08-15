@@ -268,8 +268,8 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     ):
         pass
 
-    @staticmethod
     def calculate_overall_stats(
+            self,
             predictions,
             targets,
             metadata

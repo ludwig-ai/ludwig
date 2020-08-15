@@ -368,8 +368,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             ]
 
     # todo tf2: make clear that the overall stats are bout the last prediction
-    @staticmethod
     def calculate_overall_stats(
+            self,
             predictions,
             targets,
             metadata

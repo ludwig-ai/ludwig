@@ -261,8 +261,8 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     ):
         output_feature['vector_size'] = feature_metadata['vector_size']
 
-    @staticmethod
     def calculate_overall_stats(
+            self,
             predictions,
             targets,
             metadata

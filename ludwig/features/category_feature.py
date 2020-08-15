@@ -356,8 +356,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 for cls in feature_metadata['idx2str']
             ]
 
-    @staticmethod
     def calculate_overall_stats(
+            self,
             predictions,
             targets,
             metadata

@@ -202,8 +202,8 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     ):
         pass
 
-    @staticmethod
     def calculate_overall_stats(
+            self,
             predictions,
             targets,
             metadata

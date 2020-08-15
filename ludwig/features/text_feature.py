@@ -300,13 +300,13 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 for cls in feature_metadata[level_idx2str]
             ]
 
-    @staticmethod
     def calculate_overall_stats(
+            self,
             predictions,
             targets,
             metadata
     ):
-        level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
+        level_idx2str = '{}_{}'.format(self.level, 'idx2str')
         last_elem_sequence = targets[np.arange(targets.shape[0]),
                                      (targets != 0).cumsum(1).argmax(1)]
         confusion_matrix = ConfusionMatrix(

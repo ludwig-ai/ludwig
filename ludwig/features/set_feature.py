@@ -213,8 +213,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         output_feature[LOSS][TYPE] = None
         output_feature['num_classes'] = feature_metadata['vocab_size']
 
-    @staticmethod
     def calculate_overall_stats(
+            self,
             predictions,
             targets,
             metadata
