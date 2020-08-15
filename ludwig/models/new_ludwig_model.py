@@ -525,7 +525,6 @@ class NewLudwigModel:
             skip_save_predictions=True,
             skip_save_eval_statis=True,
             output_directory='results',
-            evaluate_performance=True,
             return_type=pd.DataFrame,
             debug=False,
             **kwargs
