@@ -302,35 +302,34 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
-            train_set_metadata
+            predictions,
+            targets,
+            metadata
     ):
-        feature_name = output_feature['name']
         level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
-        sequences = dataset.get(feature_name)
-        last_elem_sequence = sequences[np.arange(sequences.shape[0]),
-                                       (sequences != 0).cumsum(1).argmax(1)]
-        stats = test_stats[feature_name]
+        last_elem_sequence = targets[np.arange(targets.shape[0]),
+                                     (targets != 0).cumsum(1).argmax(1)]
         confusion_matrix = ConfusionMatrix(
             last_elem_sequence,
-            stats[LAST_PREDICTIONS],
-            labels=train_set_metadata[feature_name][level_idx2str]
+            predictions[LAST_PREDICTIONS],
+            labels=metadata[level_idx2str],
         )
+
+        stats = {}
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
         stats['per_class_stats'] = confusion_matrix.per_class_stats()
+        return stats
 
     @staticmethod
     def postprocess_results(
+            predictions,
             output_feature,
-            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False,
+            skip_save_unprocessed_output=False
     ):
-        # todo: refactor to reuse SeuuqnceOutputFeature.postprocess_results
+        # todo v0.4: refactor to reuse SeuuqnceOutputFeature.postprocess_results
         postprocessed = {}
         name = output_feature['name']
         level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
@@ -341,8 +340,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            preds = predictions[PREDICTIONS]
             if level_idx2str in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata[level_idx2str][token]
@@ -357,10 +356,11 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PREDICTIONS), preds)
 
-            del result[PREDICTIONS]
+            del predictions[PREDICTIONS]
 
-        if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
-            last_preds = result[LAST_PREDICTIONS]
+        if LAST_PREDICTIONS in predictions and len(
+                predictions[LAST_PREDICTIONS]) > 0:
+            last_preds = predictions[LAST_PREDICTIONS]
             if level_idx2str in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
                     metadata[level_idx2str][last_pred]
@@ -372,12 +372,14 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 postprocessed[LAST_PREDICTIONS] = last_preds
 
             if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS), last_preds)
+                np.save(npy_filename.format(name, LAST_PREDICTIONS),
+                        last_preds)
 
-            del result[LAST_PREDICTIONS]
+            del predictions[LAST_PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES]
+        if PROBABILITIES in predictions and len(
+                predictions[PROBABILITIES]) > 0:
+            probs = predictions[PROBABILITIES]
             if probs is not None:
 
                 if len(probs) > 0 and isinstance(probs[0], list):
@@ -392,7 +394,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
                 # commenting probabilities out because usually it is huge:
                 # dataset x length x classes
-                # todo: add a mechanism for letting the user decide to save it
+                # todo v0.4: add a mechanism for letting the user decide to save it
                 # postprocessed[PROBABILITIES] = probs
                 postprocessed[PROBABILITY] = prob
 
@@ -401,10 +403,10 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                     # np.save(npy_filename.format(name, PROBABILITIES), probs)
                     np.save(npy_filename.format(name, PROBABILITY), prob)
 
-            del result[PROBABILITIES]
+            del predictions[PROBABILITIES]
 
-        if LENGTHS in result:
-            del result[LENGTHS]
+        if LENGTHS in predictions:
+            del predictions[LENGTHS]
 
         return postprocessed
 
