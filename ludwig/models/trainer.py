@@ -299,7 +299,7 @@ class Trainer:
             valid_validation_field = True
             validation_output_feature_name = 'combined'
             if validation_metric is not LOSS and len(output_features) == 1:
-                only_of = output_features[0]
+                only_of = list(output_features.keys())[0]
                 if validation_metric in metrics_names[only_of]:
                     validation_output_feature_name = only_of
                     logger.warning(
