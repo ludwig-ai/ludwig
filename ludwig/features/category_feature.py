@@ -360,12 +360,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     def calculate_overall_stats(
             predictions,
             targets,
-            feature_metadata
+            metadata
     ):
         confusion_matrix = ConfusionMatrix(
             targets,
             predictions[PREDICTIONS],
-            labels=feature_metadata['idx2str'],
+            labels=metadata['idx2str'],
         )
         stats = {}
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()

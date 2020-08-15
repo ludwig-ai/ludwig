@@ -243,7 +243,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     def calculate_overall_stats(
             predictions,
             targets,
-            feature_metadata
+            metadata
     ):
         pass
 

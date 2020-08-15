@@ -372,14 +372,14 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def calculate_overall_stats(
             predictions,
             targets,
-            feature_metadata
+            metadata
     ):
         last_elem_sequence = targets[np.arange(targets.shape[0]),
                                      (targets != 0).cumsum(1).argmax(1)]
         confusion_matrix = ConfusionMatrix(
             last_elem_sequence,
             predictions[LAST_PREDICTIONS],
-            labels=feature_metadata['idx2str'],
+            labels=metadata['idx2str'],
         )
 
         stats = {}

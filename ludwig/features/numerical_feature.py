@@ -272,7 +272,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     def calculate_overall_stats(
             predictions,
             targets,
-            feature_metadata
+            metadata
     ):
         pass
 

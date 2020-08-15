@@ -206,7 +206,7 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     def calculate_overall_stats(
             predictions,
             targets,
-            feature_metadata
+            metadata
     ):
         confusion_matrix = ConfusionMatrix(
             targets,
