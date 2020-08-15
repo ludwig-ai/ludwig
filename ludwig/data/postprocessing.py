@@ -17,24 +17,7 @@
 import pandas as pd
 
 from ludwig.constants import TYPE
-from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
-from ludwig.utils.misc_utils import get_from_registry
-
-
-def postprocess_results(
-        predictions,
-        output_feature,
-        metadata,
-        experiment_dir_name='',
-        skip_save_unprocessed_output=False,
-):
-    feature = get_from_registry(
-        output_feature[TYPE], output_type_registry
-    )
-    return feature.postprocess_results(predictions, output_feature, metadata,
-                                       experiment_dir_name,
-                                       skip_save_unprocessed_output=skip_save_unprocessed_output)
 
 
 def postprocess(
@@ -45,15 +28,14 @@ def postprocess(
         skip_save_unprocessed_output=False,
 ):
     postprocessed = {}
-    for output_feature in output_features:
-        of_name = output_feature['name']
-        postprocessed[of_name] = postprocess_results(
+    for of_name, output_feature in output_features.items():
+        output_feature.postprocess_predictions(
             predictions[of_name],
-            output_feature,
             train_set_metadata.get(of_name, {}),
             experiment_dir_name=experiment_dir_name,
-            skip_save_unprocessed_output=skip_save_unprocessed_output,
+            skip_save_unprocessed_output=skip_save_unprocessed_output
         )
+
     return postprocessed
 
 

@@ -221,16 +221,15 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     ):
         pass
 
-    @staticmethod
-    def postprocess_results(
+    def postprocess_predictions(
+            self,
             predictions,
-            output_feature,
             metadata,
             experiment_dir_name,
             skip_save_unprocessed_output=False
     ):
         postprocessed = {}
-        name = output_feature['name']
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
@@ -257,7 +256,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
                 predictions[PROBABILITIES]) > 0:
             probs = predictions[PROBABILITIES].numpy()
             prob = [[prob for prob in prob_set if
-                     prob >= output_feature['threshold']] for prob_set in
+                     prob >= self.threshold] for prob_set in
                     probs]
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob

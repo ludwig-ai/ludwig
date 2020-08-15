@@ -321,18 +321,18 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         stats['per_class_stats'] = confusion_matrix.per_class_stats()
         return stats
 
-    @staticmethod
-    def postprocess_results(
+    # todo v0.4: refactor to reuse SeuuqnceOutputFeature.postprocess_results
+    def postprocess_predictions(
+            self,
             predictions,
-            output_feature,
             metadata,
             experiment_dir_name,
             skip_save_unprocessed_output=False
     ):
-        # todo v0.4: refactor to reuse SeuuqnceOutputFeature.postprocess_results
         postprocessed = {}
-        name = output_feature['name']
-        level_idx2str = '{}_{}'.format(output_feature['level'], 'idx2str')
+        name = self.feature_name
+
+        level_idx2str = '{}_{}'.format(self.level, 'idx2str')
 
         npy_filename = None
         if is_on_master():

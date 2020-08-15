@@ -269,16 +269,15 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     ):
         pass
 
-    @staticmethod
-    def postprocess_results(
+    def postprocess_predictions(
+            self,
             predictions,
-            output_feature,
             metadata,
             experiment_dir_name,
             skip_save_unprocessed_output=False
     ):
         postprocessed = {}
-        name = output_feature['name']
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
