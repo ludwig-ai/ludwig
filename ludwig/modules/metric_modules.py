@@ -204,7 +204,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
     def update_state(self, y_true, y_pred, sample_weight=None):
         # TODO TF2 account for weights
         targets_sequence_length = sequence_length_2D(
-            tf.convert_to_tensor(y_true, dtype=tf.int64)
+            tf.cast(y_true, dtype=tf.int64)
         )
         last_targets = tf.gather_nd(
             y_true,
@@ -247,7 +247,7 @@ class EditDistanceMetric(tf.keras.metrics.Mean):
 
         prediction_dtype = y_pred.dtype
         prediction_sequence_length = sequence_length_2D(y_pred)
-        y_true_tensor = tf.convert_to_tensor(y_true, dtype=prediction_dtype)
+        y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
         target_sequence_length = sequence_length_2D(y_true_tensor)
         edit_distance_val, _ = edit_distance(
             y_true_tensor,
@@ -268,10 +268,10 @@ class TokenAccuracyMetric(tf.keras.metrics.Mean):
 
         prediction_dtype = y_pred.dtype
         prediction_sequence_length = sequence_length_2D(y_pred)
-        y_true_tensor = tf.convert_to_tensor(y_true, dtype=prediction_dtype)
+        y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
         target_sequence_length = sequence_length_2D(y_true_tensor)
         _, masked_corrected_predictions, _, _ = \
-            masked_accuracy(y_true, y_pred, target_sequence_length)
+            masked_accuracy(y_true_tensor, y_pred, target_sequence_length)
 
         super().update_state(masked_corrected_predictions)
 
