@@ -326,7 +326,7 @@ class Trainer:
             raise ValueError(
                 'The specificed metric {} is not valid. '
                 'Available metrics for {} output feature are: {}'.format(
-                    validation_metric,
+                    self._validation_metric,
                     validation_output_feature_name,
                     metrics_names[validation_output_feature_name]
                 )
