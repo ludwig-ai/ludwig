@@ -1,10 +1,14 @@
 ![Ludwig logo](https://github.com/ludwig-ai/ludwig-docs/raw/master/docs/images/ludwig_hero.png "Ludwig logo")
 
+<div align="center">
+
 [![PyPI version](https://badge.fury.io/py/ludwig.svg)](https://badge.fury.io/py/ludwig)
 [![Downloads](https://pepy.tech/badge/ludwig)](https://pepy.tech/project/ludwig)
 [![Build Status](https://travis-ci.com/uber/ludwig.svg?branch=master)](https://travis-ci.com/github/uber/ludwig)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/uber/ludwig/blob/master/LICENSE)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fuber%2Fludwig.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fuber%2Fludwig?ref=badge_shield)
+
+</div>
 
 Ludwig is a toolbox built on top of TensorFlow that allows users to train and test deep learning models without the need to write code.
 
