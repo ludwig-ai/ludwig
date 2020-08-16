@@ -154,7 +154,12 @@ class SequenceLoss(tf.keras.losses.Loss):
         y_pred_tensor = y_pred[LOGITS]
         y_true_tensor = tf.cast(y_true, dtype=tf.int64)
 
+        print('\n>>>sequence loss', y_pred_tensor.shape, y_true_tensor.shape)  #debug
+        d = tf.shape(y_true_tensor)  # debug
+        y_true_tensor_shape_1 = tf.reshape(d[1], [1])  #debug
+
         # pad the shorter sequence
+        # if y_true_tensor_shape_1 > y_pred_tensor.shape[1]:  #debug
         if y_true_tensor.shape[1] > y_pred_tensor.shape[1]:
             pad = tf.zeros(
                 [
