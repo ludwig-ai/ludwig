@@ -126,9 +126,9 @@ class Trainer:
         :param validation_metric: metric used on the validation field, it is
                accuracy by default
         :type validation_metric:
-        :param dropout_rate: dropout_rate probability (probability of dropping
+        :param dropout: dropout probability (probability of dropping
                a neuron in a given layer)
-        :type dropout_rate: Float
+        :type dropout: Float
         :param early_stop: How many epochs without any improvement in the
                validation_metric triggers the algorithm to stop
         :type early_stop: Integer
@@ -294,7 +294,7 @@ class Trainer:
             validation_output_feature_name = 'combined'
             if self._validation_metric is not LOSS and len(
                     output_features) == 1:
-                only_of = output_features[0]
+                only_of = next(iter(output_features))
                 if self._validation_metric in metrics_names[only_of]:
                     validation_output_feature_name = only_of
                     logger.warning(

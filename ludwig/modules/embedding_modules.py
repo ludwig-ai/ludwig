@@ -139,7 +139,7 @@ class Embed(Layer):
             pretrained_embeddings=None,
             force_embedding_size=False,
             embeddings_on_cpu=False,
-            dropout_rate=0.0,
+            dropout=0.0,
             embedding_initializer=None,
             embedding_regularizer=None
     ):
@@ -162,8 +162,8 @@ class Embed(Layer):
                 embedding_regularizer)
             self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
-        if dropout_rate > 0:
-            self.dropout = Dropout(dropout_rate)
+        if dropout > 0:
+            self.dropout = Dropout(dropout)
         else:
             self.dropout = None
 
@@ -188,7 +188,7 @@ class EmbedWeighted(Layer):
             pretrained_embeddings=None,
             force_embedding_size=False,
             embeddings_on_cpu=False,
-            dropout_rate=0.0,
+            dropout=0.0,
             embedding_initializer=None,
             embedding_regularizer=None
     ):
@@ -211,8 +211,8 @@ class EmbedWeighted(Layer):
                 embedding_regularizer)
             self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
-        if dropout_rate > 0:
-            self.dropout = Dropout(dropout_rate)
+        if dropout > 0:
+            self.dropout = Dropout(dropout)
         else:
             self.dropout = None
 
@@ -249,7 +249,7 @@ class EmbedSparse(Layer):
             pretrained_embeddings=None,
             force_embedding_size=False,
             embeddings_on_cpu=False,
-            dropout_rate=0.0,
+            dropout=0.0,
             embedding_initializer=None,
             embedding_regularizer=None,
             reduce_output='sum'
@@ -272,8 +272,8 @@ class EmbedSparse(Layer):
                 embedding_regularizer)
             self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
-        if dropout_rate > 0:
-            self.dropout = Dropout(dropout_rate)
+        if dropout > 0:
+            self.dropout = Dropout(dropout)
         else:
             self.dropout = None
 
@@ -313,7 +313,7 @@ class EmbedSequence(Layer):
             pretrained_embeddings=None,
             force_embedding_size=False,
             embeddings_on_cpu=False,
-            dropout_rate=0.0,
+            dropout=0.0,
             embedding_initializer=None,
             embedding_regularizer=None
     ):
@@ -336,8 +336,8 @@ class EmbedSequence(Layer):
                 embedding_regularizer)
             self.add_loss(lambda: embedding_regularizer_obj(self.embeddings))
 
-        if dropout_rate > 0:
-            self.dropout = Dropout(dropout_rate)
+        if dropout > 0:
+            self.dropout = Dropout(dropout)
         else:
             self.dropout = None
 

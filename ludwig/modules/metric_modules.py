@@ -38,34 +38,46 @@ min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
 # Custom classes to support Tensorflow 2
 #
 class R2Score(tf.keras.metrics.Metric):
-    # custom tf.keras.metrics class to compute r2 score from batches
-    # See for additional info:
-    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
-
-    # todo tf2 - convert to tensors?
-
-    def __init__(self, name='r2_score', **kwargs):
+    def __init__(self, name='r2_score'):
         super(R2Score, self).__init__(name=name)
-        self._reset_states()
-
-    def _reset_states(self):
-        self.sum_y = 0.0
-        self.sum_y_squared = 0.0
-        self.sum_y_hat = 0.0
-        self.sum_y_hat_squared = 0.0
-        self.sum_y_y_hat = 0.0
-        self.N = 0
-
-    def reset_states(self):
-        self._reset_states()
+        self.sum_y = self.add_weight(
+            'sum_y', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.sum_y_squared = self.add_weight(
+            'sum_y_squared', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.sum_y_hat = self.add_weight(
+            'sum_y_hat', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.sum_y_hat_squared = self.add_weight(
+            'sum_y_hat_squared', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.sum_y_hat = self.add_weight(
+            'sum_y_y_hat', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.sum_y_y_hat = self.add_weight(
+            'sum_y_y_hat', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.N = self.add_weight(
+            'N', initializer='zeros',
+            dtype=tf.float32
+        )
 
     def update_state(self, y, y_hat):
-        self.sum_y += np.sum(y)
-        self.sum_y_squared += np.sum(y ** 2)
-        self.sum_y_hat += np.sum(y_hat)
-        self.sum_y_hat_squared += np.sum(y_hat ** 2)
-        self.sum_y_y_hat += np.sum(y * y_hat)
-        self.N += y.shape[0]
+        y = tf.cast(y, dtype=tf.float32)
+        y_hat = tf.cast(y_hat, dtype=tf.float32)
+        self.sum_y.assign_add(tf.reduce_sum(y))
+        self.sum_y_squared.assign_add(tf.reduce_sum(y ** 2))
+        self.sum_y_hat.assign_add(tf.reduce_sum(y_hat))
+        self.sum_y_hat_squared.assign_add(tf.reduce_sum(y_hat ** 2))
+        self.sum_y_y_hat.assign_add(tf.reduce_sum(y * y_hat))
+        self.N.assign_add(y.shape[0])
 
     def result(self):
         y_bar = self.sum_y / self.N
@@ -77,25 +89,22 @@ class R2Score(tf.keras.metrics.Metric):
 
 
 class ErrorScore(tf.keras.metrics.Metric):
-    # See for additional info:
-    #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
-
-    # todo tf2 - convert to tensors?
-
-    def __init__(self, name='error_score', **kwargs):
+    def __init__(self, name='error_score'):
         super(ErrorScore, self).__init__(name=name)
-        self._reset_states()
-
-    def _reset_states(self):
-        self.sum_error = 0.0
-        self.N = 0
-
-    def reset_states(self):
-        self._reset_states()
+        self.sum_error = self.add_weight(
+            'sum_y_y_hat', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.N = self.add_weight(
+            'N', initializer='zeros',
+            dtype=tf.float32
+        )
 
     def update_state(self, y, y_hat):
-        self.sum_error += np.sum(y - y_hat)
-        self.N += y.shape[0]
+        y = tf.cast(y, tf.float32)
+        y_hat = tf.cast(y_hat, tf.float32)
+        self.sum_error.assign_add(tf.reduce_sum(y - y_hat))
+        self.N.assign_add(y.shape[0])
 
     def result(self):
         return self.sum_error / self.N

@@ -30,7 +30,7 @@ from ludwig.encoders.sequence_encoders import StackedRNN
 L1_REGULARIZER = 'l1'
 L2_REGULARIZER = 'l2'
 NO_REGULARIZER = None
-DROPOUT_RATE = 0.5
+DROPOUT = 0.5
 
 
 def create_encoder(encoder_type, encoder_args={}):
@@ -105,7 +105,7 @@ def test_image_encoders_resnet():
         'weights_regularizer': L1_REGULARIZER,
         'bias_regularizer': L1_REGULARIZER,
         'activity_regularizer': L1_REGULARIZER,
-        'dropout_rate': DROPOUT_RATE
+        'dropout': DROPOUT
     }
     image_size = (10, 10, 3)
 
@@ -154,7 +154,7 @@ def test_image_encoders_stacked_2dcnn():
         'fc_activity_regularizer': L1_REGULARIZER,
         'fc_weights_regularizer': L1_REGULARIZER,
         'fc_bias_regularizer': L1_REGULARIZER,
-        'dropout_rate': DROPOUT_RATE
+        'dropout': DROPOUT
 
     }
     image_size = (10, 10, 3)
@@ -172,7 +172,7 @@ def test_image_encoders_stacked_2dcnn():
     assert encoder.conv_stack_2d.layers[0]['pool_strides'] is None
     assert encoder.conv_stack_2d.layers[0]['norm'] is None
     assert encoder.fc_stack.layers[0]['activation'] == 'relu'
-    assert encoder.conv_stack_2d.layers[-1]['dropout_rate'] == 0
+    assert encoder.conv_stack_2d.layers[-1]['dropout'] == 0
 
     output_shape = [1, 28]
     input_image = generate_images(image_size, 1)
@@ -223,7 +223,7 @@ def test_sequence_encoder_embed():
             encoder_args['reduce_output'] = reduce_output
             encoder_args['embeddings_trainable'] = trainable
             encoder_args['weights_regularizer'] = L1_REGULARIZER
-            encoder_args['dropout_rate'] = DROPOUT_RATE
+            encoder_args['dropout'] = DROPOUT
             encoder = create_encoder(SequenceEmbedEncoder, encoder_args)
 
             encoder_test(
@@ -282,10 +282,10 @@ def test_sequence_encoders():
                 encoder_args['weights_regularizer'] = L1_REGULARIZER
                 encoder_args['bias_regularizer'] = L1_REGULARIZER
                 encoder_args['activity_regularizer'] = L1_REGULARIZER
-                encoder_args['dropout_rate'] = DROPOUT_RATE
-                encoder_args['dropout'] = DROPOUT_RATE
-                encoder_args['recurrent_dropout_rate'] = DROPOUT_RATE
-                encoder_args['fc_dropout_rate'] = DROPOUT_RATE
+                encoder_args['dropout'] = DROPOUT
+                encoder_args['dropout'] = DROPOUT
+                encoder_args['recurrent_dropout'] = DROPOUT
+                encoder_args['fc_dropout'] = DROPOUT
                 encoder = create_encoder(encoder_type, encoder_args)
 
                 encoder_test(

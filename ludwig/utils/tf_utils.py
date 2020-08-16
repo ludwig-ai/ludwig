@@ -84,27 +84,26 @@ def initialize_tensorflow(gpus=None,
         gpus = gpus.strip()
         gpus = [int(g) for g in gpus.split(",")]
 
-    if gpus:
-        if len(gpus) == 1 and gpus[0] == -1:
-            # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
-            tf.config.set_visible_devices([], 'GPU')
-        else:
-            # Allow memory growth and set memory limit. Regardless of whether we do this
-            # before or after setting visible devices, TensorFlow will allocate a small
-            # amount of memory per device.
-            for gpu in gpu_devices:
-                tf.config.experimental.set_memory_growth(gpu, True)
-                if gpu_memory_limit is not None:
-                    tf.config.set_logical_device_configuration(
-                        gpu,
-                        [tf.config.LogicalDeviceConfiguration(
-                            memory_limit=gpu_memory_limit)])
+    if gpus and len(gpus) == 1 and gpus[0] == -1:
+        # CUDA_VISIBLE_DEVICES syntax for disabling all GPUs
+        tf.config.set_visible_devices([], 'GPU')
+    else:
+        # Allow memory growth and set memory limit. Regardless of whether we do this
+        # before or after setting visible devices, TensorFlow will allocate a small
+        # amount of memory per device.
+        for gpu in gpu_devices:
+            tf.config.experimental.set_memory_growth(gpu, True)
+            if gpu_memory_limit is not None:
+                tf.config.set_logical_device_configuration(
+                    gpu,
+                    [tf.config.LogicalDeviceConfiguration(
+                        memory_limit=gpu_memory_limit)])
 
-            # Set visible devices so GPU utilization is isolated
-            # (no GPU contention between workers).
-            if gpu_devices:
-                local_devices = [gpu_devices[g] for g in gpus]
-                tf.config.set_visible_devices(local_devices, 'GPU')
+        # Set visible devices so GPU utilization is isolated
+        # (no GPU contention between workers).
+        if gpus and gpu_devices:
+            local_devices = [gpu_devices[g] for g in gpus]
+            tf.config.set_visible_devices(local_devices, 'GPU')
 
     _set_tf_init_params(param_tuple)
 

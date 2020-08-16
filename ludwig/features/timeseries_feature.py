@@ -231,7 +231,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             hidden,
 #             hidden_size,
 #             regularizer=None,
-#             dropout_rate=None,
+#             dropout=None,
 #             is_training=None,
 #             **kwargs
 #     ):

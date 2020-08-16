@@ -50,7 +50,7 @@ class ConcatCombiner(tf.keras.Model):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             **kwargs
     ):
         super().__init__()
@@ -82,7 +82,7 @@ class ConcatCombiner(tf.keras.Model):
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
-                default_dropout_rate=dropout_rate,
+                default_dropout=dropout,
             )
 
         if input_features and len(input_features) == 1 and fc_layers is None:

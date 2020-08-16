@@ -471,11 +471,11 @@ def cli(sys_argv):
         help="list of gpus to use"
     )
     parser.add_argument(
-        "-gf",
-        "--gpu_fraction",
-        type=float,
-        default=1.0,
-        help="fraction of gpu memory to initialize the process with",
+        '-gml',
+        '--gpu_memory_limit',
+        type=int,
+        default=None,
+        help='maximum memory in MB to allocate per GPU device'
     )
     parser.add_argument(
         "-uh",

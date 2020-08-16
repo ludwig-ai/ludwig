@@ -41,7 +41,7 @@ class FCLayer(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
     ):
         super(FCLayer, self).__init__()
 
@@ -68,8 +68,8 @@ class FCLayer(Layer):
 
         self.layers.append(Activation(activation))
 
-        if dropout_rate > 0:
-            self.layers.append(Dropout(dropout_rate))
+        if dropout > 0:
+            self.layers.append(Dropout(dropout))
 
         for layer in self.layers:
             logger.debug('   {}'.format(layer.name))
@@ -101,7 +101,7 @@ class FCStack(Layer):
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
-            default_dropout_rate=0,
+            default_dropout=0,
             **kwargs
     ):
         super(FCStack, self).__init__()
@@ -138,8 +138,8 @@ class FCStack(Layer):
                 layer['norm_params'] = default_norm_params
             if 'activation' not in layer:
                 layer['activation'] = default_activation
-            if 'dropout_rate' not in layer:
-                layer['dropout_rate'] = default_dropout_rate
+            if 'dropout' not in layer:
+                layer['dropout'] = default_dropout
 
         self.stack = []
 
@@ -158,7 +158,7 @@ class FCStack(Layer):
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
-                    dropout_rate=layer['dropout_rate'],
+                    dropout=layer['dropout'],
                 )
             )
 
