@@ -339,6 +339,7 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         logits = outputs.rnn_output
+        print('\n>>>> logits shape from tfa.seq2seq.BasicDecoder', logits.shape)  #debug
         mask = tf.sequence_mask(
             generated_sequence_lengths,
             maxlen=logits.shape[1],
