@@ -23,7 +23,7 @@ from ludwig.features.feature_utils import SEQUENCE_TYPES
 def postprocess(
         predictions,
         output_features,
-        train_set_metadata,
+        training_set_metadata,
         experiment_dir_name='',
         skip_save_unprocessed_output=False,
 ):
@@ -31,7 +31,7 @@ def postprocess(
     for of_name, output_feature in output_features.items():
         output_feature.postprocess_predictions(
             predictions[of_name],
-            train_set_metadata.get(of_name, {}),
+            training_set_metadata.get(of_name, {}),
             experiment_dir_name=experiment_dir_name,
             skip_save_unprocessed_output=skip_save_unprocessed_output
         )

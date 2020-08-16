@@ -65,7 +65,7 @@ def full_train(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        train_set_metadata_json=None,
+        training_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -123,9 +123,9 @@ def full_train(
     :param data_test_hdf5: If the test set is in the hdf5 format, this is
            used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param train_set_metadata_json: If the dataset is in hdf5 format, this is
+    :param training_set_metadata_json: If the dataset is in hdf5 format, this is
            the associated json file containing metadata.
-    :type train_set_metadata_json: filepath (str)
+    :type training_set_metadata_json: filepath (str)
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -233,9 +233,9 @@ def full_train(
         else:
             experiment_dir_name = None
 
-    # if model_load_path is not None, load its train_set_metadata
+    # if model_load_path is not None, load its training_set_metadata
     if model_load_path is not None:
-        train_set_metadata_json = os.path.join(
+        training_set_metadata_json = os.path.join(
             model_load_path,
             TRAIN_SET_METADATA_FILE_NAME
         )
@@ -270,7 +270,7 @@ def full_train(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        metadata_json=train_set_metadata_json,
+        metadata_json=training_set_metadata_json,
         random_seed=random_seed
     )
     if is_on_master():
@@ -300,7 +300,7 @@ def full_train(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
+        training_set_metadata_json=training_set_metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition['preprocessing'],
         random_seed=random_seed
@@ -309,7 +309,7 @@ def full_train(
     (training_set,
      validation_set,
      test_set,
-     train_set_metadata) = preprocessed_data
+     training_set_metadata) = preprocessed_data
 
     if is_on_master():
         logger.info('Training set: {0}'.format(training_set.size))
@@ -321,7 +321,7 @@ def full_train(
     # update model definition with metadata properties
     update_model_definition_with_metadata(
         model_definition,
-        train_set_metadata
+        training_set_metadata
     )
 
     if is_on_master():
@@ -333,7 +333,7 @@ def full_train(
                     model_dir,
                     TRAIN_SET_METADATA_FILE_NAME
                 ),
-                train_set_metadata
+                training_set_metadata
             )
 
     contrib_command("train_init", experiment_directory=experiment_dir_name,
@@ -621,7 +621,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '--train_set_metadata_json',
+        '--training_set_metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file '
              'containing the mappings of the input CSV created the first time a'
              ' CSV file is used in the same directory with the same name and a '
@@ -788,7 +788,7 @@ if __name__ == '__main__':
 def train_helper(
         model_definition,
         model=None,
-        train_set_metadata=None,
+        training_set_metadata=None,
         data_df=None,
         data_train_df=None,
         data_validation_df=None,
@@ -801,7 +801,7 @@ def train_helper(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        train_set_metadata_json=None,
+        training_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -855,9 +855,9 @@ def train_helper(
     :param data_test_hdf5: If the test set is in the hdf5 format, this is
            used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param train_set_metadata_json: If the dataset is in hdf5 format, this is
+    :param training_set_metadata_json: If the dataset is in hdf5 format, this is
            the associated json file containing metadata.
-    :type train_set_metadata_json: filepath (str)
+    :type training_set_metadata_json: filepath (str)
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -977,7 +977,7 @@ def train_helper(
             data_train_hdf5=data_train_hdf5,
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
-            metadata_json=train_set_metadata_json,
+            metadata_json=training_set_metadata_json,
             random_seed=random_seed
         )
         if not skip_save_training_description:
@@ -992,7 +992,7 @@ def train_helper(
         logger.info('\n')
 
     # preprocess
-    # todo refactoring: make this work with a provided train_set_metadata dict
+    # todo refactoring: make this work with a provided training_set_metadata dict
     preprocessed_data = preprocess_for_training(
         model_definition,
         data_df=data_df,
@@ -1007,7 +1007,7 @@ def train_helper(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
+        training_set_metadata_json=training_set_metadata_json,
         skip_save_processed_input=skip_save_processed_input,
         preprocessing_params=model_definition['preprocessing'],
         random_seed=random_seed
@@ -1016,7 +1016,7 @@ def train_helper(
     (training_set,
      validation_set,
      test_set,
-     train_set_metadata) = preprocessed_data
+     training_set_metadata) = preprocessed_data
 
     if is_on_master():
         logger.info('Training set: {0}'.format(training_set.size))
@@ -1028,7 +1028,7 @@ def train_helper(
     # update model definition with metadata properties
     update_model_definition_with_metadata(
         model_definition,
-        train_set_metadata
+        training_set_metadata
     )
 
     if is_on_master():
@@ -1040,7 +1040,7 @@ def train_helper(
                     model_dir,
                     TRAIN_SET_METADATA_FILE_NAME
                 ),
-                train_set_metadata
+                training_set_metadata
             )
 
     contrib_command("train_init", experiment_directory=experiment_dir_name,
@@ -1055,7 +1055,7 @@ def train_helper(
             print_boxed('MODEL', print_fun=logger.debug)
         update_model_definition_with_metadata(
             model_definition,
-            train_set_metadata
+            training_set_metadata
         )
         model = ECD(
             input_features_def=model_definition['input_features'],
@@ -1136,5 +1136,5 @@ def train_helper(
         experiment_dir_name,
         train_stats,
         model_definition,
-        train_set_metadata
+        training_set_metadata
     )

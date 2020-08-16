@@ -23,7 +23,7 @@ import pandas as pd
 from ludwig import visualize
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import get_split
-from ludwig.utils.data_utils import read_csv, split_dataset_tvt
+from ludwig.utils.data_utils import read_csv, split_dataset_ttv
 from tests.integration_tests.utils import category_feature, \
     numerical_feature, set_feature, generate_data, sequence_feature, \
     text_feature, binary_feature, bag_feature
@@ -83,8 +83,9 @@ class Experiment:
         # from the probability columns
         # ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
         num_probs = self.output_features[0]['vocab_size']
-        self.probability = self.test_stats_full[0].iloc[:, 1:(num_probs+2)].values
-        self.ground_truth_metadata = self.model.train_set_metadata
+        self.probability = self.test_stats_full[0].iloc[:,
+                           1:(num_probs + 2)].values
+        self.ground_truth_metadata = self.model.training_set_metadata
         target_predictions = test_df[self.output_feature_name]
         self.ground_truth = np.asarray([
             self.ground_truth_metadata[self.output_feature_name]['str2idx'][test_row]
@@ -117,7 +118,7 @@ def obtain_df_splits(data_csv):
     # Obtain data split array mapping data rows to split type
     # 0-train, 1-validation, 2-test
     data_split = get_split(data_df)
-    train_split, test_split, val_split = split_dataset_tvt(data_df, data_split)
+    train_split, test_split, val_split = split_dataset_ttv(data_df, data_split)
     # Splits are python dictionaries not dataframes- they need to be converted.
     test_df = pd.DataFrame(test_split)
     train_df = pd.DataFrame(train_split)
@@ -512,7 +513,7 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
     probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
 
-    ground_truth_metadata = model.train_set_metadata
+    ground_truth_metadata = model.training_set_metadata
     target_predictions1 = test_df[output_feature_name1]
     target_predictions2 = test_df[output_feature_name2]
     ground_truth1 = np.asarray([
@@ -578,7 +579,7 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
     probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
 
-    ground_truth_metadata = model.train_set_metadata
+    ground_truth_metadata = model.training_set_metadata
     target_predictions1 = test_df[output_feature_name1]
     target_predictions2 = test_df[output_feature_name2]
     ground_truth1 = np.asarray([

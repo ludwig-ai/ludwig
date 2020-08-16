@@ -43,7 +43,7 @@ import yaml
 from ludwig.data.dataset import Dataset
 from ludwig.data.postprocessing import postprocess_df, postprocess
 from ludwig.data.preprocessing import build_data
-from ludwig.data.preprocessing import build_dataset
+from ludwig.data.preprocessing import build_dataset_csv
 from ludwig.data.preprocessing import load_metadata
 from ludwig.data.preprocessing import replace_text_feature_level
 from ludwig.experiment import \
@@ -170,7 +170,7 @@ class LudwigModel:
             model_definition_copy = copy.deepcopy(model_definition)
             self.model_definition = merge_with_defaults(model_definition_copy)
 
-        self.train_set_metadata = None
+        self.training_set_metadata = None
         self.model = None
         self.exp_dir_name = ''
 
@@ -245,7 +245,7 @@ class LudwigModel:
                                                             allow_parallel_threads=allow_parallel_threads)
         ludwig_model = LudwigModel(model_definition)
         ludwig_model.model = model
-        ludwig_model.train_set_metadata = load_metadata(
+        ludwig_model.training_set_metadata = load_metadata(
             os.path.join(
                 model_dir,
                 TRAIN_SET_METADATA_FILE_NAME
@@ -271,7 +271,7 @@ class LudwigModel:
         ```
 
         """
-        if self.model is None or self.model_definition is None or self.train_set_metadata is None:
+        if self.model is None or self.model_definition is None or self.training_set_metadata is None:
             raise ValueError('Model has not been initialized or loaded')
 
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
@@ -283,11 +283,11 @@ class LudwigModel:
 
         self.model.model.save_weights(model_weights_path)
 
-        train_set_metadata_path = os.path.join(
+        training_set_metadata_path = os.path.join(
             save_path,
             TRAIN_SET_METADATA_FILE_NAME
         )
-        save_json(train_set_metadata_path, self.train_set_metadata)
+        save_json(training_set_metadata_path, self.training_set_metadata)
 
         self.model.save_hyperparameters(
             self.model._hyperparameters,
@@ -311,7 +311,7 @@ class LudwigModel:
 
         """
         if (self.model is None or self.model._session is None or
-                self.model_definition is None or self.train_set_metadata is None):
+                self.model_definition is None or self.training_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
         self.model.save_savedmodel(save_path)
@@ -341,7 +341,7 @@ class LudwigModel:
             data_train_dict=None,
             data_validation_dict=None,
             data_test_dict=None,
-            train_set_metadata_json=None,
+            training_set_metadata_json=None,
             experiment_name='api_experiment',
             model_name='run',
             model_load_path=None,
@@ -430,7 +430,7 @@ class LudwigModel:
                `{'text_field_name': ['text of the first datapoint', 'text of the
                second datapoint'], 'class_field_name': ['class_datapoint_1',
                'class_datapoint_2']}`.
-        :param train_set_metadata_json: (string) input metadata JSON file. It is an
+        :param training_set_metadata_json: (string) input metadata JSON file. It is an
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
@@ -539,7 +539,7 @@ class LudwigModel:
             data_train_hdf5=data_train_hdf5,
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
-            train_set_metadata_json=train_set_metadata_json,
+            training_set_metadata_json=training_set_metadata_json,
             experiment_name=experiment_name,
             model_name=model_name,
             model_load_path=model_load_path,
@@ -559,14 +559,14 @@ class LudwigModel:
             debug=debug,
         )
 
-        self.train_set_metadata = preprocessed_data[-1]
+        self.training_set_metadata = preprocessed_data[-1]
 
         return train_stats
 
     def initialize_model(
             self,
-            train_set_metadata=None,
-            train_set_metadata_json=None,
+            training_set_metadata=None,
+            training_set_metadata_json=None,
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
@@ -581,11 +581,11 @@ class LudwigModel:
 
         # Inputs
 
-        :param train_set_metadata: (dict) it contains metadata information for
+        :param training_set_metadata: (dict) it contains metadata information for
                the input and output features the model is going to be trained
                on. It's the same content of the metadata json file that is
                created while training.
-        :param train_set_metadata_json: (string)  path to the JSON metadata file
+        :param training_set_metadata_json: (string)  path to the JSON metadata file
                created while training. it contains metadata information for the
                input and output features the model is going to be trained on
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
@@ -601,17 +601,17 @@ class LudwigModel:
         :param debug: (bool, default: `False`) enables debugging mode
         """
 
-        if train_set_metadata is None and train_set_metadata_json is None:
+        if training_set_metadata is None and training_set_metadata_json is None:
             raise ValueError(
-                'train_set_metadata or train_set_metadata_json must not None.'
+                'training_set_metadata or training_set_metadata_json must not None.'
             )
-        if train_set_metadata_json is not None:
-            train_set_metadata = load_metadata(train_set_metadata_json)
+        if training_set_metadata_json is not None:
+            training_set_metadata = load_metadata(training_set_metadata_json)
 
         # update model definition with metadata properties
         update_model_definition_with_metadata(
             self.model_definition,
-            train_set_metadata)
+            training_set_metadata)
 
         # build model
         model = Trainer(
@@ -629,7 +629,7 @@ class LudwigModel:
 
         # set parameters
         self.model = model
-        self.train_set_metadata = train_set_metadata
+        self.training_set_metadata = training_set_metadata
 
     def train_online(
             self,
@@ -685,7 +685,7 @@ class LudwigModel:
         """
 
         if (self.model is None or self.model_definition is None
-                or self.train_set_metadata is None):
+                or self.training_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
         if data_df is None:
@@ -713,7 +713,7 @@ class LudwigModel:
         preprocessed_data = build_data(
             data_df,
             features_to_load,
-            self.train_set_metadata,
+            self.training_set_metadata,
             self.model_definition['preprocessing']
         )
         replace_text_feature_level(
@@ -749,7 +749,7 @@ class LudwigModel:
     ):
 
         if (self.model is None or self.model_definition is None or
-                self.train_set_metadata is None):
+                self.training_set_metadata is None):
             raise ValueError('Model has not been trained or loaded')
 
         if data_df is None:
@@ -779,7 +779,7 @@ class LudwigModel:
         preprocessed_data = build_data(
             data_df,
             features_to_load,
-            self.train_set_metadata,
+            self.training_set_metadata,
             self.model_definition['preprocessing']
         )
         replace_text_feature_level(
@@ -813,7 +813,7 @@ class LudwigModel:
                 predict_stats,
                 self.model_definition['output_features'],
                 dataset,
-                self.train_set_metadata
+                self.training_set_metadata
             )
 
         logger.debug('Postprocessing')
@@ -825,7 +825,7 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 predict_predictions,
                 self.model_definition['output_features'],
-                self.train_set_metadata,
+                self.training_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output,
             )
@@ -837,7 +837,7 @@ class LudwigModel:
             postprocessed_predictions = postprocess_df(
                 predict_predictions,
                 self.model_definition['output_features'],
-                self.train_set_metadata,
+                self.training_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output,
             )
@@ -849,7 +849,7 @@ class LudwigModel:
             postprocessed_predictions = postprocess(
                 (predict_stats, predict_predictions),
                 self.model_definition['output_features'],
-                self.train_set_metadata,
+                self.training_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output,
             )
@@ -1095,7 +1095,7 @@ def test_train_online(
         **kwargs
 ):
     model_definition = merge_with_defaults(model_definition)
-    data, train_set_metadata = build_dataset(
+    data, training_set_metadata = build_dataset_csv(
         data_csv,
         (model_definition['input_features'] +
          model_definition['output_features']),
@@ -1103,7 +1103,7 @@ def test_train_online(
     )
 
     ludwig_model = LudwigModel(model_definition, logging_level=logging_level)
-    ludwig_model.initialize_model(train_set_metadata=train_set_metadata)
+    ludwig_model.initialize_model(training_set_metadata=training_set_metadata)
 
     ludwig_model.train_online(
         data_csv=data_csv,
@@ -1169,7 +1169,7 @@ def main(sys_argv):
     # ---------------
     parser.add_argument('--data_csv', help='input data CSV file')
     parser.add_argument(
-        '--train_set_metadata_json',
+        '--training_set_metadata_json',
         help='input metadata JSON file'
     )
 

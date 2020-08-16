@@ -7,7 +7,7 @@ import pandas as pd
 import tensorflow as tf
 import yaml
 
-from ludwig.constants import TRAINING, VALIDATION, TEST
+from ludwig.constants import TRAINING, VALIDATION, TEST, PREPROCESSING
 from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess, postprocess_df
 from ludwig.data.preprocessing import load_metadata, preprocess_for_training, \
@@ -81,23 +81,23 @@ class NewLudwigModel:
 
         # setup model
         self.model = None
-        self.train_set_metadata = None
+        self.training_set_metadata = None
         self.exp_dir_name = ''
 
     def train_pseudo(self, data, training_params):
-        # process_data ignores self.train_set_metadata if it's None and computes a new one from the actual data
+        # process_data ignores self.training_set_metadata if it's None and computes a new one from the actual data
         # or uses the procided one and does not compute a new one if it is not None
-        preproc_data, train_set_metadata = preprocess_data(
+        preproc_data, training_set_metadata = preprocess_data(
             data,
-            self.train_set_metadata
+            self.training_set_metadata
         )
-        self.train_set_metadata = train_set_metadata
+        self.training_set_metadata = training_set_metadata
 
         # this is done only if the model is not loaded
         if not self.model:
             update_model_definition_with_metadata(
                 self.model_definition,
-                train_set_metadata
+                training_set_metadata
             )
             self.model = ECD(self.model_definition)
 
@@ -107,23 +107,12 @@ class NewLudwigModel:
 
     def train(
             self,
-            data_df=None,
-            data_train_df=None,
-            data_validation_df=None,
-            data_test_df=None,
-            data_csv=None,
-            data_train_csv=None,
-            data_validation_csv=None,
-            data_test_csv=None,
-            data_hdf5=None,
-            data_train_hdf5=None,
-            data_validation_hdf5=None,
-            data_test_hdf5=None,
-            data_dict=None,
-            data_train_dict=None,
-            data_validation_dict=None,
-            data_test_dict=None,
-            train_set_metadata_json=None,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format='csv',
             experiment_name='api_experiment',
             model_name='run',
             model_resume_path=None,
@@ -207,7 +196,7 @@ class NewLudwigModel:
                `{'text_field_name': ['text of the first datapoint', 'text of the
                second datapoint'], 'class_field_name': ['class_datapoint_1',
                'class_datapoint_2']}`.
-        :param train_set_metadata_json: (string) input metadata JSON file. It is an
+        :param training_set_metadata_json: (string) input metadata JSON file. It is an
                intermediate preprocess file containing the mappings of the input
                CSV created the first time a CSV file is used in the same
                directory with the same name and a json extension
@@ -283,18 +272,6 @@ class NewLudwigModel:
         :return: (dict) a dictionary containing training statistics for each
         output feature containing loss and metrics values for each epoch.
         """
-        if data_df is None and data_dict is not None:
-            data_df = pd.DataFrame(data_dict)
-
-        if data_train_df is None and data_train_dict is not None:
-            data_train_df = pd.DataFrame(data_train_dict)
-
-        if data_validation_df is None and data_validation_dict is not None:
-            data_validation_df = pd.DataFrame(data_validation_dict)
-
-        if data_test_df is None and data_test_dict is not None:
-            data_test_df = pd.DataFrame(data_test_dict)
-
         set_on_master(use_horovod)
 
         # setup directories and file names
@@ -341,6 +318,7 @@ class NewLudwigModel:
 
         # save description
         if is_on_master():
+            # todo refactoring: fix this
             description = get_experiment_description(
                 self.model_definition,
                 data_csv=data_csv,
@@ -351,7 +329,7 @@ class NewLudwigModel:
                 data_train_hdf5=data_train_hdf5,
                 data_validation_hdf5=data_validation_hdf5,
                 data_test_hdf5=data_test_hdf5,
-                metadata_json=train_set_metadata_json,
+                metadata_json=training_set_metadata_json,
                 random_seed=random_seed
             )
             if not skip_save_training_description:
@@ -366,31 +344,23 @@ class NewLudwigModel:
             logger.info('\n')
 
         # preprocess
-        # todo refactoring: make this work with a provided train_set_metadata dict
         preprocessed_data = preprocess_for_training(
             self.model_definition,
-            data_df=data_df,
-            data_train_df=data_train_df,
-            data_validation_df=data_validation_df,
-            data_test_df=data_test_df,
-            data_csv=data_csv,
-            data_train_csv=data_train_csv,
-            data_validation_csv=data_validation_csv,
-            data_test_csv=data_test_csv,
-            data_hdf5=data_hdf5,
-            data_train_hdf5=data_train_hdf5,
-            data_validation_hdf5=data_validation_hdf5,
-            data_test_hdf5=data_test_hdf5,
-            train_set_metadata_json=train_set_metadata_json,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
             skip_save_processed_input=skip_save_processed_input,
-            preprocessing_params=self.model_definition['preprocessing'],
+            preprocessing_params=self.model_definition[PREPROCESSING],
             random_seed=random_seed
         )
 
         (training_set,
          validation_set,
          test_set,
-         train_set_metadata) = preprocessed_data
+         training_set_metadata) = preprocessed_data
 
         if is_on_master():
             logger.info('Training set: {0}'.format(training_set.size))
@@ -408,7 +378,7 @@ class NewLudwigModel:
                         model_dir,
                         TRAIN_SET_METADATA_FILE_NAME
                     ),
-                    train_set_metadata
+                    training_set_metadata
                 )
 
         contrib_command("train_init", experiment_directory=experiment_dir_name,
@@ -424,7 +394,7 @@ class NewLudwigModel:
             # update model definition with metadata properties
             update_model_definition_with_metadata(
                 self.model_definition,
-                train_set_metadata
+                training_set_metadata
             )
             self.model = ECD(
                 input_features_def=self.model_definition['input_features'],
@@ -503,7 +473,7 @@ class NewLudwigModel:
 
         contrib_command("train_save", experiment_dir_name)
 
-        self.train_set_metadata = preprocessed_data[-1]
+        self.training_set_metadata = training_set_metadata
         self.exp_dir_name = experiment_dir_name
 
         return train_stats
@@ -516,10 +486,8 @@ class NewLudwigModel:
 
     def predict(
             self,
-            data_csv=None,
-            data_hdf5=None,
-            data_df=None,
-            data_dict=None,
+            dataset=None,
+            data_format='csv',
             batch_size=128,
             skip_save_unprocessed_output=True,
             skip_save_predictions=True,
@@ -530,7 +498,7 @@ class NewLudwigModel:
             **kwargs
     ):
         if (self.model is None or self.model_definition is None or
-                self.train_set_metadata is None):
+                self.training_set_metadata is None):
             raise ValueError('Model has not been trained or loaded')
 
         # todo refactoring: check if needed
@@ -541,10 +509,7 @@ class NewLudwigModel:
             self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
                 output_directory)
 
-        if data_df is None:
-            data_df = self._read_data(data_csv, data_dict)
-
-        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
         # this way I'm copying the list. If you don't do it, you are actually
         # modifying the input feature list when you add output features,
@@ -563,12 +528,11 @@ class NewLudwigModel:
             )
 
         # preprocessing
-        dataset, train_set_metadata = preprocess_for_prediction(
+        dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
-            data_df=data_df,
-            data_csv=data_csv,
-            data_hdf5=data_hdf5,
-            train_set_metadata=self.train_set_metadata,
+            dataset=dataset,
+            data_format=data_format,
+            training_set_metadata=self.training_set_metadata,
             include_outputs=False,
         )
 
@@ -588,7 +552,7 @@ class NewLudwigModel:
             postproc_predictions = postprocess(
                 predictions,
                 self.model.output_features,
-                self.train_set_metadata,
+                self.training_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
@@ -601,7 +565,7 @@ class NewLudwigModel:
             postproc_predictions = postprocess_df(
                 predictions,
                 self.model.output_features,
-                self.train_set_metadata,
+                self.training_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
@@ -614,7 +578,7 @@ class NewLudwigModel:
             postproc_predictions = postprocess(
                 predictions,
                 self.model.output_features,
-                self.train_set_metadata,
+                self.training_set_metadata,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
@@ -671,7 +635,7 @@ class NewLudwigModel:
             **kwargs
     ):
         if (self.model is None or self.model_definition is None or
-                self.train_set_metadata is None):
+                self.training_set_metadata is None):
             raise ValueError('Model has not been trained or loaded')
 
         # todo refactoring: check if needed
@@ -707,12 +671,12 @@ class NewLudwigModel:
         # preprocessing
         # todo refactoring: maybe replace the self.model_definition paramter
         #  here with features_to_load
-        dataset, train_set_metadata = preprocess_for_prediction(
+        dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
             data_df=data_df,
             data_csv=data_csv,
             data_hdf5=data_hdf5,
-            train_set_metadata=self.train_set_metadata,
+            training_set_metadata=self.training_set_metadata,
             include_outputs=True,
         )
 
@@ -729,7 +693,7 @@ class NewLudwigModel:
                 self.model.output_features,
                 predictions,
                 dataset,
-                train_set_metadata
+                training_set_metadata
             )
             stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
                      for of_name in stats}
@@ -744,7 +708,7 @@ class NewLudwigModel:
                 postproc_predictions = postprocess(
                     predictions,
                     self.model.output_features,
-                    self.train_set_metadata,
+                    self.training_set_metadata,
                     experiment_dir_name=self.exp_dir_name,
                     skip_save_unprocessed_output=skip_save_unprocessed_output
                                                  or not is_on_master(),
@@ -757,7 +721,7 @@ class NewLudwigModel:
                 postproc_predictions = postprocess_df(
                     predictions,
                     self.model.output_features,
-                    self.train_set_metadata,
+                    self.training_set_metadata,
                     experiment_dir_name=self.exp_dir_name,
                     skip_save_unprocessed_output=skip_save_unprocessed_output
                                                  or not is_on_master(),
@@ -770,7 +734,7 @@ class NewLudwigModel:
                 postproc_predictions = postprocess(
                     predictions,
                     self.model.output_features,
-                    self.train_set_metadata,
+                    self.training_set_metadata,
                     experiment_dir_name=self.exp_dir_name,
                     skip_save_unprocessed_output=skip_save_unprocessed_output
                                                  or not is_on_master(),
@@ -863,7 +827,7 @@ class NewLudwigModel:
         ludwig_model.model.load_weights(weights_save_path)
 
         # load train set metadata
-        ludwig_model.train_set_metadata = load_metadata(
+        ludwig_model.training_set_metadata = load_metadata(
             os.path.join(
                 model_dir,
                 TRAIN_SET_METADATA_FILE_NAME
@@ -892,7 +856,7 @@ class NewLudwigModel:
         """
         if (self.model is None
                 or self.model_definition is None
-                or self.train_set_metadata is None):
+                or self.training_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
         # save model definition
@@ -909,11 +873,11 @@ class NewLudwigModel:
         self.model.model.save_weights(model_weights_path)
 
         # save training set metadata
-        train_set_metadata_path = os.path.join(
+        training_set_metadata_path = os.path.join(
             save_path,
             TRAIN_SET_METADATA_FILE_NAME
         )
-        save_json(train_set_metadata_path, self.train_set_metadata)
+        save_json(training_set_metadata_path, self.training_set_metadata)
 
     def save_for_serving(self, save_path):
         """This function allows to save models on disk
@@ -932,7 +896,7 @@ class NewLudwigModel:
 
         """
         if (self.model is None or self.model._session is None or
-                self.model_definition is None or self.train_set_metadata is None):
+                self.model_definition is None or self.training_set_metadata is None):
             raise ValueError('Model has not been initialized or loaded')
 
         self.model.save_savedmodel(save_path)

@@ -66,18 +66,18 @@ def full_predict(
         logger.info('Model path: {}'.format(model_path))
         logger.info('')
 
-    train_set_metadata_json_fp = os.path.join(
+    training_set_metadata_json_fp = os.path.join(
         model_path,
         TRAIN_SET_METADATA_FILE_NAME
     )
 
     # preprocessing
-    dataset, train_set_metadata = preprocess_for_prediction(
+    dataset, training_set_metadata = preprocess_for_prediction(
         model_path,
         split,
         data_csv,
         data_hdf5,
-        train_set_metadata_json_fp,
+        training_set_metadata_json_fp,
         evaluate_performance
     )
 
@@ -92,7 +92,7 @@ def full_predict(
 
     prediction_results = predict(
         dataset,
-        train_set_metadata,
+        training_set_metadata,
         model,
         model_definition,
         batch_size,
@@ -117,7 +117,7 @@ def full_predict(
         postprocessed_output = postprocess(
             prediction_results,
             model_definition['output_features'],
-            train_set_metadata,
+            training_set_metadata,
             experiment_dir_name,
             skip_save_unprocessed_output or not is_on_master()
         )
@@ -135,7 +135,7 @@ def full_predict(
 
 def predict(
         dataset,
-        train_set_metadata,
+        training_set_metadata,
         model,
         model_definition,
         batch_size=128,
@@ -195,7 +195,7 @@ def predict(
             test_stats,
             model_definition['output_features'],
             dataset,
-            train_set_metadata
+            training_set_metadata
         )
 
     return test_stats
@@ -227,7 +227,7 @@ def cli(sys_argv):
              'same directory with the same name and a hdf5 extension'
     )
     parser.add_argument(
-        '--train_set_metadata_json',
+        '--training_set_metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file '
              'containing the mappings of the input CSV created the first time '
              'a CSV file is used in the same directory with the same name and '

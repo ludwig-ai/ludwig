@@ -51,7 +51,7 @@ def set_str_to_idx(set_string, feature_dict, tokenizer_name):
 
 
 def update_model_definition_with_metadata(model_definition,
-                                          train_set_metadata):
+                                          training_set_metadata):
     # populate input features fields depending on data
     # model_definition = merge_with_defaults(model_definition)
     for input_feature in model_definition['input_features']:
@@ -62,7 +62,7 @@ def update_model_definition_with_metadata(model_definition,
         feature.populate_defaults(input_feature)
         feature.update_model_definition_with_metadata(
             input_feature,
-            train_set_metadata[input_feature['name']],
+            training_set_metadata[input_feature['name']],
             model_definition=model_definition
         )
 
@@ -75,7 +75,7 @@ def update_model_definition_with_metadata(model_definition,
         feature.populate_defaults(output_feature)
         feature.update_model_definition_with_metadata(
             output_feature,
-            train_set_metadata[output_feature['name']]
+            training_set_metadata[output_feature['name']]
         )
 
     for feature in (
@@ -83,6 +83,6 @@ def update_model_definition_with_metadata(model_definition,
             model_definition['output_features']
     ):
         if 'preprocessing' in feature:
-            feature['preprocessing'] = train_set_metadata[feature['name']][
+            feature['preprocessing'] = training_set_metadata[feature['name']][
                 'preprocessing'
             ]

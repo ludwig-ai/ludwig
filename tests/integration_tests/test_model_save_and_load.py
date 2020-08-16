@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from ludwig.api import LudwigModel
 from ludwig.data.preprocessing import get_split
-from ludwig.utils.data_utils import split_dataset_tvt, read_csv
+from ludwig.utils.data_utils import split_dataset_ttv, read_csv
 from tests.integration_tests.utils import binary_feature, numerical_feature, \
     category_feature, sequence_feature, date_feature, h3_feature, \
     set_feature, generate_data, text_feature, vector_feature, bag_feature, \
@@ -63,7 +63,7 @@ def test_model_save_reload_API(csv_filename, tmp_path):
     }
 
     data_df = read_csv(data_csv_path)
-    training_set, test_set, validation_set = split_dataset_tvt(
+    training_set, test_set, validation_set = split_dataset_ttv(
         data_df,
         get_split(data_df)
     )

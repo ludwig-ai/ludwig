@@ -99,16 +99,16 @@ def test_savedmodel(csv_filename):
     #################################################
     # restore savedmodel, obtain predictions and weights
     #################################################
-    train_set_metadata_json_fp = os.path.join(
+    training_set_metadata_json_fp = os.path.join(
         ludwigmodel_path,
         TRAIN_SET_METADATA_FILE_NAME
     )
 
-    dataset, train_set_metadata = preprocess_for_prediction(
+    dataset, training_set_metadata = preprocess_for_prediction(
         ludwigmodel_path,
         split=FULL,
         data_csv=data_csv_path,
-        train_set_metadata=train_set_metadata_json_fp,
+        training_set_metadata=training_set_metadata_json_fp,
         evaluate_performance=False
     )
 
@@ -134,7 +134,7 @@ def test_savedmodel(csv_filename):
         name='predictions_{}'.format(of_name)
     )
     restored_predictions = tf.map_fn(
-        lambda idx: train_set_metadata[of_name]['idx2str'][idx],
+        lambda idx: training_set_metadata[of_name]['idx2str'][idx],
         restored_predictions,
         dtype=tf.string
     )

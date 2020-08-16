@@ -12,7 +12,7 @@ def calculate_overall_stats(
         output_features,
         predictions,
         dataset,
-        train_set_metadata
+        training_set_metadata
 ):
     overall_stats = {}
     for output_feature in output_features:
@@ -22,7 +22,7 @@ def calculate_overall_stats(
         output_feature.calculate_overall_stats(
             predictions[of_name],
             dataset.get(of_name),
-            train_set_metadata[of_name]
+            training_set_metadata[of_name]
         )
     return overall_stats
 

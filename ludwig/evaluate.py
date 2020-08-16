@@ -58,7 +58,7 @@ def cli(sys_argv):
              'same directory with the same name and a hdf5 extension'
     )
     parser.add_argument(
-        '--train_set_metadata_json',
+        '--training_set_metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file '
              'containing the mappings of the input CSV created the first time '
              'a CSV file is used in the same directory with the same name and '

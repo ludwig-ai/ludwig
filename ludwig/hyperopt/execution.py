@@ -50,7 +50,7 @@ class HyperoptExecutor(ABC):
             data_train_hdf5=None,
             data_validation_hdf5=None,
             data_test_hdf5=None,
-            train_set_metadata_json=None,
+            training_set_metadata_json=None,
             experiment_name="hyperopt",
             model_name="run",
             model_load_path=None,
@@ -100,7 +100,7 @@ class SerialExecutor(HyperoptExecutor):
             data_train_hdf5=None,
             data_validation_hdf5=None,
             data_test_hdf5=None,
-            train_set_metadata_json=None,
+            training_set_metadata_json=None,
             experiment_name="hyperopt",
             model_name="run",
             # model_load_path=None,
@@ -149,7 +149,7 @@ class SerialExecutor(HyperoptExecutor):
                     data_train_hdf5=data_train_hdf5,
                     data_validation_hdf5=data_validation_hdf5,
                     data_test_hdf5=data_test_hdf5,
-                    train_set_metadata_json=train_set_metadata_json,
+                    training_set_metadata_json=training_set_metadata_json,
                     experiment_name=f'{experiment_name}_{trial_id}',
                     model_name=model_name,
                     # model_load_path=model_load_path,
@@ -262,7 +262,7 @@ class ParallelExecutor(HyperoptExecutor):
             data_train_hdf5=None,
             data_validation_hdf5=None,
             data_test_hdf5=None,
-            train_set_metadata_json=None,
+            training_set_metadata_json=None,
             experiment_name="hyperopt",
             model_name="run",
             # model_load_path=None,
@@ -429,7 +429,7 @@ class ParallelExecutor(HyperoptExecutor):
                             "data_train_hdf5": data_train_hdf5,
                             "data_validation_hdf5": data_validation_hdf5,
                             "data_test_hdf5": data_test_hdf5,
-                            "train_set_metadata_json": train_set_metadata_json,
+                            "training_set_metadata_json": training_set_metadata_json,
                             "experiment_name": f'{experiment_name}_{trial_id}',
                             "model_name": model_name,
                             # model_load_path:model_load_path,
@@ -527,7 +527,7 @@ class FiberExecutor(HyperoptExecutor):
             data_train_hdf5=None,
             data_validation_hdf5=None,
             data_test_hdf5=None,
-            train_set_metadata_json=None,
+            training_set_metadata_json=None,
             experiment_name="hyperopt",
             model_name="run",
             # model_load_path=None,
@@ -564,7 +564,7 @@ class FiberExecutor(HyperoptExecutor):
             data_train_hdf5=data_train_hdf5,
             data_validation_hdf5=data_validation_hdf5,
             data_test_hdf5=data_test_hdf5,
-            train_set_metadata_json=train_set_metadata_json,
+            training_set_metadata_json=training_set_metadata_json,
             model_name=model_name,
             # model_load_path=model_load_path,
             # model_resume_path=model_resume_path,
@@ -699,7 +699,7 @@ def train_and_eval_on_split(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        train_set_metadata_json=None,
+        training_set_metadata_json=None,
         experiment_name="hyperopt",
         model_name="run",
         # model_load_path=None,
@@ -740,7 +740,7 @@ def train_and_eval_on_split(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
+        training_set_metadata_json=training_set_metadata_json,
         experiment_name=experiment_name,
         model_name=model_name,
         # model_load_path=model_load_path,
@@ -760,7 +760,7 @@ def train_and_eval_on_split(
         debug=debug,
     )
     (training_set, validation_set, test_set,
-     train_set_metadata) = preprocessed_data
+     training_set_metadata) = preprocessed_data
     if model_definition[TRAINING]["eval_batch_size"] > 0:
         batch_size = model_definition[TRAINING]["eval_batch_size"]
     else:
@@ -776,7 +776,7 @@ def train_and_eval_on_split(
 
     test_results = predict(
         eval_set,
-        train_set_metadata,
+        training_set_metadata,
         model,
         model_definition,
         batch_size,
@@ -792,7 +792,7 @@ def train_and_eval_on_split(
     postprocessed_output = postprocess(
         test_results,
         model_definition["output_features"],
-        train_set_metadata,
+        training_set_metadata,
         experiment_dir_name,
         skip_save_unprocessed_output,
     )

@@ -143,7 +143,7 @@ def test_encoder(test_case):
 
     # minimal model definition sufficient to create the input feature
     model_definition = {'input_features': features, 'output_features': []}
-    training_set, _, _, train_set_metadata = preprocess_for_training(
+    training_set, _, _, training_set_metadata = preprocess_for_training(
         model_definition,
         data_train_df=df,
         skip_save_processed_input=True,
@@ -170,7 +170,8 @@ def test_encoder(test_case):
 
         # shim code to support sequence/sequence like features
         if features[0]['type'] in SEQUENCE_TYPES.union({'category', 'set'}):
-            features[0]['vocab'] = train_set_metadata[feature_name]['idx2str']
+            features[0]['vocab'] = training_set_metadata[feature_name][
+                'idx2str']
             training_set.dataset[feature_name] = \
                 training_set.dataset[feature_name].astype(np.int32)
 
@@ -276,7 +277,7 @@ def test_decoder(test_case):
 
     # minimal model definition sufficient to create output feature
     model_definition = {'input_features': [], 'output_features': features}
-    training_set, _, _, train_set_metadata = preprocess_for_training(
+    training_set, _, _, training_set_metadata = preprocess_for_training(
         model_definition,
         data_train_df=df,
         skip_save_processed_input=True,
@@ -302,7 +303,7 @@ def test_decoder(test_case):
 
         features[0].update(x_coder_kwargs)
         if features[0]['type'] in SEQUENCE_TYPES:
-            features[0]['num_classes'] = train_set_metadata[feature_name][
+            features[0]['num_classes'] = training_set_metadata[feature_name][
                                              'vocab_size'] + 1
             training_set.dataset[feature_name] = \
                 training_set.dataset[feature_name].astype(np.int32)

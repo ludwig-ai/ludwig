@@ -59,7 +59,7 @@ def experiment(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        train_set_metadata_json=None,
+        training_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -103,7 +103,7 @@ def experiment(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
+        training_set_metadata_json=training_set_metadata_json,
         experiment_name=experiment_name,
         model_name=model_name,
         model_load_path=model_load_path,
@@ -127,7 +127,7 @@ def experiment(
     (_,  # training_set
      _,  # validation_set
      test_set,
-     train_set_metadata) = preprocessed_data
+     training_set_metadata) = preprocessed_data
 
     if test_set is not None:
         if model_definition[TRAINING]['eval_batch_size'] > 0:
@@ -138,7 +138,7 @@ def experiment(
         # predict
         test_results = predict(
             test_set,
-            train_set_metadata,
+            training_set_metadata,
             model,
             model_definition,
             batch_size,
@@ -173,7 +173,7 @@ def full_experiment(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        train_set_metadata_json=None,
+        training_set_metadata_json=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -230,9 +230,9 @@ def full_experiment(
     :param data_test_hdf5: If the test set is in the hdf5 format, this is
            used instead of the csv file.
     :type data_test_hdf5: filepath (str)
-    :param train_set_metadata_json: If the dataset is in hdf5 format, this is
+    :param training_set_metadata_json: If the dataset is in hdf5 format, this is
            the associated json file containing metadata.
-    :type train_set_metadata_json: filepath (str)
+    :type training_set_metadata_json: filepath (str)
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -330,7 +330,7 @@ def full_experiment(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
+        training_set_metadata_json=training_set_metadata_json,
         experiment_name=experiment_name,
         model_name=model_name,
         model_load_path=model_load_path,
@@ -354,7 +354,7 @@ def full_experiment(
     (training_set,
      validation_set,
      test_set,
-     train_set_metadata) = preprocessed_data
+     training_set_metadata) = preprocessed_data
 
     if test_set is not None:
         # check if we need to create the output dir
@@ -371,7 +371,7 @@ def full_experiment(
         postprocessed_output = postprocess(
             test_results,
             model_definition['output_features'],
-            train_set_metadata,
+            training_set_metadata,
             experiment_dir_name,
             skip_save_unprocessed_output or not is_on_master()
         )
@@ -478,7 +478,7 @@ def kfold_cross_validate(
             postprocessed_output = postprocess(
                 test_results,
                 model_definition['output_features'],
-                train_set_metadata=preprocessed_data[3],
+                training_set_metadata=preprocessed_data[3],
                 experiment_dir_name=experiment_dir_name,
                 skip_save_unprocessed_output=True
             )
@@ -665,7 +665,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '--train_set_metadata_json',
+        '--training_set_metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file'
              ' containing the mappings of the input CSV created the first time '
              'a CSV file is used in the same directory with the same name and a'

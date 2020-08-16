@@ -294,7 +294,7 @@ def shuffle_inplace(np_dict):
         np_dict[k] = np_dict[k][p]
 
 
-def split_dataset_tvt(dataset, split):
+def split_dataset_ttv(dataset, split):
     if SPLIT in dataset:
         del dataset[SPLIT]
     training_set = split_dataset(dataset, split, value_to_split=0)
