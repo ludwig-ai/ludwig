@@ -18,9 +18,31 @@ import pandas as pd
 
 from ludwig.constants import TYPE
 from ludwig.features.feature_utils import SEQUENCE_TYPES
+from ludwig.utils.misc_utils import get_from_registry
 
 
 def postprocess(
+        predictions,
+        output_features,
+        training_set_metadata,
+        return_type='dict',
+        experiment_dir_name='',
+        skip_save_unprocessed_output=False,
+):
+    prostprocess_fn = get_from_registry(
+        return_type,
+        postprocess_registry
+    )
+    return prostprocess_fn(
+        predictions,
+        output_features,
+        training_set_metadata,
+        experiment_dir_name=experiment_dir_name,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+    )
+
+
+def postprocess_dict(
         predictions,
         output_features,
         training_set_metadata,
@@ -35,7 +57,6 @@ def postprocess(
             experiment_dir_name=experiment_dir_name,
             skip_save_unprocessed_output=skip_save_unprocessed_output
         )
-
     return postprocessed
 
 
@@ -46,7 +67,7 @@ def postprocess_df(
         experiment_dir_name='',
         skip_save_unprocessed_output=True,
 ):
-    postprocessed_output = postprocess(
+    postprocessed_output = postprocess_dict(
         model_output,
         output_features,
         metadata,
@@ -93,3 +114,13 @@ def postprocess_df(
                 ] = output_type_value
     output_df = pd.DataFrame(data_for_df)
     return output_df
+
+
+postprocess_registry = {
+    'dict': postprocess_dict,
+    'dictionary': postprocess_dict,
+    dict: postprocess_dict,
+    'dataframe': postprocess_df,
+    'df': postprocess_df,
+    pd.DataFrame: postprocess_df,
+}

@@ -26,7 +26,7 @@ import sys
 from ludwig.constants import LOGITS
 from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command, contrib_import
-from ludwig.data.postprocessing import postprocess
+from ludwig.data.postprocessing import postprocess_dict
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
@@ -114,7 +114,7 @@ def full_predict(
                 os.makedirs(experiment_dir_name)
 
         # postprocess
-        postprocessed_output = postprocess(
+        postprocessed_output = postprocess_dict(
             prediction_results,
             model_definition['output_features'],
             training_set_metadata,

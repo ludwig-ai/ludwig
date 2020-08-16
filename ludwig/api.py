@@ -41,7 +41,7 @@ import pandas as pd
 import yaml
 
 from ludwig.data.dataset import Dataset
-from ludwig.data.postprocessing import postprocess_df, postprocess
+from ludwig.data.postprocessing import postprocess_df, postprocess_dict
 from ludwig.data.preprocessing import build_data
 from ludwig.data.preprocessing import build_dataset_csv
 from ludwig.data.preprocessing import load_metadata
@@ -822,7 +822,7 @@ class LudwigModel:
                 return_type == 'dictionary' or
                 return_type == dict
         ):
-            postprocessed_predictions = postprocess(
+            postprocessed_predictions = postprocess_dict(
                 predict_predictions,
                 self.model_definition['output_features'],
                 self.training_set_metadata,
@@ -846,7 +846,7 @@ class LudwigModel:
                 'Unrecognized return_type: {}. '
                 'Returning DataFrame.'.format(return_type)
             )
-            postprocessed_predictions = postprocess(
+            postprocessed_predictions = postprocess_dict(
                 (predict_stats, predict_predictions),
                 self.model_definition['output_features'],
                 self.training_set_metadata,

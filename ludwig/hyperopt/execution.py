@@ -5,7 +5,7 @@ import signal
 from abc import ABC, abstractmethod
 
 from ludwig.constants import MAXIMIZE, VALIDATION, TRAINING, TEST
-from ludwig.data.postprocessing import postprocess
+from ludwig.data.postprocessing import postprocess_dict
 from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
 from ludwig.models.prediction_helpers import save_prediction_outputs, \
@@ -789,7 +789,7 @@ def train_and_eval_on_split(
             os.makedirs(experiment_dir_name)
 
     # postprocess
-    postprocessed_output = postprocess(
+    postprocessed_output = postprocess_dict(
         test_results,
         model_definition["output_features"],
         training_set_metadata,

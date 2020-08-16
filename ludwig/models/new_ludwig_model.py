@@ -9,7 +9,7 @@ import yaml
 
 from ludwig.constants import TRAINING, VALIDATION, TEST, PREPROCESSING
 from ludwig.contrib import contrib_command
-from ludwig.data.postprocessing import postprocess, postprocess_df
+from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_training, \
     preprocess_for_prediction
 from ludwig.features.feature_utils import update_model_definition_with_metadata
@@ -544,45 +544,15 @@ class NewLudwigModel:
         )
 
         logger.debug('Postprocessing')
-        if (
-                return_type == 'dict' or
-                return_type == 'dictionary' or
-                return_type == dict
-        ):
-            postproc_predictions = postprocess(
-                predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            )
-        elif (
-                return_type == 'dataframe' or
-                return_type == 'df' or
-                return_type == pd.DataFrame
-        ):
-            postproc_predictions = postprocess_df(
-                predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            )
-        else:
-            logger.warning(
-                'Unrecognized return_type: {}. '
-                'Returning dict.'.format(return_type)
-            )
-            postproc_predictions = postprocess(
-                predictions,
-                self.model.output_features,
-                self.training_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output
-                                             or not is_on_master(),
-            )
+        postproc_predictions = postprocess(
+            predictions,
+            self.model.output_features,
+            self.training_set_metadata,
+            return_type=return_type,
+            experiment_dir_name=self.exp_dir_name,
+            skip_save_unprocessed_output=skip_save_unprocessed_output
+                                         or not is_on_master(),
+        )
 
         if is_on_master():
             # if we are skipping all saving,
@@ -700,45 +670,15 @@ class NewLudwigModel:
 
         if collect_predictions:
             logger.debug('Postprocessing')
-            if (
-                    return_type == 'dict' or
-                    return_type == 'dictionary' or
-                    return_type == dict
-            ):
-                postproc_predictions = postprocess(
-                    predictions,
-                    self.model.output_features,
-                    self.training_set_metadata,
-                    experiment_dir_name=self.exp_dir_name,
-                    skip_save_unprocessed_output=skip_save_unprocessed_output
-                                                 or not is_on_master(),
-                )
-            elif (
-                    return_type == 'dataframe' or
-                    return_type == 'df' or
-                    return_type == pd.DataFrame
-            ):
-                postproc_predictions = postprocess_df(
-                    predictions,
-                    self.model.output_features,
-                    self.training_set_metadata,
-                    experiment_dir_name=self.exp_dir_name,
-                    skip_save_unprocessed_output=skip_save_unprocessed_output
-                                                 or not is_on_master(),
-                )
-            else:
-                logger.warning(
-                    'Unrecognized return_type: {}. '
-                    'Returning dict.'.format(return_type)
-                )
-                postproc_predictions = postprocess(
-                    predictions,
-                    self.model.output_features,
-                    self.training_set_metadata,
-                    experiment_dir_name=self.exp_dir_name,
-                    skip_save_unprocessed_output=skip_save_unprocessed_output
-                                                 or not is_on_master(),
-                )
+            postproc_predictions = postprocess(
+                predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                return_type=return_type,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
         else:
             postproc_predictions = predictions  # = {}
 

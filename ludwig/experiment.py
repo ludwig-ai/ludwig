@@ -30,7 +30,7 @@ import yaml
 
 from ludwig.constants import TRAINING
 from ludwig.contrib import contrib_command, contrib_import
-from ludwig.data.postprocessing import postprocess
+from ludwig.data.postprocessing import postprocess_dict
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.models.prediction_helpers import save_prediction_outputs, \
     save_evaluation_stats, print_evaluation_stats
@@ -368,7 +368,7 @@ def full_experiment(
                     os.makedirs(experiment_dir_name)
 
         # postprocess
-        postprocessed_output = postprocess(
+        postprocessed_output = postprocess_dict(
             test_results,
             model_definition['output_features'],
             training_set_metadata,
@@ -475,7 +475,7 @@ def kfold_cross_validate(
             # todo this works for obtaining the postprocessed prediction
             #  and replace the raw ones, but some refactoring is needed to
             #  avoid having to do it
-            postprocessed_output = postprocess(
+            postprocessed_output = postprocess_dict(
                 test_results,
                 model_definition['output_features'],
                 training_set_metadata=preprocessed_data[3],
