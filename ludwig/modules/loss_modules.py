@@ -160,34 +160,23 @@ class SequenceLoss(tf.keras.losses.Loss):
         print('>>>y_true_shape_1', y_true_tensor_shape_1[0])  #debug
 
         # pad the shorter sequence
-        #if y_true_tensor_shape_1[0] > y_pred_tensor.shape[1]:  #debug
-        if y_true_tensor.shape[1] > y_pred_tensor.shape[1]:
-            pad = tf.zeros(
-                [
-                    y_pred_tensor.shape[0],
-                    y_true_tensor.shape[1] - y_pred_tensor.shape[1],
-                    y_pred_tensor.shape[2]
-                ],
-                dtype=y_pred_tensor.dtype)
-            y_pred_tensor = tf.concat([y_pred_tensor, pad], axis=1)
-        elif y_pred_tensor.shape[1] > y_true_tensor.shape[1]:
-            pad = tf.zeros(
-                [
-                    y_true_tensor.shape[0],
-                    y_pred_tensor.shape[1] - y_true_tensor.shape[1],
-                ],
-                dtype=y_true_tensor.dtype
-            )
-            y_true_tensor = tf.concat([y_true_tensor, pad], axis=1)
+        y_pred_seq_len = tf.shape(y_pred_tensor)[1]
+        y_true_seq_len = tf.shape(y_true_tensor)[1]
+
+        y_pred_pad_len = tf.maximum(0, y_true_seq_len - y_pred_seq_len)
+        y_true_pad_len = tf.maximum(0, y_pred_seq_len - y_true_seq_len)
+
+        y_pred_tensor = tf.pad(y_pred_tensor, [[0, 0], [0, y_pred_pad_len], [0, 0]])
+        y_true_tensor = tf.pad(y_true_tensor, [[0, 0], [0, y_true_pad_len]])
 
         longest_sequence_length = tf.maximum(sequence_length_2D(y_true_tensor),
                                              sequence_length_3D(y_pred_tensor))
         longest_sequence_length += 1  # for EOS
         longest_sequence_length = tf.minimum(longest_sequence_length,
-                                             y_true_tensor.shape[1])
+                                             tf.shape(y_true_tensor)[1])
         mask = tf.sequence_mask(
             longest_sequence_length,
-            maxlen=y_true_tensor.shape[1],
+            maxlen=tf.shape(y_true_tensor)[1],
             dtype=tf.float32
         )
         # compute loss based on valid time steps
