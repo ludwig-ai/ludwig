@@ -473,3 +473,57 @@ def get_path_size(
 def clear_data_cache():
     """Clears any cached data objects (e.g., embeddings)"""
     load_glove.cache_clear()
+
+
+def figure_data_format_dataset(dataset):
+    if isinstance(dataset, pd.DataFrame):
+        return pd.DataFrame
+    elif isinstance(dataset, dict):
+        return dict
+    elif isinstance(dataset, str):
+        dataset = dataset.lower()
+        if dataset.endswith('.csv'):
+            return 'csv'
+        elif dataset.endswith('.h5') or dataset.endswith('.hdf5'):
+            return 'hdf5'
+        else:
+            raise ValueError(
+                "Dataset path string {} "
+                "does not contain a valid extension".format(dataset)
+            )
+    else:
+        raise ValueError(
+            "Cannot figure out the format of dataset {}".format(dataset)
+        )
+
+
+def figure_data_format(
+        dataset=None, training_set=None, validation_set=None, test_set=None
+):
+    if dataset:
+        data_format = figure_data_format_dataset(dataset)
+    elif training_set:
+        data_formats = []
+        data_formats += figure_data_format_dataset(training_set)
+        if validation_set:
+            data_formats += figure_data_format_dataset(validation_set)
+        if test_set:
+            data_formats += figure_data_format_dataset(test_set)
+        data_formats_set = set(data_formats)
+        if len(data_formats_set) > 1:
+            error_message = "Datasets have different formats. Training: "
+            error_message += str(data_formats[0])
+            if validation_set:
+                error_message = ", Validation: "
+                error_message += str(data_formats[1])
+            if test_set:
+                error_message = ", Test: "
+                error_message += str(data_formats[-1])
+            raise ValueError(error_message)
+        else:
+            data_format = next(iter(data_formats_set))
+    else:
+        raise ValueError(
+            "At least one between dataset and training_set must be not None"
+        )
+    return data_format

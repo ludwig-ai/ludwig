@@ -30,7 +30,7 @@ from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import is_on_master
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import collapse_rare_labels
+from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
@@ -303,15 +303,20 @@ def preprocess_for_training(
         validation_set=None,
         test_set=None,
         training_set_metadata=None,
-        data_format='csv',
+        data_format=None,
         skip_save_processed_input=False,
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
 ):
-    # Sanity Check to make sure some data source is provided
+    # sanity check to make sure some data source is provided
     if not (dataset or training_set):
         raise ValueError('No training data is provided!')
-    # todo refactoring: add check that dayasey values and data format match
+
+    # determine data format if not provided or auto
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(
+            dataset, training_set, validation_set, test_set
+        )
 
     # if training_set_metadata is a string, assume it's a path to load the json
     if training_set_metadata and isinstance(training_set_metadata, str):
@@ -486,7 +491,7 @@ def _preprocess_csv_for_training(
     :param training_set:  training csv data
     :param validation_set: validation csv data
     :param test_set: test csv data
-    :param training_set_metadata_json: train set metadata json
+    :param training_set_metadata: train set metadata
     :param skip_save_processed_input: if False, the pre-processed data is saved
     as .hdf5 files in the same location as the csvs with the same names.
     :param preprocessing_params: preprocessing parameters
@@ -650,7 +655,7 @@ def preprocess_for_prediction(
         model_definition,
         dataset,
         training_set_metadata=None,
-        data_format='csv',
+        data_format=None,
         include_outputs=True,
 ):
     """Preprocesses the dataset to parse it into a format that is usable by the
@@ -668,7 +673,10 @@ def preprocess_for_prediction(
     # Sanity Check to make sure some data source is provided
     if not dataset:
         raise ValueError('No training data is provided!')
-    # todo refactoring: add check that dayasey values and data format match
+
+    # determine data format if not provided or auto
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(dataset)
 
     # manage the in_memory parameter
     for input_feature in model_definition['input_features']:
