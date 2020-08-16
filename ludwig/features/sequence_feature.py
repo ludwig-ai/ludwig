@@ -111,14 +111,14 @@ class SequenceFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters
     ):
         sequence_data = SequenceInputFeature.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']], preprocessing_parameters)
-        data[feature['name']] = sequence_data
+        dataset[feature['name']] = sequence_data
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):

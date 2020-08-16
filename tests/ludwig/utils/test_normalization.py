@@ -56,7 +56,7 @@ def test_norm():
     NumericalFeatureMixin.add_feature_data(
         feature=numerical_feature(),
         dataset_df=data_df,
-        data=data,
+        dataset=data,
         metadata={'x': feature_1_meta},
         preprocessing_parameters={'normalization': 'zscore'}
     )
@@ -67,7 +67,7 @@ def test_norm():
     NumericalFeatureMixin.add_feature_data(
         feature=numerical_feature(),
         dataset_df=data_df,
-        data=data,
+        dataset=data,
         metadata={'x': feature_2_meta},
         preprocessing_parameters={'normalization': 'minmax'}
     )

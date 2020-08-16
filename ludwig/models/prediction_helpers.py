@@ -7,6 +7,8 @@ from ludwig.predict import logger
 from ludwig.utils.data_utils import save_csv, save_json
 from ludwig.utils.print_utils import repr_ordered_dict
 
+SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
+
 
 def calculate_overall_stats(
         output_features,
@@ -58,15 +60,10 @@ def print_evaluation_stats(test_stats):
                 (output_field == COMBINED and len(test_stats) > 2)):
             logger.info('\n===== {} ====='.format(output_field))
             for metric in sorted(list(result)):
-                if metric != 'confusion_matrix' and metric != 'roc_curve':
+                if metric not in SKIP_EVAL_METRICS:
                     value = result[metric]
                     if isinstance(value, OrderedDict):
                         value_repr = repr_ordered_dict(value)
                     else:
                         value_repr = pformat(result[metric], indent=2)
-                    logger.info(
-                        '{0}: {1}'.format(
-                            metric,
-                            value_repr
-                        )
-                    )
+                    logger.info('{0}: {1}'.format(metric, value_repr))

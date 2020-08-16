@@ -117,22 +117,23 @@ class NumericalFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters,
     ):
-        data[feature['name']] = dataset_df[feature['name']].astype(
+        dataset[feature['name']] = dataset_df[feature['name']].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 mean = metadata[feature['name']]['mean']
                 std = metadata[feature['name']]['std']
-                data[feature['name']] = (data[feature['name']] - mean) / std
+                dataset[feature['name']] = (dataset[
+                                                feature['name']] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
                 min_ = metadata[feature['name']]['min']
                 max_ = metadata[feature['name']]['max']
-                values = data[feature['name']]
-                data[feature['name']] = (values - min_) / (max_ - min_)
+                values = dataset[feature['name']]
+                dataset[feature['name']] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):

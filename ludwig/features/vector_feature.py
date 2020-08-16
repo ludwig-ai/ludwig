@@ -102,7 +102,7 @@ class VectorFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters,
     ):
@@ -115,7 +115,7 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            data[feature['name']] = np.array(
+            dataset[feature['name']] = np.array(
                 [x.split() for x in dataset_df[feature['name']]],
                 dtype=np.float32
             )
@@ -127,7 +127,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = len(data[feature['name']][0])
+        vector_size = len(dataset[feature['name']][0])
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(

@@ -80,11 +80,11 @@ class BagFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters=None
     ):
-        data[feature['name']] = BagFeatureMixin.feature_data(
+        dataset[feature['name']] = BagFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters

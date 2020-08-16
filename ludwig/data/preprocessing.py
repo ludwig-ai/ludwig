@@ -92,14 +92,14 @@ def build_dataset_df(
             global_preprocessing_parameters
         )
 
-    _data = build_data(
+    dataset = build_data(
         dataset_df,
         features,
         metadata,
         global_preprocessing_parameters
     )
 
-    _data[SPLIT] = get_split(
+    dataset[SPLIT] = get_split(
         dataset_df,
         force_split=global_preprocessing_parameters['force_split'],
         split_probabilities=global_preprocessing_parameters[
@@ -109,7 +109,7 @@ def build_dataset_df(
         random_seed=random_seed
     )
 
-    return _data, metadata
+    return dataset, metadata
 
 
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
@@ -146,7 +146,7 @@ def build_data(
         training_set_metadata,
         global_preprocessing_parameters
 ):
-    data_dict = {}
+    dataset = {}
     for feature in features:
         add_feature_data = get_from_registry(
             feature[TYPE],
@@ -174,11 +174,11 @@ def build_data(
         add_feature_data(
             feature,
             dataset_df,
-            data_dict,
+            dataset,
             training_set_metadata,
             preprocessing_parameters
         )
-    return data_dict
+    return dataset
 
 
 def handle_missing_values(dataset_df, feature, preprocessing_parameters):
@@ -405,14 +405,10 @@ def preprocess_for_training(
         )
 
     elif data_format in DICT_FORMATS:
-        if dataset:
-            dataset = pd.DataFrame(dataset)
-        if training_set:
-            training_set = pd.DataFrame(training_set)
-        if validation_set:
-            validation_set = pd.DataFrame(validation_set)
-        if test_set:
-            test_set = pd.DataFrame(test_set)
+        dataset = dataset or pd.DataFormat(dataset)
+        training_set = training_set or pd.DataFrame(training_set)
+        validation_set = validation_set or pd.DataFrame(validation_set)
+        test_set = test_set or pd.DataFrame(test_set)
 
         (
             training_set,
@@ -636,7 +632,7 @@ def _preprocess_df_for_training(
             test_set
         )
 
-    data, training_set_metadata = build_dataset_df(
+    dataset, training_set_metadata = build_dataset_df(
         dataset,
         features,
         preprocessing_params,
@@ -644,8 +640,8 @@ def _preprocess_df_for_training(
         random_seed=random_seed
     )
     training_set, test_set, validation_set = split_dataset_ttv(
-        data,
-        data[SPLIT]
+        dataset,
+        dataset[SPLIT]
     )
     return training_set, test_set, validation_set, training_set_metadata
 
@@ -873,7 +869,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    data, training_set_metadata = build_dataset_csv(
+    dataset, training_set_metadata = build_dataset_csv(
         args.dataset_csv,
         args.training_set_metadata_json,
         args.features,
@@ -885,4 +881,5 @@ if __name__ == '__main__':
     logger.info('Writing train set metadata with vocabulary')
     data_utils.save_json(args.output_metadata_json, training_set_metadata)
     logger.info('Writing dataset')
-    data_utils.save_hdf5(args.output_dataset_h5, data, training_set_metadata)
+    data_utils.save_hdf5(args.output_dataset_h5, dataset,
+                         training_set_metadata)

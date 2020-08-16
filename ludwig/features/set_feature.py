@@ -88,11 +88,11 @@ class SetFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters,
     ):
-        data[feature['name']] = SetFeatureMixin.feature_data(
+        dataset[feature['name']] = SetFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters

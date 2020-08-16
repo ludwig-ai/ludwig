@@ -167,7 +167,7 @@ class TextFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters
     ):
@@ -175,8 +175,8 @@ class TextFeatureMixin(object):
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']], preprocessing_parameters
         )
-        data['{}_char'.format(feature['name'])] = chars_data
-        data['{}_word'.format(feature['name'])] = words_data
+        dataset['{}_char'.format(feature['name'])] = chars_data
+        dataset['{}_word'.format(feature['name'])] = words_data
 
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
@@ -306,7 +306,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             targets,
             metadata
     ):
-        level_idx2str = '{}_{}'.format(self.level, 'idx2str')
+        level_idx2str = f'{self.level}_idx2str'
         last_elem_sequence = targets[np.arange(targets.shape[0]),
                                      (targets != 0).cumsum(1).argmax(1)]
         confusion_matrix = ConfusionMatrix(
