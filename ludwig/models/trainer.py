@@ -221,9 +221,9 @@ class Trainer:
                length of a field together. Bucketing on text length speeds up
                training of RNNs consistently, 30% in some cases
         :type bucketing_field:
-        :param dropout_rate: dropout_rate probability (probability of dropping
+        :param dropout: dropout probability (probability of dropping
                a neuron in a given layer)
-        :type dropout_rate: Float
+        :type dropout: Float
         :param early_stop: How many epochs without any improvement in the
                validation_metric triggers the algorithm to stop
         :type early_stop: Integer

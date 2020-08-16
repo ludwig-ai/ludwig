@@ -121,7 +121,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         self.norm = None
         self.norm_params = None
         self.activation = 'relu'
-        self.dropout_rate = 0
+        self.dropout = 0
 
         self.overwrite_defaults(feature)
 
@@ -142,7 +142,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             default_norm=self.norm,
             default_norm_params=self.norm_params,
             default_activation=self.activation,
-            default_dropout_rate=self.dropout_rate,
+            default_dropout=self.dropout,
         )
 
     @property

@@ -92,7 +92,7 @@ class SequenceEmbedEncoder(Layer):
             embeddings_on_cpu=False,
             weights_initializer=None,
             weights_regularizer=None,
-            dropout_rate=0,
+            dropout=0,
             reduce_output='sum',
             **kwargs
     ):
@@ -171,8 +171,8 @@ class SequenceEmbedEncoder(Layer):
             :param weights_regularizer: The regularizer to use for the weights
                    of the encoder.
             :type weights_regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
+            :param dropout: Tensor (tf.float) of the probability of dropout
+            :type dropout: Tensor
 
         """
         super(SequenceEmbedEncoder, self).__init__()
@@ -190,7 +190,7 @@ class SequenceEmbedEncoder(Layer):
             embeddings_trainable=embeddings_trainable,
             pretrained_embeddings=pretrained_embeddings,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
+            dropout=dropout,
             embedding_initializer=weights_initializer,
             embedding_regularizer=weights_regularizer
         )
@@ -245,7 +245,7 @@ class ParallelCNN(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             reduce_output='max',
             **kwargs):
         """
@@ -439,7 +439,7 @@ class ParallelCNN(Layer):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout_rate=dropout_rate,
+                dropout=dropout,
                 embedding_initializer=weights_initializer,
                 embedding_regularizer=weights_regularizer
             )
@@ -460,7 +460,7 @@ class ParallelCNN(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
             default_pool_function=pool_function,
             default_pool_size=pool_size,
             default_pool_padding='same',
@@ -483,7 +483,7 @@ class ParallelCNN(Layer):
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
-                default_dropout_rate=dropout_rate,
+                default_dropout=dropout,
             )
 
     def call(self, inputs, training=None, mask=None):
@@ -564,7 +564,7 @@ class StackedCNN(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             reduce_output='max',
             **kwargs
     ):
@@ -785,7 +785,7 @@ class StackedCNN(Layer):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout_rate=dropout_rate,
+                dropout=dropout,
                 embedding_initializer=weights_initializer,
                 embedding_regularizer=weights_regularizer
             )
@@ -809,7 +809,7 @@ class StackedCNN(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
             default_pool_function=pool_function,
             default_pool_size=pool_size,
             default_pool_strides=pool_strides,
@@ -833,7 +833,7 @@ class StackedCNN(Layer):
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
-                default_dropout_rate=dropout_rate,
+                default_dropout=dropout,
             )
 
     def call(self, inputs, training=None, mask=None):
@@ -844,8 +844,8 @@ class StackedCNN(Layer):
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
+            :param dropout: Tensor (tf.float) of the probability of dropout
+            :type dropout: Tensor
             :param is_training: Tesnor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
@@ -915,7 +915,7 @@ class StackedParallelCNN(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             reduce_output='max',
             **kwargs
     ):
@@ -1131,7 +1131,7 @@ class StackedParallelCNN(Layer):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout_rate=dropout_rate,
+                dropout=dropout,
                 embedding_initializer=weights_initializer,
                 embedding_regularizer=weights_regularizer
             )
@@ -1152,7 +1152,7 @@ class StackedParallelCNN(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
             default_pool_function=pool_function,
             default_pool_size=pool_size,
         )
@@ -1174,7 +1174,7 @@ class StackedParallelCNN(Layer):
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
-                default_dropout_rate=dropout_rate,
+                default_dropout=dropout,
             )
 
     def call(self, inputs, training=None, mask=None):
@@ -1185,8 +1185,8 @@ class StackedParallelCNN(Layer):
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
+            :param dropout: Tensor (tf.float) of the probability of dropout
+            :type dropout: Tensor
             :param is_training: Tesnor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
@@ -1262,7 +1262,7 @@ class StackedRNN(Layer):
             norm=None,
             norm_params=None,
             fc_activation='relu',
-            fc_dropout_rate=0,
+            fc_dropout=0,
             reduce_output='last',
             **kwargs
     ):
@@ -1408,7 +1408,7 @@ class StackedRNN(Layer):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout_rate=fc_dropout_rate,
+                dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
                 embedding_regularizer=weights_regularizer
             )
@@ -1454,7 +1454,7 @@ class StackedRNN(Layer):
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
-                default_dropout_rate=fc_dropout_rate,
+                default_dropout=fc_dropout,
             )
 
     def call(self, inputs, training=None, mask=None):
@@ -1465,8 +1465,8 @@ class StackedRNN(Layer):
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
+            :param dropout: Tensor (tf.float) of the probability of dropout
+            :type dropout: Tensor
             :param is_training: Tesnor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
@@ -1527,7 +1527,7 @@ class StackedCNNRNN(Layer):
             padding='same',
             dilation_rate=1,
             conv_activation='relu',
-            conv_dropout_rate=0.0,
+            conv_dropout=0.0,
             pool_function='max',
             pool_size=2,
             pool_strides=None,
@@ -1558,7 +1558,7 @@ class StackedCNNRNN(Layer):
             norm=None,
             norm_params=None,
             fc_activation='relu',
-            fc_dropout_rate=0,
+            fc_dropout=0,
             reduce_output='last',
             **kwargs
     ):
@@ -1688,7 +1688,7 @@ class StackedCNNRNN(Layer):
                 embeddings_trainable=embeddings_trainable,
                 pretrained_embeddings=pretrained_embeddings,
                 embeddings_on_cpu=embeddings_on_cpu,
-                dropout_rate=fc_dropout_rate,
+                dropout=fc_dropout,
                 embedding_initializer=weights_initializer,
                 embedding_regularizer=weights_regularizer
             )
@@ -1712,7 +1712,7 @@ class StackedCNNRNN(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=conv_activation,
-            default_dropout_rate=conv_dropout_rate,
+            default_dropout=conv_dropout,
             default_pool_function=pool_function,
             default_pool_size=pool_size,
             default_pool_strides=pool_strides,
@@ -1760,7 +1760,7 @@ class StackedCNNRNN(Layer):
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=fc_activation,
-                default_dropout_rate=fc_dropout_rate,
+                default_dropout=fc_dropout,
             )
 
     def call(self, inputs, training=None, mask=None):
@@ -1771,8 +1771,8 @@ class StackedCNNRNN(Layer):
             :param regularizer: The regularizer to use for the weights
                    of the encoder.
             :type regularizer:
-            :param dropout_rate: Tensor (tf.float) of the probability of dropout
-            :type dropout_rate: Tensor
+            :param dropout: Tensor (tf.float) of the probability of dropout
+            :type dropout: Tensor
             :param is_training: Tesnor (tf.bool) specifying if in training mode
                    (important for dropout)
             :type is_training: Tensor
@@ -1857,7 +1857,7 @@ class BERT:
             self,
             input_sequence,
             regularizer,
-            dropout_rate,
+            dropout,
             is_training=True
     ):
         try:
