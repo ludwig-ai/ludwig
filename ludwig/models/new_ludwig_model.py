@@ -614,7 +614,7 @@ class NewLudwigModel:
             self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
                 output_directory)
 
-        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
         # this way I'm copying the list. If you don't do it, you are actually
         # modifying the input feature list when you add output features,
