@@ -376,7 +376,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             test_stats,
 #             output_feature,
 #             dataset,
-#             training_set_metadata
+#             train_set_metadata
 #     ):
 #         pass
 #

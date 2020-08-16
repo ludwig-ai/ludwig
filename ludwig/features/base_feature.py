@@ -236,22 +236,24 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     ):
         pass
 
+    @staticmethod
     @abstractmethod
     def calculate_overall_stats(
-            self,
-            predictions,
-            targets,
-            metadata
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
     ):
         pass
 
+    @staticmethod
     @abstractmethod
-    def postprocess_predictions(
-            self,
-            predictions,
+    def postprocess_results(
+            output_feature,
+            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         pass
 

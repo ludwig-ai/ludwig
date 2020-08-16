@@ -58,7 +58,7 @@ def hyperopt(
         data_train_hdf5=None,
         data_validation_hdf5=None,
         data_test_hdf5=None,
-        training_set_metadata_json=None,
+        train_set_metadata_json=None,
         experiment_name="hyperopt",
         model_name="run",
         # model_load_path=None,
@@ -229,7 +229,7 @@ def hyperopt(
         data_train_hdf5=data_train_hdf5,
         data_validation_hdf5=data_validation_hdf5,
         data_test_hdf5=data_test_hdf5,
-        training_set_metadata_json=training_set_metadata_json,
+        train_set_metadata_json=train_set_metadata_json,
         experiment_name=experiment_name,
         model_name=model_name,
         # model_load_path=None,
@@ -369,7 +369,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        "--training_set_metadata_json",
+        "--train_set_metadata_json",
         help="input metadata JSON file. It is an intermediate preprocess file "
              "containing the mappings of the input CSV created the first time a"
              " CSV file is used in the same directory with the same name and a "
