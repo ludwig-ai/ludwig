@@ -589,10 +589,8 @@ class NewLudwigModel:
 
     def evaluate(
             self,
-            data_csv=None,
-            data_hdf5=None,
-            data_df=None,
-            data_dict=None,
+            dataset=None,
+            data_format='csv',
             batch_size=128,
             skip_save_unprocessed_output=True,
             skip_save_predictions=True,
@@ -616,10 +614,12 @@ class NewLudwigModel:
             self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
                 output_directory)
 
-        if data_df is None:
-            data_df = self._read_data(data_csv, data_dict)
-
         logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        # Added [:] to next line, before I was just assigning,
+        # this way I'm copying the list. If you don't do it, you are actually
+        # modifying the input feature list when you add output features,
+        # which you definitely don't want to do
+        logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
         # this way I'm copying the list. If you don't do it, you are actually
         # modifying the input feature list when you add output features,
@@ -639,13 +639,29 @@ class NewLudwigModel:
             )
 
         # preprocessing
+        dataset, training_set_metadata = preprocess_for_prediction(
+            self.model_definition,
+            dataset=dataset,
+            data_format=data_format,
+            training_set_metadata=self.training_set_metadata,
+            include_outputs=False,
+        )
+        num_overrides = override_in_memory_flag(
+            self.model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported for Ludwig API.'
+            )
+
+        # preprocessing
         # todo refactoring: maybe replace the self.model_definition paramter
         #  here with features_to_load
         dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
-            data_df=data_df,
-            data_csv=data_csv,
-            data_hdf5=data_hdf5,
+            dataset=dataset,
+            data_format=data_format,
             training_set_metadata=self.training_set_metadata,
             include_outputs=True,
         )
