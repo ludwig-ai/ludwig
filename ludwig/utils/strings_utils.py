@@ -30,6 +30,7 @@ from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 UNKNOWN_SYMBOL = '<UNK>'
 PADDING_SYMBOL = '<PAD>'
+PADDING_IDX = 0
 
 SPLIT_REGEX = re.compile(r'\s+')
 SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
@@ -108,13 +109,29 @@ def create_vocabulary(
         tokenizer_registry
     )(
         vocab_file=vocab_file,
-        pretrained_model_name_or_path=pretrained_model_name_or_path
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
 
-    if tokenizer_type == 'hf_tokenizer':
-        vocab = tokenizer.tokenizer.get_vocab()
-        add_unknown = False
-        add_padding = False
+    if tokenizer_type == 'hf_tokenizer': 
+        try:
+            vocab = tokenizer.tokenizer.get_vocab()
+            vocab = list(vocab.keys())
+        except NotImplementedError:
+            vocab = []
+            for idx in range(tokenizer.tokenizer.vocab_size):
+                vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
+            vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
+        
+        pad_token = tokenizer.tokenizer.pad_token
+        unk_token = tokenizer.tokenizer.unk_token
+    
+        if pad_token is None: vocab = vocab + [padding_symbol]
+        else: padding_symbol = pad_token
+
+        if unk_token is None: vocab = vocab + [unknown_symbol]
+        else: unknown_symbol = unk_token
+        
+
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
 
@@ -128,28 +145,36 @@ def create_vocabulary(
                  unit_counts.most_common(num_most_frequent)]
 
     vocab_set = set(vocab)
-    if add_unknown:
+
+    if add_unknown and tokenizer_type != 'hf_tokenizer':
         if unknown_symbol in vocab_set:
             vocab.remove(unknown_symbol)
         vocab = [unknown_symbol] + vocab
-    if add_padding:
+    if add_padding and tokenizer_type != 'hf_tokenizer':
         if padding_symbol in vocab_set:
             vocab.remove(padding_symbol)
         vocab = [padding_symbol] + vocab
 
+
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
-                unit in vocab}
+                unit in vocab}    
 
-    return vocab, str2idx, str2freq, max_line_length
+    pad_idx = None
+    if padding_symbol in str2idx.keys():
+        pad_idx =  str2idx[padding_symbol]
+
+    return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
 
 
 def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)()
+
     format_dtype = int_type(len(unit_to_id) - 1)
     return _get_sequence_vector(
         sequence,
         tokenizer,
+        tokenizer_type,
         format_dtype,
         unit_to_id,
         lowercase=lowercase
@@ -159,21 +184,26 @@ def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
 def _get_sequence_vector(
         sequence,
         tokenizer,
+        tokenizer_type, 
         format_dtype,
         unit_to_id,
         lowercase=True,
         unknown_symbol=UNKNOWN_SYMBOL
 ):
+    
     unit_sequence = tokenizer(
         sequence.lower() if lowercase else sequence
     )
     unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)
     for i in range(len(unit_sequence)):
         curr_unit = unit_sequence[i]
-        if curr_unit in unit_to_id:
-            unit_indices_vector[i] = unit_to_id[curr_unit]
+        if tokenizer_type == 'hf_tokenizer':
+            unit_indices_vector[i] = curr_unit
         else:
-            unit_indices_vector[i] = unit_to_id[unknown_symbol]
+            if curr_unit in unit_to_id:
+                unit_indices_vector[i] = unit_to_id[curr_unit]
+            else:
+                unit_indices_vector[i] = unit_to_id[unknown_symbol]
     return unit_indices_vector
 
 
@@ -192,17 +222,18 @@ def build_sequence_matrix(
 ):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
         vocab_file=tokenizer_vocab_file,
-        max_length=length_limit,
-        pretrained_model_name_or_path=pretrained_model_name_or_path
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
-    format_dtype = int_type(len(inverse_vocabulary) - 1)
 
+    format_dtype = int_type(len(inverse_vocabulary) - 1)
+    
     max_length = 0
     unit_vectors = []
     for sequence in sequences:
         unit_indices_vector = _get_sequence_vector(
             sequence,
             tokenizer,
+            tokenizer_type,
             format_dtype,
             inverse_vocabulary,
             lowercase=lowercase,
@@ -1127,23 +1158,12 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 class HFTokenizer(BaseTokenizer):
     def __init__(self, 
             pretrained_model_name_or_path,
-            max_length, 
             **kwargs
     ):
         super().__init__()
         self.tokenizer = AutoTokenizer.from_pretrained(
-            pretrained_model_name_or_path
+            pretrained_model_name_or_path,
         )
-        self.vocab = self.tokenizer.vocab
-        self.max_model_input_size = self.tokenizer.max_model_input_sizes[
-            pretrained_model_name_or_path
-        ]
-        self.max_length = self.get_max_length(max_length)
-
-    def get_max_length(self, max_length):
-        self.max_length = min(self.max_length, self.max_model_input_size)
-        self.max_length += self.tokenizer.num_special_tokens_to_add()
-        return self.max_length
 
     def __call__(self, text):
         return self.tokenizer.encode(text)

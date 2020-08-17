@@ -16,7 +16,7 @@
 # ==============================================================================
 import logging
 import tensorflow as tf
-from ludwig.models.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import reduce_sequence
 from tensorflow.keras.layers import Layer
 
 from transformers import TFBertModel, TFOpenAIGPTModel, TFGPT2Model, \
@@ -41,18 +41,19 @@ class BERTEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
             inputs, 
             training=training,
-            attention_mask=tf.sign(tf.abs(inputs)),
+            attention_mask=mask,
             token_type_ids=tf.zeros_like(inputs)
         )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0][:,1:-1,:]
+            hidden = transformer_outputs[0]
             hidden = reduce_sequence(hidden, self.reduce_output)
 
         return {'encoder_output': hidden}
@@ -68,12 +69,19 @@ class GPTEncoder(Layer):
         super(GPTEncoder, self).__init__()
         self.transformer = TFOpenAIGPTModel.from_pretrained('openai-gpt')
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
+
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class GPT2Encoder(Layer):
@@ -89,30 +97,45 @@ class GPT2Encoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
+
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class TransformerXLEncoder(Layer):
 
     def __init__(
             self,
+            pretrained_model_name_or_path='transfo-xl-wt103',
             reduce_output='sum',
             **kwargs
     ):
         super(TransformerXLEncoder, self).__init__()
-        self.transformer = TFTransfoXLModel.from_pretrained('transfo-xl-wt103')
+        self.transformer = TFTransfoXLModel.from_pretrained(
+            pretrained_model_name_or_path
+        )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
+
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+        )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class XLNetEncoder(Layer):
@@ -128,12 +151,18 @@ class XLNetEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class XLMEncoder(Layer):
@@ -149,12 +178,18 @@ class XLMEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
-        hidden = transformer_outputs[0]
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
+        hidden = transformer_outputs[0][:,1:-1,:]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class RoBERTaEncoder(Layer):
@@ -170,15 +205,21 @@ class RoBERTaEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class DistilBERTEncoder(Layer):
@@ -194,54 +235,79 @@ class DistilBERTEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class CTRLEncoder(Layer):
 
     def __init__(
             self,
+            pretrained_model_name_or_path='ctrl',
             reduce_output='sum',
             **kwargs
     ):
         super(CTRLEncoder, self).__init__()
-        self.transformer = TFCTRLModel.from_pretrained('ctrl')
+        self.transformer = TFCTRLModel.from_pretrained(
+            pretrained_model_name_or_path
+        )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class CamemBERTEncoder(Layer):
 
     def __init__(
             self,
+            pretrained_model_name_or_path='jplu/tf-camembert-base',
             reduce_output='cls_pooled',
             **kwargs
     ):
         super(CamemBERTEncoder, self).__init__()
-        self.transformer = TFCamembertModel.from_pretrained('camembert-base')
+        self.pretrained_model_name_or_path = pretrained_model_name_or_path
+
+        self.transformer = TFCamembertModel.from_pretrained(
+            pretrained_model_name_or_path
+        )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class ALBERTEncoder(Layer):
@@ -257,15 +323,21 @@ class ALBERTEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class T5Encoder(Layer):
@@ -281,20 +353,27 @@ class T5Encoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
-        # todo tf2 doublecheck this
+
+        transformer_outputs = self.transformer({
+            'inputs' : inputs, 
+            'decoder_input_ids' : inputs,
+            'training' : training,
+            'attention_mask' : mask,
+            'token_type_ids' : tf.zeros_like(inputs)
+        })
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class XLMRoBERTaEncoder(Layer):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='xlm-roberta-base',
+            pretrained_model_name_or_path='jplu/tf-xlm-roberta-base',
             reduce_output='cls_pooled',
             **kwargs
     ):
@@ -303,22 +382,28 @@ class XLMRoBERTaEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class FlauBERTEncoder(Layer):
 
     def __init__(
             self,
-            pretrained_model_name_or_path='flaubert-base-uncased',
+            pretrained_model_name_or_path='jplu/tf-flaubert-base-uncased',
             reduce_output='cls_pooled',
             **kwargs
     ):
@@ -327,15 +412,22 @@ class FlauBERTEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
+
 
 
 # todo tf2 check lack of TFBartModel
@@ -360,7 +452,7 @@ class BartEncoder(Layer):
         else:
             hidden = transformer_outputs[0]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 # todo tf2 check lack of TFDialoGPTModel
@@ -385,7 +477,7 @@ class DialoGPTEncoder(Layer):
         else:
             hidden = transformer_outputs[0]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class ELECTRAEncoder(Layer):
@@ -401,12 +493,18 @@ class ELECTRAEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
-        hidden = transformer_outputs[0]
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
+        hidden = transformer_outputs[0][:,1:-1,:]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}
 
 
 class AutoTransformerEncoder(Layer):
@@ -422,9 +520,15 @@ class AutoTransformerEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
+        self.transformer.trainable = False
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
+        transformer_outputs = self.transformer(
+            inputs, 
+            training=training,
+            attention_mask=tf.sign(tf.abs(inputs)),
+            token_type_ids=tf.zeros_like(inputs)
+        )
         if self.reduce_output == 'cls_pooled':
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
@@ -433,4 +537,4 @@ class AutoTransformerEncoder(Layer):
         else:
             hidden = transformer_outputs[0]
             hidden = reduce_sequence(hidden, self.reduce_output)
-        return hidden
+        return {'encoder_output': hidden}

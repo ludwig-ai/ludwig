@@ -62,7 +62,10 @@ class TextFeatureMixin(object):
             char_idx2str,
             char_str2idx,
             char_str2freq,
-            char_max_len
+            char_max_len,
+            _, 
+            _,
+            _ 
         ) = create_vocabulary(
             column,
             tokenizer_type='characters',
@@ -75,7 +78,10 @@ class TextFeatureMixin(object):
             word_idx2str,
             word_str2idx,
             word_str2freq,
-            word_max_len
+            word_max_len,
+            _, 
+            _,
+            _ 
         ) = create_vocabulary(
             column,
             tokenizer_type=preprocessing_parameters['word_tokenizer'],

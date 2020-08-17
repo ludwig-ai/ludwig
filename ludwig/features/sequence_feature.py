@@ -23,7 +23,6 @@ import tensorflow as tf
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
-#from ludwig.encoders.sequence_encoders import BERT
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
 from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
@@ -31,7 +30,7 @@ from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
-from ludwig.encoders.text_encoders import BERTEncoder
+from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -47,6 +46,7 @@ from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
+import ludwig.utils.strings_utils as string_utils
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 
@@ -72,7 +72,7 @@ class SequenceFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        idx2str, str2idx, str2freq, max_length = create_vocabulary(
+        idx2str, str2idx, str2freq, max_length, pad_idx, pad_symbol, unk_symbol = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
             num_most_frequent=preprocessing_parameters['most_common'],
@@ -92,7 +92,10 @@ class SequenceFeatureMixin(object):
             'str2idx': str2idx,
             'str2freq': str2freq,
             'vocab_size': len(idx2str),
-            'max_sequence_length': max_length
+            'max_sequence_length': max_length,
+            'pad_idx' : pad_idx,
+            'padding_symbol' : pad_symbol,
+            'unknown_symbol' : unk_symbol
         }
 
     @staticmethod
@@ -102,9 +105,9 @@ class SequenceFeatureMixin(object):
             inverse_vocabulary=metadata['str2idx'],
             tokenizer_type=preprocessing_parameters['tokenizer'],
             length_limit=metadata['max_sequence_length'],
-            padding_symbol=preprocessing_parameters['padding_symbol'],
+            padding_symbol=metadata['padding_symbol'],
             padding=preprocessing_parameters['padding'],
-            unknown_symbol=preprocessing_parameters['unknown_symbol'],
+            unknown_symbol=metadata['unknown_symbol'],
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
@@ -136,11 +139,15 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
+        feature.update(feature['preprocessing'])
+
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
-
+            
+        self.pad_idx = feature['pad_idx']
+       
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
@@ -148,7 +155,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        inputs_mask = tf.not_equal(inputs, 0)
+        inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx), dtype=tf.int32) 
+
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
@@ -164,7 +172,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     ):
         input_feature['vocab'] = feature_metadata['idx2str']
         input_feature['length'] = feature_metadata['max_sequence_length']
-
+        input_feature['pad_idx'] = feature_metadata['pad_idx']
+     
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)
@@ -178,6 +187,21 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         'cnnrnn': StackedCNNRNN,
         'embed': SequenceEmbedEncoder,
         'bert': BERTEncoder,
+        'gpt' : GPTEncoder,
+        'gpt2' : GPT2Encoder,
+        'transformer_xl' : TransformerXLEncoder,
+        'xlnet' : XLNetEncoder,
+        'xlm' : XLMEncoder,
+        'roberta': RoBERTaEncoder,
+        'distilbert' : DistilBERTEncoder,
+        'ctrl' : CTRLEncoder,
+        'camembert' : CamemBERTEncoder,
+        'albert' : ALBERTEncoder,
+        't5' : T5Encoder,
+        'xlmroberta' : XLMRoBERTaEncoder,
+        'flaubert' : FlauBERTEncoder,
+        'electra' : ELECTRAEncoder,
+        'auto_transformer' : AutoTransformerEncoder, 
         'passthrough': SequencePassthroughEncoder,
         'null': SequencePassthroughEncoder,
         'none': SequencePassthroughEncoder,
