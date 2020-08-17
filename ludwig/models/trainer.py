@@ -35,7 +35,7 @@ import tensorflow as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST
+from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
 from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -43,6 +43,7 @@ from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
 from ludwig.globals import is_on_master
 from ludwig.globals import is_progressbar_disabled
+from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun
 from ludwig.modules.metric_modules import get_initial_validation_value
 from ludwig.modules.optimization_modules import ClippedOptimizer
@@ -50,11 +51,9 @@ from ludwig.utils import time_utils
 from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import allgather_object
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed
 from ludwig.utils.misc_utils import set_random_seed
-from ludwig.utils.misc_utils import sum_dicts
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +62,12 @@ tf.config.experimental_run_functions_eagerly(True)
 
 class Trainer:
     """
-    Model is a class that builds the model that Ludwig uses
+    Trainer is a class that train a model
     """
 
     def __init__(
             self,
-            optimizer={TYPE: 'Adam'},
+            optimizer=None,
             epochs=100,
             regularization_lambda=0.0,
             learning_rate=0.001,
@@ -212,6 +211,8 @@ class Trainer:
             self._learning_rate *= self._horovod.size()
 
         # ================ Optimizer ================
+        if optimizer is None:
+            optimizer = {TYPE: 'Adam'}
         self._optimizer = ClippedOptimizer(
             horovod=horovod,
             **optimizer
@@ -457,6 +458,7 @@ class Trainer:
             model.reset_metrics()
 
             # ================ Train ================
+            progress_bar = None
             if is_on_master():
                 progress_bar = tqdm(
                     desc='Training',
@@ -764,29 +766,21 @@ class Trainer:
             metrics_log,
             tables,
             batch_size=128,
+            debug=False,
     ):
-        results = model.batch_evaluation(
+        predictor = Predictor(
+            batch_size=batch_size, horovod=self._horovod, debug=self._debug
+        )
+        metrics = predictor.batch_evaluation(
+            model,
             dataset,
-            batch_size,
             collect_predictions=False,
             dataset_name=dataset_name
         )
 
-        self.append_metrics(model, dataset_name, results, metrics_log, tables)
+        self.append_metrics(model, dataset_name, metrics, metrics_log, tables)
 
         return metrics_log, tables
-
-    def merge_workers_metrics(self, metrics):
-        # gather outputs from all workers
-        all_workers_output_metrics = allgather_object(metrics)
-
-        # merge them into a single one
-        merged_output_metrics = sum_dicts(
-            all_workers_output_metrics,
-            dict_type=OrderedDict
-        )
-
-        return merged_output_metrics
 
     def check_progress_on_validation(
             self,
@@ -881,19 +875,27 @@ class Trainer:
                 should_break = True
         return should_break
 
-    # todo refactoring: should use ECD.batch_predict
-        # def predict(
-        #         self,
-        #         dataset,
-        #         batch_size,
-        #         **kwargs
-        # ):
-        #     # predict
-        #     return self.model.batch_predict(dataset, batch_size,
-        #                                     horovod=self._horovod)
+    # todo refactoring: should use Predictor.batch_predict
+    # def predict(
+    #         self,
+    #         dataset,
+    #         batch_size,
+    #         **kwargs
+    # ):
+    #     # predict
+    #     return self.model.batch_predict(dataset, batch_size,
+    #                                     horovod=self._horovod)
 
-        return collected_tensors
+    # todo refactoring: should use ECD.collect_activations
+    def collect_activations(
+            self,
+            dataset,
+            tensor_names=None,
+            **kwargs
+    ):
+        pass
 
+    # todo refactoring: should use ECD.collect_weights
     def collect_weights(
             self,
             tensor_names=None,

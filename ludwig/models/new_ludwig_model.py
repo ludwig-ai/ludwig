@@ -17,8 +17,9 @@ from ludwig.globals import set_disable_progressbar, \
     MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, set_on_master, is_on_master
 from ludwig.models.ecd import ECD
-from ludwig.models.prediction_helpers import calculate_overall_stats, \
-    save_prediction_outputs, print_evaluation_stats, save_evaluation_stats
+from ludwig.models.predictor import calculate_overall_stats, \
+    save_prediction_outputs, print_evaluation_stats, save_evaluation_stats, \
+    Predictor
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import load_json, save_json, \
@@ -537,10 +538,12 @@ class NewLudwigModel:
         )
 
         logger.debug('Predicting')
-        predictions = self.model.batch_predict(
+        predictor = Predictor(
+            batch_size=batch_size, horovod=self._horovod, debug=debug
+        )
+        predictions = predictor.batch_predict(
+            self.model,
             dataset,
-            batch_size,
-            horovod=self._horovod
         )
 
         logger.debug('Postprocessing')
@@ -667,9 +670,12 @@ class NewLudwigModel:
         )
 
         logger.debug('Predicting')
-        stats, predictions = self.model.batch_evaluation(
+        predictor = Predictor(
+            batch_size=batch_size, horovod=self._horovod, debug=debug
+        )
+        stats, predictions = predictor.batch_evaluation(
+            self.model,
             dataset,
-            batch_size,
             collect_predictions=collect_predictions or collect_overall_stats,
         )
 

@@ -10,15 +10,13 @@ from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
-from ludwig.globals import is_on_master, is_progressbar_disabled
+from ludwig.globals import is_progressbar_disabled
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
 from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
-
-EXCLUE_PRED_SET = {LOGITS}
 
 class ECD(tf.keras.Model):
 
@@ -230,135 +228,6 @@ class ECD(tf.keras.Model):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
-
-    def batch_predict(
-            self,
-            dataset,
-            batch_size,
-            horovod=None,
-            dataset_name=None
-    ):
-        batcher = initialize_batcher(
-            dataset, batch_size,
-            should_shuffle=False,
-            horovod=horovod
-        )
-
-        if is_on_master():
-            progress_bar = tqdm(
-                desc='Prediction' if dataset_name is None
-                else 'Prediction {0: <5.5}'.format(dataset_name),
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled()
-            )
-
-        predictions = {}
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-
-            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
-                      for i_feat in self.input_features}
-
-            preds = self.predict_step(inputs)
-
-            # accumulate predictions from batch for each output feature
-            for of_name, of_preds in preds.items():
-                if of_name not in predictions:
-                    predictions[of_name] = {}
-                    # todo refactoring: remove logits from predictions will happen inside exc.batch_evaluate()
-                    # remove logits, not needed for overall stats
-                    del predictions[of_name][LOGITS]
-                for pred_name, pred_values in of_preds.items():
-                    if pred_name not in EXCLUE_PRED_SET:
-                        if pred_name not in predictions[of_name]:
-                            predictions[of_name][pred_name] = [pred_values]
-                        else:
-                            predictions[of_name][pred_name].append(pred_values)
-
-            if is_on_master():
-                progress_bar.update(1)
-
-        if is_on_master():
-            progress_bar.close()
-
-        # consolidate predictions from each batch to a single tensor
-        for of_name, of_predictions in predictions.items():
-            for pred_name, pred_value_list in of_predictions.items():
-                predictions[of_name][pred_name] = tf.concat(pred_value_list,
-                                                            axis=0)
-
-        return predictions
-
-    def batch_evaluation(
-            self,
-            dataset,
-            batch_size,
-            collect_predictions=False,
-            horovod=None,
-            dataset_name=None
-    ):
-        batcher = initialize_batcher(
-            dataset, batch_size,
-            should_shuffle=False,
-            horovod=horovod
-        )
-
-        if is_on_master():
-            progress_bar = tqdm(
-                desc='Evaluation' if dataset_name is None
-                else 'Evaluation {0: <5.5}'.format(dataset_name),
-                total=batcher.steps_per_epoch,
-                file=sys.stdout,
-                disable=is_progressbar_disabled()
-            )
-
-        predictions = {}
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-
-            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
-                      for i_feat in self.input_features}
-            targets = {o_feat.feature_name: batch[o_feat.feature_name]
-                       for o_feat in self.output_features}
-
-            preds = self.evaluation_step(inputs, targets)
-
-            # todo refactoring: remove logits from predictions
-
-            # accumulate predictions from batch for each output feature
-            if collect_predictions:
-                for of_name, of_preds in preds.items():
-                    if of_name not in predictions:
-                        predictions[of_name] = {}
-                    for pred_name, pred_values in of_preds.items():
-                        if pred_name not in EXCLUE_PRED_SET:
-                            if pred_name not in predictions[of_name]:
-                                predictions[of_name][pred_name] = [pred_values]
-                            else:
-                                predictions[of_name][pred_name].append(
-                                    pred_values)
-
-            if is_on_master():
-                progress_bar.update(1)
-
-        if is_on_master():
-            progress_bar.close()
-
-        # consolidate predictions from each batch to a single tensor
-        if collect_predictions:
-            for of_name, of_predictions in predictions.items():
-                for pred_name, pred_value_list in of_predictions.items():
-                    predictions[of_name][pred_name] = tf.concat(
-                        pred_value_list, axis=0
-                    )
-
-        metrics = self.model.get_metrics()
-        if self._horovod:
-            metrics = self.merge_workers_metrics(metrics)
-        self.model.reset_metrics()
-
-        return metrics, predictions
 
     # todo tf2: reintroduce this functionality
     def batch_collect_activations(
