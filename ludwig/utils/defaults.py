@@ -48,7 +48,6 @@ default_training_params = {
     'learning_rate': 0.001,
     'batch_size': 128,
     'eval_batch_size': 0,
-    'dropout': 0.0,
     'early_stop': 5,
     'reduce_learning_rate_on_plateau': 0,
     'reduce_learning_rate_on_plateau_patience': 5,
