@@ -108,8 +108,8 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         self.feature_loss = feature_loss
 
     def call(self, y, y_pred):
-        decoder_weights = self.decoder_obj.get_weights()[0]
-        decoder_biases = self.decoder_obj.get_weights()[1]
+        decoder_weights = self.decoder_obj.weights[0]
+        decoder_biases = self.decoder_obj.weights[1]
 
         loss = sampled_softmax_cross_entropy(
             y,
