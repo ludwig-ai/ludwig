@@ -92,7 +92,7 @@ class ErrorScore(tf.keras.metrics.Metric):
     def __init__(self, name='error_score'):
         super(ErrorScore, self).__init__(name=name)
         self.sum_error = self.add_weight(
-            'sum_y_y_hat', initializer='zeros',
+            'sum_error', initializer='zeros',
             dtype=tf.float32
         )
         self.N = self.add_weight(
@@ -132,19 +132,19 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
             confidence_penalty=confidence_penalty
         )
 
-        self._reset_states()
-
-    def _reset_states(self):
-        self.sum_loss = 0.0
-        self.N = 0
-
-    def reset_states(self):
-        self._reset_states()
+        self.sum_loss = self.add_weight(
+            'sum_loss', initializer='zeros',
+            dtype=tf.float32
+        )
+        self.N = self.add_weight(
+            'N', initializer='zeros',
+            dtype=tf.float32
+        )
 
     def update_state(self, y, y_hat):
         loss = self.bwcew_loss_function(y, y_hat)
-        self.sum_loss += loss
-        self.N += 1
+        self.sum_loss.assign_add(loss)
+        self.N.assign_add(1)
 
     def result(self):
         return self.sum_loss / self.N
