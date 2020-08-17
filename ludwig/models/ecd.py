@@ -51,7 +51,6 @@ class ECD(tf.keras.Model):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    @tf.function
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
@@ -101,7 +100,6 @@ class ECD(tf.keras.Model):
 
         return output_logits
 
-    @tf.function
     def predictions(self, inputs, output_features=None):
         # check validity of output_features
         if output_features is None:
