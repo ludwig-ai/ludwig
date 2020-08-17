@@ -115,8 +115,6 @@ class BWCEWLMetric(tf.keras.metrics.Metric):
     # See for additional info:
     #   https://www.tensorflow.org/api_docs/python/tf/keras/metrics/Metric
 
-    # todo tf2 - convert to tensors?
-
     def __init__(
             self,
             positive_class_weight=1,
