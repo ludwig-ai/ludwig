@@ -368,7 +368,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def build_input(
             self,
             regularizer,
-            dropout_rate,
+            dropout,
             is_training=False,
             **kwargs
     ):
@@ -384,7 +384,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         feature_representation, feature_representation_size = self.encoder_obj(
             placeholder,
             regularizer,
-            dropout_rate,
+            dropout,
             is_training,
         )
         logger.debug(

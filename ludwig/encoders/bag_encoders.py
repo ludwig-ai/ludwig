@@ -49,7 +49,7 @@ class BagEmbedWeightedEncoder(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0.0,
+            dropout=0.0,
             **kwargs
     ):
         super(BagEmbedWeightedEncoder, self).__init__()
@@ -64,7 +64,7 @@ class BagEmbedWeightedEncoder(Layer):
             pretrained_embeddings=pretrained_embeddings,
             force_embedding_size=force_embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
+            dropout=dropout,
             embedding_initializer=weights_initializer,
             embedding_regularizer=weights_regularizer
         )
@@ -85,7 +85,7 @@ class BagEmbedWeightedEncoder(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
     def call(self, inputs, training=None, mask=None):

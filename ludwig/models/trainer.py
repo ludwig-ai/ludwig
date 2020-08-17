@@ -221,9 +221,9 @@ class Trainer:
                length of a field together. Bucketing on text length speeds up
                training of RNNs consistently, 30% in some cases
         :type bucketing_field:
-        :param dropout_rate: dropout_rate probability (probability of dropping
+        :param dropout: dropout probability (probability of dropping
                a neuron in a given layer)
-        :type dropout_rate: Float
+        :type dropout: Float
         :param early_stop: How many epochs without any improvement in the
                validation_metric triggers the algorithm to stop
         :type early_stop: Integer
@@ -299,7 +299,7 @@ class Trainer:
             valid_validation_field = True
             validation_output_feature_name = 'combined'
             if validation_metric is not LOSS and len(output_features) == 1:
-                only_of = output_features[0]
+                only_of = next(iter(output_features))
                 if validation_metric in metrics_names[only_of]:
                     validation_output_feature_name = only_of
                     logger.warning(

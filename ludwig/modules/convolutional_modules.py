@@ -55,7 +55,7 @@ class Conv1DLayer(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             pool_function='max',
             pool_size=2,
             pool_strides=None,
@@ -90,8 +90,8 @@ class Conv1DLayer(Layer):
 
         self.layers.append(Activation(activation))
 
-        if dropout_rate > 0:
-            self.layers.append(Dropout(dropout_rate))
+        if dropout > 0:
+            self.layers.append(Dropout(dropout))
 
         if pool_size is not None:
             pool = MaxPool1D
@@ -135,7 +135,7 @@ class Conv1DStack(Layer):
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
-            default_dropout_rate=0,
+            default_dropout=0,
             default_pool_function='max',
             default_pool_size=2,
             default_pool_strides=None,
@@ -199,8 +199,8 @@ class Conv1DStack(Layer):
                 layer['norm_params'] = default_norm_params
             if 'activation' not in layer:
                 layer['activation'] = default_activation
-            if 'dropout_rate' not in layer:
-                layer['dropout_rate'] = default_dropout_rate
+            if 'dropout' not in layer:
+                layer['dropout'] = default_dropout
             if 'pool_function' not in layer:
                 layer['pool_function'] = default_pool_function
             if 'pool_size' not in layer:
@@ -232,7 +232,7 @@ class Conv1DStack(Layer):
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
-                    dropout_rate=layer['dropout_rate'],
+                    dropout=layer['dropout'],
                     pool_function=layer['pool_function'],
                     pool_size=layer['pool_size'],
                     pool_strides=layer['pool_strides'],
@@ -281,7 +281,7 @@ class ParallelConv1D(Layer):
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
-            default_dropout_rate=0,
+            default_dropout=0,
             default_pool_function='max',
             default_pool_size=None,
             default_pool_strides=None,
@@ -333,8 +333,8 @@ class ParallelConv1D(Layer):
                 layer['norm_params'] = default_norm_params
             if 'activation' not in layer:
                 layer['activation'] = default_activation
-            if 'dropout_rate' not in layer:
-                layer['dropout_rate'] = default_dropout_rate
+            if 'dropout' not in layer:
+                layer['dropout'] = default_dropout
             if 'pool_function' not in layer:
                 layer['pool_function'] = default_pool_function
             if 'pool_size' not in layer:
@@ -366,7 +366,7 @@ class ParallelConv1D(Layer):
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
-                    dropout_rate=layer['dropout_rate'],
+                    dropout=layer['dropout'],
                     pool_function=layer['pool_function'],
                     pool_size=layer['pool_size'],
                     pool_strides=layer['pool_strides'],
@@ -417,7 +417,7 @@ class ParallelConv1DStack(Layer):
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
-            default_dropout_rate=0,
+            default_dropout=0,
             default_pool_function='max',
             default_pool_size=None,
             default_pool_strides=None,
@@ -487,8 +487,8 @@ class ParallelConv1DStack(Layer):
                     layer['norm_params'] = default_norm_params
                 if 'activation' not in layer:
                     layer['activation'] = default_activation
-                if 'dropout_rate' not in layer:
-                    layer['dropout_rate'] = default_dropout_rate
+                if 'dropout' not in layer:
+                    layer['dropout'] = default_dropout
                 if 'pool_function' not in layer:
                     layer['pool_function'] = default_pool_function
                 if 'pool_size' not in layer:
@@ -547,7 +547,7 @@ class Conv2DLayer(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             pool_function='max',
             pool_size=(2, 2),
             pool_strides=None,
@@ -582,8 +582,8 @@ class Conv2DLayer(Layer):
 
         self.layers.append(Activation(activation))
 
-        if dropout_rate > 0:
-            self.layers.append(Dropout(dropout_rate))
+        if dropout > 0:
+            self.layers.append(Dropout(dropout))
 
         if pool_size is not None:
             pool = MaxPool2D
@@ -627,7 +627,7 @@ class Conv2DStack(Layer):
             default_norm=None,
             default_norm_params=None,
             default_activation='relu',
-            default_dropout_rate=0,
+            default_dropout=0,
             default_pool_function='max',
             default_pool_size=(2, 2),
             default_pool_strides=None,
@@ -685,8 +685,8 @@ class Conv2DStack(Layer):
                 layer['norm_params'] = default_norm_params
             if 'activation' not in layer:
                 layer['activation'] = default_activation
-            if 'dropout_rate' not in layer:
-                layer['dropout_rate'] = default_dropout_rate
+            if 'dropout' not in layer:
+                layer['dropout'] = default_dropout
             if 'pool_function' not in layer:
                 layer['pool_function'] = default_pool_function
             if 'pool_size' not in layer:
@@ -718,7 +718,7 @@ class Conv2DStack(Layer):
                     norm=layer['norm'],
                     norm_params=layer['norm_params'],
                     activation=layer['activation'],
-                    dropout_rate=layer['dropout_rate'],
+                    dropout=layer['dropout'],
                     pool_function=layer['pool_function'],
                     pool_size=layer['pool_size'],
                     pool_strides=layer['pool_strides'],
@@ -1429,7 +1429,7 @@ def get_resnet_block_sizes(resnet_size):
 #             self,
 #             input_image,
 #             regularizer,
-#             dropout_rate,
+#             dropout,
 #             is_training=True
 #     ):
 #         """Add operations to classify a batch of input images.
