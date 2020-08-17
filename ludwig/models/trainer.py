@@ -62,8 +62,6 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
-tf.config.experimental_run_functions_eagerly(False)
-
 
 class Trainer:
     """
