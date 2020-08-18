@@ -22,12 +22,15 @@ from collections import Counter
 
 import numpy as np
 
+from transformers import AutoTokenizer
+
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.nlp_utils import load_nlp_pipeline, process_text
 
 UNKNOWN_SYMBOL = '<UNK>'
 PADDING_SYMBOL = '<PAD>'
+PADDING_IDX = 0
 
 SPLIT_REGEX = re.compile(r'\s+')
 SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
@@ -94,23 +97,44 @@ def create_vocabulary(
         num_most_frequent=None,
         vocab_file=None,
         unknown_symbol=UNKNOWN_SYMBOL,
-        padding_symbol=PADDING_SYMBOL
+        padding_symbol=PADDING_SYMBOL,
+        pretrained_model_name_or_path=None
 ):
     vocab = None
     max_line_length = 0
     unit_counts = Counter()
 
-    if tokenizer_type == 'bert':
-        vocab = load_vocabulary(vocab_file)
-        add_unknown = False
-        add_padding = False
-    elif vocab_file is not None:
-        vocab = load_vocabulary(vocab_file)
-
     tokenizer = get_from_registry(
         tokenizer_type,
         tokenizer_registry
-    )(vocab_file=vocab_file)
+    )(
+        vocab_file=vocab_file,
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
+    )
+
+    if tokenizer_type == 'hf_tokenizer': 
+        try:
+            vocab = tokenizer.tokenizer.get_vocab()
+            vocab = list(vocab.keys())
+        except NotImplementedError:
+            vocab = []
+            for idx in range(tokenizer.tokenizer.vocab_size):
+                vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
+            vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
+        
+        pad_token = tokenizer.tokenizer.pad_token
+        unk_token = tokenizer.tokenizer.unk_token
+    
+        if pad_token is None: vocab = vocab + [padding_symbol]
+        else: padding_symbol = pad_token
+
+        if unk_token is None: vocab = vocab + [unknown_symbol]
+        else: unknown_symbol = unk_token
+        
+
+    elif vocab_file is not None:
+        vocab = load_vocabulary(vocab_file)
+
     for line in data:
         processed_line = tokenizer(line.lower() if lowercase else line)
         unit_counts.update(processed_line)
@@ -121,28 +145,36 @@ def create_vocabulary(
                  unit_counts.most_common(num_most_frequent)]
 
     vocab_set = set(vocab)
-    if add_unknown:
+
+    if add_unknown and tokenizer_type != 'hf_tokenizer':
         if unknown_symbol in vocab_set:
             vocab.remove(unknown_symbol)
         vocab = [unknown_symbol] + vocab
-    if add_padding:
+    if add_padding and tokenizer_type != 'hf_tokenizer':
         if padding_symbol in vocab_set:
             vocab.remove(padding_symbol)
         vocab = [padding_symbol] + vocab
 
+
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
-                unit in vocab}
+                unit in vocab}    
 
-    return vocab, str2idx, str2freq, max_line_length
+    pad_idx = None
+    if padding_symbol in str2idx.keys():
+        pad_idx =  str2idx[padding_symbol]
+
+    return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
 
 
 def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)()
+
     format_dtype = int_type(len(unit_to_id) - 1)
     return _get_sequence_vector(
         sequence,
         tokenizer,
+        tokenizer_type,
         format_dtype,
         unit_to_id,
         lowercase=lowercase
@@ -152,21 +184,26 @@ def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
 def _get_sequence_vector(
         sequence,
         tokenizer,
+        tokenizer_type, 
         format_dtype,
         unit_to_id,
         lowercase=True,
         unknown_symbol=UNKNOWN_SYMBOL
 ):
+    
     unit_sequence = tokenizer(
         sequence.lower() if lowercase else sequence
     )
     unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)
     for i in range(len(unit_sequence)):
         curr_unit = unit_sequence[i]
-        if curr_unit in unit_to_id:
-            unit_indices_vector[i] = unit_to_id[curr_unit]
+        if tokenizer_type == 'hf_tokenizer':
+            unit_indices_vector[i] = curr_unit
         else:
-            unit_indices_vector[i] = unit_to_id[unknown_symbol]
+            if curr_unit in unit_to_id:
+                unit_indices_vector[i] = unit_to_id[curr_unit]
+            else:
+                unit_indices_vector[i] = unit_to_id[unknown_symbol]
     return unit_indices_vector
 
 
@@ -180,18 +217,23 @@ def build_sequence_matrix(
         unknown_symbol=UNKNOWN_SYMBOL,
         lowercase=True,
         tokenizer_vocab_file=None,
+        pretrained_model_name_or_path=None
+
 ):
     tokenizer = get_from_registry(tokenizer_type, tokenizer_registry)(
-        vocab_file=tokenizer_vocab_file
+        vocab_file=tokenizer_vocab_file,
+        pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
-    format_dtype = int_type(len(inverse_vocabulary) - 1)
 
+    format_dtype = int_type(len(inverse_vocabulary) - 1)
+    
     max_length = 0
     unit_vectors = []
     for sequence in sequences:
         unit_indices_vector = _get_sequence_vector(
             sequence,
             tokenizer,
+            tokenizer_type,
             format_dtype,
             inverse_vocabulary,
             lowercase=lowercase,
@@ -695,6 +737,8 @@ class GreekLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
         )
 
 
+
+
 class NorwegianTokenizer(BaseTokenizer):
     def __call__(self, text):
         return process_text(text, load_nlp_pipeline('nb'))
@@ -1111,26 +1155,18 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
         )
 
 
-class BERTTokenizer(BaseTokenizer):
-    def __init__(self, vocab_file=None, **kwargs):
+class HFTokenizer(BaseTokenizer):
+    def __init__(self, 
+            pretrained_model_name_or_path,
+            **kwargs
+    ):
         super().__init__()
-        if vocab_file is None:
-            raise ValueError(
-                'Vocabulary file is required to initialize BERT tokenizer'
-            )
-
-        try:
-            from bert.tokenization import FullTokenizer
-        except ImportError:
-            raise ValueError(
-                "Please install bert-tensorflow: pip install bert-tensorflow"
-            )
-
-        self.tokenizer = FullTokenizer(vocab_file)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path,
+        )
 
     def __call__(self, text):
-        return ['[CLS]'] + self.tokenizer.tokenize(text) + ['[SEP]']
-
+        return self.tokenizer.encode(text)
 
 tokenizer_registry = {
     'characters': CharactersToListTokenizer,
@@ -1236,5 +1272,5 @@ tokenizer_registry = {
     'multi_lemmatize': MultiLemmatizeTokenizer,
     'multi_lemmatize_filter': MultiLemmatizeFilterTokenizer,
     'multi_lemmatize_remove_stopwords': MultiLemmatizeRemoveStopwordsTokenizer,
-    'bert': BERTTokenizer
+    'hf_tokenizer' : HFTokenizer
 }
