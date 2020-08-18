@@ -54,7 +54,7 @@ class BERTEncoder(Layer):
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs[0][:,1:-1,:]
             hidden = reduce_sequence(hidden, self.reduce_output)
 
         return {'encoder_output': hidden}
@@ -195,7 +195,7 @@ class XLMEncoder(Layer):
             attention_mask=mask,
             token_type_ids=tf.zeros_like(inputs)
         )
-        hidden = transformer_outputs[0][:,1:-1,:]
+        hidden = transformer_outputs[0][:,1:-1,:] #bos + [sent] + sep
         hidden = reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 
@@ -226,7 +226,7 @@ class RoBERTaEncoder(Layer):
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0][:,1:-1,:]
+            hidden = transformer_outputs[0][:,1:-1,:] #bos + [sent] + sep
             hidden = reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 
