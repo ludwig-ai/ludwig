@@ -117,9 +117,8 @@ class GPT2Encoder(Layer):
         hidden = reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 
-
+#todo: TransformerXL tokenizer loads vocab using torch
 class TransformerXLEncoder(Layer):
-
     def __init__(
             self,
             pretrained_model_name_or_path='transfo-xl-wt103',

@@ -63,7 +63,6 @@ class SequenceFeatureMixin(object):
         'unknown_symbol': UNKNOWN_SYMBOL,
         'padding': 'right',
         'tokenizer': 'space',
-        'pretrained_model_name_or_path' : None,
         'lowercase': False,
         'vocab_file': None,
         'missing_value_strategy': FILL_WITH_CONST,
@@ -79,9 +78,7 @@ class SequenceFeatureMixin(object):
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-            pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path'
-            ],
+            
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
@@ -111,11 +108,7 @@ class SequenceFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
-            ],
-            pretrained_model_name_or_path=preprocessing_parameters[
-                'pretrained_model_name_or_path'
-            ],
-
+            ]
         )
         return sequence_data
 
@@ -140,7 +133,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         super().__init__(feature)
         self.overwrite_defaults(feature)
         feature.update(feature['preprocessing'])
-
+        
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
@@ -186,22 +179,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         'rnn': StackedRNN,
         'cnnrnn': StackedCNNRNN,
         'embed': SequenceEmbedEncoder,
-        'bert': BERTEncoder,
-        'gpt' : GPTEncoder,
-        'gpt2' : GPT2Encoder,
-        'transformer_xl' : TransformerXLEncoder,
-        'xlnet' : XLNetEncoder,
-        'xlm' : XLMEncoder,
-        'roberta': RoBERTaEncoder,
-        'distilbert' : DistilBERTEncoder,
-        'ctrl' : CTRLEncoder,
-        'camembert' : CamemBERTEncoder,
-        'albert' : ALBERTEncoder,
-        't5' : T5Encoder,
-        'xlmroberta' : XLMRoBERTaEncoder,
-        'flaubert' : FlauBERTEncoder,
-        'electra' : ELECTRAEncoder,
-        'auto_transformer' : AutoTransformerEncoder, 
         'passthrough': SequencePassthroughEncoder,
         'null': SequencePassthroughEncoder,
         'none': SequencePassthroughEncoder,
