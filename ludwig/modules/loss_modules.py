@@ -458,20 +458,6 @@ def mean_squared_error(y, y_hat, weight=1.0):
     return tf.reduce_mean(tf.multiply(squared_loss(y, y_hat), weight))
 
 
-# todo tf2: TF2 requires regularization to be done at init time
-#  so this dictionary is useless, remove it and fix the tests that use it
-# regularizer_registry = {'l1': tf2.keras.regularizers.l1,
-#                         'l2': tf2.keras.regularizers.l2,
-#                         'l1_l2': tf2.keras.regularizers.l1_l2,
-#                         'None': lambda x: None,
-#                         None: lambda x: None}
-regularizer_registry = {'l1': lambda x: None,
-                        'l2': lambda x: None,
-                        'l1_l2': lambda x: None,
-                        'None': lambda x: None,
-                        None: lambda x: None}
-
-
 def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
                                unique, class_counts, distortion):
     """returns sampled_values using the chosen sampler"""

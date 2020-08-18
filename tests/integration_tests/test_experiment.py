@@ -181,8 +181,81 @@ def test_experiment_multi_input_intent_classification(csv_filename):
         run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def test_experiment_multiple_seq_seq(csv_filename):
-    # Multiple inputs, Multiple outputs
+def generate_output_features_with_dependencies(main_feature, dependencies):
+    # helper function to generate multiple output features specifications
+    # with dependencies, support for 'test_experiment_multiple_seq_seq` unit test
+    # Parameters:
+    # main_feature: feature identifier, valid values 'feat1', 'feat2', 'feat3'
+    # dependencies: list of dependencies for 'main_feature', do not li
+    # Example:
+    #  generate_output_features_with_dependencies('feat2', ['feat1', 'feat3'])
+
+    output_features = [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            sequence_feature(vocab_size=10, max_len=5),
+            numerical_feature()
+        ]
+
+    # value portion of dictionary is a tuple: (position, feature_name)
+    #   position: location of output feature in the above output_features list
+    #   feature_name: Ludwig generated feature name
+    feature_names = {
+        'feat1': (0, output_features[0]['name']),
+        'feat2': (1, output_features[1]['name']),
+        'feat3': (2, output_features[2]['name'])
+    }
+
+    # generate list of dependencies with real feature names
+    generated_dependencies = [feature_names[feat_name][1]
+                                for feat_name in dependencies]
+
+    # specify dependencies for the main_feature
+    output_features[feature_names[main_feature][0]]['dependencies'] = \
+        generated_dependencies
+
+    return output_features
+
+
+@pytest.mark.parametrize(
+    'output_features',
+    [
+        # baseline test case
+        [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            sequence_feature(vocab_size=10, max_len=5),
+            numerical_feature()
+        ],
+
+        # use generator as decoder
+        [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            sequence_feature(vocab_size=10, max_len=5, decoder='generator'),
+            numerical_feature()
+        ],
+
+        # Generator decoder and reduce_input = None
+        [
+            category_feature(vocab_size=2, reduce_input='sum'),
+            sequence_feature(max_len=5, decoder='generator', reduce_input=None),
+            numerical_feature(normalization='minmax')
+        ],
+
+        # output features with dependencies single dependency
+        generate_output_features_with_dependencies('feat3', ['feat1']),
+
+        # output features with dependencies multiple dependencies
+        generate_output_features_with_dependencies('feat3', ['feat1', 'feat2']),
+
+        # output features with dependencies multiple dependencies
+        generate_output_features_with_dependencies('feat2', ['feat1', 'feat3']),
+
+        # output features with dependencies
+        generate_output_features_with_dependencies('feat1', ['feat2'])
+    ]
+)
+def test_experiment_multiple_seq_seq(csv_filename, output_features):
+    print('>>>>output features to test:\n', output_features)
+
     input_features = [
         text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
         numerical_feature(normalization='zscore'),
@@ -190,31 +263,8 @@ def test_experiment_multiple_seq_seq(csv_filename):
         set_feature(),
         sequence_feature(vocab_size=10, max_len=10, encoder='embed')
     ]
-    output_features = [
-        category_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(vocab_size=10, max_len=5),
-        numerical_feature()
-    ]
+    output_features = output_features
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
-
-    # Use generator as decoder
-    output_features = [
-        category_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(vocab_size=10, max_len=5, decoder='generator'),
-        numerical_feature()
-    ]
-
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
-
-    # Generator decoder and reduce_input = None
-    output_features = [
-        category_feature(vocab_size=2, reduce_input='sum'),
-        sequence_feature(max_len=5, decoder='generator', reduce_input=None),
-        numerical_feature(normalization='minmax')
-    ]
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
 

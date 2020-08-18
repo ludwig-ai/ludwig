@@ -28,5 +28,5 @@ output_features:
         type: category
 
 training:
-    dropout_rate: 0.4
+    dropout: 0.4
     epochs: 10

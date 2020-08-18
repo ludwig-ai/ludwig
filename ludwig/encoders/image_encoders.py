@@ -50,7 +50,7 @@ class Stacked2DCNN(Layer):
             conv_norm=None,
             conv_norm_params=None,
             conv_activation='relu',
-            conv_dropout_rate=0,
+            conv_dropout=0,
             pool_size=(2, 2),
             pool_strides=None,
             fc_layers=None,
@@ -67,7 +67,7 @@ class Stacked2DCNN(Layer):
             fc_norm=None,
             fc_norm_params=None,
             fc_activation='relu',
-            fc_dropout_rate=0,
+            fc_dropout=0,
             **kwargs
     ):
         super(Stacked2DCNN, self).__init__()
@@ -94,7 +94,7 @@ class Stacked2DCNN(Layer):
             default_norm=conv_norm,
             default_norm_params=conv_norm_params,
             default_activation=conv_activation,
-            default_dropout_rate=conv_dropout_rate,
+            default_dropout=conv_dropout,
             default_pool_size=pool_size,
             default_pool_strides=pool_strides,
         )
@@ -115,7 +115,7 @@ class Stacked2DCNN(Layer):
             default_norm=fc_norm,
             default_norm_params=fc_norm_params,
             default_activation=fc_activation,
-            default_dropout_rate=fc_dropout_rate,
+            default_dropout=fc_dropout,
         )
 
     def call(self, inputs, training=None, mask=None):
@@ -164,7 +164,7 @@ class ResNetEncoder(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             **kwargs
     ):
         super(ResNetEncoder, self).__init__()
@@ -211,7 +211,7 @@ class ResNetEncoder(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
     def call(self, inputs, training=None, mask=None):

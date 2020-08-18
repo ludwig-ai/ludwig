@@ -46,7 +46,7 @@ class DateEmbed(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             **kwargs
     ):
         """
@@ -92,9 +92,9 @@ class DateEmbed(Layer):
             :type norm_params: dictionary
             :param activation: Activation function to use.
             :type activation: string
-            :param dropout_rate: determines if there should be a dropout layer before
+            :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
-            :type dropout_rate: float
+            :type dropout: float
 
         """
         super(DateEmbed, self).__init__()
@@ -115,7 +115,7 @@ class DateEmbed(Layer):
             default_norm=None,
             default_norm_params=None,
             default_activation=None,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
         logger.debug('  month Embed')
@@ -126,9 +126,9 @@ class DateEmbed(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  day Embed')
@@ -139,9 +139,9 @@ class DateEmbed(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  weekday Embed')
@@ -152,9 +152,9 @@ class DateEmbed(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  yearday Embed')
@@ -165,9 +165,9 @@ class DateEmbed(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  hour Embed')
@@ -178,9 +178,9 @@ class DateEmbed(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  minute Embed')
@@ -191,9 +191,9 @@ class DateEmbed(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  second Embed')
@@ -204,9 +204,9 @@ class DateEmbed(Layer):
             embeddings_trainable=True,
             pretrained_embeddings=None,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  FCStack')
@@ -225,7 +225,7 @@ class DateEmbed(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
     def call(
@@ -330,7 +330,7 @@ class DateWave(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             **kwargs
     ):
         """
@@ -362,9 +362,9 @@ class DateWave(Layer):
             :type norm_params: dictionary
             :param activation: Activation function to use.
             :type activation: string
-            :param dropout_rate: determines if there should be a dropout layer before
+            :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
-            :type dropout_rate: float
+            :type dropout: float
         """
         super(DateWave, self).__init__()
         logger.debug(' {}'.format(self.name))
@@ -384,7 +384,7 @@ class DateWave(Layer):
             default_norm=None,
             default_norm_params=None,
             default_activation=None,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
         logger.debug('  FCStack')
@@ -403,7 +403,7 @@ class DateWave(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
     def call(

@@ -58,7 +58,7 @@ class DenseEncoder(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             **kwargs
     ):
         super(DenseEncoder, self).__init__()
@@ -80,7 +80,7 @@ class DenseEncoder(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
     def call(self, inputs, training=None, mask=None):

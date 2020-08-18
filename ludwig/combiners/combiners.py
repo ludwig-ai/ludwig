@@ -24,7 +24,6 @@ from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
-from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.reduction_modules import reduce_sequence
 from ludwig.utils.misc_utils import get_from_registry
@@ -51,7 +50,7 @@ class ConcatCombiner(tf.keras.Model):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             **kwargs
     ):
         super().__init__()
@@ -83,7 +82,7 @@ class ConcatCombiner(tf.keras.Model):
                 default_norm=norm,
                 default_norm_params=norm_params,
                 default_activation=activation,
-                default_dropout_rate=dropout_rate,
+                default_dropout=dropout,
             )
 
         if input_features and len(input_features) == 1 and fc_layers is None:
@@ -146,7 +145,10 @@ class SequenceConcatCombiner(tf.keras.Model):
         if (self.main_sequence_feature is None or
                 self.main_sequence_feature not in inputs):
             for if_name, if_outputs in inputs.items():
-                if if_outputs['type'] in SEQUENCE_TYPES:
+                # todo: when https://github.com/uber/ludwig/issues/810 is closed
+                #       convert following test from using shape to use explicit
+                #       if_outputs['type'] values for sequence features
+                if len(if_outputs['encoder_output'].shape) == 3:
                     self.main_sequence_feature = if_name
                     break
 
@@ -165,7 +167,7 @@ class SequenceConcatCombiner(tf.keras.Model):
 
         # ================ Concat ================
         for if_name, if_outputs in inputs.items():
-            if if_name is not self.main_sequence_feature:
+            if if_name != self.main_sequence_feature:
                 if_representation = if_outputs['encoder_output']
                 if len(if_representation.shape) == 3:
                     # The following check makes sense when
