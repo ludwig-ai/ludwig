@@ -4,7 +4,6 @@ import os
 from pprint import pformat
 
 import pandas as pd
-import tensorflow as tf
 import yaml
 
 from ludwig.constants import TRAINING, VALIDATION, TEST, PREPROCESSING
@@ -38,7 +37,7 @@ class NewLudwigModel:
 
     def __init__(self,
                  model_definition=None,
-                 model_definition_file=None,
+                 model_definition_fp=None,
                  logging_level=logging.ERROR,
                  use_horovod=False,
                  gpus=None,
@@ -46,24 +45,25 @@ class NewLudwigModel:
                  allow_parallel_threads=True,
                  random_seed=default_random_seed):
         # check for model_definition and model_definition_file
-        if model_definition is None and model_definition_file is None:
+        if model_definition is None and model_definition_fp is None:
             raise ValueError(
                 'Either model_definition of model_definition_file have to be'
                 'not None to initialize a LudwigModel'
             )
-        if model_definition is not None and model_definition_file is not None:
+        if model_definition is not None and model_definition_fp is not None:
             raise ValueError(
                 'Only one between model_definition and '
                 'model_definition_file can be provided'
             )
 
         # merge model definition with defaults
-        if model_definition_file is not None:
-            with open(model_definition_file, 'r') as def_file:
+        if model_definition_fp is not None:
+            with open(model_definition_fp, 'r') as def_file:
                 raw_model_definition = yaml.safe_load(def_file)
         else:
             raw_model_definition = copy.deepcopy(model_definition)
         self.model_definition = merge_with_defaults(raw_model_definition)
+        self.model_definition_fp = model_definition_fp
 
         # setup horovod
         self._horovod = None
@@ -71,6 +71,9 @@ class NewLudwigModel:
             import horovod.tensorflow
             self._horovod = horovod.tensorflow
             self._horovod.init()
+        # todo refactoring: figure out it this belongs here or
+        #  in Trainer and Predictor. It probably belongs here
+        set_on_master(use_horovod)
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -78,33 +81,36 @@ class NewLudwigModel:
         # setup TensorFlow
         initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads,
                               self._horovod)
-        tf.random.set_seed(random_seed)
+        # todo refactoring: decide where to put this,
+        #  here or at the beginning of training.
+        #  Either way make sure it is called before the model is initialized.
+        # tf.random.set_seed(random_seed)
 
         # setup model
         self.model = None
         self.training_set_metadata = None
         self.exp_dir_name = ''
 
-    def train_pseudo(self, data, training_params):
-        # process_data ignores self.training_set_metadata if it's None and computes a new one from the actual data
-        # or uses the procided one and does not compute a new one if it is not None
-        preproc_data, training_set_metadata = preprocess_data(
-            data,
-            self.training_set_metadata
-        )
-        self.training_set_metadata = training_set_metadata
-
-        # this is done only if the model is not loaded
-        if not self.model:
-            update_model_definition_with_metadata(
-                self.model_definition,
-                training_set_metadata
-            )
-            self.model = ECD(self.model_definition)
-
-        trainer = Trainer(training_params)
-        training_stats = trainer.train(self.model, preproc_data)
-        return training_stats
+    # def train_pseudo(self, data, training_params):
+    #     # process_data ignores self.training_set_metadata if it's None and computes a new one from the actual data
+    #     # or uses the procided one and does not compute a new one if it is not None
+    #     preproc_data, training_set_metadata = preprocess_data(
+    #         data,
+    #         self.training_set_metadata
+    #     )
+    #     self.training_set_metadata = training_set_metadata
+    #
+    #     # this is done only if the model is not loaded
+    #     if not self.model:
+    #         update_model_definition_with_metadata(
+    #             self.model_definition,
+    #             training_set_metadata
+    #         )
+    #         self.model = ECD(self.model_definition)
+    #
+    #     trainer = Trainer(training_params)
+    #     training_stats = trainer.train(self.model, preproc_data)
+    #     return training_stats
 
     def train(
             self,
@@ -113,7 +119,7 @@ class NewLudwigModel:
             validation_set=None,
             test_set=None,
             training_set_metadata=None,
-            data_format='csv',
+            data_format=None,
             experiment_name='api_experiment',
             model_name='run',
             model_resume_path=None,
@@ -273,8 +279,6 @@ class NewLudwigModel:
         :return: (dict) a dictionary containing training statistics for each
         output feature containing loss and metrics values for each epoch.
         """
-        set_on_master(use_horovod)
-
         # setup directories and file names
         experiment_dir_name = None
         if model_resume_path is not None:
@@ -322,15 +326,12 @@ class NewLudwigModel:
             # todo refactoring: fix this
             description = get_experiment_description(
                 self.model_definition,
-                data_csv=data_csv,
-                data_train_csv=data_train_csv,
-                data_validation_csv=data_validation_csv,
-                data_test_csv=data_test_csv,
-                data_hdf5=data_hdf5,
-                data_train_hdf5=data_train_hdf5,
-                data_validation_hdf5=data_validation_hdf5,
-                data_test_hdf5=data_test_hdf5,
-                metadata_json=training_set_metadata_json,
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                data_format=data_format,
                 random_seed=random_seed
             )
             if not skip_save_training_description:
@@ -410,7 +411,7 @@ class NewLudwigModel:
         )
 
         contrib_command("train_model", self.model, self.model_definition,
-                        self.model_load_path)
+                        self.model_definition_fp)
 
         # train model
         if is_on_master():
@@ -479,16 +480,16 @@ class NewLudwigModel:
 
         return train_stats
 
-    def predict_pseudo(self, data):
-        preproc_data = preprocess_data(data)
-        preds = self.model.batch_predict(preproc_data)
-        postproc_preds = postprocess_data(preds)
-        return postproc_preds
+    # def predict_pseudo(self, data):
+    #     preproc_data = preprocess_data(data)
+    #     preds = self.model.batch_predict(preproc_data)
+    #     postproc_preds = postprocess_data(preds)
+    #     return postproc_preds
 
     def predict(
             self,
             dataset=None,
-            data_format='csv',
+            data_format=None,
             batch_size=128,
             skip_save_unprocessed_output=True,
             skip_save_predictions=True,
@@ -501,9 +502,6 @@ class NewLudwigModel:
         if (self.model is None or self.model_definition is None or
                 self.training_set_metadata is None):
             raise ValueError('Model has not been trained or loaded')
-
-        # todo refactoring: check if needed
-        set_on_master(use_horovod)
 
         if is_on_master() and not self.exp_dir_name:
             # setup directories and file names
@@ -576,24 +574,24 @@ class NewLudwigModel:
 
         return postproc_predictions
 
-    def evaluate_pseudo(self, data, return_preds=False):
-        preproc_data = preprocess_data(data)
-        if return_preds:
-            eval_stats, preds = self.model.batch_evaluate(
-                preproc_data, return_preds=return_preds
-            )
-            postproc_preds = postprocess_data(preds)
-            return eval_stats, postproc_preds
-        else:
-            eval_stats = self.model.batch_evaluate(
-                preproc_data, return_preds=return_preds
-            )
-            return eval_stats
+    # def evaluate_pseudo(self, data, return_preds=False):
+    #     preproc_data = preprocess_data(data)
+    #     if return_preds:
+    #         eval_stats, preds = self.model.batch_evaluate(
+    #             preproc_data, return_preds=return_preds
+    #         )
+    #         postproc_preds = postprocess_data(preds)
+    #         return eval_stats, postproc_preds
+    #     else:
+    #         eval_stats = self.model.batch_evaluate(
+    #             preproc_data, return_preds=return_preds
+    #         )
+    #         return eval_stats
 
     def evaluate(
             self,
             dataset=None,
-            data_format='csv',
+            data_format=None,
             batch_size=128,
             skip_save_unprocessed_output=True,
             skip_save_predictions=True,
@@ -609,19 +607,11 @@ class NewLudwigModel:
                 self.training_set_metadata is None):
             raise ValueError('Model has not been trained or loaded')
 
-        # todo refactoring: check if needed
-        set_on_master(use_horovod)
-
         if is_on_master() and not self.exp_dir_name:
             # setup directories and file names
             self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
                 output_directory)
 
-        logger.debug('Preprocessing')
-        # Added [:] to next line, before I was just assigning,
-        # this way I'm copying the list. If you don't do it, you are actually
-        # modifying the input feature list when you add output features,
-        # which you definitely don't want to do
         logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
         # this way I'm copying the list. If you don't do it, you are actually

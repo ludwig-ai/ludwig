@@ -1,22 +1,19 @@
 import copy
 import logging
-import sys
 from collections import OrderedDict
 
 import tensorflow as tf
-from tqdm import tqdm
 
 from ludwig.combiners.combiners import get_combiner_class
 from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
-from ludwig.globals import is_progressbar_disabled
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
-from ludwig.utils.batcher import initialize_batcher
-from ludwig.utils.data_utils import clear_data_cache
+from ludwig.utils.data_utils import clear_data_cache, save_json
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
+
 
 class ECD(tf.keras.Model):
 
@@ -229,87 +226,37 @@ class ECD(tf.keras.Model):
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
 
-    # todo tf2: reintroduce this functionality
-    def batch_collect_activations(
-            self,
-            dataset,
-            batch_size,
-            tensor_names,
-            horovod=None
-    ):
-        # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
-        #                 for tensor_name in tensor_names}
-        # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
-
-        batcher = initialize_batcher(
-            dataset, batch_size,
-            should_shuffle=False,
-            horovod=horovod
-        )
-
-        progress_bar = tqdm(
-            desc='Collecting Tensors',
-            total=batcher.steps_per_epoch,
-            file=sys.stdout,
-            disable=is_progressbar_disabled()
-        )
-
-        while not batcher.last_batch():
-            batch = batcher.next_batch()
-
-            self.collect_activations_step(batch)
-            # result = session.run(
-            #     output_nodes,
-            #     feed_dict=self.feed_dict(
-            #         batch,
-            #         is_training=False
-            #     )
-            # )
-            #
-            # for tensor_name in result:
-            #     for row in result[tensor_name]:
-            #         collected_tensors[tensor_name].append(row)
-
-            progress_bar.update(1)
-
-        progress_bar.close()
-
-        collected_tensors = None
-        return collected_tensors
-
-    # todo tf2: reintroduce this functionality
     def collect_weights(
             self,
-            tensor_names,
+            tensor_names=None,
             **kwargs
     ):
-        # if self.session is None:
-        #     session = self.initialize_session(gpus, gpu_fraction)
-        #
-        #     # load parameters
-        #     if self.weights_save_path:
-        #         self.restore(session, self.weights_save_path)
-        # else:
-        #     session = self.session
-        #
-        # operation_names = set(
-        #     [t.name for op in self.graph.get_operations() for t in op.values()]
-        # )
-        # for tensor_name in tensor_names:
-        #     if tensor_name not in operation_names:
-        #         raise ValueError(
-        #             'Tensor / operation {} not present in the '
-        #             'model graph'.format(tensor_name)
-        #         )
-        #
-        # # collect tensors
-        # collected_tensors = {
-        #     tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
-        #     for tensor_name in tensor_names
-        # }
-        #
-        # return collected_tensors
-        pass
+        def recurse_weights(model, prefix=None):
+            results = []
+            for layer in model.layers:
+                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
+                if isinstance(layer, tf.keras.Model):
+                    results += recurse_weights(layer, layer_prefix)
+                else:
+                    results += [(f'{layer_prefix}/{w.name}', w) for w in
+                                layer.weights]
+            return results
+
+        weights = recurse_weights(self)
+
+        if tensor_names:
+            # Check for bad tensor names
+            weight_set = set(name for name, w in weights)
+            for name in tensor_names:
+                if name not in weight_set:
+                    raise ValueError(
+                        f'Tensor {name} not present in the model graph')
+
+            # Filter the weights
+            tensor_set = set(tensor_names)
+            weights = [(name, w) for name, w in weights if name in tensor_set]
+
+        return weights
 
     def save_savedmodel(self, save_path):
         self.model.save(save_path)

@@ -34,6 +34,12 @@ from ludwig.constants import SPLIT
 
 logger = logging.getLogger(__name__)
 
+DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
+DICT_FORMATS = {'dict', 'dictionary', dict}
+DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame}
+CSV_FORMATS = {'csv'}
+HDF5_FORMATS = {'hdf5', 'h5'}
+
 
 def get_abs_path(data_csv_path, file_path):
     if data_csv_path is not None:
@@ -76,7 +82,8 @@ def read_csv(data_fp, header=0, nrows=None, skiprows=None):
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\',
+        df = pd.read_csv(data_fp, sep=separator, header=header,
+                         escapechar='\\',
                          nrows=nrows, skiprows=skiprows)
 
     return df

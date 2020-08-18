@@ -18,6 +18,7 @@ import pandas as pd
 
 from ludwig.constants import TYPE
 from ludwig.features.feature_utils import SEQUENCE_TYPES
+from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS
 from ludwig.utils.misc_utils import get_from_registry
 
 
@@ -117,10 +118,6 @@ def postprocess_df(
 
 
 postprocess_registry = {
-    'dict': postprocess_dict,
-    'dictionary': postprocess_dict,
-    dict: postprocess_dict,
-    'dataframe': postprocess_df,
-    'df': postprocess_df,
-    pd.DataFrame: postprocess_df,
+    **{format: postprocess_dict for format in DICT_FORMATS},
+    **{format: postprocess_df for format in DATAFRAME_FORMATS},
 }

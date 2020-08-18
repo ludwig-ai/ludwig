@@ -30,7 +30,9 @@ from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.globals import is_on_master
 from ludwig.utils import data_utils
-from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format
+from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format, \
+    DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
+    HDF5_FORMATS
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
@@ -44,12 +46,6 @@ from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
-
-DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
-DICT_FORMATS = {'dict', 'dictionary', dict}
-PANDAS_FORMATS = {'dataframe', 'df', pd.DataFrame}
-CSV_FORMATS = {'csv'}
-HDF5_FORMATS = {'hdf5', 'h5'}
 
 
 def build_dataset_csv(
@@ -355,7 +351,7 @@ def preprocess_for_training(
                 model_definition['data_hdf5_fp'] = training_set
                 data_format = 'hdf5'
 
-    if data_format in PANDAS_FORMATS:
+    if data_format in DATAFRAME_FORMATS:
         (
             training_set,
             test_set,
@@ -718,7 +714,7 @@ def preprocess_for_prediction(
             model_definition['data_hdf5_fp'] = dataset
             data_format = 'hdf5'
 
-    if data_format in PANDAS_FORMATS:
+    if data_format in DATAFRAME_FORMATS:
         dataset, training_set_metadata = build_dataset_df(
             dataset,
             features,

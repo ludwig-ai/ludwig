@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import copy
 import logging
 import os
 import os.path
@@ -653,11 +652,7 @@ class Trainer:
                 if is_on_master():
                     if not self._skip_save_model:
                         model.save_weights(model_weights_path)
-                        # todo refactoring: this should become save trainer
-                        self.save_hyperparameters(
-                            self._hyperparameters,
-                            model_hyperparameters_path
-                        )
+                        model.save_definition(model_hyperparameters_path)
 
             # ========== Save training progress ==========
             if is_on_master():
@@ -670,9 +665,7 @@ class Trainer:
                         )
                     )
                     if self._skip_save_model:
-                        # todo refactoring: this should become save trainer
-                        self.save_hyperparameters(
-                            self._hyperparameters,
+                        model.save_definition(
                             model_hyperparameters_path
                         )
 
@@ -814,11 +807,7 @@ class Trainer:
             if is_on_master():
                 if not skip_save_model:
                     model.save_weights(model_weights_path)
-                    # todo refactoring: this should become save trainer
-                    self.save_hyperparameters(
-                        self._hyperparameters,
-                        model_hyperparameters_path
-                    )
+                    model.save_definition(model_hyperparameters_path)
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
                             validation_metric,
@@ -894,79 +883,6 @@ class Trainer:
             **kwargs
     ):
         pass
-
-    # todo refactoring: should use ECD.collect_weights
-    def collect_weights(
-            self,
-            tensor_names=None,
-            **kwargs
-    ):
-        def recurse_weights(model, prefix=None):
-            results = []
-            for layer in model.layers:
-                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
-                if isinstance(layer, tf.keras.Model):
-                    results += recurse_weights(layer, layer_prefix)
-                else:
-                    results += [(f'{layer_prefix}/{w.name}', w) for w in
-                                layer.weights]
-            return results
-
-        weights = recurse_weights(self.model)
-        if tensor_names:
-            # Check for bad tensor names
-            weight_set = set(name for name, w in weights)
-            for name in tensor_names:
-                if name not in weight_set:
-                    raise ValueError(
-                        f'Tensor {name} not present in the model graph')
-
-            # Filter the weights
-            tensor_set = set(tensor_names)
-            weights = [(name, w) for name, w in weights if name in tensor_set]
-        return weights
-
-    def save_weights(self, save_path):
-        # save model
-        self.model.save_weights(save_path)
-
-    # todo refactoring: should change
-    def save_hyperparameters(self, hyperparameters, save_path):
-        # removing pretrained embeddings paths from hyperparameters
-        # because the weights are already saved in the model, no need to reload
-        # from their path when loading the model next time
-
-        local_hyperparamters = copy.deepcopy(hyperparameters)
-        for feature in (local_hyperparamters['input_features'] +
-                        local_hyperparamters['output_features']):
-            if 'pretrained_embeddings' in feature:
-                feature['pretrained_embeddings'] = None
-        save_json(save_path, hyperparameters, sort_keys=True, indent=4)
-
-    # todo refactoring: should change
-    def restore(self, weights_path):
-        self.model.load_weights(weights_path)
-
-    # todo refactoring: should change
-    @staticmethod
-    def load(load_path, use_horovod=None, gpus=None, gpu_memory_limit=None,
-             allow_parallel_threads=True):
-        hyperparameter_file = os.path.join(
-            load_path,
-            MODEL_HYPERPARAMETERS_FILE_NAME
-        )
-        hyperparameters = load_json(hyperparameter_file)
-        trainer = Trainer(use_horovod=use_horovod,
-                          gpus=gpus,
-                          gpu_memory_limit=gpu_memory_limit,
-                          allow_parallel_threads=allow_parallel_threads,
-                          **hyperparameters)
-        weights_save_path = os.path.join(
-            load_path,
-            MODEL_WEIGHTS_FILE_NAME
-        )
-        trainer.restore(weights_save_path)
-        return trainer
 
     def set_epochs_to_1_or_quit(self, signum, frame):
         if not self._received_sigint:
@@ -1164,24 +1080,3 @@ class ProgressTracker:
     def load(filepath):
         loaded = load_json(filepath)
         return ProgressTracker(**loaded)
-
-
-# todo refactoring: should change
-def load_model_and_definition(model_dir,
-                              use_horovod=None,
-                              gpus=None,
-                              gpu_memory_limit=None,
-                              allow_parallel_threads=True):
-    # Load model definition and weights
-    model_definition = load_json(
-        os.path.join(
-            model_dir,
-            MODEL_HYPERPARAMETERS_FILE_NAME
-        )
-    )
-    trainer = Trainer.load(model_dir,
-                           use_horovod=use_horovod,
-                           gpus=gpus,
-                           gpu_memory_limit=gpu_memory_limit,
-                           allow_parallel_threads=allow_parallel_threads)
-    return trainer, model_definition

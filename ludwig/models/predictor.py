@@ -164,6 +164,54 @@ class Predictor:
 
         return metrics, predictions
 
+    # todo tf2: reintroduce this functionality
+    def batch_collect_activations(
+            self,
+            model,
+            dataset,
+            tensor_names,
+    ):
+        # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
+        #                 for tensor_name in tensor_names}
+        # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
+
+        batcher = initialize_batcher(
+            dataset, self._batch_size,
+            should_shuffle=False,
+            horovod=self._horovod
+        )
+
+        progress_bar = tqdm(
+            desc='Collecting Tensors',
+            total=batcher.steps_per_epoch,
+            file=sys.stdout,
+            disable=is_progressbar_disabled()
+        )
+
+        collected_tensors = {}
+
+        while not batcher.last_batch():
+            batch = batcher.next_batch()
+
+            model.collect_activations_step(batch)
+            # result = session.run(
+            #     output_nodes,
+            #     feed_dict=self.feed_dict(
+            #         batch,
+            #         is_training=False
+            #     )
+            # )
+            #
+            # for tensor_name in result:
+            #     for row in result[tensor_name]:
+            #         collected_tensors[tensor_name].append(row)
+
+            progress_bar.update(1)
+
+        progress_bar.close()
+
+        return collected_tensors
+
 
 def merge_workers_metrics(metrics):
     # gather outputs from all workers
