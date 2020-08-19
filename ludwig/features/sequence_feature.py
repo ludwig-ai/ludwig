@@ -146,6 +146,12 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
         return encoder_output
 
+    def get_input_dtype(self):
+        return tf.int32
+
+    def get_input_shape(self):
+        return None,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,

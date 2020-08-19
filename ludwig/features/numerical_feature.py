@@ -158,6 +158,12 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
         return inputs_encoded
 
+    def get_input_dtype(self):
+        return tf.float32
+
+    def get_input_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,

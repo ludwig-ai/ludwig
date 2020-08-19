@@ -120,6 +120,12 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
+    def get_input_dtype(self):
+        return tf.int32
+
+    def get_input_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,

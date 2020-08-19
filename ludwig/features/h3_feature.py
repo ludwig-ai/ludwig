@@ -95,6 +95,12 @@ class H3InputFeature(H3FeatureMixin, InputFeature):
 
         return inputs_encoded
 
+    def get_input_dtype(self):
+        return tf.uint8
+
+    def get_input_shape(self):
+        return H3_VECTOR_LENGTH,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
