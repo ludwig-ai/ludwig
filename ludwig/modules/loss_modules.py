@@ -108,8 +108,8 @@ class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         self.feature_loss = feature_loss
 
     def call(self, y, y_pred):
-        decoder_weights = self.decoder_obj.get_weights()[0]
-        decoder_biases = self.decoder_obj.get_weights()[1]
+        decoder_weights = self.decoder_obj.weights[0]
+        decoder_biases = self.decoder_obj.weights[1]
 
         loss = sampled_softmax_cross_entropy(
             y,
@@ -151,41 +151,31 @@ class SequenceLoss(tf.keras.losses.Loss):
         # y_true: shape [batch_size, sequence_size]
         # y_pred: shape [batch_size, sequence_size, num_classes]
 
-        y_pred = y_pred[LOGITS]
-        y_true = tf.convert_to_tensor(y_true, dtype=tf.int64)
+        y_pred_tensor = y_pred[LOGITS]
+        y_true_tensor = tf.cast(y_true, dtype=tf.int64)
 
         # pad the shorter sequence
-        if y_true.shape[1] > y_pred.shape[1]:
-            pad = tf.zeros(
-                [
-                    y_pred.shape[0],
-                    y_true.shape[1] - y_pred.shape[1],
-                    y_pred.shape[2]
-                ],
-                dtype=y_pred.dtype)
-            y_pred = tf.concat([y_pred, pad], axis=1)
-        elif y_pred.shape[1] > y_true.shape[1]:
-            pad = tf.zeros(
-                [
-                    y_true.shape[0],
-                    y_pred.shape[1] - y_true.shape[1],
-                ],
-                dtype=y_true.dtype
-            )
-            y_true = tf.concat([y_true, pad], axis=1)
+        y_pred_seq_len = tf.shape(y_pred_tensor)[1]
+        y_true_seq_len = tf.shape(y_true_tensor)[1]
 
-        longest_sequence_length = tf.maximum(sequence_length_2D(y_true),
-                                             sequence_length_3D(y_pred))
+        y_pred_pad_len = tf.maximum(0, y_true_seq_len - y_pred_seq_len)
+        y_true_pad_len = tf.maximum(0, y_pred_seq_len - y_true_seq_len)
+
+        y_pred_tensor = tf.pad(y_pred_tensor, [[0, 0], [0, y_pred_pad_len], [0, 0]])
+        y_true_tensor = tf.pad(y_true_tensor, [[0, 0], [0, y_true_pad_len]])
+
+        longest_sequence_length = tf.maximum(sequence_length_2D(y_true_tensor),
+                                             sequence_length_3D(y_pred_tensor))
         longest_sequence_length += 1  # for EOS
         longest_sequence_length = tf.minimum(longest_sequence_length,
-                                             y_true.shape[1])
+                                             tf.shape(y_true_tensor)[1])
         mask = tf.sequence_mask(
             longest_sequence_length,
-            maxlen=y_true.shape[1],
+            maxlen=tf.shape(y_true_tensor)[1],
             dtype=tf.float32
         )
         # compute loss based on valid time steps
-        loss = self.loss_function(y_true, y_pred)
+        loss = self.loss_function(y_true_tensor, y_pred_tensor)
         loss = loss * mask
         loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
         return loss
