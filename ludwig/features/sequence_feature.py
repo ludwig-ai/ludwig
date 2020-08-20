@@ -362,36 +362,37 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 for cls in feature_metadata['idx2str']
             ]
 
-    # todo tf2: make clear that the overall stats are bout the last prediction
+    @staticmethod
     def calculate_overall_stats(
-            self,
-            predictions,
-            targets,
-            metadata
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
     ):
-        last_elem_sequence = targets[np.arange(targets.shape[0]),
-                                     (targets != 0).cumsum(1).argmax(1)]
+        feature_name = output_feature['name']
+        sequences = dataset.get(feature_name)
+        last_elem_sequence = sequences[np.arange(sequences.shape[0]),
+                                       (sequences != 0).cumsum(1).argmax(1)]
+        stats = test_stats[feature_name]
         confusion_matrix = ConfusionMatrix(
             last_elem_sequence,
-            predictions[LAST_PREDICTIONS],
-            labels=metadata['idx2str'],
+            stats[LAST_PREDICTIONS],
+            labels=train_set_metadata[feature_name]['idx2str']
         )
-
-        stats = {}
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
         stats['per_class_stats'] = confusion_matrix.per_class_stats()
-        return stats
 
-    def postprocess_predictions(
-            self,
-            predictions,
+    @staticmethod
+    def postprocess_results(
+            output_feature,
+            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = output_feature['name']
 
         npy_filename = None
         if is_on_master():
@@ -399,8 +400,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            preds = predictions[PREDICTIONS]
+        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
+            preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token]
@@ -414,11 +415,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PREDICTIONS), preds)
 
-            del predictions[PREDICTIONS]
+            del result[PREDICTIONS]
 
-        if LAST_PREDICTIONS in predictions and len(
-                predictions[LAST_PREDICTIONS]) > 0:
-            last_preds = predictions[LAST_PREDICTIONS]
+        if LAST_PREDICTIONS in result and len(result[LAST_PREDICTIONS]) > 0:
+            last_preds = result[LAST_PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[LAST_PREDICTIONS] = [
                     metadata['idx2str'][last_pred]
@@ -432,11 +432,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 np.save(npy_filename.format(name, LAST_PREDICTIONS),
                         last_preds)
 
-            del predictions[LAST_PREDICTIONS]
+            del result[LAST_PREDICTIONS]
 
-        if PROBABILITIES in predictions and len(
-                predictions[PROBABILITIES]) > 0:
-            probs = predictions[PROBABILITIES].numpy()
+        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
+            probs = result[PROBABILITIES].numpy()
             if probs is not None:
 
                 if len(probs) > 0 and isinstance(probs[0], list):
@@ -462,10 +461,10 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     # np.save(npy_filename.format(name, PROBABILITIES), probs)
                     np.save(npy_filename.format(name, PROBABILITY), prob)
 
-            del predictions[PROBABILITIES]
+            del result[PROBABILITIES]
 
-        if LENGTHS in predictions:
-            del predictions[LENGTHS]
+        if LENGTHS in result:
+            del result[LENGTHS]
 
         return postprocessed
 

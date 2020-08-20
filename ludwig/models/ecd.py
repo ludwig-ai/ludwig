@@ -9,7 +9,7 @@ from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
-from ludwig.utils.data_utils import clear_data_cache, save_json
+from ludwig.utils.data_utils import clear_data_cache
 from ludwig.utils.misc_utils import get_from_registry
 
 logger = logging.getLogger(__name__)
@@ -25,11 +25,6 @@ class ECD(tf.keras.Model):
             **kwargs
     ):
         super().__init__()
-
-        # ================ Keep Definition ================
-        self.input_features_def = input_features_def
-        self.combiner_def = combiner_def
-        self.output_features_def = output_features_def
 
         # ================ Inputs ================
         self.input_features = build_inputs(
@@ -190,11 +185,6 @@ class ECD(tf.keras.Model):
     def predict_step(self, inputs):
         return self.predictions(inputs, output_features=None)
 
-    @tf.function
-    def collect_activations_step(self, inputs):
-        # todo tf2: to implement
-        pass
-
     def train_loss(self, targets, predictions, regularization_lambda=0.0):
         train_loss = 0
         of_train_losses = {}
@@ -239,60 +229,6 @@ class ECD(tf.keras.Model):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
-
-    def collect_weights(
-            self,
-            tensor_names=None,
-            **kwargs
-    ):
-        def recurse_weights(model, prefix=None):
-            results = []
-            for layer in model.layers:
-                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
-                if isinstance(layer, tf.keras.Model):
-                    results += recurse_weights(layer, layer_prefix)
-                else:
-                    results += [(f'{layer_prefix}/{w.name}', w) for w in
-                                layer.weights]
-            return results
-
-        weights = recurse_weights(self)
-
-        if tensor_names:
-            # Check for bad tensor names
-            weight_set = set(name for name, w in weights)
-            for name in tensor_names:
-                if name not in weight_set:
-                    raise ValueError(
-                        f'Tensor {name} not present in the model graph')
-
-            # Filter the weights
-            tensor_set = set(tensor_names)
-            weights = [(name, w) for name, w in weights if name in tensor_set]
-
-        return weights
-
-    def save_savedmodel(self, save_path):
-        self.model.save(save_path)
-
-    def get_definition(self):
-        return {
-            'input_features': self.input_features_def,
-            'combiner': self.cobiner_def,
-            'output_features': self.output_features_def,
-        }
-
-    def save_definition(self, save_path):
-        # removing pretrained embeddings paths from hyperparameters
-        # because the weights are already saved in the model, no need to reload
-        # from their path when loading the model next time
-
-        definition = copy.deepcopy(self.get_definition())
-        for feature in (definition['input_features'] +
-                        definition['output_features']):
-            if 'pretrained_embeddings' in feature:
-                feature['pretrained_embeddings'] = None
-        save_json(save_path, definition, sort_keys=True, indent=4)
 
 
 def build_inputs(

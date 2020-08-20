@@ -87,18 +87,18 @@ def collect_activations(
     logger.info('Output path: {}'.format(experiment_dir_name))
     logger.info('\n')
 
-    training_set_metadata_fp = os.path.join(
+    train_set_metadata_fp = os.path.join(
         model_path,
         TRAIN_SET_METADATA_FILE_NAME
     )
 
     # preprocessing
-    dataset, training_set_metadata = preprocess_for_prediction(
+    dataset, train_set_metadata = preprocess_for_prediction(
         model_path,
         split,
         data_csv,
         data_hdf5,
-        training_set_metadata_fp
+        train_set_metadata_fp
     )
 
     model, model_definition = load_model_and_definition(model_path,

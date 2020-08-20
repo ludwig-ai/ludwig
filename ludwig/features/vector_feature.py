@@ -127,7 +127,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = len(dataset[feature['name']][0])
+        vector_size = len(data[feature['name']][0])
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -274,23 +274,25 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     ):
         output_feature['vector_size'] = feature_metadata['vector_size']
 
+    @staticmethod
     def calculate_overall_stats(
-            self,
-            predictions,
-            targets,
-            metadata
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
     ):
         pass
 
-    def postprocess_predictions(
-            self,
-            predictions,
+    @staticmethod
+    def postprocess_results(
+            output_feature,
+            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = output_feature['name']
 
         npy_filename = None
         if is_on_master():
@@ -298,14 +300,14 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = predictions[PREDICTIONS].numpy()
+        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
+            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    predictions[PREDICTIONS]
+                    result[PREDICTIONS]
                 )
-            del predictions[PREDICTIONS]
+            del result[PREDICTIONS]
 
         return postprocessed
 

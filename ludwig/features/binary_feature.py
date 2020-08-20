@@ -209,74 +209,76 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     ):
         pass
 
+    @staticmethod
     def calculate_overall_stats(
-            self,
-            predictions,
-            targets,
-            metadata
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
     ):
+        feature_name = output_feature['name']
+        stats = test_stats[feature_name]
+
         confusion_matrix = ConfusionMatrix(
-            targets,
-            predictions[PREDICTIONS],
-            labels=['False', 'True'],
+            dataset.get(feature_name),
+            stats[PREDICTIONS],
+            labels=['False', 'True']
         )
-        stats = {}
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
         stats['per_class_stats'] = confusion_matrix.per_class_stats()
-
         fpr, tpr, thresholds = roc_curve(
-            targets,
-            predictions[PROBABILITIES]
+            dataset.get(feature_name),
+            stats[PROBABILITIES]
         )
         stats['roc_curve'] = {
             'false_positive_rate': fpr.tolist(),
             'true_positive_rate': tpr.tolist()
         }
         stats['roc_auc_macro'] = roc_auc_score(
-            targets,
-            predictions[PROBABILITIES],
+            dataset.get(feature_name),
+            stats[PROBABILITIES],
             average='macro'
         )
         stats['roc_auc_micro'] = roc_auc_score(
-            targets,
-            predictions[PROBABILITIES],
+            dataset.get(feature_name),
+            stats[PROBABILITIES],
             average='micro'
         )
         ps, rs, thresholds = precision_recall_curve(
-            targets,
-            predictions[PROBABILITIES]
+            dataset.get(feature_name),
+            stats[PROBABILITIES]
         )
         stats['precision_recall_curve'] = {
             'precisions': ps.tolist(),
             'recalls': rs.tolist()
         }
         stats['average_precision_macro'] = average_precision_score(
-            targets,
-            predictions[PROBABILITIES],
+            dataset.get(feature_name),
+            stats[PROBABILITIES],
             average='macro'
         )
         stats['average_precision_micro'] = average_precision_score(
-            targets,
-            predictions[PROBABILITIES],
+            dataset.get(feature_name),
+            stats[PROBABILITIES],
             average='micro'
         )
         stats['average_precision_samples'] = average_precision_score(
-            targets,
-            predictions[PROBABILITIES],
+            dataset.get(feature_name),
+            stats[PROBABILITIES],
             average='samples'
         )
-        return stats
 
-    def postprocess_predictions(
-            self,
-            predictions,
+    @staticmethod
+    def postprocess_results(
+            output_feature,
+            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = output_feature['name']
 
         npy_filename = None
         if is_on_master():
@@ -284,24 +286,23 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = predictions[PREDICTIONS].numpy()
+        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
+            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    predictions[PREDICTIONS]
+                    result[PREDICTIONS]
                 )
-            del predictions[PREDICTIONS]
+            del result[PREDICTIONS]
 
-        if PROBABILITIES in predictions and len(
-                predictions[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = predictions[PROBABILITIES].numpy()
+        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
+            postprocessed[PROBABILITIES] = result[PROBABILITIES].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
-                    predictions[PROBABILITIES]
+                    result[PROBABILITIES]
                 )
-            del predictions[PROBABILITIES]
+            del result[PROBABILITIES]
 
         return postprocessed
 

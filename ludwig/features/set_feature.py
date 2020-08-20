@@ -225,23 +225,25 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         output_feature[LOSS][TYPE] = None
         output_feature['num_classes'] = feature_metadata['vocab_size']
 
+    @staticmethod
     def calculate_overall_stats(
-            self,
-            predictions,
-            targets,
-            metadata
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
     ):
         pass
 
-    def postprocess_predictions(
-            self,
-            predictions,
+    @staticmethod
+    def postprocess_results(
+            output_feature,
+            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = output_feature['name']
 
         npy_filename = None
         if is_on_master():
@@ -249,8 +251,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            preds = predictions[PREDICTIONS]
+        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
+            preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
@@ -262,13 +264,12 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PREDICTIONS), preds)
 
-            del predictions[PREDICTIONS]
+            del result[PREDICTIONS]
 
-        if PROBABILITIES in predictions and len(
-                predictions[PROBABILITIES]) > 0:
-            probs = predictions[PROBABILITIES].numpy()
+        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
+            probs = result[PROBABILITIES].numpy()
             prob = [[prob for prob in prob_set if
-                     prob >= self.threshold] for prob_set in
+                     prob >= output_feature['threshold']] for prob_set in
                     probs]
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob
@@ -277,7 +278,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
                 np.save(npy_filename.format(name, PROBABILITIES), probs)
                 np.save(npy_filename.format(name, PROBABILITY), probs)
 
-            del predictions[PROBABILITIES]
+            del result[PROBABILITIES]
 
         return postprocessed
 

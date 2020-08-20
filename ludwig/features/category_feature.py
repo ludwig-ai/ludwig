@@ -120,12 +120,6 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
-    def get_input_dtype(self):
-        return tf.int32
-
-    def get_input_shape(self):
-        return ()
-
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -234,12 +228,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             k=self.top_k,
             name='metric_top_k_hits'
         )
-
-    def get_output_dtype(self):
-        return tf.int64
-
-    def get_output_shape(self):
-        return ()
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -368,32 +356,34 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 for cls in feature_metadata['idx2str']
             ]
 
+    @staticmethod
     def calculate_overall_stats(
-            self,
-            predictions,
-            targets,
-            metadata
+            test_stats,
+            output_feature,
+            dataset,
+            train_set_metadata
     ):
+        feature_name = output_feature['name']
+        stats = test_stats[feature_name]
         confusion_matrix = ConfusionMatrix(
-            targets,
-            predictions[PREDICTIONS],
-            labels=metadata['idx2str'],
+            dataset.get(feature_name),
+            stats[PREDICTIONS],
+            labels=train_set_metadata[feature_name]['idx2str']
         )
-        stats = {}
         stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         stats['overall_stats'] = confusion_matrix.stats()
         stats['per_class_stats'] = confusion_matrix.per_class_stats()
-        return stats
 
-    def postprocess_predictions(
-            self,
-            predictions,
+    @staticmethod
+    def postprocess_results(
+            output_feature,
+            result,
             metadata,
             experiment_dir_name,
-            skip_save_unprocessed_output=False
+            skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = self.feature_name
+        name = output_feature['name']
 
         npy_filename = None
         if is_on_master():
@@ -401,8 +391,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
-            preds = predictions[PREDICTIONS]
+        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
+            preds = result[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     metadata['idx2str'][pred] for pred in preds
@@ -414,11 +404,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PREDICTIONS), preds)
 
-            del predictions[PREDICTIONS]
+            del result[PREDICTIONS]
 
-        if PROBABILITIES in predictions and len(
-                predictions[PROBABILITIES]) > 0:
-            probs = predictions[PROBABILITIES].numpy()
+        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
+            probs = result[PROBABILITIES].numpy()
             prob = np.amax(probs, axis=1)
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob
@@ -427,12 +416,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 np.save(npy_filename.format(name, PROBABILITIES), probs)
                 np.save(npy_filename.format(name, PROBABILITY), probs)
 
-            del predictions[PROBABILITIES]
+            del result[PROBABILITIES]
 
-        if ('predictions_top_k' in predictions and
-            len(predictions['predictions_top_k'])) > 0:
+        if ('predictions_top_k' in result and
+            len(result['predictions_top_k'])) > 0:
 
-            preds_top_k = predictions['predictions_top_k']
+            preds_top_k = result['predictions_top_k']
             if 'idx2str' in metadata:
                 postprocessed['predictions_top_k'] = [
                     [metadata['idx2str'][pred] for pred in pred_top_k]
@@ -447,7 +436,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     preds_top_k
                 )
 
-            del predictions['predictions_top_k']
+            del result['predictions_top_k']
 
         return postprocessed
 
