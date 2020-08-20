@@ -32,7 +32,13 @@ def init_tensorflow_cpu(request):
 
     This is critical to avoid OOM errors when running subprocesses that need GPUs (e.g., hyperopt),
     as otherwise the main process will consume all the memory and cause the subprocesses to crash.
+
+    Run most tests eagerly as the cost of graph construction can easily increase runtime by
+    and order of magnitude for small tests. Tests that execute in subprocesses, and tests
+    in `test_graph_execution.py` still run in graph mode.
     """
+    import tensorflow as tf
+    tf.config.experimental_run_functions_eagerly(True)
     initialize_tensorflow(gpus=-1)
 
 

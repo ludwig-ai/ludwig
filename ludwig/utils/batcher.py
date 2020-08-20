@@ -271,6 +271,7 @@ class DistributedBatcher(object):
 #             ignore_last=ignore_last
 #         )
 #     return batcher
+
 def initialize_batcher(dataset, batch_size=128,
                        should_shuffle=True, ignore_last=False,
                        horovod=None):

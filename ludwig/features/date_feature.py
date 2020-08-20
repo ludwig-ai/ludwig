@@ -131,6 +131,12 @@ class DateInputFeature(DateFeatureMixin, InputFeature):
 
         return inputs_encoded
 
+    def get_input_dtype(self):
+        return tf.int16
+
+    def get_input_shape(self):
+        return DATE_VECTOR_LENGTH,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,

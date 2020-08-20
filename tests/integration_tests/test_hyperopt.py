@@ -21,7 +21,7 @@ import pytest
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.sampling import (get_build_hyperopt_sampler)
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
-from ludwig.utils.defaults import merge_with_defaults
+from ludwig.utils.defaults import merge_with_defaults, ACCURACY
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -70,7 +70,9 @@ EXECUTORS = [
 
 @pytest.mark.parametrize('sampler', SAMPLERS)
 @pytest.mark.parametrize('executor', EXECUTORS)
-def test_hyperopt_executor(sampler, executor, csv_filename):
+def test_hyperopt_executor(sampler, executor, csv_filename,
+                           validate_output_feature=False,
+                           validation_metric=None):
     input_features = [
         text_feature(name="utterance", cell_type="lstm", reduce_output="sum"),
         category_feature(vocab_size=2, reduce_input="sum")]
@@ -90,6 +92,11 @@ def test_hyperopt_executor(sampler, executor, csv_filename):
 
     hyperopt_config = HYPEROPT_CONFIG.copy()
 
+    if validate_output_feature:
+        hyperopt_config['output_feature'] = output_features[0]['name']
+    if validation_metric:
+        hyperopt_config['validation_metric'] = validation_metric
+
     update_hyperopt_params_with_defaults(hyperopt_config)
 
     parameters = hyperopt_config["parameters"]
@@ -106,3 +113,11 @@ def test_hyperopt_executor(sampler, executor, csv_filename):
 
     hyperopt_executor.execute(model_definition, data_csv=rel_path,
                               gpus=get_available_gpus_cuda_string())
+
+
+def test_hyperopt_executor_with_metric(csv_filename):
+    test_hyperopt_executor({"type": "random", "num_samples": 2},
+                           {"type": "serial"},
+                           csv_filename,
+                           validate_output_feature=True,
+                           validation_metric=ACCURACY)

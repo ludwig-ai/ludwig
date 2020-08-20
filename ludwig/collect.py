@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 def collect_activations(
         model_path,
-        tensors,
+        layers,
         data_csv=None,
         data_hdf5=None,
         split=TEST,
@@ -59,7 +59,7 @@ def collect_activations(
     datapoint in the dataset. Saves the tensors to the experiment directory
 
     :param model_path: Is the model from which the tensors will be collected
-    :param tensors: List contaning the names of the tensors to collect
+    :param layers: List of layer names we wish to collect the output from
     :param data_csv: The CSV filepath which contains the datapoints from which
            the tensors are collected
     :param data_hdf5: The HDF5 file path if the CSV file path does not exist,
@@ -110,15 +110,16 @@ def collect_activations(
     print_boxed('COLLECT ACTIVATIONS')
     collected_tensors = model.collect_activations(
         dataset,
-        tensors,
+        layers,
         batch_size
     )
 
     # saving
     os.makedirs(experiment_dir_name)
-    save_tensors(collected_tensors, experiment_dir_name)
+    saved_filenames = save_tensors(collected_tensors, experiment_dir_name)
 
     logger.info('Saved to: {0}'.format(experiment_dir_name))
+    return saved_filenames
 
 
 def collect_weights(
@@ -161,13 +162,22 @@ def save_tensors(collected_tensors, experiment_dir_name):
     return filenames
 
 
-def print_weight_names(
+def print_model_summary(
         model_path,
         **kwargs
 ):
     model, model_definition = load_model_and_definition(model_path)
     collected_tensors = model.collect_weights()
     names = [name for name, w in collected_tensors]
+
+    keras_model = model.model.get_connected_model()
+    keras_model.summary()
+
+    print('\nLayers:\n')
+    for layer in keras_model.layers:
+        print(layer.name)
+
+    print('\nWeights:\n')
     for name in names:
         print(name)
 
@@ -380,8 +390,8 @@ def cli_collect_weights(sys_argv):
     collect_weights(**vars(args))
 
 
-def cli_collect_names(sys_argv):
-    """Command Line Interface to collecting the weight names of the model
+def cli_collect_summary(sys_argv):
+    """Command Line Interface to collecting a summary of the model layers and weights.
     --m: Input model that is necessary to collect to the tensors, this is a
          required *option*
     --v: Verbose: Defines the logging level that the user will be exposed to
@@ -389,7 +399,7 @@ def cli_collect_names(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
                     'and uses it collect weight names.',
-        prog='ludwig collect_names',
+        prog='ludwig collect_summary',
         usage='%(prog)s [options]'
     )
 
@@ -422,9 +432,9 @@ def cli_collect_names(sys_argv):
     global logger
     logger = logging.getLogger('ludwig.collect')
 
-    print_ludwig('Collect Names', LUDWIG_VERSION)
+    print_ludwig('Collect Summary', LUDWIG_VERSION)
 
-    print_weight_names(**vars(args))
+    print_model_summary(**vars(args))
 
 
 if __name__ == '__main__':
@@ -436,8 +446,8 @@ if __name__ == '__main__':
             contrib_command("collect_weights", *sys.argv)
             cli_collect_weights(sys.argv[2:])
         elif sys.argv[1] == 'names':
-            contrib_command("collect_names", *sys.argv)
-            cli_collect_names(sys.argv[2:])
+            contrib_command("collect_summary", *sys.argv)
+            cli_collect_summary(sys.argv[2:])
         else:
             print('Unrecognized command')
     else:

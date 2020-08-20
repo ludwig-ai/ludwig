@@ -164,21 +164,30 @@ class Predictor:
 
         return metrics, predictions
 
-    # todo tf2: reintroduce this functionality
     def batch_collect_activations(
             self,
             model,
             dataset,
-            tensor_names,
+            layer_names,
+            bucketing_field=None
     ):
-        # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
-        #                 for tensor_name in tensor_names}
-        # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
+        # Build static graph for the trained model
+        tf.keras.backend.reset_uids()
+        keras_model_inputs = model.get_model_inputs()
+        keras_model = model.get_connected_model(inputs=keras_model_inputs)
+
+        # Create a new model that routes activations to outputs
+        tf.keras.backend.reset_uids()
+        output_nodes = {layer_name: keras_model.get_layer(layer_name).output
+                        for layer_name in layer_names}
+        activation_model = tf.keras.Model(inputs=keras_model_inputs,
+                                          outputs=output_nodes)
 
         batcher = initialize_batcher(
-            dataset, self._batch_size,
-            should_shuffle=False,
-            horovod=self._horovod
+            dataset,
+            self._batch_size,
+            bucketing_field,
+            should_shuffle=False
         )
 
         progress_bar = tqdm(
@@ -188,23 +197,34 @@ class Predictor:
             disable=is_progressbar_disabled()
         )
 
-        collected_tensors = {}
-
+        collected_tensors = []
         while not batcher.last_batch():
             batch = batcher.next_batch()
 
-            model.collect_activations_step(batch)
-            # result = session.run(
-            #     output_nodes,
-            #     feed_dict=self.feed_dict(
-            #         batch,
-            #         is_training=False
-            #     )
-            # )
-            #
-            # for tensor_name in result:
-            #     for row in result[tensor_name]:
-            #         collected_tensors[tensor_name].append(row)
+            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
+                      for i_feat in model.input_features}
+            targets = {o_feat.feature_name: batch[o_feat.feature_name]
+                       for o_feat in model.output_features}
+
+            input_tuple = (inputs, targets)
+            outputs = activation_model(input_tuple)
+
+            for layer_name, output in outputs.items():
+                if isinstance(output, tuple):
+                    output = list(output)
+
+                if isinstance(output, tf.Tensor):
+                    output = [('', output)]
+                elif isinstance(output, dict):
+                    output = [(f'_{key}', tensor)
+                              for key, tensor in output.items()]
+                elif isinstance(output, list):
+                    output = [(f'_{idx}', tensor)
+                              for idx, tensor in enumerate(output)]
+
+                for suffix, tensor in output:
+                    full_name = f'{layer_name}{suffix}'
+                    collected_tensors.append((full_name, tensor))
 
             progress_bar.update(1)
 

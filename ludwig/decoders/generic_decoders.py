@@ -157,7 +157,8 @@ class Classifier(Layer):
             # we should not compute the last dense projection,
             # otherwise we defet the purpose of the samples loss
             # which is not to compute the full final projection
-            return None
+            # returning empty tensor to pass graph execution validation test
+            return tf.zeros(0)
         else:
             self.first_call = False
             return self.dense(inputs)
