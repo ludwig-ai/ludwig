@@ -69,7 +69,7 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
     def create_input(self):
         return tf.keras.Input(shape=self.get_input_shape(),
                               dtype=self.get_input_dtype(),
-                              name=self.name)
+                              name=self.name + '_input')
 
     @abstractmethod
     def get_input_dtype(self):
@@ -163,7 +163,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     def create_input(self):
         return tf.keras.Input(shape=self.get_output_shape(),
                               dtype=self.get_output_dtype(),
-                              name=self.name)
+                              name=self.name + '_input')
 
     @abstractmethod
     def get_output_dtype(self):
