@@ -189,11 +189,7 @@ def hyperopt(
             output_feature_type,
             output_type_registry
         )
-        available_metrics = set(
-            key for key, val in feature_class.output_config.items()
-            if val['type'] == METRIC
-        )
-        if metric not in available_metrics:
+        if metric not in feature_class.metrics:
             # TODO allow users to specify also metrics from the overall
             #  and per class metrics from the trainign stats and in general
             #  and potprocessed metric

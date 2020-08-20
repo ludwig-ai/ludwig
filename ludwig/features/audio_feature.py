@@ -349,6 +349,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
     encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
+        # todo tf2: encoder_obj should be passed to the sequenceinputfeature
         super().__init__(feature)
         if not self.embedding_size:
             raise ValueError(

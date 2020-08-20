@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from collections import OrderedDict
+from typing import Dict
 
 import tensorflow as tf
 
@@ -98,10 +98,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
 
-        self.loss = None
         self.train_loss_function = None
         self.eval_loss_function = None
-        self.metric_functions = OrderedDict()
 
         self.reduce_input = None
         self.reduce_dependencies = None
@@ -144,6 +142,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
+
+    @property
+    @abstractmethod
+    def metric_functions(self) -> Dict:
+        pass
 
     @property
     @abstractmethod

@@ -242,7 +242,7 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
         tied_input_feature_name = input_feature_def[TIED]
         if tied_input_feature_name in other_input_features:
             encoder_obj = other_input_features[
-                tied_input_feature_name].encoder_obj
+                tied_input_feature_name].decoder_obj
 
     input_feature_class = get_from_registry(
         input_feature_def[TYPE],
