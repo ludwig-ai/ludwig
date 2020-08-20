@@ -100,7 +100,7 @@ def test_collect_weights(csv_filename):
         #  but it currently is 5, those mean and count that I believe to be
         #  the train loss function ones are still there.
         #  We should figure out why they appear here as they shouldn't
-        assert len(weights) == 5
+        assert len(weights) == 3
 
         # todo fix: this was :5 originally and made it so that we were missing
         #  the fact that the weights loaded in collect_weights() where a subset
