@@ -181,7 +181,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = 'generator'
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None,
-               PERPLEXITY: None, EDIT_DISTANCE: None}
+                        PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
     max_sequence_length = 0
     num_classes = 0

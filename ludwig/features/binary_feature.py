@@ -16,7 +16,6 @@
 # ==============================================================================
 import logging
 import os
-from typing import Set
 
 import numpy as np
 import tensorflow as tf
@@ -120,7 +119,7 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = 'regressor'
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
-    metric_functions ={LOSS: None, ACCURACY: None}
+    metric_functions = {LOSS: None, ACCURACY: None}
     default_validation_metric = ACCURACY
     threshold = 0.5
 
