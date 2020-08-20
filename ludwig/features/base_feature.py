@@ -66,6 +66,21 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def create_input(self):
+        return tf.keras.Input(shape=self.get_input_shape(),
+                              dtype=self.get_input_dtype(),
+                              name=self.name + '_input')
+
+    @abstractmethod
+    def get_input_dtype(self):
+        """Returns the Tensor data type this input accepts."""
+        pass
+
+    @abstractmethod
+    def get_input_shape(self):
+        """Returns a tuple representing the Tensor shape this input accepts."""
+        pass
+
     @staticmethod
     @abstractmethod
     def update_model_definition_with_metadata(
@@ -142,6 +157,21 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
+
+    def create_input(self):
+        return tf.keras.Input(shape=self.get_output_shape(),
+                              dtype=self.get_output_dtype(),
+                              name=self.name + '_input')
+
+    @abstractmethod
+    def get_output_dtype(self):
+        """Returns the Tensor data type feature outputs."""
+        pass
+
+    @abstractmethod
+    def get_output_shape(self):
+        """Returns a tuple representing the Tensor shape this feature outputs."""
+        pass
 
     @property
     @abstractmethod

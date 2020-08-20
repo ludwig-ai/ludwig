@@ -371,6 +371,12 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
+    def get_input_dtype(self):
+        return tf.float32
+
+    def get_input_shape(self):
+        return self.length, self.embedding_size
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
