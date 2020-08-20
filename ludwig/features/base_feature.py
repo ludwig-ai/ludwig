@@ -95,11 +95,11 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
 class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     """Parent class for all output features."""
 
+    train_loss_function = None
+    eval_loss_function = None
+
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
-
-        self.train_loss_function = None
-        self.eval_loss_function = None
 
         self.reduce_input = None
         self.reduce_dependencies = None
