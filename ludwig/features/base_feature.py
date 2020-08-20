@@ -160,6 +160,21 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             default_dropout=self.dropout,
         )
 
+    def create_input(self):
+        return tf.keras.Input(shape=self.get_output_shape(),
+                              dtype=self.get_output_dtype(),
+                              name=self.name)
+
+    @abstractmethod
+    def get_output_dtype(self):
+        """Returns the Tensor data type feature outputs."""
+        pass
+
+    @abstractmethod
+    def get_output_shape(self):
+        """Returns a tuple representing the Tensor shape this feature outputs."""
+        pass
+
     @property
     @abstractmethod
     def decoder_registry(self):

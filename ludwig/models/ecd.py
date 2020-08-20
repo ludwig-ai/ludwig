@@ -23,6 +23,8 @@ class ECD(tf.keras.Model):
             output_features_def,
             **kwargs
     ):
+        super().__init__()
+
         # ================ Inputs ================
         self.input_features = build_inputs(
             input_features_def
@@ -43,33 +45,41 @@ class ECD(tf.keras.Model):
             self.combiner
         )
 
-        inputs, outputs = self._get_inputs_and_outputs()
-        super().__init__(inputs=inputs, outputs=outputs)
-
         # ================ Combined loss metric ================
         self.eval_loss_metric = tf.keras.metrics.Mean()
 
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    def _get_inputs_and_outputs(self):
+    def build_model_graph(self, training=True):
+        inputs = {
+            input_feature_name: input_feature.create_input()
+            for input_feature_name, input_feature in self.input_features.items()
+        }
+        targets = {
+            output_feature_name: output_feature.create_input()
+            for output_feature_name, output_feature in self.output_features.items()
+        } if training else None
+
+        self.call((inputs, targets))
+
+    def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
         # parameter (inputs, targets) where
         #   inputs is a dict feature_name -> tensor/ndarray
         #   targets is dict feature_name -> tensor/ndarray
-        # if isinstance(inputs, tuple):
-        #     inputs, targets = inputs
-        # else:
-        #     targets = None
-        # assert inputs.keys() == self.input_features.keys()
+        if isinstance(inputs, tuple):
+            inputs, targets = inputs
+        else:
+            targets = None
+        assert inputs.keys() == self.input_features.keys()
 
-        inputs = []
         encoder_outputs = {}
-        for input_feature_name, encoder in self.input_features.items():
-            input_value = encoder.create_input()
-            inputs.append(input_value)
-            encoder_output = encoder(input_value)
+        for input_feature_name, input_values in inputs.items():
+            encoder = self.input_features[input_feature_name]
+            encoder_output = encoder(input_values, training=training,
+                                     mask=mask)
             encoder_outputs[input_feature_name] = encoder_output
 
         combiner_outputs = self.combiner(encoder_outputs)
@@ -77,38 +87,30 @@ class ECD(tf.keras.Model):
         output_logits = {}
         output_last_hidden = {}
         for output_feature_name, decoder in self.output_features.items():
-            # # use presence or absence of targets to signal training or prediction
-            # if targets is not None:
-            #     # doing training
-            #     target_to_use = tf.cast(targets[output_feature_name],
-            #                             dtype=tf.int32)
-            # else:
-            #     # doing prediction
-            #     target_to_use = None
-
-            # decoder_logits, decoder_last_hidden = decoder(
-            #     (
-            #         (combiner_outputs, output_last_hidden),
-            #         target_to_use
-            #     ),
-            #     training=training,
-            #     mask=mask
-            # )
+            # use presence or absence of targets to signal training or prediction
+            if targets is not None:
+                # doing training
+                target_to_use = tf.cast(targets[output_feature_name],
+                                        dtype=tf.int32)
+            else:
+                # doing prediction
+                target_to_use = None
 
             decoder_logits, decoder_last_hidden = decoder(
                 (
                     (combiner_outputs, output_last_hidden),
-                    None
+                    target_to_use
                 ),
+                training=training,
+                mask=mask
             )
-
             output_logits[output_feature_name] = {}
             output_logits[output_feature_name][LOGITS] = decoder_logits
             output_logits[output_feature_name][
                 LAST_HIDDEN] = decoder_last_hidden
             output_last_hidden[output_feature_name] = decoder_last_hidden
 
-        return inputs, output_logits
+        return output_logits
 
     def predictions(self, inputs, output_features=None):
         # check validity of output_features

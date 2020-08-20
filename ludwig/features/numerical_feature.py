@@ -265,6 +265,12 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     default_validation_metric = MEAN_SQUARED_ERROR
 
+    def get_output_dtype(self):
+        return tf.float32
+
+    def get_output_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             output_feature,

@@ -199,6 +199,12 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     default_validation_metric = ACCURACY
 
+    def get_output_dtype(self):
+        return tf.bool
+
+    def get_output_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,

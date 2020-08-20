@@ -235,6 +235,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     default_validation_metric = ACCURACY
 
+    def get_output_dtype(self):
+        return tf.int64
+
+    def get_output_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             output_feature,

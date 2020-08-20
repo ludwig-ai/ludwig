@@ -209,6 +209,12 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     default_validation_metric = JACCARD
 
+    def get_output_dtype(self):
+        return tf.bool
+
+    def get_output_shape(self):
+        return self.num_classes,
+
     @staticmethod
     def update_model_definition_with_metadata(
             output_feature,

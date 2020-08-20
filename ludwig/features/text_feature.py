@@ -252,6 +252,12 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
         else:
             self.encoder_obj = self.initialize_decoder(feature)
 
+    def get_output_dtype(self):
+        return tf.int32
+
+    def get_output_shape(self):
+        return self.max_sequence_length,
+
     @staticmethod
     def update_model_definition_with_metadata(
             output_feature,

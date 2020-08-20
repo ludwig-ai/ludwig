@@ -469,6 +469,8 @@ class Trainer:
                     disable=is_progressbar_disabled()
                 )
 
+            self.model.build_model_graph(training=True)
+
             # training step loop
             while not batcher.last_batch():
                 batch = batcher.next_batch()

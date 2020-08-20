@@ -271,6 +271,12 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     default_validation_metric = LOSS
 
+    def get_output_dtype(self):
+        return tf.int32
+
+    def get_output_shape(self):
+        return self.max_sequence_length,
+
     @staticmethod
     def update_model_definition_with_metadata(
             output_feature,
