@@ -24,9 +24,8 @@ import tensorflow as tf
 
 from ludwig.api import LudwigModel, Trainer
 from ludwig.collect import collect_activations, collect_weights
-
-from tests.integration_tests.utils import category_feature, generate_data, sequence_feature, \
-    ENCODERS
+from tests.integration_tests.utils import category_feature, generate_data, \
+    sequence_feature, ENCODERS
 
 
 def _prepare_data(csv_filename):
@@ -88,17 +87,17 @@ def test_collect_weights(csv_filename):
         model_path = os.path.join(model.exp_dir_name, 'model')
 
         weights = model.model.collect_weights()
-        assert len(weights) == 11
+        assert len(weights) == 5
 
-        tensors = [name for name, w in weights[:5]]
-        assert len(tensors) == 5
+        tensors = [name for name, w in weights[:1]]
+        assert len(tensors) == 1
 
         tf.keras.backend.reset_uids()
         with tempfile.TemporaryDirectory() as output_directory:
             filenames = collect_weights(model_path, tensors, output_directory)
-            assert len(filenames) == 5
+            assert len(filenames) == 1
 
-            for (name, weight), filename in zip(weights[:5], filenames):
+            for (name, weight), filename in zip(weights[:1], filenames):
                 saved_weight = np.load(filename)
                 assert np.allclose(weight.numpy(), saved_weight), name
     finally:

@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from collections import OrderedDict
+from typing import Dict
 
 import tensorflow as tf
 
@@ -110,13 +110,11 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
 class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     """Parent class for all output features."""
 
+    train_loss_function = None
+    eval_loss_function = None
+
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
-
-        self.loss = None
-        self.train_loss_function = None
-        self.eval_loss_function = None
-        self.metric_functions = OrderedDict()
 
         self.reduce_input = None
         self.reduce_dependencies = None
@@ -173,6 +171,11 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     @abstractmethod
     def get_output_shape(self):
         """Returns a tuple representing the Tensor shape this feature outputs."""
+        pass
+
+    @property
+    @abstractmethod
+    def metric_functions(self) -> Dict:
         pass
 
     @property

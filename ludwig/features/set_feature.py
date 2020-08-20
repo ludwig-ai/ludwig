@@ -149,6 +149,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
+    metric_functions = {LOSS: None, JACCARD: None}
+    default_validation_metric = JACCARD
 
     def __init__(self, feature):
         super().__init__(feature)
@@ -206,8 +208,6 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[JACCARD] = MeanIoU(num_classes=self.num_classes)
-
-    default_validation_metric = JACCARD
 
     def get_output_dtype(self):
         return tf.bool

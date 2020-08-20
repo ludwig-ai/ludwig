@@ -152,8 +152,10 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = 'classifier'
-    num_classes = 0
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
+    default_validation_metric = ACCURACY
+    num_classes = 0
     top_k = 3
 
     def __init__(self, feature):
@@ -232,8 +234,6 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             k=self.top_k,
             name='metric_top_k_hits'
         )
-
-    default_validation_metric = ACCURACY
 
     def get_output_dtype(self):
         return tf.int64

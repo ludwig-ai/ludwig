@@ -129,6 +129,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     length = 0
 
     def __init__(self, feature, encoder_obj=None):
+        # todo tf2: encoder_obj should be passed to the sequenceinputfeature
         super().__init__(feature)
 
     def call(self, inputs, training=None, mask=None):
