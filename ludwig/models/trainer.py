@@ -912,10 +912,20 @@ class Trainer:
             input_tuple = (inputs, targets)
             outputs = activation_model(input_tuple)
 
-            for layer_name, output_dict in outputs.items():
-                for output_name, output_tensor in output_dict.items():
-                    full_name = f'{layer_name}_{output_name}'
-                    collected_tensors.append((full_name, output_tensor))
+            for layer_name, output in outputs.items():
+                if isinstance(output, tuple):
+                    output = list(output)
+
+                if isinstance(output, tf.Tensor):
+                    output = [('', output)]
+                elif isinstance(output, dict):
+                    output = [(f'_{key}', tensor) for key, tensor in output.items()]
+                elif isinstance(output, list):
+                    output = [(f'_{idx}', tensor) for idx, tensor in enumerate(output)]
+
+                for suffix, tensor in output:
+                    full_name = f'{layer_name}{suffix}'
+                    collected_tensors.append((full_name, tensor))
 
             progress_bar.update(1)
 
@@ -1038,26 +1048,6 @@ class Trainer:
             batch_size,
             **kwargs
     ):
-        # if self.session is None:
-        #     session = self.initialize_session(gpus, gpu_fraction)
-        #
-        #     # load parameters
-        #     if self.weights_save_path:
-        #         self.restore(session, self.weights_save_path)
-        # else:
-        #     session = self.session
-
-        # get operation names
-        # operation_names = set(
-        #     [t.name for op in self.graph.get_operations() for t in op.values()]
-        # )
-        # for tensor_name in tensor_names:
-        #     if tensor_name not in operation_names:
-        #         raise ValueError(
-        #             'Tensor / operation {} not present in the '
-        #             'model graph'.format(tensor_name)
-        #         )
-
         # collect tensors
         collected_tensors = self.batch_collect_activations(
             dataset,

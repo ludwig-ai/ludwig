@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import multiprocessing
 import os
 import shutil
 import tempfile
@@ -21,8 +22,8 @@ import tempfile
 import numpy as np
 import tensorflow as tf
 
-from ludwig.api import LudwigModel
-from ludwig.collect import collect_weights
+from ludwig.api import LudwigModel, Trainer
+from ludwig.collect import collect_activations, collect_weights
 
 from tests.integration_tests.utils import category_feature, generate_data, sequence_feature, \
     ENCODERS
@@ -56,6 +57,25 @@ def _train(input_features, output_features, data_csv, **kwargs):
     return model
 
 
+def _get_layers_subprocess(model_path, queue):
+    model = Trainer.load(model_path)
+    keras_model = model.model.get_connected_model()
+    layers = [layer.name for layer in keras_model.layers]
+    queue.put(layers)
+
+
+def _get_layers(model_path):
+    ctx = multiprocessing.get_context('spawn')
+    queue = ctx.Queue()
+    p = ctx.Process(
+        target=_get_layers_subprocess,
+        args=(model_path, queue))
+    p.start()
+    p.join()
+    layers = queue.get()
+    return layers
+
+
 def test_collect_weights(csv_filename):
     model = None
     try:
@@ -81,6 +101,31 @@ def test_collect_weights(csv_filename):
             for (name, weight), filename in zip(weights[:5], filenames):
                 saved_weight = np.load(filename)
                 assert np.allclose(weight.numpy(), saved_weight), name
+    finally:
+        if model and model.exp_dir_name:
+            shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+
+
+def test_collect_activations(csv_filename):
+    model = None
+    try:
+        # This will reset the layer numbering scheme TensorFlow uses.
+        # Otherwise, when we load the model, its layer names will be appended
+        # with "_1".
+        tf.keras.backend.reset_uids()
+
+        model = _train(*_prepare_data(csv_filename))
+        model_path = os.path.join(model.exp_dir_name, 'model')
+
+        layers = _get_layers(model_path)
+        assert len(layers) > 0
+
+        tf.keras.backend.reset_uids()
+        with tempfile.TemporaryDirectory() as output_directory:
+            filenames = collect_activations(model_path, layers,
+                                            data_csv=csv_filename,
+                                            output_directory=output_directory)
+            assert len(filenames) > len(layers)
     finally:
         if model and model.exp_dir_name:
             shutil.rmtree(model.exp_dir_name, ignore_errors=True)
