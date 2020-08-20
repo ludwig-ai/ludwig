@@ -191,7 +191,10 @@ class VectorInputFeature(VectorFeatureMixin, InputFeature):
 
 class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     decoder = 'projector'
-    loss = {'type': MEAN_SQUARED_ERROR}
+    loss = {TYPE: MEAN_SQUARED_ERROR}
+    metric_functions = {LOSS: None, ERROR: None, MEAN_SQUARED_ERROR: None,
+                        MEAN_ABSOLUTE_ERROR: None, R2: None}
+    default_validation_metric = MEAN_SQUARED_ERROR
     vector_size = 0
 
     def __init__(self, feature):
@@ -249,8 +252,6 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
             name='metric_mae'
         )
         self.metric_functions[R2] = R2Score(name='metric_r2')
-
-    default_validation_metric = MEAN_SQUARED_ERROR
 
     @staticmethod
     def update_model_definition_with_metadata(
