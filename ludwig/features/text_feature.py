@@ -201,6 +201,12 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
+    def get_input_dtype(self):
+        return tf.int32
+
+    def get_input_shape(self):
+        return None,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -240,6 +246,12 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def __init__(self, feature):
         self.overwrite_defaults(feature)
         super().__init__(feature)
+
+    def get_output_dtype(self):
+        return tf.int32
+
+    def get_output_shape(self):
+        return self.max_sequence_length,
 
     @staticmethod
     def update_model_definition_with_metadata(

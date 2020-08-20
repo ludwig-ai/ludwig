@@ -120,6 +120,12 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
+    def get_input_dtype(self):
+        return tf.bool
+
+    def get_input_shape(self):
+        return len(self.vocab),
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -202,6 +208,12 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[JACCARD] = MeanIoU(num_classes=self.num_classes)
+
+    def get_output_dtype(self):
+        return tf.bool
+
+    def get_output_shape(self):
+        return self.num_classes,
 
     @staticmethod
     def update_model_definition_with_metadata(

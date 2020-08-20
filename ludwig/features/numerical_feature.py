@@ -158,6 +158,12 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
         return inputs_encoded
 
+    def get_input_dtype(self):
+        return tf.float32
+
+    def get_input_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -259,6 +265,12 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     # def update_metrics(self, targets, predictions):
     #     for metric in self.metric_functions.values():
     #         metric.update_state(targets, predictions[PREDICTIONS])
+
+    def get_output_dtype(self):
+        return tf.float32
+
+    def get_output_shape(self):
+        return ()
 
     @staticmethod
     def update_model_definition_with_metadata(

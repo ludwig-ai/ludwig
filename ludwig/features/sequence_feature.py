@@ -146,6 +146,12 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
         return encoder_output
 
+    def get_input_dtype(self):
+        return tf.int32
+
+    def get_input_shape(self):
+        return None,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -247,6 +253,12 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def predictions(self, inputs, training=None):
         # Generator Decoder
         return self.decoder_obj._predictions_eval(inputs, training=training)
+
+    def get_output_dtype(self):
+        return tf.int32
+
+    def get_output_shape(self):
+        return self.max_sequence_length,
 
     @staticmethod
     def update_model_definition_with_metadata(

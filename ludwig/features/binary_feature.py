@@ -93,6 +93,12 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         return encoder_outputs
 
+    def get_input_dtype(self):
+        return tf.bool
+
+    def get_input_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -187,6 +193,12 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     #             metric_fn.update_state(targets, predictions[LOGITS])
     #         else:
     #             metric_fn.update_state(targets, predictions[PREDICTIONS])
+
+    def get_output_dtype(self):
+        return tf.bool
+
+    def get_output_shape(self):
+        return ()
 
     @staticmethod
     def update_model_definition_with_metadata(
