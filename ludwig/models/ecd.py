@@ -52,7 +52,7 @@ class ECD(tf.keras.Model):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    def get_connected_model(self, training=True):
+    def get_model_inputs(self, training=True):
         inputs = {
             input_feature_name: input_feature.create_input()
             for input_feature_name, input_feature in self.input_features.items()
@@ -61,11 +61,12 @@ class ECD(tf.keras.Model):
             output_feature_name: output_feature.create_input()
             for output_feature_name, output_feature in self.output_features.items()
         } if training else None
+        return inputs, targets
 
-        input_tuple = (inputs, targets)
-        outputs = self.call(input_tuple)
-
-        return tf.keras.Model(inputs=input_tuple, outputs=outputs)
+    def get_connected_model(self, training=True, inputs=None):
+        inputs = inputs or self.get_model_inputs(training)
+        outputs = self.call(inputs)
+        return tf.keras.Model(inputs=inputs, outputs=outputs)
 
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
