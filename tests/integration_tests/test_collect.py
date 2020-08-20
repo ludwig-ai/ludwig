@@ -87,17 +87,39 @@ def test_collect_weights(csv_filename):
         model_path = os.path.join(model.exp_dir_name, 'model')
 
         weights = model.model.collect_weights()
+        # todo fix: this function was returning 11 tensors originally.
+        #  1 for the encoder (embeddings),
+        #  2 for the decoder classifier (w and b)
+        #  2 for the eval loss, for the eval accuracy and eval hits at k
+        #  and 2 that I suppose are for the training loss but had names like
+        #  mean and count without a namespace.
+        #  After making metrics and losses class properties
+        #  (metrics_functions in type output features and
+        #  train_loss_function and eval_loss_function in output feature class)
+        #  the number of weights should be 3 (just encoder and decoder weights)
+        #  but it currently is 5, those mean and count that I believe to be
+        #  the train loss function ones are still there.
+        #  We should figure out why they appear here as they shouldn't
         assert len(weights) == 5
 
-        tensors = [name for name, w in weights[:1]]
-        assert len(tensors) == 1
+        # todo fix: this was :5 originally and made it so that we were missing
+        #  the fact that the weights loaded in collect_weights() where a subset
+        #  of all the weights. Specifically, the weights that are not loaded
+        #  are the weights of hte output feature classifier (w and b).
+        #  If the previous point is fixed, there should be only 3 elements
+        #  in tensors (now they are 5) and collect_weights() should return 3
+        #  filenames: 1 for encoder embeddings and 2 for classifier w and b,
+        #  but right now it is returning 3 filenames, but they are
+        #  for embedding, mean and count.
+        tensors = [name for name, w in weights]
+        assert len(tensors) == 3
 
         tf.keras.backend.reset_uids()
         with tempfile.TemporaryDirectory() as output_directory:
             filenames = collect_weights(model_path, tensors, output_directory)
-            assert len(filenames) == 1
+            assert len(filenames) == 3
 
-            for (name, weight), filename in zip(weights[:1], filenames):
+            for (name, weight), filename in zip(weights, filenames):
                 saved_weight = np.load(filename)
                 assert np.allclose(weight.numpy(), saved_weight), name
     finally:
