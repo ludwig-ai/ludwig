@@ -12,6 +12,7 @@ from ludwig.models.ecd import build_inputs
 InputFeatureOptions = namedtuple('InputFeatureOptions', 'feature_type feature_options')
 
 
+# note: vocab parameter, below, is made up to facilitate creating input encoders
 @pytest.mark.parametrize(
     'input_feature_options',
     [
@@ -20,10 +21,16 @@ InputFeatureOptions = namedtuple('InputFeatureOptions', 'feature_type feature_op
             'numerical',
             {'preprocessing': {'normalization': 'zscore'}}
         ),
+        InputFeatureOptions('binary', {}),
         InputFeatureOptions('category', {'vocab': ['a', 'b', 'c']}),
         InputFeatureOptions('set', {'vocab': ['a', 'b', 'c']}),
         InputFeatureOptions('sequence', {'vocab': ['x', 'y', 'z']}),
         InputFeatureOptions('text', {'vocab': ['a', 'b', 'c']}),
+        InputFeatureOptions('timeseries', {'vocab': ['a', 'b', 'c']}),
+        InputFeatureOptions(
+            'audio',
+            {'embedding_size': 64, 'length': 16, 'vocab': ['a', 'b', 'c']}
+        ),
 
         # do not tie input features, encoders should be different
         InputFeatureOptions('numerical', None)
