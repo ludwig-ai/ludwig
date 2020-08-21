@@ -578,7 +578,7 @@ class Trainer:
                 summary_writer=train_summary_writer,
                 metrics=progress_tracker.train_metrics,
                 step=progress_tracker.epoch,
-                learning_rate=progress_tracker.learning_rate,
+                learning_rate=current_learning_rate,
             )
 
             if validation_set is not None and validation_set.size > 0:
