@@ -3,6 +3,12 @@ from collections import namedtuple
 import pytest
 
 from ludwig.models.ecd import build_inputs
+from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import run_experiment
+from tests.integration_tests.utils import numerical_feature
+from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import text_feature
 
 
 # InputFeatureOptions namedtuple structure:
@@ -94,12 +100,36 @@ def test_tied_micro_level(input_feature_options):
                input_features['input_feature_2'].encoder_obj
 
 
+# TiedUseCase namedtuple structure:
+# input_feature: Ludwig synthetic data creation function.
+# output_feature: Ludwig synthetic data creation function
+TiedUseCase = namedtuple('TiedUseCase', 'input_feature output_feature')
+
 # Macro level test ensures no exceptions are raised during a full_experiment()
+@pytest.mark.parametrize(
+    'tied_use_case',
+    [
+        TiedUseCase(numerical_feature, numerical_feature),
+        TiedUseCase(text_feature, category_feature),
+        TiedUseCase(sequence_feature, sequence_feature)
+    ]
+)
+def test_tied_macro_level(tied_use_case, csv_filename):
 
+    input_features = [
+        numerical_feature(),  # Other feature
+        tied_use_case.input_feature(),  # first feature to be tied
+        tied_use_case.input_feature(),   # second feature to be tied
+        category_feature()  # other feature
+    ]
+    # tie second feature to first feature
+    input_features[2]['tied'] = input_features[1]['name']
 
+    # setup output feature
+    output_features = [
+        tied_use_case.output_feature()
+    ]
 
-
-
-
-
-
+    # Generate test data and run full_experiment
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
