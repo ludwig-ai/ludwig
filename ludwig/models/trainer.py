@@ -140,7 +140,7 @@ class Trainer:
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag, metric_val, step=step)
             if learning_rate > 0:
-                tf.summary.scalar(metric_tag, metric_val, step=step)
+                tf.summary.scalar("combined/epoch_learning_rate", learning_rate, step=step)
         summary_writer.flush()
 
     @classmethod
