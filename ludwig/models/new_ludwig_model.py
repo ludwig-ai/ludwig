@@ -130,7 +130,7 @@ class NewLudwigModel:
             skip_save_log=False,
             skip_save_processed_input=False,
             output_directory='results',
-            random_seed=42,
+            random_seed=default_random_seed,
             debug=False,
             **kwargs
     ):
