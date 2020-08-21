@@ -15,7 +15,7 @@
 # ==============================================================================
 import logging
 from abc import ABC, abstractmethod
-from collections import OrderedDict
+from typing import Dict
 
 import tensorflow as tf
 
@@ -66,6 +66,21 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def create_input(self):
+        return tf.keras.Input(shape=self.get_input_shape(),
+                              dtype=self.get_input_dtype(),
+                              name=self.name + '_input')
+
+    @abstractmethod
+    def get_input_dtype(self):
+        """Returns the Tensor data type this input accepts."""
+        pass
+
+    @abstractmethod
+    def get_input_shape(self):
+        """Returns a tuple representing the Tensor shape this input accepts."""
+        pass
+
     @staticmethod
     @abstractmethod
     def update_model_definition_with_metadata(
@@ -95,13 +110,11 @@ class InputFeature(BaseFeature, tf.keras.Model, ABC):
 class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     """Parent class for all output features."""
 
+    train_loss_function = None
+    eval_loss_function = None
+
     def __init__(self, feature, *args, **kwargs):
         super().__init__(*args, feature=feature, **kwargs)
-
-        self.loss = None
-        self.train_loss_function = None
-        self.eval_loss_function = None
-        self.metric_functions = OrderedDict()
 
         self.reduce_input = None
         self.reduce_dependencies = None
@@ -144,6 +157,26 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
+
+    def create_input(self):
+        return tf.keras.Input(shape=self.get_output_shape(),
+                              dtype=self.get_output_dtype(),
+                              name=self.name + '_input')
+
+    @abstractmethod
+    def get_output_dtype(self):
+        """Returns the Tensor data type feature outputs."""
+        pass
+
+    @abstractmethod
+    def get_output_shape(self):
+        """Returns a tuple representing the Tensor shape this feature outputs."""
+        pass
+
+    @property
+    @abstractmethod
+    def metric_functions(self) -> Dict:
+        pass
 
     @property
     @abstractmethod

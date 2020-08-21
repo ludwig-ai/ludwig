@@ -144,6 +144,12 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
+    def get_input_dtype(self):
+        return tf.float32
+
+    def get_input_shape(self):
+        return self.length,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -359,6 +365,13 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             'type': PREDICTION
 #         })
 #     ])
+#
+#     def get_output_dtype(self):
+#         return tf.float32
+#
+#     def get_output_shape(self):
+#         return self.max_sequence_length,
+#
 #
 #     @staticmethod
 #     def update_model_definition_with_metadata(

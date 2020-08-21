@@ -120,6 +120,12 @@ class SetInputFeature(SetFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
+    def get_input_dtype(self):
+        return tf.bool
+
+    def get_input_shape(self):
+        return len(self.vocab),
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -143,6 +149,8 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     decoder = 'classifier'
     num_classes = 0
     loss = {TYPE: SIGMOID_CROSS_ENTROPY}
+    metric_functions = {LOSS: None, JACCARD: None}
+    default_validation_metric = JACCARD
 
     def __init__(self, feature):
         super().__init__(feature)
@@ -201,7 +209,11 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[JACCARD] = MeanIoU(num_classes=self.num_classes)
 
-    default_validation_metric = JACCARD
+    def get_output_dtype(self):
+        return tf.bool
+
+    def get_output_shape(self):
+        return self.num_classes,
 
     @staticmethod
     def update_model_definition_with_metadata(

@@ -201,6 +201,12 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         return encoder_output
 
+    def get_input_dtype(self):
+        return tf.int32
+
+    def get_input_shape(self):
+        return None,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -229,23 +235,23 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     decoder = 'generator'
+    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None,
+                        PERPLEXITY: None, EDIT_DISTANCE: None}
+    default_validation_metric = LOSS
     level = 'word'
     max_sequence_length = 0
-    loss = {
-        'type': SOFTMAX_CROSS_ENTROPY,
-        'class_weights': 1,
-        'class_similarities_temperature': 0,
-        'weight': 1
-    }
     num_classes = 0
 
-    def __init__(self, feature, decoder_obj=None):
-        super().__init__(feature)
+    def __init__(self, feature):
         self.overwrite_defaults(feature)
-        if decoder_obj:
-            self.encoder_obj = decoder_obj
-        else:
-            self.encoder_obj = self.initialize_decoder(feature)
+        super().__init__(feature)
+
+    def get_output_dtype(self):
+        return tf.int32
+
+    def get_output_shape(self):
+        return self.max_sequence_length,
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -373,7 +379,8 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 postprocessed[LAST_PREDICTIONS] = last_preds
 
             if not skip_save_unprocessed_output:
-                np.save(npy_filename.format(name, LAST_PREDICTIONS), last_preds)
+                np.save(npy_filename.format(name, LAST_PREDICTIONS),
+                        last_preds)
 
             del result[LAST_PREDICTIONS]
 
