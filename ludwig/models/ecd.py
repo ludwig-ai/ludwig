@@ -55,11 +55,13 @@ class ECD(tf.keras.Model):
     def get_model_inputs(self, training=True):
         inputs = {
             input_feature_name: input_feature.create_input()
-            for input_feature_name, input_feature in self.input_features.items()
+            for input_feature_name, input_feature in
+            self.input_features.items()
         }
         targets = {
             output_feature_name: output_feature.create_input()
-            for output_feature_name, output_feature in self.output_features.items()
+            for output_feature_name, output_feature in
+            self.output_features.items()
         } if training else None
         return inputs, targets
 
@@ -229,6 +231,37 @@ class ECD(tf.keras.Model):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
+
+    def collect_weights(
+            self,
+            tensor_names=None,
+            **kwargs
+    ):
+        def recurse_weights(model, prefix=None):
+            results = []
+            for layer in model.layers:
+                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
+                if isinstance(layer, tf.keras.Model):
+                    results += recurse_weights(layer, layer_prefix)
+                else:
+                    results += [(f'{layer_prefix}/{w.name}', w) for w in
+                                layer.weights]
+            return results
+
+        weights = recurse_weights(self)
+        if tensor_names:
+            # Check for bad tensor names
+            weight_set = set(name for name, w in weights)
+            for name in tensor_names:
+                if name not in weight_set:
+                    raise ValueError(
+                        f'Tensor {name} not present in the model graph')
+
+            # Filter the weights
+            tensor_set = set(tensor_names)
+            weights = [(name, w) for name, w in weights if name in tensor_set]
+
+        return weights
 
 
 def build_inputs(

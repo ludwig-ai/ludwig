@@ -715,6 +715,70 @@ class NewLudwigModel:
 
         return stats, postproc_predictions
 
+    def collect_weights(
+            self,
+            tensor_names,
+            **kwargs
+    ):
+        if (self.model is None or self.model_definition is None or
+                self.training_set_metadata is None):
+            raise ValueError('Model has not been trained or loaded')
+        collected_tensors = self.model.collect_weights(tensor_names)
+        return collected_tensors
+
+    def collect_activations(
+            self,
+            layer_names,
+            dataset,
+            data_format=None,
+            batch_size=128,
+            # output_directory='results',
+            debug=False,
+            **kwargs
+    ):
+        if (self.model is None or self.model_definition is None or
+                self.training_set_metadata is None):
+            raise ValueError('Model has not been trained or loaded')
+
+        logger.debug('Preprocessing')
+        # Added [:] to next line, before I was just assigning,
+        # this way I'm copying the list. If you don't do it, you are actually
+        # modifying the input feature list when you add output features,
+        # which you definitely don't want to do
+        features_to_load = self.model_definition['input_features'][:]
+
+        # todo refactoring: this is needed for image features as we expect all
+        #  inputs to predict to be in memory, but doublecheck
+        num_overrides = override_in_memory_flag(
+            self.model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported for Ludwig API.'
+            )
+
+        # preprocessing
+        dataset, training_set_metadata = preprocess_for_prediction(
+            self.model_definition,
+            dataset=dataset,
+            data_format=data_format,
+            training_set_metadata=self.training_set_metadata,
+            include_outputs=False,
+        )
+
+        logger.debug('Predicting')
+        predictor = Predictor(
+            batch_size=batch_size, horovod=self._horovod, debug=debug
+        )
+        activations = predictor.batch_collect_activations(
+            self.model,
+            layer_names,
+            dataset,
+        )
+
+        return activations
+
     @staticmethod
     def load(model_dir,
              logging_level=logging.ERROR,

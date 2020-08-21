@@ -167,8 +167,8 @@ class Predictor:
     def batch_collect_activations(
             self,
             model,
-            dataset,
             layer_names,
+            dataset,
             bucketing_field=None
     ):
         # Build static graph for the trained model

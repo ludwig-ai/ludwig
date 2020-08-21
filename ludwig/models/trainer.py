@@ -862,40 +862,6 @@ class Trainer:
                 should_break = True
         return should_break
 
-    # todo refactoring: should use Predictor.batch_predict
-    # def predict(
-    #         self,
-    #         dataset,
-    #         batch_size,
-    #         **kwargs
-    # ):
-    #     # predict
-    #     return self.model.batch_predict(dataset, batch_size,
-    #                                     horovod=self._horovod)
-
-    def collect_activations(
-            self,
-            dataset,
-            layer_names,
-            batch_size,
-            **kwargs
-    ):
-        # collect tensors
-        collected_tensors = self.batch_collect_activations(
-            dataset,
-            batch_size,
-            layer_names
-        )
-
-        return collected_tensors
-
-    def collect_weights(
-            self,
-            tensor_names=None,
-            **kwargs
-    ):
-        pass
-
     def set_epochs_to_1_or_quit(self, signum, frame):
         if not self._received_sigint:
             self._epochs = 1

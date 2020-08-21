@@ -25,13 +25,9 @@ import sys
 
 import numpy as np
 
-from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command
-from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.models.ecd import collect_weights
-from ludwig.models.trainer import load_model_and_definition
+from ludwig.models.new_ludwig_model import NewLudwigModel
 from ludwig.utils.misc_utils import find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -44,14 +40,14 @@ logger = logging.getLogger(__name__)
 def collect_activations(
         model_path,
         layers,
-        data_csv=None,
-        data_hdf5=None,
-        split=TEST,
+        dataset,
+        data_format=None,
         batch_size=128,
         output_directory='results',
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
+        use_horovod=None,
         debug=False,
         **kwargs
 ):
@@ -78,40 +74,31 @@ def collect_activations(
 
     """
     # setup directories and file names
-    experiment_dir_name = find_non_existing_dir_by_adding_suffix(output_directory)
+    experiment_dir_name = find_non_existing_dir_by_adding_suffix(
+        output_directory)
 
-    logger.info('Dataset path: {}'.format(
-        data_csv if data_csv is not None else data_hdf5)
-    )
+    logger.info('Dataset path: {}'.format(dataset)
+                )
     logger.info('Model path: {}'.format(model_path))
     logger.info('Output path: {}'.format(experiment_dir_name))
     logger.info('\n')
 
-    train_set_metadata_fp = os.path.join(
+    model = NewLudwigModel.load(
         model_path,
-        TRAIN_SET_METADATA_FILE_NAME
+        gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
+        use_horovod=use_horovod
     )
-
-    # preprocessing
-    dataset, train_set_metadata = preprocess_for_prediction(
-        model_path,
-        split,
-        data_csv,
-        data_hdf5,
-        train_set_metadata_fp
-    )
-
-    model, model_definition = load_model_and_definition(model_path,
-                                                        gpus=gpus,
-                                                        gpu_memory_limit=gpu_memory_limit,
-                                                        allow_parallel_threads=allow_parallel_threads)
 
     # collect activations
     print_boxed('COLLECT ACTIVATIONS')
     collected_tensors = model.collect_activations(
-        dataset,
         layers,
-        batch_size
+        dataset,
+        data_format=data_format,
+        batch_size=batch_size,
+        debug=debug
     )
 
     # saving
@@ -130,13 +117,14 @@ def collect_weights(
         **kwargs
 ):
     # setup directories and file names
-    experiment_dir_name = find_non_existing_dir_by_adding_suffix(output_directory)
+    experiment_dir_name = find_non_existing_dir_by_adding_suffix(
+        output_directory)
 
     logger.info('Model path: {}'.format(model_path))
     logger.info('Output path: {}'.format(experiment_dir_name))
     logger.info('\n')
 
-    model, model_definition = load_model_and_definition(model_path)
+    model = NewLudwigModel.load(model_path)
 
     # collect weights
     print_boxed('COLLECT WEIGHTS')
@@ -166,7 +154,7 @@ def print_model_summary(
         model_path,
         **kwargs
 ):
-    model, model_definition = load_model_and_definition(model_path)
+    model = NewLudwigModel.load(model_path)
     collected_tensors = model.collect_weights()
     names = [name for name, w in collected_tensors]
 
@@ -212,16 +200,16 @@ def cli_collect_activations(sys_argv):
     # ---------------
     # Data parameters
     # ---------------
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--data_csv', help='input data CSV file')
-    group.add_argument('--data_hdf5', help='input data HDF5 file')
-
     parser.add_argument(
-        '-s',
-        '--split',
-        default=TEST,
-        choices=[TRAINING, VALIDATION, TEST, FULL],
-        help='the split to test the model on'
+        '--dataset',
+        help='input data file path',
+        required=True
+    )
+    parser.add_argument(
+        '--data_format',
+        help='format of the input data',
+        default='auto',
+        choices=['auto', 'csv', 'hdf5']
     )
 
     # ----------------
@@ -286,6 +274,13 @@ def cli_collect_activations(sys_argv):
         action='store_false',
         dest='allow_parallel_threads',
         help='disable TensorFlow from using multithreading for reproducibility'
+    )
+    parser.add_argument(
+        '-uh',
+        '--use_horovod',
+        action='store_true',
+        default=None,
+        help='uses horovod for distributed training'
     )
     parser.add_argument(
         '-dbg',
