@@ -132,14 +132,15 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        feature.update(feature['preprocessing'])
+        """if 'preprocessing' in feature.keys():
+            feature.update(feature['preprocessing'])"""
         
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
             
-        self.pad_idx = feature['pad_idx']
+        #self.pad_idx = feature['pad_idx']
        
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -148,7 +149,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx), dtype=tf.int32) 
+        #inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx), dtype=tf.int32) 
+        inputs_mask = tf.not_equal(inputs, 0)
 
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask

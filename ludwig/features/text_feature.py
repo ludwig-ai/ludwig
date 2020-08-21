@@ -222,6 +222,11 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
+        if 'preprocessing' in feature.keys():
+            feature.update(feature['preprocessing'])
+            
+        self.pad_idx = feature['pad_idx']
+
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
