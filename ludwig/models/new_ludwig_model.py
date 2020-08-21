@@ -493,7 +493,6 @@ class NewLudwigModel:
             batch_size=128,
             skip_save_unprocessed_output=True,
             skip_save_predictions=True,
-            skip_save_eval_statis=True,
             output_directory='results',
             return_type=pd.DataFrame,
             debug=False,
@@ -559,9 +558,7 @@ class NewLudwigModel:
             # if we are skipping all saving,
             # there is no need to create a directory that will remain empty
             should_create_exp_dir = not (
-                    skip_save_unprocessed_output and
-                    skip_save_predictions and
-                    skip_save_eval_statis
+                    skip_save_unprocessed_output and skip_save_predictions
             )
             if should_create_exp_dir:
                 os.makedirs(self.exp_dir_name, exist_ok=True)
