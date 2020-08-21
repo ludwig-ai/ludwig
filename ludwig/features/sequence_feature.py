@@ -156,6 +156,12 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
         return encoder_output
 
+    def get_input_dtype(self):
+        return tf.int32
+
+    def get_input_shape(self):
+        return None,
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -188,33 +194,18 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
 
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
-    decoder = 'tagger'
+    decoder = 'generator'
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None,
+                        PERPLEXITY: None, EDIT_DISTANCE: None}
+    default_validation_metric = LOSS
+    max_sequence_length = 0
+    num_classes = 0
 
     def __init__(self, feature):
         super().__init__(feature)
-        self.type = SEQUENCE
-
-        self.decoder = 'generator'
-        self.max_sequence_length = 0
-        self.loss = {
-            'type': SOFTMAX_CROSS_ENTROPY,
-            'sampler': None,
-            'negative_samples': 0,
-            'distortion': 1,
-            'labels_smoothing': 0,
-            'class_weights': 1,
-            'robust_lambda': 0,
-            'confidence_penalty': 0,
-            'class_similarities_temperature': 0,
-            'weight': 1
-        }
-        self.num_classes = 0
-
         self.overwrite_defaults(feature)
-
         self.decoder_obj = self.initialize_decoder(feature)
-
         self._setup_loss()
         self._setup_metrics()
 
@@ -273,7 +264,11 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         # Generator Decoder
         return self.decoder_obj._predictions_eval(inputs, training=training)
 
-    default_validation_metric = LOSS
+    def get_output_dtype(self):
+        return tf.int32
+
+    def get_output_shape(self):
+        return self.max_sequence_length,
 
     @staticmethod
     def update_model_definition_with_metadata(

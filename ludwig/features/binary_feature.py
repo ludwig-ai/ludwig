@@ -93,6 +93,12 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
         return encoder_outputs
 
+    def get_input_dtype(self):
+        return tf.bool
+
+    def get_input_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -118,12 +124,9 @@ class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
 
 class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     decoder = 'regressor'
-    loss = {
-        'robust_lambda': 0,
-        'confidence_penalty': 0,
-        'positive_class_weight': 1,
-        'weight': 1
-    }
+    loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    metric_functions = {LOSS: None, ACCURACY: None}
+    default_validation_metric = ACCURACY
     threshold = 0.5
 
     def __init__(self, feature):
@@ -191,7 +194,11 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
     #         else:
     #             metric_fn.update_state(targets, predictions[PREDICTIONS])
 
-    default_validation_metric = ACCURACY
+    def get_output_dtype(self):
+        return tf.bool
+
+    def get_output_shape(self):
+        return ()
 
     @staticmethod
     def update_model_definition_with_metadata(

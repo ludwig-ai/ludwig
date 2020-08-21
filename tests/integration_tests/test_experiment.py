@@ -32,9 +32,11 @@ from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import generate_output_features_with_dependencies
 from tests.integration_tests.utils import h3_feature
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
+from tests.integration_tests.utils import run_experiment
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
@@ -44,44 +46,6 @@ from tests.integration_tests.utils import vector_feature
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
-
-
-def run_experiment(input_features, output_features, **kwargs):
-    """
-    Helper method to avoid code repetition in running an experiment. Deletes
-    the data saved to disk after running the experiment
-    :param input_features: list of input feature dictionaries
-    :param output_features: list of output feature dictionaries
-    **kwargs you may also pass extra parameters to the experiment as keyword
-    arguments
-    :return: None
-    """
-    model_definition = None
-    if input_features is not None and output_features is not None:
-        # This if is necessary so that the caller can call with
-        # model_definition_file (and not model_definition)
-        model_definition = {
-            'input_features': input_features,
-            'output_features': output_features,
-            'combiner': {
-                'type': 'concat',
-                'fc_size': 14
-            },
-            'training': {'epochs': 2}
-        }
-
-    args = {
-        'model_definition': model_definition,
-        'skip_save_processed_input': True,
-        'skip_save_progress': True,
-        'skip_save_unprocessed_output': True,
-        'skip_save_model': True,
-        'skip_save_log': True
-    }
-    args.update(kwargs)
-
-    exp_dir_name = full_experiment(**args)
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
 def test_experiment_seq_seq(csv_filename):
@@ -181,41 +145,6 @@ def test_experiment_multi_input_intent_classification(csv_filename):
         run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-def generate_output_features_with_dependencies(main_feature, dependencies):
-    # helper function to generate multiple output features specifications
-    # with dependencies, support for 'test_experiment_multiple_seq_seq` unit test
-    # Parameters:
-    # main_feature: feature identifier, valid values 'feat1', 'feat2', 'feat3'
-    # dependencies: list of dependencies for 'main_feature', do not li
-    # Example:
-    #  generate_output_features_with_dependencies('feat2', ['feat1', 'feat3'])
-
-    output_features = [
-            category_feature(vocab_size=2, reduce_input='sum'),
-            sequence_feature(vocab_size=10, max_len=5),
-            numerical_feature()
-        ]
-
-    # value portion of dictionary is a tuple: (position, feature_name)
-    #   position: location of output feature in the above output_features list
-    #   feature_name: Ludwig generated feature name
-    feature_names = {
-        'feat1': (0, output_features[0]['name']),
-        'feat2': (1, output_features[1]['name']),
-        'feat3': (2, output_features[2]['name'])
-    }
-
-    # generate list of dependencies with real feature names
-    generated_dependencies = [feature_names[feat_name][1]
-                                for feat_name in dependencies]
-
-    # specify dependencies for the main_feature
-    output_features[feature_names[main_feature][0]]['dependencies'] = \
-        generated_dependencies
-
-    return output_features
-
-
 @pytest.mark.parametrize(
     'output_features',
     [
@@ -254,8 +183,6 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     ]
 )
 def test_experiment_multiple_seq_seq(csv_filename, output_features):
-    print('>>>>output features to test:\n', output_features)
-
     input_features = [
         text_feature(vocab_size=100, min_len=1, encoder='stacked_cnn'),
         numerical_feature(normalization='zscore'),

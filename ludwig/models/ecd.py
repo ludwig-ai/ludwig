@@ -1,3 +1,4 @@
+import copy
 import logging
 from collections import OrderedDict
 
@@ -51,7 +52,22 @@ class ECD(tf.keras.Model):
         # After constructing all layers, clear the cache to free up memory
         clear_data_cache()
 
-    @tf.function
+    def get_model_inputs(self, training=True):
+        inputs = {
+            input_feature_name: input_feature.create_input()
+            for input_feature_name, input_feature in self.input_features.items()
+        }
+        targets = {
+            output_feature_name: output_feature.create_input()
+            for output_feature_name, output_feature in self.output_features.items()
+        } if training else None
+        return inputs, targets
+
+    def get_connected_model(self, training=True, inputs=None):
+        inputs = inputs or self.get_model_inputs(training)
+        outputs = self.call(inputs)
+        return tf.keras.Model(inputs=inputs, outputs=outputs)
+
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
@@ -88,7 +104,7 @@ class ECD(tf.keras.Model):
 
             decoder_logits, decoder_last_hidden = decoder(
                 (
-                    (combiner_outputs, output_last_hidden),
+                    (combiner_outputs, copy.copy(output_last_hidden)),
                     target_to_use
                 ),
                 training=training,
@@ -102,7 +118,6 @@ class ECD(tf.keras.Model):
 
         return output_logits
 
-    @tf.function
     def predictions(self, inputs, output_features=None):
         # check validity of output_features
         if output_features is None:
