@@ -359,6 +359,13 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
                 'length has to be defined - '
                 'check "update_model_definition_with_metadata()"')
 
+        self.overwrite_defaults(feature)
+        if encoder_obj:
+            self.encoder_obj = encoder_obj
+        else:
+            self.encoder_obj = self.initialize_encoder(feature)
+
+
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.float32
