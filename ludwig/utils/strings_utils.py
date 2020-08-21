@@ -100,6 +100,7 @@ def create_vocabulary(
         padding_symbol=PADDING_SYMBOL,
         pretrained_model_name_or_path=None
 ):
+
     vocab = None
     max_line_length = 0
     unit_counts = Counter()
@@ -159,6 +160,7 @@ def create_vocabulary(
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
                 unit in vocab}    
+
 
     pad_idx = None
     if padding_symbol in str2idx.keys():
@@ -257,6 +259,7 @@ def build_sequence_matrix(
             sequence_matrix[i, :limit] = vector[:limit]
         else:  # if padding == 'left
             sequence_matrix[i, max_length - limit:] = vector[:limit]
+
     return sequence_matrix
 
 
