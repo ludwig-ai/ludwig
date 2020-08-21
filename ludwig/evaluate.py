@@ -22,13 +22,54 @@ import argparse
 import logging
 import sys
 
-from ludwig.constants import TEST, TRAINING, VALIDATION, FULL
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import set_on_master, is_on_master, LUDWIG_VERSION
-from ludwig.predict import full_predict
+from ludwig.models.new_ludwig_model import NewLudwigModel
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
+
+
+def evaluate_cli(
+        model_path,
+        dataset=None,
+        data_format=None,
+        batch_size=128,
+        skip_save_unprocessed_output=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
+        skip_collect_predictions=False,
+        skip_collect_overall_stats=False,
+        output_directory='results',
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
+        logging_level=logging.INFO,
+        debug=False,
+        **kwargs
+):
+    model = NewLudwigModel.load(
+        model_path,
+        logging_level=logging_level,
+        use_horovod=use_horovod,
+        gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads
+    )
+    model.evaluate(
+        dataset=dataset,
+        data_format=data_format,
+        batch_size=batch_size,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
+        collect_predictions=not skip_collect_predictions,
+        collect_overall_stats=not skip_collect_overall_stats,
+        output_directory=output_directory,
+        return_type=dict,
+        debug=debug
+    )
 
 
 def cli(sys_argv):
@@ -43,34 +84,16 @@ def cli(sys_argv):
     # ---------------
     # Data parameters
     # ---------------
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        '--data_csv',
-        help='input data CSV file. '
-             'If it has a split column, it will be used for splitting '
-             '(0: train, 1: validation, 2: test), '
-             'otherwise the dataset will be randomly split'
-    )
-    group.add_argument(
-        '--data_hdf5',
-        help='input data HDF5 file. It is an intermediate preprocess version of'
-             ' the input CSV created the first time a CSV file is used in the '
-             'same directory with the same name and a hdf5 extension'
+    parser.add_argument(
+        '--dataset',
+        help='input data file path',
+        required=True
     )
     parser.add_argument(
-        '--training_set_metadata_json',
-        help='input metadata JSON file. It is an intermediate preprocess file '
-             'containing the mappings of the input CSV created the first time '
-             'a CSV file is used in the same directory with the same name and '
-             'a json extension'
-    )
-
-    parser.add_argument(
-        '-s',
-        '--split',
-        default=TEST,
-        choices=[TRAINING, VALIDATION, TEST, FULL],
-        help='the split to test the model on'
+        '--data_format',
+        help='format of the input data',
+        default='auto',
+        choices=['auto', 'csv', 'hdf5']
     )
 
     # ----------------
@@ -97,6 +120,24 @@ def cli(sys_argv):
         '-ssuo',
         '--skip_save_unprocessed_output',
         help='skips saving intermediate NPY output files',
+        action='store_true', default=False
+    )
+    parser.add_argument(
+        '-sses',
+        '--skip_save_eval_stats',
+        help='skips saving intermediate JSON eval statistics',
+        action='store_true', default=False
+    )
+    parser.add_argument(
+        '-scp',
+        '--skip_collect_predictions',
+        help='skips collecting predictions',
+        action='store_true', default=False
+    )
+    parser.add_argument(
+        '-scos',
+        '--skip_collect_overall_stats',
+        help='skips collecting overall stats',
         action='store_true', default=False
     )
 
@@ -170,8 +211,11 @@ def cli(sys_argv):
 
     if is_on_master():
         print_ludwig('Test', LUDWIG_VERSION)
+        logger.info('Dataset path: {}'.format(args.dataset))
+        logger.info('Model path: {}'.format(args.model_path))
+        logger.info('')
 
-    full_predict(**vars(args))
+    evaluate_cli(**vars(args))
 
 
 if __name__ == '__main__':

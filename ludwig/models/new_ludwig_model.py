@@ -593,9 +593,9 @@ class NewLudwigModel:
             skip_save_unprocessed_output=True,
             skip_save_predictions=True,
             skip_save_eval_stats=True,
-            output_directory='results',
             collect_predictions=False,
             collect_overall_stats=False,
+            output_directory='results',
             return_type=pd.DataFrame,
             debug=False,
             **kwargs

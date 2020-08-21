@@ -80,10 +80,7 @@ def cli(sys_argv):
     # ---------------
     parser.add_argument(
         '--dataset',
-        help='input data file path. '
-             'If it has a split column, it will be used for splitting '
-             '(0: train, 1: validation, 2: test), '
-             'otherwise the dataset will be randomly split',
+        help='input data file path',
         required=True
     )
     parser.add_argument(
