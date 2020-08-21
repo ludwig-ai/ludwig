@@ -256,6 +256,13 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
+        '--data_format',
+        help='format of the input data',
+        default='auto',
+        choices=['auto', 'csv', 'hdf5']
+    )
+
+    parser.add_argument(
         '-sspi',
         '--skip_save_processed_input',
         help='skips saving intermediate HDF5 and JSON files',
