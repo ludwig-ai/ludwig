@@ -125,7 +125,8 @@ class Trainer:
             cls,
             summary_writer,
             metrics,
-            step
+            step,
+            learning_rate=None
     ):
         if not summary_writer:
             return
@@ -138,6 +139,8 @@ class Trainer:
                     )
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag, metric_val, step=step)
+            if learning_rate:
+                tf.summary.scalar("combined/epoch_learning_rate", learning_rate, step=step)
         summary_writer.flush()
 
     @classmethod
@@ -575,6 +578,7 @@ class Trainer:
                 summary_writer=train_summary_writer,
                 metrics=progress_tracker.train_metrics,
                 step=progress_tracker.epoch,
+                learning_rate=current_learning_rate,
             )
 
             if validation_set is not None and validation_set.size > 0:
