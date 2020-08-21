@@ -13,6 +13,9 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
                                  'feature_type feature_options tie_features')
 
 
+# micro level test confirms the encoders for tied input features are sharing
+# the same encoder.  Include negative tests to confirm untied input features
+# do not share the same encoder.
 # note: vocab parameter, below, is made up to facilitate creating input encoders
 @pytest.mark.parametrize(
     'input_feature_options',
@@ -56,7 +59,7 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
         ),
     ]
 )
-def test_encoder_tied_weights(input_feature_options):
+def test_tied_micro_level(input_feature_options):
 
     # build input feature definition
     input_feature_definitions = []
@@ -90,6 +93,8 @@ def test_encoder_tied_weights(input_feature_options):
         assert input_features['input_feature_1'].encoder_obj is not \
                input_features['input_feature_2'].encoder_obj
 
+
+# Macro level test ensures no exceptions are raised during a full_experiment()
 
 
 
