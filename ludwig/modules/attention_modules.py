@@ -29,53 +29,27 @@ class FeedForwardAttentionReducer(Layer):
             activation='tanh'
         )
         self.layer2 = Dense(
-            hidden_size,
+            1,
             activation='linear',
             use_bias=False
         )
 
-    def call(self, current_inputs, **kwargs):
-        hidden = self.layer1(current_inputs)
-        hidden = self.layer2(hidden)
-        attention = tf.nn.softmax(
+    def call(self, current_inputs, training=None, mask=None):
+        # current_inputs shape [b, s, h]
+
+        hidden = self.layer1(current_inputs, training=training) # [b, s, h`], h`=hidden_size
+        hidden = self.layer2(hidden, training=training)  # [b, s, 1]
+        attention = tf.nn.softmax(  # [b, s]
             tf.reshape(
                 hidden,
                 [-1, tf.shape(current_inputs)[1]]
             )
         )
-        geated_inputs = tf.reduce_sum(
+        geated_inputs = tf.reduce_sum(  # [b, h]
             tf.expand_dims(attention, -1) * current_inputs, 1)
 
-        return geated_inputs
+        return geated_inputs  # [b, h]
 
-
-# todo tf2: port all these functions to tf2
-def reduce_feed_forward_attention(current_inputs, hidden_size=256):
-    with tf.variable_scope('reduce_ff_attention'):
-        weights_1 = tf.get_variable('weights_1',
-                                    [current_inputs.shape[-1],
-                                     hidden_size])
-        logger.debug('  att_weights_1: {}'.format(weights_1))
-        biases_1 = tf.get_variable('biases_1', [hidden_size])
-        logger.debug('  att_biases_1: {}'.format(biases_1))
-        weights_2 = tf.get_variable('weights_2', [hidden_size, 1])
-        logger.debug('  att_weights_2: {}'.format(weights_2))
-
-        current_inputs_reshape = tf.reshape(current_inputs,
-                                            [-1, current_inputs.shape[
-                                                -1]])
-        hidden = tf.tanh(
-            tf.matmul(current_inputs_reshape, weights_1) + biases_1)
-        logger.debug('  att_hidden: {}'.format(hidden))
-        attention = tf.nn.softmax(
-            tf.reshape(tf.matmul(hidden, weights_2),
-                       [-1, tf.shape(current_inputs)[1]]))
-        logger.debug('  att_attention: {}'.format(attention))
-        # attention [bs x seq]
-        geated_inputs = tf.reduce_sum(
-            tf.expand_dims(attention, -1) * current_inputs, 1)
-        logger.debug('  att_geated_inputs: {}'.format(geated_inputs))
-    return geated_inputs
 
 # todo future
 # def feed_forward_attention(current_inputs, feature_hidden_size,
