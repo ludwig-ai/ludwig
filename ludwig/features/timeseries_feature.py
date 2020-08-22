@@ -150,7 +150,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return tf.float32
 
     def get_input_shape(self):
-        return self.max_sequence_length
+        return self.max_sequence_length,
 
     @staticmethod
     def update_model_definition_with_metadata(
