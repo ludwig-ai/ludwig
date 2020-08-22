@@ -22,6 +22,8 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE
+from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
+    StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import calculate_incr_mean
 from ludwig.utils.audio_utils import calculate_incr_var
@@ -344,7 +346,7 @@ class AudioFeatureMixin(object):
 
 
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    encoder = 'embed'
+    encoder = 'parallel_cnn'
     max_sequence_length = None
     embedding_size = None
 
@@ -396,3 +398,16 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
                 'preprocessing': {}
             }
         )
+
+    encoder_registry = {
+        'stacked_cnn': StackedCNN,
+        'parallel_cnn': ParallelCNN,
+        'stacked_parallel_cnn': StackedParallelCNN,
+        'rnn': StackedRNN,
+        'cnnrnn': StackedCNNRNN,
+        'passthrough': SequencePassthroughEncoder,
+        'null': SequencePassthroughEncoder,
+        'none': SequencePassthroughEncoder,
+        'None': SequencePassthroughEncoder,
+        None: SequencePassthroughEncoder
+    }

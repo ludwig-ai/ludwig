@@ -3,13 +3,12 @@ from collections import namedtuple
 import pytest
 
 from ludwig.models.ecd import build_inputs
-from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import run_experiment
-from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import category_feature
+from tests.integration_tests.utils import generate_data
+from tests.integration_tests.utils import numerical_feature
+from tests.integration_tests.utils import run_experiment
 from tests.integration_tests.utils import sequence_feature
 from tests.integration_tests.utils import text_feature
-
 
 # InputFeatureOptions namedtuple structure:
 # feature_type: input feature type, e.g., numerical, category, etc.
@@ -38,10 +37,11 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
         InputFeatureOptions('set', {'vocab': ['a', 'b', 'c']}, True),
         InputFeatureOptions('sequence', {'vocab': ['x', 'y', 'z']}, True),
         InputFeatureOptions('text', {'vocab': ['a', 'b', 'c']}, True),
-        InputFeatureOptions('timeseries', {'vocab': ['a', 'b', 'c']}, True),
+        InputFeatureOptions('timeseries', {'should_embed': False}, True),
         InputFeatureOptions(
             'audio',
-            {'embedding_size': 64, 'length': 16, 'vocab': ['a', 'b', 'c']},
+            {'embedding_size': 64, 'max_sequence_length': 16,
+             'should_embed': False},
             True
         ),
 
@@ -57,10 +57,11 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
         InputFeatureOptions('set', {'vocab': ['a', 'b', 'c']}, False),
         InputFeatureOptions('sequence', {'vocab': ['x', 'y', 'z']}, False),
         InputFeatureOptions('text', {'vocab': ['a', 'b', 'c']}, False),
-        InputFeatureOptions('timeseries', {'vocab': ['a', 'b', 'c']}, False),
+        InputFeatureOptions('timeseries', {'should_embed': False}, False),
         InputFeatureOptions(
             'audio',
-            {'embedding_size': 64, 'length': 16, 'vocab': ['a', 'b', 'c']},
+            {'embedding_size': 64, 'max_sequence_length': 16,
+             'should_embed': False},
             False
         ),
     ]
