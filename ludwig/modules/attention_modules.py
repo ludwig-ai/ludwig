@@ -20,6 +20,7 @@ from tensorflow.keras.layers import Layer, Dense
 
 logger = logging.getLogger(__name__)
 
+
 class FeedForwardAttentionReducer(Layer):
     def __init__(self, hidden_size=256):
         super(FeedForwardAttentionReducer, self).__init__()
