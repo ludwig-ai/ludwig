@@ -91,7 +91,7 @@ def test_collect_weights(csv_filename):
         #  2 for the decoder classifier (w and b)
         assert len(weights) == 3
 
-        # Load weights from disk to ensure correct weight names
+        # Load model from disk to ensure correct weight names
         tf.keras.backend.reset_uids()
         model_loaded = Trainer.load(model_path)
         tensor_names = [name for name, w in model_loaded.collect_weights()]
