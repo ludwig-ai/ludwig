@@ -95,7 +95,6 @@ def test_collect_weights(csv_filename):
         tf.keras.backend.reset_uids()
         model_loaded = Trainer.load(model_path)
         tensor_names = [name for name, w in model_loaded.collect_weights()]
-
         assert len(tensor_names) == 3
 
         tf.keras.backend.reset_uids()
