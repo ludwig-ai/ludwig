@@ -110,6 +110,12 @@ class BagInputFeature(BagFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
+    def get_input_dtype(self):
+        return tf.float32
+
+    def get_input_shape(self):
+        return len(self.vocab),
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,

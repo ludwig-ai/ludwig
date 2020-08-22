@@ -57,8 +57,6 @@ class SequenceGeneratorDecoder(Layer):
             num_layers=1,
             attention=None,
             tied_embeddings=None,
-            initializer=None,
-            regularize=True,
             is_timeseries=False,
             max_sequence_length=0,
             use_bias=True,
@@ -81,8 +79,6 @@ class SequenceGeneratorDecoder(Layer):
         self.attention = attention
         self.attention_mechanism = None
         self.tied_embeddings = tied_embeddings
-        self.initializer = initializer
-        self.regularize = regularize
         self.is_timeseries = is_timeseries
         self.num_classes = num_classes
         self.max_sequence_length = max_sequence_length
@@ -100,14 +96,34 @@ class SequenceGeneratorDecoder(Layer):
         self.END_SYMBOL = 0
 
         logger.debug('  project input Dense')
-        self.project = Dense(state_size)
+        self.project = Dense(
+            state_size,
+            use_bias=use_bias,
+            kernel_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
 
         logger.debug('  Embedding')
         self.decoder_embedding = Embedding(
             input_dim=self.num_classes + 1,  # account for GO_SYMBOL
-            output_dim=embedding_size)
+            output_dim=embedding_size,
+            embeddings_initializer=weights_initializer,
+            embeddings_regularizer=weights_regularizer,
+            activity_regularizer=activity_regularizer
+        )
         logger.debug('  project output Dense')
-        self.dense_layer = Dense(num_classes)
+        self.dense_layer = Dense(
+            num_classes,
+            use_bias=use_bias,
+            kernel_initializer=weights_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=weights_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer
+        )
         self.decoder_rnncell = \
             get_from_registry(cell_type, rnn_layers_registry)(state_size)
         logger.debug('  {}'.format(self.decoder_rnncell))

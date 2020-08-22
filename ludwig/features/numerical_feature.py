@@ -158,6 +158,12 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 
         return inputs_encoded
 
+    def get_input_dtype(self):
+        return tf.float32
+
+    def get_input_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -184,6 +190,9 @@ class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
 class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     decoder = 'regressor'
     loss = {TYPE: MEAN_SQUARED_ERROR}
+    metric_functions = {LOSS: None, MEAN_SQUARED_ERROR: None,
+                        MEAN_ABSOLUTE_ERROR: None, R2: None}
+    default_validation_metric = MEAN_SQUARED_ERROR
     clip = None
 
     def __init__(self, feature):
@@ -257,7 +266,11 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     #     for metric in self.metric_functions.values():
     #         metric.update_state(targets, predictions[PREDICTIONS])
 
-    default_validation_metric = MEAN_SQUARED_ERROR
+    def get_output_dtype(self):
+        return tf.float32
+
+    def get_output_shape(self):
+        return ()
 
     @staticmethod
     def update_model_definition_with_metadata(

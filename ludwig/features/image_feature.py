@@ -364,11 +364,17 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
         return inputs_encoded
 
+    def get_input_dtype(self):
+        return tf.uint8
+
+    def get_input_shape(self):
+        return self.height, self.width, self.num_channels
+
     # keep this here for now until it's refactored
     def build_input(
             self,
             regularizer,
-            dropout_rate,
+            dropout,
             is_training=False,
             **kwargs
     ):
@@ -384,7 +390,7 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
         feature_representation, feature_representation_size = self.encoder_obj(
             placeholder,
             regularizer,
-            dropout_rate,
+            dropout,
             is_training,
         )
         logger.debug(

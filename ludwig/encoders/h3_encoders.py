@@ -48,7 +48,7 @@ class H3Embed(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             reduce_output='sum',
             **kwargs
     ):
@@ -105,9 +105,9 @@ class H3Embed(Layer):
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  edge Embed')
@@ -119,9 +119,9 @@ class H3Embed(Layer):
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  resolution Embed')
@@ -133,9 +133,9 @@ class H3Embed(Layer):
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  base cell Embed')
@@ -147,9 +147,9 @@ class H3Embed(Layer):
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  cells Embed')
@@ -161,9 +161,9 @@ class H3Embed(Layer):
             pretrained_embeddings=None,
             force_embedding_size=True,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout_rate=dropout_rate,
-            initializer=weights_initializer,
-            regularizer=weights_regularizer
+            dropout=dropout,
+            embedding_initializer=weights_initializer,
+            embedding_regularizer=weights_regularizer
         )
 
         logger.debug('  FCStack')
@@ -182,7 +182,7 @@ class H3Embed(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
     def call(
@@ -278,7 +278,7 @@ class H3WeightedSum(Layer):
             norm=None,
             norm_params=None,
             activation='relu',
-            dropout_rate=0,
+            dropout=0,
             **kwargs
     ):
         """
@@ -327,7 +327,7 @@ class H3WeightedSum(Layer):
         self.h3_embed = H3Embed(
             embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout=dropout,
             initializer=weights_initializer,
             regularize=weights_regularizer,
             reduce_output=None,
@@ -353,7 +353,7 @@ class H3WeightedSum(Layer):
             default_norm=norm,
             default_norm_params=norm_params,
             default_activation=activation,
-            default_dropout_rate=dropout_rate,
+            default_dropout=dropout,
         )
 
     def call(
@@ -419,7 +419,7 @@ class H3RNN(Layer):
             recurrent_regularizer=None,
             bias_regularizer=None,
             activity_regularizer=None,
-            dropout_rate=0.0,
+            dropout=0.0,
             recurrent_dropout=0.0,
             initializer=None,
             regularize=True,
@@ -486,9 +486,9 @@ class H3RNN(Layer):
             :param activity_regularizer: Regularizer applied to the output of the
                    layer (activation)
             :type activity_regularizer: string
-            :param dropout_rate: determines if there should be a dropout layer before
+            :param dropout: determines if there should be a dropout layer before
                    returning the encoder output.
-            :type dropout_rate: float
+            :type dropout: float
             :param recurrent_dropout: Float between 0.0 and 1.0.  Fraction of
                    the units to drop for the linear transformation of the
                    recurrent state.
@@ -529,7 +529,7 @@ class H3RNN(Layer):
         self.h3_embed = H3Embed(
             embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,
-            dropout=dropout_rate,
+            dropout=dropout,
             initializer=initializer,
             regularize=regularize,
             reduce_output=None
@@ -552,7 +552,7 @@ class H3RNN(Layer):
             recurrent_regularizer=recurrent_regularizer,
             bias_regularizer=bias_regularizer,
             activity_regularizer=activity_regularizer,
-            dropout=dropout_rate,
+            dropout=dropout,
             recurrent_dropout=recurrent_dropout,
             regularize=regularize,
             reduce_output=reduce_output

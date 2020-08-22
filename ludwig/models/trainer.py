@@ -62,8 +62,6 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
 
-tf.config.experimental_run_functions_eagerly(True)
-
 
 class Trainer:
     """
@@ -221,9 +219,9 @@ class Trainer:
                length of a field together. Bucketing on text length speeds up
                training of RNNs consistently, 30% in some cases
         :type bucketing_field:
-        :param dropout_rate: dropout_rate probability (probability of dropping
+        :param dropout: dropout probability (probability of dropping
                a neuron in a given layer)
-        :type dropout_rate: Float
+        :type dropout: Float
         :param early_stop: How many epochs without any improvement in the
                validation_metric triggers the algorithm to stop
         :type early_stop: Integer
@@ -298,11 +296,22 @@ class Trainer:
         if validation_field == 'combined':
             valid_validation_field = True
             validation_output_feature_name = 'combined'
+            if validation_metric is not LOSS and len(output_features) == 1:
+                only_of = next(iter(output_features))
+                if validation_metric in metrics_names[only_of]:
+                    validation_output_feature_name = only_of
+                    logger.warning(
+                        "Replacing 'combined' validation field "
+                        "with '{}' as the specified validation "
+                        "metric {} is invalid for 'combined' "
+                        "but is valid for '{}'.".format(
+                            only_of, validation_metric, only_of
+                        ))
         else:
             for output_feature in output_features:
-                if validation_field == output_feature['name']:
+                if validation_field == output_feature:
                     valid_validation_field = True
-                    validation_output_feature_name = output_feature['name']
+                    validation_output_feature_name = validation_field
         if not valid_validation_field:
             raise ValueError(
                 'The specificed validation_field {} is not valid.'
@@ -318,8 +327,8 @@ class Trainer:
         ]
         if not valid_validation_metric:
             raise ValueError(
-                'The specificed metric {} is not valid.'
-                'Available metrics for {} output features are: {}'.format(
+                'The specificed metric {} is not valid. '
+                'Available metrics for {} output feature are: {}'.format(
                     validation_metric,
                     validation_output_feature_name,
                     metrics_names[validation_output_feature_name]
@@ -383,13 +392,16 @@ class Trainer:
                     )
                 )
 
-        # todo tf2: reintroduce debugging mode
-        # if self.debug:
-        #    session = tf_debug.LocalCLIDebugWrapperSession(session)
-        #    session.add_tensor_filter(
-        #        'has_inf_or_nan',
-        #        tf_debug.has_inf_or_nan
-        #    )
+        if self._debug and is_on_master():
+            # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
+            debug_path = os.path.join(
+                save_path, 'debug'
+            )
+            tf.debugging.experimental.enable_dump_debug_info(
+                debug_path,
+                tensor_debug_mode='FULL_HEALTH',
+                circular_buffer_size=-1,
+            )
 
         # ================ Resume logic ================
         if resume:
@@ -621,7 +633,7 @@ class Trainer:
             if should_validate:
                 should_break = self.check_progress_on_validation(
                     progress_tracker,
-                    validation_field,
+                    validation_output_feature_name,
                     validation_metric,
                     model_weights_path,
                     model_hyperparameters_path,
@@ -853,17 +865,23 @@ class Trainer:
 
         return merged_output_metrics
 
-    # todo tf2: reintroduce this functionality
     def batch_collect_activations(
             self,
             dataset,
             batch_size,
-            tensor_names,
+            layer_names,
             bucketing_field=None
     ):
-        # output_nodes = {tensor_name: self.graph.get_tensor_by_name(tensor_name)
-        #                 for tensor_name in tensor_names}
-        # collected_tensors = {tensor_name: [] for tensor_name in tensor_names}
+        # Build static graph for the trained model
+        tf.keras.backend.reset_uids()
+        keras_model_inputs = self.model.get_model_inputs()
+        keras_model = self.model.get_connected_model(inputs=keras_model_inputs)
+
+        # Create a new model that routes activations to outputs
+        tf.keras.backend.reset_uids()
+        output_nodes = {layer_name: keras_model.get_layer(layer_name).output
+                        for layer_name in layer_names}
+        activation_model = tf.keras.Model(inputs=keras_model_inputs, outputs=output_nodes)
 
         batcher = self.initialize_batcher(
             dataset,
@@ -879,31 +897,46 @@ class Trainer:
             disable=is_progressbar_disabled()
         )
 
+        collected_tensors = []
         while not batcher.last_batch():
             batch = batcher.next_batch()
-            # result = session.run(
-            #     output_nodes,
-            #     feed_dict=self.feed_dict(
-            #         batch,
-            #         is_training=False
-            #     )
-            # )
-            #
-            # for tensor_name in result:
-            #     for row in result[tensor_name]:
-            #         collected_tensors[tensor_name].append(row)
+            inputs = {
+                i_feat['name']: batch[i_feat['name']]
+                for i_feat in self._hyperparameters['input_features']
+            }
+            targets = {
+                o_feat['name']: batch[o_feat['name']]
+                for o_feat in self._hyperparameters['output_features']
+            }
+
+            input_tuple = (inputs, targets)
+            outputs = activation_model(input_tuple)
+
+            for layer_name, output in outputs.items():
+                if isinstance(output, tuple):
+                    output = list(output)
+
+                if isinstance(output, tf.Tensor):
+                    output = [('', output)]
+                elif isinstance(output, dict):
+                    output = [(f'_{key}', tensor) for key, tensor in output.items()]
+                elif isinstance(output, list):
+                    output = [(f'_{idx}', tensor) for idx, tensor in enumerate(output)]
+
+                for suffix, tensor in output:
+                    full_name = f'{layer_name}{suffix}'
+                    collected_tensors.append((full_name, tensor))
 
             progress_bar.update(1)
 
         progress_bar.close()
 
-        collected_tensors = None
         return collected_tensors
 
     def check_progress_on_validation(
             self,
             progress_tracker,
-            validation_field,
+            validation_output_feature_name,
             validation_metric,
             model_weights_path,
             model_hyperparameters_path,
@@ -921,13 +954,13 @@ class Trainer:
         # record how long its been since an improvement
         improved = get_improved_fun(validation_metric)
         if improved(
-                progress_tracker.vali_metrics[validation_field][
+                progress_tracker.vali_metrics[validation_output_feature_name][
                     validation_metric][-1],
                 progress_tracker.best_valid_metric
         ):
             progress_tracker.last_improvement_epoch = progress_tracker.epoch
             progress_tracker.best_valid_metric = progress_tracker.vali_metrics[
-                validation_field][validation_metric][-1]
+                validation_output_feature_name][validation_metric][-1]
             if is_on_master():
                 if not skip_save_model:
                     self.model.save_weights(model_weights_path)
@@ -938,7 +971,7 @@ class Trainer:
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
                             validation_metric,
-                            validation_field
+                            validation_output_feature_name
                         )
                     )
 
@@ -951,7 +984,7 @@ class Trainer:
                     'Last improvement of {} on {} happened '
                     '{} epoch{} ago'.format(
                         validation_metric,
-                        validation_field,
+                        validation_output_feature_name,
                         progress_tracker.last_improvement,
                         '' if progress_tracker.last_improvement == 1 else 's'
                     )
@@ -1008,76 +1041,51 @@ class Trainer:
 
         return eval_metrics, eval_predictions
 
-    # todo tf2: reintroduce this functionality
     def collect_activations(
             self,
             dataset,
-            tensor_names,
+            layer_names,
             batch_size,
             **kwargs
     ):
-        # if self.session is None:
-        #     session = self.initialize_session(gpus, gpu_fraction)
-        #
-        #     # load parameters
-        #     if self.weights_save_path:
-        #         self.restore(session, self.weights_save_path)
-        # else:
-        #     session = self.session
-
-        # get operation names
-        # operation_names = set(
-        #     [t.name for op in self.graph.get_operations() for t in op.values()]
-        # )
-        # for tensor_name in tensor_names:
-        #     if tensor_name not in operation_names:
-        #         raise ValueError(
-        #             'Tensor / operation {} not present in the '
-        #             'model graph'.format(tensor_name)
-        #         )
-
         # collect tensors
         collected_tensors = self.batch_collect_activations(
             dataset,
             batch_size,
-            tensor_names
+            layer_names
         )
 
         return collected_tensors
 
-    # todo tf2: reintroduce this functionality
     def collect_weights(
             self,
-            tensor_names,
+            tensor_names=None,
             **kwargs
     ):
-        # if self.session is None:
-        #     session = self.initialize_session(gpus, gpu_fraction)
-        #
-        #     # load parameters
-        #     if self.weights_save_path:
-        #         self.restore(session, self.weights_save_path)
-        # else:
-        #     session = self.session
-        #
-        # operation_names = set(
-        #     [t.name for op in self.graph.get_operations() for t in op.values()]
-        # )
-        # for tensor_name in tensor_names:
-        #     if tensor_name not in operation_names:
-        #         raise ValueError(
-        #             'Tensor / operation {} not present in the '
-        #             'model graph'.format(tensor_name)
-        #         )
-        #
-        # # collect tensors
-        # collected_tensors = {
-        #     tensor_name: session.run(self.graph.get_tensor_by_name(tensor_name))
-        #     for tensor_name in tensor_names
-        # }
-        #
-        # return collected_tensors
-        pass
+        def recurse_weights(model, prefix=None):
+            results = []
+            for layer in model.layers:
+                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
+                if isinstance(layer, tf.keras.Model):
+                    results += recurse_weights(layer, layer_prefix)
+                else:
+                    results += [(f'{layer_prefix}/{w.name}', w) for w in
+                                layer.weights]
+            return results
+
+        weights = recurse_weights(self.model)
+        if tensor_names:
+            # Check for bad tensor names
+            weight_set = set(name for name, w in weights)
+            for name in tensor_names:
+                if name not in weight_set:
+                    raise ValueError(
+                        f'Tensor {name} not present in the model graph')
+
+            # Filter the weights
+            tensor_set = set(tensor_names)
+            weights = [(name, w) for name, w in weights if name in tensor_set]
+        return weights
 
     def save_weights(self, save_path):
         # save model

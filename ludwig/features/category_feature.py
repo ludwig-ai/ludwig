@@ -120,6 +120,12 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
         return {'encoder_output': encoder_output}
 
+    def get_input_dtype(self):
+        return tf.int32
+
+    def get_input_shape(self):
+        return ()
+
     @staticmethod
     def update_model_definition_with_metadata(
             input_feature,
@@ -146,8 +152,10 @@ class CategoryInputFeature(CategoryFeatureMixin, InputFeature):
 
 class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
     decoder = 'classifier'
-    num_classes = 0
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
+    metric_functions = {LOSS: None, ACCURACY: None, HITS_AT_K: None}
+    default_validation_metric = ACCURACY
+    num_classes = 0
     top_k = 3
 
     def __init__(self, feature):
@@ -227,7 +235,11 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             name='metric_top_k_hits'
         )
 
-    default_validation_metric = ACCURACY
+    def get_output_dtype(self):
+        return tf.int64
+
+    def get_output_shape(self):
+        return ()
 
     @staticmethod
     def update_model_definition_with_metadata(

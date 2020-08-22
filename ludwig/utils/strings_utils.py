@@ -159,9 +159,10 @@ def create_vocabulary(
             vocab.remove(padding_symbol)
         vocab = [padding_symbol] + vocab
 
+
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
-                unit in vocab}
+                unit in vocab}    
 
     pad_idx = None
     if padding_symbol in str2idx.keys():

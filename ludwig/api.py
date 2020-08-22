@@ -639,7 +639,6 @@ class LudwigModel:
             batch_size=None,
             learning_rate=None,
             regularization_lambda=None,
-            dropout_rate=None,
             bucketing_field=None
     ):
         """This function is used to perform one epoch of training of the model
@@ -664,7 +663,7 @@ class LudwigModel:
         :param regularization_lambda: (float) the regularization lambda
                parameter to use for training. By default the values is the one
                specified in the model definition.
-        :param dropout_rate: (float) the dropout rate to use for training. By
+        :param dropout: (float) the dropout rate to use for training. By
                default the values is the one specified in the model definition.
         :param bucketing_field: (string) the bucketing field to use for
                bucketing the data. By default the values is one specified in the
@@ -700,8 +699,6 @@ class LudwigModel:
             regularization_lambda = self.model_definition[TRAINING][
                 'regularization_lambda'
             ]
-        if dropout_rate is None:
-            dropout_rate = self.model_definition[TRAINING]['dropout_rate'],
         if bucketing_field is None:
             bucketing_field = self.model_definition[TRAINING][
                 'bucketing_field'
@@ -734,7 +731,6 @@ class LudwigModel:
             batch_size=batch_size,
             learning_rate=learning_rate,
             regularization_lambda=regularization_lambda,
-            dropout_rate=dropout_rate,
             bucketing_field=bucketing_field)
 
     def _predict(
