@@ -28,7 +28,7 @@ def reduce_feed_forward_attention(current_inputs, hidden_size=256):
 
 class FeedForwardAttentionReducer(Layer):
     def __init__(self, hidden_size=256):
-        super(FeedForwardAttentionReducer, self).__init__()
+        super().__init__()
 
         self.layer1 = Dense(
             hidden_size,
