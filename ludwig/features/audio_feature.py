@@ -344,9 +344,9 @@ class AudioFeatureMixin(object):
 
 
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    length = None
-    embedding_size = None
     encoder = 'embed'
+    max_sequence_length = None
+    embedding_size = None
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
@@ -354,9 +354,9 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
             raise ValueError(
                 'embedding_size has to be defined - '
                 'check "update_model_definition_with_metadata()"')
-        if not self.length:
+        if not self.max_sequence_length:
             raise ValueError(
-                'length has to be defined - '
+                'max_sequence_length has to be defined - '
                 'check "update_model_definition_with_metadata()"')
 
     def call(self, inputs, training=None, mask=None):
@@ -374,7 +374,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         return tf.float32
 
     def get_input_shape(self):
-        return self.length, self.embedding_size
+        return self.max_sequence_length, self.embedding_size
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -383,7 +383,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
             *args,
             **kwargs
     ):
-        input_feature['length'] = feature_metadata['max_length']
+        input_feature['max_sequence_length'] = feature_metadata['max_length']
         input_feature['embedding_size'] = feature_metadata['feature_dim']
         input_feature['should_embed'] = False
 

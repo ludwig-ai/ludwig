@@ -126,7 +126,7 @@ class TimeseriesFeatureMixin(object):
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     encoder = 'parallel_cnn'
-    length = 0
+    max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
@@ -148,7 +148,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return tf.float32
 
     def get_input_shape(self):
-        return self.length,
+        return self.max_sequence_length
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -157,7 +157,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
             *args,
             **kwargs
     ):
-        input_feature['length'] = feature_metadata['max_timeseries_length']
+        input_feature['max_sequence_length'] = feature_metadata[
+            'max_timeseries_length']
         input_feature['embedding_size'] = 1
         input_feature['should_embed'] = False
 
