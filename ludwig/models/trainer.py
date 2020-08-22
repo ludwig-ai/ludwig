@@ -1083,7 +1083,8 @@ class Trainer:
                                 layer.weights]
             return results
 
-        weights = recurse_weights(self.model)
+        connected_model = self.model.get_connected_model()
+        weights = recurse_weights(connected_model)
         if tensor_names:
             # Check for bad tensor names
             weight_set = set(name for name, w in weights)
