@@ -985,8 +985,9 @@ class Trainer:
         if progress_tracker.last_improvement != 0:
             if is_on_master():
                 logger.info(
-                    'Last improvement of {} on {} happened '
-                    '{} epoch{} ago'.format(
+                    'Last improvement '
+                    '(or learning rate reduction / batch_size increase) '
+                    'of {} on {} happened {} epoch{} ago'.format(
                         validation_metric,
                         validation_output_feature_name,
                         progress_tracker.last_improvement,
