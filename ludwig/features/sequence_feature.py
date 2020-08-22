@@ -123,6 +123,7 @@ class SequenceFeatureMixin(object):
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     encoder = 'embed'
+    max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -160,7 +161,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
             **kwargs
     ):
         input_feature['vocab'] = feature_metadata['idx2str']
-        input_feature['length'] = feature_metadata['max_sequence_length']
+        input_feature['max_sequence_length'] = feature_metadata[
+            'max_sequence_length']
 
     @staticmethod
     def populate_defaults(input_feature):

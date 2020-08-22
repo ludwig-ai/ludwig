@@ -253,7 +253,6 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
         input_feature_def['name']
     ))
 
-    # todo tf2: tied encoder mechanism needs to be tested
     encoder_obj = None
     if input_feature_def.get(TIED, None) is not None:
         tied_input_feature_name = input_feature_def[TIED]

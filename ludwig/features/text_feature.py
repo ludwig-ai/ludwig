@@ -181,12 +181,11 @@ class TextFeatureMixin(object):
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     encoder = 'parallel_cnn'
+    max_sequence_length = None
     level = 'word'
-    length = 0
 
     def __init__(self, feature, encoder_obj=None):
-        # todo tf2: encoder_obj should be passed to the sequenceinputfeature
-        super().__init__(feature)
+        super().__init__(feature, encoder_obj=encoder_obj)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -217,7 +216,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         input_feature['vocab'] = (
             feature_metadata[input_feature['level'] + '_idx2str']
         )
-        input_feature['length'] = (
+        input_feature['max_sequence_length'] = (
             feature_metadata[input_feature['level'] + '_max_sequence_length']
         )
 
@@ -234,17 +233,15 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    decoder = 'generator'
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None,
                         PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
-    level = 'word'
     max_sequence_length = 0
     num_classes = 0
+    level = 'word'
 
     def __init__(self, feature):
-        self.overwrite_defaults(feature)
         super().__init__(feature)
 
     def get_output_dtype(self):
@@ -419,54 +416,4 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         set_default_value(output_feature, 'level', 'word')
-
-        # If Loss is not defined, set an empty dictionary
-        set_default_value(output_feature, LOSS, {})
-
-        # Populate the default values for LOSS if they aren't defined already
-        set_default_values(
-            output_feature[LOSS],
-            {
-                'type': 'softmax_cross_entropy',
-                'labels_smoothing': 0,
-                'class_weights': 1,
-                'robust_lambda': 0,
-                'confidence_penalty': 0,
-                'class_similarities_temperature': 0,
-                'weight': 1
-            }
-        )
-
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
-            set_default_values(
-                output_feature[LOSS],
-                {
-                    'sampler': 'log_uniform',
-                    'negative_samples': 25,
-                    'distortion': 0.75
-                }
-            )
-        else:
-            set_default_values(
-                output_feature[LOSS],
-                {
-                    'sampler': None,
-                    'negative_samples': 0,
-                    'distortion': 1
-                }
-            )
-
-        set_default_value(output_feature[LOSS], 'unique', False)
-        set_default_value(output_feature, 'decoder', 'generator')
-
-        if output_feature['decoder'] == 'tagger':
-            set_default_value(output_feature, 'reduce_input', None)
-
-        set_default_values(
-            output_feature,
-            {
-                'dependencies': [],
-                'reduce_input': SUM,
-                'reduce_dependencies': SUM
-            }
-        )
+        SequenceOutputFeature.populate_defaults(output_feature)
