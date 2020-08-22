@@ -20,6 +20,11 @@ from tensorflow.keras.layers import Layer, Dense
 
 logger = logging.getLogger(__name__)
 
+# todo tf2 remove reduce_feed_forward_attention() once method for
+#   incorporating new FeedForwardAttentionReducer class is implemented.
+def reduce_feed_forward_attention(current_inputs, hidden_size=256):
+    pass
+
 
 class FeedForwardAttentionReducer(Layer):
     def __init__(self, hidden_size=256):
