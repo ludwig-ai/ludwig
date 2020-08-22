@@ -71,7 +71,7 @@ class SequenceFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        idx2str, str2idx, str2freq, max_length, pad_idx, pad_symbol, unk_symbol = create_vocabulary(
+        idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
             num_most_frequent=preprocessing_parameters['most_common'],
@@ -89,10 +89,7 @@ class SequenceFeatureMixin(object):
             'str2idx': str2idx,
             'str2freq': str2freq,
             'vocab_size': len(idx2str),
-            'max_sequence_length': max_length,
-            'pad_idx' : pad_idx,
-            'padding_symbol' : pad_symbol,
-            'unknown_symbol' : unk_symbol
+            'max_sequence_length': max_length
         }
 
     @staticmethod
@@ -102,9 +99,9 @@ class SequenceFeatureMixin(object):
             inverse_vocabulary=metadata['str2idx'],
             tokenizer_type=preprocessing_parameters['tokenizer'],
             length_limit=metadata['max_sequence_length'],
-            padding_symbol=metadata['padding_symbol'],
+            padding_symbol=preprocessing_parameters['padding_symbol'],
             padding=preprocessing_parameters['padding'],
-            unknown_symbol=metadata['unknown_symbol'],
+            unknown_symbol=preprocessing_parameters['unknown_symbol'],
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
@@ -132,16 +129,12 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        """if 'preprocessing' in feature.keys():
-            feature.update(feature['preprocessing'])"""
         
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
-            
-        #self.pad_idx = feature['pad_idx']
-       
+
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
@@ -149,7 +142,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        #inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx), dtype=tf.int32) 
         inputs_mask = tf.not_equal(inputs, 0)
 
         encoder_output = self.encoder_obj(
@@ -167,8 +159,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     ):
         input_feature['vocab'] = feature_metadata['idx2str']
         input_feature['length'] = feature_metadata['max_sequence_length']
-        input_feature['pad_idx'] = feature_metadata['pad_idx']
-     
+        #input_feature['pad_idx'] = feature_metadata['pad_idx']
+
     @staticmethod
     def populate_defaults(input_feature):
         set_default_value(input_feature, TIED, None)

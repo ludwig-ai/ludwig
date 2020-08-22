@@ -126,12 +126,15 @@ def create_vocabulary(
         pad_token = tokenizer.tokenizer.pad_token
         unk_token = tokenizer.tokenizer.unk_token
     
-        if pad_token is None: vocab = vocab + [padding_symbol]
-        else: padding_symbol = pad_token
+        if pad_token is None:
+            vocab = vocab + [padding_symbol]
+        else:
+            padding_symbol = pad_token
 
-        if unk_token is None: vocab = vocab + [unknown_symbol]
-        else: unknown_symbol = unk_token
-        
+        if unk_token is None:
+            vocab = vocab + [unknown_symbol]
+        else:
+            unknown_symbol = unk_token
 
     elif vocab_file is not None:
         vocab = load_vocabulary(vocab_file)
@@ -156,11 +159,9 @@ def create_vocabulary(
             vocab.remove(padding_symbol)
         vocab = [padding_symbol] + vocab
 
-
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
-                unit in vocab}    
-
+                unit in vocab}
 
     pad_idx = None
     if padding_symbol in str2idx.keys():
