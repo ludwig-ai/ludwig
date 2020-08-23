@@ -129,13 +129,11 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
         self.overwrite_defaults(feature)
-        
         if encoder_obj:
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
             
-        self.pad_idx = feature['pad_idx']
        
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -167,7 +165,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     ):
         input_feature['vocab'] = feature_metadata['idx2str']
         input_feature['length'] = feature_metadata['max_sequence_length']
-        #input_feature['pad_idx'] = feature_metadata['pad_idx']
 
     @staticmethod
     def populate_defaults(input_feature):

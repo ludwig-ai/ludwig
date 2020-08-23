@@ -168,9 +168,9 @@ class TextFeatureMixin(object):
             inverse_vocabulary=metadata['char_str2idx'],
             tokenizer_type=preprocessing_parameters['char_tokenizer'],
             length_limit=metadata['char_max_sequence_length'],
-            padding_symbol=preprocessing_parameters['padding_symbol'],
+            padding_symbol=metadata['char_pad_symbol'],
             padding=preprocessing_parameters['padding'],
-            unknown_symbol=preprocessing_parameters['unknown_symbol'],
+            unknown_symbol=metadata['char_unk_symbol'],
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'char_vocab_file'
@@ -221,10 +221,11 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     length = 0
 
     def __init__(self, feature, encoder_obj=None):
-        # todo tf2: encoder_obj should be passed to the sequenceinputfeature
+
         super().__init__(feature)
         if 'preprocessing' in feature.keys():
-            feature.update(feature['preprocessing'])
+            # makes pretrained model name visible to encoder init if it is provided/necessary
+            feature['pretrained_model_name_or_path'] = feature['preprocessing']['pretrained_model_name_or_path']
             
         self.pad_idx = feature['pad_idx']
 
