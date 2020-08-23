@@ -16,7 +16,6 @@
 import logging
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer
 
 from ludwig.modules.attention_modules import \
     FeedForwardAttentionReducer
@@ -30,7 +29,10 @@ class SequenceReducerMixin(object):
 
     def __init__(self, reduce_mode=None):
         super().__init__()
-        self.reduce_mode = reduce_mode
+        # save as private variable for debugging
+        self._reduce_mode = reduce_mode
+
+        # use registry to find required reduction function
         self._reduce_func = get_from_registry(
             reduce_mode,
             reduce_mode_registry
@@ -40,16 +42,22 @@ class SequenceReducerMixin(object):
         return self._reduce_func(inputs, **kwargs)
 
     def reduce_sequence_list(self, sequence_list, **kwargs):
+        # setup list for reduced sequence
         reduced_list = []
+
+        # for sequence provided  reduce it
         for sequence in sequence_list:
             reduced_list.append(self.reduce_sequence(sequence, **kwargs))
+
+        # consolidate reduced sequences into a single return result
         if len(reduced_list) > 1:
-            if self.reduce_mode == dont_reduce:
+            if self._reduce_mode == dont_reduce:
                 reduced_output = tf.concat(reduced_list, 2)
             else:
                 reduced_output = tf.concat(reduced_list, 1)
         else:
             reduced_output = reduced_list[0]
+
         return reduced_output
 
 
