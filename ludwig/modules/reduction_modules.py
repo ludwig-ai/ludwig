@@ -18,7 +18,7 @@ import logging
 import tensorflow as tf
 
 from ludwig.modules.attention_modules import \
-    reduce_feed_forward_attention
+    FeedForwardAttentionReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
@@ -73,7 +73,7 @@ reduce_mode_registry = {
     'avg': reduce_mean,
     'max': reduce_max,
     'concat': reduce_concat,
-    'attention': reduce_feed_forward_attention,
+    'attention': FeedForwardAttentionReducer(),
     'none': dont_reduce,
     'None': dont_reduce,
     None: dont_reduce
