@@ -32,12 +32,14 @@ class FeedForwardAttentionReducer(Layer):
 
         self.layer1 = Dense(
             hidden_size,
-            activation='tanh'
+            activation='tanh',
+            name='ffa_reducer_layer1'
         )
         self.layer2 = Dense(
             1,
             activation='linear',
-            use_bias=False
+            use_bias=False,
+            name='ffa_reducer_layer2'
         )
 
     def call(self, current_inputs, training=None, mask=None):
