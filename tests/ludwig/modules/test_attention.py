@@ -4,15 +4,13 @@ import tensorflow as tf
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 
 
-@pytest.mark.parametrize('reducer_hidden_size', [128, 256, 512])
-@pytest.mark.parametrize('input_hidden_size', [128, 256])
+@pytest.mark.parametrize('input_hidden_size', [128, 256, 512])
 @pytest.mark.parametrize('input_seq_size', [10, 20])
 @pytest.mark.parametrize('input_batch_size', [16, 32])
 def test_feed_forward_attention_reducer(
         input_batch_size,
         input_seq_size,
-        input_hidden_size,
-        reducer_hidden_size
+        input_hidden_size
 ):
 
     # Generate synthetic data
@@ -22,9 +20,7 @@ def test_feed_forward_attention_reducer(
     )
 
     # instantiate feed forward attention reducer
-    feed_forward_attention_reducer = FeedForwardAttentionReducer(
-        hidden_size=reducer_hidden_size
-    )
+    feed_forward_attention_reducer = FeedForwardAttentionReducer()
 
     result = feed_forward_attention_reducer(current_inputs)
 
