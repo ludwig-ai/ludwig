@@ -28,16 +28,29 @@ logger = logging.getLogger(__name__)
 
 class SequenceReducerMixin(object):
 
-    def __init__(self, reduce_output=None):
+    def __init__(self, reduce_mode=None):
         super().__init__()
-        self.reduce_output = reduce_output
+        self.reduce_mode = reduce_mode
         self._reduce_func = get_from_registry(
-            reduce_output,
+            reduce_mode,
             reduce_mode_registry
         )
 
     def reduce_sequence(self, inputs, **kwargs):
         return self._reduce_func(inputs, **kwargs)
+
+    def reduce_sequence_list(self, sequence_list, **kwargs):
+        reduced_list = []
+        for sequence in sequence_list:
+            reduced_list.append(self.reduce_sequence(sequence, **kwargs))
+        if len(reduced_list) > 1:
+            if self.reduce_mode == dont_reduce:
+                reduced_output = tf.concat(reduced_list, 2)
+            else:
+                reduced_output = tf.concat(reduced_list, 1)
+        else:
+            reduced_output = reduced_list[0]
+        return reduced_output
 
 
 def reduce_last(sequence, **kwargs):
