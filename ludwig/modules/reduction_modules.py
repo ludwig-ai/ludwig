@@ -102,12 +102,14 @@ reduce_mode_registry = {
     'max': reduce_max,
     'concat': reduce_concat,
     'attention': FeedForwardAttentionReducer(),
+    'null': dont_reduce,  # todo tf2 do we need this value,added to support text_feature()
     'none': dont_reduce,
     'None': dont_reduce,
     None: dont_reduce
 }
 
-
+# todo tf2 clean up after confirming SequenceReducerMixin is working
+# references found in BaseOutputFeature
 def reduce_sequence(sequence, mode):
     reduce_mode = get_from_registry(
         mode,
