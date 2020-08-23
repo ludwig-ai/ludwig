@@ -224,7 +224,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         super().__init__(feature)
         if 'preprocessing' in feature.keys():
-            # makes pretrained model name visible to encoder init if it is provided/necessary
+            # makes pretrained model name visible to encoder init() if it is provided/necessary
             feature['pretrained_model_name_or_path'] = feature['preprocessing']['pretrained_model_name_or_path']
             
         self.pad_idx = feature['pad_idx']
