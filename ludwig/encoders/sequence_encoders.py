@@ -27,7 +27,7 @@ from ludwig.modules.convolutional_modules import Conv1DStack, \
 from ludwig.modules.embedding_modules import EmbedSequence
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
-from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducerMixin
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class SequencePassthroughEncoder(Layer):
         return {'encoder_output': hidden}
 
 
-class SequenceEmbedEncoder(Layer):
+class SequenceEmbedEncoder(SequenceReducerMixin, Layer):
 
     def __init__(
             self,
@@ -175,10 +175,10 @@ class SequenceEmbedEncoder(Layer):
             :type dropout: Tensor
 
         """
-        super(SequenceEmbedEncoder, self).__init__()
+        super(SequenceEmbedEncoder, self).__init__(reduce_output=reduce_output)
         logger.debug(' {}'.format(self.name))
 
-        self.reduce_output = reduce_output
+        #self.reduce_output = reduce_output
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -209,7 +209,8 @@ class SequenceEmbedEncoder(Layer):
             inputs, training=training, mask=mask
         )
 
-        hidden = reduce_sequence(embedded_sequence, self.reduce_output)
+        hidden = self.reduce_sequence(embedded_sequence)
+
 
         return {'encoder_output': hidden}
 
