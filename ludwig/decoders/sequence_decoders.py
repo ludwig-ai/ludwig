@@ -86,7 +86,7 @@ class SequenceGeneratorDecoder(Layer):
         self.attention_mechanism = None
 
         self.reduce_input = reduce_input if reduce_input else 'sum'
-        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
+        self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_input)
 
         if is_timeseries:
             self.vocab_size = 1
