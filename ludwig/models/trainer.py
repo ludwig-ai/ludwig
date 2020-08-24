@@ -1315,8 +1315,11 @@ class Trainer:
             reduce_learning_rate_on_plateau_patience,
             reduce_learning_rate_on_plateau_rate
     ):
-        if (progress_tracker.last_learning_rate_reduction >=
-                reduce_learning_rate_on_plateau_patience):
+        if (
+            progress_tracker.last_improvement >= reduce_learning_rate_on_plateau_patience
+            and
+            progress_tracker.last_learning_rate_reduction >= reduce_learning_rate_on_plateau_patience
+        ):
             if (progress_tracker.num_reductions_lr >=
                     reduce_learning_rate_on_plateau):
                 if is_on_master():
@@ -1352,8 +1355,11 @@ class Trainer:
             increase_batch_size_on_plateau_max,
             increase_batch_size_on_plateau_rate
     ):
-        if (progress_tracker.last_batch_size_increase >=
-                increase_batch_size_on_plateau_patience):
+        if (
+            progress_tracker.last_improvement >= increase_batch_size_on_plateau_patience
+            and
+            progress_tracker.last_batch_size_increase >= increase_batch_size_on_plateau_patience
+        ):
             if (progress_tracker.num_increases_bs >=
                     increase_batch_size_on_plateau):
                 if is_on_master():
