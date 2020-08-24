@@ -1006,9 +1006,9 @@ class Trainer:
                 reduce_learning_rate_on_plateau_patience,
                 reduce_learning_rate_on_plateau_rate
             )
+            progress_tracker.last_learning_rate_reduction = progress_tracker.epoch - progress_tracker.last_learning_rate_reduction_epoch
             if progress_tracker.last_learning_rate_reduction > 0:
                 last_learning_rate_reduction_str = 'Last learning rate reduction'
-                progress_tracker.last_learning_rate_reduction = progress_tracker.epoch - progress_tracker.last_learning_rate_reduction_epoch
                 logger.info(
                     '{} happened {} epoch{} ago'.format(
                         last_learning_rate_reduction_str,
@@ -1026,9 +1026,9 @@ class Trainer:
                 increase_batch_size_on_plateau_max,
                 increase_batch_size_on_plateau_rate
             )
+            progress_tracker.last_batch_size_increase = progress_tracker.epoch - progress_tracker.last_batch_size_increase_epoch
             if progress_tracker.last_batch_size_increase > 0:
                 last_batch_size_increase_str = 'Last batch size increase'
-                progress_tracker.last_batch_size_increase = progress_tracker.epoch - progress_tracker.last_batch_size_increase_epoch
                 logger.info(
                     '{} happened {} epoch{} ago'.format(
                         last_batch_size_increase_str,
