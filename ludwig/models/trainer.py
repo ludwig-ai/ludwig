@@ -1006,15 +1006,16 @@ class Trainer:
                 reduce_learning_rate_on_plateau_patience,
                 reduce_learning_rate_on_plateau_rate
             )
-            last_learning_rate_reduction_str = 'Last learning rate reduction'
-            progress_tracker.last_learning_rate_reduction = progress_tracker.epoch - progress_tracker.last_learning_rate_reduction_epoch
-            logger.info(
-                '{} happened {} epoch{} ago'.format(
-                    last_learning_rate_reduction_str,
-                    progress_tracker.last_learning_rate_reduction,
-                    '' if progress_tracker.last_learning_rate_reduction == 1 else 's'
+            if progress_tracker.last_learning_rate_reduction > 0:
+                last_learning_rate_reduction_str = 'Last learning rate reduction'
+                progress_tracker.last_learning_rate_reduction = progress_tracker.epoch - progress_tracker.last_learning_rate_reduction_epoch
+                logger.info(
+                    '{} happened {} epoch{} ago'.format(
+                        last_learning_rate_reduction_str,
+                        progress_tracker.last_learning_rate_reduction,
+                        '' if progress_tracker.last_learning_rate_reduction == 1 else 's'
+                    )
                 )
-            )
 
         # ========== Increase Batch Size Plateau logic =========
         if increase_batch_size_on_plateau > 0:
@@ -1025,15 +1026,16 @@ class Trainer:
                 increase_batch_size_on_plateau_max,
                 increase_batch_size_on_plateau_rate
             )
-            last_batch_size_increase_str = 'Last batch size increase'
-            progress_tracker.last_batch_size_increase = progress_tracker.epoch - progress_tracker.last_batch_size_increase_epoch
-            logger.info(
-                '{} happened {} epoch{} ago'.format(
-                    last_batch_size_increase_str,
-                    progress_tracker.last_batch_size_increase,
-                    '' if progress_tracker.last_batch_size_increase == 1 else 's'
+            if progress_tracker.last_batch_size_increase > 0:
+                last_batch_size_increase_str = 'Last batch size increase'
+                progress_tracker.last_batch_size_increase = progress_tracker.epoch - progress_tracker.last_batch_size_increase_epoch
+                logger.info(
+                    '{} happened {} epoch{} ago'.format(
+                        last_batch_size_increase_str,
+                        progress_tracker.last_batch_size_increase,
+                        '' if progress_tracker.last_batch_size_increase == 1 else 's'
+                    )
                 )
-            )
 
         # ========== Early Stop logic ==========
         if early_stop > 0:
@@ -1333,9 +1335,7 @@ class Trainer:
                         'PLATEAU REACHED, reducing learning rate '
                         'due to lack of validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement and ' +
-                        str(progress_tracker.last_learning_rate_reduction) +
-                        ' epochs since the learning rate was reduced'
+                        ' epochs since last validation accuracy improvement'
                     )
 
                 progress_tracker.learning_rate *= (
@@ -1387,9 +1387,7 @@ class Trainer:
                         'increasing batch size due to lack of '
                         'validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement and ' +
-                        str(progress_tracker.last_batch_size_increase) +
-                        ' epochs since the batch size was increased'
+                        ' epochs since last validation accuracy improvement'
                     )
 
                 progress_tracker.batch_size = min(
