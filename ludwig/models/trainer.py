@@ -988,10 +988,6 @@ class Trainer:
                     validation_metric,
                     validation_output_feature_name,
                 )
-                if reduce_learning_rate_on_plateau > 0:
-                    last_improvement_str += ' / learning rate reduction'
-                if increase_batch_size_on_plateau > 0:
-                    last_improvement_str += ' / batch size increase'
                 logger.info(
                     '{} happened {} epoch{} ago'.format(
                         last_improvement_str,
@@ -1008,6 +1004,26 @@ class Trainer:
                 reduce_learning_rate_on_plateau_patience,
                 reduce_learning_rate_on_plateau_rate
             )
+            if reduce_learning_rate_on_plateau > 0:
+                last_learning_rate_reduction_str = 'Last learning rate reduction'
+                epochs_since_learning_rate_reduction = progress_tracker.epoch - progress_tracker.last_learning_rate_reduction_epoch
+                logger.info(
+                    '{} happened {} epoch{} ago'.format(
+                        last_learning_rate_reduction_str,
+                        epochs_since_learning_rate_reduction,
+                        '' if epochs_since_learning_rate_reduction == 1 else 's'
+                    )
+                )
+            if increase_batch_size_on_plateau > 0:
+                last_batch_size_increase_str = 'Last batch size increase'
+                epochs_since_batch_size_increase = progress_tracker.epoch - progress_tracker.last_batch_size_increase_epoch
+                logger.info(
+                    '{} happened {} epoch{} ago'.format(
+                        last_batch_size_increase_str,
+                        epochs_since_batch_size_increase,
+                        '' if epochs_since_batch_size_increase == 1 else 's'
+                    )
+                )
 
         # ========== Increase Batch Size Plateau logic =========
         if increase_batch_size_on_plateau > 0:
@@ -1298,7 +1314,7 @@ class Trainer:
             reduce_learning_rate_on_plateau_patience,
             reduce_learning_rate_on_plateau_rate
     ):
-        if (progress_tracker.last_improvement >=
+        if (progress_tracker.last_learning_rate_reduction >=
                 reduce_learning_rate_on_plateau_patience):
             if (progress_tracker.num_reductions_lr >=
                     reduce_learning_rate_on_plateau):
@@ -1324,10 +1340,8 @@ class Trainer:
                 progress_tracker.learning_rate *= (
                     reduce_learning_rate_on_plateau_rate
                 )
-                progress_tracker.last_improvement_epoch = (
-                    progress_tracker.epoch
-                )
-                progress_tracker.last_improvement = 0
+                progress_tracker.last_learning_rate_reduction_epoch = progress_tracker.epoch
+                progress_tracker.last_learning_rate_reduction = 0
                 progress_tracker.num_reductions_lr += 1
 
     def increase_batch_size(
@@ -1338,7 +1352,7 @@ class Trainer:
             increase_batch_size_on_plateau_max,
             increase_batch_size_on_plateau_rate
     ):
-        if (progress_tracker.last_improvement >=
+        if (progress_tracker.last_batch_size_increase >=
                 increase_batch_size_on_plateau_patience):
             if (progress_tracker.num_increases_bs >=
                     increase_batch_size_on_plateau):
@@ -1381,8 +1395,8 @@ class Trainer:
                      progress_tracker.batch_size),
                     increase_batch_size_on_plateau_max
                 )
-                progress_tracker.last_improvement_epoch = progress_tracker.epoch
-                progress_tracker.last_improvement = 0
+                progress_tracker.last_batch_size_increase_epoch = progress_tracker.epoch
+                progress_tracker.last_batch_size_increase = 0
                 progress_tracker.num_increases_bs += 1
 
 
@@ -1393,6 +1407,8 @@ class ProgressTracker:
             batch_size,
             steps,
             last_improvement_epoch,
+            last_learning_rate_reduction_epoch,
+            last_batch_size_increase_epoch,
             best_valid_metric,
             learning_rate,
             num_reductions_lr,
@@ -1400,13 +1416,19 @@ class ProgressTracker:
             train_metrics,
             vali_metrics,
             test_metrics,
-            last_improvement=0
+            last_improvement = 0,
+            last_learning_rate_reduction = 0,
+            last_batch_size_increase = 0
     ):
         self.batch_size = batch_size
         self.epoch = epoch
         self.steps = steps
         self.last_improvement_epoch = last_improvement_epoch
         self.last_improvement = last_improvement
+        self.last_learning_rate_reduction_epoch = last_learning_rate_reduction_epoch
+        self.last_learning_rate_reduction = last_learning_rate_reduction
+        self.last_batch_size_increase_epoch = last_batch_size_increase_epoch
+        self.last_batch_size_increase = last_batch_size_increase
         self.learning_rate = learning_rate
         self.best_valid_metric = best_valid_metric
         self.num_reductions_lr = num_reductions_lr
