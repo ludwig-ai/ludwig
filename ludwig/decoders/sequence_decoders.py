@@ -30,12 +30,6 @@ from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
-# todo tf2 clean up
-# from ludwig.models.modules.attention_modules import \
-#     feed_forward_memory_attention
-# from ludwig.models.modules.initializer_modules import get_initializer
-# from ludwig.models.modules.recurrent_modules import recurrent_decoder
-
 logger = logging.getLogger(__name__)
 
 rnn_layers_registry = {
