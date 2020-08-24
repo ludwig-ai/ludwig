@@ -26,7 +26,7 @@ from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
-from ludwig.modules.reduction_modules import SequenceReducerMixin
+from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
 
@@ -45,7 +45,7 @@ rnn_layers_registry = {
 }
 
 
-class SequenceGeneratorDecoder(SequenceReducerMixin, Layer):
+class SequenceGeneratorDecoder(Layer):
 
     def __init__(
             self,
@@ -68,8 +68,7 @@ class SequenceGeneratorDecoder(SequenceReducerMixin, Layer):
             reduce_input='sum',
             **kwargs
     ):
-        reduce_input_parm = reduce_input if reduce_input else 'sum'
-        super(SequenceGeneratorDecoder, self).__init__(reduce_mode=reduce_input_parm)
+        super(SequenceGeneratorDecoder, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         self.cell_type = cell_type
@@ -86,7 +85,8 @@ class SequenceGeneratorDecoder(SequenceReducerMixin, Layer):
         self.state_size = state_size
         self.attention_mechanism = None
 
-        self.reduce_input = reduce_input_parm
+        self.reduce_input = reduce_input if reduce_input else 'sum'
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_input)
 
         if is_timeseries:
             self.vocab_size = 1

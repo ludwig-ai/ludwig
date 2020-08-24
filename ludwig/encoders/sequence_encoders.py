@@ -27,12 +27,12 @@ from ludwig.modules.convolutional_modules import Conv1DStack, \
 from ludwig.modules.embedding_modules import EmbedSequence
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
-from ludwig.modules.reduction_modules import SequenceReducerMixin
+from ludwig.modules.reduction_modules import SequenceReducer
 
 logger = logging.getLogger(__name__)
 
 
-class SequencePassthroughEncoder(SequenceReducerMixin, Layer):
+class SequencePassthroughEncoder(Layer):
 
     def __init__(
             self,
@@ -49,10 +49,11 @@ class SequencePassthroughEncoder(SequenceReducerMixin, Layer):
                    and returns the full tensor).
             :type reduce_output: str
         """
-        super(SequencePassthroughEncoder, self).__init__(reduce_mode=reduce_output)
+        super(SequencePassthroughEncoder, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -80,7 +81,7 @@ class SequencePassthroughEncoder(SequenceReducerMixin, Layer):
         return {'encoder_output': hidden}
 
 
-class SequenceEmbedEncoder(SequenceReducerMixin, Layer):
+class SequenceEmbedEncoder(Layer):
 
     def __init__(
             self,
@@ -175,12 +176,14 @@ class SequenceEmbedEncoder(SequenceReducerMixin, Layer):
             :type dropout: Tensor
 
         """
-        super(SequenceEmbedEncoder, self).__init__(reduce_mode=reduce_output)
+        super(SequenceEmbedEncoder, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
         if self.reduce_output is None:
             self.supports_masking = True
+
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
         logger.debug('  EmbedSequence')
         self.embed_sequence = EmbedSequence(
@@ -214,7 +217,7 @@ class SequenceEmbedEncoder(SequenceReducerMixin, Layer):
         return {'encoder_output': hidden}
 
 
-class ParallelCNN(SequenceReducerMixin, Layer):
+class ParallelCNN(Layer):
 
     def __init__(
             self,
@@ -384,7 +387,7 @@ class ParallelCNN(SequenceReducerMixin, Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(ParallelCNN, self).__init__(reduce_mode=reduce_output)
+        super(ParallelCNN, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -427,6 +430,7 @@ class ParallelCNN(SequenceReducerMixin, Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -528,7 +532,7 @@ class ParallelCNN(SequenceReducerMixin, Layer):
         return {'encoder_output': hidden}
 
 
-class StackedCNN(SequenceReducerMixin, Layer):
+class StackedCNN(Layer):
 
     def __init__(
             self,
@@ -704,7 +708,7 @@ class StackedCNN(SequenceReducerMixin, Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedCNN, self).__init__(reduce_mode=reduce_output)
+        super(StackedCNN, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -773,6 +777,7 @@ class StackedCNN(SequenceReducerMixin, Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -884,7 +889,7 @@ class StackedCNN(SequenceReducerMixin, Layer):
         return {'encoder_output': hidden}
 
 
-class StackedParallelCNN(SequenceReducerMixin, Layer):
+class StackedParallelCNN(Layer):
 
     def __init__(
             self,
@@ -1062,7 +1067,7 @@ class StackedParallelCNN(SequenceReducerMixin, Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedParallelCNN, self).__init__(reduce_mode=reduce_output)
+        super(StackedParallelCNN, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         if stacked_layers is not None and num_stacked_layers is None:
@@ -1119,6 +1124,7 @@ class StackedParallelCNN(SequenceReducerMixin, Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1225,7 +1231,7 @@ class StackedParallelCNN(SequenceReducerMixin, Layer):
         return {'encoder_output': hidden}
 
 
-class StackedRNN(SequenceReducerMixin, Layer):
+class StackedRNN(Layer):
 
     def __init__(
             self,
@@ -1389,10 +1395,11 @@ class StackedRNN(SequenceReducerMixin, Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedRNN, self).__init__(reduce_mode=reduce_output)
+        super(StackedRNN, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -1508,7 +1515,7 @@ class StackedRNN(SequenceReducerMixin, Layer):
         }
 
 
-class StackedCNNRNN(SequenceReducerMixin, Layer):
+class StackedCNNRNN(Layer):
 
     def __init__(
             self,
@@ -1651,7 +1658,7 @@ class StackedCNNRNN(SequenceReducerMixin, Layer):
                    (which does not reduce and returns the full tensor).
             :type reduce_output: str
         """
-        super(StackedCNNRNN, self).__init__(reduce_mode=reduce_output)
+        super(StackedCNNRNN, self).__init__()
         logger.debug(' {}'.format(self.name))
 
         if conv_layers is not None and num_conv_layers is None:
@@ -1676,6 +1683,7 @@ class StackedCNNRNN(SequenceReducerMixin, Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
