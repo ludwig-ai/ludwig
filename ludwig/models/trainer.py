@@ -427,6 +427,8 @@ class Trainer:
                 epoch=0,
                 steps=0,
                 last_improvement_epoch=0,
+                last_learning_rate_reduction_epoch=0,
+                last_batch_size_increase_epoch=0,
                 learning_rate=learning_rate,
                 best_valid_metric=get_initial_validation_value(
                     validation_metric
@@ -1418,9 +1420,9 @@ class ProgressTracker:
             train_metrics,
             vali_metrics,
             test_metrics,
-            last_improvement = 0,
-            last_learning_rate_reduction = 0,
-            last_batch_size_increase = 0
+            last_improvement=0,
+            last_learning_rate_reduction=0,
+            last_batch_size_increase=0
     ):
         self.batch_size = batch_size
         self.epoch = epoch
