@@ -1333,8 +1333,9 @@ class Trainer:
                         'PLATEAU REACHED, reducing learning rate '
                         'due to lack of validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement '
-                        'or since the learning rate was reduced'
+                        ' epochs since last validation accuracy improvement and ' +
+                        str(progress_tracker.last_learning_rate_reduction) +
+                        ' epochs since the learning rate was reduced'
                     )
 
                 progress_tracker.learning_rate *= (
@@ -1386,8 +1387,9 @@ class Trainer:
                         'increasing batch size due to lack of '
                         'validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement '
-                        'or since the batch size was increased'
+                        ' epochs since last validation accuracy improvement and ' +
+                        str(progress_tracker.last_batch_size_increase) +
+                        ' epochs since the batch size was increased'
                     )
 
                 progress_tracker.batch_size = min(
