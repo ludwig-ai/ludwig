@@ -1322,8 +1322,8 @@ class Trainer:
                 if is_on_master():
                     logger.info(
                         'It has been ' +
-                        str(progress_tracker.last_improvement) +
-                        ' epochs since last validation improvement '
+                        str(progress_tracker.last_learning_rate_reduction) +
+                        ' epochs since last learning rate reduction '
                         'and the learning rate was already reduced ' +
                         str(progress_tracker.num_reductions_lr) +
                         ' times, not reducing it anymore'
@@ -1333,8 +1333,8 @@ class Trainer:
                     logger.info(
                         'PLATEAU REACHED, reducing learning rate '
                         'due to lack of validation improvement, it has been ' +
-                        str(progress_tracker.last_improvement) +
-                        ' epochs since last validation improvement'
+                        str(progress_tracker.last_learning_rate_reduction) +
+                        ' epochs since last learning rate reduction'
                     )
 
                 progress_tracker.learning_rate *= (
@@ -1359,11 +1359,11 @@ class Trainer:
                 if is_on_master():
                     logger.info(
                         'It has been ' +
-                        str(progress_tracker.last_improvement) +
-                        ' epochs since last validation improvement '
-                        'and the learning rate was already reduced ' +
+                        str(progress_tracker.last_batch_size_increase) +
+                        ' epochs since last batch size increase '
+                        'and the batch size was already increased ' +
                         str(progress_tracker.num_increases_bs) +
-                        ' times, not reducing it anymore'
+                        ' times, not increasing it anymore'
                     )
 
             elif (progress_tracker.batch_size ==
@@ -1371,8 +1371,8 @@ class Trainer:
                 if is_on_master():
                     logger.info(
                         'It has been' +
-                        str(progress_tracker.last_improvement) +
-                        ' epochs since last validation improvement '
+                        str(progress_tracker.last_batch_size_increase) +
+                        ' epochs since last batch size increase '
                         'and the batch size was already increased ' +
                         str(progress_tracker.num_increases_bs) +
                         ' times and currently is ' +
@@ -1385,8 +1385,8 @@ class Trainer:
                         'PLATEAU REACHED '
                         'increasing batch size due to lack of '
                         'validation improvement, it has been ' +
-                        str(progress_tracker.last_improvement) +
-                        ' epochs since last validation improvement'
+                        str(progress_tracker.last_batch_size_increase) +
+                        ' epochs since last batch size increase'
                     )
 
                 progress_tracker.batch_size = min(
