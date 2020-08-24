@@ -122,30 +122,3 @@ reduce_mode_registry = {
     'None': dont_reduce,
     None: dont_reduce
 }
-
-# todo tf2 clean up after confirming SequenceReducerMixin is working
-# references found in BaseOutputFeature
-def reduce_sequence(sequence, mode):
-    reduce_mode = get_from_registry(
-        mode,
-        reduce_mode_registry
-    )
-    return reduce_mode(sequence)
-
-
-def reduce_sequence_list(sequence_list, mode):
-    reduce_mode = get_from_registry(
-        mode,
-        reduce_mode_registry
-    )
-    reduced_list = []
-    for sequence in sequence_list:
-        reduced_list.append(reduce_mode(sequence))
-    if len(reduced_list) > 1:
-        if reduce_mode == dont_reduce:
-            reduced_output = tf.concat(reduced_list, 2)
-        else:
-            reduced_output = tf.concat(reduced_list, 1)
-    else:
-        reduced_output = reduced_list[0]
-    return reduced_output
