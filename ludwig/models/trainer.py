@@ -1043,8 +1043,7 @@ class Trainer:
                 if is_on_master():
                     logger.info(
                         "\nEARLY STOPPING due to lack of validation improvement"
-                        ", it has been {0} epochs since last validation "
-                        "accuracy improvement\n".format(
+                        ", it has been {0} epochs since last validation improvement\n".format(
                             progress_tracker.epoch -
                             progress_tracker.last_improvement_epoch
                         )
@@ -1324,7 +1323,7 @@ class Trainer:
                     logger.info(
                         'It has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement '
+                        ' epochs since last validation improvement '
                         'and the learning rate was already reduced ' +
                         str(progress_tracker.num_reductions_lr) +
                         ' times, not reducing it anymore'
@@ -1335,7 +1334,7 @@ class Trainer:
                         'PLATEAU REACHED, reducing learning rate '
                         'due to lack of validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement'
+                        ' epochs since last validation improvement'
                     )
 
                 progress_tracker.learning_rate *= (
@@ -1361,7 +1360,7 @@ class Trainer:
                     logger.info(
                         'It has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement '
+                        ' epochs since last validation improvement '
                         'and the learning rate was already reduced ' +
                         str(progress_tracker.num_increases_bs) +
                         ' times, not reducing it anymore'
@@ -1373,7 +1372,7 @@ class Trainer:
                     logger.info(
                         'It has been' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement '
+                        ' epochs since last validation improvement '
                         'and the batch size was already increased ' +
                         str(progress_tracker.num_increases_bs) +
                         ' times and currently is ' +
@@ -1387,7 +1386,7 @@ class Trainer:
                         'increasing batch size due to lack of '
                         'validation improvement, it has been ' +
                         str(progress_tracker.last_improvement) +
-                        ' epochs since last validation accuracy improvement'
+                        ' epochs since last validation improvement'
                     )
 
                 progress_tracker.batch_size = min(
