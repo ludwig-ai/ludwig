@@ -39,8 +39,8 @@ class SequenceReducer(Layer):
             reduce_mode_registry
         )()
 
-    def call(self, inputs, **kwargs):
-        return self._reduce_obj(inputs, **kwargs)
+    def call(self, inputs, training=None, mask=None):
+        return self._reduce_obj(inputs, training=training, mask=mask)
 
 
 class ReduceLast(Layer):
@@ -49,27 +49,32 @@ class ReduceLast(Layer):
         batch_size = tf.shape(inputs)[0]
         sequence_length = sequence_length_3D(inputs)
         # gather the correct outputs from the the RNN outputs (the outputs after sequence_length are all 0s)
-        return tf.gather_nd(inputs, tf.stack(
-            [tf.range(batch_size),
-             tf.maximum(sequence_length - 1, 0)], axis=1))
+        gathered = tf.gather_nd(
+            inputs,
+            tf.stack(
+                [tf.range(batch_size), tf.maximum(sequence_length - 1, 0)],
+                axis=1
+            )
+        )
+        return gathered
 
 
 class ReduceSum(Layer):
 
     def call(self, inputs, training=None, mask=None):
-        tf.reduce_sum(inputs, axis=1)
+        return tf.reduce_sum(inputs, axis=1)
 
 
 class ReduceMean(Layer):
 
     def call(self, inputs, training=None, mask=None):
-        tf.reduce_mean(inputs, axis=1)
+        return tf.reduce_mean(inputs, axis=1)
 
 
 class ReduceMax(Layer):
 
     def call(self, inputs, training=None, mask=None):
-        tf.reduce_max(inputs, axis=1)
+        return tf.reduce_max(inputs, axis=1)
 
 
 class ReduceConcat(Layer):
