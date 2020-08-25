@@ -117,7 +117,7 @@ class GPT2Encoder(Layer):
         hidden = reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 
-#todo: TransformerXL tokenizer loads vocab using torch
+
 class TransformerXLEncoder(Layer):
     def __init__(
             self,
@@ -444,60 +444,6 @@ class FlauBERTEncoder(Layer):
             hidden = reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 
-
-
-# todo tf2 check lack of TFBartModel
-class BartEncoder(Layer):
-
-    def __init__(
-            self,
-            pretrained_model_name_or_path='bart-large',
-            reduce_output='cls_pooled',
-            trainable=False,
-            **kwargs
-    ):
-        super(BartEncoder, self).__init__()
-        # self.transformer = TFBartModel.from_pretrained(
-        #     pretrained_model_name_or_path
-        # )
-        self.reduce_output = reduce_output
-
-    def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
-        if self.reduce_output == 'cls_pooled':
-            hidden = transformer_outputs[1]
-        else:
-            hidden = transformer_outputs[0]
-            hidden = reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
-
-
-# todo tf2 check lack of TFDialoGPTModel
-class DialoGPTEncoder(Layer):
-
-    def __init__(
-            self,
-            pretrained_model_name_or_path='DialoGPT-small',
-            reduce_output='cls_pooled',
-            trainable=False,
-            **kwargs
-    ):
-        super(DialoGPTEncoder, self).__init__()
-        # self.transformer = TFDialoGPTModel.from_pretrained(
-        #     pretrained_model_name_or_path
-        # )
-        self.reduce_output = reduce_output
-
-    def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(inputs, training=training)
-        if self.reduce_output == 'cls_pooled':
-            hidden = transformer_outputs[1]
-        else:
-            hidden = transformer_outputs[0]
-            hidden = reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
-
-
 class ELECTRAEncoder(Layer):
 
     def __init__(
@@ -546,7 +492,7 @@ class AutoTransformerEncoder(Layer):
         transformer_outputs = self.transformer(
             inputs, 
             training=training,
-            attention_mask=tf.sign(tf.abs(inputs)),
+            attention_mask=mask,
             token_type_ids=tf.zeros_like(inputs)
         )
         if self.reduce_output == 'cls_pooled':
