@@ -71,8 +71,12 @@ def test_multiple_dependencies(
     num_feature_defn['dependencies'] = ['feature_name']
     if len(dependent_hidden_shape) > 2:
         num_feature_defn['reduce_dependencies'] = reduce_dependencies
+        # expected_hidden_size = HIDDEN_SIZE + SEQ_SIZE * OTHER_HIDDEN_SIZE
 
-    expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE
+    if reduce_dependencies == 'concat' and len(dependent_hidden_shape) > 2:
+        expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE * SEQ_SIZE
+    else:
+        expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE
 
     # set up if multiple dependencies specified
     if dependent_hidden_shape2:
@@ -84,7 +88,12 @@ def test_multiple_dependencies(
         num_feature_defn['dependencies'].append('feature_name2')
         if len(dependent_hidden_shape2) > 2:
             num_feature_defn['reduce_dependencies'] = reduce_dependencies
-        expected_hidden_size += OTHER_HIDDEN_SIZE2
+            # expected_hidden_size += SEQ_SIZE * OTHER_HIDDEN_SIZE2
+
+        if reduce_dependencies == 'concat' and len(dependent_hidden_shape2) > 2:
+            expected_hidden_size += OTHER_HIDDEN_SIZE2 * SEQ_SIZE
+        else:
+            expected_hidden_size += OTHER_HIDDEN_SIZE2
 
     # test dependency concatenation
     out_feature = NumericalOutputFeature(num_feature_defn)
