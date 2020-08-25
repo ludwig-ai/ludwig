@@ -88,7 +88,7 @@ def text_feature(**kwargs):
     feature = {
         'name': 'text_' + random_string(),
         'type': 'text',
-        'reduce_input': 'null',
+        'reduce_input': None,
         'vocab_size': 5,
         'min_len': 7,
         'max_len': 7,
