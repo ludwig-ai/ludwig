@@ -1009,7 +1009,11 @@ class Trainer:
                     progress_tracker.epoch -
                     progress_tracker.last_learning_rate_reduction_epoch
             )
-            if progress_tracker.last_learning_rate_reduction > 0:
+            if (
+                progress_tracker.last_learning_rate_reduction > 0
+                and
+                progress_tracker.last_improvement > 0
+            ):
                 logger.info(
                     'Last learning rate reduction '
                     'happened {} epoch{} ago'.format(
@@ -1031,7 +1035,11 @@ class Trainer:
                     progress_tracker.epoch -
                     progress_tracker.last_batch_size_increase_epoch
             )
-            if progress_tracker.last_batch_size_increase > 0:
+            if (
+                progress_tracker.last_batch_size_increase > 0
+                and
+                progress_tracker.last_improvement > 0
+            ):
                 logger.info(
                     'Last batch size increase '
                     'happened {} epoch{} ago'.format(
@@ -1328,10 +1336,8 @@ class Trainer:
                     reduce_learning_rate_on_plateau):
                 if is_on_master():
                     logger.info(
-                        'It has been {} epochs since last learning rate '
-                        'reduction and the learning rate was already reduced '
+                        'Learning rate was already reduced '
                         '{} times, not reducing it anymore'.format(
-                            progress_tracker.last_learning_rate_reduction,
                             progress_tracker.num_reductions_lr
                         )
                     )
@@ -1343,11 +1349,8 @@ class Trainer:
                 if is_on_master():
                     logger.info(
                         'PLATEAU REACHED, reducing learning rate to {} '
-                        'due to lack of validation improvement, '
-                        'it has been {} epochs since last '
-                        'learning rate reduction'.format(
+                        'due to lack of validation improvement'.format(
                             progress_tracker.learning_rate,
-                            progress_tracker.last_learning_rate_reduction
                         )
                     )
 
@@ -1371,10 +1374,8 @@ class Trainer:
                     increase_batch_size_on_plateau):
                 if is_on_master():
                     logger.info(
-                        'It has been {} epochs since last batch size '
-                        'increase and the batch size was already increased '
+                        'Batch size was already increased '
                         '{} times, not increasing it anymore'.format(
-                            progress_tracker.last_batch_size_increase,
                             progress_tracker.num_increases_bs
                         )
                     )
@@ -1382,11 +1383,9 @@ class Trainer:
                   increase_batch_size_on_plateau_max):
                 if is_on_master():
                     logger.info(
-                        'It has been {} epochs since last batch size '
-                        'increase, the learning rate was already increased '
+                        'Batch size was already increased '
                         '{} times, currently it is {}, '
                         'the maximum allowed'.format(
-                            progress_tracker.last_batch_size_increase,
                             progress_tracker.num_increases_bs,
                             progress_tracker.batch_size
                         )
@@ -1401,11 +1400,8 @@ class Trainer:
                 if is_on_master():
                     logger.info(
                         'PLATEAU REACHED, increasing batch size to {} '
-                        'due to lack of validation improvement, '
-                        'it has been {} epochs since last '
-                        'batch size increase'.format(
-                            progress_tracker.batch_size,
-                            progress_tracker.last_batch_size_increase
+                        'due to lack of validation improvement'.format(
+                            progress_tracker.batch_size
                         )
                     )
 
