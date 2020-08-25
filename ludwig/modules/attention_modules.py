@@ -28,22 +28,20 @@ class FeedForwardAttentionReducer(Layer):
         self.layer1 = Dense(
             hidden_size,
             activation='tanh',
-            name='ffa_reducer_layer1'
         )
         self.layer2 = Dense(
             1,
             activation='linear',
             use_bias=False,
-            name='ffa_reducer_layer2'
         )
 
-    def call(self, current_inputs, training=None, mask=None):
+    def call(self, inputs, training=None, mask=None):
         # current_inputs shape [b, s, h]
-        hidden = self.layer1(current_inputs,
+        hidden = self.layer1(inputs,
                              training=training)  # [b, s, h`], h`=hidden_size
         hidden = self.layer2(hidden, training=training)  # [b, s, 1]
         attention = tf.nn.softmax(hidden, axis=1)
-        geated_inputs = tf.reduce_sum(attention * current_inputs, 1)  # [b, h]
+        geated_inputs = tf.reduce_sum(attention * inputs, 1)  # [b, h]
         return geated_inputs  # [b, h]
 
 

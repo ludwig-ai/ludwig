@@ -34,65 +34,83 @@ class SequenceReducer(Layer):
         self._reduce_mode = reduce_mode
 
         # use registry to find required reduction function
-        self._reduce_func = get_from_registry(
+        self._reduce_obj = get_from_registry(
             reduce_mode,
             reduce_mode_registry
-        )
+        )()
 
     def call(self, inputs, **kwargs):
-        return self._reduce_func(inputs, **kwargs)
+        return self._reduce_obj(inputs, **kwargs)
 
 
-def reduce_last(sequence, **kwargs):
-    batch_size = tf.shape(sequence)[0]
-    sequence_length = sequence_length_3D(sequence)
-    # gather the correct outputs from the the RNN outputs (the outputs after sequence_length are all 0s)
-    return tf.gather_nd(sequence, tf.stack(
-        [tf.range(batch_size),
-         tf.maximum(sequence_length - 1, 0)], axis=1))
+class ReduceLast(Layer):
+
+    def call(self, inputs, training=None, mask=None):
+        batch_size = tf.shape(inputs)[0]
+        sequence_length = sequence_length_3D(inputs)
+        # gather the correct outputs from the the RNN outputs (the outputs after sequence_length are all 0s)
+        return tf.gather_nd(inputs, tf.stack(
+            [tf.range(batch_size),
+             tf.maximum(sequence_length - 1, 0)], axis=1))
 
 
-def reduce_sum(sequence, **kwargs):
-    return tf.reduce_sum(sequence, axis=1)
+class ReduceSum(Layer):
+
+    def call(self, inputs, training=None, mask=None):
+        tf.reduce_sum(inputs, axis=1)
 
 
-def reduce_mean(sequence, **kwargs):
-    return tf.reduce_mean(sequence, axis=1)
+class ReduceMean(Layer):
+
+    def call(self, inputs, training=None, mask=None):
+        tf.reduce_mean(inputs, axis=1)
 
 
-def reduce_max(sequence, **kwargs):
-    return tf.reduce_max(sequence, axis=1)
+class ReduceMax(Layer):
+
+    def call(self, inputs, training=None, mask=None):
+        tf.reduce_max(inputs, axis=1)
 
 
-def reduce_concat(sequence, **kwargs):
-    if sequence.shape.as_list()[-2] is None or sequence.shape.as_list()[
-        -1] is None:
-        # this the case of outputs coming from rnn encoders
-        logger.warning('  WARNING: '
-                        'The sequence length dimension is undefined '
-                        '(probably because of an RNN based encoder), '
-                        'so the sequence cannot be reduced by concatenation. '
-                        'Last will be used instead.')
-        return reduce_last(sequence, **kwargs)
-    else:
-        return tf.reshape(sequence,
-                          [-1,
-                           sequence.shape[-2] * sequence.shape[-1]])
+class ReduceConcat(Layer):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.reduce_last = ReduceLast()
+
+    def call(self, inputs, training=None, mask=None):
+        if (inputs.shape.as_list()[-2] is None or
+                inputs.shape.as_list()[-1] is None):
+            # this the case of outputs coming from rnn encoders
+            logger.warning('  WARNING: '
+                           'The sequence length dimension is undefined '
+                           '(probably because of an RNN based encoder), '
+                           'so the sequence cannot be reduced '
+                           'by concatenation. '
+                           'Last will be used instead.')
+            return self.reduce_last(inputs)
+        else:
+            return tf.reshape(
+                inputs,
+                [-1, inputs.shape[-2] * inputs.shape[-1]]
+            )
 
 
-def dont_reduce(sequence, **kwargs):
-    return sequence
+class ReduceNone(Layer):
+
+    def call(self, inputs, training=None, mask=None):
+        return inputs
 
 
 reduce_mode_registry = {
-    'last': reduce_last,
-    'sum': reduce_sum,
-    'mean': reduce_mean,
-    'avg': reduce_mean,
-    'max': reduce_max,
-    'concat': reduce_concat,
-    'attention': FeedForwardAttentionReducer(),
-    'none': dont_reduce,
-    'None': dont_reduce,
-    None: dont_reduce
+    'last': ReduceLast,
+    'sum': ReduceSum,
+    'mean': ReduceMean,
+    'avg': ReduceMean,
+    'max': ReduceMax,
+    'concat': ReduceConcat,
+    'attention': FeedForwardAttentionReducer,
+    'none': ReduceNone,
+    'None': ReduceNone,
+    None: ReduceNone
 }
