@@ -22,6 +22,8 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE
+from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
+    StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.audio_utils import calculate_incr_mean
 from ludwig.utils.audio_utils import calculate_incr_var
@@ -344,20 +346,19 @@ class AudioFeatureMixin(object):
 
 
 class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
-    length = None
+    encoder = 'parallel_cnn'
+    max_sequence_length = None
     embedding_size = None
-    encoder = 'embed'
 
     def __init__(self, feature, encoder_obj=None):
-        # todo tf2: encoder_obj should be passed to the sequenceinputfeature
-        super().__init__(feature)
+        super().__init__(feature, encoder_obj=encoder_obj)
         if not self.embedding_size:
             raise ValueError(
                 'embedding_size has to be defined - '
                 'check "update_model_definition_with_metadata()"')
-        if not self.length:
+        if not self.max_sequence_length:
             raise ValueError(
-                'length has to be defined - '
+                'max_sequence_length has to be defined - '
                 'check "update_model_definition_with_metadata()"')
 
     def call(self, inputs, training=None, mask=None):
@@ -375,7 +376,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
         return tf.float32
 
     def get_input_shape(self):
-        return self.length, self.embedding_size
+        return self.max_sequence_length, self.embedding_size
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -384,7 +385,7 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
             *args,
             **kwargs
     ):
-        input_feature['length'] = feature_metadata['max_length']
+        input_feature['max_sequence_length'] = feature_metadata['max_length']
         input_feature['embedding_size'] = feature_metadata['feature_dim']
         input_feature['should_embed'] = False
 
@@ -397,3 +398,16 @@ class AudioInputFeature(AudioFeatureMixin, SequenceInputFeature):
                 'preprocessing': {}
             }
         )
+
+    encoder_registry = {
+        'stacked_cnn': StackedCNN,
+        'parallel_cnn': ParallelCNN,
+        'stacked_parallel_cnn': StackedParallelCNN,
+        'rnn': StackedRNN,
+        'cnnrnn': StackedCNNRNN,
+        'passthrough': SequencePassthroughEncoder,
+        'null': SequencePassthroughEncoder,
+        'none': SequencePassthroughEncoder,
+        'None': SequencePassthroughEncoder,
+        None: SequencePassthroughEncoder
+    }

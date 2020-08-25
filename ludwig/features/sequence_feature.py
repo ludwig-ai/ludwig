@@ -14,11 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import logging
 import os
 
 import numpy as np
-import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
@@ -46,7 +44,6 @@ from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
-import ludwig.utils.strings_utils as string_utils
 from ludwig.utils.strings_utils import build_sequence_matrix
 from ludwig.utils.strings_utils import create_vocabulary
 
@@ -125,6 +122,7 @@ class SequenceFeatureMixin(object):
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
     encoder = 'embed'
+    max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature)
@@ -164,7 +162,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
             **kwargs
     ):
         input_feature['vocab'] = feature_metadata['idx2str']
-        input_feature['length'] = feature_metadata['max_sequence_length']
+        input_feature['max_sequence_length'] = feature_metadata[
+            'max_sequence_length']
 
     @staticmethod
     def populate_defaults(input_feature):

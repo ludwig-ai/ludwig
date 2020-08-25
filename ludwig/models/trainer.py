@@ -125,7 +125,8 @@ class Trainer:
             cls,
             summary_writer,
             metrics,
-            step
+            step,
+            learning_rate=None
     ):
         if not summary_writer:
             return
@@ -138,6 +139,9 @@ class Trainer:
                     )
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag, metric_val, step=step)
+            if learning_rate:
+                tf.summary.scalar("combined/epoch_learning_rate",
+                                  learning_rate, step=step)
         summary_writer.flush()
 
     @classmethod
@@ -575,6 +579,7 @@ class Trainer:
                 summary_writer=train_summary_writer,
                 metrics=progress_tracker.train_metrics,
                 step=progress_tracker.epoch,
+                learning_rate=current_learning_rate,
             )
 
             if validation_set is not None and validation_set.size > 0:
@@ -980,11 +985,17 @@ class Trainer:
         )
         if progress_tracker.last_improvement != 0:
             if is_on_master():
+                last_improvement_str = 'Last improvement of {} on {}'.format(
+                    validation_metric,
+                    validation_output_feature_name,
+                )
+                if reduce_learning_rate_on_plateau > 0:
+                    last_improvement_str += ' / learning rate reduction'
+                if increase_batch_size_on_plateau > 0:
+                    last_improvement_str += ' / batch size increase'
                 logger.info(
-                    'Last improvement of {} on {} happened '
-                    '{} epoch{} ago'.format(
-                        validation_metric,
-                        validation_output_feature_name,
+                    '{} happened {} epoch{} ago'.format(
+                        last_improvement_str,
                         progress_tracker.last_improvement,
                         '' if progress_tracker.last_improvement == 1 else 's'
                     )
@@ -1073,7 +1084,8 @@ class Trainer:
                                 layer.weights]
             return results
 
-        weights = recurse_weights(self.model)
+        connected_model = self.model.get_connected_model()
+        weights = recurse_weights(connected_model)
         if tensor_names:
             # Check for bad tensor names
             weight_set = set(name for name, w in weights)

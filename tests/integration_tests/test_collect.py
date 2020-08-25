@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import multiprocessing
 import os
 import shutil
 import tempfile
@@ -25,7 +24,7 @@ import tensorflow as tf
 from ludwig.api import LudwigModel, Trainer
 from ludwig.collect import collect_activations, collect_weights
 from tests.integration_tests.utils import category_feature, generate_data, \
-    sequence_feature, ENCODERS
+    sequence_feature, spawn, ENCODERS
 
 
 def _prepare_data(csv_filename):
@@ -56,23 +55,18 @@ def _train(input_features, output_features, data_csv, **kwargs):
     return model
 
 
-def _get_layers_subprocess(model_path, queue):
+@spawn
+def _get_layers(model_path):
     model = Trainer.load(model_path)
     keras_model = model.model.get_connected_model()
-    layers = [layer.name for layer in keras_model.layers]
-    queue.put(layers)
+    return [layer.name for layer in keras_model.layers]
 
 
-def _get_layers(model_path):
-    ctx = multiprocessing.get_context('spawn')
-    queue = ctx.Queue()
-    p = ctx.Process(
-        target=_get_layers_subprocess,
-        args=(model_path, queue))
-    p.start()
-    p.join()
-    layers = queue.get()
-    return layers
+@spawn
+def _collect_activations(model_path, layers, csv_filename, output_directory):
+    return collect_activations(model_path, layers,
+                               data_csv=csv_filename,
+                               output_directory=output_directory)
 
 
 def test_collect_weights(csv_filename):
@@ -85,21 +79,28 @@ def test_collect_weights(csv_filename):
 
         model = _train(*_prepare_data(csv_filename))
         model_path = os.path.join(model.exp_dir_name, 'model')
+        weights = [w for name, w in model.model.collect_weights()]
 
-        weights = model.model.collect_weights()
-        assert len(weights) == 5
+        #  1 for the encoder (embeddings),
+        #  2 for the decoder classifier (w and b)
+        assert len(weights) == 3
 
-        tensors = [name for name, w in weights[:1]]
-        assert len(tensors) == 1
+        # Load model from disk to ensure correct weight names
+        tf.keras.backend.reset_uids()
+        model_loaded = Trainer.load(model_path)
+        tensor_names = [name for name, w in model_loaded.collect_weights()]
+        assert len(tensor_names) == 3
 
         tf.keras.backend.reset_uids()
         with tempfile.TemporaryDirectory() as output_directory:
-            filenames = collect_weights(model_path, tensors, output_directory)
-            assert len(filenames) == 1
+            filenames = collect_weights(model_path, tensor_names,
+                                        output_directory)
+            assert len(filenames) == 3
 
-            for (name, weight), filename in zip(weights[:1], filenames):
+            for weight, filename in zip(weights, filenames):
                 saved_weight = np.load(filename)
-                assert np.allclose(weight.numpy(), saved_weight), name
+                assert np.allclose(weight.numpy(), saved_weight,
+                                   rtol=1.e-4), filename
     finally:
         if model and model.exp_dir_name:
             shutil.rmtree(model.exp_dir_name, ignore_errors=True)
@@ -121,9 +122,10 @@ def test_collect_activations(csv_filename):
 
         tf.keras.backend.reset_uids()
         with tempfile.TemporaryDirectory() as output_directory:
-            filenames = collect_activations(model_path, layers,
-                                            data_csv=csv_filename,
-                                            output_directory=output_directory)
+            filenames = _collect_activations(model_path,
+                                             layers,
+                                             csv_filename,
+                                             output_directory)
             assert len(filenames) > len(layers)
     finally:
         if model and model.exp_dir_name:

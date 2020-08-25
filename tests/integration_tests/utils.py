@@ -14,10 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import multiprocessing
 import random
 import shutil
 import uuid
 
+import cloudpickle
 import pandas as pd
 
 from ludwig.constants import VECTOR
@@ -310,10 +312,34 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
 
     # generate list of dependencies with real feature names
     generated_dependencies = [feature_names[feat_name][1]
-                                for feat_name in dependencies]
+                              for feat_name in dependencies]
 
     # specify dependencies for the main_feature
     output_features[feature_names[main_feature][0]]['dependencies'] = \
         generated_dependencies
 
     return output_features
+
+
+def _subproc_wrapper(fn, queue, *args, **kwargs):
+    fn = cloudpickle.loads(fn)
+    results = fn(*args, **kwargs)
+    queue.put(results)
+
+
+def spawn(fn):
+    def wrapped_fn(*args, **kwargs):
+        ctx = multiprocessing.get_context('spawn')
+        queue = ctx.Queue()
+
+        p = ctx.Process(
+            target=_subproc_wrapper,
+            args=(cloudpickle.dumps(fn), queue, *args),
+            kwargs=kwargs)
+
+        p.start()
+        p.join()
+        results = queue.get()
+        return results
+
+    return wrapped_fn

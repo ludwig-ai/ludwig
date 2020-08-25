@@ -14,16 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import logging
 import os
 
 import numpy as np
-import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.encoders.text_encoders import *
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
-from ludwig.encoders.text_encoders import *
 from ludwig.globals import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -65,7 +63,7 @@ class TextFeatureMixin(object):
             char_str2idx,
             char_str2freq,
             char_max_len,
-            char_pad_idx, 
+            char_pad_idx,
             char_pad_symbol,
             char_unk_symbol,
         ) = create_vocabulary(
@@ -83,7 +81,7 @@ class TextFeatureMixin(object):
             word_str2idx,
             word_str2freq,
             word_max_len,
-            word_pad_idx, 
+            word_pad_idx,
             word_pad_symbol,
             word_unk_symbol,
         ) = create_vocabulary(
@@ -101,14 +99,14 @@ class TextFeatureMixin(object):
             char_str2idx,
             char_str2freq,
             char_max_len,
-            char_pad_idx, 
+            char_pad_idx,
             char_pad_symbol,
             char_unk_symbol,
             word_idx2str,
             word_str2idx,
             word_str2freq,
             word_max_len,
-            word_pad_idx, 
+            word_pad_idx,
             word_pad_symbol,
             word_unk_symbol,
         )
@@ -123,14 +121,14 @@ class TextFeatureMixin(object):
             char_str2idx,
             char_str2freq,
             char_max_len,
-            char_pad_idx, 
+            char_pad_idx,
             char_pad_symbol,
             char_unk_symbol,
             word_idx2str,
             word_str2idx,
             word_str2freq,
             word_max_len,
-            word_pad_idx, 
+            word_pad_idx,
             word_pad_symbol,
             word_unk_symbol,
         ) = tf_meta
@@ -148,17 +146,17 @@ class TextFeatureMixin(object):
             'char_str2freq': char_str2freq,
             'char_vocab_size': len(char_idx2str),
             'char_max_sequence_length': char_max_len,
-            'char_pad_idx' : char_pad_idx, 
-            'char_pad_symbol' : char_pad_symbol,
-            'char_unk_symbol' :  char_unk_symbol,
+            'char_pad_idx': char_pad_idx,
+            'char_pad_symbol': char_pad_symbol,
+            'char_unk_symbol': char_unk_symbol,
             'word_idx2str': word_idx2str,
             'word_str2idx': word_str2idx,
             'word_str2freq': word_str2freq,
             'word_vocab_size': len(word_idx2str),
             'word_max_sequence_length': word_max_len,
-            'word_pad_idx' : word_pad_idx, 
-            'word_pad_symbol' : word_pad_symbol,
-            'word_unk_symbol' :  word_unk_symbol,
+            'word_pad_idx': word_pad_idx,
+            'word_pad_symbol': word_pad_symbol,
+            'word_unk_symbol': word_unk_symbol,
         }
 
     @staticmethod
@@ -178,7 +176,7 @@ class TextFeatureMixin(object):
             pretrained_model_name_or_path=preprocessing_parameters[
                 'pretrained_model_name_or_path'
             ]
-            
+
         )
         word_data = build_sequence_matrix(
             sequences=column,
@@ -217,16 +215,15 @@ class TextFeatureMixin(object):
 
 class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
     encoder = 'parallel_cnn'
+    max_sequence_length = None
     level = 'word'
-    length = 0
 
     def __init__(self, feature, encoder_obj=None):
-
-        super().__init__(feature)
+        super().__init__(feature, encoder_obj=encoder_obj)
         if 'preprocessing' in feature.keys():
             # makes pretrained model name visible to encoder init() if it is provided/necessary
             feature['pretrained_model_name_or_path'] = feature['preprocessing']['pretrained_model_name_or_path']
-            
+
         self.pad_idx = feature['pad_idx']
 
 
@@ -237,7 +234,8 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx), dtype=tf.int32) 
+        inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx),
+                              dtype=tf.int32)
 
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
@@ -261,7 +259,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         input_feature['vocab'] = (
             feature_metadata[input_feature['level'] + '_idx2str']
         )
-        input_feature['length'] = (
+        input_feature['max_sequence_length'] = (
             feature_metadata[input_feature['level'] + '_max_sequence_length']
         )
         input_feature['pad_idx'] = (
@@ -285,33 +283,31 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         'gpt2' : GPT2Encoder,
         'transformer_xl' : TransformerXLEncoder,
         'xlnet' : XLNetEncoder,
-        'xlm' : XLMEncoder,
+        'xlm': XLMEncoder,
         'roberta': RoBERTaEncoder,
-        'distilbert' : DistilBERTEncoder,
-        'ctrl' : CTRLEncoder,
-        'camembert' : CamemBERTEncoder,
-        'albert' : ALBERTEncoder,
-        't5' : T5Encoder,
-        'xlmroberta' : XLMRoBERTaEncoder,
-        'flaubert' : FlauBERTEncoder,
-        'electra' : ELECTRAEncoder,
-        'auto_transformer' : AutoTransformerEncoder, 
+        'distilbert': DistilBERTEncoder,
+        'ctrl': CTRLEncoder,
+        'camembert': CamemBERTEncoder,
+        'albert': ALBERTEncoder,
+        't5': T5Encoder,
+        'xlmroberta': XLMRoBERTaEncoder,
+        'flaubert': FlauBERTEncoder,
+        'electra': ELECTRAEncoder,
+        'auto_transformer': AutoTransformerEncoder,
         **SequenceInputFeature.encoder_registry
     }
 
 
 class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
-    decoder = 'generator'
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
     metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None,
                         PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
-    level = 'word'
     max_sequence_length = 0
     num_classes = 0
+    level = 'word'
 
     def __init__(self, feature):
-        self.overwrite_defaults(feature)
         super().__init__(feature)
 
     def get_output_dtype(self):
@@ -486,54 +482,4 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         set_default_value(output_feature, 'level', 'word')
-
-        # If Loss is not defined, set an empty dictionary
-        set_default_value(output_feature, LOSS, {})
-
-        # Populate the default values for LOSS if they aren't defined already
-        set_default_values(
-            output_feature[LOSS],
-            {
-                'type': 'softmax_cross_entropy',
-                'labels_smoothing': 0,
-                'class_weights': 1,
-                'robust_lambda': 0,
-                'confidence_penalty': 0,
-                'class_similarities_temperature': 0,
-                'weight': 1
-            }
-        )
-
-        if output_feature[LOSS]['type'] == 'sampled_softmax_cross_entropy':
-            set_default_values(
-                output_feature[LOSS],
-                {
-                    'sampler': 'log_uniform',
-                    'negative_samples': 25,
-                    'distortion': 0.75
-                }
-            )
-        else:
-            set_default_values(
-                output_feature[LOSS],
-                {
-                    'sampler': None,
-                    'negative_samples': 0,
-                    'distortion': 1
-                }
-            )
-
-        set_default_value(output_feature[LOSS], 'unique', False)
-        set_default_value(output_feature, 'decoder', 'generator')
-
-        if output_feature['decoder'] == 'tagger':
-            set_default_value(output_feature, 'reduce_input', None)
-
-        set_default_values(
-            output_feature,
-            {
-                'dependencies': [],
-                'reduce_input': SUM,
-                'reduce_dependencies': SUM
-            }
-        )
+        SequenceOutputFeature.populate_defaults(output_feature)
