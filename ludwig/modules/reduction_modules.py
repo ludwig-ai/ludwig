@@ -43,31 +43,6 @@ class SequenceReducer(Layer):
         return self._reduce_func(inputs, **kwargs)
 
 
-class SequenceListReducer(Layer):
-    def __init__(self, reduce_mode=None):
-        super().__init__()
-        self.sequence_reducer = SequenceReducer(reduce_mode=reduce_mode)
-
-    def call(self, sequence_list, **kwargs):
-        # setup list for reduced sequence
-        reduced_list = []
-
-        # for sequence provided  reduce it
-        for sequence in sequence_list:
-            reduced_list.append(self.sequence_reducer(sequence, **kwargs))
-
-        # consolidate reduced sequences into a single return result
-        if len(reduced_list) > 1:
-            if self.sequence_reducer._reduce_func is dont_reduce:
-                reduced_output = tf.concat(reduced_list, 2)
-            else:
-                reduced_output = tf.concat(reduced_list, 1)
-        else:
-            reduced_output = reduced_list[0]
-
-        return reduced_output
-
-
 def reduce_last(sequence, **kwargs):
     batch_size = tf.shape(sequence)[0]
     sequence_length = sequence_length_3D(sequence)
