@@ -86,8 +86,8 @@ def test_multiple_dependencies(
     if dependent_hidden_shape2:
         if reduce_dependencies == 'attention' and \
                 dependent_hidden_shape[-1] != dependent_hidden_shape2[-1]:
-                pytest.skip("Skipping: 'reduce_dependencies==attention' and "
-                            "hidden sizes not equal, {} and {}.  Invalid test"
+                pytest.skip("Invalid test case: 'reduce_dependencies==attention' and "
+                            "hidden sizes not equal, {} and {}."
                             "case".format(dependent_hidden_shape,
                                           dependent_hidden_shape2))
         other_hidden_layer2 = tf.random.normal(
