@@ -92,7 +92,6 @@ reduce_mode_registry = {
     'max': reduce_max,
     'concat': reduce_concat,
     'attention': FeedForwardAttentionReducer(),
-    'null': dont_reduce,  # todo tf2 do we need this value,added to support text_feature()
     'none': dont_reduce,
     'None': dont_reduce,
     None: dont_reduce
