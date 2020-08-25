@@ -39,18 +39,11 @@ class FeedForwardAttentionReducer(Layer):
 
     def call(self, current_inputs, training=None, mask=None):
         # current_inputs shape [b, s, h]
-
-        hidden = self.layer1(current_inputs, training=training) # [b, s, h`], h`=hidden_size
+        hidden = self.layer1(current_inputs,
+                             training=training)  # [b, s, h`], h`=hidden_size
         hidden = self.layer2(hidden, training=training)  # [b, s, 1]
-        attention = tf.nn.softmax(  # [b, s]
-            tf.reshape(
-                hidden,
-                [-1, tf.shape(current_inputs)[1]]
-            )
-        )
-        geated_inputs = tf.reduce_sum(  # [b, h]
-            tf.expand_dims(attention, -1) * current_inputs, 1)
-
+        attention = tf.nn.softmax(hidden, axis=1)
+        geated_inputs = tf.reduce_sum(attention * current_inputs, 1)  # [b, h]
         return geated_inputs  # [b, h]
 
 
