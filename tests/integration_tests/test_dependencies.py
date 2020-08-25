@@ -5,6 +5,7 @@ import pytest
 import tensorflow as tf
 
 from ludwig.features.numerical_feature import NumericalOutputFeature
+from ludwig.modules.reduction_modules import reduce_mode_registry
 from tests.integration_tests.utils import numerical_feature
 
 
@@ -42,8 +43,15 @@ OTHER_HIDDEN_SIZE2 = 18
         [BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE]
     ]
 )
-def test_multiple_dependencies(hidden_shape, dependent_hidden_shape,
-                               dependent_hidden_shape2):
+@pytest.mark.parametrize(
+    'reduce_dependencies', ['sum', 'mean', 'avg', 'max', 'concat', 'last']
+)
+def test_multiple_dependencies(
+        reduce_dependencies,
+        hidden_shape,
+        dependent_hidden_shape,
+        dependent_hidden_shape2
+):
 
     # setup at least for a single dependency
     hidden_layer = tf.random.normal(
@@ -62,7 +70,7 @@ def test_multiple_dependencies(hidden_shape, dependent_hidden_shape,
     num_feature_defn['loss'] = {'type': 'mean_squared_error'}
     num_feature_defn['dependencies'] = ['feature_name']
     if len(dependent_hidden_shape) > 2:
-        num_feature_defn['reduce_dependencies'] = 'sum'
+        num_feature_defn['reduce_dependencies'] = reduce_dependencies
 
     expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE
 
@@ -75,7 +83,7 @@ def test_multiple_dependencies(hidden_shape, dependent_hidden_shape,
         other_dependencies['feature_name2'] = other_hidden_layer2
         num_feature_defn['dependencies'].append('feature_name2')
         if len(dependent_hidden_shape2) > 2:
-            num_feature_defn['reduce_dependencies'] = 'sum'
+            num_feature_defn['reduce_dependencies'] = reduce_dependencies
         expected_hidden_size += OTHER_HIDDEN_SIZE2
 
     # test dependency concatenation
