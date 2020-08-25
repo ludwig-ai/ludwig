@@ -17,7 +17,7 @@ BATCH_SIZE = 16
 SEQ_SIZE = 12
 HIDDEN_SIZE = 128
 OTHER_HIDDEN_SIZE = 32
-OTHER_HIDDEN_SIZE2 = 18
+OTHER_HIDDEN_SIZE2 = 64
 
 
 # unit test for dependency concatenation
@@ -26,8 +26,8 @@ OTHER_HIDDEN_SIZE2 = 18
     'dependent_hidden_shape2', [
         None,
         [BATCH_SIZE, OTHER_HIDDEN_SIZE2],
-        [BATCH_SIZE, SEQ_SIZE, OTHER_HIDDEN_SIZE2]
-
+        [BATCH_SIZE, SEQ_SIZE, OTHER_HIDDEN_SIZE2],
+        [BATCH_SIZE, SEQ_SIZE, OTHER_HIDDEN_SIZE]
     ]
 )
 @pytest.mark.parametrize(
@@ -82,8 +82,14 @@ def test_multiple_dependencies(
     else:
         expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE
 
-    # set up if multiple dependencies specified, setup second depdendent feature
+    # set up if multiple dependencies specified, setup second dependent feature
     if dependent_hidden_shape2:
+        if reduce_dependencies == 'attention' and \
+                dependent_hidden_shape[-1] != dependent_hidden_shape2[-1]:
+                pytest.skip("Skipping: 'reduce_dependencies==attention' and "
+                            "hidden sizes not equal, {} and {}.  Invalid test"
+                            "case".format(dependent_hidden_shape,
+                                          dependent_hidden_shape2))
         other_hidden_layer2 = tf.random.normal(
             dependent_hidden_shape2,
             dtype=tf.float32
@@ -97,9 +103,9 @@ def test_multiple_dependencies(
         # hidden size with two dependencies
         if reduce_dependencies == 'concat' and len(hidden_shape) == 2 and \
                 len(dependent_hidden_shape2) == 3:
-                expected_hidden_size += OTHER_HIDDEN_SIZE2 * SEQ_SIZE
+                expected_hidden_size += dependent_hidden_shape2[-1] * SEQ_SIZE
         else:
-            expected_hidden_size += OTHER_HIDDEN_SIZE2
+            expected_hidden_size += dependent_hidden_shape2[-1]
 
     # test dependency concatenation
     out_feature = NumericalOutputFeature(num_feature_defn)
@@ -114,6 +120,8 @@ def test_multiple_dependencies(
                [BATCH_SIZE, SEQ_SIZE, expected_hidden_size]
     else:
         assert results.shape.as_list() == [BATCH_SIZE, expected_hidden_size]
+
+    del(out_feature)
 
 
 
