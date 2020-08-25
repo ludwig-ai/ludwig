@@ -20,5 +20,8 @@ def test_reduction(reduce_output, csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
 
+    del(input_features)
+    del(output_features)
+
 
 
