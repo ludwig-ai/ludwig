@@ -162,9 +162,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         self.reduce_sequence_input = SequenceReducer(
             reduce_mode=self.reduce_input
         )
-        self.reduce_sequence_dependencies = SequenceReducer(
-            reduce_mode=self.reduce_dependencies
-        )
+        if self.dependencies:
+            self.dependency_reducers = {}
+            for dependency in self.dependencies:
+                self.dependency_reducers[dependency] = SequenceReducer(
+                    reduce_mode=self.reduce_dependencies
+                )
 
     def create_input(self):
         return tf.keras.Input(shape=self.get_output_shape(),
@@ -345,10 +348,9 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 else:
                     if len(dependency_final_hidden.shape) > 2:
                         # vector matrix -> reduce concat
+                        reducer = self.dependency_reducers[dependency]
                         dependencies_hidden.append(
-                            self.reduce_sequence_dependencies(
-                                dependency_final_hidden
-                            )
+                            reducer(dependency_final_hidden)
                         )
                     else:
                         # vector vector -> concat

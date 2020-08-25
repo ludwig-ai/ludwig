@@ -1,13 +1,10 @@
 import logging
 
 import pytest
-
 import tensorflow as tf
 
 from ludwig.features.numerical_feature import NumericalOutputFeature
-from ludwig.modules.reduction_modules import reduce_mode_registry
 from tests.integration_tests.utils import numerical_feature
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -84,12 +81,6 @@ def test_multiple_dependencies(
 
     # set up if multiple dependencies specified, setup second dependent feature
     if dependent_hidden_shape2:
-        if reduce_dependencies == 'attention' and \
-                dependent_hidden_shape[-1] != dependent_hidden_shape2[-1]:
-                pytest.skip("Invalid test case: 'reduce_dependencies==attention' and "
-                            "hidden sizes not equal, {} and {}."
-                            "case".format(dependent_hidden_shape,
-                                          dependent_hidden_shape2))
         other_hidden_layer2 = tf.random.normal(
             dependent_hidden_shape2,
             dtype=tf.float32
