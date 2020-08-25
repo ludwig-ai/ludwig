@@ -21,7 +21,6 @@ from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
-
 from transformers import AutoTokenizer
 
 from ludwig.utils.math_utils import int_type
@@ -100,7 +99,6 @@ def create_vocabulary(
         padding_symbol=PADDING_SYMBOL,
         pretrained_model_name_or_path=None
 ):
-
     vocab = None
     max_line_length = 0
     unit_counts = Counter()
@@ -113,7 +111,7 @@ def create_vocabulary(
         pretrained_model_name_or_path=pretrained_model_name_or_path,
     )
 
-    if tokenizer_type == 'hf_tokenizer': 
+    if tokenizer_type == 'hf_tokenizer':
         try:
             vocab = tokenizer.tokenizer.get_vocab()
             vocab = list(vocab.keys())
@@ -122,10 +120,10 @@ def create_vocabulary(
             for idx in range(tokenizer.tokenizer.vocab_size):
                 vocab.append(tokenizer.tokenizer._convert_id_to_token(idx))
             vocab += tokenizer.tokenizer.added_tokens_encoder.keys()
-        
+
         pad_token = tokenizer.tokenizer.pad_token
         unk_token = tokenizer.tokenizer.unk_token
-    
+
         if pad_token is None:
             vocab = vocab + [padding_symbol]
         else:
@@ -159,14 +157,13 @@ def create_vocabulary(
             vocab.remove(padding_symbol)
         vocab = [padding_symbol] + vocab
 
-
     str2idx = {unit: i for i, unit in enumerate(vocab)}
     str2freq = {unit: unit_counts.get(unit) if unit in unit_counts else 0 for
-                unit in vocab}    
+                unit in vocab}
 
     pad_idx = None
     if padding_symbol in str2idx.keys():
-        pad_idx =  str2idx[padding_symbol]
+        pad_idx = str2idx[padding_symbol]
 
     return vocab, str2idx, str2freq, max_line_length, pad_idx, padding_symbol, unknown_symbol
 
@@ -188,13 +185,12 @@ def get_sequence_vector(sequence, tokenizer_type, unit_to_id, lowercase=True):
 def _get_sequence_vector(
         sequence,
         tokenizer,
-        tokenizer_type, 
+        tokenizer_type,
         format_dtype,
         unit_to_id,
         lowercase=True,
         unknown_symbol=UNKNOWN_SYMBOL
 ):
-    
     unit_sequence = tokenizer(
         sequence.lower() if lowercase else sequence
     )
@@ -230,7 +226,7 @@ def build_sequence_matrix(
     )
 
     format_dtype = int_type(len(inverse_vocabulary) - 1)
-    
+
     max_length = 0
     unit_vectors = []
     for sequence in sequences:
@@ -742,8 +738,6 @@ class GreekLemmatizeRemoveStopwordsFilterTokenizer(BaseTokenizer):
         )
 
 
-
-
 class NorwegianTokenizer(BaseTokenizer):
     def __call__(self, text):
         return process_text(text, load_nlp_pipeline('nb'))
@@ -1161,10 +1155,10 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 
 
 class HFTokenizer(BaseTokenizer):
-    def __init__(self, 
-            pretrained_model_name_or_path,
-            **kwargs
-    ):
+    def __init__(self,
+                 pretrained_model_name_or_path,
+                 **kwargs
+                 ):
         super().__init__()
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
@@ -1172,6 +1166,7 @@ class HFTokenizer(BaseTokenizer):
 
     def __call__(self, text):
         return self.tokenizer.encode(text)
+
 
 tokenizer_registry = {
     'characters': CharactersToListTokenizer,
@@ -1277,5 +1272,5 @@ tokenizer_registry = {
     'multi_lemmatize': MultiLemmatizeTokenizer,
     'multi_lemmatize_filter': MultiLemmatizeFilterTokenizer,
     'multi_lemmatize_remove_stopwords': MultiLemmatizeRemoveStopwordsTokenizer,
-    'hf_tokenizer' : HFTokenizer
+    'hf_tokenizer': HFTokenizer
 }
