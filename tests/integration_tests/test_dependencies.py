@@ -44,7 +44,8 @@ OTHER_HIDDEN_SIZE2 = 18
     ]
 )
 @pytest.mark.parametrize(
-    'reduce_dependencies', ['sum', 'mean', 'avg', 'max', 'concat', 'last']
+    'reduce_dependencies', ['sum', 'mean', 'avg', 'max',
+                            'concat', 'last', 'attention']
 )
 def test_multiple_dependencies(
         reduce_dependencies,
