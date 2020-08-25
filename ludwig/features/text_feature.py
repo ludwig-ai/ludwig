@@ -44,7 +44,7 @@ class TextFeatureMixin(object):
         'char_sequence_length_limit': 1024,
         'char_most_common': 70,
         'word_tokenizer': 'space_punct',
-        'pretrained_model_name_or_path' : None,
+        'pretrained_model_name_or_path': None,
         'word_vocab_file': None,
         'word_sequence_length_limit': 256,
         'word_most_common': 20000,
@@ -73,7 +73,8 @@ class TextFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-            pretrained_model_name_or_path=preprocessing_parameters['pretrained_model_name_or_path']
+            pretrained_model_name_or_path=preprocessing_parameters[
+                'pretrained_model_name_or_path']
 
         )
         (
@@ -92,7 +93,8 @@ class TextFeatureMixin(object):
             vocab_file=preprocessing_parameters['word_vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-            pretrained_model_name_or_path=preprocessing_parameters['pretrained_model_name_or_path']
+            pretrained_model_name_or_path=preprocessing_parameters[
+                'pretrained_model_name_or_path']
         )
         return (
             char_idx2str,
@@ -220,12 +222,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
-        if 'preprocessing' in feature.keys():
-            # makes pretrained model name visible to encoder init() if it is provided/necessary
-            feature['pretrained_model_name_or_path'] = feature['preprocessing']['pretrained_model_name_or_path']
-
         self.pad_idx = feature['pad_idx']
-
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -279,10 +276,10 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     encoder_registry = {
         'bert': BERTEncoder,
-        'gpt' : GPTEncoder,
-        'gpt2' : GPT2Encoder,
-        'transformer_xl' : TransformerXLEncoder,
-        'xlnet' : XLNetEncoder,
+        'gpt': GPTEncoder,
+        'gpt2': GPT2Encoder,
+        'transformer_xl': TransformerXLEncoder,
+        'xlnet': XLNetEncoder,
         'xlm': XLMEncoder,
         'roberta': RoBERTaEncoder,
         'distilbert': DistilBERTEncoder,

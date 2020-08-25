@@ -15,26 +15,30 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import tensorflow as tf
-from ludwig.modules.reduction_modules import reduce_sequence
-from tensorflow.keras.layers import Layer
 
+import tensorflow as tf
+from tensorflow.keras.layers import Layer
 from transformers import TFBertModel, TFOpenAIGPTModel, TFGPT2Model, \
     TFTransfoXLModel, TFXLNetModel, TFXLMModel, \
     TFRobertaModel, TFDistilBertModel, TFCTRLModel, TFCamembertModel, \
     TFAlbertModel, TFT5Model, TFXLMRobertaModel, \
     TFFlaubertModel, TFElectraModel, TFAutoModel
 
+from ludwig.modules.reduction_modules import reduce_sequence
+
 logger = logging.getLogger(__name__)
 
 
 class BERTEncoder(Layer):
+    fixed_preprocessing_params = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
 
     def __init__(
             self,
             pretrained_model_name_or_path='bert-base-uncased',
             reduce_output='cls_pooled',
-            trainable = False,
+            trainable=False,
             **kwargs
     ):
         super(BERTEncoder, self).__init__()
