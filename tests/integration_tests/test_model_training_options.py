@@ -6,11 +6,11 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import pytest
+import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-import tensorflow as tf
-
 from ludwig.experiment import full_experiment
+from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json
 
 RANDOM_SEED = 42
@@ -271,14 +271,8 @@ def test_resume_training(optimizer, generated_data, tmp_path):
 #
 #     pass
 
-# todo tf2: add optimizer registry in optimization_module.py
-OPTIMIZER_REGISTRY = [
-    'sgd', 'stochastic_gradient_descent', 'gd', 'gradient_descent',
-    'adam', 'adadelta', 'adagrad', 'ftrl', 'rmsprop'
-]
 
-
-@pytest.mark.parametrize('optimizer_type', OPTIMIZER_REGISTRY)
+@pytest.mark.parametrize('optimizer_type', optimizers_registry)
 def test_optimizers(optimizer_type, generated_data, tmp_path):
     input_features, output_features = get_feature_definitions()
 
