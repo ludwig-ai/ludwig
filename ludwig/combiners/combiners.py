@@ -25,7 +25,7 @@ from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
@@ -131,6 +131,7 @@ class SequenceConcatCombiner(tf.keras.Model):
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
         self.main_sequence_feature = main_sequence_feature
@@ -246,10 +247,7 @@ class SequenceConcatCombiner(tf.keras.Model):
         )
 
         # ================ Reduce ================
-        hidden = reduce_sequence(
-            hidden,
-            self.reduce_output
-        )
+        hidden = self.reduce_sequence(hidden)
 
         return_data = {'combiner_output': hidden}
 

@@ -26,15 +26,9 @@ from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
-from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
-
-# todo tf2 clean up
-# from ludwig.models.modules.attention_modules import \
-#     feed_forward_memory_attention
-# from ludwig.models.modules.initializer_modules import get_initializer
-# from ludwig.models.modules.recurrent_modules import recurrent_decoder
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +79,8 @@ class SequenceGeneratorDecoder(Layer):
         self.state_size = state_size
         self.attention_mechanism = None
 
-        self.reduce_input = reduce_input
+        self.reduce_input = reduce_input if reduce_input else 'sum'
+        self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_input)
 
         if is_timeseries:
             self.vocab_size = 1
@@ -165,10 +160,7 @@ class SequenceGeneratorDecoder(Layer):
             hidden = inputs['hidden']
             if len(hidden.shape) == 3:  # encoder_output is a sequence
                 # reduce_sequence returns a [b, h]
-                encoder_output_state = reduce_sequence(
-                    hidden,
-                    self.reduce_input if self.reduce_input else 'sum'
-                )
+                encoder_output_state = self.reduce_sequence(hidden)
             elif len(hidden.shape) == 2:
                 # this returns a [b, h]
                 encoder_output_state = hidden
