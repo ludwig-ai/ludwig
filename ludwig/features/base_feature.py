@@ -332,7 +332,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                             multipliers
                         )
 
-                        # todo tf2: maybe modify this with TF2 mask mechanics
+                        # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
                         mask = tf.sequence_mask(
                             sequence_length,

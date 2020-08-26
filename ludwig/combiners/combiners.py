@@ -236,7 +236,7 @@ class SequenceConcatCombiner(tf.keras.Model):
         logger.debug('  concat_hidden: {0}'.format(hidden))
 
         # ================ Mask ================
-        # todo tf2: maybe use tf2 masking
+        # todo future: maybe modify this with TF2 mask mechanics
         sequence_mask = tf.sequence_mask(
             sequence_length,
             sequence_max_length

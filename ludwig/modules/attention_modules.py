@@ -45,7 +45,7 @@ class FeedForwardAttentionReducer(Layer):
         return geated_inputs  # [b, h]
 
 
-# todo future
+# todo future: maybe reintroduce these attention function
 # def feed_forward_attention(current_inputs, feature_hidden_size,
 #                            hidden_size=256):
 #     with tf.variable_scope('ff_attention'):
@@ -65,7 +65,7 @@ class FeedForwardAttentionReducer(Layer):
 #     return outputs, feature_hidden_size * 2
 #
 #
-# todo future
+# todo future: maybe reintroduce these attention function
 # def simple_memory_attention(current_inputs, context):
 #     assert current_inputs.shape[2] == context.shape[2]
 #     # calculating attention
@@ -88,7 +88,7 @@ class FeedForwardAttentionReducer(Layer):
 #     return outputs, outputs.shape[-1]
 #
 #
-# todo future
+# todo future: maybe reintroduce these attention function
 # def feed_forward_memory_attention(current_inputs, memory, hidden_size=256):
 #     seq_len = tf.shape(current_inputs)[1]
 #     mem_len = tf.shape(current_inputs)[1]
