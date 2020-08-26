@@ -140,7 +140,8 @@ class Trainer:
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag, metric_val, step=step)
             if learning_rate:
-                tf.summary.scalar("combined/epoch_learning_rate", learning_rate, step=step)
+                tf.summary.scalar("combined/epoch_learning_rate",
+                                  learning_rate, step=step)
         summary_writer.flush()
 
     @classmethod
@@ -885,7 +886,8 @@ class Trainer:
         tf.keras.backend.reset_uids()
         output_nodes = {layer_name: keras_model.get_layer(layer_name).output
                         for layer_name in layer_names}
-        activation_model = tf.keras.Model(inputs=keras_model_inputs, outputs=output_nodes)
+        activation_model = tf.keras.Model(inputs=keras_model_inputs,
+                                          outputs=output_nodes)
 
         batcher = self.initialize_batcher(
             dataset,
@@ -923,9 +925,11 @@ class Trainer:
                 if isinstance(output, tf.Tensor):
                     output = [('', output)]
                 elif isinstance(output, dict):
-                    output = [(f'_{key}', tensor) for key, tensor in output.items()]
+                    output = [(f'_{key}', tensor) for key, tensor in
+                              output.items()]
                 elif isinstance(output, list):
-                    output = [(f'_{idx}', tensor) for idx, tensor in enumerate(output)]
+                    output = [(f'_{idx}', tensor) for idx, tensor in
+                              enumerate(output)]
 
                 for suffix, tensor in output:
                     full_name = f'{layer_name}{suffix}'
@@ -1113,6 +1117,9 @@ class Trainer:
             if 'pretrained_embeddings' in feature:
                 feature['pretrained_embeddings'] = None
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
+
+    def save_savedmodel(self, save_path):
+        self.model.save(save_path)
 
     def restore(self, weights_path):
         self.model.load_weights(weights_path)
