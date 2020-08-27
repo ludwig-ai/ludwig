@@ -21,6 +21,7 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.misc_utils import set_default_value
+import warnings
 
 default_random_seed = 42
 
@@ -180,11 +181,11 @@ def merge_with_defaults(model_definition):
     if stratify is not None:
         if stratify not in [x['name'] for x in
                             model_definition['output_features']]:
-            raise ValueError('Stratify must be in output features')
-        if ([x for x in model_definition['output_features'] if
+            warnings.warn('Stratify must be in output features')
+        elif ([x for x in model_definition['output_features'] if
              x['name'] == stratify][0][TYPE]
                 not in [BINARY, CATEGORY]):
-            raise ValueError('Stratify feature must be binary or category')
+            warnings.warn('Stratify feature must be binary or category')
     # ===== Model =====
     set_default_value(model_definition, 'combiner',
                       {'type': default_combiner_type})
