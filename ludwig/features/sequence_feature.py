@@ -141,10 +141,11 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
         inputs_mask = tf.not_equal(inputs, 0)
+        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
-
+        encoder_output[LENGTHS] = lengths
         return encoder_output
 
     def get_input_dtype(self):

@@ -21,7 +21,6 @@ import sys
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
-from ludwig.constants import *
 
 from ludwig.modules.convolutional_modules import Conv1DStack, \
     ParallelConv1DStack, ParallelConv1D
@@ -1479,9 +1478,6 @@ class StackedRNN(Layer):
                    (important for dropout)
             :type is_training: Tensor
         """
-
-        lengths = tf.reduce_sum(tf.cast(mask, dtype=tf.int32), axis=1)
-
         # ================ Embeddings ================
         if self.should_embed:
             embedded_sequence = self.embed_sequence(
@@ -1515,8 +1511,7 @@ class StackedRNN(Layer):
 
         return {
             'encoder_output': hidden,
-            'encoder_output_state': final_state,
-            LENGTHS: lengths
+            'encoder_output_state': final_state
         }
 
 
