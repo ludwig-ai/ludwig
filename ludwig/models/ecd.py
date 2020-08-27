@@ -70,8 +70,6 @@ class ECD(tf.keras.Model):
     def get_connected_model(self, training=True, inputs=None):
         inputs = inputs or self.get_model_inputs(training)
         outputs = self.call(inputs)
-        print('inputs: {}'.format(inputs))
-        print('outputs: {}'.format(outputs))
         return tf.keras.Model(inputs=inputs, outputs=outputs)
 
     def call(self, inputs, training=None, mask=None):
