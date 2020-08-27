@@ -5,7 +5,7 @@ from collections import OrderedDict
 import tensorflow as tf
 
 from ludwig.combiners.combiners import get_combiner_class
-from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
+from ludwig.constants import *
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -113,6 +113,9 @@ class ECD(tf.keras.Model):
             output_logits[output_feature_name][LOGITS] = decoder_logits
             output_logits[output_feature_name][
                 LAST_HIDDEN] = decoder_last_hidden
+            if LENGTHS in combiner_outputs:
+                output_logits[output_feature_name][LENGTHS] = \
+                    combiner_outputs[LENGTHS]
             output_last_hidden[output_feature_name] = decoder_last_hidden
 
         return output_logits

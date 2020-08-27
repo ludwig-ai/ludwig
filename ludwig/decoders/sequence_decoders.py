@@ -635,11 +635,12 @@ class SequenceTaggerDecoder(Layer):
 
     def _predictions_eval(
             self,
-            inputs,  # encoder_output, encoder_output_state
+            inputs,  # encoder_output, encoder_output_state, lengths
             training=None
     ):
         logits = self.call(inputs, training=training)
 
+        input_sequence_lengths = inputs[LENGTHS]  # retrieve input sequence length
         probabilities = tf.nn.softmax(
             logits,
             name='probabilities_{}'.format(self.name)
@@ -653,13 +654,13 @@ class SequenceTaggerDecoder(Layer):
         )
 
         # todo tf2: deal with spurious 0s in predictions
-        generated_sequence_lengths = sequence_length_2D(predictions)
+        #generated_sequence_lengths = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
                  tf.maximum(
-                     generated_sequence_lengths - 1,
+                     input_sequence_lengths - 1,  #modified to use input sequence length
                      0
                  )],
                 axis=1
@@ -669,7 +670,7 @@ class SequenceTaggerDecoder(Layer):
 
         # mask logits
         mask = tf.sequence_mask(
-            generated_sequence_lengths,
+            input_sequence_lengths,
             maxlen=logits.shape[1],
             dtype=tf.float32
         )
