@@ -181,11 +181,12 @@ def merge_with_defaults(model_definition):
     if stratify is not None:
         if stratify not in [x['name'] for x in
                             model_definition['output_features']]:
-            warnings.warn('Stratify must be in output features')
+            warnings.warn('Stratify is not in output features. '
+                          'Expecting type to be binary or category')
         elif ([x for x in model_definition['output_features'] if
              x['name'] == stratify][0][TYPE]
                 not in [BINARY, CATEGORY]):
-            warnings.warn('Stratify feature must be binary or category')
+            raise ValueError('Stratify feature must be binary or category')
     # ===== Model =====
     set_default_value(model_definition, 'combiner',
                       {'type': default_combiner_type})
