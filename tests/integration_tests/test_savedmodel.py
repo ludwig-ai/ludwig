@@ -114,17 +114,12 @@ def test_savedmodel(csv_filename):
 
     restored_model = tf.saved_model.load(savedmodel_path)
 
-    if_name = list(restored_model.input_features.keys())[0]
-    of_name = list(restored_model.output_features.keys())[0]
+    if_name = list(ludwig_model.model.model.input_features.keys())[0]
+    of_name = list(ludwig_model.model.model.output_features.keys())[0]
 
-    num_values = tf.convert_to_tensor(dataset.dataset[if_name]).shape[0]
-
-    data_to_predict = (
-        {if_name: tf.convert_to_tensor(dataset.dataset[if_name])},
-        # todo tf2: next is work-around allow matching function signature by
-        # tf2, need to determine if this can be eliminated
-        {of_name: tf.zeros([num_values, ], dtype=tf.int8)}
-    )
+    data_to_predict = {
+        if_name: tf.convert_to_tensor(dataset.dataset[if_name], dtype=tf.int32)
+    }
 
     logits = restored_model(data_to_predict, False, None)
 
