@@ -95,8 +95,7 @@ class ECD(tf.keras.Model):
             # use presence or absence of targets to signal training or prediction
             if targets is not None:
                 # doing training
-                target_to_use = tf.cast(targets[output_feature_name],
-                                        dtype=tf.int32)
+                target_to_use = targets[output_feature_name]
             else:
                 # doing prediction
                 target_to_use = None

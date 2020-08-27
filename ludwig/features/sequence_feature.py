@@ -247,7 +247,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if training:
             return self.decoder_obj._logits_training(
                 inputs,
-                target=target,
+                target=tf.cast(target, dtype=tf.int32),
                 training=training
             )
         else:
