@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
+
 from ludwig.constants import *
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_registries import input_type_registry
@@ -21,7 +23,8 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.misc_utils import set_default_value
-import warnings
+
+logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
@@ -177,19 +180,20 @@ def merge_with_defaults(model_definition):
     )
 
     stratify = model_definition['preprocessing']['stratify']
-
     if stratify is not None:
-        if stratify not in [x['name'] for x in
-                            model_definition['output_features']]:
-            warnings.warn('Stratify is not in output features. '
-                          'Expecting type to be binary or category')
-        elif ([x for x in model_definition['output_features'] if
-             x['name'] == stratify][0][TYPE]
-                not in [BINARY, CATEGORY]):
+        features = (
+                model_definition['input_features'] +
+                model_definition['output_features']
+        )
+        feature_names = set(f['name'] for f in features)
+        if stratify not in feature_names:
+            logger.warning(
+                'Stratify is not among the features. '
+                'Cannot establish if it is a binary or category'
+            )
+        elif ([f for f in features if f['name'] == stratify][0][TYPE]
+              not in {BINARY, CATEGORY}):
             raise ValueError('Stratify feature must be binary or category')
-    # ===== Model =====
-    set_default_value(model_definition, 'combiner',
-                      {'type': default_combiner_type})
 
     # ===== Training =====
     set_default_value(model_definition, TRAINING, default_training_params)
@@ -201,7 +205,6 @@ def merge_with_defaults(model_definition):
     set_default_value(
         model_definition[TRAINING],
         'validation_metric',
-
         output_type_registry[model_definition['output_features'][0][
             TYPE]].default_validation_metric
     )
@@ -216,6 +219,10 @@ def merge_with_defaults(model_definition):
     for input_feature in model_definition['input_features']:
         get_from_registry(input_feature[TYPE],
                           input_type_registry).populate_defaults(input_feature)
+
+    # ===== Combiner =====
+    set_default_value(model_definition, 'combiner',
+                      {'type': default_combiner_type})
 
     # ===== Output features =====
     for output_feature in model_definition['output_features']:
