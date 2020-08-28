@@ -34,6 +34,10 @@ class BERTEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'bert-base-uncased',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='bert-base-uncased',
