@@ -75,6 +75,11 @@ def test_savedmodel(csv_filename):
     shutil.rmtree(ludwigmodel_path, ignore_errors=True)
     ludwig_model.save(ludwigmodel_path)
 
+    ###################
+    # load Ludwig model
+    ###################
+    ludwig_model = LudwigModel.load(ludwigmodel_path)
+
     #################
     # save savedmodel
     #################
