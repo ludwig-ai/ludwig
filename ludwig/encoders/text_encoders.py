@@ -30,8 +30,13 @@ logger = logging.getLogger(__name__)
 
 
 class BERTEncoder(Layer):
-    fixed_preprocessing_params = {
+
+    fixed_preprocessing_parameters = {
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    fixed_preprocessing_parameters_defaults = {
+        'pretrained_model_name_or_path': 'bert-base-uncased'
     }
 
     def __init__(
@@ -66,6 +71,10 @@ class BERTEncoder(Layer):
 
 class GPTEncoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             reduce_output='sum',
@@ -95,6 +104,10 @@ class GPTEncoder(Layer):
 
 class GPT2Encoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='gpt2',
@@ -123,6 +136,11 @@ class GPT2Encoder(Layer):
 
 
 class TransformerXLEncoder(Layer):
+
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='transfo-xl-wt103',
@@ -149,6 +167,10 @@ class TransformerXLEncoder(Layer):
 
 
 class XLNetEncoder(Layer):
+
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
 
     def __init__(
             self,
@@ -178,6 +200,10 @@ class XLNetEncoder(Layer):
 
 class XLMEncoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='xlm-mlm-en-2048',
@@ -205,6 +231,10 @@ class XLMEncoder(Layer):
 
 
 class RoBERTaEncoder(Layer):
+
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
 
     def __init__(
             self,
@@ -237,6 +267,10 @@ class RoBERTaEncoder(Layer):
 
 class DistilBERTEncoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='distilbert-base-uncased',
@@ -267,6 +301,10 @@ class DistilBERTEncoder(Layer):
 
 class CTRLEncoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='ctrl',
@@ -294,6 +332,10 @@ class CTRLEncoder(Layer):
 
 
 class CamemBERTEncoder(Layer):
+
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
 
     def __init__(
             self,
@@ -328,6 +370,10 @@ class CamemBERTEncoder(Layer):
 
 class ALBERTEncoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='albert-base-v2',
@@ -359,6 +405,10 @@ class ALBERTEncoder(Layer):
 
 class T5Encoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='t5-small',
@@ -388,6 +438,10 @@ class T5Encoder(Layer):
 
 
 class XLMRoBERTaEncoder(Layer):
+
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
 
     def __init__(
             self,
@@ -420,6 +474,10 @@ class XLMRoBERTaEncoder(Layer):
 
 class FlauBERTEncoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='jplu/tf-flaubert-base-uncased',
@@ -450,6 +508,10 @@ class FlauBERTEncoder(Layer):
 
 class ELECTRAEncoder(Layer):
 
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='google/electra-small-discriminator',
@@ -477,6 +539,10 @@ class ELECTRAEncoder(Layer):
 
 
 class AutoTransformerEncoder(Layer):
+
+    fixed_preprocessing_parameters = {
+        'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
 
     def __init__(
             self,
