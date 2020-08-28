@@ -35,8 +35,8 @@ class BERTEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
-    fixed_preprocessing_parameters_defaults = {
-        'pretrained_model_name_or_path': 'bert-base-uncased'
+    default_params = {
+        'pretrained_model_name_or_path': 'bert-base-uncased',
     }
 
     def __init__(
@@ -44,6 +44,7 @@ class BERTEncoder(Layer):
             pretrained_model_name_or_path='bert-base-uncased',
             reduce_output='cls_pooled',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(BERTEncoder, self).__init__()
@@ -52,6 +53,8 @@ class BERTEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
+
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -75,11 +78,16 @@ class GPTEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'openai-gpt',
+    }
+
     def __init__(
             self,
             reduce_output='sum',
             pretrained_model_name_or_path='openai-gpt',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(GPTEncoder, self).__init__()
@@ -88,14 +96,17 @@ class GPTEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
+            {
+            'input_ids' : inputs, 
+            'training' : training,
+            'attention_mask' : mask,
+            'token_type_ids' : tf.zeros_like(inputs)
+            }
         )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
@@ -108,11 +119,16 @@ class GPT2Encoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'gpt2',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='gpt2',
             reduce_output='sum',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(GPT2Encoder, self).__init__()
@@ -121,6 +137,7 @@ class GPT2Encoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
 
     def call(self, inputs, training=None, mask=None):
@@ -135,10 +152,14 @@ class GPT2Encoder(Layer):
         return {'encoder_output': hidden}
 
 
-class TransformerXLEncoder(Layer):
+"""class TransformerXLEncoder(Layer):
 
     fixed_preprocessing_parameters = {
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
+    }
+
+    default_params = {
+        'pretrained_model_name_or_path': 'transfo-xl-wt103',
     }
 
     def __init__(
@@ -163,7 +184,7 @@ class TransformerXLEncoder(Layer):
         )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}
+        return {'encoder_output': hidden}"""
 
 
 class XLNetEncoder(Layer):
@@ -172,11 +193,16 @@ class XLNetEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'xlnet-base-cased',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='xlnet-base-cased',
             reduce_output='sum',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(XLNetEncoder, self).__init__()
@@ -185,6 +211,7 @@ class XLNetEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -204,11 +231,16 @@ class XLMEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'xlm-mlm-en-2048',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='xlm-mlm-en-2048',
             reduce_output='sum',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(XLMEncoder, self).__init__()
@@ -217,6 +249,7 @@ class XLMEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -236,11 +269,16 @@ class RoBERTaEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'roberta-base',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='roberta-base',
             reduce_output='cls_pooled',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(RoBERTaEncoder, self).__init__()
@@ -249,6 +287,7 @@ class RoBERTaEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -271,11 +310,16 @@ class DistilBERTEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'distilbert-base-uncased',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='distilbert-base-uncased',
             reduce_output='cls_pooled',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(DistilBERTEncoder, self).__init__()
@@ -284,6 +328,7 @@ class DistilBERTEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -305,11 +350,16 @@ class CTRLEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'ctrl',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='ctrl',
             reduce_output='sum',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(CTRLEncoder, self).__init__()
@@ -318,13 +368,16 @@ class CTRLEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
+            {
+            'input_ids' : inputs, 
+            'attention_mask' : mask,
+            'token_type_ids' : tf.zeros_like(inputs),
+            'training' : training,
+            }
         )
         hidden = transformer_outputs[0]
         hidden = reduce_sequence(hidden, self.reduce_output)
@@ -337,11 +390,16 @@ class CamemBERTEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'jplu/tf-camembert-base',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='jplu/tf-camembert-base',
             reduce_output='cls_pooled',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(CamemBERTEncoder, self).__init__()
@@ -352,6 +410,7 @@ class CamemBERTEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -374,11 +433,16 @@ class ALBERTEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'albert-base-v2',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='albert-base-v2',
             reduce_output='cls_pooled',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(ALBERTEncoder, self).__init__()
@@ -387,6 +451,7 @@ class ALBERTEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -409,11 +474,16 @@ class T5Encoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 't5-small',
+    }
+    
     def __init__(
             self,
             pretrained_model_name_or_path='t5-small',
             reduce_output='sum',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(T5Encoder, self).__init__()
@@ -422,6 +492,7 @@ class T5Encoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
 
@@ -443,11 +514,16 @@ class XLMRoBERTaEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'jplu/tf-xlm-roberta-base',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='jplu/tf-xlm-roberta-base',
             reduce_output='cls_pooled',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(XLMRoBERTaEncoder, self).__init__()
@@ -456,6 +532,7 @@ class XLMRoBERTaEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -478,11 +555,16 @@ class FlauBERTEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'jplu/tf-flaubert-base-uncased',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='jplu/tf-flaubert-base-uncased',
             reduce_output='cls_pooled',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(FlauBERTEncoder, self).__init__()
@@ -491,6 +573,7 @@ class FlauBERTEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -512,11 +595,16 @@ class ELECTRAEncoder(Layer):
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
     }
 
+    default_params = {
+        'pretrained_model_name_or_path': 'google/electra-small-discriminator',
+    }
+
     def __init__(
             self,
             pretrained_model_name_or_path='google/electra-small-discriminator',
             reduce_output='sum',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(ELECTRAEncoder, self).__init__()
@@ -525,6 +613,7 @@ class ELECTRAEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(
@@ -549,6 +638,7 @@ class AutoTransformerEncoder(Layer):
             pretrained_model_name_or_path,
             reduce_output='sum',
             trainable=False,
+            num_tokens = None,
             **kwargs
     ):
         super(AutoTransformerEncoder, self).__init__()
@@ -557,6 +647,7 @@ class AutoTransformerEncoder(Layer):
         )
         self.reduce_output = reduce_output
         self.transformer.trainable = trainable
+        self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer(

@@ -274,6 +274,16 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             }
         )
 
+        encoder_class = get_from_registry(
+            input_feature['encoder'],
+            TextInputFeature.encoder_registry
+        )
+        if hasattr(encoder_class, 'default_params'):
+            set_default_values(
+                input_feature,
+                encoder_class.default_params
+            )
+
     encoder_registry = {
         'bert': BERTEncoder,
         'gpt': GPTEncoder,
