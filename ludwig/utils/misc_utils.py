@@ -132,7 +132,10 @@ def resolve_pointers(dict1, dict2, dict2_name):
         value = dict1[key]
         if value.startswith(dict2_name):
             key_in_dict2 = value[len(dict2_name):]
-            value = dict2[key_in_dict2]
+            if key_in_dict2 in dict2.keys():
+                value = dict2[key_in_dict2]
+            else:
+                value = None
         resolved_dict[key] = value
     return resolved_dict
 
