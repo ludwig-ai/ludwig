@@ -585,7 +585,7 @@ class FlauBERTEncoder(Layer):
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
-            hidden = transformer_outputs[0][:,1:-1,:]
+            hidden = transformer_outputs[0][:,1:-1,:]  
             hidden = reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 

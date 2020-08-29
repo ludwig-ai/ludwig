@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import sys
 
 import numpy as np
 
@@ -27,6 +28,7 @@ from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
@@ -222,7 +224,11 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
     def __init__(self, feature, encoder_obj=None):
         super().__init__(feature, encoder_obj=encoder_obj)
-        self.pad_idx = feature['pad_idx']
+        if 'pad_idx' in feature.keys():
+            self.pad_idx = feature['pad_idx']
+        else:
+            self.pad_idx = None
+
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -231,8 +237,12 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         assert len(inputs.shape) == 2
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
-        inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx),
-                              dtype=tf.int32)
+
+        if self.pad_idx is not None:
+            inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx),
+                                dtype=tf.int32)
+        else: 
+            inputs_mask = None
 
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
@@ -262,6 +272,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         input_feature['pad_idx'] = (
             feature_metadata[input_feature['level'] + '_pad_idx']
         )
+        input_feature['num_tokens'] = (
+            len(feature_metadata[input_feature['level'] + '_idx2str'])
+        )
 
     @staticmethod
     def populate_defaults(input_feature):
@@ -278,6 +291,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
             input_feature['encoder'],
             TextInputFeature.encoder_registry
         )
+
         if hasattr(encoder_class, 'default_params'):
             set_default_values(
                 input_feature,
@@ -288,7 +302,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         'bert': BERTEncoder,
         'gpt': GPTEncoder,
         'gpt2': GPT2Encoder,
-        'transformer_xl': TransformerXLEncoder,
+        #'transformer_xl': TransformerXLEncoder,
         'xlnet': XLNetEncoder,
         'xlm': XLMEncoder,
         'roberta': RoBERTaEncoder,

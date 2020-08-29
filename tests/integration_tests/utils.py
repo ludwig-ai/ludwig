@@ -32,6 +32,24 @@ ENCODERS = [
     'stacked_cnn'
 ]
 
+HF_ENCODERS = [
+    'bert',
+    #'gpt',
+    #'gpt2',
+    #'transformer_xl',
+    'xlnet',
+    'xlm',
+    'roberta',
+    'distilbert',
+    'ctrl',
+    'camembert',
+    'albert',
+    't5',
+    'xlmroberta',
+    'flaubert',
+    'electra',
+]
+
 
 def generate_data(
         input_features,

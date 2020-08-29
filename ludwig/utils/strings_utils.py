@@ -194,6 +194,7 @@ def _get_sequence_vector(
     unit_sequence = tokenizer(
         sequence.lower() if lowercase else sequence
     )
+
     unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)
     for i in range(len(unit_sequence)):
         curr_unit = unit_sequence[i]
@@ -1157,12 +1158,14 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 class HFTokenizer(BaseTokenizer):
     def __init__(self,
                  pretrained_model_name_or_path,
+                 #pad_token = '<PAD>',
                  **kwargs
                  ):
         super().__init__()
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
         )
+        #self.tokenizer.add_special_tokens({'pad_token': pad_token})
 
     def __call__(self, text):
         return self.tokenizer.encode(text)

@@ -25,7 +25,7 @@ from ludwig.experiment import full_experiment
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import ENCODERS
+from tests.integration_tests.utils import ENCODERS, HF_ENCODERS
 from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
@@ -46,6 +46,43 @@ from tests.integration_tests.utils import vector_feature
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
+
+
+def test_experiment_text_feature_nonHF(csv_filename):
+
+    input_features = [
+        text_feature(
+            vocab_size=30,
+            min_len=1,
+            reduce_output=None,
+            preprocessing={'word_tokenizer': 'space'}
+        )
+    ]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+
+    for encoder in ENCODERS:
+        input_features[0]['encoder'] = encoder
+        run_experiment(input_features, output_features, data_csv=rel_path)
+
+"""def test_experiment_text_feature_HF(csv_filename):
+
+    for encoder in HF_ENCODERS:
+
+        input_features = [
+            text_feature(
+                vocab_size=30,
+                min_len=1,
+                reduce_output=None,
+                encoder=encoder,
+                preprocessing={'word_tokenizer': 'hf_tokenizer'}
+            )
+        ]
+        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+        # Generate test data
+        rel_path = generate_data(input_features, output_features, csv_filename)
+        run_experiment(input_features, output_features, data_csv=rel_path)"""
 
 
 def test_experiment_seq_seq(csv_filename):

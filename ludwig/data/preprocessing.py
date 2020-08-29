@@ -132,7 +132,6 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
             encoder_class = encoders_registry[feature['encoder']]
             if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
-                #encoder_fpp_defaults = encoder_class.fixed_preprocessing_parameters_defaults
                 
                 if 'preprocessing' in feature:
                     all_feature_params = merge_dict(
@@ -146,10 +145,6 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
                     preprocessing_parameters,
                     resolve_pointers(encoder_fpp, all_feature_params, 'feature.')
                 )
-
-                """for key, value in encoder_fpp_defaults.items():
-                    if preprocessing_parameters[key] is None:
-                        preprocessing_parameters[key] = value"""
 
         handle_missing_values(
             dataset_df,
@@ -193,10 +188,11 @@ def build_data(
                 feature[TYPE],
                 input_type_registry
             ).encoder_registry
+
             encoder_class = encoders_registry[feature['encoder']]
             if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
-                #encoder_fpp_defaults = encoder_class.fixed_preprocessing_parameters_defaults
+
                 if 'preprocessing' in feature:
                     all_feature_params = merge_dict(
                         feature,
@@ -210,11 +206,6 @@ def build_data(
                     resolve_pointers(encoder_fpp, all_feature_params, 'feature.')
                 )
                 
-                """for key, value in encoder_fpp_defaults.items():
-                    if preprocessing_parameters[key] is None:
-                        preprocessing_parameters[key] = value"""
-
-
         handle_missing_values(
             dataset_df,
             feature,
