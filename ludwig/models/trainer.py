@@ -1115,35 +1115,7 @@ class Trainer:
                 feature['pretrained_embeddings'] = None
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
 
-    # todo tf2: reintroduce this functionality
     def save_savedmodel(self, save_path):
-        # input_tensors = {}
-        # for input_feature in self.hyperparameters['input_features']:
-        #     input_tensors[input_feature['name']] = getattr(
-        #         self, input_feature['name']
-        #     )
-        #
-        # output_tensors = {}
-        # for output_feature in self.hyperparameters['output_features']:
-        #     output_tensors[output_feature['name']] = getattr(
-        #         self,
-        #         output_feature['name']
-        #     )
-        #
-        # session = self.initialize_session()
-        #
-        # builder = saved_model_builder.SavedModelBuilder(save_path)
-        # builder.add_meta_graph_and_variables(
-        #     session,
-        #     [tf.saved_model.tag_constants.SERVING],
-        #     signature_def_map={
-        #         'predict': tf.saved_model.predict_signature_def(
-        #             input_tensors, output_tensors)
-        #     },
-        #     strip_default_attrs=True,
-        #     saver=self.saver,
-        # )
-        # builder.save()
         self.model.save(save_path)
 
     def restore(self, weights_path):

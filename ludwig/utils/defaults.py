@@ -68,6 +68,10 @@ default_training_params = {
 }
 
 default_optimizer_params_registry = {
+    'sgd': {},
+    'stochastic_gradient_descent': {},
+    'gd': {},
+    'gradient_descent': {},
     'adam': {
         'beta_1': 0.9,
         'beta_2': 0.999,
@@ -80,31 +84,14 @@ default_optimizer_params_registry = {
     'adagrad': {
         'initial_accumulator_value': 0.1
     },
-    'adagradda': {
-        'initial_gradient_squared_accumulator_value': 0.1,
-        'l1_regularization_strength': 0.0,
-        'l2_regularization_strength': 0.0
-    },
+    'adamax': {},
     'ftrl': {
         'learning_rate_power': -0.5,
         'initial_accumulator_value': 0.1,
         'l1_regularization_strength': 0.0,
         'l2_regularization_strength': 0.0
     },
-    'momentum': {
-        'momentum': 0.1
-    },
-    'proximalgd': {
-        'l1_regularization_strength': 0.0,
-        'l2_regularization_strength': 0.0
-    },
-    'proximaladagrad': {
-        'initial_accumulator_value': 0.1,
-        'l1_regularization_strength': 0.0,
-        'l2_regularization_strength': 0.0
-    },
-    'sgd': {
-    },
+    'nadam': {},
     'rmsprop': {
         'decay': 0.9,
         'momentum': 0.0,

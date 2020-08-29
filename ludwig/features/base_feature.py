@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
@@ -157,6 +157,17 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             default_activation=self.activation,
             default_dropout=self.dropout,
         )
+
+        # set up two sequence reducers, one for inputs and other for dependencies
+        self.reduce_sequence_input = SequenceReducer(
+            reduce_mode=self.reduce_input
+        )
+        if self.dependencies:
+            self.dependency_reducers = {}
+            for dependency in self.dependencies:
+                self.dependency_reducers[dependency] = SequenceReducer(
+                    reduce_mode=self.reduce_dependencies
+                )
 
     def create_input(self):
         return tf.keras.Input(shape=self.get_output_shape(),
@@ -321,7 +332,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                             multipliers
                         )
 
-                        # todo tf2: maybe modify this with TF2 mask mechanics
+                        # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
                         mask = tf.sequence_mask(
                             sequence_length,
@@ -337,9 +348,9 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 else:
                     if len(dependency_final_hidden.shape) > 2:
                         # vector matrix -> reduce concat
+                        reducer = self.dependency_reducers[dependency]
                         dependencies_hidden.append(
-                            reduce_sequence(dependency_final_hidden,
-                                            self.reduce_dependencies)
+                            reducer(dependency_final_hidden)
                         )
                     else:
                         # vector vector -> concat
@@ -425,9 +436,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
         # ================ Reduce Inputs ================
         if self.reduce_input is not None and len(feature_hidden.shape) > 2:
-            feature_hidden = reduce_sequence(
-                feature_hidden,
-                self.reduce_input
+            feature_hidden = self.reduce_sequence_input(
+                feature_hidden
             )
 
         # ================ Concat Dependencies ================
