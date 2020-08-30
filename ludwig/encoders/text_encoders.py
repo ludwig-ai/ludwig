@@ -60,12 +60,12 @@ class BERTEncoder(Layer):
 
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -104,14 +104,12 @@ class GPTEncoder(Layer):
 
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            {
+        transformer_outputs = self.transformer({
             'input_ids' : inputs, 
             'training' : training,
             'attention_mask' : mask,
             'token_type_ids' : tf.zeros_like(inputs)
-            }
-        )
+        })
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -146,12 +144,12 @@ class GPT2Encoder(Layer):
 
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -222,12 +220,12 @@ class XLNetEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -261,12 +259,12 @@ class XLMEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         hidden = transformer_outputs[0][:, 1:-1, :]  # bos + [sent] + sep
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -301,12 +299,12 @@ class RoBERTaEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -344,11 +342,11 @@ class DistilBERTEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask
+        })
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -385,14 +383,12 @@ class CTRLEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            {
+        transformer_outputs = self.transformer({
             'input_ids' : inputs, 
             'attention_mask' : mask,
             'token_type_ids' : tf.zeros_like(inputs),
             'training' : training,
-            }
-        )
+        })
         hidden = transformer_outputs[0]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -428,12 +424,12 @@ class CamemBERTEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -471,12 +467,12 @@ class ALBERTEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -555,12 +551,12 @@ class XLMRoBERTaEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -598,12 +594,12 @@ class FlauBERTEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer.forward({
+            'input_ids' : inputs, 
+            'training' : training,
+            'attention_mask' : mask,
+            'token_type_ids' : tf.zeros_like(inputs)
+        })
         if self.reduce_output == 'cls_pooled':
             hidden = transformer_outputs[1]
         else:
@@ -639,12 +635,12 @@ class ELECTRAEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         hidden = transformer_outputs[0][:, 1:-1, :]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
@@ -675,12 +671,12 @@ class AutoTransformerEncoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer(
-            inputs, 
-            training=training,
-            attention_mask=mask,
-            token_type_ids=tf.zeros_like(inputs)
-        )
+        transformer_outputs = self.transformer({
+            "input_ids" : inputs, 
+            "training" : training,
+            "attention_mask" : mask,
+            "token_type_ids" : tf.zeros_like(inputs)
+        })
         if self.reduce_output == 'cls_pooled':
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
