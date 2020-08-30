@@ -47,42 +47,38 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-
-def test_experiment_text_feature_nonHF(csv_filename):
+@pytest.mark.parametrize('encoder', ENCODERS)
+def test_experiment_text_feature_nonHF(encoder, csv_filename):
 
     input_features = [
         text_feature(
             vocab_size=30,
             min_len=1,
             reduce_output=None,
+            encoder=encoder,
             preprocessing={'word_tokenizer': 'space'}
         )
     ]
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
-    for encoder in ENCODERS:
-        input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
-
-"""def test_experiment_text_feature_HF(csv_filename):
-
-    for encoder in HF_ENCODERS:
-
-        input_features = [
-            text_feature(
-                vocab_size=30,
-                min_len=1,
-                reduce_output=None,
-                encoder=encoder,
-                preprocessing={'word_tokenizer': 'hf_tokenizer'}
-            )
-        ]
-        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
-        # Generate test data
-        rel_path = generate_data(input_features, output_features, csv_filename)
-        run_experiment(input_features, output_features, data_csv=rel_path)"""
+@pytest.mark.parametrize('encoder', HF_ENCODERS)
+def test_experiment_text_feature_HF(encoder, csv_filename):
+    input_features = [
+        text_feature(
+            vocab_size=30,
+            min_len=1,
+            reduce_output=None,
+            encoder=encoder,
+            preprocessing={'word_tokenizer': 'hf_tokenizer'}
+        )
+    ]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    # Generate test data
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    run_experiment(input_features, output_features, data_csv=rel_path)
 
 
 def test_experiment_seq_seq(csv_filename):
