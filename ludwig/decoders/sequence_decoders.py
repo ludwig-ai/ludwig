@@ -38,8 +38,6 @@ rnn_layers_registry = {
     'lstm': LSTMCell
 }
 
-PAD_TOKEN = 0
-
 
 class SequenceGeneratorDecoder(Layer):
 
@@ -87,11 +85,10 @@ class SequenceGeneratorDecoder(Layer):
         if is_timeseries:
             self.vocab_size = 1
         else:
-            # account for GO_SYMBOL and END_SYMBOL
             self.vocab_size = self.num_classes
 
         self.GO_SYMBOL = self.vocab_size
-        self.END_SYMBOL = self.vocab_size + 1
+        self.END_SYMBOL = 0
 
         logger.debug('  project input Dense')
         self.project = Dense(
@@ -106,7 +103,7 @@ class SequenceGeneratorDecoder(Layer):
 
         logger.debug('  Embedding')
         self.decoder_embedding = Embedding(
-            input_dim=self.num_classes + 2,  # account for GO_SYMBOL & END_SYMBOL
+            input_dim=self.num_classes + 1,  # account for GO_SYMBOL
             output_dim=embedding_size,
             embeddings_initializer=weights_initializer,
             embeddings_regularizer=weights_regularizer,
@@ -297,50 +294,11 @@ class SequenceGeneratorDecoder(Layer):
         if self.is_timeseries:
             start_tokens = tf.cast(start_tokens, tf.float32)
             end_tokens = tf.cast(end_tokens, tf.float32)
-            targets_with_go_and_eos = tf.concat([
-                tf.expand_dims(start_tokens, 1),
-                target,  # todo tf2: right now cast to tf.int32, fails if tf.int64
-                tf.expand_dims(end_tokens, 1)], 1)
-        else:
-            # determine where sequence ends, i.e., last non-zer token
-            non_zero = tf.not_equal(target, PAD_TOKEN)
-            non_zero_size = tf.reduce_sum(tf.cast(non_zero, dtype=tf.int32),
-                                          axis=1)
-            non_zero_size = tf.reshape(non_zero_size, shape=[-1, 1])
-            # setup tensor indicating where END_SYMBOLE should be placed
-            insert_location = tf.concat(
-                [
-                    tf.expand_dims(tf.range(batch_size), 1),
-                    non_zero_size
-                ],
-                axis=1
-            )
-            sparse_eos = tf.sparse.SparseTensor(
-                tf.cast(insert_location, tf.int64),
-                batch_size * [self.END_SYMBOL],
-                dense_shape=[
-                    target.shape[0],
-                    target.shape[1] + 1  # account for full sequence
-                ]
-            )
-            # expand target tensor in axis=1 to support full sequence length
-            target_expanded = tf.concat(
-                [
-                    target,
-                    tf.expand_dims(tf.tile([PAD_TOKEN], [batch_size]),
-                                   axis=1)
-                ],
-                axis=1
-            )
-            targets_with_go_and_eos = tf.concat(
-                [
-                    tf.expand_dims(start_tokens, 1),
-                    target_expanded + tf.sparse.to_dense(sparse_eos)
-                ],
-                1
-            )
-
-            target_sequence_length_with_eos = target_sequence_length + 1
+        targets_with_go_and_eos = tf.concat([
+            tf.expand_dims(start_tokens, 1),
+            target,  # todo tf2: right now cast to tf.int32, fails if tf.int64
+            tf.expand_dims(end_tokens, 1)], 1)
+        target_sequence_length_with_eos = target_sequence_length + 1
 
         # Decoder Embeddings
         decoder_emb_inp = self.decoder_embedding(targets_with_go_and_eos)
