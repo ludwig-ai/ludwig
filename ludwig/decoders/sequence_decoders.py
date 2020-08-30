@@ -489,10 +489,12 @@ class SequenceGeneratorDecoder(Layer):
 
         predictions = decoder_output.sample_id
         logits = decoder_output.rnn_output
-        # lengths = decoder_lengths
-        non_pad_token = tf.not_equal(predictions, PAD_TOKEN)
-        lengths = tf.reduce_sum(tf.cast(non_pad_token, dtype=tf.int32),
-                                      axis=1)
+        if training:
+            lengths = decoder_lengths
+        else:
+            non_pad_token = tf.not_equal(predictions, PAD_TOKEN)
+            lengths = tf.reduce_sum(tf.cast(non_pad_token, dtype=tf.int32),
+                                          axis=1)
 
         probabilities = tf.nn.softmax(
             logits,
