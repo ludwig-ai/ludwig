@@ -303,7 +303,7 @@ class SequenceGeneratorDecoder(Layer):
                 tf.expand_dims(end_tokens, 1)], 1)
         else:
             # determine where sequence ends, i.e., last non-zer token
-            non_zero = tf.not_equal(target, 0)
+            non_zero = tf.not_equal(target, PAD_TOKEN)
             non_zero_size = tf.reduce_sum(tf.cast(non_zero, dtype=tf.int32),
                                           axis=1)
             non_zero_size = tf.reshape(non_zero_size, shape=[-1, 1])
@@ -529,7 +529,10 @@ class SequenceGeneratorDecoder(Layer):
 
         predictions = decoder_output.sample_id
         logits = decoder_output.rnn_output
-        lengths = decoder_lengths
+        # lengths = decoder_lengths
+        non_pad_token = tf.not_equal(predictions, PAD_TOKEN)
+        lengths = tf.reduce_sum(tf.cast(non_pad_token, dtype=tf.int32),
+                                      axis=1)
 
         probabilities = tf.nn.softmax(
             logits,
