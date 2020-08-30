@@ -1120,7 +1120,8 @@ class Trainer:
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
 
     def save_savedmodel(self, save_path):
-        self.model.save(save_path)
+        keras_model = self.model.get_connected_model(training=False)
+        keras_model.save(save_path)
 
     def restore(self, weights_path):
         self.model.load_weights(weights_path)
