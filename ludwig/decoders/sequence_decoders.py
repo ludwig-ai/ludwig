@@ -38,6 +38,8 @@ rnn_layers_registry = {
     'lstm': LSTMCell
 }
 
+PAD_TOKEN = 0
+
 
 class SequenceGeneratorDecoder(Layer):
 
