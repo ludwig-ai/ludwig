@@ -34,8 +34,8 @@ ENCODERS = [
 
 HF_ENCODERS = [
     'bert',
-    #'gpt',
-    #'gpt2',
+    'gpt',
+    'gpt2',
     #'transformer_xl',
     'xlnet',
     'xlm',
@@ -46,7 +46,7 @@ HF_ENCODERS = [
     'albert',
     't5',
     'xlmroberta',
-    'flaubert',
+    #'flaubert',
     'electra',
 ]
 
