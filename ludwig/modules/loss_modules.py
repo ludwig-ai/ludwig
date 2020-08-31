@@ -166,7 +166,7 @@ class SequenceLoss(tf.keras.losses.Loss):
         longest_sequence_length = tf.minimum(longest_sequence_length,
                                              tf.shape(y_true_tensor)[1])
         mask = tf.sequence_mask(
-            longest_sequence_length,
+            longest_sequence_length - 1,  # adjust for only one <PAD> token
             maxlen=tf.shape(y_true_tensor)[1],
             dtype=tf.float32
         )
