@@ -488,9 +488,18 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         predictions = decoder_output.sample_id
-        logits = decoder_output.rnn_output
+        seq_len_diff = self.max_sequence_length - predictions.shape[1]
+        if seq_len_diff > 0:
+            predictions = tf.pad(
+                predictions,
+                [[0, 0], [0, seq_len_diff]]
+            )
+        logits = tf.pad(
+            decoder_output.rnn_output,
+            [[0, 0], [0, seq_len_diff], [0, 0]]
+        )
         if training:
-            lengths = decoder_lengths
+            lengths = tf.tile([self.max_sequence_length], [batch_size])
         else:
             non_pad_token = tf.not_equal(predictions, PAD_TOKEN)
             lengths = tf.reduce_sum(tf.cast(non_pad_token, dtype=tf.int32),
