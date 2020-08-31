@@ -155,7 +155,7 @@ class GPT2Encoder(Layer):
         return {'encoder_output': hidden}
 
 
-"""class TransformerXLEncoder(Layer):
+class TransformerXLEncoder(Layer):
 
     fixed_preprocessing_parameters = {
         'pretrained_model_name_or_path': 'feature.pretrained_model_name_or_path',
@@ -189,7 +189,7 @@ class GPT2Encoder(Layer):
         hidden = transformer_outputs[0]
 
         hidden = self.reduce_sequence(hidden, self.reduce_output)
-        return {'encoder_output': hidden}"""
+        return {'encoder_output': hidden}
 
 
 class XLNetEncoder(Layer):
@@ -593,8 +593,9 @@ class FlauBERTEncoder(Layer):
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
 
+
     def call(self, inputs, training=None, mask=None):
-        transformer_outputs = self.transformer.forward({
+        transformer_outputs = self.transformer({
             'input_ids' : inputs, 
             'training' : training,
             'attention_mask' : mask,
@@ -658,6 +659,7 @@ class AutoTransformerEncoder(Layer):
             reduce_output='sum',
             trainable=False,
             num_tokens = None,
+            pooler_output = None,
             **kwargs
     ):
         super(AutoTransformerEncoder, self).__init__()
@@ -669,6 +671,7 @@ class AutoTransformerEncoder(Layer):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
+        self.pooler_output_idx = pooler_output
 
     def call(self, inputs, training=None, mask=None):
         transformer_outputs = self.transformer({
@@ -677,11 +680,11 @@ class AutoTransformerEncoder(Layer):
             "attention_mask" : mask,
             "token_type_ids" : tf.zeros_like(inputs)
         })
-        if self.reduce_output == 'cls_pooled':
+        if self.reduce_output == 'cls_pooled' and self.pooler_output_idx is not None:
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
             # the BERT base class call() function
-            hidden = transformer_outputs[1]
+            hidden = transformer_outputs[self.pooler_output_idx]
         else:
             hidden = transformer_outputs[0]
             hidden = self.reduce_sequence(hidden, self.reduce_output)

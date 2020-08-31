@@ -312,7 +312,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         'albert': ALBERTEncoder,
         't5': T5Encoder,
         'xlmroberta': XLMRoBERTaEncoder,
-        'flaubert': FlauBERTEncoder,
+        #'flaubert': FlauBERTEncoder,
         'electra': ELECTRAEncoder,
         'auto_transformer': AutoTransformerEncoder,
         **SequenceInputFeature.encoder_registry
