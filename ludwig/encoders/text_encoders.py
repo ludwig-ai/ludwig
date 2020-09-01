@@ -18,11 +18,11 @@ import logging
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
-from transformers import TFBertModel, TFOpenAIGPTModel, TFGPT2Model, \
+"""from transformers import TFBertModel, TFOpenAIGPTModel, TFGPT2Model, \
     TFTransfoXLModel, TFXLNetModel, TFXLMModel, \
     TFRobertaModel, TFDistilBertModel, TFCTRLModel, TFCamembertModel, \
     TFAlbertModel, TFT5Model, TFXLMRobertaModel, \
-    TFFlaubertModel, TFElectraModel, TFAutoModel
+    TFFlaubertModel, TFElectraModel, TFAutoModel"""
 
 
 from ludwig.modules.reduction_modules import SequenceReducer
