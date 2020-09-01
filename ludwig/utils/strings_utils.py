@@ -21,7 +21,6 @@ from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
-from transformers import AutoTokenizer
 
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
@@ -35,7 +34,6 @@ SPLIT_REGEX = re.compile(r'\s+')
 SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
-
 
 def make_safe_filename(s):
     def safe_char(c):
@@ -194,6 +192,7 @@ def _get_sequence_vector(
     unit_sequence = tokenizer(
         sequence.lower() if lowercase else sequence
     )
+
     unit_indices_vector = np.empty(len(unit_sequence), dtype=format_dtype)
     for i in range(len(unit_sequence)):
         curr_unit = unit_sequence[i]
@@ -1160,6 +1159,8 @@ class HFTokenizer(BaseTokenizer):
                  **kwargs
                  ):
         super().__init__()
+        from transformers import AutoTokenizer 
+
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
         )
