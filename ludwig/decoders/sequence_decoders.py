@@ -352,9 +352,10 @@ class SequenceGeneratorDecoder(Layer):
         encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # ================ predictions =================
-        # decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
+        decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
         start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
         end_token = self.END_SYMBOL
+        decoder_inp_emb = self.decoder_embedding(decoder_input)
 
         # code sequence based on example found here
         # https://www.tensorflow.org/addons/api_docs/python/tfa/seq2seq/BeamSearchDecoder
@@ -416,7 +417,17 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         predictions = decoder_output.beam_search_decoder_output.predicted_ids[:, :, 0]
-        logits = decoder_output.beam_search_decoder_output.scores[:, :, 0, :]
+        seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
+        if seq_len_diff > 0:
+            predictions = tf.pad(
+                predictions,
+                [[0, 0], [0, seq_len_diff]]
+            )
+
+        logits = tf.pad(
+            decoder_output.beam_search_decoder_output.scores[:, :, 0, :],
+            [[0, 0], [0, seq_len_diff], [0, 0]]
+        )
         lengths = decoder_lengths[:, 0]
 
         last_predictions = tf.gather_nd(
@@ -430,6 +441,15 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         probabilities = tf.nn.softmax(logits)
+
+        # mask logits
+        mask = tf.sequence_mask(
+            lengths,
+            maxlen=tf.shape(logits)[1],
+            dtype=tf.float32
+        )
+
+        logits = logits * mask[:, :, tf.newaxis]
 
         return logits, lengths, predictions, last_predictions, probabilities
 
