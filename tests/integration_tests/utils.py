@@ -46,6 +46,7 @@ HF_ENCODERS = [
     'albert',
     't5',
     'xlmroberta',
+    'longformer'
     #'flaubert',
     'electra',
 ]

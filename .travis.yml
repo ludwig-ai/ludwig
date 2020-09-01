@@ -11,4 +11,4 @@ install:
   - python -m pip install -U pip
   - HOROVOD_WITH_TENSORFLOW=1 HOROVOD_WITHOUT_MPI=1 HOROVOD_WITHOUT_PYTORCH=1 HOROVOD_WITHOUT_MXNET=1 pip install --no-cache-dir '.[test]'
 script:
-  - pytest -v tests/integration_tests/test_contrib_wandb.py
+  - pytest -v tests

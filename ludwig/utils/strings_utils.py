@@ -21,7 +21,6 @@ from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
-#from transformers import AutoTokenizer
 
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
@@ -35,7 +34,6 @@ SPLIT_REGEX = re.compile(r'\s+')
 SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
-
 
 def make_safe_filename(s):
     def safe_char(c):
@@ -1158,14 +1156,14 @@ class MultiLemmatizeRemoveStopwordsTokenizer(BaseTokenizer):
 class HFTokenizer(BaseTokenizer):
     def __init__(self,
                  pretrained_model_name_or_path,
-                 #pad_token = '<PAD>',
                  **kwargs
                  ):
         super().__init__()
+        from transformers import AutoTokenizer 
+
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
         )
-        #self.tokenizer.add_special_tokens({'pad_token': pad_token})
 
     def __call__(self, text):
         return self.tokenizer.encode(text)

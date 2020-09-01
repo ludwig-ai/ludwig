@@ -314,6 +314,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         'xlmroberta': XLMRoBERTaEncoder,
         #'flaubert': FlauBERTEncoder,
         'electra': ELECTRAEncoder,
+        'longformer' : LongformerEncoder
         'auto_transformer': AutoTransformerEncoder,
         **SequenceInputFeature.encoder_registry
     }
