@@ -21,7 +21,7 @@ from abc import abstractmethod
 from collections import Counter
 
 import numpy as np
-from transformers import AutoTokenizer
+#from transformers import AutoTokenizer
 
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.misc_utils import get_from_registry
