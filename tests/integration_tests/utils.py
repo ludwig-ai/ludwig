@@ -32,6 +32,25 @@ ENCODERS = [
     'stacked_cnn'
 ]
 
+HF_ENCODERS = [
+    'bert',
+    'gpt',
+    'gpt2',
+    #'transformer_xl',
+    'xlnet',
+    'xlm',
+    'roberta',
+    'distilbert',
+    'ctrl',
+    'camembert',
+    'albert',
+    't5',
+    'xlmroberta',
+    'longformer',
+    #'flaubert',
+    'electra',
+]
+
 
 def generate_data(
         input_features,
@@ -312,7 +331,7 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
 
     # generate list of dependencies with real feature names
     generated_dependencies = [feature_names[feat_name][1]
-                                for feat_name in dependencies]
+                              for feat_name in dependencies]
 
     # specify dependencies for the main_feature
     output_features[feature_names[main_feature][0]]['dependencies'] = \
@@ -341,4 +360,5 @@ def spawn(fn):
         p.join()
         results = queue.get()
         return results
+
     return wrapped_fn

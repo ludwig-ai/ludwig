@@ -67,7 +67,6 @@ InputFeatureOptions = namedtuple('InputFeatureOptions',
     ]
 )
 def test_tied_micro_level(input_feature_options):
-
     # build input feature definition
     input_feature_definitions = []
 
@@ -76,14 +75,16 @@ def test_tied_micro_level(input_feature_options):
         'type': input_feature_options.feature_type
     })
     if input_feature_options.feature_options is not None:
-        input_feature_definitions[0].update(input_feature_options.feature_options)
+        input_feature_definitions[0].update(
+            input_feature_options.feature_options)
 
     input_feature_definitions.append({
         'name': 'input_feature_2',
         'type': input_feature_options.feature_type
     })
     if input_feature_options.feature_options is not None:
-        input_feature_definitions[1].update(input_feature_options.feature_options)
+        input_feature_definitions[1].update(
+            input_feature_options.feature_options)
 
     # add tied option to the second feature
     if input_feature_options.tie_features:
@@ -94,7 +95,7 @@ def test_tied_micro_level(input_feature_options):
     if input_feature_options.tie_features:
         # should be same encoder
         assert input_features['input_feature_1'].encoder_obj is \
-            input_features['input_feature_2'].encoder_obj
+               input_features['input_feature_2'].encoder_obj
     else:
         # no tied parameter, encoders should be different
         assert input_features['input_feature_1'].encoder_obj is not \
@@ -106,6 +107,7 @@ def test_tied_micro_level(input_feature_options):
 # output_feature: Ludwig synthetic data creation function
 TiedUseCase = namedtuple('TiedUseCase', 'input_feature output_feature')
 
+
 # Macro level test ensures no exceptions are raised during a full_experiment()
 @pytest.mark.parametrize(
     'tied_use_case',
@@ -116,11 +118,10 @@ TiedUseCase = namedtuple('TiedUseCase', 'input_feature output_feature')
     ]
 )
 def test_tied_macro_level(tied_use_case, csv_filename):
-
     input_features = [
         numerical_feature(),  # Other feature
         tied_use_case.input_feature(),  # first feature to be tied
-        tied_use_case.input_feature(),   # second feature to be tied
+        tied_use_case.input_feature(),  # second feature to be tied
         category_feature()  # other feature
     ]
     # tie second feature to first feature

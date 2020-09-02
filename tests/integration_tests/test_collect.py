@@ -93,12 +93,14 @@ def test_collect_weights(csv_filename):
 
         tf.keras.backend.reset_uids()
         with tempfile.TemporaryDirectory() as output_directory:
-            filenames = collect_weights(model_path, tensor_names, output_directory)
+            filenames = collect_weights(model_path, tensor_names,
+                                        output_directory)
             assert len(filenames) == 3
 
             for weight, filename in zip(weights, filenames):
                 saved_weight = np.load(filename)
-                assert np.allclose(weight.numpy(), saved_weight, rtol=1.e-4), filename
+                assert np.allclose(weight.numpy(), saved_weight,
+                                   rtol=1.e-4), filename
     finally:
         if model and model.exp_dir_name:
             shutil.rmtree(model.exp_dir_name, ignore_errors=True)
