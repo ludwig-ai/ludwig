@@ -621,14 +621,13 @@ class T5Encoder(Layer):
         self.transformer.resize_token_embeddings(num_tokens)
 
     def call(self, inputs, training=None, mask=None):
-
-        transformer_outputs = self.transformer({
-            'inputs' : inputs, 
-            'decoder_input_ids' : inputs,
-            'training' : training,
-            'attention_mask' : mask,
-            'token_type_ids' : tf.zeros_like(inputs)
-        })
+        transformer_outputs = self.transformer(
+            inputs, 
+            decoder_input_ids = inputs,
+            training=training,
+            attention_mask=mask,
+            token_type_ids=tf.zeros_like(inputs)
+        )
         hidden = transformer_outputs[0][:, 0:-1, :] # [sent] + [eos token]
         hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
