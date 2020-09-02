@@ -434,7 +434,7 @@ class SequenceGeneratorDecoder(Layer):
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 1, 0)],
+                 tf.maximum(lengths - 2, 0)], # convert lengths to offset for last
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)
@@ -535,7 +535,7 @@ class SequenceGeneratorDecoder(Layer):
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 1, 0)],
+                 tf.maximum(lengths - 2, 0)],  # convert lengths to offset for last
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)
