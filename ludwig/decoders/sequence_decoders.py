@@ -590,6 +590,7 @@ class SequenceGeneratorDecoder(Layer):
 
         return {
             PREDICTIONS: preds,
+            LENGTHS: lengths,
             LAST_PREDICTIONS: last_preds,
             PROBABILITIES: probs,
             LOGITS: logits
