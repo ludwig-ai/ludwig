@@ -405,12 +405,13 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
+            lengths = result[LENGTHS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token]
                      if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
-                     for token in pred]
-                    for pred in preds
+                     for token in [pred[i] for i in range(length)]]
+                    for pred, length in [(preds[j], lengths[j]) for j in range(len(preds))]
                 ]
             else:
                 postprocessed[PREDICTIONS] = preds
