@@ -57,10 +57,14 @@ class ECD(tf.keras.Model):
             input_feature_name: input_feature.create_input()
             for input_feature_name, input_feature in self.input_features.items()
         }
+
+        if not training:
+            return inputs
+
         targets = {
             output_feature_name: output_feature.create_input()
             for output_feature_name, output_feature in self.output_features.items()
-        } if training else None
+        }
         return inputs, targets
 
     def get_connected_model(self, training=True, inputs=None):
