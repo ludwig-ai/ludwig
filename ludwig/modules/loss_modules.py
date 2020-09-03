@@ -162,9 +162,10 @@ class SequenceLoss(tf.keras.losses.Loss):
 
         longest_sequence_length = tf.maximum(sequence_length_2D(y_true_tensor),
                                              sequence_length_3D(y_pred_tensor))
-        longest_sequence_length += 1  # for EOS
         longest_sequence_length = tf.minimum(longest_sequence_length,
-                                             tf.shape(y_true_tensor)[1])
+                                             sequence_length_2D(y_true_tensor))
+        longest_sequence_length += 2  # for EOS
+
         mask = tf.sequence_mask(
             longest_sequence_length - 1,  # adjust for only one <PAD> token
             maxlen=tf.shape(y_true_tensor)[1],
