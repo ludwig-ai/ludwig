@@ -711,6 +711,7 @@ class SequenceTaggerDecoder(Layer):
 
         return {
             PREDICTIONS: predictions,
+            LENGTHS: input_sequence_lengths,
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
             LOGITS: logits
