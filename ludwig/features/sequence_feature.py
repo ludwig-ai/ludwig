@@ -144,7 +144,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
-        encoder_output[LENGTHS] = lengths
+
         return encoder_output
 
     def get_input_dtype(self):
