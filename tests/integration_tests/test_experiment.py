@@ -25,14 +25,16 @@ from ludwig.experiment import full_experiment
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
-from tests.integration_tests.utils import ENCODERS, HF_ENCODERS
+from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
+    HF_ENCODERS_SHORT
 from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import date_feature
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import generate_output_features_with_dependencies
+from tests.integration_tests.utils import \
+    generate_output_features_with_dependencies
 from tests.integration_tests.utils import h3_feature
 from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
@@ -47,9 +49,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-@pytest.mark.parametrize('encoder', ENCODERS)
-def test_experiment_text_feature_nonHF(encoder, csv_filename):
 
+@pytest.mark.parametrize('encoder', ENCODERS)
+def test_experiment_text_feature_non_HF(encoder, csv_filename):
     input_features = [
         text_feature(
             vocab_size=30,
@@ -64,7 +66,8 @@ def test_experiment_text_feature_nonHF(encoder, csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
 
-@pytest.mark.parametrize('encoder', HF_ENCODERS)
+
+@pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
 def test_experiment_text_feature_HF(encoder, csv_filename):
     input_features = [
         text_feature(
@@ -79,6 +82,12 @@ def test_experiment_text_feature_HF(encoder, csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(input_features, output_features, data_csv=rel_path)
+
+
+# Commented out because very slow
+@pytest.mark.parametrize('encoder', HF_ENCODERS)
+def _test_experiment_text_feature_HF(encoder, csv_filename):
+    return test_experiment_text_feature_HF(encoder, csv_filename)
 
 
 def test_experiment_seq_seq(csv_filename):
@@ -198,7 +207,8 @@ def test_experiment_multi_input_intent_classification(csv_filename):
         # Generator decoder and reduce_input = None
         [
             category_feature(vocab_size=2, reduce_input='sum'),
-            sequence_feature(max_len=5, decoder='generator', reduce_input=None),
+            sequence_feature(max_len=5, decoder='generator',
+                             reduce_input=None),
             numerical_feature(normalization='minmax')
         ],
 
@@ -206,10 +216,12 @@ def test_experiment_multi_input_intent_classification(csv_filename):
         generate_output_features_with_dependencies('feat3', ['feat1']),
 
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies('feat3', ['feat1', 'feat2']),
+        generate_output_features_with_dependencies('feat3',
+                                                   ['feat1', 'feat2']),
 
         # output features with dependencies multiple dependencies
-        generate_output_features_with_dependencies('feat2', ['feat1', 'feat3']),
+        generate_output_features_with_dependencies('feat2',
+                                                   ['feat1', 'feat3']),
 
         # output features with dependencies
         generate_output_features_with_dependencies('feat1', ['feat2'])

@@ -32,11 +32,13 @@ ENCODERS = [
     'stacked_cnn'
 ]
 
+HF_ENCODERS_SHORT = ['distilbert']
+
 HF_ENCODERS = [
     'bert',
     'gpt',
     'gpt2',
-    #'transformer_xl',
+    # 'transformer_xl',
     'xlnet',
     'xlm',
     'roberta',
@@ -47,7 +49,7 @@ HF_ENCODERS = [
     't5',
     'xlmroberta',
     'longformer',
-    #'flaubert',
+    # 'flaubert',
     'electra',
 ]
 
@@ -315,10 +317,10 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     #  generate_output_features_with_dependencies('feat2', ['feat1', 'feat3'])
 
     output_features = [
-            category_feature(vocab_size=2, reduce_input='sum'),
-            sequence_feature(vocab_size=10, max_len=5),
-            numerical_feature()
-        ]
+        category_feature(vocab_size=2, reduce_input='sum'),
+        sequence_feature(vocab_size=10, max_len=5),
+        numerical_feature()
+    ]
 
     # value portion of dictionary is a tuple: (position, feature_name)
     #   position: location of output feature in the above output_features list
