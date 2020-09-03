@@ -78,6 +78,7 @@ class ECD(tf.keras.Model):
         # parameter (inputs, targets) where
         #   inputs is a dict feature_name -> tensor/ndarray
         #   targets is dict feature_name -> tensor/ndarray
+
         if isinstance(inputs, tuple):
             inputs, targets = inputs
         else:

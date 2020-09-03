@@ -14,16 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import logging
 import os
 
 import numpy as np
-import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
-from ludwig.encoders.sequence_encoders import BERT
 from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
 from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
@@ -31,6 +28,7 @@ from ludwig.encoders.sequence_encoders import StackedCNN
 from ludwig.encoders.sequence_encoders import StackedCNNRNN
 from ludwig.encoders.sequence_encoders import StackedParallelCNN
 from ludwig.encoders.sequence_encoders import StackedRNN
+from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.globals import is_on_master
@@ -70,13 +68,14 @@ class SequenceFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        idx2str, str2idx, str2freq, max_length = create_vocabulary(
+        idx2str, str2idx, str2freq, max_length, _, _, _ = create_vocabulary(
             column, preprocessing_parameters['tokenizer'],
             lowercase=preprocessing_parameters['lowercase'],
             num_most_frequent=preprocessing_parameters['most_common'],
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
+
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
@@ -103,7 +102,7 @@ class SequenceFeatureMixin(object):
             lowercase=preprocessing_parameters['lowercase'],
             tokenizer_vocab_file=preprocessing_parameters[
                 'vocab_file'
-            ],
+            ]
         )
         return sequence_data
 
@@ -133,6 +132,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
+
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
@@ -141,7 +141,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
         inputs_mask = tf.not_equal(inputs, 0)
-        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
@@ -177,7 +176,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         'rnn': StackedRNN,
         'cnnrnn': StackedCNNRNN,
         'embed': SequenceEmbedEncoder,
-        'bert': BERT,
         'passthrough': SequencePassthroughEncoder,
         'null': SequencePassthroughEncoder,
         'none': SequencePassthroughEncoder,
