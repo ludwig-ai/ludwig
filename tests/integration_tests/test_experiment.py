@@ -19,14 +19,13 @@ import shutil
 
 import pytest
 import yaml
-
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import full_experiment
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import full_predict
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
-    HF_ENCODERS_SHORT
+    HF_ENCODERS_SHORT, slow
 from tests.integration_tests.utils import audio_feature
 from tests.integration_tests.utils import bag_feature
 from tests.integration_tests.utils import binary_feature
@@ -84,9 +83,9 @@ def test_experiment_text_feature_HF(encoder, csv_filename):
     run_experiment(input_features, output_features, data_csv=rel_path)
 
 
-# Commented out because very slow
+@slow
 @pytest.mark.parametrize('encoder', HF_ENCODERS)
-def _test_experiment_text_feature_HF(encoder, csv_filename):
+def test_experiment_text_feature_HF_full(encoder, csv_filename):
     return test_experiment_text_feature_HF(encoder, csv_filename)
 
 
