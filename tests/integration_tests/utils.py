@@ -51,7 +51,7 @@ HF_ENCODERS = [
     't5',
     'xlmroberta',
     'longformer',
-    # 'flaubert',
+    'flaubert',
     'electra',
 ]
 

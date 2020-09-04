@@ -15,10 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import sys
 
 import numpy as np
-
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import *
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -26,9 +24,9 @@ from ludwig.features.sequence_feature import SequenceOutputFeature
 from ludwig.globals import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
+from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
-from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.strings_utils import PADDING_SYMBOL
 from ludwig.utils.strings_utils import UNKNOWN_SYMBOL
 from ludwig.utils.strings_utils import build_sequence_matrix
@@ -302,7 +300,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         'bert': BERTEncoder,
         'gpt': GPTEncoder,
         'gpt2': GPT2Encoder,
-        #'transformer_xl': TransformerXLEncoder,
+        # 'transformer_xl': TransformerXLEncoder,
         'xlnet': XLNetEncoder,
         'xlm': XLMEncoder,
         'roberta': RoBERTaEncoder,
@@ -312,9 +310,9 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         'albert': ALBERTEncoder,
         't5': T5Encoder,
         'xlmroberta': XLMRoBERTaEncoder,
-        #'flaubert': FlauBERTEncoder,
+        'flaubert': FlauBERTEncoder,
         'electra': ELECTRAEncoder,
-        'longformer' : LongformerEncoder,
+        'longformer': LongformerEncoder,
         'auto_transformer': AutoTransformerEncoder,
         **SequenceInputFeature.encoder_registry
     }
