@@ -15,7 +15,7 @@ before_install:
   - sudo apt-get install -y cmake libsndfile1
 install:
   - python -m pip install -U pip
-  - cat requirements.txt | sed '/^tensorflow[>=<]/d' > requirements.txt
+  - cat requirements.txt | sed '/^tensorflow[>=<]/d' > requirements-temp && mv requirements-temp requirements.txt
   - |
     if [ $TENSORFLOW == "nightly" ]; then
       pip install tf-nightly
