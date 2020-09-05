@@ -53,7 +53,7 @@ from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
+from ludwig.utils.horovod_utils import should_use_horovod
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed
 from ludwig.utils.misc_utils import set_random_seed
@@ -863,7 +863,7 @@ class Trainer:
 
     def merge_workers_metrics(self, metrics):
         # gather outputs from all workers
-        all_workers_output_metrics = allgather_object(metrics)
+        all_workers_output_metrics = self._horovod.allgather_object(metrics)
 
         # merge them into a single one
         merged_output_metrics = sum_dicts(

@@ -225,12 +225,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
     def call(
             self,
-            inputs,  # ((hidden, other_output_hidden), target)
+            inputs,  # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
             training=None,
             mask=None
     ):
         # account for output feature target
-        if isinstance(inputs, tuple):
+        if isinstance(inputs[0], tuple):
             local_inputs, target = inputs
         else:
             local_inputs = inputs
