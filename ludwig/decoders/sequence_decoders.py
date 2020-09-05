@@ -719,10 +719,9 @@ class SequenceTaggerDecoder(Layer):
         # mask logits
         mask = tf.sequence_mask(
             input_sequence_lengths,
-            maxlen=logits.shape[1],
+            maxlen=tf.shape(logits)[1],
             dtype=tf.float32
         )
-
         logits = logits * mask[:, :, tf.newaxis]
 
         return {
