@@ -105,7 +105,7 @@ class ECD(tf.keras.Model):
                                         dtype=tf.int32)
                 decoder_inputs = (decoder_inputs, target_to_use)
 
-            decoder_logits, decoder_last_hidden = decoder(
+            decoder_outputs = decoder(
                 decoder_inputs,
                 training=training,
                 mask=mask
