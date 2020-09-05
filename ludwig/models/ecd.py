@@ -105,7 +105,7 @@ class ECD(tf.keras.Model):
                 # doing prediction
                 target_to_use = None
 
-            decoder_logits, decoder_last_hidden = decoder(
+            decoder_outputs = decoder(
                 (
                     (combiner_outputs, copy.copy(output_last_hidden)),
                     target_to_use
@@ -113,14 +113,21 @@ class ECD(tf.keras.Model):
                 training=training,
                 mask=mask
             )
-            output_logits[output_feature_name] = {}
-            output_logits[output_feature_name][LOGITS] = decoder_logits
-            output_logits[output_feature_name][
-                LAST_HIDDEN] = decoder_last_hidden
-            if LENGTHS in combiner_outputs:
-                output_logits[output_feature_name][LENGTHS] = \
-                    combiner_outputs[LENGTHS]
-            output_last_hidden[output_feature_name] = decoder_last_hidden
+            output_logits[output_feature_name] = decoder_outputs
+            # output_logits[output_feature_name][LOGITS] = decoder_logits
+            # output_logits[output_feature_name][
+            #    LAST_HIDDEN] = decoder_last_hidden
+
+            # todo Piero: not sure this is needed,
+            #  if combiner had lengths and the decoder wants to return them
+            #  the decoder should do it, otherwise
+            #  this can override the decoder outputs
+            # if LENGTHS in combiner_outputs:
+            #    output_logits[output_feature_name][LENGTHS] = \
+            #        combiner_outputs[LENGTHS]
+
+            output_last_hidden[output_feature_name] = decoder_outputs[
+                'last_hidden']
 
         return output_logits
 
@@ -156,12 +163,12 @@ class ECD(tf.keras.Model):
                 "of output features"
             )
 
-        logits = self.call(inputs, training=False)
+        outputs = self.call(inputs, training=False)
 
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                logits[of_name],
+                outputs[of_name],
                 training=False
             )
 
@@ -171,9 +178,9 @@ class ECD(tf.keras.Model):
     def train_step(self, optimizer, inputs, targets,
                    regularization_lambda=0.0):
         with tf.GradientTape() as tape:
-            logits = self((inputs, targets), training=True)
+            model_outputs = self((inputs, targets), training=True)
             loss, all_losses = self.train_loss(
-                targets, logits, regularization_lambda
+                targets, model_outputs, regularization_lambda
             )
         optimizer.minimize_with_tape(
             tape, loss, self.trainable_variables

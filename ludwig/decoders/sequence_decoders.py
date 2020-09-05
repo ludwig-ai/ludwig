@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
@@ -333,12 +332,21 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         logits = outputs.rnn_output
-        mask = tf.sequence_mask(
-            generated_sequence_lengths,
-            maxlen=logits.shape[1],
-            dtype=tf.float32
+        # mask = tf.sequence_mask(
+        #    generated_sequence_lengths,
+        #    maxlen=tf.shape(logits)[1],
+        #    dtype=tf.float32
+        # )
+        # logits = logits * mask[:, :, tf.newaxis]
+
+        # append a trailing 0, useful for
+        # those datapoints that reach maximum length
+        # and don't have a eos at the end
+        logits = tf.pad(
+            logits,
+            [[0, 0], [0, 1], [0, 0]]
         )
-        logits = logits * mask[:, :, tf.newaxis]
+
         return logits  # , outputs, final_state, generated_sequence_lengths
 
     def decoder_beam_search(
@@ -434,7 +442,7 @@ class SequenceGeneratorDecoder(Layer):
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 2, 0)], # convert lengths to offset for last
+                 tf.maximum(lengths - 1, 0)],
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)
@@ -443,12 +451,15 @@ class SequenceGeneratorDecoder(Layer):
         probabilities = tf.nn.softmax(logits)
 
         # mask logits
+        # Note Piero: in greedy and in teacher forcing we don't need
+        # to mask logits, but here the scores returned
+        # by the beam search decoder are extremely low,
+        # so the eval loss end up being inf, so we need to mask
         mask = tf.sequence_mask(
             lengths,
             maxlen=tf.shape(logits)[1],
             dtype=tf.float32
         )
-
         logits = logits * mask[:, :, tf.newaxis]
 
         return logits, lengths, predictions, last_predictions, probabilities
@@ -518,7 +529,9 @@ class SequenceGeneratorDecoder(Layer):
             decoder_output.rnn_output,
             [[0, 0], [0, seq_len_diff], [0, 0]]
         )
-        lengths = decoder_lengths
+
+        # -1 because they include the EOS symbol
+        lengths = decoder_lengths - 1
 
         probabilities = tf.nn.softmax(
             logits,
@@ -535,33 +548,30 @@ class SequenceGeneratorDecoder(Layer):
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 2, 0)],  # convert lengths to offset for last
+                 tf.maximum(lengths - 1, 0)],  # -1 because of EOS
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)
         )
 
         # mask logits
-        mask = tf.sequence_mask(
-            lengths,
-            maxlen=tf.shape(logits)[1],
-            dtype=tf.float32
-        )
-
-        logits = logits * mask[:, :, tf.newaxis]
+        # mask = tf.sequence_mask(
+        #     lengths,
+        #     maxlen=tf.shape(logits)[1],
+        #     dtype=tf.float32
+        # )
+        # logits = logits * mask[:, :, tf.newaxis]
 
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
         # shape [batch_size, seq_size, state_size]
-        encoder_output = inputs[LOGITS]['hidden']
+        encoder_output = inputs['hidden']
         # form dependent on cell_type
         # lstm: list([batch_size, state_size], [batch_size, state_size])
         # rnn, gru: [batch_size, state_size]
-        encoder_output_state = self.prepare_encoder_output_state(
-            inputs[LOGITS]
-        )
+        encoder_output_state = self.prepare_encoder_output_state(inputs)
 
         if self.beam_width > 1:
             decoder_outputs = self.decoder_beam_search(
@@ -653,7 +663,11 @@ class SequenceTaggerDecoder(Layer):
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)
 
-        return logits  # logits shape [batch_size, sequence_length, num_classes]
+        return {
+            LOGITS: logits,
+            # logits shape [batch_size, sequence_length, num_classes]
+            LENGTHS: inputs[LENGTHS]
+        }
 
     def _logits_training(
             self,
@@ -670,9 +684,11 @@ class SequenceTaggerDecoder(Layer):
             inputs,  # encoder_output, encoder_output_state, lengths
             training=None
     ):
-        logits = self.call(inputs, training=training)
+        outputs = self.call(inputs, training=training)
+        logits = outputs[LOGITS]
+        input_sequence_lengths = inputs[
+            LENGTHS]  # retrieve input sequence length
 
-        input_sequence_lengths = inputs[LENGTHS]  # retrieve input sequence length
         probabilities = tf.nn.softmax(
             logits,
             name='probabilities_{}'.format(self.name)
