@@ -97,13 +97,13 @@ class ECD(tf.keras.Model):
         output_logits = {}
         output_last_hidden = {}
         for output_feature_name, decoder in self.output_features.items():
-            # use presence or absence of targets to signal training or prediction
+            # use presence or absence of targets
+            # to signal training or prediction
             decoder_inputs = (combiner_outputs, copy.copy(output_last_hidden))
             if targets is not None:
-                # targets are only used during training, during prediction they are omitted
-                target_to_use = tf.cast(targets[output_feature_name],
-                                        dtype=tf.int32)
-                decoder_inputs = (decoder_inputs, target_to_use)
+                # targets are only used during training,
+                # during prediction they are omitted
+                decoder_inputs = (decoder_inputs, targets[output_feature_name])
 
             decoder_outputs = decoder(
                 decoder_inputs,
