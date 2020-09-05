@@ -18,7 +18,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 
 from ludwig.constants import *
-from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
+from ludwig.utils.tf_utils import sequence_length_2D
 
 
 class BWCEWLoss(tf.keras.losses.Loss):
@@ -149,25 +149,28 @@ class SequenceLoss(tf.keras.losses.Loss):
         y_pred_tensor = y_pred[LOGITS]
         y_true_tensor = tf.cast(y_true, dtype=tf.int64)
 
-        # pad the shorter sequence
-        y_pred_seq_len = tf.shape(y_pred_tensor)[1]
-        y_true_seq_len = tf.shape(y_true_tensor)[1]
+        # pad the shorter sequence (tensor shape 1)
+        y_pred_tensor_len = tf.shape(y_pred_tensor)[1]
+        y_true_tensor_len = tf.shape(y_true_tensor)[1]
 
-        y_pred_pad_len = tf.maximum(0, y_true_seq_len - y_pred_seq_len)
-        y_true_pad_len = tf.maximum(0, y_pred_seq_len - y_true_seq_len)
+        y_pred_pad_len = tf.maximum(0, y_true_tensor_len - y_pred_tensor_len)
+        y_true_pad_len = tf.maximum(0, y_pred_tensor_len - y_true_tensor_len)
 
         y_pred_tensor = tf.pad(y_pred_tensor,
                                [[0, 0], [0, y_pred_pad_len], [0, 0]])
         y_true_tensor = tf.pad(y_true_tensor, [[0, 0], [0, y_true_pad_len]])
 
-        longest_sequence_length = tf.maximum(sequence_length_2D(y_true_tensor),
-                                             sequence_length_3D(y_pred_tensor))
-        longest_sequence_length = tf.minimum(longest_sequence_length,
-                                             sequence_length_2D(y_true_tensor))
-        longest_sequence_length += 2  # for EOS
+        y_true_seq_len = sequence_length_2D(y_true_tensor)
+        # longest_sequence_length = tf.maximum(y_true_seq_len,
+        #                                     sequence_length_3D(y_pred_tensor))
+        # longest_sequence_length = tf.minimum(longest_sequence_length,
+        #                                     y_true_seq_len)
+        # longest_sequence_length += 2  # for EOS
 
         mask = tf.sequence_mask(
-            longest_sequence_length - 1,  # adjust for only one <PAD> token
+            y_true_seq_len + 1,  # this is for including the eos
+            # in case of generator and shouldn't impact
+            # negatively in case of tagger
             maxlen=tf.shape(y_true_tensor)[1],
             dtype=tf.float32
         )
