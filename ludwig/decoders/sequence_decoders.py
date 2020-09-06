@@ -424,7 +424,7 @@ class SequenceGeneratorDecoder(Layer):
             ),
         )
 
-        predictions = decoder_output.beam_search_decoder_output.predicted_ids[:, :, 0]
+        predictions = decoder_output.predicted_ids[:, :, 0]
         seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
         if seq_len_diff > 0:
             predictions = tf.pad(
@@ -436,7 +436,8 @@ class SequenceGeneratorDecoder(Layer):
             decoder_output.beam_search_decoder_output.scores[:, :, 0, :],
             [[0, 0], [0, seq_len_diff], [0, 0]]
         )
-        lengths = decoder_lengths[:, 0]
+        # -1 because they include pad
+        lengths = decoder_lengths[:, 0] - 1
 
         last_predictions = tf.gather_nd(
             predictions,
