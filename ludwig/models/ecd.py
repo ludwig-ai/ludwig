@@ -5,7 +5,7 @@ from collections import OrderedDict
 import tensorflow as tf
 
 from ludwig.combiners.combiners import get_combiner_class
-from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
+from ludwig.constants import *
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -97,24 +97,34 @@ class ECD(tf.keras.Model):
         output_logits = {}
         output_last_hidden = {}
         for output_feature_name, decoder in self.output_features.items():
-            # use presence or absence of targets to signal training or prediction
+            # use presence or absence of targets
+            # to signal training or prediction
             decoder_inputs = (combiner_outputs, copy.copy(output_last_hidden))
             if targets is not None:
-                # targets are only used during training, during prediction they are omitted
-                target_to_use = tf.cast(targets[output_feature_name],
-                                        dtype=tf.int32)
-                decoder_inputs = (decoder_inputs, target_to_use)
+                # targets are only used during training,
+                # during prediction they are omitted
+                decoder_inputs = (decoder_inputs, targets[output_feature_name])
 
-            decoder_logits, decoder_last_hidden = decoder(
+            decoder_outputs = decoder(
                 decoder_inputs,
                 training=training,
                 mask=mask
             )
-            output_logits[output_feature_name] = {}
-            output_logits[output_feature_name][LOGITS] = decoder_logits
-            output_logits[output_feature_name][
-                LAST_HIDDEN] = decoder_last_hidden
-            output_last_hidden[output_feature_name] = decoder_last_hidden
+            output_logits[output_feature_name] = decoder_outputs
+            # output_logits[output_feature_name][LOGITS] = decoder_logits
+            # output_logits[output_feature_name][
+            #    LAST_HIDDEN] = decoder_last_hidden
+
+            # todo Piero: not sure this is needed,
+            #  if combiner had lengths and the decoder wants to return them
+            #  the decoder should do it, otherwise
+            #  this can override the decoder outputs
+            # if LENGTHS in combiner_outputs:
+            #    output_logits[output_feature_name][LENGTHS] = \
+            #        combiner_outputs[LENGTHS]
+
+            output_last_hidden[output_feature_name] = decoder_outputs[
+                'last_hidden']
 
         return output_logits
 
@@ -150,12 +160,12 @@ class ECD(tf.keras.Model):
                 "of output features"
             )
 
-        logits = self.call(inputs, training=False)
+        outputs = self.call(inputs, training=False)
 
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                logits[of_name],
+                outputs[of_name],
                 training=False
             )
 
@@ -165,9 +175,9 @@ class ECD(tf.keras.Model):
     def train_step(self, optimizer, inputs, targets,
                    regularization_lambda=0.0):
         with tf.GradientTape() as tape:
-            logits = self((inputs, targets), training=True)
+            model_outputs = self((inputs, targets), training=True)
             loss, all_losses = self.train_loss(
-                targets, logits, regularization_lambda
+                targets, model_outputs, regularization_lambda
             )
         optimizer.minimize_with_tape(
             tape, loss, self.trainable_variables

@@ -15,7 +15,6 @@
 # ==============================================================================
 import logging
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras.layers import GRUCell, SimpleRNNCell, LSTMCell
@@ -37,6 +36,8 @@ rnn_layers_registry = {
     'gru': GRUCell,
     'lstm': LSTMCell
 }
+
+PAD_TOKEN = 0
 
 
 class SequenceGeneratorDecoder(Layer):
@@ -331,12 +332,21 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         logits = outputs.rnn_output
-        mask = tf.sequence_mask(
-            generated_sequence_lengths,
-            maxlen=logits.shape[1],
-            dtype=tf.float32
+        # mask = tf.sequence_mask(
+        #    generated_sequence_lengths,
+        #    maxlen=tf.shape(logits)[1],
+        #    dtype=tf.float32
+        # )
+        # logits = logits * mask[:, :, tf.newaxis]
+
+        # append a trailing 0, useful for
+        # those datapoints that reach maximum length
+        # and don't have a eos at the end
+        logits = tf.pad(
+            logits,
+            [[0, 0], [0, 1], [0, 0]]
         )
-        logits = logits * mask[:, :, tf.newaxis]
+
         return logits  # , outputs, final_state, generated_sequence_lengths
 
     def decoder_beam_search(
@@ -350,9 +360,10 @@ class SequenceGeneratorDecoder(Layer):
         encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # ================ predictions =================
-        # decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
+        decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
         start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
         end_token = self.END_SYMBOL
+        decoder_inp_emb = self.decoder_embedding(decoder_input)
 
         # code sequence based on example found here
         # https://www.tensorflow.org/addons/api_docs/python/tfa/seq2seq/BeamSearchDecoder
@@ -414,8 +425,19 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         predictions = decoder_output.predicted_ids[:, :, 0]
-        logits = decoder_output.beam_search_decoder_output.scores[:, :, 0, :]
-        lengths = decoder_lengths[:, 0]
+        seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
+        if seq_len_diff > 0:
+            predictions = tf.pad(
+                predictions,
+                [[0, 0], [0, seq_len_diff]]
+            )
+
+        logits = tf.pad(
+            decoder_output.beam_search_decoder_output.scores[:, :, 0, :],
+            [[0, 0], [0, seq_len_diff], [0, 0]]
+        )
+        # -1 because they include pad
+        lengths = decoder_lengths[:, 0] - 1
 
         last_predictions = tf.gather_nd(
             predictions,
@@ -428,6 +450,18 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         probabilities = tf.nn.softmax(logits)
+
+        # mask logits
+        # Note Piero: in greedy and in teacher forcing we don't need
+        # to mask logits, but here the scores returned
+        # by the beam search decoder are extremely low,
+        # so the eval loss end up being inf, so we need to mask
+        mask = tf.sequence_mask(
+            lengths,
+            maxlen=tf.shape(logits)[1],
+            dtype=tf.float32
+        )
+        logits = logits * mask[:, :, tf.newaxis]
 
         return logits, lengths, predictions, last_predictions, probabilities
 
@@ -486,8 +520,19 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         predictions = decoder_output.sample_id
-        logits = decoder_output.rnn_output
-        lengths = decoder_lengths
+        seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
+        if seq_len_diff > 0:
+            predictions = tf.pad(
+                predictions,
+                [[0, 0], [0, seq_len_diff]]
+            )
+        logits = tf.pad(
+            decoder_output.rnn_output,
+            [[0, 0], [0, seq_len_diff], [0, 0]]
+        )
+
+        # -1 because they include the EOS symbol
+        lengths = decoder_lengths - 1
 
         probabilities = tf.nn.softmax(
             logits,
@@ -504,33 +549,30 @@ class SequenceGeneratorDecoder(Layer):
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 1, 0)],
+                 tf.maximum(lengths - 1, 0)],  # -1 because of EOS
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)
         )
 
         # mask logits
-        mask = tf.sequence_mask(
-            lengths,
-            maxlen=logits.shape[1],
-            dtype=tf.float32
-        )
-
-        logits = logits * mask[:, :, tf.newaxis]
+        # mask = tf.sequence_mask(
+        #     lengths,
+        #     maxlen=tf.shape(logits)[1],
+        #     dtype=tf.float32
+        # )
+        # logits = logits * mask[:, :, tf.newaxis]
 
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
         # shape [batch_size, seq_size, state_size]
-        encoder_output = inputs[LOGITS]['hidden']
+        encoder_output = inputs['hidden']
         # form dependent on cell_type
         # lstm: list([batch_size, state_size], [batch_size, state_size])
         # rnn, gru: [batch_size, state_size]
-        encoder_output_state = self.prepare_encoder_output_state(
-            inputs[LOGITS]
-        )
+        encoder_output_state = self.prepare_encoder_output_state(inputs)
 
         if self.beam_width > 1:
             decoder_outputs = self.decoder_beam_search(
@@ -559,6 +601,7 @@ class SequenceGeneratorDecoder(Layer):
 
         return {
             PREDICTIONS: preds,
+            LENGTHS: lengths,
             LAST_PREDICTIONS: last_preds,
             PROBABILITIES: probs,
             LOGITS: logits
@@ -621,7 +664,11 @@ class SequenceTaggerDecoder(Layer):
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)
 
-        return logits  # logits shape [batch_size, sequence_length, num_classes]
+        return {
+            LOGITS: logits,
+            # logits shape [batch_size, sequence_length, num_classes]
+            LENGTHS: inputs[LENGTHS]
+        }
 
     def _logits_training(
             self,
@@ -635,10 +682,13 @@ class SequenceTaggerDecoder(Layer):
 
     def _predictions_eval(
             self,
-            inputs,  # encoder_output, encoder_output_state
+            inputs,  # encoder_output, encoder_output_state, lengths
             training=None
     ):
-        logits = self.call(inputs, training=training)
+        outputs = self.call(inputs, training=training)
+        logits = outputs[LOGITS]
+        input_sequence_lengths = inputs[
+            LENGTHS]  # retrieve input sequence length
 
         probabilities = tf.nn.softmax(
             logits,
@@ -653,13 +703,13 @@ class SequenceTaggerDecoder(Layer):
         )
 
         # todo tf2: deal with spurious 0s in predictions
-        generated_sequence_lengths = sequence_length_2D(predictions)
+        #generated_sequence_lengths = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
                  tf.maximum(
-                     generated_sequence_lengths - 1,
+                     input_sequence_lengths - 1,  #modified to use input sequence length
                      0
                  )],
                 axis=1
@@ -669,15 +719,15 @@ class SequenceTaggerDecoder(Layer):
 
         # mask logits
         mask = tf.sequence_mask(
-            generated_sequence_lengths,
-            maxlen=logits.shape[1],
+            input_sequence_lengths,
+            maxlen=tf.shape(logits)[1],
             dtype=tf.float32
         )
-
         logits = logits * mask[:, :, tf.newaxis]
 
         return {
             PREDICTIONS: predictions,
+            LENGTHS: input_sequence_lengths,
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
             LOGITS: logits

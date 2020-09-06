@@ -4,12 +4,12 @@ dist: bionic
 language: python
 jobs:
   include:
-  - python: "3.6"
-    env: TENSORFLOW=2.2.0
-  - python: "3.7"
-    env: TENSORFLOW=2.3.0
-  - python: "3.8"
-    env: TENSORFLOW=nightly
+    - python: "3.6"
+      env: TENSORFLOW=2.2.0
+    - python: "3.7"
+      env: TENSORFLOW=2.3.0
+    - python: "3.8"
+      env: TENSORFLOW=nightly
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y cmake libsndfile1

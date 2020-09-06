@@ -75,7 +75,7 @@ class SequenceFeatureMixin(object):
             vocab_file=preprocessing_parameters['vocab_file'],
             unknown_symbol=preprocessing_parameters['unknown_symbol'],
             padding_symbol=preprocessing_parameters['padding_symbol'],
-            
+
         )
         max_length = min(
             preprocessing_parameters['sequence_length_limit'],
@@ -131,8 +131,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
             self.encoder_obj = encoder_obj
         else:
             self.encoder_obj = self.initialize_encoder(feature)
-            
-       
+
+
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
@@ -141,11 +141,11 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
         inputs_mask = tf.not_equal(inputs, 0)
-
+        lengths = tf.reduce_sum(tf.cast(inputs_mask, dtype=tf.int32), axis=1)
         encoder_output = self.encoder_obj(
             inputs_exp, training=training, mask=inputs_mask
         )
-
+        encoder_output[LENGTHS] = lengths
         return encoder_output
 
     def get_input_dtype(self):
@@ -246,7 +246,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
         if training:
             return self.decoder_obj._logits_training(
                 inputs,
-                target=target,
+                target=tf.cast(target, dtype=tf.int32),
                 training=training
             )
         else:
@@ -404,12 +404,13 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
         if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
             preds = result[PREDICTIONS]
+            lengths = result[LENGTHS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][token]
                      if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
-                     for token in pred]
-                    for pred in preds
+                     for token in [pred[i] for i in range(length)]]
+                    for pred, length in [(preds[j], lengths[j]) for j in range(len(preds))]
                 ]
             else:
                 postprocessed[PREDICTIONS] = preds

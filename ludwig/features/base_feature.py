@@ -251,9 +251,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         logits_input = {
             HIDDEN: hidden
         }
+        # pass supplemental data from encoders to decoder
         if 'encoder_output_state' in combiner_outputs:
             logits_input['encoder_output_state'] = \
                 combiner_outputs['encoder_output_state']
+        if LENGTHS in combiner_outputs:
+            logits_input[LENGTHS] = combiner_outputs[LENGTHS]
         logits = self.logits(logits_input, target=target, training=training)
 
         # most of the cases the output of self.logits is a tensor
@@ -262,8 +265,13 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         # The first element will be the logits tensor
         if isinstance(logits, tuple):
             logits = logits[0]
+        if not isinstance(logits, dict):
+            logits = {'logits': logits}
 
-        return logits, hidden
+        return {
+            'last_hidden': hidden,
+            **logits
+        }
 
     @property
     @abstractmethod
