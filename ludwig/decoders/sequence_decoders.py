@@ -413,7 +413,7 @@ class SequenceGeneratorDecoder(Layer):
             ),
         )
 
-        predictions = decoder_output.beam_search_decoder_output.predicted_ids[:, :, 0]
+        predictions = decoder_output.predicted_ids[:, :, 0]
         logits = decoder_output.beam_search_decoder_output.scores[:, :, 0, :]
         lengths = decoder_lengths[:, 0]
 
