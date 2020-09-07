@@ -813,10 +813,11 @@ class Trainer:
                 if of_name not in predictions:
                     predictions[of_name] = {}
                 for pred_name, pred_values in of_preds.items():
-                    if pred_name not in predictions[of_name]:
-                        predictions[of_name][pred_name] = [pred_values]
-                    else:
-                        predictions[of_name][pred_name].append(pred_values)
+                    if pred_values != None:
+                        if pred_name not in predictions[of_name]:
+                            predictions[of_name][pred_name] = [pred_values]
+                        else:
+                            predictions[of_name][pred_name].append(pred_values)
 
             if is_on_master():
                 progress_bar.update(1)

@@ -135,18 +135,22 @@ class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
 
 
 class SequenceLoss(tf.keras.losses.Loss):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name=None, from_logits=True, **kwargs):
         super(SequenceLoss, self).__init__(name=name)
         self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True,
+            from_logits=from_logits,
             reduction='none'
         )
+        self.from_logits = from_logits
 
     def call(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
         # y_pred: shape [batch_size, sequence_size, num_classes]
 
-        y_pred_tensor = y_pred[LOGITS]
+        if self.from_logits:
+            y_pred_tensor = y_pred[LOGITS]
+        else:
+            y_pred_tensor = y_pred[PROBABILITIES]
         y_true_tensor = tf.cast(y_true, dtype=tf.int64)
 
         # pad the shorter sequence (tensor shape 1)

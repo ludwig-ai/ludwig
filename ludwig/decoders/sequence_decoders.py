@@ -475,7 +475,7 @@ class SequenceGeneratorDecoder(Layer):
             tf.concat([tf.shape(all_log_probs)[0], tf.shape(all_log_probs)[1],
                        tf.shape(all_log_probs)[3]], axis=0)
         )
-        probs = tf.exp(log_probs)
+        probabilities = tf.exp(log_probs)
 
         seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
         if seq_len_diff > 0:
@@ -486,10 +486,11 @@ class SequenceGeneratorDecoder(Layer):
 
         # todo Piero, from here on it is wrong,
         #  those are not logits but probs, treat them as such
-        logits = tf.pad(
-            probs,
-            [[0, 0], [0, seq_len_diff], [0, 0]]
-        )
+        # logits = tf.pad(
+        #    probs,
+        #    [[0, 0], [0, seq_len_diff], [0, 0]]
+        # )
+
         # -1 because they include pad
         lengths = decoder_lengths[:, 0] - 1
 
@@ -503,21 +504,19 @@ class SequenceGeneratorDecoder(Layer):
             name='last_predictions_{}'.format(self.name)
         )
 
-        probabilities = probs
-
         # mask logits
         # Note Piero: in greedy and in teacher forcing we don't need
         # to mask logits, but here the scores returned
         # by the beam search decoder are extremely low,
         # so the eval loss end up being inf, so we need to mask
-        mask = tf.sequence_mask(
-            lengths,
-            maxlen=tf.shape(logits)[1],
-            dtype=tf.float32
-        )
-        logits = logits * mask[:, :, tf.newaxis]
+        # mask = tf.sequence_mask(
+        #    lengths,
+        #    maxlen=tf.shape(logits)[1],
+        #    dtype=tf.float32
+        # )
+        # logits = logits * mask[:, :, tf.newaxis]
 
-        return logits, lengths, predictions, last_predictions, probabilities
+        return None, lengths, predictions, last_predictions, probabilities
 
     def decoder_greedy(
             self,
