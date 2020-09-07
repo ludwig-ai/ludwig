@@ -506,8 +506,8 @@ class SequenceGeneratorDecoder(Layer):
         # the size of the output vocabulary
         log_probs = tf.reshape(
             log_probs_to_reshape,
-            tf.concat([tf.shape(all_log_probs)[0], tf.shape(all_log_probs)[1],
-                       tf.shape(all_log_probs)[3]], axis=0)
+            tf.stack([tf.shape(all_log_probs)[0], tf.shape(all_log_probs)[1],
+                      tf.shape(all_log_probs)[3]], axis=0)
         )
         # as they are log probs, exponentiating them return probabilities
         probabilities = tf.exp(log_probs)
