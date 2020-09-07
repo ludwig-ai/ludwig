@@ -425,6 +425,58 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         predictions = decoder_output.predicted_ids[:, :, 0]
+
+        # get logits
+        all_log_probs = decoder_output.beam_search_decoder_output.scores
+        top_ids = decoder_output.beam_search_decoder_output.predicted_ids
+        parent_rows = decoder_output.beam_search_decoder_output.parent_ids
+
+        tiled_predictions = tf.tile(tf.expand_dims(predictions, -1),
+                                    [1, 1, self.beam_width])
+
+        preds_locs_bool = tf.equal(tiled_predictions, top_ids)
+        preds_locs_all = tf.where(preds_locs_bool)
+        segments = ((preds_locs_all[:, 0] *
+                     tf.cast(tf.shape(predictions)[-1], tf.int64)) +
+                    preds_locs_all[:, 1])
+        preds_locs = tf.math.segment_min(
+            preds_locs_all[:, 2], segments
+        )
+
+        xs = tf.repeat(
+            tf.range(tf.shape(parent_rows)[0], dtype=tf.int64),
+            tf.repeat(
+                tf.shape(parent_rows)[1], tf.shape(parent_rows)[0])
+        )
+        ys = tf.tile(tf.range(tf.shape(parent_rows)[1], dtype=tf.int64),
+                     tf.shape(parent_rows)[0:1])
+        preds_locs_for_gather = tf.concat(
+            [xs[:, tf.newaxis], ys[:, tf.newaxis], preds_locs[:, tf.newaxis]],
+            axis=-1
+        )
+
+        rows_from_log_probs_to_select = tf.gather_nd(
+            parent_rows,
+            preds_locs_for_gather
+        )
+        rows_from_log_probs_for_gather = tf.concat(
+            [xs[:, tf.newaxis], ys[:, tf.newaxis],
+             tf.cast(rows_from_log_probs_to_select[:, tf.newaxis],
+                     dtype=tf.int64)],
+            axis=-1
+        )
+
+        log_probs_to_reshape = tf.gather_nd(
+            all_log_probs,
+            rows_from_log_probs_for_gather
+        )
+        log_probs = tf.reshape(
+            log_probs_to_reshape,
+            tf.concat([tf.shape(all_log_probs)[0], tf.shape(all_log_probs)[1],
+                       tf.shape(all_log_probs)[3]], axis=0)
+        )
+        probs = tf.exp(log_probs)
+
         seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
         if seq_len_diff > 0:
             predictions = tf.pad(
@@ -432,8 +484,10 @@ class SequenceGeneratorDecoder(Layer):
                 [[0, 0], [0, seq_len_diff]]
             )
 
+        # todo Piero, from here on it is wrong,
+        #  those are not logits but probs, treat them as such
         logits = tf.pad(
-            decoder_output.beam_search_decoder_output.scores[:, :, 0, :],
+            probs,
             [[0, 0], [0, seq_len_diff], [0, 0]]
         )
         # -1 because they include pad
@@ -449,7 +503,7 @@ class SequenceGeneratorDecoder(Layer):
             name='last_predictions_{}'.format(self.name)
         )
 
-        probabilities = tf.nn.softmax(logits)
+        probabilities = probs
 
         # mask logits
         # Note Piero: in greedy and in teacher forcing we don't need
@@ -703,13 +757,14 @@ class SequenceTaggerDecoder(Layer):
         )
 
         # todo tf2: deal with spurious 0s in predictions
-        #generated_sequence_lengths = sequence_length_2D(predictions)
+        # generated_sequence_lengths = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
                  tf.maximum(
-                     input_sequence_lengths - 1,  #modified to use input sequence length
+                     input_sequence_lengths - 1,
+                     # modified to use input sequence length
                      0
                  )],
                 axis=1
