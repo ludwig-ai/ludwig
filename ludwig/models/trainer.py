@@ -1050,7 +1050,7 @@ class Trainer:
                 logger.info(
                     'Last learning rate reduction '
                     'happened {} epoch{} ago '
-                    '(last improvement of {} on {} '
+                    '(improvement of {} on {} '
                     'happened {} epoch{} ago)'
                     ''.format(
                         progress_tracker.last_learning_rate_reduction,
@@ -1086,7 +1086,7 @@ class Trainer:
                 logger.info(
                     'Last batch size increase '
                     'happened {} epoch{} ago '
-                    '(last improvement of {} on {} '
+                    '(improvement of {} on {} '
                     'happened {} epoch{} ago)'.format(
                         progress_tracker.last_batch_size_increase,
                         '' if progress_tracker.last_batch_size_increase == 1 else 's',
