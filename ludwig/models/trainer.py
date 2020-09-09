@@ -1401,8 +1401,9 @@ class Trainer:
                     if is_on_master():
                         logger.info(
                             'PLATEAU REACHED, reducing learning rate to {} '
-                            'due to lack of {} improvement'.format(
+                            'due to lack of {} improvement on {}'.format(
                                 progress_tracker.learning_rate,
+                                validation_metric,
                                 reduce_learning_rate_split,
                             )
                         )
@@ -1483,8 +1484,9 @@ class Trainer:
                     if is_on_master():
                         logger.info(
                             'PLATEAU REACHED, increasing batch size to {} '
-                            'due to lack of {} improvement'.format(
+                            'due to lack of {} improvement on {}'.format(
                                 progress_tracker.batch_size,
+                                validation_metric,
                                 increase_batch_size_split,
                             )
                         )
