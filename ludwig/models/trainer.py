@@ -444,9 +444,11 @@ class Trainer:
                 best_reduce_learning_rate_valid_metric=get_initial_validation_value(
                     reduce_learning_rate_validation_metric
                 ),
+                last_reduce_learning_rate_valid_metric_improvement=0,
                 best_batch_size_increase_valid_metric=get_initial_validation_value(
                     increase_batch_size_validation_metric
                 ),
+                last_batch_size_increase_valid_metric_improvement=0,
                 num_reductions_lr=0,
                 num_increases_bs=0,
                 train_metrics=train_metrics,
@@ -1043,13 +1045,20 @@ class Trainer:
             if (
                 progress_tracker.last_learning_rate_reduction > 0
                 and
-                progress_tracker.last_improvement > 0
+                progress_tracker.last_reduce_learning_rate_valid_metric_improvement > 0
             ):
                 logger.info(
                     'Last learning rate reduction '
-                    'happened {} epoch{} ago'.format(
+                    'happened {} epoch{} ago '
+                    '(last improvement of {} on {} '
+                    'happened {} epoch{} ago)'
+                    ''.format(
                         progress_tracker.last_learning_rate_reduction,
-                        '' if progress_tracker.last_learning_rate_reduction == 1 else 's'
+                        '' if progress_tracker.last_learning_rate_reduction == 1 else 's',
+                        reduce_learning_rate_validation_metric,
+                        reduce_learning_rate_split,
+                        progress_tracker.last_reduce_learning_rate_valid_metric_improvement,
+                        '' if progress_tracker.last_reduce_learning_rate_valid_metric_improvement == 1 else 's',
                     )
                 )
 
@@ -1072,13 +1081,19 @@ class Trainer:
             if (
                 progress_tracker.last_batch_size_increase > 0
                 and
-                progress_tracker.last_improvement > 0
+                progress_tracker.last_batch_size_increase_valid_metric_improvement > 0
             ):
                 logger.info(
                     'Last batch size increase '
-                    'happened {} epoch{} ago'.format(
+                    'happened {} epoch{} ago '
+                    '(last improvement of {} on {} '
+                    'happened {} epoch{} ago)'.format(
                         progress_tracker.last_batch_size_increase,
-                        '' if progress_tracker.last_batch_size_increase == 1 else 's'
+                        '' if progress_tracker.last_batch_size_increase == 1 else 's',
+                        increase_batch_size_validation_metric,
+                        increase_batch_size_split,
+                        progress_tracker.last_batch_size_increase_valid_metric_improvement,
+                        '' if progress_tracker.last_batch_size_increase_valid_metric_improvement == 1 else 's',
                     )
                 )
 
@@ -1350,39 +1365,51 @@ class Trainer:
             validation_metric][-1]
 
         improved = get_improved_fun(validation_metric)
-        if not improved(
+        is_improved = improved(
                 last_metric_value,
                 progress_tracker.best_reduce_learning_rate_valid_metric
-        ) and (
+        )
+        if is_improved:
+            # We update the best metric value and set it to the current one, and reset last improvement epoch count
+            progress_tracker.best_reduce_learning_rate_valid_metric = last_metric_value
+            progress_tracker.last_reduce_learning_rate_valid_metric_improvement = 0
+        else:
+            progress_tracker.last_reduce_learning_rate_valid_metric_improvement += 1
+            if not is_improved and (
+                # Learning rate reduction happened more than N epochs ago
                 progress_tracker.last_learning_rate_reduction >=
                 reduce_learning_rate_on_plateau_patience
-        ):
-            if (progress_tracker.num_reductions_lr >=
-                    reduce_learning_rate_on_plateau):
-                if is_on_master():
-                    logger.info(
-                        'Learning rate was already reduced '
-                        '{} times, not reducing it anymore'.format(
-                            progress_tracker.num_reductions_lr
+                and
+                # We had no improvement of the evaluation metric since more than N epochs ago
+                progress_tracker.last_reduce_learning_rate_valid_metric_improvement >=
+                reduce_learning_rate_on_plateau_patience
+            ):
+                if (progress_tracker.num_reductions_lr >=
+                        reduce_learning_rate_on_plateau):
+                    if is_on_master():
+                        logger.info(
+                            'Learning rate was already reduced '
+                            '{} times, not reducing it anymore'.format(
+                                progress_tracker.num_reductions_lr
+                            )
                         )
-                    )
-            else:
-                progress_tracker.learning_rate *= (
-                    reduce_learning_rate_on_plateau_rate
-                )
-
-                if is_on_master():
-                    logger.info(
-                        'PLATEAU REACHED, reducing learning rate to {} '
-                        'due to lack of {} improvement'.format(
-                            progress_tracker.learning_rate,
-                            reduce_learning_rate_split,
-                        )
+                else:
+                    progress_tracker.learning_rate *= (
+                        reduce_learning_rate_on_plateau_rate
                     )
 
-                progress_tracker.last_learning_rate_reduction_epoch = progress_tracker.epoch
-                progress_tracker.last_learning_rate_reduction = 0
-                progress_tracker.num_reductions_lr += 1
+                    if is_on_master():
+                        logger.info(
+                            'PLATEAU REACHED, reducing learning rate to {} '
+                            'due to lack of {} improvement'.format(
+                                progress_tracker.learning_rate,
+                                reduce_learning_rate_split,
+                            )
+                        )
+
+                    progress_tracker.last_learning_rate_reduction_epoch = progress_tracker.epoch
+                    progress_tracker.last_learning_rate_reduction = 0
+                    progress_tracker.num_reductions_lr += 1
 
     def increase_batch_size(
             self,
@@ -1407,52 +1434,64 @@ class Trainer:
             validation_metric][-1]
 
         improved = get_improved_fun(validation_metric)
-        if not improved(
+        is_improved = improved(
                 last_metric_value,
                 progress_tracker.best_increase_batch_size_valid_metric
-        ) and (
+        )
+        if is_improved:
+            # We update the best metric value and set it to the current one, and reset last improvement epoch count
+            progress_tracker.best_increase_batch_size_valid_metric = last_metric_value
+            progress_tracker.last_increase_batch_size_valid_metric_improvement = 0
+        else:
+            progress_tracker.last_increase_batch_size_valid_metric_improvement += 1
+            if not is_improved and (
+                # Batch size increase happened more than N epochs ago
                 progress_tracker.last_batch_size_increase >=
                 increase_batch_size_on_plateau_patience
-        ):
-            if (progress_tracker.num_increases_bs >=
-                    increase_batch_size_on_plateau):
-                if is_on_master():
-                    logger.info(
-                        'Batch size was already increased '
-                        '{} times, not increasing it anymore'.format(
-                            progress_tracker.num_increases_bs
+                and
+                # We had no improvement of the evaluation metric since more than N epochs ago
+                progress_tracker.last_batch_size_increase_valid_metric_improvement >=
+                increase_batch_size_on_plateau_patience
+            ):
+                if (progress_tracker.num_increases_bs >=
+                        increase_batch_size_on_plateau):
+                    if is_on_master():
+                        logger.info(
+                            'Batch size was already increased '
+                            '{} times, not increasing it anymore'.format(
+                                progress_tracker.num_increases_bs
+                            )
                         )
-                    )
-            elif (progress_tracker.batch_size ==
-                  increase_batch_size_on_plateau_max):
-                if is_on_master():
-                    logger.info(
-                        'Batch size was already increased '
-                        '{} times, currently it is {}, '
-                        'the maximum allowed'.format(
-                            progress_tracker.num_increases_bs,
-                            progress_tracker.batch_size
+                elif (progress_tracker.batch_size ==
+                      increase_batch_size_on_plateau_max):
+                    if is_on_master():
+                        logger.info(
+                            'Batch size was already increased '
+                            '{} times, currently it is {}, '
+                            'the maximum allowed'.format(
+                                progress_tracker.num_increases_bs,
+                                progress_tracker.batch_size
+                            )
                         )
-                    )
-            else:
-                progress_tracker.batch_size = min(
-                    (increase_batch_size_on_plateau_rate *
-                     progress_tracker.batch_size),
-                    increase_batch_size_on_plateau_max
-                )
-
-                if is_on_master():
-                    logger.info(
-                        'PLATEAU REACHED, increasing batch size to {} '
-                        'due to lack of {} improvement'.format(
-                            progress_tracker.batch_size,
-                            increase_batch_size_split,
-                        )
+                else:
+                    progress_tracker.batch_size = min(
+                        (increase_batch_size_on_plateau_rate *
+                         progress_tracker.batch_size),
+                        increase_batch_size_on_plateau_max
                     )
 
-                progress_tracker.last_batch_size_increase_epoch = progress_tracker.epoch
-                progress_tracker.last_batch_size_increase = 0
-                progress_tracker.num_increases_bs += 1
+                    if is_on_master():
+                        logger.info(
+                            'PLATEAU REACHED, increasing batch size to {} '
+                            'due to lack of {} improvement'.format(
+                                progress_tracker.batch_size,
+                                increase_batch_size_split,
+                            )
+                        )
+
+                    progress_tracker.last_batch_size_increase_epoch = progress_tracker.epoch
+                    progress_tracker.last_batch_size_increase = 0
+                    progress_tracker.num_increases_bs += 1
 
 
 class ProgressTracker:
@@ -1467,7 +1506,9 @@ class ProgressTracker:
             last_batch_size_increase_epoch,
             best_valid_metric,
             best_reduce_learning_rate_valid_metric,
+            last_reduce_learning_rate_valid_metric_improvement,
             best_batch_size_increase_valid_metric,
+            last_batch_size_increase_valid_metric_improvement,
             learning_rate,
             num_reductions_lr,
             num_increases_bs,
@@ -1490,7 +1531,9 @@ class ProgressTracker:
         self.learning_rate = learning_rate
         self.best_valid_metric = best_valid_metric
         self.best_reduce_learning_rate_valid_metric = best_reduce_learning_rate_valid_metric
+        self.last_reduce_learning_rate_valid_metric_improvement = last_reduce_learning_rate_valid_metric_improvement
         self.best_batch_size_increase_valid_metric = best_batch_size_increase_valid_metric
+        self.last_batch_size_increase_valid_metric_improvement = last_batch_size_increase_valid_metric_improvement
         self.num_reductions_lr = num_reductions_lr
         self.num_increases_bs = num_increases_bs
         self.train_metrics = train_metrics
