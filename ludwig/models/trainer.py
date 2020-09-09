@@ -1487,6 +1487,8 @@ class ProgressTracker:
         self.last_batch_size_increase = last_batch_size_increase
         self.learning_rate = learning_rate
         self.best_valid_metric = best_valid_metric
+        self.best_reduce_learning_rate_valid_metric = best_reduce_learning_rate_valid_metric
+        self.best_batch_size_increase_valid_metric = best_batch_size_increase_valid_metric
         self.num_reductions_lr = num_reductions_lr
         self.num_increases_bs = num_increases_bs
         self.train_metrics = train_metrics
