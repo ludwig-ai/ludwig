@@ -1,2 +1,2 @@
 spacy>=2.3
-bert-tensorflow
+transformers

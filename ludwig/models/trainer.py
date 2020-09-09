@@ -53,7 +53,7 @@ from ludwig.utils.batcher import BucketedBatcher
 from ludwig.utils.batcher import DistributedBatcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.horovod_utils import allgather_object, should_use_horovod
+from ludwig.utils.horovod_utils import should_use_horovod
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed
 from ludwig.utils.misc_utils import set_random_seed
@@ -61,6 +61,8 @@ from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 logger = logging.getLogger(__name__)
+
+tf.config.experimental_run_functions_eagerly(True)
 
 
 class Trainer:
@@ -140,7 +142,8 @@ class Trainer:
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag, metric_val, step=step)
             if learning_rate:
-                tf.summary.scalar("combined/epoch_learning_rate", learning_rate, step=step)
+                tf.summary.scalar("combined/epoch_learning_rate",
+                                  learning_rate, step=step)
         summary_writer.flush()
 
     @classmethod
@@ -405,6 +408,7 @@ class Trainer:
                 tensor_debug_mode='FULL_HEALTH',
                 circular_buffer_size=-1,
             )
+            tf.config.experimental_run_functions_eagerly(True)
 
         # ================ Resume logic ================
         if resume:
@@ -862,7 +866,7 @@ class Trainer:
 
     def merge_workers_metrics(self, metrics):
         # gather outputs from all workers
-        all_workers_output_metrics = allgather_object(metrics)
+        all_workers_output_metrics = self._horovod.allgather_object(metrics)
 
         # merge them into a single one
         merged_output_metrics = sum_dicts(
@@ -888,7 +892,8 @@ class Trainer:
         tf.keras.backend.reset_uids()
         output_nodes = {layer_name: keras_model.get_layer(layer_name).output
                         for layer_name in layer_names}
-        activation_model = tf.keras.Model(inputs=keras_model_inputs, outputs=output_nodes)
+        activation_model = tf.keras.Model(inputs=keras_model_inputs,
+                                          outputs=output_nodes)
 
         batcher = self.initialize_batcher(
             dataset,
@@ -926,9 +931,11 @@ class Trainer:
                 if isinstance(output, tf.Tensor):
                     output = [('', output)]
                 elif isinstance(output, dict):
-                    output = [(f'_{key}', tensor) for key, tensor in output.items()]
+                    output = [(f'_{key}', tensor) for key, tensor in
+                              output.items()]
                 elif isinstance(output, list):
-                    output = [(f'_{idx}', tensor) for idx, tensor in enumerate(output)]
+                    output = [(f'_{idx}', tensor) for idx, tensor in
+                              enumerate(output)]
 
                 for suffix, tensor in output:
                     full_name = f'{layer_name}{suffix}'
@@ -1144,36 +1151,9 @@ class Trainer:
                 feature['pretrained_embeddings'] = None
         save_json(save_path, hyperparameters, sort_keys=True, indent=4)
 
-    # todo tf2: reintroduce this functionality
     def save_savedmodel(self, save_path):
-        # input_tensors = {}
-        # for input_feature in self.hyperparameters['input_features']:
-        #     input_tensors[input_feature['name']] = getattr(
-        #         self, input_feature['name']
-        #     )
-        #
-        # output_tensors = {}
-        # for output_feature in self.hyperparameters['output_features']:
-        #     output_tensors[output_feature['name']] = getattr(
-        #         self,
-        #         output_feature['name']
-        #     )
-        #
-        # session = self.initialize_session()
-        #
-        # builder = saved_model_builder.SavedModelBuilder(save_path)
-        # builder.add_meta_graph_and_variables(
-        #     session,
-        #     [tf.saved_model.tag_constants.SERVING],
-        #     signature_def_map={
-        #         'predict': tf.saved_model.predict_signature_def(
-        #             input_tensors, output_tensors)
-        #     },
-        #     strip_default_attrs=True,
-        #     saver=self.saver,
-        # )
-        # builder.save()
-        self.model.save(save_path)
+        keras_model = self.model.get_connected_model(training=False)
+        keras_model.save(save_path)
 
     def restore(self, weights_path):
         self.model.load_weights(weights_path)

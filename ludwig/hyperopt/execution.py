@@ -461,7 +461,8 @@ class ParallelExecutor(HyperoptExecutor):
                                              hyperopt_parameters)
 
                 self.hyperopt_sampler.update_batch(
-                    (result["parameters"], result["metric_score"]) for result in
+                    (result["parameters"], result["metric_score"]) for result
+                    in
                     batch_results
                 )
 

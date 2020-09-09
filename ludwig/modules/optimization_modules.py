@@ -17,7 +17,6 @@ import tensorflow as tf
 
 from ludwig.utils.misc_utils import get_from_registry
 
-# todo tf2: add missing optimizers
 optimizers_registry = {
     'sgd': tf.keras.optimizers.SGD,
     'stochastic_gradient_descent': tf.keras.optimizers.SGD,
@@ -26,11 +25,9 @@ optimizers_registry = {
     'adam': tf.keras.optimizers.Adam,
     'adadelta': tf.keras.optimizers.Adadelta,
     'adagrad': tf.keras.optimizers.Adagrad,
-    'adagradda': None,
-    'momentum': None,
+    'adamax': tf.keras.optimizers.Adamax,
     'ftrl': tf.keras.optimizers.Ftrl,
-    'proximalgd': None,
-    'proximaladagrad': None,
+    'nadam': tf.keras.optimizers.Nadam,
     'rmsprop': tf.keras.optimizers.RMSprop,
 }
 

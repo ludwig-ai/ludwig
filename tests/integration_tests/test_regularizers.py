@@ -273,6 +273,10 @@ def test_decoder(test_case):
             'encoder_output_state': tf.random.normal(
                 [BATCH_SIZE, HIDDEN_SIZE],
                 dtype=tf.float32
+            ),
+            'lengths': tf.convert_to_tensor(
+                np.array(BATCH_SIZE * [SEQ_SIZE]),
+                dtype=tf.int32
             )
         }
 

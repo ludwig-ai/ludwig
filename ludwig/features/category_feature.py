@@ -55,7 +55,7 @@ class CategoryFeatureMixin(object):
 
     @staticmethod
     def get_feature_meta(column, preprocessing_parameters):
-        idx2str, str2idx, str2freq, _ = create_vocabulary(
+        idx2str, str2idx, str2freq, _, _, _, _ = create_vocabulary(
             column, 'stripped',
             num_most_frequent=preprocessing_parameters['most_common'],
             lowercase=preprocessing_parameters['lowercase'],

@@ -27,7 +27,7 @@ from ludwig.modules.convolutional_modules import Conv1DStack, \
 from ludwig.modules.embedding_modules import EmbedSequence
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.recurrent_modules import RecurrentStack
-from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducer
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,7 @@ class SequencePassthroughEncoder(Layer):
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -75,7 +76,7 @@ class SequencePassthroughEncoder(Layer):
             input_sequence = tf.expand_dims(
                 input_sequence, -1
             )
-        hidden = reduce_sequence(input_sequence, self.reduce_output)
+        hidden = self.reduce_sequence(input_sequence)
 
         return {'encoder_output': hidden}
 
@@ -182,6 +183,8 @@ class SequenceEmbedEncoder(Layer):
         if self.reduce_output is None:
             self.supports_masking = True
 
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+
         logger.debug('  EmbedSequence')
         self.embed_sequence = EmbedSequence(
             vocab,
@@ -209,7 +212,7 @@ class SequenceEmbedEncoder(Layer):
             inputs, training=training, mask=mask
         )
 
-        hidden = reduce_sequence(embedded_sequence, self.reduce_output)
+        hidden = self.reduce_sequence(embedded_sequence)
 
         return {'encoder_output': hidden}
 
@@ -427,6 +430,7 @@ class ParallelCNN(Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -516,7 +520,7 @@ class ParallelCNN(Layer):
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
-            hidden = reduce_sequence(hidden, self.reduce_output)
+            hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
             hidden = self.fc_stack(
@@ -773,6 +777,7 @@ class StackedCNN(Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -872,7 +877,7 @@ class StackedCNN(Layer):
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
-            hidden = reduce_sequence(hidden, self.reduce_output)
+            hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
             hidden = self.fc_stack(
@@ -1119,6 +1124,7 @@ class StackedParallelCNN(Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1213,7 +1219,7 @@ class StackedParallelCNN(Layer):
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
-            hidden = reduce_sequence(hidden, self.reduce_output)
+            hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
             hidden = self.fc_stack(
@@ -1393,6 +1399,7 @@ class StackedRNN(Layer):
         logger.debug(' {}'.format(self.name))
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         if self.reduce_output is None:
             self.supports_masking = True
 
@@ -1493,7 +1500,7 @@ class StackedRNN(Layer):
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
-            hidden = reduce_sequence(hidden, self.reduce_output)
+            hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
             hidden = self.fc_stack(
@@ -1676,6 +1683,7 @@ class StackedCNNRNN(Layer):
             )
 
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.should_embed = should_embed
         self.embed_sequence = None
 
@@ -1805,7 +1813,7 @@ class StackedCNNRNN(Layer):
 
         # ================ Sequence Reduction ================
         if self.reduce_output is not None:
-            hidden = reduce_sequence(hidden, self.reduce_output)
+            hidden = self.reduce_sequence(hidden)
 
             # ================ FC Layers ================
             hidden = self.fc_stack(

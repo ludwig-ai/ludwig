@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.modules.fully_connected_modules import FCStack
-from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import merge_dict, get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D
 
@@ -158,6 +158,17 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             default_dropout=self.dropout,
         )
 
+        # set up two sequence reducers, one for inputs and other for dependencies
+        self.reduce_sequence_input = SequenceReducer(
+            reduce_mode=self.reduce_input
+        )
+        if self.dependencies:
+            self.dependency_reducers = {}
+            for dependency in self.dependencies:
+                self.dependency_reducers[dependency] = SequenceReducer(
+                    reduce_mode=self.reduce_dependencies
+                )
+
     def create_input(self):
         return tf.keras.Input(shape=self.get_output_shape(),
                               dtype=self.get_output_dtype(),
@@ -214,12 +225,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
     def call(
             self,
-            inputs,  # ((hidden, other_output_hidden), target)
+            inputs,  # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
             training=None,
             mask=None
     ):
         # account for output feature target
-        if isinstance(inputs, tuple):
+        if isinstance(inputs[0], tuple):
             local_inputs, target = inputs
         else:
             local_inputs = inputs
@@ -240,9 +251,12 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         logits_input = {
             HIDDEN: hidden
         }
+        # pass supplemental data from encoders to decoder
         if 'encoder_output_state' in combiner_outputs:
             logits_input['encoder_output_state'] = \
                 combiner_outputs['encoder_output_state']
+        if LENGTHS in combiner_outputs:
+            logits_input[LENGTHS] = combiner_outputs[LENGTHS]
         logits = self.logits(logits_input, target=target, training=training)
 
         # most of the cases the output of self.logits is a tensor
@@ -251,8 +265,13 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
         # The first element will be the logits tensor
         if isinstance(logits, tuple):
             logits = logits[0]
+        if not isinstance(logits, dict):
+            logits = {'logits': logits}
 
-        return logits, hidden
+        return {
+            'last_hidden': hidden,
+            **logits
+        }
 
     @property
     @abstractmethod
@@ -321,7 +340,7 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                             multipliers
                         )
 
-                        # todo tf2: maybe modify this with TF2 mask mechanics
+                        # todo future: maybe modify this with TF2 mask mechanics
                         sequence_length = sequence_length_3D(hidden)
                         mask = tf.sequence_mask(
                             sequence_length,
@@ -337,9 +356,9 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
                 else:
                     if len(dependency_final_hidden.shape) > 2:
                         # vector matrix -> reduce concat
+                        reducer = self.dependency_reducers[dependency]
                         dependencies_hidden.append(
-                            reduce_sequence(dependency_final_hidden,
-                                            self.reduce_dependencies)
+                            reducer(dependency_final_hidden)
                         )
                     else:
                         # vector vector -> concat
@@ -425,9 +444,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
         # ================ Reduce Inputs ================
         if self.reduce_input is not None and len(feature_hidden.shape) > 2:
-            feature_hidden = reduce_sequence(
-                feature_hidden,
-                self.reduce_input
+            feature_hidden = self.reduce_sequence_input(
+                feature_hidden
             )
 
         # ================ Concat Dependencies ================
