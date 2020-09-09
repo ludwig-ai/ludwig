@@ -1350,7 +1350,7 @@ class Trainer:
             validation_metric][-1]
 
         improved = get_improved_fun(validation_metric)
-        if improved(
+        if not improved(
                 last_metric_value,
                 progress_tracker.best_reduce_learning_rate_valid_metric
         ) and (
@@ -1407,7 +1407,7 @@ class Trainer:
             validation_metric][-1]
 
         improved = get_improved_fun(validation_metric)
-        if improved(
+        if not improved(
                 last_metric_value,
                 progress_tracker.best_increase_batch_size_valid_metric
         ) and (
