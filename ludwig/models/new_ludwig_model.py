@@ -11,7 +11,7 @@ from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_training, \
     preprocess_for_prediction
-from ludwig.features.feature_utils import update_model_definition_with_metadata
+from ludwig.features.feature_registries import update_model_definition_with_metadata
 from ludwig.globals import set_disable_progressbar, \
     MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, set_on_master, is_on_master
