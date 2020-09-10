@@ -23,7 +23,7 @@ from ludwig.modules.embedding_modules import Embed
 from ludwig.modules.fully_connected_modules import FCStack
 from ludwig.modules.initializer_modules import get_initializer
 from ludwig.modules.recurrent_modules import RecurrentStack
-from ludwig.modules.reduction_modules import reduce_sum, reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducer
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +95,7 @@ class H3Embed(Layer):
 
         self.embedding_size = embedding_size
         self.reduce_output = reduce_output
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
 
         logger.debug('  mode Embed')
         self.embed_mode = Embed(
@@ -244,7 +245,7 @@ class H3Embed(Layer):
              embedded_base_cell, masked_embedded_cells],
             axis=1)
 
-        hidden = reduce_sequence(concatenated, self.reduce_output)
+        hidden = self.reduce_sequence(concatenated)
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))
@@ -323,6 +324,8 @@ class H3WeightedSum(Layer):
         logger.debug(' {}'.format(self.name))
 
         self.should_softmax = should_softmax
+        self.reduce_sequence = SequenceReducer(reduce_mode='sum')
+
 
         self.h3_embed = H3Embed(
             embedding_size,
@@ -330,7 +333,7 @@ class H3WeightedSum(Layer):
             dropout=dropout,
             initializer=weights_initializer,
             regularize=weights_regularizer,
-            reduce_output=None,
+            reduce_output=None
         )
 
         self.aggregation_weights = tf.Variable(
@@ -385,7 +388,7 @@ class H3WeightedSum(Layer):
         else:
             weights = self.aggregation_weights
 
-        hidden = reduce_sum(embedded_h3['encoder_output'] * weights)
+        hidden = self.reduce_sequence(embedded_h3['encoder_output'] * weights)
 
         # ================ FC Stack ================
         # logger.debug('  flatten hidden: {0}'.format(hidden))

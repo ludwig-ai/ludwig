@@ -126,6 +126,18 @@ def sum_dicts(dicts, dict_type=dict):
     return summed_dict
 
 
+def resolve_pointers(dict1, dict2, dict2_name):
+    resolved_dict = copy.deepcopy(dict1)
+    for key in dict1:
+        value = dict1[key]
+        if value.startswith(dict2_name):
+            key_in_dict2 = value[len(dict2_name):]
+            if key_in_dict2 in dict2.keys():
+                value = dict2[key_in_dict2]
+                resolved_dict[key] = value
+    return resolved_dict
+
+
 def get_from_registry(key, registry):
     if hasattr(key, 'lower'):
         key = key.lower()

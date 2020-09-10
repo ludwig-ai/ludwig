@@ -36,7 +36,8 @@ from ludwig.models.prediction_helpers import save_prediction_outputs, \
     save_evaluation_stats, print_evaluation_stats
 from ludwig.predict import predict
 from ludwig.train import full_train
-from ludwig.utils.data_utils import save_json, generate_kfold_splits
+from ludwig.utils.data_utils import save_json, generate_kfold_splits, \
+    is_model_dir
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
@@ -134,6 +135,15 @@ def experiment(
             batch_size = model_definition[TRAINING]['eval_batch_size']
         else:
             batch_size = model_definition[TRAINING]['batch_size']
+
+        # if a model was saved on disk, reload it
+        model_dir = os.path.join(experiment_dir_name, 'model')
+        if is_model_dir(model_dir):
+            model = Trainer.load(model_dir,
+                                 use_horovod=use_horovod,
+                                 gpus=gpus,
+                                 gpu_memory_limit=gpu_memory_limit,
+                                 allow_parallel_threads=allow_parallel_threads)
 
         # predict
         test_results = predict(

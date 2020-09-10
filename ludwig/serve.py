@@ -37,9 +37,11 @@ try:
     from starlette.datastructures import UploadFile
     from starlette.requests import Request
     from starlette.responses import JSONResponse
-except ImportError:
+except ImportError as e:
+    logger.error(e)
     logger.error(
-        ' fastapi and other serving dependencies are not installed. '
+        ' fastapi and other serving dependencies cannot be loaded'
+        'and may have not been installed. '
         'In order to install all serving dependencies run '
         'pip install ludwig[serve]'
     )

@@ -18,6 +18,7 @@ import shutil
 from copy import deepcopy
 
 import numpy as np
+import pytest
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
@@ -29,7 +30,8 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def test_savedmodel(csv_filename):
+@pytest.mark.parametrize('should_load_model', [True, False])
+def test_savedmodel(csv_filename, should_load_model):
     #######
     # Setup
     #######
@@ -75,6 +77,12 @@ def test_savedmodel(csv_filename):
     shutil.rmtree(ludwigmodel_path, ignore_errors=True)
     ludwig_model.save(ludwigmodel_path)
 
+    ###################
+    # load Ludwig model
+    ###################
+    if should_load_model:
+        ludwig_model = LudwigModel.load(ludwigmodel_path)
+
     #################
     # save savedmodel
     #################
@@ -114,17 +122,12 @@ def test_savedmodel(csv_filename):
 
     restored_model = tf.saved_model.load(savedmodel_path)
 
-    if_name = list(restored_model.input_features.keys())[0]
-    of_name = list(restored_model.output_features.keys())[0]
+    if_name = list(ludwig_model.model.model.input_features.keys())[0]
+    of_name = list(ludwig_model.model.model.output_features.keys())[0]
 
-    num_values = tf.convert_to_tensor(dataset.dataset[if_name]).shape[0]
-
-    data_to_predict = (
-        {if_name: tf.convert_to_tensor(dataset.dataset[if_name])},
-        # todo tf2: next is work-around allow matching function signature by
-        # tf2, need to determine if this can be eliminated
-        {of_name: tf.zeros([num_values, ], dtype=tf.int8)}
-    )
+    data_to_predict = {
+        if_name: tf.convert_to_tensor(dataset.dataset[if_name], dtype=tf.int32)
+    }
 
     logits = restored_model(data_to_predict, False, None)
 

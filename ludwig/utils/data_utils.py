@@ -31,6 +31,8 @@ from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
 from ludwig.constants import SPLIT
+from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
+    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -534,3 +536,19 @@ def figure_data_format(
             "At least one between dataset and training_set must be not None"
         )
     return data_format
+
+
+def is_model_dir(path: str) -> bool:
+    hyperparameters_fn = os.path.join(path, MODEL_HYPERPARAMETERS_FILE_NAME)
+    ts_metadata_fn = os.path.join(path, TRAIN_SET_METADATA_FILE_NAME)
+    is_model_dir = False
+    if (os.path.isdir(path)
+            and os.path.isfile(hyperparameters_fn)
+            and os.path.isfile(ts_metadata_fn)):
+        weights_files_count = 0
+        for file_name in os.listdir(path):
+            if file_name.startswith(MODEL_WEIGHTS_FILE_NAME):
+                weights_files_count += 1
+        if weights_files_count >= 2:
+            is_model_dir = True
+    return is_model_dir

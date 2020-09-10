@@ -5,7 +5,7 @@ from collections import OrderedDict
 import tensorflow as tf
 
 from ludwig.combiners.combiners import get_combiner_class
-from ludwig.constants import TIED, LOSS, COMBINED, TYPE, LOGITS, LAST_HIDDEN
+from ludwig.constants import *
 from ludwig.features.feature_registries import input_type_registry, \
     output_type_registry
 from ludwig.utils.algorithms_utils import topological_sort_feature_dependencies
@@ -58,11 +58,14 @@ class ECD(tf.keras.Model):
             for input_feature_name, input_feature in
             self.input_features.items()
         }
+
+        if not training:
+            return inputs
+
         targets = {
             output_feature_name: output_feature.create_input()
-            for output_feature_name, output_feature in
-            self.output_features.items()
-        } if training else None
+            for output_feature_name, output_feature in self.output_features.items()
+        }
         return inputs, targets
 
     def get_connected_model(self, training=True, inputs=None):
@@ -70,12 +73,17 @@ class ECD(tf.keras.Model):
         outputs = self.call(inputs)
         return tf.keras.Model(inputs=inputs, outputs=outputs)
 
+    def save_savedmodel(self, save_path):
+        keras_model = self.model.get_connected_model(training=False)
+        keras_model.save(save_path)
+
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
         # parameter (inputs, targets) where
         #   inputs is a dict feature_name -> tensor/ndarray
         #   targets is dict feature_name -> tensor/ndarray
+
         if isinstance(inputs, tuple):
             inputs, targets = inputs
         else:
@@ -94,28 +102,34 @@ class ECD(tf.keras.Model):
         output_logits = {}
         output_last_hidden = {}
         for output_feature_name, decoder in self.output_features.items():
-            # use presence or absence of targets to signal training or prediction
+            # use presence or absence of targets
+            # to signal training or prediction
+            decoder_inputs = (combiner_outputs, copy.copy(output_last_hidden))
             if targets is not None:
-                # doing training
-                target_to_use = tf.cast(targets[output_feature_name],
-                                        dtype=tf.int32)
-            else:
-                # doing prediction
-                target_to_use = None
+                # targets are only used during training,
+                # during prediction they are omitted
+                decoder_inputs = (decoder_inputs, targets[output_feature_name])
 
-            decoder_logits, decoder_last_hidden = decoder(
-                (
-                    (combiner_outputs, copy.copy(output_last_hidden)),
-                    target_to_use
-                ),
+            decoder_outputs = decoder(
+                decoder_inputs,
                 training=training,
                 mask=mask
             )
-            output_logits[output_feature_name] = {}
-            output_logits[output_feature_name][LOGITS] = decoder_logits
-            output_logits[output_feature_name][
-                LAST_HIDDEN] = decoder_last_hidden
-            output_last_hidden[output_feature_name] = decoder_last_hidden
+            output_logits[output_feature_name] = decoder_outputs
+            # output_logits[output_feature_name][LOGITS] = decoder_logits
+            # output_logits[output_feature_name][
+            #    LAST_HIDDEN] = decoder_last_hidden
+
+            # todo Piero: not sure this is needed,
+            #  if combiner had lengths and the decoder wants to return them
+            #  the decoder should do it, otherwise
+            #  this can override the decoder outputs
+            # if LENGTHS in combiner_outputs:
+            #    output_logits[output_feature_name][LENGTHS] = \
+            #        combiner_outputs[LENGTHS]
+
+            output_last_hidden[output_feature_name] = decoder_outputs[
+                'last_hidden']
 
         return output_logits
 
@@ -151,12 +165,12 @@ class ECD(tf.keras.Model):
                 "of output features"
             )
 
-        logits = self.call(inputs, training=False)
+        outputs = self.call(inputs, training=False)
 
         predictions = {}
         for of_name in of_list:
             predictions[of_name] = self.output_features[of_name].predictions(
-                logits[of_name],
+                outputs[of_name],
                 training=False
             )
 
@@ -166,9 +180,9 @@ class ECD(tf.keras.Model):
     def train_step(self, optimizer, inputs, targets,
                    regularization_lambda=0.0):
         with tf.GradientTape() as tape:
-            logits = self((inputs, targets), training=True)
+            model_outputs = self((inputs, targets), training=True)
             loss, all_losses = self.train_loss(
-                targets, logits, regularization_lambda
+                targets, model_outputs, regularization_lambda
             )
         optimizer.minimize_with_tape(
             tape, loss, self.trainable_variables
@@ -248,7 +262,8 @@ class ECD(tf.keras.Model):
                                 layer.weights]
             return results
 
-        weights = recurse_weights(self)
+        connected_model = self.get_connected_model()
+        weights = recurse_weights(connected_model)
         if tensor_names:
             # Check for bad tensor names
             weight_set = set(name for name, w in weights)
@@ -286,7 +301,6 @@ def build_single_input(input_feature_def, other_input_features, **kwargs):
         input_feature_def['name']
     ))
 
-    # todo tf2: tied encoder mechanism needs to be tested
     encoder_obj = None
     if input_feature_def.get(TIED, None) is not None:
         tied_input_feature_name = input_feature_def[TIED]

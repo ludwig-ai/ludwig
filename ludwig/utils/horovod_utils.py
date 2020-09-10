@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import io
 import os
 
 
@@ -28,40 +27,3 @@ def should_use_horovod(use_horovod):
 def has_horovodrun():
     """Returns True if running with `horovodrun` using Gloo or OpenMPI."""
     return 'OMPI_COMM_WORLD_RANK' in os.environ or 'HOROVOD_RANK' in os.environ
-
-
-def allgather_object(obj):
-    """
-    Serializes and allgathers an object from all other processes.
-
-    Arguments:
-        obj: An object capable of being serialized without losing any context.
-
-    Returns:
-        The list of objects that were allgathered across all ranks.
-    """
-    # Horovod and its deps are optional, so do not import them at the top.
-    # TensorFlow is included here as certain modules (like comet) must import before TF.
-    import cloudpickle
-    import tensorflow as tf
-    from horovod.tensorflow import allgather, size
-
-    def load(byte_array):
-        buf = io.BytesIO(byte_array.tobytes())
-        return cloudpickle.load(buf)
-
-    b = io.BytesIO()
-    cloudpickle.dump(obj, b)
-
-    t = tf.convert_to_tensor(bytearray(b.getvalue()), dtype=tf.uint8)
-    sz = tf.convert_to_tensor([t.shape[0]], dtype=tf.int32)
-
-    sizes = allgather(sz, name=type(obj).__name__ + '.sz').numpy()
-    gathered = allgather(t, name=type(obj).__name__ + '.t').numpy()
-
-    def select(i):
-        start = sizes[i - 1] if i > 0 else 0
-        end = start + sizes[i]
-        return gathered[start:end]
-
-    return [load(select(i)) for i in range(size())]

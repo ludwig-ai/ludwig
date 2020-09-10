@@ -27,7 +27,8 @@ from ludwig.constants import TEXT
 from ludwig.data.concatenate_datasets import concatenate_csv
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.dataset import Dataset
-from ludwig.features.feature_registries import base_type_registry
+from ludwig.features.feature_registries import base_type_registry, \
+    input_type_registry
 from ludwig.globals import is_on_master
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format, \
@@ -41,7 +42,7 @@ from ludwig.utils.data_utils import text_feature_data_field
 from ludwig.utils.defaults import default_preprocessing_parameters, \
     merge_with_defaults
 from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry, resolve_pointers
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.misc_utils import set_random_seed
 
@@ -111,10 +112,6 @@ def build_dataset_df(
 def build_metadata(dataset_df, features, global_preprocessing_parameters):
     metadata = {}
     for feature in features:
-        get_feature_meta = get_from_registry(
-            feature[TYPE],
-            base_type_registry
-        ).get_feature_meta
         if PREPROCESSING in feature:
             preprocessing_parameters = merge_dict(
                 global_preprocessing_parameters[feature[TYPE]],
@@ -124,11 +121,40 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
             preprocessing_parameters = global_preprocessing_parameters[
                 feature[TYPE]
             ]
+
+        # deal with encoders that have fixed preprocessing
+        if 'encoder' in feature:
+            encoders_registry = get_from_registry(
+                feature[TYPE],
+                input_type_registry
+            ).encoder_registry
+            encoder_class = encoders_registry[feature['encoder']]
+            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
+                encoder_fpp = encoder_class.fixed_preprocessing_parameters
+
+                if 'preprocessing' in feature:
+                    all_feature_params = merge_dict(
+                        feature,
+                        feature['preprocessing']
+                    )
+                else:
+                    all_feature_params = feature
+
+                preprocessing_parameters = merge_dict(
+                    preprocessing_parameters,
+                    resolve_pointers(encoder_fpp, all_feature_params, 'feature.')
+                )
+
         handle_missing_values(
             dataset_df,
             feature,
             preprocessing_parameters
         )
+
+        get_feature_meta = get_from_registry(
+            feature[TYPE],
+            base_type_registry
+        ).get_feature_meta
         metadata[feature[NAME]] = get_feature_meta(
             dataset_df[feature[NAME]].astype(str),
             preprocessing_parameters
@@ -144,10 +170,6 @@ def build_data(
 ):
     dataset = {}
     for feature in features:
-        add_feature_data = get_from_registry(
-            feature[TYPE],
-            base_type_registry
-        ).add_feature_data
         if PREPROCESSING in feature:
             preprocessing_parameters = merge_dict(
                 global_preprocessing_parameters[feature[TYPE]],
@@ -157,6 +179,31 @@ def build_data(
             preprocessing_parameters = global_preprocessing_parameters[
                 feature[TYPE]
             ]
+
+        # deal with encoders that have fixed preprocessing
+        if 'encoder' in feature:
+            encoders_registry = get_from_registry(
+                feature[TYPE],
+                input_type_registry
+            ).encoder_registry
+
+            encoder_class = encoders_registry[feature['encoder']]
+            if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
+                encoder_fpp = encoder_class.fixed_preprocessing_parameters
+
+                if 'preprocessing' in feature:
+                    all_feature_params = merge_dict(
+                        feature,
+                        feature['preprocessing']
+                    )
+                else:
+                    all_feature_params = feature
+
+                preprocessing_parameters = merge_dict(
+                    preprocessing_parameters,
+                    resolve_pointers(encoder_fpp, all_feature_params, 'feature.')
+                )
+
         handle_missing_values(
             dataset_df,
             feature,
@@ -167,6 +214,11 @@ def build_data(
         training_set_metadata[
             feature[NAME]
         ][PREPROCESSING] = preprocessing_parameters
+
+        add_feature_data = get_from_registry(
+            feature[TYPE],
+            base_type_registry
+        ).add_feature_data
         add_feature_data(
             feature,
             dataset_df,

@@ -50,11 +50,14 @@ from ludwig.utils import time_utils
 from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import should_use_horovod
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
+
+tf.config.experimental_run_functions_eagerly(True)
 
 
 class Trainer:
@@ -220,7 +223,8 @@ class Trainer:
             cls,
             summary_writer,
             metrics,
-            step
+            step,
+            learning_rate=None
     ):
         if not summary_writer:
             return
@@ -233,6 +237,9 @@ class Trainer:
                     )
                     metric_val = output_feature[metric][-1]
                     tf.summary.scalar(metric_tag, metric_val, step=step)
+            if learning_rate:
+                tf.summary.scalar("combined/epoch_learning_rate",
+                                  learning_rate, step=step)
         summary_writer.flush()
 
     @classmethod
@@ -397,6 +404,7 @@ class Trainer:
                 tensor_debug_mode='FULL_HEALTH',
                 circular_buffer_size=-1,
             )
+            tf.config.experimental_run_functions_eagerly(True)
 
         # ================ Resume logic ================
         if self._resume:
@@ -570,6 +578,7 @@ class Trainer:
                 summary_writer=train_summary_writer,
                 metrics=progress_tracker.train_metrics,
                 step=progress_tracker.epoch,
+                learning_rate=current_learning_rate,
             )
 
             if validation_set is not None and validation_set.size > 0:
@@ -818,11 +827,17 @@ class Trainer:
         )
         if progress_tracker.last_improvement != 0:
             if is_on_master():
+                last_improvement_str = 'Last improvement of {} on {}'.format(
+                    validation_metric,
+                    validation_output_feature_name,
+                )
+                if reduce_learning_rate_on_plateau > 0:
+                    last_improvement_str += ' / learning rate reduction'
+                if increase_batch_size_on_plateau > 0:
+                    last_improvement_str += ' / batch size increase'
                 logger.info(
-                    'Last improvement of {} on {} happened '
-                    '{} epoch{} ago'.format(
-                        validation_metric,
-                        validation_output_feature_name,
+                    '{} happened {} epoch{} ago'.format(
+                        last_improvement_str,
                         progress_tracker.last_improvement,
                         '' if progress_tracker.last_improvement == 1 else 's'
                     )

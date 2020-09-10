@@ -25,15 +25,9 @@ from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
-from ludwig.modules.reduction_modules import reduce_sequence
+from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
-
-# todo tf2 clean up
-# from ludwig.models.modules.attention_modules import \
-#     feed_forward_memory_attention
-# from ludwig.models.modules.initializer_modules import get_initializer
-# from ludwig.models.modules.recurrent_modules import recurrent_decoder
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +36,8 @@ rnn_layers_registry = {
     'gru': GRUCell,
     'lstm': LSTMCell
 }
+
+PAD_TOKEN = 0
 
 
 class SequenceGeneratorDecoder(Layer):
@@ -84,7 +80,8 @@ class SequenceGeneratorDecoder(Layer):
         self.state_size = state_size
         self.attention_mechanism = None
 
-        self.reduce_input = reduce_input
+        self.reduce_input = reduce_input if reduce_input else 'sum'
+        self.reduce_sequence = SequenceReducer(reduce_mode=self.reduce_input)
 
         if is_timeseries:
             self.vocab_size = 1
@@ -164,10 +161,7 @@ class SequenceGeneratorDecoder(Layer):
             hidden = inputs['hidden']
             if len(hidden.shape) == 3:  # encoder_output is a sequence
                 # reduce_sequence returns a [b, h]
-                encoder_output_state = reduce_sequence(
-                    hidden,
-                    self.reduce_input if self.reduce_input else 'sum'
-                )
+                encoder_output_state = self.reduce_sequence(hidden)
             elif len(hidden.shape) == 2:
                 # this returns a [b, h]
                 encoder_output_state = hidden
@@ -338,12 +332,21 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         logits = outputs.rnn_output
-        mask = tf.sequence_mask(
-            generated_sequence_lengths,
-            maxlen=logits.shape[1],
-            dtype=tf.float32
+        # mask = tf.sequence_mask(
+        #    generated_sequence_lengths,
+        #    maxlen=tf.shape(logits)[1],
+        #    dtype=tf.float32
+        # )
+        # logits = logits * mask[:, :, tf.newaxis]
+
+        # append a trailing 0, useful for
+        # those datapoints that reach maximum length
+        # and don't have a eos at the end
+        logits = tf.pad(
+            logits,
+            [[0, 0], [0, 1], [0, 0]]
         )
-        logits = logits * mask[:, :, tf.newaxis]
+
         return logits  # , outputs, final_state, generated_sequence_lengths
 
     def decoder_beam_search(
@@ -357,9 +360,10 @@ class SequenceGeneratorDecoder(Layer):
         encoder_sequence_length = sequence_length_3D(encoder_output)
 
         # ================ predictions =================
-        # decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
+        decoder_input = tf.expand_dims([self.GO_SYMBOL] * batch_size, 1)
         start_tokens = tf.fill([batch_size], self.GO_SYMBOL)
         end_token = self.END_SYMBOL
+        decoder_inp_emb = self.decoder_embedding(decoder_input)
 
         # code sequence based on example found here
         # https://www.tensorflow.org/addons/api_docs/python/tfa/seq2seq/BeamSearchDecoder
@@ -400,7 +404,7 @@ class SequenceGeneratorDecoder(Layer):
         maximum_iterations = self.max_sequence_length
 
         # initialize inference decoder
-        decoder_embedding_matrix = self.decoder_embedding.variables[0]
+        decoder_embedding_matrix = self.decoder_embedding.weights[0]
 
         # beam search
         decoder_output, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
@@ -420,9 +424,21 @@ class SequenceGeneratorDecoder(Layer):
             ),
         )
 
-        predictions = decoder_output.beam_search_decoder_output.predicted_ids[:, :, 0]
-        logits = decoder_output.beam_search_decoder_output.scores[:, :, 0, :]
-        lengths = decoder_lengths[:, 0]
+        sequence_id = 0
+        predictions = decoder_output.predicted_ids[:, :, sequence_id]
+        probabilities = extract_sequence_probabilities(
+            decoder_output, self.beam_width, sequence_id=sequence_id
+        )
+
+        seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
+        if seq_len_diff > 0:
+            predictions = tf.pad(
+                predictions,
+                [[0, 0], [0, seq_len_diff]]
+            )
+
+        # -1 because they include pad
+        lengths = decoder_lengths[:, 0] - 1
 
         last_predictions = tf.gather_nd(
             predictions,
@@ -434,9 +450,7 @@ class SequenceGeneratorDecoder(Layer):
             name='last_predictions_{}'.format(self.name)
         )
 
-        probabilities = tf.nn.softmax(logits)
-
-        return logits, lengths, predictions, last_predictions, probabilities
+        return None, lengths, predictions, last_predictions, probabilities
 
     def decoder_greedy(
             self,
@@ -474,11 +488,11 @@ class SequenceGeneratorDecoder(Layer):
             output_layer=self.dense_layer
         )
 
-        # ================ generate logits ==================
+        # ================ generate sequence ==================
         maximum_iterations = self.max_sequence_length
 
         # initialize inference decoder
-        decoder_embedding_matrix = self.decoder_embedding.variables[0]
+        decoder_embedding_matrix = self.decoder_embedding.weights[0]
         decoder_output, decoder_state, decoder_lengths = tfa.seq2seq.dynamic_decode(
             decoder=decoder,
             output_time_major=False,
@@ -493,8 +507,19 @@ class SequenceGeneratorDecoder(Layer):
         )
 
         predictions = decoder_output.sample_id
-        logits = decoder_output.rnn_output
-        lengths = decoder_lengths
+        seq_len_diff = self.max_sequence_length - tf.shape(predictions)[1]
+        if seq_len_diff > 0:
+            predictions = tf.pad(
+                predictions,
+                [[0, 0], [0, seq_len_diff]]
+            )
+        logits = tf.pad(
+            decoder_output.rnn_output,
+            [[0, 0], [0, seq_len_diff], [0, 0]]
+        )
+
+        # -1 because they include the EOS symbol
+        lengths = decoder_lengths - 1
 
         probabilities = tf.nn.softmax(
             logits,
@@ -511,33 +536,30 @@ class SequenceGeneratorDecoder(Layer):
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
-                 tf.maximum(lengths - 1, 0)],
+                 tf.maximum(lengths - 1, 0)],  # -1 because of EOS
                 axis=1
             ),
             name='last_predictions_{}'.format(self.name)
         )
 
         # mask logits
-        mask = tf.sequence_mask(
-            lengths,
-            maxlen=logits.shape[1],
-            dtype=tf.float32
-        )
-
-        logits = logits * mask[:, :, tf.newaxis]
+        # mask = tf.sequence_mask(
+        #     lengths,
+        #     maxlen=tf.shape(logits)[1],
+        #     dtype=tf.float32
+        # )
+        # logits = logits * mask[:, :, tf.newaxis]
 
         return logits, lengths, predictions, last_predictions, probabilities
 
     # this should be used only for decoder inference
     def call(self, inputs, training=None, mask=None):
         # shape [batch_size, seq_size, state_size]
-        encoder_output = inputs[LOGITS]['hidden']
+        encoder_output = inputs['hidden']
         # form dependent on cell_type
         # lstm: list([batch_size, state_size], [batch_size, state_size])
         # rnn, gru: [batch_size, state_size]
-        encoder_output_state = self.prepare_encoder_output_state(
-            inputs[LOGITS]
-        )
+        encoder_output_state = self.prepare_encoder_output_state(inputs)
 
         if self.beam_width > 1:
             decoder_outputs = self.decoder_beam_search(
@@ -566,10 +588,105 @@ class SequenceGeneratorDecoder(Layer):
 
         return {
             PREDICTIONS: preds,
+            LENGTHS: lengths,
             LAST_PREDICTIONS: last_preds,
             PROBABILITIES: probs,
             LOGITS: logits
         }
+
+
+# reconstruct probs from raw beam search output
+def extract_sequence_probabilities(decoder_output, beam_width, sequence_id=0):
+    # obtain tesnors needed
+    predictions = decoder_output.predicted_ids[:, :, sequence_id]
+    all_log_probs = decoder_output.beam_search_decoder_output.scores
+    top_ids = decoder_output.beam_search_decoder_output.predicted_ids
+    parent_rows = decoder_output.beam_search_decoder_output.parent_ids
+
+    # tile predictions so that they have the same shape
+    # of top ids, [b, s, beam]
+    preds_tiled = tf.tile(tf.expand_dims(predictions, -1),
+                          [1, 1, beam_width])
+    # figure out the location among the top k ids of the ones
+    # we ended using for predictions, by first obtaining a boolean tensor
+    # that reports if they match or not, and then using tf.where
+    # to obtain the coordinates where they appear.
+    # the output is a tensor preds_locs_all of size = [n, dims]
+    # where n is ]the number of matches and dims is
+    # the number of axes of the coordinates
+    # (the rank of the preds_locs_bool tesnor)
+    # They are not always the first, because of the way beam search works.
+    preds_locs_bool = tf.equal(preds_tiled, top_ids)
+    preds_locs_all = tf.where(preds_locs_bool)
+    # the predicted ids may have appeared multiple times across
+    # the different beams, so we need to select the first one (as it's the
+    # one with highest probability.
+    # to do so we create segment ids to use with the segment_min function.
+    # to obtain the segments we use the first 2 coordinates of preds_locs
+    # multiply the first by the max length of the second and then
+    # add the second to obtain contgous numbering.
+    # for example if we know that the maximum length is 12,
+    # location [2,3] becomes segment 2 * 12 + 3 = 27
+    segments = ((preds_locs_all[:, 0] *
+                 tf.cast(tf.shape(predictions)[-1], tf.int64)) +
+                preds_locs_all[:, 1])
+    # degment min takes the min (first occurrence) of
+    # the predicted sequence elment among all the beams
+    preds_locs = tf.math.segment_min(
+        preds_locs_all[:, 2], segments
+    )
+    # as we want to gather the values in parent rows,
+    # we need to construct the coordinates xs and ys as the preds_locs
+    # are the values of the third axis (beam size)
+    # from which we want to gather).
+    # we know for sure the values of xs and ys because we know for sure
+    # that at least one of the besms contains the pred id at each step,
+    # so we know for sure that there will be b*s rows in pred_loc
+    # and so we can concatenate xs and ys that have the same size
+    xs = tf.repeat(
+        tf.range(tf.shape(parent_rows)[0], dtype=tf.int64),
+        tf.repeat(
+            tf.shape(parent_rows)[1], tf.shape(parent_rows)[0])
+    )
+    ys = tf.tile(tf.range(tf.shape(parent_rows)[1], dtype=tf.int64),
+                 tf.shape(parent_rows)[0:1])
+    preds_locs_for_gather = tf.concat(
+        [xs[:, tf.newaxis], ys[:, tf.newaxis],
+         preds_locs[:, tf.newaxis]],
+        axis=-1
+    )
+    # now that we have a [b*s, x, y ,z] tensor of coordinates,
+    # we can use it to gather from the parent rows tensor
+    rows_from_log_probs_to_select = tf.gather_nd(
+        parent_rows,
+        preds_locs_for_gather
+    )
+    # we can reuse xs and ys to concatenate to the id of rows
+    # from log probs to select in order to obtain the coordinates
+    # in the all_log_probs tensor to gather
+    rows_from_log_probs_for_gather = tf.concat(
+        [xs[:, tf.newaxis], ys[:, tf.newaxis],
+         tf.cast(rows_from_log_probs_to_select[:, tf.newaxis],
+                 dtype=tf.int64)],
+        axis=-1
+    )
+    # let's finally gather the logprobs
+    log_probs_to_reshape = tf.gather_nd(
+        all_log_probs,
+        rows_from_log_probs_for_gather
+    )
+    # and let's reshape them in a [b,s,v] shape where v is
+    # the size of the output vocabulary
+    log_probs = tf.reshape(
+        log_probs_to_reshape,
+        tf.stack(
+            [tf.shape(all_log_probs)[0], tf.shape(all_log_probs)[1],
+             tf.shape(all_log_probs)[3]], axis=0)
+    )
+    # as they are log probs, exponentiating them return probabilities
+    probabilities = tf.exp(log_probs)
+
+    return probabilities
 
 
 class SequenceTaggerDecoder(Layer):
@@ -628,7 +745,11 @@ class SequenceTaggerDecoder(Layer):
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)
 
-        return logits  # logits shape [batch_size, sequence_length, num_classes]
+        return {
+            LOGITS: logits,
+            # logits shape [batch_size, sequence_length, num_classes]
+            LENGTHS: inputs[LENGTHS]
+        }
 
     def _logits_training(
             self,
@@ -642,10 +763,13 @@ class SequenceTaggerDecoder(Layer):
 
     def _predictions_eval(
             self,
-            inputs,  # encoder_output, encoder_output_state
+            inputs,  # encoder_output, encoder_output_state, lengths
             training=None
     ):
-        logits = self.call(inputs, training=training)
+        outputs = self.call(inputs, training=training)
+        logits = outputs[LOGITS]
+        input_sequence_lengths = inputs[
+            LENGTHS]  # retrieve input sequence length
 
         probabilities = tf.nn.softmax(
             logits,
@@ -660,13 +784,14 @@ class SequenceTaggerDecoder(Layer):
         )
 
         # todo tf2: deal with spurious 0s in predictions
-        generated_sequence_lengths = sequence_length_2D(predictions)
+        # generated_sequence_lengths = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
             predictions,
             tf.stack(
                 [tf.range(tf.shape(predictions)[0]),
                  tf.maximum(
-                     generated_sequence_lengths - 1,
+                     input_sequence_lengths - 1,
+                     # modified to use input sequence length
                      0
                  )],
                 axis=1
@@ -676,15 +801,15 @@ class SequenceTaggerDecoder(Layer):
 
         # mask logits
         mask = tf.sequence_mask(
-            generated_sequence_lengths,
-            maxlen=logits.shape[1],
+            input_sequence_lengths,
+            maxlen=tf.shape(logits)[1],
             dtype=tf.float32
         )
-
         logits = logits * mask[:, :, tf.newaxis]
 
         return {
             PREDICTIONS: predictions,
+            LENGTHS: input_sequence_lengths,
             LAST_PREDICTIONS: last_predictions,
             PROBABILITIES: probabilities,
             LOGITS: logits

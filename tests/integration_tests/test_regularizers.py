@@ -265,15 +265,19 @@ def test_decoder(test_case):
     }
 
     combiner_outputs_rank3 = {
-        'combiner_output': tf.random.normal(
-            [BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
-            dtype=tf.float32
-        ),
-        'encoder_output_state': tf.random.normal(
-            [BATCH_SIZE, HIDDEN_SIZE],
-            dtype=tf.float32
-        )
-    }
+            'combiner_output': tf.random.normal(
+                [BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
+                dtype=tf.float32
+            ),
+            'encoder_output_state': tf.random.normal(
+                [BATCH_SIZE, HIDDEN_SIZE],
+                dtype=tf.float32
+            ),
+            'lengths': tf.convert_to_tensor(
+                np.array(BATCH_SIZE * [SEQ_SIZE]),
+                dtype=tf.int32
+            )
+        }
 
     # minimal model definition sufficient to create output feature
     model_definition = {'input_features': [], 'output_features': features}

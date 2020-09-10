@@ -16,15 +16,11 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.python.ops.losses.losses_impl import Reduction
 
 from ludwig.constants import *
-from ludwig.utils.tf_utils import sequence_length_2D, sequence_length_3D
+from ludwig.utils.tf_utils import sequence_length_2D
 
 
-#
-# Custom classes to support Tensorflow 2
-#
 class BWCEWLoss(tf.keras.losses.Loss):
     def __init__(
             self,
@@ -92,7 +88,6 @@ class SoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
         return loss
 
 
-# todo tf2: wait for fix to https://github.com/tensorflow/tensorflow/issues/41792
 class SampledSoftmaxCrossEntropyLoss(tf.keras.losses.Loss):
     def __init__(
             self,
@@ -140,37 +135,46 @@ class SigmoidCrossEntropyLoss(tf.keras.losses.Loss):
 
 
 class SequenceLoss(tf.keras.losses.Loss):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name=None, from_logits=True, **kwargs):
         super(SequenceLoss, self).__init__(name=name)
         self.loss_function = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True,
+            from_logits=from_logits,
             reduction='none'
         )
+        self.from_logits = from_logits
 
     def call(self, y_true, y_pred):
         # y_true: shape [batch_size, sequence_size]
         # y_pred: shape [batch_size, sequence_size, num_classes]
 
-        y_pred_tensor = y_pred[LOGITS]
+        if self.from_logits:
+            y_pred_tensor = y_pred[LOGITS]
+        else:
+            y_pred_tensor = y_pred[PROBABILITIES]
         y_true_tensor = tf.cast(y_true, dtype=tf.int64)
 
-        # pad the shorter sequence
-        y_pred_seq_len = tf.shape(y_pred_tensor)[1]
-        y_true_seq_len = tf.shape(y_true_tensor)[1]
+        # pad the shorter sequence (tensor shape 1)
+        y_pred_tensor_len = tf.shape(y_pred_tensor)[1]
+        y_true_tensor_len = tf.shape(y_true_tensor)[1]
 
-        y_pred_pad_len = tf.maximum(0, y_true_seq_len - y_pred_seq_len)
-        y_true_pad_len = tf.maximum(0, y_pred_seq_len - y_true_seq_len)
+        y_pred_pad_len = tf.maximum(0, y_true_tensor_len - y_pred_tensor_len)
+        y_true_pad_len = tf.maximum(0, y_pred_tensor_len - y_true_tensor_len)
 
-        y_pred_tensor = tf.pad(y_pred_tensor, [[0, 0], [0, y_pred_pad_len], [0, 0]])
+        y_pred_tensor = tf.pad(y_pred_tensor,
+                               [[0, 0], [0, y_pred_pad_len], [0, 0]])
         y_true_tensor = tf.pad(y_true_tensor, [[0, 0], [0, y_true_pad_len]])
 
-        longest_sequence_length = tf.maximum(sequence_length_2D(y_true_tensor),
-                                             sequence_length_3D(y_pred_tensor))
-        longest_sequence_length += 1  # for EOS
-        longest_sequence_length = tf.minimum(longest_sequence_length,
-                                             tf.shape(y_true_tensor)[1])
+        y_true_seq_len = sequence_length_2D(y_true_tensor)
+        # longest_sequence_length = tf.maximum(y_true_seq_len,
+        #                                     sequence_length_3D(y_pred_tensor))
+        # longest_sequence_length = tf.minimum(longest_sequence_length,
+        #                                     y_true_seq_len)
+        # longest_sequence_length += 2  # for EOS
+
         mask = tf.sequence_mask(
-            longest_sequence_length,
+            y_true_seq_len + 1,  # this is for including the eos
+            # in case of generator and shouldn't impact
+            # negatively in case of tagger
             maxlen=tf.shape(y_true_tensor)[1],
             dtype=tf.float32
         )
@@ -179,9 +183,6 @@ class SequenceLoss(tf.keras.losses.Loss):
         loss = loss * mask
         loss = tf.reduce_sum(loss) / tf.reduce_sum(mask)
         return loss
-
-
-# end of custom classes
 
 
 def softmax_cross_entropy_with_class_weighting(logits, one_hot_labels,
@@ -223,66 +224,6 @@ def mean_confidence_penalty(probabilities, num_classes):
     entropy = tf.reduce_sum(entropy_per_class, -1)
     penalty = (max_entropy - entropy) / max_entropy
     return tf.reduce_mean(penalty)
-
-
-def seq2seq_sequence_loss(targets, targets_sequence_length, logits,
-                          softmax_function=None):
-    batch_max_targets_sequence_length = tf.shape(targets)[1]
-    batch_max_logits_sequence_length = tf.shape(logits)[1]
-    difference = tf.maximum(0,
-                            batch_max_targets_sequence_length - batch_max_logits_sequence_length)
-    padded_logits = tf.pad(logits, [[0, 0], [0, difference], [0, 0]])
-    padded_logits = padded_logits[:, :batch_max_targets_sequence_length, :]
-
-    with tf.variable_scope('sequence_loss'):
-        sequence_loss = tfa.seq2seq.sequence_loss(
-            padded_logits,
-            targets,
-            tf.sequence_mask(targets_sequence_length,
-                             batch_max_targets_sequence_length,
-                             dtype=tf.float32),
-            average_across_timesteps=True,
-            average_across_batch=False,
-            softmax_loss_function=softmax_function
-        )
-
-    # batch_max_seq_length = tf.shape(logits)[1]
-    # unpadded_targets = targets[:, :tf.shape(logits)[1]]
-    # with tf.variable_scope('sequence_loss'):
-    #     sequence_loss = tfa.seq2seq.sequence_loss(
-    #         logits,
-    #         unpadded_targets,
-    #         tf.sequence_mask(targets_sequence_length, batch_max_seq_length, dtype=tf.float32),
-    #         average_across_timesteps=True,
-    #         average_across_batch=False,
-    #         softmax_loss_function=softmax_function
-    #     )
-
-    return sequence_loss
-
-
-# manual implementation of sequence loss
-def cross_entropy_sequence_loss(logits, targets, sequence_length):
-    """Calculates the per-example cross-entropy loss for a sequence of logits and
-      masks out all losses passed the sequence length.
-    Args:
-      logits: Logits of shape `[B, T, vocab_size]`
-      targets: Target classes of shape `[B, T]`
-      sequence_length: An int32 tensor of shape `[B]` corresponding
-        to the length of each input
-    Returns:
-      A tensor of shape [T, B] that contains the loss per example, per time step.
-    """
-    with tf.variable_scope('sequence_loss'):
-        losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
-            logits=logits, labels=targets)
-        # Mask out the losses we don't care about
-        loss_mask = tf.sequence_mask(
-            tf.cast(sequence_length, tf.int32),
-            tf.cast(tf.shape(targets)[1], tf.int32)
-        )
-        losses = losses * tf.cast(loss_mask, tf.float32)
-        return losses
 
 
 def sampled_softmax_cross_entropy(
@@ -408,44 +349,6 @@ def weighted_softmax_cross_entropy(
             label_smoothing=labels_smoothing
         )
     return train_loss
-
-
-def loss_multilabel(logits, vector_labels, loss):
-    # input: `logits` and `labels` must have the same shape `[batch_size, num_classes]`
-    # output: A 1-D `Tensor` of length `batch_size` of the same type as `logits` with the softmax cross entropy loss.
-    # let `x = logits`, `z = labels`.  The logistic loss is:z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
-    use_class_weights = not isinstance(loss['class_weights'], (int, float))
-    if use_class_weights:
-        train_loss = sigmoid_cross_entropy_with_class_weighting(
-            logits,
-            vector_labels,
-            loss['class_weights'],
-            loss['labels_smoothing']
-        )
-    else:
-        train_loss = tf.losses.sigmoid_cross_entropy(
-            multi_class_labels=vector_labels,
-            logits=logits,
-            label_smoothing=loss[
-                'labels_smoothing'],
-            reduction=Reduction.NONE)
-    return train_loss
-
-
-def absolute_loss(y, y_hat):
-    return tf.abs(tf.subtract(y, y_hat))
-
-
-def squared_loss(y, y_hat):
-    return tf.square(tf.subtract(y, y_hat))
-
-
-def mean_absolute_error(y, y_hat, weight=1.0):
-    return tf.reduce_mean(tf.multiply(absolute_loss(y, y_hat), weight))
-
-
-def mean_squared_error(y, y_hat, weight=1.0):
-    return tf.reduce_mean(tf.multiply(squared_loss(y, y_hat), weight))
 
 
 def sample_values_from_classes(labels, sampler, num_classes, negative_samples,
