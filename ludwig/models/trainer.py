@@ -449,8 +449,8 @@ class Trainer:
                     increase_batch_size_eval_metric
                 ),
                 last_increase_batch_size_eval_metric_improvement=0,
-                num_reductions_lr=0,
-                num_increases_bs=0,
+                num_reductions_learning_rate=0,
+                num_increases_batch_size=0,
                 train_metrics=train_metrics,
                 vali_metrics=vali_metrics,
                 test_metrics=test_metrics,
@@ -1047,7 +1047,7 @@ class Trainer:
                     and
                     progress_tracker.last_reduce_learning_rate_eval_metric_improvement > 0
                     and
-                    not progress_tracker.num_reductions_lr >= reduce_learning_rate_on_plateau
+                    not progress_tracker.num_reductions_learning_rate >= reduce_learning_rate_on_plateau
             ):
                 logger.info(
                     'Last learning rate reduction '
@@ -1085,7 +1085,7 @@ class Trainer:
                     and
                     progress_tracker.last_increase_batch_size_eval_metric_improvement > 0
                     and
-                    not progress_tracker.num_increases_bs >= increase_batch_size_on_plateau
+                    not progress_tracker.num_increases_batch_size >= increase_batch_size_on_plateau
                     and
                     not progress_tracker.batch_size >= increase_batch_size_on_plateau_max
             ):
@@ -1359,7 +1359,7 @@ class Trainer:
             reduce_learning_rate_eval_metric=LOSS,
             reduce_learning_rate_eval_split=TRAINING
     ):
-        if not (progress_tracker.num_reductions_lr >=
+        if not (progress_tracker.num_reductions_learning_rate >=
                 reduce_learning_rate_on_plateau):
 
             if reduce_learning_rate_eval_split == TRAINING:
@@ -1410,15 +1410,15 @@ class Trainer:
 
                     progress_tracker.last_learning_rate_reduction_epoch = progress_tracker.epoch
                     progress_tracker.last_learning_rate_reduction = 0
-                    progress_tracker.num_reductions_lr += 1
+                    progress_tracker.num_reductions_learning_rate += 1
 
-                    if (progress_tracker.num_reductions_lr >=
+                    if (progress_tracker.num_reductions_learning_rate >=
                             reduce_learning_rate_on_plateau):
                         if is_on_master():
                             logger.info(
                                 'Learning rate was already reduced '
                                 '{} times, not reducing it anymore'.format(
-                                    progress_tracker.num_reductions_lr
+                                    progress_tracker.num_reductions_learning_rate
                                 )
                             )
 
@@ -1433,7 +1433,7 @@ class Trainer:
             increase_batch_size_eval_metric=LOSS,
             increase_batch_size_eval_split=TRAINING
     ):
-        if (not progress_tracker.num_increases_bs >=
+        if (not progress_tracker.num_increases_batch_size >=
                 increase_batch_size_on_plateau
                 and not progress_tracker.batch_size ==
                         increase_batch_size_on_plateau_max):
@@ -1487,15 +1487,15 @@ class Trainer:
 
                     progress_tracker.last_increase_batch_size_epoch = progress_tracker.epoch
                     progress_tracker.last_increase_batch_size = 0
-                    progress_tracker.num_increases_bs += 1
+                    progress_tracker.num_increases_batch_size += 1
 
-                    if (progress_tracker.num_increases_bs >=
+                    if (progress_tracker.num_increases_batch_size >=
                             increase_batch_size_on_plateau):
                         if is_on_master():
                             logger.info(
                                 'Batch size was already increased '
                                 '{} times, not increasing it anymore'.format(
-                                    progress_tracker.num_increases_bs
+                                    progress_tracker.num_increases_batch_size
                                 )
                             )
                     elif (progress_tracker.batch_size >=
@@ -1505,7 +1505,7 @@ class Trainer:
                                 'Batch size was already increased '
                                 '{} times, currently it is {}, '
                                 'the maximum allowed'.format(
-                                    progress_tracker.num_increases_bs,
+                                    progress_tracker.num_increases_batch_size,
                                     progress_tracker.batch_size
                                 )
                             )
@@ -1527,8 +1527,8 @@ class ProgressTracker:
             best_increase_batch_size_eval_metric,
             last_increase_batch_size_eval_metric_improvement,
             learning_rate,
-            num_reductions_lr,
-            num_increases_bs,
+            num_reductions_learning_rate,
+            num_increases_batch_size,
             train_metrics,
             vali_metrics,
             test_metrics,
@@ -1551,8 +1551,8 @@ class ProgressTracker:
         self.last_reduce_learning_rate_eval_metric_improvement = last_reduce_learning_rate_eval_metric_improvement
         self.best_increase_batch_size_eval_metric = best_increase_batch_size_eval_metric
         self.last_increase_batch_size_eval_metric_improvement = last_increase_batch_size_eval_metric_improvement
-        self.num_reductions_lr = num_reductions_lr
-        self.num_increases_bs = num_increases_bs
+        self.num_reductions_learning_rate = num_reductions_learning_rate
+        self.num_increases_batch_size = num_increases_batch_size
         self.train_metrics = train_metrics
         self.vali_metrics = vali_metrics
         self.test_metrics = test_metrics
