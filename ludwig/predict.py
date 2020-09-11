@@ -28,8 +28,6 @@ from ludwig.models.new_ludwig_model import NewLudwigModel
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
-logger = logging.getLogger(__name__)
-
 
 def predict_cli(
         model_path,
