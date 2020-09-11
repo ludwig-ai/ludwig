@@ -278,6 +278,16 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     def default_validation_metric(self):
         pass
 
+    @abstractmethod
+    def postprocess_predictions(
+            self,
+            result,
+            metadata,
+            experiment_dir_name,
+            skip_save_unprocessed_output=False,
+    ):
+        pass
+
     @staticmethod
     @abstractmethod
     def update_model_definition_with_metadata(
@@ -295,17 +305,6 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             output_feature,
             dataset,
             train_set_metadata
-    ):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def postprocess_results(
-            output_feature,
-            result,
-            metadata,
-            experiment_dir_name,
-            skip_save_unprocessed_output=False,
     ):
         pass
 

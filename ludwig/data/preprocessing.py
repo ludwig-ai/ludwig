@@ -341,7 +341,7 @@ def preprocess_for_training(
         random_seed=default_random_seed
 ):
     # sanity check to make sure some data source is provided
-    if not (dataset or training_set):
+    if dataset is None and training_set is None:
         raise ValueError('No training data is provided!')
 
     # determine data format if not provided or auto
@@ -707,7 +707,7 @@ def preprocess_for_prediction(
         :returns: Dataset, Train set metadata
         """
     # Sanity Check to make sure some data source is provided
-    if not dataset:
+    if dataset is None:
         raise ValueError('No training data is provided!')
 
     if isinstance(dataset, Dataset):

@@ -508,15 +508,14 @@ def figure_data_format_dataset(dataset):
 def figure_data_format(
         dataset=None, training_set=None, validation_set=None, test_set=None
 ):
-    if dataset:
+    if dataset is not None:
         data_format = figure_data_format_dataset(dataset)
-    elif training_set:
-        data_formats = []
-        data_formats += figure_data_format_dataset(training_set)
-        if validation_set:
-            data_formats += figure_data_format_dataset(validation_set)
-        if test_set:
-            data_formats += figure_data_format_dataset(test_set)
+    elif training_set is not None:
+        data_formats = [figure_data_format_dataset(training_set)]
+        if validation_set is not None:
+            data_formats.append(figure_data_format_dataset(validation_set))
+        if test_set is not None:
+            data_formats.append(figure_data_format_dataset(test_set))
         data_formats_set = set(data_formats)
         if len(data_formats_set) > 1:
             error_message = "Datasets have different formats. Training: "

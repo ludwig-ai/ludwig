@@ -335,7 +335,9 @@ class NewLudwigModel:
                 random_seed=random_seed
             )
             if not skip_save_training_description:
-                save_json(description_fn, description)
+                # TODO(refactor): datasets are not JSON serializable
+                # save_json(description_fn, description)
+                pass
             # print description
             logger.info('Experiment name: {}'.format(experiment_name))
             logger.info('Model name: {}'.format(model_name))
