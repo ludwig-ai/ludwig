@@ -106,7 +106,6 @@ def csv_contains_column(data_fp, column_name):
 
 
 def load_json(data_fp):
-    data = []
     with open(data_fp, 'r') as input_file:
         data = json.load(input_file)
     return data

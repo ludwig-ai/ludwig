@@ -8,10 +8,9 @@ from ludwig.constants import MAXIMIZE, VALIDATION, TRAINING, TEST
 from ludwig.data.postprocessing import postprocess_dict
 from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
-from ludwig.models.prediction_helpers import save_prediction_outputs, \
+from ludwig.models.new_ludwig_model import NewLudwigModel
+from ludwig.models.predictor import save_prediction_outputs, \
     save_evaluation_stats, print_evaluation_stats
-from ludwig.predict import predict
-from ludwig.train import full_train
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -38,19 +37,12 @@ class HyperoptExecutor(ABC):
     def execute(
             self,
             model_definition,
-            data_df=None,
-            data_train_df=None,
-            data_validation_df=None,
-            data_test_df=None,
-            data_csv=None,
-            data_train_csv=None,
-            data_validation_csv=None,
-            data_test_csv=None,
-            data_hdf5=None,
-            data_train_hdf5=None,
-            data_validation_hdf5=None,
-            data_test_hdf5=None,
-            training_set_metadata_json=None,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
             experiment_name="hyperopt",
             model_name="run",
             model_load_path=None,
@@ -88,19 +80,12 @@ class SerialExecutor(HyperoptExecutor):
     def execute(
             self,
             model_definition,
-            data_df=None,
-            data_train_df=None,
-            data_validation_df=None,
-            data_test_df=None,
-            data_csv=None,
-            data_train_csv=None,
-            data_validation_csv=None,
-            data_test_csv=None,
-            data_hdf5=None,
-            data_train_hdf5=None,
-            data_validation_hdf5=None,
-            data_test_hdf5=None,
-            training_set_metadata_json=None,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
             experiment_name="hyperopt",
             model_name="run",
             # model_load_path=None,
@@ -137,19 +122,12 @@ class SerialExecutor(HyperoptExecutor):
                 train_stats, eval_stats = train_and_eval_on_split(
                     modified_model_definition,
                     eval_split=self.split,
-                    data_df=data_df,
-                    data_train_df=data_train_df,
-                    data_validation_df=data_validation_df,
-                    data_test_df=data_test_df,
-                    data_csv=data_csv,
-                    data_train_csv=data_train_csv,
-                    data_validation_csv=data_validation_csv,
-                    data_test_csv=data_test_csv,
-                    data_hdf5=data_hdf5,
-                    data_train_hdf5=data_train_hdf5,
-                    data_validation_hdf5=data_validation_hdf5,
-                    data_test_hdf5=data_test_hdf5,
-                    training_set_metadata_json=training_set_metadata_json,
+                    dataset=dataset,
+                    training_set=training_set,
+                    validation_set=validation_set,
+                    test_set=test_set,
+                    training_set_metadata=training_set_metadata,
+                    data_format=data_format,
                     experiment_name=f'{experiment_name}_{trial_id}',
                     model_name=model_name,
                     # model_load_path=model_load_path,
@@ -250,19 +228,12 @@ class ParallelExecutor(HyperoptExecutor):
     def execute(
             self,
             model_definition,
-            data_df=None,
-            data_train_df=None,
-            data_validation_df=None,
-            data_test_df=None,
-            data_csv=None,
-            data_train_csv=None,
-            data_validation_csv=None,
-            data_test_csv=None,
-            data_hdf5=None,
-            data_train_hdf5=None,
-            data_validation_hdf5=None,
-            data_test_hdf5=None,
-            training_set_metadata_json=None,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
             experiment_name="hyperopt",
             model_name="run",
             # model_load_path=None,
@@ -413,44 +384,37 @@ class ParallelExecutor(HyperoptExecutor):
 
                     trial_id = trials + i
                     hyperopt_parameters.append(
-                        {
-                            "parameters": parameters,
-                            "model_definition": modified_model_definition,
-                            "eval_split": self.split,
-                            "data_df": data_df,
-                            "data_train_df": data_train_df,
-                            "data_validation_df": data_validation_df,
-                            "data_test_df": data_test_df,
-                            "data_csv": data_csv,
-                            "data_train_csv": data_train_csv,
-                            "data_validation_csv": data_validation_csv,
-                            "data_test_csv": data_test_csv,
-                            "data_hdf5": data_hdf5,
-                            "data_train_hdf5": data_train_hdf5,
-                            "data_validation_hdf5": data_validation_hdf5,
-                            "data_test_hdf5": data_test_hdf5,
-                            "training_set_metadata_json": training_set_metadata_json,
-                            "experiment_name": f'{experiment_name}_{trial_id}',
-                            "model_name": model_name,
-                            # model_load_path:model_load_path,
-                            # model_resume_path:model_resume_path,
-                            'skip_save_training_description': skip_save_training_description,
-                            'skip_save_training_statistics': skip_save_training_statistics,
-                            'skip_save_model': skip_save_model,
-                            'skip_save_progress': skip_save_progress,
-                            'skip_save_log': skip_save_log,
-                            'skip_save_processed_input': skip_save_processed_input,
-                            'skip_save_unprocessed_output': skip_save_unprocessed_output,
-                            'skip_save_test_predictions': skip_save_test_predictions,
-                            'skip_save_test_statistics': skip_save_test_statistics,
-                            'output_directory': output_directory,
-                            'gpus': gpus,
-                            'gpu_memory_limit': gpu_memory_limit,
-                            'allow_parallel_threads': allow_parallel_threads,
-                            'use_horovod': use_horovod,
-                            'random_seed': random_seed,
-                            'debug': debug,
-                        }
+                        dict(
+                            parameters=parameters,
+                            model_definition=modified_model_definition,
+                            eval_split=self.split,
+                            dataset=dataset,
+                            training_set=training_set,
+                            validation_set=validation_set,
+                            test_set=test_set,
+                            training_set_metadata=training_set_metadata,
+                            data_format=data_format,
+                            experiment_name=f'{experiment_name}_{trial_id}',
+                            model_name=model_name,
+                            # model_load_pat=model_load_path,
+                            # model_resume_path=model_resume_path,
+                            skip_save_training_description=skip_save_training_description,
+                            skip_save_training_statistics=skip_save_training_statistics,
+                            skip_save_model=skip_save_model,
+                            skip_save_progress=skip_save_progress,
+                            skip_save_log=skip_save_log,
+                            skip_save_processed_input=skip_save_processed_input,
+                            skip_save_unprocessed_output=skip_save_unprocessed_output,
+                            skip_save_test_predictions=skip_save_test_predictions,
+                            skip_save_test_statistics=skip_save_test_statistics,
+                            output_directory=output_directory,
+                            gpus=gpus,
+                            gpu_memory_limit=gpu_memory_limit,
+                            allow_parallel_threads=allow_parallel_threads,
+                            use_horovod=use_horovod,
+                            random_seed=random_seed,
+                            debug=debug,
+                        )
                     )
                 trials += len(sampled_parameters)
 
@@ -516,19 +480,12 @@ class FiberExecutor(HyperoptExecutor):
     def execute(
             self,
             model_definition,
-            data_df=None,
-            data_train_df=None,
-            data_validation_df=None,
-            data_test_df=None,
-            data_csv=None,
-            data_train_csv=None,
-            data_validation_csv=None,
-            data_test_csv=None,
-            data_hdf5=None,
-            data_train_hdf5=None,
-            data_validation_hdf5=None,
-            data_test_hdf5=None,
-            training_set_metadata_json=None,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
             experiment_name="hyperopt",
             model_name="run",
             # model_load_path=None,
@@ -553,19 +510,12 @@ class FiberExecutor(HyperoptExecutor):
     ):
         train_kwargs = dict(
             eval_split=self.split,
-            data_df=data_df,
-            data_train_df=data_train_df,
-            data_validation_df=data_validation_df,
-            data_test_df=data_test_df,
-            data_csv=data_csv,
-            data_train_csv=data_train_csv,
-            data_validation_csv=data_validation_csv,
-            data_test_csv=data_test_csv,
-            data_hdf5=data_hdf5,
-            data_train_hdf5=data_train_hdf5,
-            data_validation_hdf5=data_validation_hdf5,
-            data_test_hdf5=data_test_hdf5,
-            training_set_metadata_json=training_set_metadata_json,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
             model_name=model_name,
             # model_load_path=model_load_path,
             # model_resume_path=model_resume_path,
@@ -688,19 +638,12 @@ def substitute_parameters(model_definition, parameters):
 def train_and_eval_on_split(
         model_definition,
         eval_split=VALIDATION,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        training_set_metadata_json=None,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
         experiment_name="hyperopt",
         model_name="run",
         # model_load_path=None,
@@ -726,26 +669,24 @@ def train_and_eval_on_split(
     # Collect training and validation losses and metrics
     # & append it to `results`
     # ludwig_model = LudwigModel(modified_model_definition)
-    (model, preprocessed_data, experiment_dir_name, train_stats,
-     model_definition) = full_train(
+    model = NewLudwigModel(
         model_definition=model_definition,
-        data_df=data_df,
-        data_train_df=data_train_df,
-        data_validation_df=data_validation_df,
-        data_test_df=data_test_df,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        training_set_metadata_json=training_set_metadata_json,
+        use_horovod=use_horovod,
+        gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
+        random_seed=random_seed
+    )
+
+    train_stats, preprocessed_data = model.train(
+        dataset=dataset,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
-        # model_load_path=model_load_path,
-        # model_resume_path=model_resume_path,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
         skip_save_model=skip_save_model,
@@ -753,20 +694,16 @@ def train_and_eval_on_split(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
     )
-    (training_set, validation_set, test_set,
-     training_set_metadata) = preprocessed_data
+
     if model_definition[TRAINING]["eval_batch_size"] > 0:
         batch_size = model_definition[TRAINING]["eval_batch_size"]
     else:
         batch_size = model_definition[TRAINING]["batch_size"]
 
+    training_set, validation_set, test_set, train_set_metadata = preprocessed_data
     eval_set = validation_set
     if eval_split == TRAINING:
         eval_set = training_set
@@ -775,34 +712,18 @@ def train_and_eval_on_split(
     elif eval_split == TEST:
         eval_set = test_set
 
-    test_results = predict(
-        eval_set,
-        training_set_metadata,
-        model,
-        model_definition,
-        batch_size,
-        evaluate_performance=True,
-        debug=debug
-    )
-    if not (
-            skip_save_unprocessed_output and skip_save_test_predictions and skip_save_test_statistics):
-        if not os.path.exists(experiment_dir_name):
-            os.makedirs(experiment_dir_name)
-
-    # postprocess
-    postprocessed_output = postprocess_dict(
-        test_results,
-        model_definition["output_features"],
-        training_set_metadata,
-        experiment_dir_name,
-        skip_save_unprocessed_output,
+    test_results, postproc_predictions = model.evaluate(
+        dataset=eval_set,
+        data_format=data_format,
+        batch_size=batch_size,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_test_predictions,
+        skip_save_eval_stats=skip_save_test_statistics,
+        output_directory=output_directory,
+        return_type=dict,
+        debug=debug,
     )
 
-    print_evaluation_stats(test_results)
-    if not skip_save_test_predictions:
-        save_prediction_outputs(postprocessed_output, experiment_dir_name)
-    if not skip_save_test_statistics:
-        save_evaluation_stats(test_results, experiment_dir_name)
     return train_stats, test_results
 
 

@@ -111,7 +111,8 @@ def test_hyperopt_executor(sampler, executor, csv_filename,
     hyperopt_executor = get_build_hyperopt_executor(executor["type"])(
         hyperopt_sampler, output_feature, metric, split, **executor)
 
-    hyperopt_executor.execute(model_definition, data_csv=rel_path,
+    hyperopt_executor.execute(model_definition,
+                              dataset=rel_path,
                               gpus=get_available_gpus_cuda_string())
 
 

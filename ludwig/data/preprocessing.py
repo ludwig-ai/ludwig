@@ -370,6 +370,8 @@ def preprocess_for_training(
                     'of the csv, using them instead'
                 )
                 dataset = replace_file_extension(dataset, 'hdf5')
+                training_set_metadata_fname = replace_file_extension(dataset, 'json')
+                training_set_metadata = data_utils.load_json(training_set_metadata_fname)
                 model_definition['data_hdf5_fp'] = dataset
                 data_format = 'hdf5'
 
@@ -381,6 +383,8 @@ def preprocess_for_training(
                     'of the csv, using them instead'
                 )
                 training_set = replace_file_extension(training_set, 'hdf5')
+                training_set_metadata_fname = replace_file_extension(training_set, 'json')
+                training_set_metadata = data_utils.load_json(training_set_metadata_fname)
                 validation_set = replace_file_extension(validation_set,
                                                         'hdf5')
                 test_set = replace_file_extension(test_set, 'hdf5')
@@ -705,6 +709,9 @@ def preprocess_for_prediction(
     # Sanity Check to make sure some data source is provided
     if not dataset:
         raise ValueError('No training data is provided!')
+
+    if isinstance(dataset, Dataset):
+        return dataset, training_set_metadata
 
     # determine data format if not provided or auto
     if not data_format or data_format == 'auto':

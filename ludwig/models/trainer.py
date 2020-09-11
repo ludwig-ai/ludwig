@@ -498,11 +498,11 @@ class Trainer:
                 batch = batcher.next_batch()
                 inputs = {
                     i_feat.feature_name: batch[i_feat.feature_name]
-                    for i_feat in model.input_features
+                    for i_feat in model.input_features.values()
                 }
                 targets = {
                     o_feat.feature_name: batch[o_feat.feature_name]
-                    for o_feat in model.output_features
+                    for o_feat in model.output_features.values()
                 }
 
                 # Reintroduce for tensorboard graph
@@ -796,7 +796,7 @@ class Trainer:
         predictor = Predictor(
             batch_size=batch_size, horovod=self._horovod, debug=self._debug
         )
-        metrics = predictor.batch_evaluation(
+        metrics, predictions = predictor.batch_evaluation(
             model,
             dataset,
             collect_predictions=False,

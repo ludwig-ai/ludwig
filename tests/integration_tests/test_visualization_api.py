@@ -71,7 +71,7 @@ class Experiment:
         self.input_features[0]['encoder'] = encoder
         self.setup_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
-        self.train_stats = self.model.train(
+        self.train_stats, _ = self.model.train(
             data_train_df=train_df,
             data_validation_df=val_df
         )

@@ -363,6 +363,7 @@ class NewLudwigModel:
          validation_set,
          test_set,
          training_set_metadata) = preprocessed_data
+        self.training_set_metadata = training_set_metadata
 
         if is_on_master():
             logger.info('Training set: {0}'.format(training_set.size))
@@ -478,7 +479,7 @@ class NewLudwigModel:
         self.training_set_metadata = training_set_metadata
         self.exp_dir_name = experiment_dir_name
 
-        return train_stats
+        return train_stats, preprocessed_data
 
     # def predict_pseudo(self, data):
     #     preproc_data = preprocess_data(data)

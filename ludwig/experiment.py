@@ -32,10 +32,8 @@ from ludwig.constants import TRAINING
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess_dict
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
-from ludwig.models.prediction_helpers import save_prediction_outputs, \
+from ludwig.models.predictor import save_prediction_outputs, \
     save_evaluation_stats, print_evaluation_stats
-from ludwig.predict import predict
-from ludwig.train import full_train
 from ludwig.utils.data_utils import save_json, generate_kfold_splits, \
     is_model_dir
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults

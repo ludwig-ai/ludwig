@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from collections import OrderedDict
@@ -8,15 +9,15 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_on_master, is_progressbar_disabled
-from ludwig.predict import logger
 from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import save_csv, save_json
-from ludwig.utils.horovod_utils import allgather_object
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
 
 EXCLUE_PRED_SET = {LOGITS}
 SKIP_EVAL_METRICS = {'confusion_matrix', 'roc_curve'}
+
+logger = logging.getLogger(__name__)
 
 
 class Predictor:
@@ -121,10 +122,14 @@ class Predictor:
         while not batcher.last_batch():
             batch = batcher.next_batch()
 
-            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
-                      for i_feat in model.input_features}
-            targets = {o_feat.feature_name: batch[o_feat.feature_name]
-                       for o_feat in model.output_features}
+            inputs = {
+                i_feat.feature_name: batch[i_feat.feature_name]
+                for i_feat in model.input_features.values()
+            }
+            targets = {
+                o_feat.feature_name: batch[o_feat.feature_name]
+                for o_feat in model.output_features.values()
+            }
 
             preds = model.evaluation_step(inputs, targets)
 
@@ -157,8 +162,7 @@ class Predictor:
                     )
 
         metrics = model.get_metrics()
-        if self._horovod:
-            metrics = merge_workers_metrics(metrics)
+        metrics = self.merge_workers_metrics(metrics)
         model.reset_metrics()
 
         return metrics, predictions
@@ -231,18 +235,20 @@ class Predictor:
 
         return collected_tensors
 
+    def merge_workers_metrics(self, metrics):
+        if not self._horovod:
+            return metrics
 
-def merge_workers_metrics(metrics):
-    # gather outputs from all workers
-    all_workers_output_metrics = allgather_object(metrics)
+        # gather outputs from all workers
+        all_workers_output_metrics = self._horovod.allgather_object(metrics)
 
-    # merge them into a single one
-    merged_output_metrics = sum_dicts(
-        all_workers_output_metrics,
-        dict_type=OrderedDict
-    )
+        # merge them into a single one
+        merged_output_metrics = sum_dicts(
+            all_workers_output_metrics,
+            dict_type=OrderedDict
+        )
 
-    return merged_output_metrics
+        return merged_output_metrics
 
 
 def calculate_overall_stats(
