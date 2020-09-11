@@ -62,8 +62,10 @@ class Predictor:
         while not batcher.last_batch():
             batch = batcher.next_batch()
 
-            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
-                      for i_feat in model.input_features}
+            inputs = {
+                i_feat.feature_name: batch[i_feat.feature_name]
+                for i_feat in model.input_features.values()
+            }
 
             preds = model.predict_step(inputs)
 
@@ -71,9 +73,6 @@ class Predictor:
             for of_name, of_preds in preds.items():
                 if of_name not in predictions:
                     predictions[of_name] = {}
-                    # todo refactoring: remove logits from predictions will happen inside exc.batch_evaluate()
-                    # remove logits, not needed for overall stats
-                    del predictions[of_name][LOGITS]
                 for pred_name, pred_values in of_preds.items():
                     if pred_name not in EXCLUE_PRED_SET:
                         if pred_name not in predictions[of_name]:
