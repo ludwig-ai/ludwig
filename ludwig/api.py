@@ -801,7 +801,8 @@ class LudwigModel:
             # combine predictions with the overall metrics
             for of_name in predict_predictions:
                 # remove logits, not needed for overall stats
-                del predict_predictions[of_name][LOGITS]
+                if LOGITS in predict_predictions[of_name]:
+                    del predict_predictions[of_name][LOGITS]
                 predict_stats[of_name] = {**predict_stats[of_name],
                                           **predict_predictions[of_name]}
 

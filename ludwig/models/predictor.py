@@ -136,12 +136,11 @@ class Predictor:
                     if of_name not in predictions:
                         predictions[of_name] = {}
                     for pred_name, pred_values in of_preds.items():
-                        if pred_name not in EXCLUE_PRED_SET:
+                        if pred_name not in EXCLUE_PRED_SET and pred_values is not None:
                             if pred_name not in predictions[of_name]:
                                 predictions[of_name][pred_name] = [pred_values]
                             else:
-                                predictions[of_name][pred_name].append(
-                                    pred_values)
+                                predictions[of_name][pred_name].append(pred_values)
 
             if is_on_master():
                 progress_bar.update(1)

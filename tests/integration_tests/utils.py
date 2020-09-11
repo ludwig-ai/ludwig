@@ -14,12 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 
+import multiprocessing
+import os
 import random
 import shutil
+import unittest
 import uuid
+from distutils.util import strtobool
 
+import cloudpickle
 import pandas as pd
-
 from ludwig.constants import VECTOR
 from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
@@ -29,6 +33,59 @@ ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
     'stacked_cnn'
 ]
+
+HF_ENCODERS_SHORT = ['distilbert']
+
+HF_ENCODERS = [
+    'bert',
+    'gpt',
+    'gpt2',
+    # 'transformer_xl',
+    'xlnet',
+    'xlm',
+    'roberta',
+    'distilbert',
+    'ctrl',
+    'camembert',
+    'albert',
+    't5',
+    'xlmroberta',
+    'longformer',
+    'flaubert',
+    'electra',
+]
+
+
+def parse_flag_from_env(key, default=False):
+    try:
+        value = os.environ[key]
+    except KeyError:
+        # KEY isn't set, default to `default`.
+        _value = default
+    else:
+        # KEY is set, convert it to True or False.
+        try:
+            _value = strtobool(value)
+        except ValueError:
+            # More values are supported, but let's keep the message simple.
+            raise ValueError("If set, {} must be yes or no.".format(key))
+    return _value
+
+
+_run_slow_tests = parse_flag_from_env("RUN_SLOW", default=False)
+
+
+def slow(test_case):
+    """
+    Decorator marking a test as slow.
+
+    Slow tests are skipped by default. Set the RUN_SLOW environment variable
+    to a truth value to run them.
+
+    """
+    if not _run_slow_tests:
+        test_case = unittest.skip("Skipping: this test is too slow")(test_case)
+    return test_case
 
 
 def generate_data(
@@ -86,7 +143,7 @@ def text_feature(**kwargs):
     feature = {
         'name': 'text_' + random_string(),
         'type': 'text',
-        'reduce_input': 'null',
+        'reduce_input': None,
         'vocab_size': 5,
         'min_len': 7,
         'max_len': 7,
@@ -294,10 +351,10 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
     #  generate_output_features_with_dependencies('feat2', ['feat1', 'feat3'])
 
     output_features = [
-            category_feature(vocab_size=2, reduce_input='sum'),
-            sequence_feature(vocab_size=10, max_len=5),
-            numerical_feature()
-        ]
+        category_feature(vocab_size=2, reduce_input='sum'),
+        sequence_feature(vocab_size=10, max_len=5),
+        numerical_feature()
+    ]
 
     # value portion of dictionary is a tuple: (position, feature_name)
     #   position: location of output feature in the above output_features list
@@ -310,10 +367,34 @@ def generate_output_features_with_dependencies(main_feature, dependencies):
 
     # generate list of dependencies with real feature names
     generated_dependencies = [feature_names[feat_name][1]
-                                for feat_name in dependencies]
+                              for feat_name in dependencies]
 
     # specify dependencies for the main_feature
     output_features[feature_names[main_feature][0]]['dependencies'] = \
         generated_dependencies
 
     return output_features
+
+
+def _subproc_wrapper(fn, queue, *args, **kwargs):
+    fn = cloudpickle.loads(fn)
+    results = fn(*args, **kwargs)
+    queue.put(results)
+
+
+def spawn(fn):
+    def wrapped_fn(*args, **kwargs):
+        ctx = multiprocessing.get_context('spawn')
+        queue = ctx.Queue()
+
+        p = ctx.Process(
+            target=_subproc_wrapper,
+            args=(cloudpickle.dumps(fn), queue, *args),
+            kwargs=kwargs)
+
+        p.start()
+        p.join()
+        results = queue.get()
+        return results
+
+    return wrapped_fn

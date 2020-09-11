@@ -20,6 +20,8 @@ import numpy as np
 import tensorflow as tf
 
 from ludwig.constants import *
+from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
+    StackedParallelCNN, StackedRNN, StackedCNNRNN, SequencePassthroughEncoder
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
@@ -125,11 +127,10 @@ class TimeseriesFeatureMixin(object):
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
     encoder = 'parallel_cnn'
-    length = 0
+    max_sequence_length = None
 
     def __init__(self, feature, encoder_obj=None):
-        # todo tf2: encoder_obj should be passed to the sequenceinputfeature
-        super().__init__(feature)
+        super().__init__(feature, encoder_obj=encoder_obj)
 
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
@@ -148,7 +149,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         return tf.float32
 
     def get_input_shape(self):
-        return self.length,
+        return self.max_sequence_length,
 
     @staticmethod
     def update_model_definition_with_metadata(
@@ -157,7 +158,8 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
             *args,
             **kwargs
     ):
-        input_feature['length'] = feature_metadata['max_timeseries_length']
+        input_feature['max_sequence_length'] = feature_metadata[
+            'max_timeseries_length']
         input_feature['embedding_size'] = 1
         input_feature['should_embed'] = False
 
@@ -170,6 +172,19 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
                 'encoder': 'parallel_cnn',
             }
         )
+
+    encoder_registry = {
+        'stacked_cnn': StackedCNN,
+        'parallel_cnn': ParallelCNN,
+        'stacked_parallel_cnn': StackedParallelCNN,
+        'rnn': StackedRNN,
+        'cnnrnn': StackedCNNRNN,
+        'passthrough': SequencePassthroughEncoder,
+        'null': SequencePassthroughEncoder,
+        'none': SequencePassthroughEncoder,
+        'None': SequencePassthroughEncoder,
+        None: SequencePassthroughEncoder
+    }
 
 # this is still WIP
 # class TimeseriesOutputFeature(TimeseriesBaseFeature, SequenceOutputFeature):

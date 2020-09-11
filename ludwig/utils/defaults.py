@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
+
 from ludwig.constants import *
 from ludwig.features.feature_registries import base_type_registry
 from ludwig.features.feature_registries import input_type_registry
@@ -21,6 +23,8 @@ from ludwig.features.feature_registries import output_type_registry
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.misc_utils import set_default_value
+
+logger = logging.getLogger(__name__)
 
 default_random_seed = 42
 
@@ -68,6 +72,10 @@ default_training_params = {
 }
 
 default_optimizer_params_registry = {
+    'sgd': {},
+    'stochastic_gradient_descent': {},
+    'gd': {},
+    'gradient_descent': {},
     'adam': {
         'beta_1': 0.9,
         'beta_2': 0.999,
@@ -80,31 +88,14 @@ default_optimizer_params_registry = {
     'adagrad': {
         'initial_accumulator_value': 0.1
     },
-    'adagradda': {
-        'initial_gradient_squared_accumulator_value': 0.1,
-        'l1_regularization_strength': 0.0,
-        'l2_regularization_strength': 0.0
-    },
+    'adamax': {},
     'ftrl': {
         'learning_rate_power': -0.5,
         'initial_accumulator_value': 0.1,
         'l1_regularization_strength': 0.0,
         'l2_regularization_strength': 0.0
     },
-    'momentum': {
-        'momentum': 0.1
-    },
-    'proximalgd': {
-        'l1_regularization_strength': 0.0,
-        'l2_regularization_strength': 0.0
-    },
-    'proximaladagrad': {
-        'initial_accumulator_value': 0.1,
-        'l1_regularization_strength': 0.0,
-        'l2_regularization_strength': 0.0
-    },
-    'sgd': {
-    },
+    'nadam': {},
     'rmsprop': {
         'decay': 0.9,
         'momentum': 0.0,
@@ -189,18 +180,20 @@ def merge_with_defaults(model_definition):
     )
 
     stratify = model_definition['preprocessing']['stratify']
-
     if stratify is not None:
-        if stratify not in [x['name'] for x in
-                            model_definition['output_features']]:
-            raise ValueError('Stratify must be in output features')
-        if ([x for x in model_definition['output_features'] if
-             x['name'] == stratify][0][TYPE]
-                not in [BINARY, CATEGORY]):
+        features = (
+                model_definition['input_features'] +
+                model_definition['output_features']
+        )
+        feature_names = set(f['name'] for f in features)
+        if stratify not in feature_names:
+            logger.warning(
+                'Stratify is not among the features. '
+                'Cannot establish if it is a binary or category'
+            )
+        elif ([f for f in features if f['name'] == stratify][0][TYPE]
+              not in {BINARY, CATEGORY}):
             raise ValueError('Stratify feature must be binary or category')
-    # ===== Model =====
-    set_default_value(model_definition, 'combiner',
-                      {'type': default_combiner_type})
 
     # ===== Training =====
     set_default_value(model_definition, TRAINING, default_training_params)
@@ -212,7 +205,6 @@ def merge_with_defaults(model_definition):
     set_default_value(
         model_definition[TRAINING],
         'validation_metric',
-
         output_type_registry[model_definition['output_features'][0][
             TYPE]].default_validation_metric
     )
@@ -227,6 +219,10 @@ def merge_with_defaults(model_definition):
     for input_feature in model_definition['input_features']:
         get_from_registry(input_feature[TYPE],
                           input_type_registry).populate_defaults(input_feature)
+
+    # ===== Combiner =====
+    set_default_value(model_definition, 'combiner',
+                      {'type': default_combiner_type})
 
     # ===== Output features =====
     for output_feature in model_definition['output_features']:

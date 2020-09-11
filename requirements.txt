@@ -6,7 +6,7 @@ scipy>=0.18
 tabulate>=0.7
 scikit-learn
 tqdm
-tensorflow==2.2
-tfa-nightly==0.12.0.dev20200807032152
+tensorflow>=2.2
+tfa-nightly==0.12.0.dev20200820045606
 PyYAML>=3.12
 absl-py
