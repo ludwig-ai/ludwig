@@ -132,18 +132,10 @@ def build_metadata(dataset_df, features, global_preprocessing_parameters):
             encoder_class = encoders_registry[feature['encoder']]
             if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
-                
-                if 'preprocessing' in feature:
-                    all_feature_params = merge_dict(
-                        feature,
-                        feature['preprocessing']
-                    )
-                else:
-                    all_feature_params = feature
 
                 preprocessing_parameters = merge_dict(
                     preprocessing_parameters,
-                    resolve_pointers(encoder_fpp, all_feature_params, 'feature.')
+                    resolve_pointers(encoder_fpp, feature, 'feature.')
                 )
 
         handle_missing_values(
@@ -193,17 +185,9 @@ def build_data(
             if hasattr(encoder_class, 'fixed_preprocessing_parameters'):
                 encoder_fpp = encoder_class.fixed_preprocessing_parameters
 
-                if 'preprocessing' in feature:
-                    all_feature_params = merge_dict(
-                        feature,
-                        feature['preprocessing']
-                    )
-                else:
-                    all_feature_params = feature
-
                 preprocessing_parameters = merge_dict(
                     preprocessing_parameters,
-                    resolve_pointers(encoder_fpp, all_feature_params, 'feature.')
+                    resolve_pointers(encoder_fpp, feature, 'feature.')
                 )
                 
         handle_missing_values(
