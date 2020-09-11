@@ -1052,13 +1052,14 @@ class Trainer:
                 logger.info(
                     'Last learning rate reduction '
                     'happened {} epoch{} ago, '
-                    'improvement of {} on {} '
+                    'improvement of {} {} on {} '
                     'happened {} epoch{} ago'
                     ''.format(
                         progress_tracker.last_learning_rate_reduction,
                         '' if progress_tracker.last_learning_rate_reduction == 1 else 's',
-                        reduce_learning_rate_eval_metric,
                         reduce_learning_rate_eval_split,
+                        reduce_learning_rate_eval_metric,
+                        validation_output_feature_name,
                         progress_tracker.last_reduce_learning_rate_eval_metric_improvement,
                         '' if progress_tracker.last_reduce_learning_rate_eval_metric_improvement == 1 else 's',
                     )
@@ -1092,12 +1093,13 @@ class Trainer:
                 logger.info(
                     'Last batch size increase '
                     'happened {} epoch{} ago, '
-                    'improvement of {} on {} '
+                    'improvement of {} {} on {} '
                     'happened {} epoch{} ago'.format(
                         progress_tracker.last_increase_batch_size,
                         '' if progress_tracker.last_increase_batch_size == 1 else 's',
-                        increase_batch_size_eval_metric,
                         increase_batch_size_eval_split,
+                        increase_batch_size_eval_metric,
+                        validation_output_feature_name,
                         progress_tracker.last_increase_batch_size_eval_metric_improvement,
                         '' if progress_tracker.last_increase_batch_size_eval_metric_improvement == 1 else 's',
                     )
@@ -1401,10 +1403,11 @@ class Trainer:
                     if is_on_master():
                         logger.info(
                             'PLATEAU REACHED, reducing learning rate to {} '
-                            'due to lack of {} improvement on {}'.format(
-                                progress_tracker.learning_rate,
-                                validation_metric,
+                            'due to lack of {} {} improvement on {}'.format(
+                                progress_tracker.batch_size,
                                 reduce_learning_rate_eval_split,
+                                validation_metric,
+                                validation_output_feature_name
                             )
                         )
 
@@ -1478,10 +1481,11 @@ class Trainer:
                     if is_on_master():
                         logger.info(
                             'PLATEAU REACHED, increasing batch size to {} '
-                            'due to lack of {} improvement on {}'.format(
+                            'due to lack of {} {} improvement on {}'.format(
                                 progress_tracker.batch_size,
-                                validation_metric,
                                 increase_batch_size_eval_split,
+                                validation_metric,
+                                validation_output_feature_name
                             )
                         )
 
