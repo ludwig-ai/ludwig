@@ -52,8 +52,7 @@ def postprocess_dict(
 ):
     postprocessed = {}
     for of_name, output_feature in output_features.items():
-        output_feature.postprocess_results(
-            output_feature,
+        postprocessed[of_name] = output_feature.postprocess_predictions(
             predictions[of_name],
             training_set_metadata.get(of_name, {}),
             experiment_dir_name=experiment_dir_name,
