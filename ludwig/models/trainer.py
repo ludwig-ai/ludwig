@@ -843,7 +843,8 @@ class Trainer:
             if is_on_master():
                 if not skip_save_model:
                     model.save_weights(model_weights_path)
-                    model.save_definition(model_hyperparameters_path)
+                    # todo reconcile next statement with ECD.save_definition()
+                    # model.save_definition(model_hyperparameters_path)
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
                             validation_metric,
