@@ -744,6 +744,8 @@ class NewLudwigModel:
             skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
             skip_save_test_predictions=False,  # skipcq: PYL-W0613
             skip_save_test_statistics=False,  # skipcq: PYL-W0613
+            skip_collect_predictions=False,
+            skip_collect_overall_stats=False,
             output_directory='results',
             gpus=None,
             gpu_memory_limit=None,
@@ -808,20 +810,17 @@ class NewLudwigModel:
                 test_set,
                 data_format=data_format,
                 batch_size=batch_size,
-                collect_predictions=True,
-                collect_overall_stats=True,
+                collect_predictions=not skip_collect_predictions,
+                collect_overall_stats=not skip_collect_overall_stats,
                 debug=debug
             )
         else:
             test_results = None
 
         return (
-            self,
-            preprocessed_data,
-            self.exp_dir_name,
+            test_results,
             train_stats,
-            self.model_definition,
-            test_results
+            preprocessed_data
         )
 
     def collect_weights(

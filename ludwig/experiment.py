@@ -68,6 +68,8 @@ def experiment_cli(
         skip_save_unprocessed_output=False,
         skip_save_test_predictions=False,
         skip_save_test_statistics=False,
+        skip_collect_predictions=False,
+        skip_collect_overall_stats=False,
         output_directory='results',
         gpus=None,
         gpu_memory_limit=None,
@@ -190,43 +192,6 @@ def experiment_cli(
     """
     set_on_master(use_horovod)
 
-    # (
-    #     model,
-    #     preprocessed_data,
-    #     experiment_dir_name,
-    #     _,  # train_stats
-    #     model_definition,
-    #     test_results
-    # ) = experiment(
-    #     model_definition,
-    #     model_definition_file=model_definition_file,
-    #     dataset=dataset,
-    #     training_set=training_set,
-    #     validation_set=validation_set,
-    #     test_set=test_set,
-    #     data_format=data_format,
-    #     training_set_metadata=training_set_metadata,
-    #     experiment_name=experiment_name,
-    #     model_name=model_name,
-    #     model_load_path=model_load_path,
-    #     model_resume_path=model_resume_path,
-    #     skip_save_training_description=skip_save_training_description,
-    #     skip_save_training_statistics=skip_save_training_statistics,
-    #     skip_save_model=skip_save_model,
-    #     skip_save_progress=skip_save_progress,
-    #     skip_save_log=skip_save_log,
-    #     skip_save_processed_input=skip_save_processed_input,
-    #     output_directory=output_directory,
-    #     gpus=gpus,
-    #     gpu_memory_limit=gpu_memory_limit,
-    #     allow_parallel_threads=allow_parallel_threads,
-    #     use_horovod=use_horovod,
-    #     random_seed=random_seed,
-    #     debug=debug,
-    #     **kwargs
-    # )
-
-
     if model_load_path:
         model = NewLudwigModel.load(model_load_path)
     else:
@@ -263,54 +228,15 @@ def experiment_cli(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
+        skip_save_test_predictions=skip_save_test_predictions,
+        skip_save_test_statistics=skip_save_test_statistics,
+        skip_collect_predictions=skip_collect_predictions,
+        skip_collect_overall_stats=skip_collect_overall_stats,
         output_directory=output_directory,
         random_seed=random_seed,
         debug=debug,
     )
 
-
-
-    (training_set,
-     validation_set,
-     test_set,
-     training_set_metadata) = preprocessed_data
-
-    if test_set is not None:
-        # check if we need to create the output dir
-        if is_on_master():
-            if not (
-                    skip_save_unprocessed_output and
-                    skip_save_test_predictions and
-                    skip_save_test_statistics
-            ):
-                if not os.path.exists(experiment_dir_name):
-                    os.makedirs(experiment_dir_name)
-
-        # postprocess
-        postprocessed_output = postprocess_dict(
-            test_results,
-            model_definition['output_features'],
-            training_set_metadata,
-            experiment_dir_name,
-            skip_save_unprocessed_output or not is_on_master()
-        )
-
-        if is_on_master():
-            print_evaluation_stats(test_results)
-            if not skip_save_test_predictions:
-                save_prediction_outputs(
-                    postprocessed_output,
-                    experiment_dir_name
-                )
-            if not skip_save_test_statistics:
-                save_evaluation_stats(test_results, experiment_dir_name)
-
-    if is_on_master():
-        logger.info('\nFinished: {0}_{1}'.format(
-            experiment_name, model_name))
-        logger.info('Saved to: {}'.format(experiment_dir_name))
-
-    contrib_command("experiment_save", experiment_dir_name)
     return experiment_dir_name
 
 
