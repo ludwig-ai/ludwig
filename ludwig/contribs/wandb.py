@@ -40,10 +40,10 @@ class Wandb():
                 "Ignored --wandb: Please install wandb; see https://docs.wandb.com")
             return None
 
-    def train_model(self, model, *args, **kwargs):
+    def train_model(self, model, model_definition, *args, **kwargs):
         import wandb
         logger.info("wandb.train_model() called...")
-        config = model._hyperparameters.copy()
+        config = model_definition.copy()
         del config["input_features"]
         del config["output_features"]
         wandb.config.update(config)

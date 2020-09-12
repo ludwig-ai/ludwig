@@ -205,14 +205,7 @@ def experiment_cli(
             allow_parallel_threads=allow_parallel_threads,
             random_seed=random_seed
         )
-    (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
-        train_stats,
-        model_definition,
-        test_results
-    ) = model.experiment(
+    model.experiment(
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -237,7 +230,7 @@ def experiment_cli(
         debug=debug,
     )
 
-    return experiment_dir_name
+    return model.exp_dir_name
 
 
 def kfold_cross_validate(

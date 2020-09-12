@@ -708,7 +708,7 @@ class NewLudwigModel:
             if should_create_exp_dir:
                 os.makedirs(self.exp_dir_name, exist_ok=True)
 
-            if postproc_predictions and not skip_save_predictions:
+            if postproc_predictions is not None and not skip_save_predictions:
                 save_prediction_outputs(postproc_predictions,
                                         self.exp_dir_name)
 
