@@ -291,7 +291,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
     ):
         pass
 
-    def postprocess_results(
+    def postprocess_predictions(
             self,
             predictions,
             metadata,
