@@ -408,9 +408,9 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #     ):
 #         pass
 #
-#     @staticmethod
-#     def postprocess_results(
-#             output_feature,
+#
+#     def postprocess_predictions(
+#             self,
 #             result,
 #             metadata,
 #             experiment_dir_name,
