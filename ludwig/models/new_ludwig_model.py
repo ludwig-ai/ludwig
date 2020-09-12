@@ -11,7 +11,8 @@ from ludwig.contrib import contrib_command
 from ludwig.data.postprocessing import postprocess
 from ludwig.data.preprocessing import load_metadata, preprocess_for_training, \
     preprocess_for_prediction
-from ludwig.features.feature_registries import update_model_definition_with_metadata
+from ludwig.features.feature_registries import \
+    update_model_definition_with_metadata
 from ludwig.globals import set_disable_progressbar, \
     MODEL_HYPERPARAMETERS_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, set_on_master, is_on_master
@@ -880,13 +881,11 @@ class NewLudwigModel:
             save_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
         )
-        self.model.save_definition(
-            model_hyperparameters_path
-        )
+        save_json(model_hyperparameters_path, self.model_definition)
 
         # save model weights
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-        self.model.model.save_weights(model_weights_path)
+        self.model.save_weights(model_weights_path)
 
         # save training set metadata
         training_set_metadata_path = os.path.join(
