@@ -70,6 +70,7 @@ def experiment_cli(
         skip_save_test_statistics=False,
         skip_collect_predictions=False,
         skip_collect_overall_stats=False,
+        skip_save_predictions=True,
         output_directory='results',
         gpus=None,
         gpu_memory_limit=None,
@@ -206,12 +207,9 @@ def experiment_cli(
             random_seed=random_seed
         )
     (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
+        test_results,
         train_stats,
-        model_definition,
-        test_results
+        preprocessed_data
     ) = model.experiment(
         dataset=dataset,
         training_set=training_set,
@@ -232,12 +230,13 @@ def experiment_cli(
         skip_save_test_statistics=skip_save_test_statistics,
         skip_collect_predictions=skip_collect_predictions,
         skip_collect_overall_stats=skip_collect_overall_stats,
+        skip_save_predictions=skip_save_predictions,
         output_directory=output_directory,
         random_seed=random_seed,
         debug=debug,
     )
 
-    return experiment_dir_name
+    return model, test_results, train_stats, preprocessed_data
 
 
 def kfold_cross_validate(

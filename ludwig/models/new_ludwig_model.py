@@ -689,13 +689,11 @@ class NewLudwigModel:
                 predictions,
                 self.model.output_features,
                 self.training_set_metadata,
-                return_type=return_type,
+                return_type='dict',
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
             )
-        else:
-            postproc_predictions = predictions  # = {}
 
         if is_on_master():
             # if we are skipping all saving,
@@ -746,6 +744,7 @@ class NewLudwigModel:
             skip_save_test_statistics=False,  # skipcq: PYL-W0613
             skip_collect_predictions=False,
             skip_collect_overall_stats=False,
+            skip_save_predictions=True,
             output_directory='results',
             gpus=None,
             gpu_memory_limit=None,
@@ -812,6 +811,7 @@ class NewLudwigModel:
                 batch_size=batch_size,
                 collect_predictions=not skip_collect_predictions,
                 collect_overall_stats=not skip_collect_overall_stats,
+                skip_save_predictions=skip_save_predictions,
                 debug=debug
             )
         else:
