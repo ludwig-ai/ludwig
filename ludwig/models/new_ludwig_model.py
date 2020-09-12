@@ -858,7 +858,7 @@ class NewLudwigModel:
             dataset=dataset,
             data_format=data_format,
             training_set_metadata=self.training_set_metadata,
-            include_outputs=False,
+            include_outputs=True,
         )
 
         logger.debug('Predicting')
