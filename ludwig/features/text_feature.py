@@ -17,6 +17,7 @@
 import os
 
 import numpy as np
+
 from ludwig.constants import *
 from ludwig.encoders.text_encoders import *
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -237,8 +238,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         inputs_exp = tf.cast(inputs, dtype=tf.int32)
 
         if self.pad_idx is not None:
-            inputs_mask = tf.cast(tf.not_equal(inputs, self.pad_idx),
-                                dtype=tf.int32)
+            inputs_mask = tf.not_equal(inputs, self.pad_idx)
         else: 
             inputs_mask = None
 
