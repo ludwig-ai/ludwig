@@ -402,11 +402,7 @@ class NewLudwigModel:
                 self.model_definition,
                 training_set_metadata
             )
-            self.model = ECD(
-                input_features_def=self.model_definition['input_features'],
-                combiner_def=self.model_definition['combiner'],
-                output_features_def=self.model_definition['output_features'],
-            )
+            self.model = NewLudwigModel.create_model(self.model_definition)
 
         # init trainer
         trainer = Trainer(
@@ -420,6 +416,9 @@ class NewLudwigModel:
         # train model
         if is_on_master():
             print_boxed('TRAINING')
+            if not skip_save_model:
+                self.save_model_definition(model_dir)
+
         train_stats = trainer.train(
             self.model,
             training_set,
@@ -502,10 +501,7 @@ class NewLudwigModel:
             debug=False,
             **kwargs
     ):
-        if (self.model is None or self.model_definition is None or
-                self.training_set_metadata is None):
-            raise ValueError('Model has not been trained or loaded')
-
+        self._check_initialization()
         if is_on_master() and not self.exp_dir_name:
             # setup directories and file names
             self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
@@ -604,10 +600,7 @@ class NewLudwigModel:
             debug=False,
             **kwargs
     ):
-        if (self.model is None or self.model_definition is None or
-                self.training_set_metadata is None):
-            raise ValueError('Model has not been trained or loaded')
-
+        self._check_initialization()
         if is_on_master() and not self.exp_dir_name:
             # setup directories and file names
             self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
@@ -721,8 +714,6 @@ class NewLudwigModel:
 
         return stats, postproc_predictions
 
-
-
     def experiment(
             self,
             dataset=None,
@@ -825,12 +816,10 @@ class NewLudwigModel:
 
     def collect_weights(
             self,
-            tensor_names,
+            tensor_names=None,
             **kwargs
     ):
-        if (self.model is None or self.model_definition is None or
-                self.training_set_metadata is None):
-            raise ValueError('Model has not been trained or loaded')
+        self._check_initialization()
         collected_tensors = self.model.collect_weights(tensor_names)
         return collected_tensors
 
@@ -844,10 +833,7 @@ class NewLudwigModel:
             debug=False,
             **kwargs
     ):
-        if (self.model is None or self.model_definition is None or
-                self.training_set_metadata is None):
-            raise ValueError('Model has not been trained or loaded')
-
+        self._check_initialization()
         logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
         # this way I'm copying the list. If you don't do it, you are actually
@@ -940,6 +926,9 @@ class NewLudwigModel:
             allow_parallel_threads=allow_parallel_threads,
         )
 
+        # generate model from definition
+        ludwig_model.model = NewLudwigModel.create_model(model_definition)
+
         # load model weights
         weights_save_path = os.path.join(
             model_dir,
@@ -981,11 +970,7 @@ class NewLudwigModel:
             raise ValueError('Model has not been initialized or loaded')
 
         # save model definition
-        model_hyperparameters_path = os.path.join(
-            save_path,
-            MODEL_HYPERPARAMETERS_FILE_NAME
-        )
-        save_json(model_hyperparameters_path, self.model_definition)
+        self.save_model_definition(save_path)
 
         # save model weights
         model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
@@ -997,6 +982,13 @@ class NewLudwigModel:
             TRAIN_SET_METADATA_FILE_NAME
         )
         save_json(training_set_metadata_path, self.training_set_metadata)
+
+    def save_model_definition(self, save_path):
+        model_hyperparameters_path = os.path.join(
+            save_path,
+            MODEL_HYPERPARAMETERS_FILE_NAME
+        )
+        save_json(model_hyperparameters_path, self.model_definition)
 
     def save_for_serving(self, save_path):
         """This function allows to save models on disk
@@ -1014,11 +1006,23 @@ class NewLudwigModel:
         ```
 
         """
-        if (self.model is None or self.model._session is None or
-                self.model_definition is None or self.training_set_metadata is None):
-            raise ValueError('Model has not been initialized or loaded')
-
+        self._check_initialization()
         self.model.save_savedmodel(save_path)
+
+    def _check_initialization(self):
+        if self.model is None or \
+                self.model_definition is None or \
+                self.training_set_metadata is None:
+            raise ValueError('Model has not been trained or loaded')
+
+    @staticmethod
+    def create_model(model_definition):
+        # TODO: support loading other model types based on definition
+        return ECD(
+            input_features_def=model_definition['input_features'],
+            combiner_def=model_definition['combiner'],
+            output_features_def=model_definition['output_features'],
+        )
 
     @staticmethod
     def set_logging_level(logging_level):
