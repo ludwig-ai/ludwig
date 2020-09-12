@@ -34,6 +34,9 @@ from ludwig.data.postprocessing import postprocess_dict
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
 from ludwig.models.predictor import save_prediction_outputs, \
     save_evaluation_stats, print_evaluation_stats
+from ludwig.models.trainer import Trainer
+from ludwig.train import train_cli
+from ludwig.models.new_ludwig_model import NewLudwigModel
 from ludwig.utils.data_utils import save_json, generate_kfold_splits, \
     is_model_dir
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
@@ -43,145 +46,15 @@ from ludwig.utils.print_utils import print_ludwig
 logger = logging.getLogger(__name__)
 
 
-def experiment(
+def experiment_cli(
         model_definition,
         model_definition_file=None,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        training_set_metadata_json=None,
-        experiment_name='experiment',
-        model_name='run',
-        model_load_path=None,
-        model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
-        skip_save_test_predictions=False,  # skipcq: PYL-W0613
-        skip_save_test_statistics=False,  # skipcq: PYL-W0613
-        output_directory='results',
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        use_horovod=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
-):
-    (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
-        train_stats,
-        model_definition
-    ) = full_train(
-        model_definition,
-        model_definition_file=model_definition_file,
-        data_df=data_df,
-        data_train_df=data_train_df,
-        data_validation_df=data_validation_df,
-        data_test_df=data_test_df,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        training_set_metadata_json=training_set_metadata_json,
-        experiment_name=experiment_name,
-        model_name=model_name,
-        model_load_path=model_load_path,
-        model_resume_path=model_resume_path,
-        skip_save_training_description=skip_save_training_description,
-        skip_save_training_statistics=skip_save_training_statistics,
-        skip_save_model=skip_save_model,
-        skip_save_progress=skip_save_progress,
-        skip_save_log=skip_save_log,
-        skip_save_processed_input=skip_save_processed_input,
-        output_directory=output_directory,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
-        random_seed=random_seed,
-        debug=debug,
-        **kwargs
-    )
-
-    (_,  # training_set
-     _,  # validation_set
-     test_set,
-     training_set_metadata) = preprocessed_data
-
-    if test_set is not None:
-        if model_definition[TRAINING]['eval_batch_size'] > 0:
-            batch_size = model_definition[TRAINING]['eval_batch_size']
-        else:
-            batch_size = model_definition[TRAINING]['batch_size']
-
-        # if a model was saved on disk, reload it
-        model_dir = os.path.join(experiment_dir_name, 'model')
-        if is_model_dir(model_dir):
-            model = Trainer.load(model_dir,
-                                 use_horovod=use_horovod,
-                                 gpus=gpus,
-                                 gpu_memory_limit=gpu_memory_limit,
-                                 allow_parallel_threads=allow_parallel_threads)
-
-        # predict
-        test_results = predict(
-            test_set,
-            training_set_metadata,
-            model,
-            model_definition,
-            batch_size,
-            evaluate_performance=True,
-            debug=debug
-        )
-    else:
-        test_results = None
-
-    return (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
-        train_stats,
-        model_definition,
-        test_results
-    )
-
-
-def full_experiment(
-        model_definition,
-        model_definition_file=None,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        training_set_metadata_json=None,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        data_format=None,
+        training_set_metadata=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -202,6 +75,7 @@ def full_experiment(
         use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
+        logging_level=logging.INFO,
         **kwargs
 ):
     """Trains a model on a dataset's training and validation splits and
@@ -316,32 +190,72 @@ def full_experiment(
     """
     set_on_master(use_horovod)
 
+    # (
+    #     model,
+    #     preprocessed_data,
+    #     experiment_dir_name,
+    #     _,  # train_stats
+    #     model_definition,
+    #     test_results
+    # ) = experiment(
+    #     model_definition,
+    #     model_definition_file=model_definition_file,
+    #     dataset=dataset,
+    #     training_set=training_set,
+    #     validation_set=validation_set,
+    #     test_set=test_set,
+    #     data_format=data_format,
+    #     training_set_metadata=training_set_metadata,
+    #     experiment_name=experiment_name,
+    #     model_name=model_name,
+    #     model_load_path=model_load_path,
+    #     model_resume_path=model_resume_path,
+    #     skip_save_training_description=skip_save_training_description,
+    #     skip_save_training_statistics=skip_save_training_statistics,
+    #     skip_save_model=skip_save_model,
+    #     skip_save_progress=skip_save_progress,
+    #     skip_save_log=skip_save_log,
+    #     skip_save_processed_input=skip_save_processed_input,
+    #     output_directory=output_directory,
+    #     gpus=gpus,
+    #     gpu_memory_limit=gpu_memory_limit,
+    #     allow_parallel_threads=allow_parallel_threads,
+    #     use_horovod=use_horovod,
+    #     random_seed=random_seed,
+    #     debug=debug,
+    #     **kwargs
+    # )
+
+
+    if model_load_path:
+        model = NewLudwigModel.load(model_load_path)
+    else:
+        model = NewLudwigModel(
+            model_definition=model_definition,
+            model_definition_fp=model_definition_file,
+            logging_level=logging_level,
+            use_horovod=use_horovod,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            random_seed=random_seed
+        )
     (
         model,
         preprocessed_data,
         experiment_dir_name,
-        _,  # train_stats
+        train_stats,
         model_definition,
         test_results
-    ) = experiment(
-        model_definition,
-        model_definition_file=model_definition_file,
-        data_df=data_df,
-        data_train_df=data_train_df,
-        data_validation_df=data_validation_df,
-        data_test_df=data_test_df,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        training_set_metadata_json=training_set_metadata_json,
+    ) = model.experiment(
+        dataset=dataset,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
-        model_load_path=model_load_path,
         model_resume_path=model_resume_path,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
@@ -350,14 +264,11 @@ def full_experiment(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         output_directory=output_directory,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
-        **kwargs
     )
+
+
 
     (training_set,
      validation_set,
@@ -550,7 +461,7 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
-def full_kfold_cross_validate(
+def kfold_cross_validate_cli(
         k_fold,
         model_definition=None,
         model_definition_file=None,
@@ -873,9 +784,9 @@ def cli(sys_argv):
         print_ludwig('Experiment', LUDWIG_VERSION)
 
     if args.k_fold is None:
-        full_experiment(**vars(args))
+        experiment_cli(**vars(args))
     else:
-        full_kfold_cross_validate(**vars(args))
+        kfold_cross_validate_cli(**vars(args))
 
 
 if __name__ == '__main__':
