@@ -386,16 +386,15 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         overall_stats['overall_stats'] = confusion_matrix.stats()
         overall_stats['per_class_stats'] = confusion_matrix.per_class_stats()
 
-    @staticmethod
-    def postprocess_results(
-            output_feature,
-            result,
+    def postprocess_predictions(
+            self,
+            predictions,
             metadata,
             experiment_dir_name,
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = output_feature.feature_name
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
@@ -403,8 +402,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            preds = result[PREDICTIONS]
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            preds = predictions[PREDICTIONS]
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     metadata['idx2str'][pred] for pred in preds
@@ -416,10 +415,10 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             if not skip_save_unprocessed_output:
                 np.save(npy_filename.format(name, PREDICTIONS), preds)
 
-            del result[PREDICTIONS]
+            del predictions[PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            probs = result[PROBABILITIES].numpy()
+        if PROBABILITIES in predictions and len(predictions[PROBABILITIES]) > 0:
+            probs = predictions[PROBABILITIES].numpy()
             prob = np.amax(probs, axis=1)
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob
@@ -428,12 +427,12 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 np.save(npy_filename.format(name, PROBABILITIES), probs)
                 np.save(npy_filename.format(name, PROBABILITY), probs)
 
-            del result[PROBABILITIES]
+            del predictions[PROBABILITIES]
 
-        if ('predictions_top_k' in result and
-            len(result['predictions_top_k'])) > 0:
+        if ('predictions_top_k' in predictions and
+            len(predictions['predictions_top_k'])) > 0:
 
-            preds_top_k = result['predictions_top_k']
+            preds_top_k = predictions['predictions_top_k']
             if 'idx2str' in metadata:
                 postprocessed['predictions_top_k'] = [
                     [metadata['idx2str'][pred] for pred in pred_top_k]
@@ -448,7 +447,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     preds_top_k
                 )
 
-            del result['predictions_top_k']
+            del predictions['predictions_top_k']
 
         return postprocessed
 

@@ -77,8 +77,7 @@ def postprocess_df(
         skip_save_unprocessed_output=skip_save_unprocessed_output,
     )
     data_for_df = {}
-    for of_name, output_feature in output_features.items():
-        output_feature_name = of_name
+    for output_feature_name, output_feature in output_features.items():
         output_feature_type = output_feature.type
         output_feature_dict = postprocessed_output[output_feature_name]
         for key_val in output_feature_dict.items():

@@ -41,29 +41,32 @@ def run_api_experiment(input_features, output_features, data_csv):
 
     model = LudwigModel(model_definition)
 
-    # Training with csv
-    model.train(
-        data_csv=data_csv,
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
+    try:
+        # Training with csv
+        model.train(
+            dataset=data_csv,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
 
-    model.predict(data_csv=data_csv)
+        model.predict(dataset=data_csv)
+    finally:
+        # Remove results/intermediate data saved to disk
+        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
-    # Remove results/intermediate data saved to disk
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
-
-    # Training with dataframe
-    data_df = read_csv(data_csv)
-    model.train(
-        data_df=data_df,
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.predict(data_df=data_df)
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    try:
+        # Training with dataframe
+        data_df = read_csv(data_csv)
+        model.train(
+            dataset=data_df,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
+        model.predict(dataset=data_df)
+    finally:
+        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
 
 def run_api_experiment_separated_datasets(
@@ -93,65 +96,72 @@ def run_api_experiment_separated_datasets(
     test_df = data_df.drop(train_df.index).sample(frac=0.5)
     validation_df = data_df.drop(train_df.index).drop(test_df.index)
 
-    train_df.to_csv(data_csv + '.train')
-    validation_df.to_csv(data_csv + '.validation')
-    test_df.to_csv(data_csv + '.test')
+    basename, ext = os.path.splitext(data_csv)
+    train_fname = basename + '.train' + ext
+    val_fname = basename + '.validation' + ext
+    test_fname = basename + '.test' + ext
 
-    # Training with csv
-    model.train(
-        data_train_csv=data_csv + '.train',
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.train(
-        data_train_csv=data_csv + '.train',
-        data_validation_df=data_csv + '.validation',
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.train(
-        data_train_csv=data_csv + '.train',
-        data_validation_df=data_csv + '.validation',
-        data_test_csv=data_csv + '.test',
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
+    try:
+        train_df.to_csv(train_fname)
+        validation_df.to_csv(val_fname)
+        test_df.to_csv(test_fname)
 
-    model.predict(data_csv=data_csv + '.test')
+        # Training with csv
+        model.train(
+            training_set=train_fname,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
+        model.train(
+            training_set=train_fname,
+            validation_set=val_fname,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
+        model.train(
+            training_set=train_fname,
+            validation_set=val_fname,
+            test_set=test_fname,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
 
-    # Remove results/intermediate data saved to disk
-    os.remove(data_csv + '.train')
-    os.remove(data_csv + '.validation')
-    os.remove(data_csv + '.test')
+        model.predict(dataset=test_fname)
+    finally:
+        # Remove results/intermediate data saved to disk
+        os.remove(train_fname)
+        os.remove(val_fname)
+        os.remove(test_fname)
+        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
-
-    model.train(
-        data_train_df=train_df,
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.train(
-        data_train_df=train_df,
-        data_validation_df=validation_df,
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.train(
-        data_train_df=train_df,
-        data_validation_df=validation_df,
-        data_vtest_df=test_df,
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.predict(data_df=data_df)
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    try:
+        model.train(
+            training_set=train_df,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
+        model.train(
+            training_set=train_df,
+            validation_set=validation_df,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
+        model.train(
+            training_set=train_df,
+            validation_set=validation_df,
+            test_set=test_df,
+            skip_save_processed_input=True,
+            skip_save_progress=True,
+            skip_save_unprocessed_output=True
+        )
+        model.predict(dataset=data_df)
+    finally:
+        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
 
 def test_api_intent_classification(csv_filename):
