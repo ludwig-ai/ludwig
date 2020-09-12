@@ -40,7 +40,7 @@ class NewLudwigModel:
                  model_definition=None,
                  model_definition_fp=None,
                  logging_level=logging.ERROR,
-                 use_horovod=False,
+                 use_horovod=None,
                  gpus=None,
                  gpu_memory_limit=None,
                  allow_parallel_threads=True,
@@ -890,7 +890,7 @@ class NewLudwigModel:
     @staticmethod
     def load(model_dir,
              logging_level=logging.ERROR,
-             use_horovod=False,
+             use_horovod=None,
              gpus=None,
              gpu_memory_limit=None,
              allow_parallel_threads=True):

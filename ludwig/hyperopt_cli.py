@@ -77,7 +77,7 @@ def hyperopt(
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs,

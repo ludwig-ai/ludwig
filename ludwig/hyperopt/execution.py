@@ -60,7 +60,7 @@ class HyperoptExecutor(ABC):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=False,
+            use_horovod=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -103,7 +103,7 @@ class SerialExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=False,
+            use_horovod=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -251,7 +251,7 @@ class ParallelExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=False,
+            use_horovod=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -503,7 +503,7 @@ class FiberExecutor(HyperoptExecutor):
             gpus=None,
             gpu_memory_limit=None,
             allow_parallel_threads=True,
-            use_horovod=False,
+            use_horovod=None,
             random_seed=default_random_seed,
             debug=False,
             **kwargs
@@ -661,7 +661,7 @@ def train_and_eval_on_split(
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs
