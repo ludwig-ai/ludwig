@@ -676,6 +676,8 @@ class NewLudwigModel:
                 training_set_metadata
             )
             stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
+                        # handle 'combined' key
+                        if of_name in overall_stats else {**stats[of_name]}
                      for of_name in stats}
 
         if collect_predictions:

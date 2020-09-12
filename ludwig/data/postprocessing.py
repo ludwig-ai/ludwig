@@ -52,7 +52,8 @@ def postprocess_dict(
 ):
     postprocessed = {}
     for of_name, output_feature in output_features.items():
-        output_feature.postprocess_predictions(
+        output_feature.postprocess_results(
+            output_feature,
             predictions[of_name],
             training_set_metadata.get(of_name, {}),
             experiment_dir_name=experiment_dir_name,
@@ -76,9 +77,9 @@ def postprocess_df(
         skip_save_unprocessed_output=skip_save_unprocessed_output,
     )
     data_for_df = {}
-    for output_feature in output_features:
-        output_feature_name = output_feature['name']
-        output_feature_type = output_feature[TYPE]
+    for of_name, output_feature in output_features.items():
+        output_feature_name = of_name
+        output_feature_type = output_feature.type
         output_feature_dict = postprocessed_output[output_feature_name]
         for key_val in output_feature_dict.items():
             output_subgroup_name, output_type_value = key_val

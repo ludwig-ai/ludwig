@@ -370,21 +370,21 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
+            overall_stats,
+            predictions,
+            targets,
             train_set_metadata
     ):
-        feature_name = output_feature['name']
-        stats = test_stats[feature_name]
+        # feature_name = output_feature['name']
+        # stats = test_stats[feature_name]
         confusion_matrix = ConfusionMatrix(
-            dataset.get(feature_name),
-            stats[PREDICTIONS],
-            labels=train_set_metadata[feature_name]['idx2str']
+            targets, #dataset.get(feature_name),
+            predictions[PREDICTIONS], #stats[PREDICTIONS],
+            labels=train_set_metadata['idx2str']
         )
-        stats['confusion_matrix'] = confusion_matrix.cm.tolist()
-        stats['overall_stats'] = confusion_matrix.stats()
-        stats['per_class_stats'] = confusion_matrix.per_class_stats()
+        overall_stats['confusion_matrix'] = confusion_matrix.cm.tolist()
+        overall_stats['overall_stats'] = confusion_matrix.stats()
+        overall_stats['per_class_stats'] = confusion_matrix.per_class_stats()
 
     @staticmethod
     def postprocess_results(
@@ -395,7 +395,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = output_feature['name']
+        name = output_feature.feature_name
 
         npy_filename = None
         if is_on_master():

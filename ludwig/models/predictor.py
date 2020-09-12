@@ -262,6 +262,7 @@ def calculate_overall_stats(
         if of_name not in overall_stats:
             overall_stats[of_name] = {}
         output_feature.calculate_overall_stats(
+            overall_stats[of_name],
             predictions[of_name],
             dataset.get(of_name),
             training_set_metadata[of_name]
