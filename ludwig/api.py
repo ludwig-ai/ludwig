@@ -1006,10 +1006,7 @@ class LudwigModel:
         ```
 
         """
-        if (self.model is None
-                or self.model_definition is None
-                or self.training_set_metadata is None):
-            raise ValueError('Model has not been initialized or loaded')
+        self._check_initialization()
 
         # save model definition
         self.save_model_definition(save_path)
@@ -1026,6 +1023,7 @@ class LudwigModel:
         save_json(training_set_metadata_path, self.training_set_metadata)
 
     def save_model_definition(self, save_path):
+        os.makedirs(save_path, exist_ok=True)
         model_hyperparameters_path = os.path.join(
             save_path,
             MODEL_HYPERPARAMETERS_FILE_NAME
