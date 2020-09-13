@@ -21,7 +21,7 @@ import tempfile
 import numpy as np
 import tensorflow as tf
 
-from ludwig.api import LudwigModel, Trainer
+from ludwig.api import LudwigModel
 from ludwig.collect import collect_activations, collect_weights
 from tests.integration_tests.utils import category_feature, generate_data, \
     sequence_feature, spawn, ENCODERS
@@ -49,7 +49,7 @@ def _train(input_features, output_features, data_csv, **kwargs):
 
     model = LudwigModel(model_definition)
     model.train(
-        data_csv=data_csv,
+        dataset=data_csv,
         **kwargs
     )
     return model
@@ -57,7 +57,7 @@ def _train(input_features, output_features, data_csv, **kwargs):
 
 @spawn
 def _get_layers(model_path):
-    model = Trainer.load(model_path)
+    model = LudwigModel.load(model_path)
     keras_model = model.model.get_connected_model()
     return [layer.name for layer in keras_model.layers]
 
@@ -65,7 +65,7 @@ def _get_layers(model_path):
 @spawn
 def _collect_activations(model_path, layers, csv_filename, output_directory):
     return collect_activations(model_path, layers,
-                               data_csv=csv_filename,
+                               dataset=csv_filename,
                                output_directory=output_directory)
 
 
@@ -87,7 +87,7 @@ def test_collect_weights(csv_filename):
 
         # Load model from disk to ensure correct weight names
         tf.keras.backend.reset_uids()
-        model_loaded = Trainer.load(model_path)
+        model_loaded = LudwigModel.load(model_path)
         tensor_names = [name for name, w in model_loaded.collect_weights()]
         assert len(tensor_names) == 3
 
