@@ -78,7 +78,7 @@ class ECD(tf.keras.Model):
         keras_model.save(save_path)
 
     # def save_definition(self, model_hyperparameters_path):
-    #     # TODO(refactor)
+    #     # todo refactoring
     #     pass
 
     def call(self, inputs, training=None, mask=None):

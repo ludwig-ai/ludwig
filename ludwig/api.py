@@ -63,8 +63,6 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 
 import yaml
 
-from ludwig.experiment import \
-    kfold_cross_validate as experiment_kfold_cross_validate
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry, print_boxed
 
@@ -373,7 +371,7 @@ class LudwigModel:
                 random_seed=random_seed
             )
             if not skip_save_training_description:
-                # TODO(refactor): datasets are not JSON serializable
+                # todo refactoring: datasets are not JSON serializable
                 # save_json(description_fn, description)
                 pass
             # print description
@@ -520,7 +518,7 @@ class LudwigModel:
 
         return train_stats, preprocessed_data
 
-    # todo(refactor): reintroduce the train_online functionality?
+    # todo refactoring: reintroduce the train_online functionality?
     def train_online(self):
         pass
 
@@ -899,6 +897,9 @@ class LudwigModel:
             dataset=dataset,
             data_format=data_format,
             training_set_metadata=self.training_set_metadata,
+            # todo refactoring: we shouldn't need to include the outputs
+            #  we want to collect activations also using loaded models
+            #  on unseen test sets
             include_outputs=True,
         )
 
@@ -1080,56 +1081,56 @@ class LudwigModel:
             set_disable_progressbar(False)
 
 
-# todo(refactor): this should be adapted to the new API / functionalities
-def kfold_cross_validate(
-        num_folds,
-        model_definition=None,
-        model_definition_file=None,
-        data_csv=None,
-        output_directory='results',
-        random_seed=default_random_seed,
-        **kwargs
-):
-    """Performs k-fold cross validation and returns result data structures.
+# todo refactoring: this should be adapted to the new API / functionalities
+#def kfold_cross_validate(
+#        num_folds,
+#        model_definition=None,
+#        model_definition_file=None,
+#        data_csv=None,
+#        output_directory='results',
+#        random_seed=default_random_seed,
+#        **kwargs
+#):
+#    """Performs k-fold cross validation and returns result data structures.
+#
+#
+#   # Inputs
+#    
+#    :param num_folds: (int) number of folds to create for the cross-validation
+#    :param model_definition: (dict, default: None) a dictionary containing
+#           information needed to build a model. Refer to the
+#           [User Guide](http://ludwig.ai/user_guide/#model-definition)
+#           for details.
+#    :param model_definition_file: (string, optional, default: `None`) path to
+#           a YAML file containing the model definition. If available it will be
+#           used instead of the model_definition dict.
+#    :param data_csv: (dataframe, default: None)
+#    :param data_csv: (string, default: None)
+#    :param output_directory: (string, default: 'results')
+#    :param random_seed: (int) Random seed used k-fold splits.
+#
+#    # Return#
+#
+#    :return: (tuple(kfold_cv_stats, kfold_split_indices), dict) a tuple of
+#            dictionaries `kfold_cv_stats`: contains metrics from cv run.
+#             `kfold_split_indices`: indices to split training data into
+#             training fold and test fold.
+#    """
+#
+#    (kfold_cv_stats,
+#     kfold_split_indices) = experiment_kfold_cross_validate(
+#        num_folds,
+#        model_definition=model_definition,
+#        model_definition_file=model_definition_file,
+#        data_csv=data_csv,
+#        output_directory=output_directory,
+#        random_seed=random_seed
+#    )
+#
+#    return kfold_cv_stats, kfold_split_indices
 
 
-    # Inputs
-    
-    :param num_folds: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: None) a dictionary containing
-           information needed to build a model. Refer to the
-           [User Guide](http://ludwig.ai/user_guide/#model-definition)
-           for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-           a YAML file containing the model definition. If available it will be
-           used instead of the model_definition dict.
-    :param data_csv: (dataframe, default: None)
-    :param data_csv: (string, default: None)
-    :param output_directory: (string, default: 'results')
-    :param random_seed: (int) Random seed used k-fold splits.
-
-    # Return
-
-    :return: (tuple(kfold_cv_stats, kfold_split_indices), dict) a tuple of
-            dictionaries `kfold_cv_stats`: contains metrics from cv run.
-             `kfold_split_indices`: indices to split training data into
-             training fold and test fold.
-    """
-
-    (kfold_cv_stats,
-     kfold_split_indices) = experiment_kfold_cross_validate(
-        num_folds,
-        model_definition=model_definition,
-        model_definition_file=model_definition_file,
-        data_csv=data_csv,
-        output_directory=output_directory,
-        random_seed=random_seed
-    )
-
-    return kfold_cv_stats, kfold_split_indices
-
-
-# todo(refactor): this shouldn't exist,
+# todo refactoring: this shouldn't exist,
 #  all api tests should be done in a proper integration test,
 #  move there if needed
 def test_train(
@@ -1167,7 +1168,7 @@ def test_train(
     logger.critical(predictions)
 
 
-# todo(refactor): this shouldn't exist,
+# todo refactoring: this shouldn't exist,
 #  all api tests should be done in a proper integration test,
 #  move there if needed
 def test_train_online(
@@ -1178,7 +1179,7 @@ def test_train_online(
         logging_level=logging.ERROR,
         **kwargs
 ):
-    # TODO(refactor)
+    # todo refactoring
     # model_definition = merge_with_defaults(model_definition)
     # data, train_set_metadata = build_dataset(
     #     data_csv,
@@ -1209,7 +1210,7 @@ def test_train_online(
     pass
 
 
-# todo(refactor): this shouldn't exist,
+# todo refactoring: this shouldn't exist,
 #  all api tests should be done in a proper integration test,
 #  move there if needed
 def test_predict(
