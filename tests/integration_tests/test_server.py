@@ -59,13 +59,13 @@ def train_model(input_features, output_features, data_csv):
 
     # Training with csv
     model.train(
-        data_csv=data_csv,
+        dataset=data_csv,
         skip_save_processed_input=True,
         skip_save_progress=True,
         skip_save_unprocessed_output=True
     )
 
-    model.predict(data_csv=data_csv)
+    model.predict(dataset=data_csv)
 
     # Remove results/intermediate data saved to disk
     shutil.rmtree(model.exp_dir_name, ignore_errors=True)
@@ -73,12 +73,12 @@ def train_model(input_features, output_features, data_csv):
     # Training with dataframe
     data_df = read_csv(data_csv)
     model.train(
-        data_df=data_df,
+        dataset=data_df,
         skip_save_processed_input=True,
         skip_save_progress=True,
         skip_save_unprocessed_output=True
     )
-    model.predict(data_df=data_df)
+    model.predict(dataset=data_df)
     return model
 
 

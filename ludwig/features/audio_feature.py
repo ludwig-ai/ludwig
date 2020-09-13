@@ -279,7 +279,7 @@ class AudioFeatureMixin(object):
         }
 
         if feature['preprocessing']['in_memory']:
-            data[feature['name']] = np.empty(
+            dataset[feature['name']] = np.empty(
                 (num_audio_utterances, max_length, feature_dim),
                 dtype=np.float32
             )
@@ -293,7 +293,7 @@ class AudioFeatureMixin(object):
                     padding_value, normalization_type, audio_stats
                 )
 
-                data[feature['name']][i, :, :] = audio_feature
+                dataset[feature['name']][i, :, :] = audio_feature
 
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))

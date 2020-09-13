@@ -74,7 +74,7 @@ class ECD(tf.keras.Model):
         return tf.keras.Model(inputs=inputs, outputs=outputs)
 
     def save_savedmodel(self, save_path):
-        keras_model = self.model.get_connected_model(training=False)
+        keras_model = self.get_connected_model(training=False)
         keras_model.save(save_path)
 
     # def save_definition(self, model_hyperparameters_path):
