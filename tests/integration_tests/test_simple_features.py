@@ -18,7 +18,7 @@ import shutil
 
 import pytest
 
-from ludwig.experiment import full_experiment
+from ludwig.experiment import experiment_cli
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -64,7 +64,7 @@ def run_experiment(input_features, output_features, **kwargs):
     }
     args.update(kwargs)
 
-    exp_dir_name = full_experiment(**args)
+    exp_dir_name = experiment_cli(**args)
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
