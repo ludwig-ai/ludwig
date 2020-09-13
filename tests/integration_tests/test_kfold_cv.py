@@ -14,6 +14,7 @@ from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import text_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -98,7 +99,18 @@ FEATURES_TO_TEST = [
                 reduce_input=None
             )
         ]
-    )
+    ),
+    FeaturesToUse(
+        # input feature
+        [
+            numerical_feature(normalization='zscore'),
+            numerical_feature(normalization='zscore')
+        ],
+        # output feature
+        [
+            text_feature()
+        ]
+    ),
 ]
 
 
