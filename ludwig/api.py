@@ -31,11 +31,14 @@ import copy
 import logging
 import os
 import sys
+import tempfile
 from pprint import pformat
 
+import numpy as np
 import pandas as pd
 
 import ludwig.contrib
+from ludwig.experiment import logger, experiment_cli
 
 ludwig.contrib.contrib_import()
 
@@ -55,7 +58,7 @@ from ludwig.models.predictor import Predictor, save_prediction_outputs, \
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json, override_in_memory_flag, \
-    load_json
+    load_json, generate_kfold_splits
 from ludwig.utils.horovod_utils import should_use_horovod
 from ludwig.utils.misc_utils import get_experiment_dir_name, get_file_names, \
     get_experiment_description, find_non_existing_dir_by_adding_suffix
@@ -1347,3 +1350,209 @@ def main(sys_argv):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+
+
+def kfold_cross_validate(
+        num_folds,
+        model_definition=None,
+        model_definition_file=None,
+        data_csv=None,
+        output_directory='results',
+        random_seed=default_random_seed,
+        **kwargs
+):
+    """Performs k-fold cross validation and returns result data structures.
+
+    # Inputs
+
+    :param num_folds: (int) number of folds to create for the cross-validation
+    :param model_definition: (dict, default: None) a dictionary containing
+           information needed to build a model. Refer to the
+           [User Guide](http://ludwig.ai/user_guide/#model-definition)
+           for details.
+    :param model_definition_file: (string, optional, default: `None`) path to
+           a YAML file containing the model definition. If available it will be
+           used instead of the model_definition dict.
+    :param data_csv: (dataframe, default: None)
+    :param data_csv: (string, default: None)
+    :param output_directory: (string, default: 'results')
+    :param random_seed: (int) Random seed used k-fold splits.
+
+    # Return
+
+    :return: (tuple(kfold_cv_stats, kfold_split_indices), dict) a tuple of
+            dictionaries `kfold_cv_stats`: contains metrics from cv run.
+             `kfold_split_indices`: indices to split training data into
+             training fold and test fold.
+    """
+    # check for k_fold
+    if num_folds is None:
+        raise ValueError(
+            'k_fold parameter must be specified'
+        )
+
+    # check for model_definition and model_definition_file
+    if model_definition is None and model_definition_file is None:
+        raise ValueError(
+            'Either model_definition of model_definition_file have to be'
+            'not None to initialize a LudwigModel'
+        )
+    if model_definition is not None and model_definition_file is not None:
+        raise ValueError(
+            'Only one between model_definition and '
+            'model_definition_file can be provided'
+        )
+
+    logger.info('starting {:d}-fold cross validation'.format(num_folds))
+
+    # extract out model definition for use
+    if model_definition_file is not None:
+        with open(model_definition_file, 'r') as def_file:
+            model_definition = \
+                merge_with_defaults(yaml.safe_load(def_file))
+
+    # create output_directory if not available
+    if not os.path.isdir(output_directory):
+        os.mkdir(output_directory)
+
+    # read in data to split for the folds
+    data_df = pd.read_csv(data_csv)
+
+    # place each fold in a separate directory
+    data_dir = os.path.dirname(data_csv)
+
+    kfold_cv_stats = {}
+    kfold_split_indices = {}
+
+    for train_indices, test_indices, fold_num in \
+            generate_kfold_splits(data_df, num_folds, random_seed):
+        with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
+            curr_train_df = data_df.iloc[train_indices]
+            curr_test_df = data_df.iloc[test_indices]
+
+            kfold_split_indices['fold_' + str(fold_num)] = {
+                'training_indices': train_indices,
+                'test_indices': test_indices
+            }
+
+            # train and validate model on this fold
+            logger.info("training on fold {:d}".format(fold_num))
+            (
+                model,
+                test_results,
+                train_stats,
+                preprocessed_data
+            ) = experiment_cli(
+                model_definition,
+                training_set=curr_train_df,
+                test_set=curr_test_df,
+                experiment_name='cross_validation',
+                model_name='fold_' + str(fold_num),
+                output_directory=os.path.join(temp_dir_name, 'results')
+            )
+
+            set_on_master(use_horovod)
+
+            model = LudwigModel(
+                    model_definition=model_definition,
+                    model_definition_fp=model_definition_file,
+                    logging_level=logging_level,
+                    use_horovod=use_horovod,
+                    gpus=gpus,
+                    gpu_memory_limit=gpu_memory_limit,
+                    allow_parallel_threads=allow_parallel_threads,
+                    random_seed=random_seed
+                )
+            (
+                test_results,
+                train_stats,
+                preprocessed_data
+            ) = model.experiment(
+                dataset=dataset,
+                training_set=curr_train_df,
+                test_set=curr_test_df,
+                experiment_name='cross_validation',
+                model_name='fold_' + str(fold_num),
+                skip_save_training_description=skip_save_training_description,
+                skip_save_training_statistics=skip_save_training_statistics,
+                skip_save_model=skip_save_model,
+                skip_save_progress=skip_save_progress,
+                skip_save_log=skip_save_log,
+                skip_save_processed_input=skip_save_processed_input,
+                skip_save_test_predictions=skip_save_test_predictions,
+                skip_save_test_statistics=skip_save_test_statistics,
+                skip_collect_predictions=skip_collect_predictions,
+                skip_collect_overall_stats=skip_collect_overall_stats,
+                skip_save_predictions=skip_save_predictions,
+                output_directory=os.path.join(temp_dir_name, 'results'),
+                random_seed=random_seed,
+                debug=debug,
+            )
+
+            # todo remove for obtaining the postprocessed prediction
+            #  postprocessing taken care of in experiment_cli()
+            # postprocessed_output = postprocess_dict(
+            #     test_results,
+            #     model_definition['output_features'],
+            #     training_set_metadata=preprocessed_data[3],
+            #     experiment_dir_name=model.exp_dir_name,
+            #     skip_save_unprocessed_output=True
+            # )
+            # todo if we want to save the csv of predictions uncomment block
+            # if is_on_master():
+            #     print_test_results(test_results)
+            #     if not skip_save_test_predictions:
+            #         save_prediction_outputs(
+            #             postprocessed_output,
+            #             experiment_dir_name
+            #         )
+            #     if not skip_save_test_statistics:
+            #         save_test_statistics(test_results, experiment_dir_name)
+
+            # augment the training statistics with scoring metric from
+            # the hold out fold
+            train_stats['fold_test_results'] = test_results[0]
+
+            # collect training statistics for this fold
+            kfold_cv_stats['fold_' + str(fold_num)] = train_stats
+
+    # consolidate raw fold metrics across all folds
+    raw_kfold_stats = {}
+    for fold_name in kfold_cv_stats:
+        curr_fold_test_results = kfold_cv_stats[fold_name]['fold_test_results']
+        for of_name in curr_fold_test_results:
+            if of_name not in raw_kfold_stats:
+                raw_kfold_stats[of_name] = {}
+            fold_test_results_of = curr_fold_test_results[of_name]
+
+            for metric in fold_test_results_of:
+                if metric not in {
+                    'predictions',
+                    'probabilities',
+                    'confusion_matrix',
+                    'overall_stats',
+                    'per_class_stats',
+                    'roc_curve',
+                    'precision_recall_curve'
+                }:
+                    if metric not in raw_kfold_stats[of_name]:
+                        raw_kfold_stats[of_name][metric] = []
+                    raw_kfold_stats[of_name][metric].append(
+                        fold_test_results_of[metric]
+                    )
+
+    # calculate overall kfold statistics
+    overall_kfold_stats = {}
+    for of_name in raw_kfold_stats:
+        overall_kfold_stats[of_name] = {}
+        for metric in raw_kfold_stats[of_name]:
+            mean = np.mean(raw_kfold_stats[of_name][metric])
+            std = np.std(raw_kfold_stats[of_name][metric])
+            overall_kfold_stats[of_name][metric + '_mean'] = mean
+            overall_kfold_stats[of_name][metric + '_std'] = std
+
+    kfold_cv_stats['overall'] = overall_kfold_stats
+
+    logger.info('completed {:d}-fold cross validation'.format(num_folds))
+
+    return kfold_cv_stats, kfold_split_indices
