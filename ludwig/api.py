@@ -63,8 +63,6 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 
 import yaml
 
-from ludwig.experiment import \
-    kfold_cross_validate as experiment_kfold_cross_validate
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry, print_boxed
 
@@ -1084,52 +1082,52 @@ class LudwigModel:
 
 
 # todo refactoring: this should be adapted to the new API / functionalities
-def kfold_cross_validate(
-        num_folds,
-        model_definition=None,
-        model_definition_file=None,
-        data_csv=None,
-        output_directory='results',
-        random_seed=default_random_seed,
-        **kwargs
-):
-    """Performs k-fold cross validation and returns result data structures.
-
-
-    # Inputs
-    
-    :param num_folds: (int) number of folds to create for the cross-validation
-    :param model_definition: (dict, default: None) a dictionary containing
-           information needed to build a model. Refer to the
-           [User Guide](http://ludwig.ai/user_guide/#model-definition)
-           for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-           a YAML file containing the model definition. If available it will be
-           used instead of the model_definition dict.
-    :param data_csv: (dataframe, default: None)
-    :param data_csv: (string, default: None)
-    :param output_directory: (string, default: 'results')
-    :param random_seed: (int) Random seed used k-fold splits.
-
-    # Return
-
-    :return: (tuple(kfold_cv_stats, kfold_split_indices), dict) a tuple of
-            dictionaries `kfold_cv_stats`: contains metrics from cv run.
-             `kfold_split_indices`: indices to split training data into
-             training fold and test fold.
-    """
-
-    (kfold_cv_stats,
-     kfold_split_indices) = experiment_kfold_cross_validate(
-        num_folds,
-        model_definition=model_definition,
-        model_definition_file=model_definition_file,
-        data_csv=data_csv,
-        output_directory=output_directory,
-        random_seed=random_seed
-    )
-
-    return kfold_cv_stats, kfold_split_indices
+#def kfold_cross_validate(
+#        num_folds,
+#        model_definition=None,
+#        model_definition_file=None,
+#        data_csv=None,
+#        output_directory='results',
+#        random_seed=default_random_seed,
+#        **kwargs
+#):
+#    """Performs k-fold cross validation and returns result data structures.
+#
+#
+#   # Inputs
+#    
+#    :param num_folds: (int) number of folds to create for the cross-validation
+#    :param model_definition: (dict, default: None) a dictionary containing
+#           information needed to build a model. Refer to the
+#           [User Guide](http://ludwig.ai/user_guide/#model-definition)
+#           for details.
+#    :param model_definition_file: (string, optional, default: `None`) path to
+#           a YAML file containing the model definition. If available it will be
+#           used instead of the model_definition dict.
+#    :param data_csv: (dataframe, default: None)
+#    :param data_csv: (string, default: None)
+#    :param output_directory: (string, default: 'results')
+#    :param random_seed: (int) Random seed used k-fold splits.
+#
+#    # Return#
+#
+#    :return: (tuple(kfold_cv_stats, kfold_split_indices), dict) a tuple of
+#            dictionaries `kfold_cv_stats`: contains metrics from cv run.
+#             `kfold_split_indices`: indices to split training data into
+#             training fold and test fold.
+#    """
+#
+#    (kfold_cv_stats,
+#     kfold_split_indices) = experiment_kfold_cross_validate(
+#        num_folds,
+#        model_definition=model_definition,
+#        model_definition_file=model_definition_file,
+#        data_csv=data_csv,
+#        output_directory=output_directory,
+#        random_seed=random_seed
+#    )
+#
+#    return kfold_cv_stats, kfold_split_indices
 
 
 # todo refactoring: this shouldn't exist,
