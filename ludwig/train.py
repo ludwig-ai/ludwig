@@ -24,9 +24,9 @@ import sys
 
 import yaml
 
+from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
-from ludwig.models.new_ludwig_model import NewLudwigModel
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
@@ -168,9 +168,9 @@ def train_cli(
     :returns: None
     """
     if model_load_path:
-        model = NewLudwigModel.load(model_load_path)
+        model = LudwigModel.load(model_load_path)
     else:
-        model = NewLudwigModel(
+        model = LudwigModel(
             model_definition=model_definition,
             model_definition_fp=model_definition_file,
             logging_level=logging_level,

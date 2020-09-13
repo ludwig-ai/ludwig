@@ -28,17 +28,11 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from ludwig.constants import TRAINING
+from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.data.postprocessing import postprocess_dict
 from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
-from ludwig.models.predictor import save_prediction_outputs, \
-    save_evaluation_stats, print_evaluation_stats
-from ludwig.models.trainer import Trainer
-from ludwig.train import train_cli
-from ludwig.models.new_ludwig_model import NewLudwigModel
-from ludwig.utils.data_utils import save_json, generate_kfold_splits, \
-    is_model_dir
+from ludwig.utils.data_utils import save_json, generate_kfold_splits
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
@@ -193,9 +187,9 @@ def experiment_cli(
     set_on_master(use_horovod)
 
     if model_load_path:
-        model = NewLudwigModel.load(model_load_path)
+        model = LudwigModel.load(model_load_path)
     else:
-        model = NewLudwigModel(
+        model = LudwigModel(
             model_definition=model_definition,
             model_definition_fp=model_definition_file,
             logging_level=logging_level,

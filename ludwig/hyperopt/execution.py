@@ -1,16 +1,12 @@
 import copy
 import multiprocessing
-import os
 import signal
 from abc import ABC, abstractmethod
 
+from ludwig.api import LudwigModel
 from ludwig.constants import MAXIMIZE, VALIDATION, TRAINING, TEST
-from ludwig.data.postprocessing import postprocess_dict
 from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
-from ludwig.models.new_ludwig_model import NewLudwigModel
-from ludwig.models.predictor import save_prediction_outputs, \
-    save_evaluation_stats, print_evaluation_stats
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.misc_utils import get_available_gpu_memory, get_from_registry
 from ludwig.utils.tf_utils import get_available_gpus_cuda_string
@@ -669,7 +665,7 @@ def train_and_eval_on_split(
     # Collect training and validation losses and metrics
     # & append it to `results`
     # ludwig_model = LudwigModel(modified_model_definition)
-    model = NewLudwigModel(
+    model = LudwigModel(
         model_definition=model_definition,
         use_horovod=use_horovod,
         gpus=gpus,
