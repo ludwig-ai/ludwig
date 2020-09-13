@@ -319,31 +319,28 @@ def kfold_cross_validate(
             # train and validate model on this fold
             logger.info("training on fold {:d}".format(fold_num))
             (
-                _,  # model
-                preprocessed_data,  # preprocessed_data
-                experiment_dir_name,  # experiment_dir_name
+                model,
+                test_results,
                 train_stats,
+                preprocessed_data
+            ) = experiment_cli(
                 model_definition,
-                test_results
-            ) = experiment(
-                model_definition,
-                data_train_df=curr_train_df,
-                data_test_df=curr_test_df,
+                training_set=curr_train_df,
+                test_set=curr_test_df,
                 experiment_name='cross_validation',
                 model_name='fold_' + str(fold_num),
                 output_directory=os.path.join(temp_dir_name, 'results')
             )
 
-            # todo this works for obtaining the postprocessed prediction
-            #  and replace the raw ones, but some refactoring is needed to
-            #  avoid having to do it
-            postprocessed_output = postprocess_dict(
-                test_results,
-                model_definition['output_features'],
-                training_set_metadata=preprocessed_data[3],
-                experiment_dir_name=experiment_dir_name,
-                skip_save_unprocessed_output=True
-            )
+            # todo remove for obtaining the postprocessed prediction
+            #  postprocessing taken care of in experiment_cli()
+            # postprocessed_output = postprocess_dict(
+            #     test_results,
+            #     model_definition['output_features'],
+            #     training_set_metadata=preprocessed_data[3],
+            #     experiment_dir_name=model.exp_dir_name,
+            #     skip_save_unprocessed_output=True
+            # )
             # todo if we want to save the csv of predictions uncomment block
             # if is_on_master():
             #     print_test_results(test_results)
@@ -357,7 +354,7 @@ def kfold_cross_validate(
 
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats['fold_test_results'] = test_results
+            train_stats['fold_test_results'] = test_results[0]
 
             # collect training statistics for this fold
             kfold_cv_stats['fold_' + str(fold_num)] = train_stats
