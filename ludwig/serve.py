@@ -74,7 +74,7 @@ def server(model):
                 return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
                                     status_code=400)
             try:
-                resp = model.predict(data_dict=[entry]).to_dict('records')[0]
+                resp = model.predict(dataset=[entry], data_format=dict).to_dict('records')[0]
                 return JSONResponse(resp)
             except Exception as e:
                 logger.error("Error: {}".format(str(e)))
@@ -88,9 +88,7 @@ def server(model):
 
 
 def convert_input(form):
-    '''
-    Returns a new input and a list of files to be cleaned up
-    '''
+    """Returns a new input and a list of files to be cleaned up"""
     new_input = {}
     files = []
     for k, v in form.multi_items():
@@ -106,7 +104,7 @@ def convert_input(form):
         else:
             new_input[k] = v
 
-    return (files, new_input)
+    return files, new_input
 
 
 def run_server(model_path, host, port):
