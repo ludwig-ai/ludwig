@@ -23,7 +23,7 @@ from ludwig.models.predictor import calculate_overall_stats, \
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import load_json, save_json, \
-    override_in_memory_flag
+    override_in_memory_flag, is_model_dir
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.horovod_utils import should_use_horovod
 from ludwig.utils.misc_utils import get_experiment_dir_name, get_file_names, \
@@ -40,7 +40,7 @@ class NewLudwigModel:
                  model_definition=None,
                  model_definition_fp=None,
                  logging_level=logging.ERROR,
-                 use_horovod=False,
+                 use_horovod=None,
                  gpus=None,
                  gpu_memory_limit=None,
                  allow_parallel_threads=True,
@@ -679,6 +679,8 @@ class NewLudwigModel:
                 training_set_metadata
             )
             stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
+                        # account for presence of 'combined' key
+                        if of_name in overall_stats else {**stats[of_name]}
                      for of_name in stats}
 
         if collect_predictions:
@@ -718,6 +720,108 @@ class NewLudwigModel:
                 logger.info('Saved to: {0}'.format(self.exp_dir_name))
 
         return stats, postproc_predictions
+
+
+
+    def experiment(
+            self,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
+            experiment_name='experiment',
+            model_name='run',
+            model_load_path=None,
+            model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
+            skip_save_test_predictions=False,  # skipcq: PYL-W0613
+            skip_save_test_statistics=False,  # skipcq: PYL-W0613
+            skip_collect_predictions=False,
+            skip_collect_overall_stats=False,
+            output_directory='results',
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            use_horovod=None,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
+    ):
+        (
+            train_stats,
+            preprocessed_data
+        ) = self.train(
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            experiment_name=experiment_name,
+            model_name=model_name,
+            model_load_path=model_load_path,
+            model_resume_path=model_resume_path,
+            skip_save_training_description=skip_save_training_description,
+            skip_save_training_statistics=skip_save_training_statistics,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            skip_save_processed_input=skip_save_processed_input,
+            output_directory=output_directory,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            use_horovod=use_horovod,
+            random_seed=random_seed,
+            debug=debug,
+        )
+
+        (_,  # training_set
+         _,  # validation_set
+         test_set,
+         training_set_metadata) = preprocessed_data
+
+        if test_set is not None:
+            if self.model_definition[TRAINING]['eval_batch_size'] > 0:
+                batch_size = self.model_definition[TRAINING]['eval_batch_size']
+            else:
+                batch_size = self.model_definition[TRAINING]['batch_size']
+
+            # todo tf2 refactor: figure out where this goes given NewLudwigModel
+            # if a model was saved on disk, reload it
+            # model_dir = os.path.join(self.exp_dir_name, 'model')
+            # if is_model_dir(model_dir):
+            #     model = NewLudwigModel.load(model_dir,
+            #                          use_horovod=use_horovod,
+            #                          gpus=gpus,
+            #                          gpu_memory_limit=gpu_memory_limit,
+            #                          allow_parallel_threads=allow_parallel_threads)
+
+            # predict
+            test_results = self.evaluate(
+                test_set,
+                data_format=data_format,
+                batch_size=batch_size,
+                collect_predictions=not skip_collect_predictions,
+                collect_overall_stats=not skip_collect_overall_stats,
+                debug=debug
+            )
+        else:
+            test_results = None
+
+        return (
+            test_results,
+            train_stats,
+            preprocessed_data
+        )
 
     def collect_weights(
             self,
@@ -786,7 +890,7 @@ class NewLudwigModel:
     @staticmethod
     def load(model_dir,
              logging_level=logging.ERROR,
-             use_horovod=False,
+             use_horovod=None,
              gpus=None,
              gpu_memory_limit=None,
              allow_parallel_threads=True):

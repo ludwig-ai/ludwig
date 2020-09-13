@@ -20,9 +20,9 @@ import shutil
 import pytest
 import yaml
 from ludwig.data.concatenate_datasets import concatenate_df
-from ludwig.experiment import full_experiment
+from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
-from ludwig.predict import full_predict
+from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
     HF_ENCODERS_SHORT, slow
@@ -102,7 +102,7 @@ def test_experiment_seq_seq(csv_filename):
     for encoder in encoders2:
         logger.info('seq to seq test, Encoder: {0}'.format(encoder))
         input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):

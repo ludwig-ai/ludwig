@@ -27,7 +27,7 @@ import pandas as pd
 from ludwig.constants import VECTOR
 from ludwig.data.dataset_synthesizer import DATETIME_FORMATS
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
-from ludwig.experiment import full_experiment
+from ludwig.experiment import experiment_cli
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
@@ -337,7 +337,7 @@ def run_experiment(input_features, output_features, **kwargs):
     }
     args.update(kwargs)
 
-    exp_dir_name = full_experiment(**args)
+    exp_dir_name = experiment_cli(**args)
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 

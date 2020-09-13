@@ -684,7 +684,8 @@ class Trainer:
                 if is_on_master():
                     if not self._skip_save_model:
                         model.save_weights(model_weights_path)
-                        model.save_definition(model_hyperparameters_path)
+                        # TODO(refactor): this is currently handled by LudwigModel
+                        # model.save_definition(model_hyperparameters_path)
 
             # ========== Save training progress ==========
             if is_on_master():
@@ -696,10 +697,11 @@ class Trainer:
                             TRAINING_PROGRESS_TRACKER_FILE_NAME
                         )
                     )
-                    if self._skip_save_model:
-                        model.save_definition(
-                            model_hyperparameters_path
-                        )
+                    # TODO(refactor): this is currently handled by LudwigModel
+                    # if self._skip_save_model:
+                    #     model.save_definition(
+                    #         model_hyperparameters_path
+                    #     )
 
             if is_on_master():
                 contrib_command("train_epoch_end", progress_tracker)
@@ -843,7 +845,8 @@ class Trainer:
             if is_on_master():
                 if not skip_save_model:
                     model.save_weights(model_weights_path)
-                    model.save_definition(model_hyperparameters_path)
+                    # TODO(refactor): this is currently handled by LudwigModel
+                    # model.save_definition(model_hyperparameters_path)
                     logger.info(
                         'Validation {} on {} improved, model saved'.format(
                             validation_metric,

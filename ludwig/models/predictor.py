@@ -257,14 +257,14 @@ def calculate_overall_stats(
         training_set_metadata
 ):
     overall_stats = {}
-    for output_feature in output_features:
-        of_name = output_feature.feature_name
+    for of_name, output_feature in output_features.items():
         if of_name not in overall_stats:
             overall_stats[of_name] = {}
         output_feature.calculate_overall_stats(
-            predictions[of_name],
-            dataset.get(of_name),
-            training_set_metadata[of_name]
+            overall_stats[of_name], # dictionary for overall stats
+            predictions[of_name],  # predictions
+            dataset.get(of_name),  # target
+            training_set_metadata[of_name]  #output feature metadata
         )
     return overall_stats
 
