@@ -9,7 +9,7 @@ import pytest
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-from ludwig.experiment import full_experiment
+from ludwig.experiment import experiment_cli
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json
 
@@ -76,10 +76,10 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     results_dir.mkdir()
 
     # run experiment
-    exp_dir_name = full_experiment(
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+    exp_dir_name = experiment_cli(
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory=str(results_dir),
         model_definition=model_definition,
         skip_save_processed_input=True,
@@ -135,10 +135,10 @@ def test_model_progress_save(
     results_dir.mkdir()
 
     # run experiment
-    exp_dir_name = full_experiment(
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+    exp_dir_name = experiment_cli(
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory=str(results_dir),
         model_definition=model_definition,
         skip_save_processed_input=True,
@@ -192,29 +192,29 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
-    exp_dir_name_1 = full_experiment(
+    exp_dir_name_1 = experiment_cli(
         model_definition,
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory='results'  # results_dir
     )
 
     model_definition['training']['epochs'] = 4
 
-    full_experiment(
+    experiment_cli(
         model_definition,
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         model_resume_path=exp_dir_name_1
     )
 
-    exp_dir_name_2 = full_experiment(
+    exp_dir_name_2 = experiment_cli(
         model_definition,
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
     )
 
     # compare learning curves with and without resuming
@@ -251,8 +251,8 @@ def test_resume_training(optimizer, generated_data, tmp_path):
 #     # perform inital model training
 #     ludwig_model = LudwigModel(model_definition)
 #     train_stats = ludwig_model.train(
-#         data_train_df=generated_data.train_df,
-#         data_validation_df=generated_data.validation_df,
+#         training_set=generated_data.train_df,
+#         validation_set=generated_data.validation_df,
 #         data_test_df=generated_data.test_df,
 #         output_directory='results' #results_dir
 #     )
@@ -295,10 +295,10 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
     results_dir.mkdir()
 
     # run experiment
-    exp_dir_name = full_experiment(
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+    exp_dir_name = experiment_cli(
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory=str(results_dir),
         model_definition=model_definition,
         skip_save_processed_input=True,
@@ -361,10 +361,10 @@ def test_regularization(generated_data, tmp_path):
             'activity_regularizer'] = regularizer
 
         # run experiment
-        exp_dir_name = full_experiment(
-            data_train_df=generated_data.train_df,
-            data_validation_df=generated_data.validation_df,
-            data_test_df=generated_data.test_df,
+        exp_dir_name = experiment_cli(
+            training_set=generated_data.train_df,
+            validation_set=generated_data.validation_df,
+            test_set=generated_data.test_df,
             output_directory=str(results_dir),
             model_definition=model_definition,
             experiment_name='regularization',
