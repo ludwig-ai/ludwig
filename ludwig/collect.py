@@ -25,9 +25,9 @@ import sys
 
 import numpy as np
 
+from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.models.new_ludwig_model import NewLudwigModel
 from ludwig.utils.misc_utils import find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
@@ -83,7 +83,7 @@ def collect_activations(
     logger.info('Output path: {}'.format(experiment_dir_name))
     logger.info('\n')
 
-    model = NewLudwigModel.load(
+    model = LudwigModel.load(
         model_path,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
@@ -124,7 +124,7 @@ def collect_weights(
     logger.info('Output path: {}'.format(experiment_dir_name))
     logger.info('\n')
 
-    model = NewLudwigModel.load(model_path)
+    model = LudwigModel.load(model_path)
 
     # collect weights
     print_boxed('COLLECT WEIGHTS')
@@ -154,7 +154,7 @@ def print_model_summary(
         model_path,
         **kwargs
 ):
-    model = NewLudwigModel.load(model_path)
+    model = LudwigModel.load(model_path)
     collected_tensors = model.collect_weights()
     names = [name for name, w in collected_tensors]
 

@@ -173,6 +173,9 @@ class Predictor:
             dataset,
             bucketing_field=None
     ):
+        if bucketing_field:
+            raise ValueError('BucketedBatcher is not supported yet')
+
         # Build static graph for the trained model
         tf.keras.backend.reset_uids()
         keras_model_inputs = model.get_model_inputs()
@@ -188,7 +191,6 @@ class Predictor:
         batcher = initialize_batcher(
             dataset,
             self._batch_size,
-            bucketing_field,
             should_shuffle=False
         )
 
@@ -203,10 +205,14 @@ class Predictor:
         while not batcher.last_batch():
             batch = batcher.next_batch()
 
-            inputs = {i_feat.feature_name: batch[i_feat.feature_name]
-                      for i_feat in model.input_features}
-            targets = {o_feat.feature_name: batch[o_feat.feature_name]
-                       for o_feat in model.output_features}
+            inputs = {
+                i_feat.feature_name: batch[i_feat.feature_name]
+                for i_feat in model.input_features.values()
+            }
+            targets = {
+                o_feat.feature_name: batch[o_feat.feature_name]
+                for o_feat in model.output_features.values()
+            }
 
             input_tuple = (inputs, targets)
             outputs = activation_model(input_tuple)

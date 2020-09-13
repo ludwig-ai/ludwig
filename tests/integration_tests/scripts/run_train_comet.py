@@ -67,8 +67,8 @@ def run(csv_filename):
     with patch('comet_ml.Experiment.log_asset_data') as mock_log_asset_data:
         try:
             # Training with csv
-            model.train(data_csv=data_csv)
-            model.predict(data_csv=data_csv)
+            model.train(dataset=data_csv)
+            model.predict(dataset=data_csv)
         finally:
             if model.exp_dir_name:
                 shutil.rmtree(model.exp_dir_name, ignore_errors=True)

@@ -22,9 +22,9 @@ import argparse
 import logging
 import sys
 
+from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
-from ludwig.models.new_ludwig_model import NewLudwigModel
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -47,7 +47,7 @@ def predict_cli(
         debug=False,
         **kwargs
 ):
-    model = NewLudwigModel.load(
+    model = LudwigModel.load(
         model_path,
         logging_level=logging_level,
         use_horovod=use_horovod,

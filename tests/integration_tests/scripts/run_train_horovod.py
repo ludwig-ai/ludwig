@@ -37,7 +37,7 @@ parser.add_argument('--output-features', required=True)
 parser.add_argument('--ludwig-kwargs', required=True)
 
 
-def run_api_experiment(input_features, output_features, data_csv, **kwargs):
+def run_api_experiment(input_features, output_features, dataset, **kwargs):
     model_definition = {
         'input_features': input_features,
         'output_features': output_features,
@@ -50,11 +50,11 @@ def run_api_experiment(input_features, output_features, data_csv, **kwargs):
     try:
         # Training with csv
         model.train(
-            data_csv=data_csv,
+            dataset=dataset,
             **kwargs
         )
 
-        model.predict(data_csv=data_csv)
+        model.predict(dataset=dataset)
     finally:
         if model.exp_dir_name:
             shutil.rmtree(model.exp_dir_name, ignore_errors=True)
@@ -62,7 +62,9 @@ def run_api_experiment(input_features, output_features, data_csv, **kwargs):
 
 def test_horovod_intent_classification(rel_path, input_features,
                                        output_features, **kwargs):
-    run_api_experiment(input_features, output_features, data_csv=rel_path,
+    run_api_experiment(input_features,
+                       output_features,
+                       dataset=rel_path,
                        **kwargs)
 
     # Horovod should be initialized following training. If not, this will raise an exception.
