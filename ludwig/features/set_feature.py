@@ -255,7 +255,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
-                     if pred == True] for pred_set in preds
+                     if pred] for pred_set in preds
                 ]
             else:
                 postprocessed[PREDICTIONS] = preds
@@ -268,7 +268,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             probs = result[PROBABILITIES].numpy()
             prob = [[prob for prob in prob_set if
-                     prob >= output_feature['threshold']] for prob_set in
+                     prob >= self.threshold] for prob_set in
                     probs]
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob
