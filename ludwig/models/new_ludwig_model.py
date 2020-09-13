@@ -929,3 +929,5 @@ class NewLudwigModel:
             set_disable_progressbar(True)
         else:
             set_disable_progressbar(False)
+
+# todo(refactor): reintroduce the train_online functionality

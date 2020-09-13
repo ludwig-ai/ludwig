@@ -46,7 +46,7 @@ from ludwig.models.new_ludwig_model import NewLudwigModel as LudwigModel
 
 logger = logging.getLogger(__name__)
 
-
+# todo(refactor): this should be adapted to the new API / functionalities
 def kfold_cross_validate(
         num_folds,
         model_definition=None,
@@ -95,6 +95,9 @@ def kfold_cross_validate(
     return kfold_cv_stats, kfold_split_indices
 
 
+# todo(refactor): this shouldn't exist,
+#  all api tests should be done in a proper integration test,
+#  move there if needed
 def test_train(
         data_csv,
         model_definition,
@@ -130,6 +133,9 @@ def test_train(
     logger.critical(predictions)
 
 
+# todo(refactor): this shouldn't exist,
+#  all api tests should be done in a proper integration test,
+#  move there if needed
 def test_train_online(
         data_csv,
         model_definition,
@@ -169,6 +175,9 @@ def test_train_online(
     pass
 
 
+# todo(refactor): this shouldn't exist,
+#  all api tests should be done in a proper integration test,
+#  move there if needed
 def test_predict(
         data_csv,
         model_path,
@@ -202,6 +211,9 @@ def test_predict(
     logger.critical(predictions)
 
 
+# todo(refactoring): this shouldn't exist,
+#  all api tests should be done in a proper integration test,
+#  move there if needed
 def main(sys_argv):
     parser = argparse.ArgumentParser(
         description='This script tests ludwig APIs.'
