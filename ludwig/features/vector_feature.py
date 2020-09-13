@@ -276,12 +276,12 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
+            predictions,
+            targets,
             train_set_metadata
     ):
-        pass
+        # no overall stats, just return empty dictionary
+        return {}
 
     def postprocess_predictions(
             self,
