@@ -301,8 +301,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     @staticmethod
     @abstractmethod
     def calculate_overall_stats(
-            output_feature,
-            dataset,
+            predictions,
+            targets,
             train_set_metadata
     ):
         pass

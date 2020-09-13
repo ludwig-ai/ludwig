@@ -64,7 +64,7 @@ def experiment_cli(
         skip_save_test_statistics=False,
         skip_collect_predictions=False,
         skip_collect_overall_stats=False,
-        skip_save_predictions=True,
+        skip_save_predictions=False,
         output_directory='results',
         gpus=None,
         gpu_memory_limit=None,
