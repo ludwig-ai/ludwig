@@ -151,4 +151,4 @@ def test_feature(input_test_feature, output_test_feature,
     rel_path = generate_data(input_features, output_features, csv_filename,
                              1001)
 
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
