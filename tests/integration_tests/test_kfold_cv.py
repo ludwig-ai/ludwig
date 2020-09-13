@@ -7,7 +7,8 @@ from collections import namedtuple
 import pytest
 import yaml
 
-from ludwig.experiment import kfold_cross_validate, kfold_cross_validate_cli
+from ludwig.experiment import kfold_cross_validate_cli
+from ludwig.api import kfold_cross_validate
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
