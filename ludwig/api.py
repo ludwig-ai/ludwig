@@ -631,7 +631,7 @@ class LudwigModel:
     #         eval_stats = self.model.batch_evaluate(
     #             preproc_data, return_preds=return_preds
     #         )
-    #         return eval_statst
+    #         return eval_stats
 
     def evaluate(
             self,
