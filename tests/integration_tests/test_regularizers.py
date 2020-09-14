@@ -145,7 +145,7 @@ def test_encoder(test_case):
     model_definition = {'input_features': features, 'output_features': []}
     training_set, _, _, training_set_metadata = preprocess_for_training(
         model_definition,
-        data_train_df=df,
+        training_set=df,
         skip_save_processed_input=True,
         random_seed=RANDOM_SEED
     )
@@ -283,7 +283,7 @@ def test_decoder(test_case):
     model_definition = {'input_features': [], 'output_features': features}
     training_set, _, _, training_set_metadata = preprocess_for_training(
         model_definition,
-        data_train_df=df,
+        training_set=df,
         skip_save_processed_input=True,
         random_seed=RANDOM_SEED
     )
