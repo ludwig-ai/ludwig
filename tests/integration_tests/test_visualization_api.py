@@ -681,7 +681,8 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
     data_df = read_csv(data_csv)
     model.train(dataset=data_df)
     # extract test metrics
-    test_stats, _ = model.evaluate(dataset=data_df)
+    test_stats, _ = model.evaluate(dataset=data_df,
+                                   collect_overall_stats=True)
     test_stats = test_stats
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
