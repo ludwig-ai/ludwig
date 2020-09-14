@@ -655,25 +655,6 @@ class LudwigModel:
         features_to_load = self.model_definition['input_features'] + \
                            self.model_definition['output_features']
 
-        # todo refactoring: this is needed for image features as we expect all
-        #  inputs to predict to be in memory, but doublecheck
-        num_overrides = override_in_memory_flag(
-            self.model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported for Ludwig API.'
-            )
-
-        # preprocessing
-        dataset, training_set_metadata = preprocess_for_prediction(
-            self.model_definition,
-            dataset=dataset,
-            data_format=data_format,
-            training_set_metadata=self.training_set_metadata,
-            include_outputs=False,
-        )
         num_overrides = override_in_memory_flag(
             self.model_definition['input_features'],
             True
