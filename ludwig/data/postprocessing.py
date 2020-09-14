@@ -26,27 +26,6 @@ def postprocess(
         predictions,
         output_features,
         training_set_metadata,
-        return_type='dict',
-        experiment_dir_name='',
-        skip_save_unprocessed_output=False,
-):
-    prostprocess_fn = get_from_registry(
-        return_type,
-        postprocess_registry
-    )
-    return prostprocess_fn(
-        predictions,
-        output_features,
-        training_set_metadata,
-        experiment_dir_name=experiment_dir_name,
-        skip_save_unprocessed_output=skip_save_unprocessed_output,
-    )
-
-
-def postprocess_dict(
-        predictions,
-        output_features,
-        training_set_metadata,
         experiment_dir_name='',
         skip_save_unprocessed_output=False,
 ):
@@ -61,24 +40,35 @@ def postprocess_dict(
     return postprocessed
 
 
-def postprocess_df(
-        model_output,
-        output_features,
-        metadata,
-        experiment_dir_name='',
-        skip_save_unprocessed_output=True,
-):
-    postprocessed_output = postprocess_dict(
-        model_output,
-        output_features,
-        metadata,
-        experiment_dir_name=experiment_dir_name,
-        skip_save_unprocessed_output=skip_save_unprocessed_output,
+def convert_predictions(predictions, output_features, training_set_metadata, return_type='dict'):
+    convert_fn = get_from_registry(
+        return_type,
+        conversion_registry
     )
+    return convert_fn(
+        predictions,
+        output_features,
+        training_set_metadata,
+    )
+
+
+def convert_to_dict(
+        predictions,
+        output_features,
+        training_set_metadata,
+):
+    return predictions
+
+
+def convert_to_df(
+        predictions,
+        output_features,
+        training_set_metadata,
+):
     data_for_df = {}
     for output_feature_name, output_feature in output_features.items():
         output_feature_type = output_feature.type
-        output_feature_dict = postprocessed_output[output_feature_name]
+        output_feature_dict = predictions[output_feature_name]
         for key_val in output_feature_dict.items():
             output_subgroup_name, output_type_value = key_val
             if (hasattr(output_type_value, 'shape') and
@@ -92,9 +82,9 @@ def postprocess_df(
                     ] = output_type_value.tolist()
                 else:
                     for i, value in enumerate(output_type_value.T):
-                        if (output_feature_name in metadata and
-                                'idx2str' in metadata[output_feature_name]):
-                            class_name = metadata[output_feature_name][
+                        if (output_feature_name in training_set_metadata and
+                                'idx2str' in training_set_metadata[output_feature_name]):
+                            class_name = training_set_metadata[output_feature_name][
                                 'idx2str'][i]
                         else:
                             class_name = str(i)
@@ -116,7 +106,7 @@ def postprocess_df(
     return output_df
 
 
-postprocess_registry = {
-    **{format: postprocess_dict for format in DICT_FORMATS},
-    **{format: postprocess_df for format in DATAFRAME_FORMATS},
+conversion_registry = {
+    **{format: convert_to_dict for format in DICT_FORMATS},
+    **{format: convert_to_df for format in DATAFRAME_FORMATS},
 }
