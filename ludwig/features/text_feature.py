@@ -336,6 +336,9 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
     def get_output_shape(self):
         return self.max_sequence_length,
 
+    def overall_statistics_metadata(self):
+        return {'level': self.level}
+
     @staticmethod
     def update_model_definition_with_metadata(
             output_feature,
@@ -390,15 +393,14 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
                 for cls in feature_metadata[level_idx2str]
             ]
 
-
+    @staticmethod
     def calculate_overall_stats(
-            self,
             predictions,
             targets,
-            train_set_metadata
+            train_set_metadata,
     ):
         overall_stats = {}
-        level_idx2str = '{}_{}'.format(self.level, 'idx2str')
+        level_idx2str = '{}_{}'.format(train_set_metadata['level'], 'idx2str')
 
         sequences = targets
         last_elem_sequence = sequences[np.arange(sequences.shape[0]),

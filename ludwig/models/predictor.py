@@ -264,10 +264,13 @@ def calculate_overall_stats(
 ):
     overall_stats = {}
     for of_name, output_feature in output_features.items():
+        feature_metadata = output_feature.overall_statistics_metadata()
+        feature_metadata.update(training_set_metadata[of_name])
+
         overall_stats[of_name] = output_feature.calculate_overall_stats(
             predictions[of_name],  # predictions
             dataset.get(of_name),  # target
-            training_set_metadata[of_name]  #output feature metadata
+            feature_metadata,  # output feature metadata
         )
     return overall_stats
 

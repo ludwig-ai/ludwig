@@ -273,6 +273,13 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             **logits
         }
 
+    def overall_statistics_metadata(self):
+        """Additional metadata used to extend `training_set_metadata`.
+
+        Used when calculating the overall statistics.
+        """
+        return {}
+
     @property
     @abstractmethod
     def default_validation_metric(self):
