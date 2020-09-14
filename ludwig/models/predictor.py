@@ -278,18 +278,14 @@ def calculate_overall_stats(
 def save_prediction_outputs(
         postprocessed_output,
         experiment_dir_name,
-        skip_output_types=None
 ):
-    if skip_output_types is None:
-        skip_output_types = set()
-    csv_filename = os.path.join(experiment_dir_name, '{}_{}.csv')
+    csv_filename = os.path.join(experiment_dir_name, '{}.csv')
     for output_field, outputs in postprocessed_output.items():
-        for output_type, values in outputs.items():
-            if output_type not in skip_output_types:
-                save_csv(
-                    csv_filename.format(output_field, output_type),
-                    values
-                )
+        values = outputs.to_numpy()
+        save_csv(
+            csv_filename.format(output_field),
+            values
+        )
 
 
 def save_evaluation_stats(test_stats, experiment_dir_name):
