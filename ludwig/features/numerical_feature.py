@@ -284,12 +284,12 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            overall_stats,
             predictions,
             targets,
             metadata
     ):
-        pass
+        # no overall stats, just return empty dictionary
+        return {}
 
     def postprocess_predictions(
             self,

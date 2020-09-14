@@ -366,24 +366,24 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
+            predictions,
+            targets,
             train_set_metadata
     ):
-        feature_name = output_feature['name']
-        sequences = dataset.get(feature_name)
+        overall_stats = {}
+        sequences = targets
         last_elem_sequence = sequences[np.arange(sequences.shape[0]),
                                        (sequences != 0).cumsum(1).argmax(1)]
-        stats = test_stats[feature_name]
         confusion_matrix = ConfusionMatrix(
             last_elem_sequence,
-            stats[LAST_PREDICTIONS],
-            labels=train_set_metadata[feature_name]['idx2str']
+            predictions[LAST_PREDICTIONS],
+            labels=train_set_metadata['idx2str']
         )
-        stats['confusion_matrix'] = confusion_matrix.cm.tolist()
-        stats['overall_stats'] = confusion_matrix.stats()
-        stats['per_class_stats'] = confusion_matrix.per_class_stats()
+        overall_stats['confusion_matrix'] = confusion_matrix.cm.tolist()
+        overall_stats['overall_stats'] = confusion_matrix.stats()
+        overall_stats['per_class_stats'] = confusion_matrix.per_class_stats()
+
+        return overall_stats
 
     def postprocess_predictions(
             self,

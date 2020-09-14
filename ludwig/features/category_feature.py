@@ -370,21 +370,21 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            overall_stats,
             predictions,
             targets,
             train_set_metadata
     ):
-        # feature_name = output_feature['name']
-        # stats = test_stats[feature_name]
+        overall_stats = {}
         confusion_matrix = ConfusionMatrix(
-            targets, #dataset.get(feature_name),
-            predictions[PREDICTIONS], #stats[PREDICTIONS],
+            targets,
+            predictions[PREDICTIONS],
             labels=train_set_metadata['idx2str']
         )
         overall_stats['confusion_matrix'] = confusion_matrix.cm.tolist()
         overall_stats['overall_stats'] = confusion_matrix.stats()
         overall_stats['per_class_stats'] = confusion_matrix.per_class_stats()
+
+        return overall_stats
 
     def postprocess_predictions(
             self,

@@ -7,13 +7,15 @@ from collections import namedtuple
 import pytest
 import yaml
 
-from ludwig.experiment import kfold_cross_validate, full_kfold_cross_validate
+from ludwig.experiment import kfold_cross_validate_cli
+from ludwig.api import kfold_cross_validate
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
+from tests.integration_tests.utils import text_feature
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -98,7 +100,18 @@ FEATURES_TO_TEST = [
                 reduce_input=None
             )
         ]
-    )
+    ),
+    FeaturesToUse(
+        # input feature
+        [
+            numerical_feature(normalization='zscore'),
+            numerical_feature(normalization='zscore')
+        ],
+        # output feature
+        [
+            text_feature()
+        ]
+    ),
 ]
 
 
@@ -136,7 +149,7 @@ def test_kfold_cv_cli(features_to_use):
             yaml.dump(model_definition, f)
 
         # run k-fold cv
-        full_kfold_cross_validate(
+        kfold_cross_validate_cli(
             k_fold=num_folds,
             model_definition_file=model_definition_fp,
             data_csv=training_data_fp,
