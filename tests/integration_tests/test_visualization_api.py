@@ -55,7 +55,6 @@ class Experiment:
 
     def __init__(self, csv_filename):
         self.csv_file = csv_filename
-        self.model = None
         self.input_features = [
             text_feature(vocab_size=10, min_len=1, representation='sparse'),
             category_feature(vocab_size=10)
@@ -69,34 +68,35 @@ class Experiment:
             self.csv_file
         )
         self.input_features[0]['encoder'] = encoder
-        self.setup_model()
+        self.model = self._create_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
         self.train_stats, _ = self.model.train(
-            data_train_df=train_df,
-            data_validation_df=val_df
+            training_set=train_df,
+            validation_set=val_df
         )
-        self.test_stats_full = self.model.test(
-            data_df=test_df
+        self.test_stats_full, predictions = self.model.evaluate(
+            dataset=test_df,
+            collect_overall_stats=True,
+            collect_predictions=True,
         )
         self.output_feature_name = self.output_features[0]['name']
         # probabilities need to be list of lists containing each row data
         # from the probability columns
         # ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
         num_probs = self.output_features[0]['vocab_size']
-        self.probability = self.test_stats_full[0].iloc[:,
-                           1:(num_probs + 2)].values
+        self.probability = predictions.iloc[:, 1:(num_probs + 2)].values
         self.ground_truth_metadata = self.model.training_set_metadata
         target_predictions = test_df[self.output_feature_name]
         self.ground_truth = np.asarray([
             self.ground_truth_metadata[self.output_feature_name]['str2idx'][test_row]
             for test_row in target_predictions
         ])
-        self.prediction_raw = self.test_stats_full[0].iloc[:, 0].tolist()
+        self.prediction_raw = predictions.iloc[:, 0].tolist()
         self.prediction = np.asarray([
             self.ground_truth_metadata[self.output_feature_name]['str2idx'][pred_row]
             for pred_row in self.prediction_raw])
 
-    def setup_model(self):
+    def _create_model(self):
         """Configure and setup test model"""
         model_definition = {
             'input_features': self.input_features,
@@ -104,7 +104,7 @@ class Experiment:
             'combiner': {'type': 'concat', 'fc_size': 14},
             'training': {'epochs': 2}
         }
-        self.model = LudwigModel(model_definition)
+        return LudwigModel(model_definition)
 
 
 def obtain_df_splits(data_csv):
@@ -156,7 +156,7 @@ def test_compare_performance_vis_api(csv_filename):
     """
     experiment = Experiment(csv_filename)
     # extract test stats only
-    test_stats = experiment.test_stats_full[1][0]
+    test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
@@ -289,7 +289,7 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
     """
     experiment = Experiment(csv_filename)
     # extract test stats only
-    test_stats = experiment.test_stats_full[1][0]
+    test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
@@ -499,19 +499,20 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     model = run_api_experiment(input_features, output_features)
     test_df, train_df, val_df = obtain_df_splits(data_csv)
     model.train(
-        data_train_df=train_df,
-        data_validation_df=val_df
+        training_set=train_df,
+        validation_set=val_df
     )
-    test_stats = model.test(
-        data_df=test_df
+    test_stats, predictions = model.evaluate(
+        dataset=test_df,
+        collect_predictions=True,
     )
 
     output_feature_name1 = output_features[0]['name']
     output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
     # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-    probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
-    probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
+    probability1 = predictions.iloc[:, [2, 3, 4]].values
+    probability2 = predictions.iloc[:, [7, 8, 9]].values
 
     ground_truth_metadata = model.training_set_metadata
     target_predictions1 = test_df[output_feature_name1]
@@ -565,19 +566,20 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     model = run_api_experiment(input_features, output_features)
     test_df, train_df, val_df = obtain_df_splits(data_csv)
     model.train(
-        data_train_df=train_df,
-        data_validation_df=val_df
+        training_set=train_df,
+        validation_set=val_df
     )
-    test_stats = model.test(
-        data_df=test_df
+    test_stats, predictions = model.evaluate(
+        dataset=test_df,
+        collect_predictions=True,
     )
 
     output_feature_name1 = output_features[0]['name']
     output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
     # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-    probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
-    probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
+    probability1 = predictions.iloc[:, [2, 3, 4]].values
+    probability2 = predictions.iloc[:, [7, 8, 9]].values
 
     ground_truth_metadata = model.training_set_metadata
     target_predictions1 = test_df[output_feature_name1]
@@ -677,9 +679,11 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
 
     model = run_api_experiment(input_features, output_features)
     data_df = read_csv(data_csv)
-    model.train(data_df=data_df)
+    model.train(dataset=data_df)
     # extract test metrics
-    test_stats = model.test(data_df=data_df)[1][0]
+    test_stats, _ = model.evaluate(dataset=data_df,
+                                   collect_overall_stats=True)
+    test_stats = test_stats
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(
@@ -757,7 +761,7 @@ def test_confusion_matrix_vis_api(csv_filename):
     """
     experiment = Experiment(csv_filename)
     # extract test stats only
-    test_stats = experiment.test_stats_full[1][0]
+    test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
@@ -786,7 +790,7 @@ def test_frequency_vs_f1_vis_api(csv_filename):
     """
     experiment = Experiment(csv_filename)
     # extract test stats
-    test_stats = experiment.test_stats_full[1][0]
+    test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(

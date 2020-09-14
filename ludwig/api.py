@@ -43,7 +43,7 @@ ludwig.contrib.contrib_import()
 
 from ludwig.constants import PREPROCESSING, TRAINING, VALIDATION, TEST
 from ludwig.contrib import contrib_command
-from ludwig.data.postprocessing import postprocess
+from ludwig.data.postprocessing import convert_predictions, postprocess
 from ludwig.data.preprocessing import preprocess_for_training, \
     preprocess_for_prediction, load_metadata
 from ludwig.features.feature_registries import \
@@ -361,7 +361,6 @@ class LudwigModel:
 
         # save description
         if is_on_master():
-            # todo refactoring: fix this
             description = get_experiment_description(
                 self.model_definition,
                 dataset=dataset,
@@ -373,9 +372,7 @@ class LudwigModel:
                 random_seed=random_seed
             )
             if not skip_save_training_description:
-                # todo refactoring: datasets are not JSON serializable
-                # save_json(description_fn, description)
-                pass
+                save_json(description_fn, description)
             # print description
             logger.info('Experiment name: {}'.format(experiment_name))
             logger.info('Model name: {}'.format(model_name))
@@ -585,14 +582,18 @@ class LudwigModel:
         )
 
         logger.debug('Postprocessing')
-        postproc_predictions = postprocess(
-            predictions,
+        postproc_predictions = convert_predictions(
+            postprocess(
+                predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                experiment_dir_name=self.exp_dir_name,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            ),
             self.model.output_features,
             self.training_set_metadata,
-            return_type=return_type,
-            experiment_dir_name=self.exp_dir_name,
-            skip_save_unprocessed_output=skip_save_unprocessed_output
-                                         or not is_on_master(),
+            return_type=return_type
         )
 
         if is_on_master():
@@ -704,7 +705,6 @@ class LudwigModel:
                 predictions,
                 self.model.output_features,
                 self.training_set_metadata,
-                return_type=return_type,
                 experiment_dir_name=self.exp_dir_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
@@ -734,6 +734,13 @@ class LudwigModel:
             if not skip_save_predictions or not skip_save_eval_stats:
                 logger.info('Saved to: {0}'.format(self.exp_dir_name))
 
+        if collect_predictions:
+            postproc_predictions = convert_predictions(
+                postproc_predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                return_type=return_type)
+
         return stats, postproc_predictions
 
     def experiment(
@@ -754,7 +761,7 @@ class LudwigModel:
             skip_save_progress=False,
             skip_save_log=False,
             skip_save_processed_input=False,
-            skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
+            skip_save_unprocessed_output=False,
             skip_save_predictions=False,
             skip_save_eval_stats=False,
             skip_collect_predictions=False,
@@ -788,6 +795,7 @@ class LudwigModel:
             skip_save_progress=skip_save_progress,
             skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
@@ -823,6 +831,7 @@ class LudwigModel:
                 test_set,
                 data_format=data_format,
                 batch_size=batch_size,
+                skip_save_unprocessed_output=skip_save_unprocessed_output,
                 skip_save_predictions=skip_save_predictions,
                 skip_save_eval_stats=skip_save_eval_stats,
                 collect_predictions=not skip_collect_predictions,
