@@ -701,7 +701,6 @@ class LudwigModel:
 
         if collect_predictions:
             logger.debug('Postprocessing')
-            print('predictions: {} {}'.format(type(predictions), predictions))
             postproc_predictions = postprocess(
                 predictions,
                 self.model.output_features,
