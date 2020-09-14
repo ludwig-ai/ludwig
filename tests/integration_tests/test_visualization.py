@@ -28,7 +28,7 @@ import subprocess
 
 import numpy as np
 
-from ludwig.experiment import full_experiment
+from ludwig.experiment import experiment_cli
 from ludwig.utils.data_utils import load_from_file, load_json
 from tests.integration_tests.test_visualization_api import obtain_df_splits
 from tests.integration_tests.utils import generate_data
@@ -69,7 +69,7 @@ def run_experiment(input_features, output_features, **kwargs):
     }
     args.update(kwargs)
 
-    exp_dir_name = full_experiment(**args)
+    exp_dir_name = experiment_cli(**args)
 
     return exp_dir_name
 
