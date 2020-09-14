@@ -63,7 +63,7 @@ def test_experiment_text_feature_non_HF(encoder, csv_filename):
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('encoder', HF_ENCODERS_SHORT)
@@ -80,7 +80,7 @@ def test_experiment_text_feature_HF(encoder, csv_filename):
     output_features = [category_feature(vocab_size=2, reduce_input='sum')]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @slow
@@ -124,7 +124,7 @@ def test_experiment_seq_seq_model_def_file(csv_filename, yaml_filename):
 
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(
-        None, None, data_csv=rel_path, model_definition_file=yaml_filename
+        None, None, dataset=rel_path, model_definition_file=yaml_filename
     )
 
 
@@ -148,9 +148,9 @@ def test_experiment_seq_seq_train_test_valid(csv_filename):
     run_experiment(
         input_features,
         output_features,
-        data_train_csv=train_csv,
-        data_test_csv=test_csv,
-        data_validation_csv=valdation_csv
+        training_set=train_csv,
+        test_set=test_csv,
+        validation_set=valdation_csv
     )
 
     input_features[0]['encoder'] = 'parallel_cnn'
@@ -158,9 +158,9 @@ def test_experiment_seq_seq_train_test_valid(csv_filename):
     run_experiment(
         input_features,
         output_features,
-        data_train_csv=train_csv,
-        data_test_csv=test_csv,
-        data_validation_csv=valdation_csv
+        training_set=train_csv,
+        test_set=test_csv,
+        validation_set=valdation_csv
     )
 
     # Delete the temporary data created
@@ -183,7 +183,7 @@ def test_experiment_multi_input_intent_classification(csv_filename):
 
     for encoder in ENCODERS:
         input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize(
@@ -237,7 +237,7 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     output_features = output_features
 
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_image_inputs(csv_filename):
@@ -268,12 +268,12 @@ def test_experiment_image_inputs(csv_filename):
     ]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
     # Stacked CNN encoder
     input_features[0]['encoder'] = 'stacked_cnn'
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
     # Stacked CNN encoder, in_memory = False
     input_features[0]['preprocessing']['in_memory'] = False
@@ -281,7 +281,7 @@ def test_experiment_image_inputs(csv_filename):
     run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path,
+        dataset=rel_path,
         skip_save_processed_input=False,
     )
 
@@ -303,7 +303,7 @@ def test_experiment_audio_inputs(csv_filename):
     ]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
     # Delete the temporary data created
     shutil.rmtree(audio_dest_folder)
@@ -333,7 +333,7 @@ def test_experiment_tied_weights(csv_filename):
     for encoder in ENCODERS:
         input_features[0]['encoder'] = encoder
         input_features[1]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('dec_beam_width', [1, 3])
@@ -383,7 +383,7 @@ def test_sequence_generator(
     output_features[0]['beam_width'] = dec_beam_width
 
     # run the experiment
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
@@ -415,7 +415,7 @@ def test_sequence_tagger(
     input_features[0]['cell_type'] = enc_cell_type
 
     # run the experiment
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('sequence_combiner_encoder', ENCODERS[:-2])
@@ -471,12 +471,12 @@ def test_experiment_sequence_combiner(sequence_combiner_encoder, csv_filename):
 
         model_definition['input_features'] = input_features
 
-        exp_dir_name = full_experiment(
+        exp_dir_name = experiment_cli(
             model_definition,
             skip_save_processed_input=False,
             skip_save_progress=True,
             skip_save_unprocessed_output=True,
-            data_csv=rel_path
+            dataset=rel_path
         )
         shutil.rmtree(exp_dir_name, ignore_errors=True)
 
@@ -496,16 +496,16 @@ def test_experiment_model_resume(csv_filename):
         'training': {'epochs': 2}
     }
 
-    exp_dir_name = full_experiment(model_definition, data_csv=rel_path)
+    exp_dir_name = experiment_cli(model_definition, dataset=rel_path)
     logger.info('Experiment Directory: {0}'.format(exp_dir_name))
 
-    full_experiment(
+    experiment_cli(
         model_definition,
-        data_csv=rel_path,
+        dataset=rel_path,
         model_resume_path=exp_dir_name
     )
 
-    full_predict(os.path.join(exp_dir_name, 'model'), data_csv=rel_path)
+    predict_cli(os.path.join(exp_dir_name, 'model'), dataset=rel_path)
     shutil.rmtree(exp_dir_name, ignore_errors=True)
 
 
@@ -515,7 +515,7 @@ def test_experiment_various_feature_types(csv_filename):
 
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_timeseries(csv_filename):
@@ -529,7 +529,7 @@ def test_experiment_timeseries(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
     for encoder in encoders2:
         input_features[0]['encoder'] = encoder
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_visual_question_answering(csv_filename):
@@ -552,7 +552,7 @@ def test_visual_question_answering(csv_filename):
     ]
     output_features = [sequence_feature(decoder='generator', cell_type='lstm')]
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
@@ -605,13 +605,13 @@ def test_image_resizing_num_channel_handling(csv_filename):
     df.to_csv(rel_path, index=False)
 
     # Here the user sepcifiies number of channels. Exception shouldn't be thrown
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
     del input_features[0]['preprocessing']['num_channels']
 
     # User now doesn't specify num channels. Should throw exception
     with pytest.raises(ValueError):
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
@@ -626,7 +626,7 @@ def test_experiment_date(encoder, csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     input_features[0]['encoder'] = encoder
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('encoder', H3InputFeature.encoder_registry.keys())
@@ -638,7 +638,7 @@ def test_experiment_h3(encoder, csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename)
 
     input_features[0]['encoder'] = encoder
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_vector_feature_1(csv_filename):
@@ -647,7 +647,7 @@ def test_experiment_vector_feature_1(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_vector_feature_2(csv_filename):
@@ -656,7 +656,7 @@ def test_experiment_vector_feature_2(csv_filename):
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
 
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 def test_experiment_sampled_softmax(csv_filename):
@@ -671,7 +671,7 @@ def test_experiment_sampled_softmax(csv_filename):
     rel_path = generate_data(input_features, output_features, csv_filename,
                              num_examples=10000)
 
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
 
 
 if __name__ == '__main__':
