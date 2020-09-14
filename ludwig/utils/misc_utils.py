@@ -26,8 +26,7 @@ from collections.abc import Mapping
 import numpy
 
 import ludwig.globals
-from ludwig.utils.data_utils import figure_data_format, CSV_FORMATS, \
-    HDF5_FORMATS
+from ludwig.utils.data_utils import figure_data_format
 
 
 def get_experiment_description(
@@ -59,26 +58,30 @@ def get_experiment_description(
     if random_seed is not None:
         description['random_seed'] = random_seed
 
+    if isinstance(dataset, str):
+        description['dataset'] = dataset
+    if isinstance(training_set, str):
+        description['training_set'] = training_set
+    if isinstance(validation_set, str):
+        description['validation_set'] = validation_set
+    if isinstance(test_set, str):
+        description['test_set'] = test_set
+    if training_set_metadata is not None:
+        description['training_set_metadata'] = training_set_metadata
+
     # determine data format if not provided or auto
     if not data_format or data_format == 'auto':
         data_format = figure_data_format(
             dataset, training_set, validation_set, test_set
         )
 
-    if data_format in CSV_FORMATS or data_format in HDF5_FORMATS:
-        if dataset: description['dataset'] = dataset
-        if training_set: description['training_set'] = training_set
-        if validation_set: description['validation_set'] = validation_set
-        if test_set: description['test_set'] = test_set
-        if training_set_metadata:
-            description['training_set_metadata'] = training_set_metadata
-
-    if data_format: description['data_format'] = data_format
+    if data_format:
+        description['data_format'] = str(data_format)
 
     description['model_definition'] = model_definition
 
-    from tensorflow.version import VERSION as tf_version
-    description['tf_version'] = tf_version
+    import tensorflow as tf
+    description['tf_version'] = tf.__version__
 
     return description
 
