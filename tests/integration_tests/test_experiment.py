@@ -16,6 +16,7 @@
 import logging
 import os
 import shutil
+from collections import namedtuple
 
 import pytest
 import yaml
@@ -240,7 +241,19 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
     run_experiment(input_features, output_features, dataset=rel_path)
 
 
-def test_experiment_image_inputs(csv_filename):
+ImageParms = namedtuple(
+    'ImageTestParms',
+    'image_encoder in_memory_flag skip_save_processed_input'
+)
+@pytest.mark.parametrize(
+    'image_parms',
+    [
+        ImageParms('resnet', True, True),
+        ImageParms('stacked_cnn', True, True),
+        ImageParms('stacked_cnn', False, False)
+    ]
+)
+def test_experiment_image_inputs(image_parms, csv_filename):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
@@ -267,22 +280,14 @@ def test_experiment_image_inputs(csv_filename):
         numerical_feature()
     ]
 
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, dataset=rel_path)
-
-    # Stacked CNN encoder
-    input_features[0]['encoder'] = 'stacked_cnn'
-    rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, dataset=rel_path)
-
-    # Stacked CNN encoder, in_memory = False
-    input_features[0]['preprocessing']['in_memory'] = False
+    input_features[0]['encoder'] = image_parms.image_encoder
+    input_features[0]['preprocessing']['in_memory'] = image_parms.in_memory_flag
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(
         input_features,
         output_features,
         dataset=rel_path,
-        skip_save_processed_input=False,
+        skip_save_processed_input=image_parms.skip_save_processed_input
     )
 
     # Delete the temporary data created
