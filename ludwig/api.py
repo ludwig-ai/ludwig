@@ -441,6 +441,12 @@ class LudwigModel:
         # init trainer
         trainer = Trainer(
             **self.model_definition[TRAINING],
+            resume=model_resume_path is not None,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            random_seed=random_seed,
+            horoovd=self._horovod,
             debug=debug
         )
 
