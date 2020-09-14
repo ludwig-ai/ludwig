@@ -70,9 +70,9 @@ def run_experiment(input_features, output_features, **kwargs):
     }
     args.update(kwargs)
 
-    exp_dir_name = experiment_cli(**args)
+    model, _, _, _ = experiment_cli(**args)
 
-    return exp_dir_name
+    return model.exp_dir_name
 
 
 def get_output_feature_name(experiment_dir, output_feature=0):
