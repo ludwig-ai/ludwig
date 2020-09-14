@@ -361,7 +361,6 @@ class LudwigModel:
 
         # save description
         if is_on_master():
-            # todo refactoring: fix this
             description = get_experiment_description(
                 self.model_definition,
                 dataset=dataset,
@@ -763,7 +762,7 @@ class LudwigModel:
             skip_save_progress=False,
             skip_save_log=False,
             skip_save_processed_input=False,
-            skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
+            skip_save_unprocessed_output=False,
             skip_save_predictions=False,
             skip_save_eval_stats=False,
             skip_collect_predictions=False,
@@ -797,6 +796,7 @@ class LudwigModel:
             skip_save_progress=skip_save_progress,
             skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
@@ -832,6 +832,7 @@ class LudwigModel:
                 test_set,
                 data_format=data_format,
                 batch_size=batch_size,
+                skip_save_unprocessed_output=skip_save_unprocessed_output,
                 skip_save_predictions=skip_save_predictions,
                 skip_save_eval_stats=skip_save_eval_stats,
                 collect_predictions=not skip_collect_predictions,

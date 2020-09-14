@@ -215,6 +215,7 @@ def experiment_cli(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
         skip_save_predictions=skip_save_predictions,
         skip_save_eval_stats=skip_save_eval_stats,
         skip_collect_predictions=skip_collect_predictions,
