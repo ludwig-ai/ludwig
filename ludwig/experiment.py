@@ -79,34 +79,24 @@ def experiment_cli(
     :param model_definition_file: The file that specifies the model definition.
            It is a yaml file.
     :type model_definition_file: filepath (str)
-    :param data_csv: A CSV file containing the input data which is used to
-           train, validate and test a model. The CSV either contains a
-           split column or will be split.
-    :type data_csv: filepath (str)
-    :param data_train_csv: A CSV file containing the input data which is used
-           to train a model.
-    :type data_train_csv: filepath (str)
-    :param data_validation_csv: A CSV file containing the input data which is used
-           to validate a model..
-    :type data_validation_csv: filepath (str)
-    :param data_test_csv: A CSV file containing the input data which is used
-           to test a model.
-    :type data_test_csv: filepath (str)
-    :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
-           of the csv file.
-    :type data_hdf5: filepath (str)
-    :param data_train_hdf5: If the training set is in the hdf5 format, this is
-           used instead of the csv file.
-    :type data_train_hdf5: filepath (str)
-    :param data_validation_hdf5: If the validation set is in the hdf5 format,
-           this is used instead of the csv file.
-    :type data_validation_hdf5: filepath (str)
-    :param data_test_hdf5: If the test set is in the hdf5 format, this is
-           used instead of the csv file.
-    :type data_test_hdf5: filepath (str)
-    :param training_set_metadata_json: If the dataset is in hdf5 format, this is
-           the associated json file containing metadata.
-    :type training_set_metadata_json: filepath (str)
+    :param dataset: Source containing the entire dataset.
+           If it has a split column, it will be used for splitting (0: train,
+           1: validation, 2: test), otherwise the dataset will be randomly split.
+    :type dataset: Str, Dictionary, DataFrame
+    :param training_set: Source containing training data.
+    :type training_set: Str, Dictionary, DataFrame
+    :param validation_set: Source containing validation data.
+    :type validation_set: Str, Dictionary, DataFrame
+    :param test_set: Source containing test data.
+    :type test_set: Str, Dictionary, DataFrame
+    :param training_set_metadata: Metadata JSON file or loaded metadata.
+           Intermediate preprocess structure containing the mappings of the input
+           CSV created the first time a CSV file is used in the same
+           directory with the same name and a '.json' extension.
+    :type training_set_metadata: Str, Dictionary
+    :param data_format: Format to interpret data sources. Will be inferred
+           automatically if not specified.
+    :type data_format: Str
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -162,6 +152,10 @@ def experiment_cli(
     :type skip_save_predictions: Boolean
     :param skip_save_eval_stats: skips saving test statistics JSON file
     :type skip_save_eval_stats: Boolean
+    :param skip_collect_predictions: skips collecting post-processed predictions during eval.
+    :type skip_collect_predictions: Boolean
+    :param skip_collect_overall_stats: skips collecting overall stats during eval.
+    :type skip_collect_overall_stats: Boolean
     :param output_directory: The directory that will contain the training
            statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
@@ -179,6 +173,8 @@ def experiment_cli(
     :type random_seed: Integer
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
+    :param logging_level: Log level to send to stderr.
+    :type logging_level: int
     """
     set_on_master(use_horovod)
 

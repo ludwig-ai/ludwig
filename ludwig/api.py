@@ -82,6 +82,20 @@ class LudwigModel:
                  gpu_memory_limit=None,
                  allow_parallel_threads=True,
                  random_seed=default_random_seed):
+        """
+        :param model_definition: (dict) in-memory representation of model definition.
+        :param model_definition_fp: (string) path to model definition file.
+        :param logging_level: Log level that will be sent to stderr.
+        :param use_horovod: (bool) use Horovod for distributed training. Will be set
+               automatically if `horovodrun` is used to launch the training script.
+        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
+               same syntax of CUDA_VISIBLE_DEVICES)
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+              per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+               multithreading parallelism to improve performance at the cost of
+               determinism.
+        """
         # check for model_definition and model_definition_file
         if model_definition is None and model_definition_fp is None:
             raise ValueError(
@@ -129,27 +143,6 @@ class LudwigModel:
         self.training_set_metadata = None
         self.exp_dir_name = ''
 
-    # def train_pseudo(self, data, training_params):
-    #     # process_data ignores self.training_set_metadata if it's None and computes a new one from the actual data
-    #     # or uses the procided one and does not compute a new one if it is not None
-    #     preproc_data, training_set_metadata = preprocess_data(
-    #         data,
-    #         self.training_set_metadata
-    #     )
-    #     self.training_set_metadata = training_set_metadata
-    #
-    #     # this is done only if the model is not loaded
-    #     if not self.model:
-    #         update_model_definition_with_metadata(
-    #             self.model_definition,
-    #             training_set_metadata
-    #         )
-    #         self.model = ECD(self.model_definition)
-    #
-    #     trainer = Trainer(training_params)
-    #     training_stats = trainer.train(self.model, preproc_data)
-    #     return training_stats
-
     def train(
             self,
             dataset=None,
@@ -177,80 +170,22 @@ class LudwigModel:
 
         # Inputs
 
-        :param data_df: (DataFrame) dataframe containing data. If it has a split
-               column, it will be used for splitting (0: train, 1: validation,
-               2: test), otherwise the dataset will be randomly split
-        :param data_train_df: (DataFrame) dataframe containing training data
-        :param data_validation_df: (DataFrame) dataframe containing validation
-               data
-        :param data_test_df: (DataFrame dataframe containing test data
-        :param data_csv: (string) input data CSV file. If it has a split column,
-               it will be used for splitting (0: train, 1: validation, 2: test),
-               otherwise the dataset will be randomly split
-        :param data_train_csv: (string) input train data CSV file
-        :param data_validation_csv: (string) input validation data CSV file
-        :param data_test_csv: (string) input test data CSV file
-        :param data_hdf5: (string) input data HDF5 file. It is an intermediate
-               preprocess  version of the input CSV created the first time a CSV
-               file is used in the same directory with the same name and a hdf5
-               extension
-        :param data_train_hdf5: (string) input train data HDF5 file. It is an
-               intermediate preprocess  version of the input CSV created the
-               first time a CSV file is used in the same directory with the same
-               name and a hdf5 extension
-        :param data_validation_hdf5: (string) input validation data HDF5 file.
-               It is an intermediate preprocess version of the input CSV created
-               the first time a CSV file is used in the same directory with the
-               same name and a hdf5 extension
-        :param data_test_hdf5: (string) input test data HDF5 file. It is an
-               intermediate preprocess  version of the input CSV created the
-               first time a CSV file is used in the same directory with the same
-               name and a hdf5 extension
-        :param data_dict: (dict) input data dictionary. It is expected to
-               contain one key for each field and the values have to be lists of
-               the same length. Each index in the lists corresponds to one
-               datapoint. For example a data set consisting of two datapoints
-               with a text and a class may be provided as the following dict
-               `{'text_field_name': ['text of the first datapoint', text of the
-               second datapoint'], 'class_filed_name': ['class_datapoints_1',
-               'class_datapoints_2']}`.
-        :param data_train_dict: (dict) input training data dictionary. It is
-               expected to contain one key for each field and the values have
-               to be lists of the same length. Each index in the lists
-               corresponds to one datapoint. For example a data set consisting
-               of two datapoints with a text and a class may be provided as the
-               following dict:
-               `{'text_field_name': ['text of the first datapoint', 'text of the
-               second datapoint'], 'class_field_name': ['class_datapoint_1',
-               'class_datapoint_2']}`.
-        :param data_validation_dict: (dict) input validation data dictionary. It
-               is expected to contain one key for each field and the values have
-               to be lists of the same length. Each index in the lists
-               corresponds to one datapoint. For example a data set consisting
-               of two datapoints with a text and a class may be provided as the
-               following dict:
-               `{'text_field_name': ['text of the first datapoint', 'text of the
-               second datapoint'], 'class_field_name': ['class_datapoint_1',
-               'class_datapoint_2']}`.
-        :param data_test_dict: (dict) input test data dictionary. It is
-               expected to contain one key for each field and the values have
-               to be lists of the same length. Each index in the lists
-               corresponds to one datapoint. For example a data set consisting
-               of two datapoints with a text and a class may be provided as the
-               following dict:
-               `{'text_field_name': ['text of the first datapoint', 'text of the
-               second datapoint'], 'class_field_name': ['class_datapoint_1',
-               'class_datapoint_2']}`.
-        :param training_set_metadata_json: (string) input metadata JSON file. It is an
-               intermediate preprocess file containing the mappings of the input
+        :param dataset: (string, dict, DataFrame) source containing the entire dataset.
+               If it has a split column, it will be used for splitting (0: train,
+               1: validation, 2: test), otherwise the dataset will be randomly split.
+        :param training_set: (string, dict, DataFrame) source containing training data.
+        :param validation_set: (string, dict, DataFrame) source containing validation data.
+        :param test_set: (string, dict, DataFrame) source containing test data.
+        :param training_set_metadata: (string, dict) metadata JSON file or loaded metadata.
+               Intermediate preprocess structure containing the mappings of the input
                CSV created the first time a CSV file is used in the same
-               directory with the same name and a json extension
+               directory with the same name and a '.json' extension.
+        :param data_format: (string) format to interpret data sources. Will be inferred
+               automatically if not specified.
         :param experiment_name: (string) a name for the experiment, used for the save
                directory
         :param model_name: (string) a name for the model, used for the save
                directory
-        :param model_load_path: (string) path of a pretrained model to load as
-               initialization
         :param model_resume_path: (string) path of a the model directory to
                resume training of
         :param skip_save_training_description: (bool, default: `False`) disables
@@ -279,13 +214,6 @@ class LudwigModel:
                intermediate HDF5 and JSON files
         :param output_directory: (string, default: `'results'`) directory that
                contains the results
-        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
-               same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
-              per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
-               multithreading parallelism to improve performance at the cost of
-               determinism.
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -314,8 +242,10 @@ class LudwigModel:
 
         # Return
 
-        :return: (dict) a dictionary containing training statistics for each
-        output feature containing loss and metrics values for each epoch.
+        :return: ((dict, DataFrame)) tuple containing:
+            - A dictionary of training statistics for each output feature containing
+              loss and metrics values for each epoch. The second return
+            - A Pandas DataFrame of preprocessed training data.
         """
         # setup directories and file names
         experiment_dir_name = None
