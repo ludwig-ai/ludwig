@@ -289,7 +289,7 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
     """
     experiment = Experiment(csv_filename)
     # extract test stats only
-    test_stats = experiment.test_stats_full[1][0]
+    test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
@@ -502,16 +502,17 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
         training_set=train_df,
         validation_set=val_df
     )
-    test_stats, _ = model.evaluate(
-        dataset=test_df
+    test_stats, predictions = model.evaluate(
+        dataset=test_df,
+        collect_predictions=True,
     )
 
     output_feature_name1 = output_features[0]['name']
     output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
     # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-    probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
-    probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
+    probability1 = predictions.iloc[:, [2, 3, 4]].values
+    probability2 = predictions.iloc[:, [7, 8, 9]].values
 
     ground_truth_metadata = model.training_set_metadata
     target_predictions1 = test_df[output_feature_name1]
@@ -568,16 +569,17 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
         training_set=train_df,
         validation_set=val_df
     )
-    test_stats, _ = model.evaluate(
-        dataset=test_df
+    test_stats, predictions = model.evaluate(
+        dataset=test_df,
+        collect_predictions=True,
     )
 
     output_feature_name1 = output_features[0]['name']
     output_feature_name2 = output_features[1]['name']
     # probabilities need to be list of lists containing each row data from the
     # probability columns ref: https://ludwig-ai.github.io/ludwig-docs/api/#test - Return
-    probability1 = test_stats[0].iloc[:, [2, 3, 4]].values
-    probability2 = test_stats[0].iloc[:, [7, 8, 9]].values
+    probability1 = predictions.iloc[:, [2, 3, 4]].values
+    probability2 = predictions.iloc[:, [7, 8, 9]].values
 
     ground_truth_metadata = model.training_set_metadata
     target_predictions1 = test_df[output_feature_name1]
@@ -680,7 +682,7 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
     model.train(dataset=data_df)
     # extract test metrics
     test_stats, _ = model.evaluate(dataset=data_df)
-    test_stats = test_stats[1][0]
+    test_stats = test_stats
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(
@@ -758,7 +760,7 @@ def test_confusion_matrix_vis_api(csv_filename):
     """
     experiment = Experiment(csv_filename)
     # extract test stats only
-    test_stats = experiment.test_stats_full[1][0]
+    test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
@@ -787,7 +789,7 @@ def test_frequency_vs_f1_vis_api(csv_filename):
     """
     experiment = Experiment(csv_filename)
     # extract test stats
-    test_stats = experiment.test_stats_full[1][0]
+    test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
         vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
