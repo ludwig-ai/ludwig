@@ -66,6 +66,7 @@ def run_experiment(input_features, output_features, **kwargs):
         'skip_save_processed_input': False,
         'skip_save_progress': False,
         'skip_save_unprocessed_output': False,
+        'skip_save_eval_stats': False,
     }
     args.update(kwargs)
 
@@ -105,7 +106,7 @@ def test_visualization_learning_curves_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
@@ -153,7 +154,7 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -208,7 +209,7 @@ def test_visualization_compare_performance_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -272,7 +273,7 @@ def test_visualization_compare_classifiers_from_prob_csv_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
@@ -339,7 +340,7 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
 
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
@@ -405,7 +406,7 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -473,7 +474,7 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -539,7 +540,7 @@ def test_visualization_compare_classifiers_subset_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -602,7 +603,7 @@ def test_visualization_compare_classifiers_changing_k_output_pdf(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -668,7 +669,7 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -731,7 +732,7 @@ def test_visualization_compare_classifiers_predictions_npy_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -797,7 +798,7 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -861,7 +862,7 @@ def test_visualization_cmp_classifiers_predictions_distribution_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -924,7 +925,7 @@ def test_visualization_cconfidence_thresholding_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -989,7 +990,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1054,7 +1055,7 @@ def test_visualization_confidence_thresholding_data_vs_acc_subset_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1121,7 +1122,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1198,7 +1199,7 @@ def test_vis_confidence_thresholding_2thresholds_2d_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1274,7 +1275,7 @@ def test_vis_confidence_thresholding_2thresholds_3d_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1348,7 +1349,7 @@ def test_visualization_binary_threshold_vs_metric_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1415,7 +1416,7 @@ def test_visualization_roc_curves_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1483,7 +1484,7 @@ def test_visualization_roc_curves_from_test_statistics_output_saved(
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1541,7 +1542,7 @@ def test_visualization_calibration_1_vs_all_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1608,7 +1609,7 @@ def test_visualization_calibration_multiclass_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1671,7 +1672,7 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     vis_output_pattern_pdf = exp_dir_name + '/*.pdf'
     vis_output_pattern_png = exp_dir_name + '/*.png'
@@ -1733,7 +1734,7 @@ def test_load_ground_truth_split_from_file(csv_filename):
     exp_dir_name = run_experiment(
         input_features,
         output_features,
-        data_csv=rel_path
+        dataset=rel_path
     )
     output_feature_name = get_output_feature_name(exp_dir_name)
     experiment_source_data_name = csv_filename.split('.')[0]

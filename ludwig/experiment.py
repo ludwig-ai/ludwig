@@ -56,11 +56,10 @@ def experiment_cli(
         skip_save_log=False,
         skip_save_processed_input=False,
         skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
         skip_collect_predictions=False,
         skip_collect_overall_stats=False,
-        skip_save_predictions=False,
         output_directory='results',
         gpus=None,
         gpu_memory_limit=None,
@@ -159,10 +158,10 @@ def experiment_cli(
            (one for each output feature). If this parameter is True,
            only the CSV ones are saved and the numpy ones are skipped.
     :type skip_save_unprocessed_output: Boolean
-    :param skip_save_test_predictions: skips saving test predictions CSV files
-    :type skip_save_test_predictions: Boolean
-    :param skip_save_test_statistics: skips saving test statistics JSON file
-    :type skip_save_test_statistics: Boolean
+    :param skip_save_predictions: skips saving test predictions CSV files
+    :type skip_save_predictions: Boolean
+    :param skip_save_eval_stats: skips saving test statistics JSON file
+    :type skip_save_eval_stats: Boolean
     :param output_directory: The directory that will contain the training
            statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
@@ -216,11 +215,10 @@ def experiment_cli(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
-        skip_save_test_predictions=skip_save_test_predictions,
-        skip_save_test_statistics=skip_save_test_statistics,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
         skip_collect_predictions=skip_collect_predictions,
         skip_collect_overall_stats=skip_collect_overall_stats,
-        skip_save_predictions=skip_save_predictions,
         output_directory=output_directory,
         random_seed=random_seed,
         debug=debug,
@@ -436,14 +434,14 @@ def cli(sys_argv):
     )
     parser.add_argument(
         '-sstp',
-        '--skip_save_test_predictions',
+        '--skip_save_predictions',
         help='skips saving test predictions CSV files',
         action='store_true', default=False
     )
     parser.add_argument(
         '-sstes',
-        '--skip_save_test_statistics',
-        help='skips saving test statistics JSON file',
+        '--skip_save_eval_stats',
+        help='skips saving eval statistics JSON file',
         action='store_true', default=False
     )
     parser.add_argument(

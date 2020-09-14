@@ -774,8 +774,8 @@ class LudwigModel:
             skip_save_log=False,
             skip_save_processed_input=False,
             skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
-            skip_save_test_predictions=False,  # skipcq: PYL-W0613
-            skip_save_test_statistics=False,  # skipcq: PYL-W0613
+            skip_save_predictions=False,
+            skip_save_eval_stats=False,
             skip_collect_predictions=False,
             skip_collect_overall_stats=False,
             output_directory='results',
@@ -842,6 +842,8 @@ class LudwigModel:
                 test_set,
                 data_format=data_format,
                 batch_size=batch_size,
+                skip_save_predictions=skip_save_predictions,
+                skip_save_eval_stats=skip_save_eval_stats,
                 collect_predictions=not skip_collect_predictions,
                 collect_overall_stats=not skip_collect_overall_stats,
                 debug=debug
@@ -1092,11 +1094,10 @@ def kfold_cross_validate(
         skip_save_progress=False,
         skip_save_log=False,
         skip_save_processed_input=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
         skip_collect_predictions=False,
         skip_collect_overall_stats=False,
-        skip_save_predictions=False,
         output_directory='results',
         random_seed=default_random_seed,
         gpus=None,
@@ -1205,11 +1206,10 @@ def kfold_cross_validate(
                 skip_save_progress=skip_save_progress,
                 skip_save_log=skip_save_log,
                 skip_save_processed_input=skip_save_processed_input,
-                skip_save_test_predictions=skip_save_test_predictions,
-                skip_save_test_statistics=skip_save_test_statistics,
+                skip_save_predictions=skip_save_predictions,
+                skip_save_eval_stats=skip_save_eval_stats,
                 skip_collect_predictions=skip_collect_predictions,
                 skip_collect_overall_stats=skip_collect_overall_stats,
-                skip_save_predictions=skip_save_predictions,
                 output_directory=os.path.join(temp_dir_name, 'results'),
                 random_seed=random_seed,
                 debug=debug,
@@ -1218,12 +1218,12 @@ def kfold_cross_validate(
             # todo if we want to save the csv of predictions uncomment block
             # if is_on_master():
             #     print_test_results(test_results)
-            #     if not skip_save_test_predictions:
+            #     if not skip_save_predictions:
             #         save_prediction_outputs(
             #             postprocessed_output,
             #             experiment_dir_name
             #         )
-            #     if not skip_save_test_statistics:
+            #     if not skip_save_eval_stats:
             #         save_test_statistics(test_results, experiment_dir_name)
 
             # augment the training statistics with scoring metric from
