@@ -517,6 +517,15 @@ class LudwigModel:
             dataset,
         )
 
+        if is_on_master():
+            # if we are skipping all saving,
+            # there is no need to create a directory that will remain empty
+            should_create_exp_dir = not (
+                    skip_save_unprocessed_output and skip_save_predictions
+            )
+            if should_create_exp_dir:
+                os.makedirs(self.exp_dir_name, exist_ok=True)
+
         logger.debug('Postprocessing')
         postproc_predictions = convert_predictions(
             postprocess(
@@ -533,14 +542,6 @@ class LudwigModel:
         )
 
         if is_on_master():
-            # if we are skipping all saving,
-            # there is no need to create a directory that will remain empty
-            should_create_exp_dir = not (
-                    skip_save_unprocessed_output and skip_save_predictions
-            )
-            if should_create_exp_dir:
-                os.makedirs(self.exp_dir_name, exist_ok=True)
-
             if not skip_save_predictions:
                 save_prediction_outputs(postproc_predictions,
                                         self.exp_dir_name)
