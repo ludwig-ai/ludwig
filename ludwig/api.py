@@ -58,8 +58,8 @@ from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json, load_json, generate_kfold_splits
 from ludwig.utils.horovod_utils import should_use_horovod
-from ludwig.utils.misc_utils import get_experiment_dir_name, get_file_names, \
-    get_experiment_description, find_non_existing_dir_by_adding_suffix
+from ludwig.utils.misc_utils import get_output_directory, get_file_names, \
+    get_experiment_description
 from ludwig.utils.tf_utils import initialize_tensorflow
 
 import yaml
@@ -140,7 +140,6 @@ class LudwigModel:
         # setup model
         self.model = None
         self.training_set_metadata = None
-        self.exp_dir_name = ''
 
     def train(
             self,
@@ -247,10 +246,9 @@ class LudwigModel:
             - A Pandas DataFrame of preprocessed training data.
         """
         # setup directories and file names
-        experiment_dir_name = None
         if model_resume_path is not None:
             if os.path.exists(model_resume_path):
-                experiment_dir_name = model_resume_path
+                output_directory = model_resume_path
             else:
                 if is_on_master():
                     logger.info(
@@ -261,17 +259,17 @@ class LudwigModel:
 
         if model_resume_path is None:
             if is_on_master():
-                experiment_dir_name = get_experiment_dir_name(
+                output_directory = get_output_directory(
                     output_directory,
                     experiment_name,
                     model_name
                 )
             else:
-                experiment_dir_name = None
+                output_directory = None
 
         # if we are skipping all saving,
         # there is no need to create a directory that will remain empty
-        should_create_exp_dir = not (
+        should_create_output_directory = not (
                 skip_save_training_description and
                 skip_save_training_statistics and
                 skip_save_model and
@@ -282,11 +280,11 @@ class LudwigModel:
 
         description_fn = training_stats_fn = model_dir = None
         if is_on_master():
-            if should_create_exp_dir:
-                if not os.path.exists(experiment_dir_name):
-                    os.makedirs(experiment_dir_name, exist_ok=True)
+            if should_create_output_directory:
+                if not os.path.exists(output_directory):
+                    os.makedirs(output_directory, exist_ok=True)
             description_fn, training_stats_fn, model_dir = get_file_names(
-                experiment_dir_name)
+                output_directory)
 
         # save description
         if is_on_master():
@@ -305,7 +303,7 @@ class LudwigModel:
             # print description
             logger.info('Experiment name: {}'.format(experiment_name))
             logger.info('Model name: {}'.format(model_name))
-            logger.info('Output path: {}'.format(experiment_dir_name))
+            logger.info('Output directory: {}'.format(output_directory))
             logger.info('\n')
             for key, value in description.items():
                 logger.info('{}: {}'.format(key, pformat(value, indent=4)))
@@ -350,7 +348,7 @@ class LudwigModel:
                     training_set_metadata
                 )
 
-        contrib_command("train_init", experiment_directory=experiment_dir_name,
+        contrib_command("train_init", experiment_directory=output_directory,
                         experiment_name=experiment_name, model_name=model_name,
                         output_directory=output_directory,
                         resume=model_resume_path is not None)
@@ -443,14 +441,13 @@ class LudwigModel:
                 )
             logger.info(
                 '\nFinished: {0}_{1}'.format(experiment_name, model_name))
-            logger.info('Saved to: {0}'.format(experiment_dir_name))
+            logger.info('Saved to: {0}'.format(output_directory))
 
-        contrib_command("train_save", experiment_dir_name)
+        contrib_command("train_save", output_directory)
 
         self.training_set_metadata = training_set_metadata
-        self.exp_dir_name = experiment_dir_name
 
-        return train_stats, preprocessed_data
+        return train_stats, preprocessed_data, output_directory
 
     # todo refactoring: reintroduce the train_online functionality?
     def train_online(self):
@@ -475,10 +472,7 @@ class LudwigModel:
             **kwargs
     ):
         self._check_initialization()
-        if is_on_master() and not self.exp_dir_name:
-            # setup directories and file names
-            self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
-                output_directory)
+        # setup directories and file names
 
         logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
@@ -512,7 +506,7 @@ class LudwigModel:
                     skip_save_unprocessed_output and skip_save_predictions
             )
             if should_create_exp_dir:
-                os.makedirs(self.exp_dir_name, exist_ok=True)
+                os.makedirs(output_directory, exist_ok=True)
 
         logger.debug('Postprocessing')
         postproc_predictions = convert_predictions(
@@ -520,7 +514,7 @@ class LudwigModel:
                 predictions,
                 self.model.output_features,
                 self.training_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
+                output_directory=output_directory,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
             ),
@@ -532,11 +526,11 @@ class LudwigModel:
         if is_on_master():
             if not skip_save_predictions:
                 save_prediction_outputs(postproc_predictions,
-                                        self.exp_dir_name)
+                                        output_directory)
 
-                logger.info('Saved to: {0}'.format(self.exp_dir_name))
+                logger.info('Saved to: {0}'.format(output_directory))
 
-        return postproc_predictions
+        return postproc_predictions, output_directory
 
     # def evaluate_pseudo(self, data, return_preds=False):
     #     preproc_data = preprocess_data(data)
@@ -568,10 +562,6 @@ class LudwigModel:
             **kwargs
     ):
         self._check_initialization()
-        if is_on_master() and not self.exp_dir_name:
-            # setup directories and file names
-            self.exp_dir_name = find_non_existing_dir_by_adding_suffix(
-                output_directory)
 
         logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
@@ -621,7 +611,7 @@ class LudwigModel:
                 predictions,
                 self.model.output_features,
                 self.training_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
+                output_directory=output_directory,
                 skip_save_unprocessed_output=skip_save_unprocessed_output
                                              or not is_on_master(),
             )
@@ -637,18 +627,18 @@ class LudwigModel:
                     skip_save_eval_stats
             )
             if should_create_exp_dir:
-                os.makedirs(self.exp_dir_name, exist_ok=True)
+                os.makedirs(output_directory, exist_ok=True)
 
             if postproc_predictions is not None and not skip_save_predictions:
                 save_prediction_outputs(postproc_predictions,
-                                        self.exp_dir_name)
+                                        output_directory)
 
             print_evaluation_stats(stats)
             if not skip_save_eval_stats:
-                save_evaluation_stats(stats, self.exp_dir_name)
+                save_evaluation_stats(stats, output_directory)
 
             if not skip_save_predictions or not skip_save_eval_stats:
-                logger.info('Saved to: {0}'.format(self.exp_dir_name))
+                logger.info('Saved to: {0}'.format(output_directory))
 
         if collect_predictions:
             postproc_predictions = convert_predictions(
@@ -657,7 +647,7 @@ class LudwigModel:
                 self.training_set_metadata,
                 return_type=return_type)
 
-        return stats, postproc_predictions
+        return stats, postproc_predictions, output_directory
 
     def experiment(
             self,
@@ -693,7 +683,8 @@ class LudwigModel:
     ):
         (
             train_stats,
-            preprocessed_data
+            preprocessed_data,
+            output_directory
         ) = self.train(
             dataset=dataset,
             training_set=training_set,
@@ -734,7 +725,7 @@ class LudwigModel:
 
             # todo tf2 refactor: figure out where this goes given NewLudwigModel
             # if a model was saved on disk, reload it
-            # model_dir = os.path.join(self.exp_dir_name, 'model')
+            # model_dir = os.path.join(output_directory, 'model')
             # if is_model_dir(model_dir):
             #     model = NewLudwigModel.load(model_dir,
             #                          use_horovod=use_horovod,
@@ -747,6 +738,7 @@ class LudwigModel:
                 test_set,
                 data_format=data_format,
                 batch_size=batch_size,
+                output_directory=experiment_name,
                 skip_save_unprocessed_output=skip_save_unprocessed_output,
                 skip_save_predictions=skip_save_predictions,
                 skip_save_eval_stats=skip_save_eval_stats,
@@ -757,11 +749,7 @@ class LudwigModel:
         else:
             test_results = None
 
-        return (
-            test_results,
-            train_stats,
-            preprocessed_data
-        )
+        return test_results, train_stats, preprocessed_data, output_directory
 
     def collect_weights(
             self,
@@ -1089,7 +1077,8 @@ def kfold_cross_validate(
             (
                 test_results,
                 train_stats,
-                preprocessed_data
+                preprocessed_data,
+                output_directory
             ) = model.experiment(
                 training_set=curr_train_df,
                 test_set=curr_test_df,
@@ -1116,10 +1105,10 @@ def kfold_cross_validate(
             #     if not skip_save_predictions:
             #         save_prediction_outputs(
             #             postprocessed_output,
-            #             experiment_dir_name
+            #             output_directory
             #         )
             #     if not skip_save_eval_stats:
-            #         save_test_statistics(test_results, experiment_dir_name)
+            #         save_test_statistics(test_results, output_directory)
 
             # augment the training statistics with scoring metric from
             # the hold out fold

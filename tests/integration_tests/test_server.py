@@ -58,7 +58,7 @@ def train_model(input_features, output_features, data_csv):
     model = LudwigModel(model_definition)
 
     # Training with csv
-    model.train(
+    _, _, output_dir = model.train(
         dataset=data_csv,
         skip_save_processed_input=True,
         skip_save_progress=True,
@@ -68,7 +68,7 @@ def train_model(input_features, output_features, data_csv):
     model.predict(dataset=data_csv)
 
     # Remove results/intermediate data saved to disk
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(output_dir, ignore_errors=True)
 
     # Training with dataframe
     data_df = read_csv(data_csv)
@@ -141,7 +141,8 @@ def test_server_integration(csv_filename):
     ]
 
     rel_path = generate_data(input_features, output_features, csv_filename)
-    model = train_model(input_features, output_features, data_csv=rel_path)
+    model, _, output_dir = train_model(input_features, output_features,
+                                       data_csv=rel_path)
 
     app = server(model)
     client = TestClient(app)
@@ -158,5 +159,5 @@ def test_server_integration(csv_filename):
     response_keys = sorted(list(response.json().keys()))
     assert response_keys == sorted(output_keys_for(output_features))
 
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(output_dir, ignore_errors=True)
     shutil.rmtree(image_dest_folder)

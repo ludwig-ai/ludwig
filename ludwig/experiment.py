@@ -194,7 +194,8 @@ def experiment_cli(
     (
         test_results,
         train_stats,
-        preprocessed_data
+        preprocessed_data,
+        output_directory
     ) = model.experiment(
         dataset=dataset,
         training_set=training_set,
@@ -221,7 +222,7 @@ def experiment_cli(
         debug=debug,
     )
 
-    return model, test_results, train_stats, preprocessed_data
+    return model, test_results, train_stats, preprocessed_data, output_directory
 
 
 def kfold_cross_validate_cli(

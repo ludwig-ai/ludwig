@@ -196,7 +196,7 @@ def get_available_gpu_memory():
     return memory_free_values
 
 
-def get_experiment_dir_name(
+def get_output_directory(
         output_directory,
         experiment_name,
         model_name='run'
@@ -208,11 +208,11 @@ def get_experiment_dir_name(
     return find_non_existing_dir_by_adding_suffix(base_dir_name)
 
 
-def get_file_names(experiment_dir_name):
-    description_fn = os.path.join(experiment_dir_name, 'description.json')
+def get_file_names(output_directory):
+    description_fn = os.path.join(output_directory, 'description.json')
     training_stats_fn = os.path.join(
-        experiment_dir_name, 'training_statistics.json')
+        output_directory, 'training_statistics.json')
 
-    model_dir = os.path.join(experiment_dir_name, 'model')
+    model_dir = os.path.join(output_directory, 'model')
 
     return description_fn, training_stats_fn, model_dir

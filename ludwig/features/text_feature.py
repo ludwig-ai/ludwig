@@ -420,7 +420,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
             self,
             result,
             metadata,
-            experiment_dir_name,
+            output_directory,
             skip_save_unprocessed_output=False,
     ):
         # todo: refactor to reuse SequenceOutputFeature.postprocess_predictions
@@ -430,7 +430,7 @@ class TextOutputFeature(TextFeatureMixin, SequenceOutputFeature):
 
         npy_filename = None
         if is_on_master():
-            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+            npy_filename = os.path.join(output_directory, '{}_{}.npy')
         else:
             skip_save_unprocessed_output = True
 

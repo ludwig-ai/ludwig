@@ -277,12 +277,12 @@ def calculate_overall_stats(
 
 def save_prediction_outputs(
         postprocessed_output,
-        experiment_dir_name,
+        output_directory,
         skip_output_types=None
 ):
     if skip_output_types is None:
         skip_output_types = set()
-    csv_filename = os.path.join(experiment_dir_name, '{}_{}.csv')
+    csv_filename = os.path.join(output_directory, '{}_{}.csv')
     for output_field, outputs in postprocessed_output.items():
         for output_type, values in outputs.items():
             if output_type not in skip_output_types:
@@ -292,9 +292,9 @@ def save_prediction_outputs(
                 )
 
 
-def save_evaluation_stats(test_stats, experiment_dir_name):
+def save_evaluation_stats(test_stats, output_directory):
     test_stats_fn = os.path.join(
-        experiment_dir_name,
+        output_directory,
         'test_statistics.json'
     )
     save_json(test_stats_fn, test_stats)
