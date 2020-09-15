@@ -56,8 +56,7 @@ from ludwig.models.predictor import Predictor, save_prediction_outputs, \
     calculate_overall_stats, print_evaluation_stats, save_evaluation_stats
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
-from ludwig.utils.data_utils import save_json, override_in_memory_flag, \
-    load_json, generate_kfold_splits
+from ludwig.utils.data_utils import save_json, load_json, generate_kfold_splits
 from ludwig.utils.horovod_utils import should_use_horovod
 from ludwig.utils.misc_utils import get_experiment_dir_name, get_file_names, \
     get_experiment_description, find_non_existing_dir_by_adding_suffix
@@ -558,17 +557,6 @@ class LudwigModel:
         # which you definitely don't want to do
         features_to_load = self.model_definition['input_features'][:]
 
-        # todo refactoring: this is needed for image features as we expect all
-        #  inputs to predict to be in memory, but doublecheck
-        num_overrides = override_in_memory_flag(
-            self.model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported for Ludwig API.'
-            )
-
         # preprocessing
         dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
@@ -661,15 +649,6 @@ class LudwigModel:
         # which you definitely don't want to do
         features_to_load = self.model_definition['input_features'] + \
                            self.model_definition['output_features']
-
-        num_overrides = override_in_memory_flag(
-            self.model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported for Ludwig API.'
-            )
 
         # preprocessing
         # todo refactoring: maybe replace the self.model_definition paramter
@@ -879,17 +858,6 @@ class LudwigModel:
         # modifying the input feature list when you add output features,
         # which you definitely don't want to do
         features_to_load = self.model_definition['input_features'][:]
-
-        # todo refactoring: this is needed for image features as we expect all
-        #  inputs to predict to be in memory, but doublecheck
-        num_overrides = override_in_memory_flag(
-            self.model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported for Ludwig API.'
-            )
 
         # preprocessing
         dataset, training_set_metadata = preprocess_for_prediction(
@@ -1178,15 +1146,15 @@ def kfold_cross_validate(
             logger.info("training on fold {:d}".format(fold_num))
 
             model = LudwigModel(
-                    model_definition=model_definition,
-                    model_definition_fp=model_definition_file,
-                    logging_level=logging_level,
-                    use_horovod=use_horovod,
-                    gpus=gpus,
-                    gpu_memory_limit=gpu_memory_limit,
-                    allow_parallel_threads=allow_parallel_threads,
-                    random_seed=random_seed
-                )
+                model_definition=model_definition,
+                model_definition_fp=model_definition_file,
+                logging_level=logging_level,
+                use_horovod=use_horovod,
+                gpus=gpus,
+                gpu_memory_limit=gpu_memory_limit,
+                allow_parallel_threads=allow_parallel_threads,
+                random_seed=random_seed
+            )
             (
                 test_results,
                 train_stats,
@@ -1269,6 +1237,7 @@ def kfold_cross_validate(
     logger.info('completed {:d}-fold cross validation'.format(num_folds))
 
     return kfold_cv_stats, kfold_split_indices
+
 
 # todo refactoring: this shouldn't exist,
 #  all api tests should be done in a proper integration test,
@@ -1487,5 +1456,3 @@ def main(sys_argv):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
-
