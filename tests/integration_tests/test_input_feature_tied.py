@@ -117,7 +117,7 @@ TiedUseCase = namedtuple('TiedUseCase', 'input_feature output_feature')
         TiedUseCase(sequence_feature, sequence_feature)
     ]
 )
-def test_tied_macro_level(tied_use_case, csv_filename):
+def test_tied_macro_level(tied_use_case: TiedUseCase, csv_filename: str):
     input_features = [
         numerical_feature(),  # Other feature
         tied_use_case.input_feature(),  # first feature to be tied
@@ -134,4 +134,4 @@ def test_tied_macro_level(tied_use_case, csv_filename):
 
     # Generate test data and run full_experiment
     rel_path = generate_data(input_features, output_features, csv_filename)
-    run_experiment(input_features, output_features, data_csv=rel_path)
+    run_experiment(input_features, output_features, dataset=rel_path)
