@@ -20,8 +20,13 @@ from collections import namedtuple
 
 import pytest
 import yaml
+import h5py
+
+import pandas as pd
+import numpy as np
 
 from ludwig.data.concatenate_datasets import concatenate_df
+from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
@@ -295,6 +300,85 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
 
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
+
+
+
+def test_experiment_image_df( csv_filename):
+    # Image Inputs
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder='stacked_cnn',
+            preprocessing={
+                'in_memory': True,
+                'height': 12,
+                'width': 12,
+                'num_channels': 3,
+                'num_processes': 5
+            },
+            fc_size=16,
+            num_filters=8
+        ),
+    ]
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+    ]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    df = pd.read_csv(rel_path)
+    run_experiment(
+        input_features,
+        output_features,
+        dataset=df
+    )
+
+    # Delete the temporary data created
+    shutil.rmtree(image_dest_folder)
+
+
+def test_experiment_image_hdf5(csv_filename):
+    # Image Inputs
+    image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
+
+    input_features = [
+        image_feature(
+            folder=image_dest_folder,
+            encoder='stacked_cnn',
+            preprocessing={
+                'in_memory': True,
+                'height': 12,
+                'width': 12,
+                'num_channels': 3,
+                'num_processes': 5
+            },
+            fc_size=16,
+            num_filters=8
+        ),
+    ]
+    output_features = [
+        category_feature(vocab_size=2, reduce_input='sum'),
+    ]
+
+    rel_path = generate_data(input_features, output_features, csv_filename)
+    df = pd.read_csv(rel_path)
+
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features
+    }
+    preprocess_for_training(model_definition, dataset=df)
+
+    run_experiment(
+        input_features,
+        output_features,
+        dataset='./my_file.hdf5'
+    )
+
+    # Delete the temporary data created
+    shutil.rmtree(image_dest_folder)
+
 
 
 def test_experiment_audio_inputs(csv_filename):
