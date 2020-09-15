@@ -122,8 +122,6 @@ class LudwigModel:
             import horovod.tensorflow
             self._horovod = horovod.tensorflow
             self._horovod.init()
-        # todo refactoring: figure out it this belongs here or
-        #  in Trainer and Predictor. It probably belongs here
         set_on_master(use_horovod)
 
         # setup logging

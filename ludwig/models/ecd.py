@@ -77,10 +77,6 @@ class ECD(tf.keras.Model):
         keras_model = self.get_connected_model(training=False)
         keras_model.save(save_path)
 
-    # def save_definition(self, model_hyperparameters_path):
-    #     # todo refactoring
-    #     pass
-
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
         # or
