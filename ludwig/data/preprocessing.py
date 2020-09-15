@@ -33,7 +33,7 @@ from ludwig.globals import is_on_master
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format, \
     DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
-    HDF5_FORMATS
+    HDF5_FORMATS, override_in_memory_flag
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
@@ -718,16 +718,28 @@ def preprocess_for_prediction(
         data_format = figure_data_format(dataset)
 
     # manage the in_memory parameter
-    for input_feature in model_definition['input_features']:
-        if PREPROCESSING in input_feature:
-            if 'in_memory' in input_feature[PREPROCESSING]:
-                if not input_feature[PREPROCESSING]['in_memory']:
-                    logger.warning(
-                        'WARNING: When running predict in_memory flag should '
-                        'be true. Overriding and setting it to true for '
-                        'feature <{}>'.format(input_feature[NAME])
-                    )
-                    input_feature[PREPROCESSING]['in_memory'] = True
+    # for input_feature in model_definition['input_features']:
+    #     if PREPROCESSING in input_feature:
+    #         if 'in_memory' in input_feature[PREPROCESSING]:
+    #             if not input_feature[PREPROCESSING]['in_memory']:
+    #                 logger.warning(
+    #                     'WARNING: When running predict in_memory flag should '
+    #                     'be true. Overriding and setting it to true for '
+    #                     'feature <{}>'.format(input_feature[NAME])
+    #                 )
+    #                 input_feature[PREPROCESSING]['in_memory'] = True
+
+    if data_format not in HDF5_FORMATS:
+        num_overrides = override_in_memory_flag(
+            model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported '
+                'with {} data format.'.format(data_format)
+            )
+
     preprocessing_params = merge_dict(
         default_preprocessing_parameters,
         model_definition[PREPROCESSING]

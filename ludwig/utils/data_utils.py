@@ -30,7 +30,7 @@ import pandas as pd
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
-from ludwig.constants import SPLIT
+from ludwig.constants import SPLIT, PREPROCESSING
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 
@@ -423,9 +423,9 @@ def add_sequence_feature_column(df, col_name, seq_length):
 def override_in_memory_flag(input_features, override_value):
     num_overrides = 0
     for feature in input_features:
-        if 'preprocessing' in feature:
-            if 'in_memory' in feature['preprocessing']:
-                feature['preprocessing']['in_memory'] = override_value
+        if PREPROCESSING in feature:
+            if 'in_memory' in feature[PREPROCESSING]:
+                feature[PREPROCESSING]['in_memory'] = override_value
                 num_overrides += 1
     return num_overrides
 

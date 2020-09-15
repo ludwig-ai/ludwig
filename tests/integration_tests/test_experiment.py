@@ -20,6 +20,7 @@ from collections import namedtuple
 
 import pytest
 import yaml
+
 from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
@@ -245,6 +246,8 @@ ImageParms = namedtuple(
     'ImageTestParms',
     'image_encoder in_memory_flag skip_save_processed_input'
 )
+
+
 @pytest.mark.parametrize(
     'image_parms',
     [
@@ -253,7 +256,7 @@ ImageParms = namedtuple(
         ImageParms('stacked_cnn', False, False)
     ]
 )
-def test_experiment_image_inputs(image_parms, csv_filename):
+def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
     # Image Inputs
     image_dest_folder = os.path.join(os.getcwd(), 'generated_images')
 
