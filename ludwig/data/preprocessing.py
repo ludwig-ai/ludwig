@@ -718,17 +718,6 @@ def preprocess_for_prediction(
         data_format = figure_data_format(dataset)
 
     # manage the in_memory parameter
-    # for input_feature in model_definition['input_features']:
-    #     if PREPROCESSING in input_feature:
-    #         if 'in_memory' in input_feature[PREPROCESSING]:
-    #             if not input_feature[PREPROCESSING]['in_memory']:
-    #                 logger.warning(
-    #                     'WARNING: When running predict in_memory flag should '
-    #                     'be true. Overriding and setting it to true for '
-    #                     'feature <{}>'.format(input_feature[NAME])
-    #                 )
-    #                 input_feature[PREPROCESSING]['in_memory'] = True
-
     if data_format not in HDF5_FORMATS:
         num_overrides = override_in_memory_flag(
             model_definition['input_features'],
