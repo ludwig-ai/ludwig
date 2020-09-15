@@ -504,17 +504,17 @@ def test_experiment_model_resume(csv_filename):
         'training': {'epochs': 2}
     }
 
-    exp_dir_name = experiment_cli(model_definition, dataset=rel_path)
-    logger.info('Experiment Directory: {0}'.format(exp_dir_name))
+    model, _, _, _ = experiment_cli(model_definition, dataset=rel_path)
+    logger.info('Experiment Directory: {0}'.format(model.exp_dir_name))
 
     experiment_cli(
         model_definition,
         dataset=rel_path,
-        model_resume_path=exp_dir_name
+        model_resume_path=model.exp_dir_name
     )
 
-    predict_cli(os.path.join(exp_dir_name, 'model'), dataset=rel_path)
-    shutil.rmtree(exp_dir_name, ignore_errors=True)
+    predict_cli(os.path.join(model.exp_dir_name, 'model'), dataset=rel_path)
+    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
 
 
 def test_experiment_various_feature_types(csv_filename):
