@@ -821,11 +821,11 @@ class LudwigModel:
         ```
 
         """
-        configure_horovod(use_horovod)
+        horovod = configure_horovod(use_horovod)
         model_definition = broadcast_return(lambda: load_json(os.path.join(
             model_dir,
             MODEL_HYPERPARAMETERS_FILE_NAME
-        )))
+        )), horovod)
 
         # initialize model
         ludwig_model = LudwigModel(
@@ -850,12 +850,15 @@ class LudwigModel:
                     model_dir,
                     TRAIN_SET_METADATA_FILE_NAME
                 )
-            )
+            ), horovod
         )
 
         return ludwig_model
 
     def load_weights(self, model_dir):
+        # Make sure all weights are initialized before loading
+        self.model.get_connected_model()
+
         if is_on_master():
             weights_save_path = os.path.join(
                 model_dir,

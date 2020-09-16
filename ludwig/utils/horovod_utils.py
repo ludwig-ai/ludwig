@@ -47,14 +47,14 @@ def has_horovodrun():
     return 'OMPI_COMM_WORLD_RANK' in os.environ or 'HOROVOD_RANK' in os.environ
 
 
-def broadcast_return(fn):
+def broadcast_return(fn, horovod):
     """Returns the result of calling `fn` on master, broadcasted to all other ranks.
 
     Specifically, `fn` is only executed on master, but its result is returned by every
     rank by broadcasting the return value from master.
     """
     result = fn() if is_on_master() else None
-    if _HVD:
+    if horovod:
         name = f'broadcast_return_{int(time.time())}'
         result = _HVD.broadcast_object(result, name=name)
     return result
