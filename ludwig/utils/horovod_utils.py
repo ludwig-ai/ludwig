@@ -27,12 +27,8 @@ ON_MASTER = True
 
 
 def configure_horovod(use_horovod):
-    hvd = None
-    if should_use_horovod(use_horovod):
-        _HVD.init()
-        hvd = _HVD
     set_on_master(use_horovod)
-    return hvd
+    return _HVD if should_use_horovod(use_horovod) else None
 
 
 def should_use_horovod(use_horovod):
@@ -63,14 +59,13 @@ def broadcast_return(fn, horovod):
 def set_on_master(use_horovod):
     global ON_MASTER
     if should_use_horovod(use_horovod):
-        try:
-            _HVD.init()
-            ON_MASTER = _HVD.rank() == 0
-        except ImportError:
+        if not _HVD:
             raise ValueError("use_horovod parameter specified, "
                              "but cannot import horovod.tensorflow. "
                              "Install horovod following the instructions at: "
                              " https://github.com/horovod/horovod")
+        _HVD.init()
+        ON_MASTER = _HVD.rank() == 0
     else:
         ON_MASTER = True
 
