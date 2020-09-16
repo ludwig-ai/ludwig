@@ -192,7 +192,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
-    model1, _, _, _ = experiment_cli(
+    _, _, _, _, output_dir = experiment_cli(
         model_definition,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
@@ -207,10 +207,10 @@ def test_resume_training(optimizer, generated_data, tmp_path):
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
-        model_resume_path=model1.exp_dir_name
+        model_resume_path=output_dir
     )
 
-    model2, _, _, _ = experiment_cli(
+    experiment_cli(
         model_definition,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
@@ -218,16 +218,16 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     )
 
     # compare learning curves with and without resuming
-    ts1 = load_json(os.path.join(model1.exp_dir_name, 'training_statistics.json'))
-    ts2 = load_json(os.path.join(model2.exp_dir_name, 'training_statistics.json'))
+    ts1 = load_json(os.path.join(output_dir, 'training_statistics.json'))
+    ts2 = load_json(os.path.join(output_dir, 'training_statistics.json'))
     print('ts1', ts1)
     print('ts2', ts2)
     assert ts1['training']['combined']['loss'] == ts2['training']['combined'][
         'loss']
 
     # compare predictions with and without resuming
-    y_pred1 = np.load(os.path.join(model1.exp_dir_name, 'y_predictions.npy'))
-    y_pred2 = np.load(os.path.join(model2.exp_dir_name, 'y_predictions.npy'))
+    y_pred1 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
+    y_pred2 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
     print('y_pred1', y_pred1)
     print('y_pred2', y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
