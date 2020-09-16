@@ -1112,7 +1112,7 @@ def kfold_cross_validate(
 
             # augment the training statistics with scoring metric from
             # the hold out fold
-            train_stats['fold_test_results'] = test_results[0]
+            train_stats['fold_test_results'] = test_results
 
             # collect training statistics for this fold
             kfold_cv_stats['fold_' + str(fold_num)] = train_stats
