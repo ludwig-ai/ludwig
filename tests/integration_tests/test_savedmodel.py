@@ -22,7 +22,6 @@ import pytest
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
-from ludwig.constants import FULL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from tests.integration_tests.utils import category_feature
@@ -93,14 +92,14 @@ def test_savedmodel(csv_filename, should_load_model):
     ##############################
     # collect weight tensors names
     ##############################
-    original_predictions_df = ludwig_model.predict(dataset=data_csv_path)
+    original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
     original_weights = deepcopy(ludwig_model.model.trainable_variables)
 
     ###################################################
     # load Ludwig model, obtain predictions and weights
     ###################################################
     ludwig_model = LudwigModel.load(ludwigmodel_path)
-    loaded_prediction_df = ludwig_model.predict(dataset=data_csv_path)
+    loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
     loaded_weights = deepcopy(ludwig_model.model.trainable_variables)
 
     #################################################

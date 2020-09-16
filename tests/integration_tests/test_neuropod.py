@@ -88,7 +88,7 @@ def test_neuropod(csv_filename):
         skip_save_log=True,
         skip_save_processed_input=True,
     )
-    original_predictions_df = ludwig_model.predict(dataset=data_csv_path)
+    original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
 
     ###################
     # save Ludwig model

@@ -25,7 +25,7 @@ class LudwigNeuropodModelWrapper:
         data_dict = kwargs
         for key in data_dict:
             data_dict[key] = np.squeeze(data_dict[key], axis=1)
-        predicted = self.ludwig_model.predict(
+        predicted, _ = self.ludwig_model.predict(
             dataset=data_dict,
             return_type=dict
         )

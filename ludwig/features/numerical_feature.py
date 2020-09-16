@@ -295,7 +295,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
             self,
             predictions,
             metadata,
-            experiment_dir_name,
+            output_directory,
             skip_save_unprocessed_output=False
     ):
         postprocessed = {}
@@ -303,7 +303,7 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
         npy_filename = None
         if is_on_master():
-            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+            npy_filename = os.path.join(output_directory, '{}_{}.npy')
         else:
             skip_save_unprocessed_output = True
 

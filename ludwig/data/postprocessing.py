@@ -16,7 +16,6 @@
 # ==============================================================================
 import pandas as pd
 
-from ludwig.constants import TYPE
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS
 from ludwig.utils.misc_utils import get_from_registry
@@ -26,7 +25,7 @@ def postprocess(
         predictions,
         output_features,
         training_set_metadata,
-        experiment_dir_name='',
+        output_directory='',
         skip_save_unprocessed_output=False,
 ):
     postprocessed = {}
@@ -34,7 +33,7 @@ def postprocess(
         postprocessed[of_name] = output_feature.postprocess_predictions(
             predictions[of_name],
             training_set_metadata.get(of_name, {}),
-            experiment_dir_name=experiment_dir_name,
+            output_directory=output_directory,
             skip_save_unprocessed_output=skip_save_unprocessed_output
         )
     return postprocessed

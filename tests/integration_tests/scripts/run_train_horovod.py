@@ -46,18 +46,19 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
     }
 
     model = LudwigModel(model_definition)
+    output_dir = None
 
     try:
         # Training with csv
-        model.train(
+        _, _, output_dir = model.train(
             dataset=dataset,
             **kwargs
         )
 
         model.predict(dataset=dataset)
     finally:
-        if model.exp_dir_name:
-            shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        if output_dir:
+            shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def test_horovod_intent_classification(rel_path, input_features,

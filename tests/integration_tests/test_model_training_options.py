@@ -76,7 +76,7 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     results_dir.mkdir()
 
     # run experiment
-    model, _, _, _ = experiment_cli(
+    _, _, _, _, output_dir = experiment_cli(
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
@@ -90,8 +90,8 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     )
 
     # test existence of required files
-    train_stats_fp = os.path.join(model.exp_dir_name, 'training_statistics.json')
-    metadata_fp = os.path.join(model.exp_dir_name, 'description.json')
+    train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
+    metadata_fp = os.path.join(output_dir, 'description.json')
     assert os.path.isfile(train_stats_fp)
     assert os.path.isfile(metadata_fp)
 
@@ -135,7 +135,7 @@ def test_model_progress_save(
     results_dir.mkdir()
 
     # run experiment
-    model, _, _, _ = experiment_cli(
+    _, _, _, _, output_dir = experiment_cli(
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
@@ -150,26 +150,26 @@ def test_model_progress_save(
 
     # ========== Check for required result data sets =============
     if skip_save_model:
-        model_dir = os.path.join(model.exp_dir_name, 'model')
+        model_dir = os.path.join(output_dir, 'model')
         files = [f for f in os.listdir(model_dir) if
                  re.match(r'model_weights', f)]
         assert len(files) == 0
     else:
-        model_dir = os.path.join(model.exp_dir_name, 'model')
+        model_dir = os.path.join(output_dir, 'model')
         files = [f for f in os.listdir(model_dir) if
                  re.match(r'model_weights', f)]
         # at least one .index and one .data file, but .data may be more
         assert len(files) >= 2
         assert os.path.isfile(
-            os.path.join(model.exp_dir_name, 'model', 'checkpoint'))
+            os.path.join(output_dir, 'model', 'checkpoint'))
 
     if skip_save_progress:
         assert not os.path.isdir(
-            os.path.join(model.exp_dir_name, 'model', 'training_checkpoints')
+            os.path.join(output_dir, 'model', 'training_checkpoints')
         )
     else:
         assert os.path.isdir(
-            os.path.join(model.exp_dir_name, 'model', 'training_checkpoints')
+            os.path.join(output_dir, 'model', 'training_checkpoints')
         )
 
 
@@ -192,7 +192,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
-    model1, _, _, _ = experiment_cli(
+    _, _, _, _, output_dir = experiment_cli(
         model_definition,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
@@ -207,10 +207,10 @@ def test_resume_training(optimizer, generated_data, tmp_path):
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
-        model_resume_path=model1.exp_dir_name
+        model_resume_path=output_dir
     )
 
-    model2, _, _, _ = experiment_cli(
+    experiment_cli(
         model_definition,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
@@ -218,21 +218,22 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     )
 
     # compare learning curves with and without resuming
-    ts1 = load_json(os.path.join(model1.exp_dir_name, 'training_statistics.json'))
-    ts2 = load_json(os.path.join(model2.exp_dir_name, 'training_statistics.json'))
+    ts1 = load_json(os.path.join(output_dir, 'training_statistics.json'))
+    ts2 = load_json(os.path.join(output_dir, 'training_statistics.json'))
     print('ts1', ts1)
     print('ts2', ts2)
     assert ts1['training']['combined']['loss'] == ts2['training']['combined'][
         'loss']
 
     # compare predictions with and without resuming
-    y_pred1 = np.load(os.path.join(model1.exp_dir_name, 'y_predictions.npy'))
-    y_pred2 = np.load(os.path.join(model2.exp_dir_name, 'y_predictions.npy'))
+    y_pred1 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
+    y_pred2 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
     print('y_pred1', y_pred1)
     print('y_pred2', y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
 
 
+# todo refactoring: check if this is relevant
 # work-in-progress
 # def test_model_save_resume(generated_data, tmp_path):
 #
@@ -295,7 +296,7 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
     results_dir.mkdir()
 
     # run experiment
-    model, _, _, _ = experiment_cli(
+    _, _, _, _, output_dir = experiment_cli(
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
@@ -309,8 +310,8 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
     )
 
     # test existence of required files
-    train_stats_fp = os.path.join(model.exp_dir_name, 'training_statistics.json')
-    metadata_fp = os.path.join(model.exp_dir_name, 'description.json')
+    train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
+    metadata_fp = os.path.join(output_dir, 'description.json')
     assert os.path.isfile(train_stats_fp)
     assert os.path.isfile(metadata_fp)
 
@@ -361,7 +362,7 @@ def test_regularization(generated_data, tmp_path):
             'activity_regularizer'] = regularizer
 
         # run experiment
-        model, _, _, _ = experiment_cli(
+        _, _, _, _, output_dir = experiment_cli(
             training_set=generated_data.train_df,
             validation_set=generated_data.validation_df,
             test_set=generated_data.test_df,
@@ -377,8 +378,8 @@ def test_regularization(generated_data, tmp_path):
         )
 
         # test existence of required files
-        train_stats_fp = os.path.join(model.exp_dir_name, 'training_statistics.json')
-        metadata_fp = os.path.join(model.exp_dir_name, 'description.json')
+        train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
+        metadata_fp = os.path.join(output_dir, 'description.json')
         assert os.path.isfile(train_stats_fp)
         assert os.path.isfile(metadata_fp)
 

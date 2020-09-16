@@ -74,8 +74,10 @@ def server(model):
                 return JSONResponse(ALL_FEATURES_PRESENT_ERROR,
                                     status_code=400)
             try:
-                resp = model.predict(dataset=[entry], data_format=dict).to_dict('records')[0]
-                return JSONResponse(resp)
+                resp, _ = model.predict(
+                    dataset=[entry], data_format=dict
+                )
+                return JSONResponse(resp.to_dict('records')[0])
             except Exception as e:
                 logger.error("Error: {}".format(str(e)))
                 return JSONResponse(COULD_NOT_RUN_INFERENCE_ERROR,
