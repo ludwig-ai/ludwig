@@ -30,7 +30,8 @@ from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, \
     VALIDATION
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults

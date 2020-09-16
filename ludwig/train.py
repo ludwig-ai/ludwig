@@ -26,7 +26,8 @@ import yaml
 
 from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
-from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig

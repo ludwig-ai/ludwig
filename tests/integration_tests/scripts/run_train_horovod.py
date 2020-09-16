@@ -20,6 +20,8 @@ import os
 import shutil
 import sys
 
+import numpy as np
+
 import horovod.tensorflow as hvd
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
@@ -56,6 +58,11 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         )
 
         model.predict(dataset=dataset)
+
+        # Attempt loading saved model, should broadcast successfully
+        model_dir = os.path.join(model.exp_dir_name, 'model') if model.exp_dir_name else None
+        loaded_model = LudwigModel.load(model_dir)
+        assert np.allclose(model.model.get_weights(), loaded_model.model.get_weights())
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)

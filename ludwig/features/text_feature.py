@@ -22,7 +22,7 @@ from ludwig.constants import *
 from ludwig.encoders.text_encoders import *
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.features.sequence_feature import SequenceOutputFeature
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import get_from_registry

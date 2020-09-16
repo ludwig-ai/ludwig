@@ -27,7 +27,7 @@ from ludwig.encoders.set_encoders import SetSparseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value

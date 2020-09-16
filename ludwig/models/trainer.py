@@ -40,7 +40,7 @@ from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.globals import is_progressbar_disabled
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun
