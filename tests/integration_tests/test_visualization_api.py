@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import glob
+import os
 import shutil
 
 import numpy as np
@@ -70,7 +71,7 @@ class Experiment:
         self.input_features[0]['encoder'] = encoder
         self.model = self._create_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
-        self.train_stats, _ = self.model.train(
+        self.train_stats, _, self.output_dir = self.model.train(
             training_set=train_df,
             validation_set=val_df
         )
@@ -78,6 +79,7 @@ class Experiment:
             dataset=test_df,
             collect_overall_stats=True,
             collect_predictions=True,
+            output_directory=self.output_dir
         )
         self.output_feature_name = self.output_features[0]['name']
         # probabilities need to be list of lists containing each row data
@@ -88,12 +90,14 @@ class Experiment:
         self.ground_truth_metadata = self.model.training_set_metadata
         target_predictions = test_df[self.output_feature_name]
         self.ground_truth = np.asarray([
-            self.ground_truth_metadata[self.output_feature_name]['str2idx'][test_row]
+            self.ground_truth_metadata[self.output_feature_name]['str2idx'][
+                test_row]
             for test_row in target_predictions
         ])
         self.prediction_raw = predictions.iloc[:, 0].tolist()
         self.prediction = np.asarray([
-            self.ground_truth_metadata[self.output_feature_name]['str2idx'][pred_row]
+            self.ground_truth_metadata[self.output_feature_name]['str2idx'][
+                pred_row]
             for pred_row in self.prediction_raw])
 
     def _create_model(self):
@@ -502,9 +506,10 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
         training_set=train_df,
         validation_set=val_df
     )
-    test_stats, predictions = model.evaluate(
+    test_stats, predictions, _ = model.evaluate(
         dataset=test_df,
         collect_predictions=True,
+        output_dir=output_dir
     )
 
     output_feature_name1 = output_features[0]['name']
@@ -569,9 +574,10 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
         training_set=train_df,
         validation_set=val_df
     )
-    test_stats, predictions = model.evaluate(
+    test_stats, predictions, _ = model.evaluate(
         dataset=test_df,
         collect_predictions=True,
+        output_directory=output_dir
     )
 
     output_feature_name1 = output_features[0]['name']
@@ -594,7 +600,9 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     ])
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = output_dir + '/*.{}'.format(viz_output)
+        vis_output_pattern_pdf = os.path.join(
+            output_dir, '*.{}'.format(viz_output)
+        )
         visualize.confidence_thresholding_2thresholds_3d(
             [probability1, probability2],
             [ground_truth1, ground_truth2],
@@ -681,13 +689,14 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
     data_df = read_csv(data_csv)
     _, _, output_dir = model.train(dataset=data_df)
     # extract test metrics
-    test_stats, _ = model.evaluate(dataset=data_df,
-                                   collect_overall_stats=True)
+    test_stats, _, _ = model.evaluate(dataset=data_df,
+                                      collect_overall_stats=True,
+                                      output_directory=output_dir)
     test_stats = test_stats
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = output_dir + '/*.{}'.format(
-            viz_output)
+        vis_output_pattern_pdf = os.path.join(output_dir, '*.{}'.format(
+            viz_output))
         visualize.roc_curves_from_test_statistics(
             [test_stats, test_stats],
             output_feature_name,
@@ -710,8 +719,8 @@ def test_calibration_1_vs_all_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
-            viz_output
+        vis_output_pattern_pdf = os.path.join(
+            experiment.output_dir, '*.{}'.format(viz_output)
         )
         visualize.calibration_1_vs_all(
             [probability, probability],
