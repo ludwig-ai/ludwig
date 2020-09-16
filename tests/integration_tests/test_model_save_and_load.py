@@ -76,18 +76,18 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     # perform initial model training
     ludwig_model1 = LudwigModel(model_definition)
-    ludwig_model1.train(
+    _, _, output_dir = ludwig_model1.train(
         training_set=training_set,
         validation_set=validation_set,
         test_set=test_set,
         output_directory='results'  # results_dir
     )
 
-    preds_1 = ludwig_model1.predict(dataset=validation_set)
+    preds_1, _ = ludwig_model1.predict(dataset=validation_set)
 
     def check_model_equal(ludwig_model2):
         # Compare model predictions
-        preds_2 = ludwig_model2.predict(dataset=validation_set)
+        preds_2, _ = ludwig_model2.predict(dataset=validation_set)
         assert set(preds_1.keys()) == set(preds_2.keys())
         for key in preds_1:
             assert preds_1[key].dtype == preds_2[key].dtype, key
@@ -124,6 +124,6 @@ def test_model_save_reload_api(csv_filename, tmp_path):
 
     # Test loading the model from the experiment directory
     ludwig_model_exp = LudwigModel.load(
-        os.path.join(ludwig_model1.exp_dir_name, 'model')
+        os.path.join(output_dir, 'model')
     )
     check_model_equal(ludwig_model_exp)
