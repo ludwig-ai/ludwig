@@ -310,8 +310,8 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
 
 @pytest.mark.parametrize('test_in_memory', [True, False])
 @pytest.mark.parametrize('test_format', ['csv', 'df', 'hdf5'])
-@pytest.mark.parametrize('train_in_memory', [False]) #True, False])
-@pytest.mark.parametrize('train_format', ['df']) #'csv', 'df', 'hdf5'])
+@pytest.mark.parametrize('train_in_memory', [True, False])
+@pytest.mark.parametrize('train_format', ['csv', 'df', 'hdf5'])
 def test_experiment_image_dataset(
         train_format, train_in_memory,
         test_format, test_in_memory
