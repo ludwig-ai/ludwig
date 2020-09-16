@@ -399,14 +399,18 @@ def test_experiment_image_dataset(
         test_dataset_to_use = pd.read_csv(test_data)
     else:
         # hdf5 format
+        # for in_memory True for creating hdf5 data with correct representation
+        # this need due to the way the hdf5 data set is created for testing
         model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = test_in_memory
+            'in_memory'] = True
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
             model_definition,
             dataset=test_data
         )
-
+        # set back to requested in_memory specification
+        model_definition['input_features'][0]['preprocessing'][
+            'in_memory'] = test_in_memory
         test_dataset_to_use = test_set.data_hdf5_fp
 
     # run functions with the specified data format
