@@ -362,6 +362,7 @@ def test_experiment_image_dataset(test_format, train_format):
             'in_memory'] = True
         train_dataset_to_use = pd.read_csv(train_data)
     else:
+        # hdf5 format
         model_definition['input_features'][0]['preprocessing'][
             'in_memory'] = False
         train_set, _, _, training_set_metadata = preprocess_for_training(
@@ -381,13 +382,16 @@ def test_experiment_image_dataset(test_format, train_format):
             'in_memory'] = True
         test_dataset_to_use = pd.read_csv(test_data)
     else:
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = False
-        test_set, _ = preprocess_for_prediction(
+        # hdf5 format
+        # model_definition['input_features'][0]['preprocessing'][
+        #     'in_memory'] = False  # this causes exception when training set is dataframe
+        # create hdf5 data set
+        _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
             model_definition,
-            dataset=train_data
+            dataset=test_data
         )
-        test_dataset_to_use = test_set
+
+        test_dataset_to_use = test_set.data_hdf5_fp
 
     # define Ludwig model
     model = LudwigModel(
