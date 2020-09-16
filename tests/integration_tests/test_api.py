@@ -57,6 +57,9 @@ def run_api_experiment(input_features, output_features, data_csv):
         model_dir = os.path.join(output_dir, 'model')
         loaded_model = LudwigModel.load(model_dir)
 
+        # Necessary before call to get_weights() to materialize the weights
+        loaded_model.predict(dataset=data_csv)
+
         model_weights = model.model.get_weights()
         loaded_weights = loaded_model.model.get_weights()
         for model_weight, loaded_weight in zip(model_weights, loaded_weights):

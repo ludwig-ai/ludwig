@@ -856,9 +856,6 @@ class LudwigModel:
         return ludwig_model
 
     def load_weights(self, model_dir):
-        # Make sure all weights are initialized before loading
-        self.model.get_connected_model()
-
         if is_on_master():
             weights_save_path = os.path.join(
                 model_dir,
