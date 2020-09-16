@@ -307,9 +307,15 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
     # Delete the temporary data created
     shutil.rmtree(image_dest_folder)
 
+
+@pytest.mark.parametrize('test_in_memory', [True, False])
 @pytest.mark.parametrize('test_format', ['csv', 'df', 'hdf5'])
-@pytest.mark.parametrize('train_format', ['csv', 'df', 'hdf5'])
-def test_experiment_image_dataset(test_format, train_format):
+@pytest.mark.parametrize('train_in_memory', [False]) #True, False])
+@pytest.mark.parametrize('train_format', ['df']) #'csv', 'df', 'hdf5'])
+def test_experiment_image_dataset(
+        train_format, train_in_memory,
+        test_format, test_in_memory
+):
     # primary focus of this test is to determine if exceptions are
     # raised for different data set formats and in_memory setting
 
@@ -355,36 +361,46 @@ def test_experiment_image_dataset(test_format, train_format):
     training_set_metadata = None
     if train_format == 'csv':
         model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = True
+            'in_memory'] = train_in_memory
         train_dataset_to_use = train_data
     elif train_format == 'df':
         model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = True
+            'in_memory'] = train_in_memory
         train_dataset_to_use = pd.read_csv(train_data)
     else:
         # hdf5 format
         model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = False
+            'in_memory'] = train_in_memory
         train_set, _, _, training_set_metadata = preprocess_for_training(
             model_definition,
             dataset=train_data
         )
         train_dataset_to_use = train_set.data_hdf5_fp
 
+    # define Ludwig model
+    model = LudwigModel(
+        model_definition=model_definition,
+        random_seed=default_random_seed
+    )
+    model.train(
+        dataset=train_dataset_to_use,
+        training_set_metadata=training_set_metadata
+    )
+
     # setup test data format to test
     test_data = generate_data(input_features, output_features, test_csv_filename)
     if test_format == 'csv':
         model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = True
+            'in_memory'] = test_in_memory
         test_dataset_to_use = test_data
     elif test_format == 'df':
         model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = True
+            'in_memory'] = test_in_memory
         test_dataset_to_use = pd.read_csv(test_data)
     else:
         # hdf5 format
-        # model_definition['input_features'][0]['preprocessing'][
-        #     'in_memory'] = False  # this causes exception when training set is dataframe
+        model_definition['input_features'][0]['preprocessing'][
+            'in_memory'] = test_in_memory
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
             model_definition,
@@ -393,17 +409,7 @@ def test_experiment_image_dataset(test_format, train_format):
 
         test_dataset_to_use = test_set.data_hdf5_fp
 
-    # define Ludwig model
-    model = LudwigModel(
-        model_definition=model_definition,
-        random_seed=default_random_seed
-    )
-
     # run functions with the specified data format
-    model.train(
-        dataset=train_dataset_to_use,
-        training_set_metadata=training_set_metadata
-    )
     model.evaluate(dataset=test_dataset_to_use)
     model.predict(dataset=test_dataset_to_use)
 
