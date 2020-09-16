@@ -135,7 +135,9 @@ def run_api_experiment_separated_datasets(
         )
         output_dirs.append(output_dir)
 
-        model.predict(dataset=test_fname)
+        _, output_dir = model.predict(dataset=test_fname)
+        output_dirs.append(output_dir)
+
     finally:
         # Remove results/intermediate data saved to disk
         os.remove(train_fname)
@@ -173,7 +175,9 @@ def run_api_experiment_separated_datasets(
         )
         output_dirs.append(output_dir)
 
-        model.predict(dataset=data_df)
+        _, output_dir = model.predict(dataset=data_df)
+        output_dirs.append(output_dir)
+
     finally:
         for output_dir in output_dirs:
             shutil.rmtree(output_dir, ignore_errors=True)

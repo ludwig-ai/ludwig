@@ -70,7 +70,6 @@ def _collect_activations(model_path, layers, csv_filename, output_directory):
 
 
 def test_collect_weights(csv_filename):
-    model = None
     output_dir = None
     try:
         # This will reset the layer numbering scheme TensorFlow uses.
@@ -108,7 +107,6 @@ def test_collect_weights(csv_filename):
 
 
 def test_collect_activations(csv_filename):
-    model = None
     output_dir = None
     try:
         # This will reset the layer numbering scheme TensorFlow uses.
