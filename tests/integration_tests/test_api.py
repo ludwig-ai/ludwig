@@ -54,7 +54,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         )
         model.predict(dataset=data_csv)
 
-        model_dir = os.path.join(model.exp_dir_name, 'model')
+        model_dir = os.path.join(output_dir, 'model')
         loaded_model = LudwigModel.load(model_dir)
 
         model_weights = model.model.get_weights()

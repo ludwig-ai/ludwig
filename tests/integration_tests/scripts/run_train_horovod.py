@@ -60,7 +60,7 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         model.predict(dataset=dataset)
 
         # Attempt loading saved model, should broadcast successfully
-        model_dir = os.path.join(model.exp_dir_name, 'model') if model.exp_dir_name else None
+        model_dir = os.path.join(output_dir, 'model') if output_dir else None
         loaded_model = LudwigModel.load(model_dir)
 
         # Model loading should broadcast weights from master
