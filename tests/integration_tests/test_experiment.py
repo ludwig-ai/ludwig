@@ -358,19 +358,17 @@ def test_experiment_image_dataset(
 
     # setup training data format to test
     train_data = generate_data(input_features, output_features, train_csv_filename)
+    model_definition['input_features'][0]['preprocessing']['in_memory'] \
+        = train_in_memory
     training_set_metadata = None
     if train_format == 'csv':
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = train_in_memory
         train_dataset_to_use = train_data
+
     elif train_format == 'df':
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = train_in_memory
         train_dataset_to_use = pd.read_csv(train_data)
+
     else:
         # hdf5 format
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = train_in_memory
         train_set, _, _, training_set_metadata = preprocess_for_training(
             model_definition,
             dataset=train_data
@@ -390,16 +388,14 @@ def test_experiment_image_dataset(
     # setup test data format to test
     test_data = generate_data(input_features, output_features, test_csv_filename)
     if test_format == 'csv':
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = test_in_memory
         test_dataset_to_use = test_data
+
     elif test_format == 'df':
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = test_in_memory
         test_dataset_to_use = pd.read_csv(test_data)
+
     else:
         # hdf5 format
-        # for in_memory True for creating hdf5 data with correct representation
+        # temporary override for creating hdf5 data with correct representation
         # this need due to the way the hdf5 data set is created for testing
         model_definition['input_features'][0]['preprocessing'][
             'in_memory'] = True
@@ -408,10 +404,10 @@ def test_experiment_image_dataset(
             model_definition,
             dataset=test_data
         )
-        # set back to requested in_memory specification
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = test_in_memory
         test_dataset_to_use = test_set.data_hdf5_fp
+
+    model_definition['input_features'][0]['preprocessing']['in_memory'] \
+        = test_in_memory
 
     # run functions with the specified data format
     model.evaluate(dataset=test_dataset_to_use)
