@@ -785,6 +785,16 @@ def preprocess_for_prediction(
         )
 
     elif data_format in HDF5_FORMATS:
+        num_overrides = override_in_memory_flag(
+            model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported '
+                'with {} data format.'.format(data_format)
+            )
+
         dataset = load_hdf5(
             dataset,
             model_definition['input_features'],
