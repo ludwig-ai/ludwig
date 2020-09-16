@@ -28,7 +28,7 @@ PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, '..', '..', '..')
 sys.path.insert(0, os.path.abspath(PATH_ROOT))
 
-import ludwig.globals
+import ludwig.utils.horovod_utils
 
 from ludwig.api import LudwigModel
 
@@ -62,7 +62,12 @@ def run_api_experiment(input_features, output_features, dataset, **kwargs):
         # Attempt loading saved model, should broadcast successfully
         model_dir = os.path.join(model.exp_dir_name, 'model') if model.exp_dir_name else None
         loaded_model = LudwigModel.load(model_dir)
-        assert np.allclose(model.model.get_weights(), loaded_model.model.get_weights())
+
+        # Model loading should broadcast weights from master
+        loaded_weights = loaded_model.model.get_weights()
+        bcast_weights = hvd.broadcast_object(loaded_weights)
+        for loaded, bcast in zip(loaded_weights, bcast_weights):
+            assert np.allclose(loaded, bcast)
     finally:
         if output_dir:
             shutil.rmtree(output_dir, ignore_errors=True)
@@ -77,7 +82,7 @@ def test_horovod_intent_classification(rel_path, input_features,
 
     # Horovod should be initialized following training. If not, this will raise an exception.
     assert hvd.size() == 2
-    assert ludwig.globals.ON_MASTER == (hvd.rank() == 0)
+    assert ludwig.utils.horovod_utils.ON_MASTER == (hvd.rank() == 0)
 
 
 if __name__ == "__main__":
