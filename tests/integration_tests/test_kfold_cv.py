@@ -7,8 +7,8 @@ from collections import namedtuple
 import pytest
 import yaml
 
-from ludwig.experiment import kfold_cross_validate_cli
 from ludwig.api import kfold_cross_validate
+from ludwig.experiment import kfold_cross_validate_cli
 from ludwig.utils.data_utils import load_json
 from tests.integration_tests.utils import binary_feature
 from tests.integration_tests.utils import category_feature
@@ -116,7 +116,7 @@ FEATURES_TO_TEST = [
 
 
 @pytest.mark.parametrize('features_to_use', FEATURES_TO_TEST)
-def test_kfold_cv_cli(features_to_use):
+def test_kfold_cv_cli(features_to_use: FeaturesToUse):
     # k-fold cross validation cli
     num_folds = 3
 

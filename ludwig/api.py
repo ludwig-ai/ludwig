@@ -472,7 +472,6 @@ class LudwigModel:
             **kwargs
     ):
         self._check_initialization()
-        # setup directories and file names
 
         logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
@@ -605,6 +604,17 @@ class LudwigModel:
             if of_name in overall_stats else {**stats[of_name]}
                      for of_name in stats}
 
+        if is_on_master():
+            # if we are skipping all saving,
+            # there is no need to create a directory that will remain empty
+            should_create_exp_dir = not (
+                    skip_save_unprocessed_output and
+                    skip_save_predictions and
+                    skip_save_eval_stats
+            )
+            if should_create_exp_dir:
+                os.makedirs(output_directory, exist_ok=True)
+
         if collect_predictions:
             logger.debug('Postprocessing')
             postproc_predictions = postprocess(
@@ -619,16 +629,6 @@ class LudwigModel:
             postproc_predictions = predictions  # = {}
 
         if is_on_master():
-            # if we are skipping all saving,
-            # there is no need to create a directory that will remain empty
-            should_create_exp_dir = not (
-                    skip_save_unprocessed_output and
-                    skip_save_predictions and
-                    skip_save_eval_stats
-            )
-            if should_create_exp_dir:
-                os.makedirs(output_directory, exist_ok=True)
-
             if postproc_predictions is not None and not skip_save_predictions:
                 save_prediction_outputs(postproc_predictions,
                                         output_directory)
