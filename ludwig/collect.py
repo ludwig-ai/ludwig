@@ -28,7 +28,6 @@ import numpy as np
 from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.misc_utils import find_non_existing_dir_by_adding_suffix
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_boxed
 from ludwig.utils.print_utils import print_ludwig
@@ -73,14 +72,10 @@ def collect_activations(
     :returns: None
 
     """
-    # setup directories and file names
-    experiment_dir_name = find_non_existing_dir_by_adding_suffix(
-        output_directory)
-
     logger.info('Dataset path: {}'.format(dataset)
                 )
     logger.info('Model path: {}'.format(model_path))
-    logger.info('Output path: {}'.format(experiment_dir_name))
+    logger.info('Output path: {}'.format(output_directory))
     logger.info('\n')
 
     model = LudwigModel.load(
@@ -102,10 +97,10 @@ def collect_activations(
     )
 
     # saving
-    os.makedirs(experiment_dir_name)
-    saved_filenames = save_tensors(collected_tensors, experiment_dir_name)
+    os.makedirs(output_directory, exist_ok=True)
+    saved_filenames = save_tensors(collected_tensors, output_directory)
 
-    logger.info('Saved to: {0}'.format(experiment_dir_name))
+    logger.info('Saved to: {0}'.format(output_directory))
     return saved_filenames
 
 
@@ -116,12 +111,8 @@ def collect_weights(
         debug=False,
         **kwargs
 ):
-    # setup directories and file names
-    experiment_dir_name = find_non_existing_dir_by_adding_suffix(
-        output_directory)
-
     logger.info('Model path: {}'.format(model_path))
-    logger.info('Output path: {}'.format(experiment_dir_name))
+    logger.info('Output path: {}'.format(output_directory))
     logger.info('\n')
 
     model = LudwigModel.load(model_path)
@@ -131,18 +122,18 @@ def collect_weights(
     collected_tensors = model.collect_weights(tensors)
 
     # saving
-    os.makedirs(experiment_dir_name)
-    saved_filenames = save_tensors(collected_tensors, experiment_dir_name)
+    os.makedirs(output_directory, exist_ok=True)
+    saved_filenames = save_tensors(collected_tensors, output_directory)
 
-    logger.info('Saved to: {0}'.format(experiment_dir_name))
+    logger.info('Saved to: {0}'.format(output_directory))
     return saved_filenames
 
 
-def save_tensors(collected_tensors, experiment_dir_name):
+def save_tensors(collected_tensors, output_directory):
     filenames = []
     for tensor_name, tensor_value in collected_tensors:
         np_filename = os.path.join(
-            experiment_dir_name,
+            output_directory,
             make_safe_filename(tensor_name) + '.npy'
         )
         np.save(np_filename, tensor_value.numpy())

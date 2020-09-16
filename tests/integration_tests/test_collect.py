@@ -48,11 +48,11 @@ def _train(input_features, output_features, data_csv, **kwargs):
     }
 
     model = LudwigModel(model_definition)
-    model.train(
+    _, _, output_dir = model.train(
         dataset=data_csv,
         **kwargs
     )
-    return model
+    return model, output_dir
 
 
 @spawn
@@ -70,15 +70,15 @@ def _collect_activations(model_path, layers, csv_filename, output_directory):
 
 
 def test_collect_weights(csv_filename):
-    model = None
+    output_dir = None
     try:
         # This will reset the layer numbering scheme TensorFlow uses.
         # Otherwise, when we load the model, its layer names will be appended
         # with "_1".
         tf.keras.backend.reset_uids()
 
-        model = _train(*_prepare_data(csv_filename))
-        model_path = os.path.join(model.exp_dir_name, 'model')
+        model, output_dir = _train(*_prepare_data(csv_filename))
+        model_path = os.path.join(output_dir, 'model')
         weights = [w for name, w in model.model.collect_weights()]
 
         #  1 for the encoder (embeddings),
@@ -102,20 +102,20 @@ def test_collect_weights(csv_filename):
                 assert np.allclose(weight.numpy(), saved_weight,
                                    rtol=1.e-4), filename
     finally:
-        if model and model.exp_dir_name:
-            shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        if output_dir:
+            shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def test_collect_activations(csv_filename):
-    model = None
+    output_dir = None
     try:
         # This will reset the layer numbering scheme TensorFlow uses.
         # Otherwise, when we load the model, its layer names will be appended
         # with "_1".
         tf.keras.backend.reset_uids()
 
-        model = _train(*_prepare_data(csv_filename))
-        model_path = os.path.join(model.exp_dir_name, 'model')
+        model, output_dir = _train(*_prepare_data(csv_filename))
+        model_path = os.path.join(output_dir, 'model')
 
         layers = _get_layers(model_path)
         assert len(layers) > 0
@@ -128,5 +128,5 @@ def test_collect_activations(csv_filename):
                                              output_directory)
             assert len(filenames) > len(layers)
     finally:
-        if model and model.exp_dir_name:
-            shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        if output_dir:
+            shutil.rmtree(output_dir, ignore_errors=True)

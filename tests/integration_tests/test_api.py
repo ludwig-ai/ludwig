@@ -40,25 +40,25 @@ def run_api_experiment(input_features, output_features, data_csv):
     }
 
     model = LudwigModel(model_definition)
+    output_dir = None
 
     try:
         # Training with csv
-        model.train(
+        _, _, output_dir = model.train(
             dataset=data_csv,
             skip_save_processed_input=True,
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-
         model.predict(dataset=data_csv)
     finally:
         # Remove results/intermediate data saved to disk
-        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        shutil.rmtree(output_dir, ignore_errors=True)
 
     try:
         # Training with dataframe
         data_df = read_csv(data_csv)
-        model.train(
+        _, _, output_dir = model.train(
             dataset=data_df,
             skip_save_processed_input=True,
             skip_save_progress=True,
@@ -66,7 +66,7 @@ def run_api_experiment(input_features, output_features, data_csv):
         )
         model.predict(dataset=data_df)
     finally:
-        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def run_api_experiment_separated_datasets(
@@ -100,6 +100,7 @@ def run_api_experiment_separated_datasets(
     train_fname = basename + '.train' + ext
     val_fname = basename + '.validation' + ext
     test_fname = basename + '.test' + ext
+    output_dirs = []
 
     try:
         train_df.to_csv(train_fname)
@@ -107,20 +108,24 @@ def run_api_experiment_separated_datasets(
         test_df.to_csv(test_fname)
 
         # Training with csv
-        model.train(
+        _, _, output_dir = model.train(
             training_set=train_fname,
             skip_save_processed_input=True,
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-        model.train(
+        output_dirs.append(output_dir)
+
+        _, _, output_dir = model.train(
             training_set=train_fname,
             validation_set=val_fname,
             skip_save_processed_input=True,
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-        model.train(
+        output_dirs.append(output_dir)
+
+        _, _, output_dir = model.train(
             training_set=train_fname,
             validation_set=val_fname,
             test_set=test_fname,
@@ -128,30 +133,39 @@ def run_api_experiment_separated_datasets(
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
+        output_dirs.append(output_dir)
 
-        model.predict(dataset=test_fname)
+        _, output_dir = model.predict(dataset=test_fname)
+        output_dirs.append(output_dir)
+
     finally:
         # Remove results/intermediate data saved to disk
         os.remove(train_fname)
         os.remove(val_fname)
         os.remove(test_fname)
-        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        for output_dir in output_dirs:
+            shutil.rmtree(output_dir, ignore_errors=True)
 
+    output_dirs = []
     try:
-        model.train(
+        _, _, output_dir = model.train(
             training_set=train_df,
             skip_save_processed_input=True,
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-        model.train(
+        output_dirs.append(output_dir)
+
+        _, _, output_dir = model.train(
             training_set=train_df,
             validation_set=validation_df,
             skip_save_processed_input=True,
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-        model.train(
+        output_dirs.append(output_dir)
+
+        _, _, output_dir = model.train(
             training_set=train_df,
             validation_set=validation_df,
             test_set=test_df,
@@ -159,9 +173,14 @@ def run_api_experiment_separated_datasets(
             skip_save_progress=True,
             skip_save_unprocessed_output=True
         )
-        model.predict(dataset=data_df)
+        output_dirs.append(output_dir)
+
+        _, output_dir = model.predict(dataset=data_df)
+        output_dirs.append(output_dir)
+
     finally:
-        shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+        for output_dir in output_dirs:
+            shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def test_api_intent_classification(csv_filename):

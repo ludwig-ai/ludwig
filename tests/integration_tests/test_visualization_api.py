@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import glob
+import os
 import shutil
 
 import numpy as np
@@ -70,14 +71,15 @@ class Experiment:
         self.input_features[0]['encoder'] = encoder
         self.model = self._create_model()
         test_df, train_df, val_df = obtain_df_splits(data_csv)
-        self.train_stats, _ = self.model.train(
+        self.train_stats, _, self.output_dir = self.model.train(
             training_set=train_df,
             validation_set=val_df
         )
-        self.test_stats_full, predictions = self.model.evaluate(
+        self.test_stats_full, predictions, self.output_dir = self.model.evaluate(
             dataset=test_df,
             collect_overall_stats=True,
             collect_predictions=True,
+            output_directory=self.output_dir
         )
         self.output_feature_name = self.output_features[0]['name']
         # probabilities need to be list of lists containing each row data
@@ -88,12 +90,14 @@ class Experiment:
         self.ground_truth_metadata = self.model.training_set_metadata
         target_predictions = test_df[self.output_feature_name]
         self.ground_truth = np.asarray([
-            self.ground_truth_metadata[self.output_feature_name]['str2idx'][test_row]
+            self.ground_truth_metadata[self.output_feature_name]['str2idx'][
+                test_row]
             for test_row in target_predictions
         ])
         self.prediction_raw = predictions.iloc[:, 0].tolist()
         self.prediction = np.asarray([
-            self.ground_truth_metadata[self.output_feature_name]['str2idx'][pred_row]
+            self.ground_truth_metadata[self.output_feature_name]['str2idx'][
+                pred_row]
             for pred_row in self.prediction_raw])
 
     def _create_model(self):
@@ -135,17 +139,17 @@ def test_learning_curves_vis_api(csv_filename):
     experiment = Experiment(csv_filename)
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output)
         visualize.learning_curves(
             experiment.train_stats,
             output_feature_name=None,
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 4 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_performance_vis_api(csv_filename):
@@ -159,19 +163,19 @@ def test_compare_performance_vis_api(csv_filename):
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_performance(
             [test_stats, test_stats],
             output_feature_name=None,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
@@ -184,7 +188,7 @@ def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output)
         visualize.compare_classifiers_performance_from_prob(
             [probability, probability],
@@ -192,12 +196,12 @@ def test_compare_classifier_performance_from_prob_vis_api(csv_filename):
             top_n_classes=[0],
             labels_limit=0,
             model_namess=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
@@ -210,7 +214,7 @@ def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
     prediction = experiment.prediction_raw
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output)
         visualize.compare_classifiers_performance_from_pred(
             [prediction, prediction],
@@ -219,12 +223,12 @@ def test_compare_classifier_performance_from_pred_vis_api(csv_filename):
             experiment.output_feature_name,
             labels_limit=0,
             model_namess=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifiers_performance_subset_vis_api(csv_filename):
@@ -237,7 +241,7 @@ def test_compare_classifiers_performance_subset_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output)
         visualize.compare_classifiers_performance_subset(
             [probability, probability],
@@ -246,12 +250,12 @@ def test_compare_classifiers_performance_subset_vis_api(csv_filename):
             labels_limit=0,
             subset='ground_truth',
             model_namess=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifiers_performance_changing_k_vis_api(csv_filename):
@@ -264,7 +268,7 @@ def test_compare_classifiers_performance_changing_k_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_classifiers_performance_changing_k(
@@ -273,12 +277,12 @@ def test_compare_classifiers_performance_changing_k_vis_api(csv_filename):
             top_k=3,
             labels_limit=0,
             model_namess=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
@@ -292,7 +296,7 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_classifiers_multiclass_multimetric(
@@ -301,12 +305,12 @@ def test_compare_classifiers_multiclass_multimetric_vis_api(csv_filename):
             experiment.output_feature_name,
             top_n_classes=[6],
             model_namess=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 4 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifiers_predictions_vis_api(csv_filename):
@@ -319,7 +323,7 @@ def test_compare_classifiers_predictions_vis_api(csv_filename):
     prediction = experiment.prediction
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_classifiers_predictions(
@@ -327,12 +331,12 @@ def test_compare_classifiers_predictions_vis_api(csv_filename):
             experiment.ground_truth,
             labels_limit=0,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_compare_classifiers_predictions_distribution_vis_api(csv_filename):
@@ -345,7 +349,7 @@ def test_compare_classifiers_predictions_distribution_vis_api(csv_filename):
     prediction = experiment.prediction
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.compare_classifiers_predictions_distribution(
@@ -353,12 +357,12 @@ def test_compare_classifiers_predictions_distribution_vis_api(csv_filename):
             experiment.ground_truth,
             labels_limit=0,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_confidence_thresholding_vis_api(csv_filename):
@@ -371,7 +375,7 @@ def test_confidence_thresholding_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.confidence_thresholding(
@@ -379,12 +383,12 @@ def test_confidence_thresholding_vis_api(csv_filename):
             experiment.ground_truth,
             labels_limit=0,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_confidence_thresholding_data_vs_acc_vis_api(csv_filename):
@@ -397,7 +401,7 @@ def test_confidence_thresholding_data_vs_acc_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.confidence_thresholding_data_vs_acc(
@@ -405,12 +409,12 @@ def test_confidence_thresholding_data_vs_acc_vis_api(csv_filename):
             experiment.ground_truth,
             labels_limit=0,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_confidence_thresholding_data_vs_acc_subset_vis_api(csv_filename):
@@ -423,7 +427,7 @@ def test_confidence_thresholding_data_vs_acc_subset_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.confidence_thresholding_data_vs_acc_subset(
@@ -433,12 +437,12 @@ def test_confidence_thresholding_data_vs_acc_subset_vis_api(csv_filename):
             labels_limit=0,
             subset='ground_truth',
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(
@@ -453,7 +457,7 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.confidence_thresholding_data_vs_acc_subset_per_class(
@@ -465,14 +469,14 @@ def test_confidence_thresholding_data_vs_acc_subset_per_class_vis_api(
             labels_limit=0,
             subset='ground_truth',
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         # 3 figures should be saved because experiment setting top_n_classes = 3
         # hence one figure per class
         assert 3 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
@@ -498,13 +502,14 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     input_features[0]['encoder'] = encoder
     model = run_api_experiment(input_features, output_features)
     test_df, train_df, val_df = obtain_df_splits(data_csv)
-    model.train(
+    _, _, output_dir = model.train(
         training_set=train_df,
         validation_set=val_df
     )
-    test_stats, predictions = model.evaluate(
+    test_stats, predictions, _ = model.evaluate(
         dataset=test_df,
         collect_predictions=True,
+        output_dir=output_dir
     )
 
     output_feature_name1 = output_features[0]['name']
@@ -527,19 +532,19 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     ])
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(viz_output)
+        vis_output_pattern_pdf = output_dir + '/*.{}'.format(viz_output)
         visualize.confidence_thresholding_2thresholds_2d(
             [probability1, probability2],
             [ground_truth1, ground_truth2],
             [output_feature_name1, output_feature_name2],
             labels_limit=0,
             model_names=['Model1'],
-            output_directory=model.exp_dir_name,
+            output_directory=output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 3 == len(figure_cnt)
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
@@ -565,13 +570,14 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     input_features[0]['encoder'] = encoder
     model = run_api_experiment(input_features, output_features)
     test_df, train_df, val_df = obtain_df_splits(data_csv)
-    model.train(
+    _, _, output_dir = model.train(
         training_set=train_df,
         validation_set=val_df
     )
-    test_stats, predictions = model.evaluate(
+    test_stats, predictions, _ = model.evaluate(
         dataset=test_df,
         collect_predictions=True,
+        output_directory=output_dir
     )
 
     output_feature_name1 = output_features[0]['name']
@@ -594,18 +600,20 @@ def test_confidence_thresholding_2thresholds_3d_vis_api(csv_filename):
     ])
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(viz_output)
+        vis_output_pattern_pdf = os.path.join(
+            output_dir, '*.{}'.format(viz_output)
+        )
         visualize.confidence_thresholding_2thresholds_3d(
             [probability1, probability2],
             [ground_truth1, ground_truth2],
             [output_feature_name1, output_feature_name2],
             labels_limit=0,
-            output_directory=model.exp_dir_name,
+            output_directory=output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def test_binary_threshold_vs_metric_vis_api(csv_filename):
@@ -620,7 +628,7 @@ def test_binary_threshold_vs_metric_vis_api(csv_filename):
     metrics = ['accuracy']
     positive_label = 2
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.binary_threshold_vs_metric(
@@ -629,12 +637,12 @@ def test_binary_threshold_vs_metric_vis_api(csv_filename):
             metrics,
             positive_label,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_roc_curves_vis_api(csv_filename):
@@ -648,7 +656,7 @@ def test_roc_curves_vis_api(csv_filename):
     viz_outputs = ('pdf', 'png')
     positive_label = 2
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.roc_curves(
@@ -656,12 +664,12 @@ def test_roc_curves_vis_api(csv_filename):
             experiment.ground_truth,
             positive_label,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_roc_curves_from_test_statistics_vis_api(csv_filename):
@@ -679,25 +687,26 @@ def test_roc_curves_from_test_statistics_vis_api(csv_filename):
 
     model = run_api_experiment(input_features, output_features)
     data_df = read_csv(data_csv)
-    model.train(dataset=data_df)
+    _, _, output_dir = model.train(dataset=data_df)
     # extract test metrics
-    test_stats, _ = model.evaluate(dataset=data_df,
-                                   collect_overall_stats=True)
+    test_stats, _, _ = model.evaluate(dataset=data_df,
+                                      collect_overall_stats=True,
+                                      output_directory=output_dir)
     test_stats = test_stats
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = model.exp_dir_name + '/*.{}'.format(
-            viz_output)
+        vis_output_pattern_pdf = os.path.join(output_dir, '*.{}'.format(
+            viz_output))
         visualize.roc_curves_from_test_statistics(
             [test_stats, test_stats],
             output_feature_name,
             model_names=['Model1', 'Model2'],
-            output_directory=model.exp_dir_name,
+            output_directory=output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 1 == len(figure_cnt)
-    shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(output_dir, ignore_errors=True)
 
 
 def test_calibration_1_vs_all_vis_api(csv_filename):
@@ -710,8 +719,8 @@ def test_calibration_1_vs_all_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
-            viz_output
+        vis_output_pattern_pdf = os.path.join(
+            experiment.output_dir, '*.{}'.format(viz_output)
         )
         visualize.calibration_1_vs_all(
             [probability, probability],
@@ -719,12 +728,12 @@ def test_calibration_1_vs_all_vis_api(csv_filename):
             top_n_classes=[6],
             labels_limit=0,
             model_namess=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 7 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_calibration_multiclass_vis_api(csv_filename):
@@ -737,7 +746,7 @@ def test_calibration_multiclass_vis_api(csv_filename):
     probability = experiment.probability
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.calibration_multiclass(
@@ -745,12 +754,12 @@ def test_calibration_multiclass_vis_api(csv_filename):
             experiment.ground_truth,
             labels_limit=0,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 2 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_confusion_matrix_vis_api(csv_filename):
@@ -764,7 +773,7 @@ def test_confusion_matrix_vis_api(csv_filename):
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.confusion_matrix(
@@ -774,12 +783,12 @@ def test_confusion_matrix_vis_api(csv_filename):
             top_n_classes=[0],
             normalize=False,
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 4 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)
 
 
 def test_frequency_vs_f1_vis_api(csv_filename):
@@ -793,7 +802,7 @@ def test_frequency_vs_f1_vis_api(csv_filename):
     test_stats = experiment.test_stats_full
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = experiment.model.exp_dir_name + '/*.{}'.format(
+        vis_output_pattern_pdf = experiment.output_dir + '/*.{}'.format(
             viz_output
         )
         visualize.frequency_vs_f1(
@@ -802,9 +811,9 @@ def test_frequency_vs_f1_vis_api(csv_filename):
             experiment.output_feature_name,
             top_n_classes=[0],
             model_names=['Model1', 'Model2'],
-            output_directory=experiment.model.exp_dir_name,
+            output_directory=experiment.output_dir,
             file_format=viz_output
         )
         figure_cnt = glob.glob(vis_output_pattern_pdf)
         assert 2 == len(figure_cnt)
-    shutil.rmtree(experiment.model.exp_dir_name, ignore_errors=True)
+    shutil.rmtree(experiment.output_dir, ignore_errors=True)

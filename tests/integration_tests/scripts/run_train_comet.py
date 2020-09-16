@@ -59,6 +59,7 @@ def run(csv_filename):
     }
 
     model = LudwigModel(model_definition)
+    output_dir = None
 
     # Wrap these methods so we can check that they were called
     comet_instance.train_init = Mock(side_effect=comet_instance.train_init)
@@ -67,11 +68,11 @@ def run(csv_filename):
     with patch('comet_ml.Experiment.log_asset_data') as mock_log_asset_data:
         try:
             # Training with csv
-            model.train(dataset=data_csv)
+            _, _, output_dir = model.train(dataset=data_csv)
             model.predict(dataset=data_csv)
         finally:
-            if model.exp_dir_name:
-                shutil.rmtree(model.exp_dir_name, ignore_errors=True)
+            if output_dir:
+                shutil.rmtree(output_dir, ignore_errors=True)
 
     # Verify that the experiment was created successfully
     assert comet_instance.cometml_experiment is not None

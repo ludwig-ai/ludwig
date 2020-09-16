@@ -133,10 +133,10 @@ class Comet():
                 self.cometml_experiment.log_asset_data(model_definition,
                                                        base_name)
 
-    def train_save(self, experiment_dir_name, *args, **kwargs):
+    def train_save(self, output_directory, *args, **kwargs):
         logger.info("comet.train_save() called......")
         if self.cometml_experiment:
-            self.cometml_experiment.log_asset_folder(experiment_dir_name)
+            self.cometml_experiment.log_asset_folder(output_directory)
 
     def train_epoch_end(self, progress_tracker):
         """
@@ -170,9 +170,9 @@ class Comet():
 
     def experiment_save(self, *args, **kwargs):
         logger.info("comet.experiment_save() called......")
-        experiment_dir_name = args[0]
+        output_directory = args[0]
         if self.cometml_experiment:
-            self.cometml_experiment.log_asset_folder(experiment_dir_name)
+            self.cometml_experiment.log_asset_folder(output_directory)
 
     def visualize(self, *args, **kwargs):
         import comet_ml

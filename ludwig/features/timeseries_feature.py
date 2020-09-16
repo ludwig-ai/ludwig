@@ -413,7 +413,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             self,
 #             result,
 #             metadata,
-#             experiment_dir_name,
+#             output_directory,
 #             skip_save_unprocessed_output=False,
 #     ):
 #         pass

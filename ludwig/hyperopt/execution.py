@@ -664,7 +664,6 @@ def train_and_eval_on_split(
 ):
     # Collect training and validation losses and metrics
     # & append it to `results`
-    # ludwig_model = LudwigModel(modified_model_definition)
     model = LudwigModel(
         model_definition=model_definition,
         use_horovod=use_horovod,
@@ -674,7 +673,7 @@ def train_and_eval_on_split(
         random_seed=random_seed
     )
 
-    train_stats, preprocessed_data = model.train(
+    train_stats, preprocessed_data, _ = model.train(
         dataset=dataset,
         training_set=training_set,
         validation_set=validation_set,
@@ -708,7 +707,7 @@ def train_and_eval_on_split(
     elif eval_split == TEST:
         eval_set = test_set
 
-    test_results, postproc_predictions = model.evaluate(
+    test_results, postproc_predictions, _ = model.evaluate(
         dataset=eval_set,
         data_format=data_format,
         batch_size=batch_size,
