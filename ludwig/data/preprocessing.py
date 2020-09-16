@@ -392,6 +392,16 @@ def preprocess_for_training(
                 data_format = 'hdf5'
 
     if data_format in DATAFRAME_FORMATS:
+        num_overrides = override_in_memory_flag(
+            model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported '
+                'with {} data format.'.format(data_format)
+            )
+
         (
             training_set,
             test_set,

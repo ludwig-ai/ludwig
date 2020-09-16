@@ -285,11 +285,6 @@ class ImageFeatureMixin(object):
         all_file_paths = [get_abs_path(csv_path, file_path)
                           for file_path in dataset_df[feature['name']]]
 
-        # check if original data source of the dataframe is csv dataset
-        if not hasattr(dataset_df, 'csv'):
-            # not csv source, override in_memory and set to True
-            feature['preprocessing']['in_memory'] = True
-
         if feature['preprocessing']['in_memory']:
             # Number of processes to run in parallel for preprocessing
             num_processes = feature['preprocessing']['num_processes']
