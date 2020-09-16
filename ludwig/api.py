@@ -734,11 +734,11 @@ class LudwigModel:
             #                          allow_parallel_threads=allow_parallel_threads)
 
             # predict
-            test_results = self.evaluate(
+            test_results, _, _ = self.evaluate(
                 test_set,
                 data_format=data_format,
                 batch_size=batch_size,
-                output_directory=experiment_name,
+                output_directory=output_directory,
                 skip_save_unprocessed_output=skip_save_unprocessed_output,
                 skip_save_predictions=skip_save_predictions,
                 skip_save_eval_stats=skip_save_eval_stats,
