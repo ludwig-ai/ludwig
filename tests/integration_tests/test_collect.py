@@ -58,7 +58,7 @@ def _train(input_features, output_features, data_csv, **kwargs):
 @spawn
 def _get_layers(model_path):
     model = LudwigModel.load(model_path)
-    keras_model = model.model.get_connected_model()
+    keras_model = model.model.get_connected_model(training=False)
     return [layer.name for layer in keras_model.layers]
 
 

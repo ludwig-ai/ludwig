@@ -817,10 +817,7 @@ class LudwigModel:
             dataset=dataset,
             data_format=data_format,
             training_set_metadata=self.training_set_metadata,
-            # todo refactoring: we shouldn't need to include the outputs
-            #  we want to collect activations also using loaded models
-            #  on unseen test sets
-            include_outputs=True,
+            include_outputs=False,
         )
 
         logger.debug('Predicting')

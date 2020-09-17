@@ -179,8 +179,9 @@ class Predictor:
 
         # Build static graph for the trained model
         tf.keras.backend.reset_uids()
-        keras_model_inputs = model.get_model_inputs()
-        keras_model = model.get_connected_model(inputs=keras_model_inputs)
+        keras_model_inputs = model.get_model_inputs(training=False)
+        keras_model = model.get_connected_model(inputs=keras_model_inputs,
+                                                training=False)
 
         # Create a new model that routes activations to outputs
         tf.keras.backend.reset_uids()
@@ -210,13 +211,7 @@ class Predictor:
                 i_feat.feature_name: batch[i_feat.feature_name]
                 for i_feat in model.input_features.values()
             }
-            targets = {
-                o_feat.feature_name: batch[o_feat.feature_name]
-                for o_feat in model.output_features.values()
-            }
-
-            input_tuple = (inputs, targets)
-            outputs = activation_model(input_tuple)
+            outputs = activation_model(inputs)
 
             for layer_name, output in outputs.items():
                 if isinstance(output, tuple):

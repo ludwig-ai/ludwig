@@ -149,7 +149,7 @@ def print_model_summary(
     collected_tensors = model.collect_weights()
     names = [name for name, w in collected_tensors]
 
-    keras_model = model.model.get_connected_model()
+    keras_model = model.model.get_connected_model(training=False)
     keras_model.summary()
 
     print('\nLayers:\n')
