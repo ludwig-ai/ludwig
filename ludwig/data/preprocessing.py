@@ -755,8 +755,6 @@ def preprocess_for_prediction(
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
 
-    hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
-
     # determine data format if not provided or auto
     if not data_format or data_format == 'auto':
         data_format = figure_data_format(dataset)
@@ -781,6 +779,8 @@ def preprocess_for_prediction(
     # if training_set_metadata is a string, assume it's a path to load the json
     if training_set_metadata and isinstance(training_set_metadata, str):
         training_set_metadata = load_metadata(training_set_metadata)
+
+    hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP, None)
 
     # setup
     output_features = []
