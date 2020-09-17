@@ -132,6 +132,9 @@ class LudwigModel:
         self.model = None
         self.training_set_metadata = None
 
+        # online training state
+        self._online_trainer = None
+
     def train(
             self,
             dataset=None,
@@ -444,15 +447,60 @@ class LudwigModel:
 
         return train_stats, preprocessed_data, output_directory
 
-    # todo refactoring: reintroduce the train_online functionality?
-    def train_online(self):
-        pass
+    def train_online(self,
+                     dataset,
+                     training_set_metadata=None,
+                     data_format='auto',
+                     random_seed=default_random_seed,
+                     debug=False):
+        """Performs one epoch of training of the model on `dataset`.
 
-    # def predict_pseudo(self, data):
-    #     preproc_data = preprocess_data(data)
-    #     preds = self.model.batch_predict(preproc_data)
-    #     postproc_preds = postprocess_data(preds)
-    #     return postproc_preds
+        :param dataset: (string, dict, DataFrame) source containing the training dataset.
+        :param training_set_metadata: (string, dict) metadata JSON file or loaded metadata.
+               Intermediate preprocess structure containing the mappings of the input
+               CSV created the first time a CSV file is used in the same
+               directory with the same name and a '.json' extension.
+        :param data_format: (string) format to interpret data sources. Will be inferred
+               automatically if not specified.
+        :param random_seed: (int, default`42`) a random seed that is going to be
+               used anywhere there is a call to a random number generator: data
+               splitting, parameter initialization and training set shuffling
+        :param debug: (bool, default: `False`) enables debugging mode
+
+        """
+        training_set_metadata = training_set_metadata or self.training_set_metadata
+        training_dataset, _, _, training_set_metadata = preprocess_for_training(
+            self.model_definition,
+            training_set=dataset,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            skip_save_processed_input=True,
+            preprocessing_params=self.model_definition[PREPROCESSING],
+            random_seed=random_seed
+        )
+
+        if not self.training_set_metadata:
+            self.training_set_metadata = training_set_metadata
+
+        if not self.model:
+            update_model_definition_with_metadata(
+                self.model_definition,
+                training_set_metadata
+            )
+            self.model = LudwigModel.create_model(self.model_definition)
+
+        if not self._online_trainer:
+            self._online_trainer = Trainer(
+                **self.model_definition[TRAINING],
+                random_seed=random_seed,
+                horoovd=self._horovod,
+                debug=debug
+            )
+
+        self._online_trainer.train_online(
+            self.model,
+            training_dataset,
+        )
 
     def predict(
             self,

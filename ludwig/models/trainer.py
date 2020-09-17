@@ -717,12 +717,10 @@ class Trainer:
             self,
             model,
             dataset,
-            batch_size=128,
-            regularization_lambda=0.0,
-            bucketing_field=None
     ):
         batcher = initialize_batcher(
-            dataset, batch_size, bucketing_field,
+            dataset,
+            self._batch_size,
             horovod=self._horovod
         )
 
@@ -738,18 +736,18 @@ class Trainer:
             batch = batcher.next_batch()
             inputs = {
                 i_feat.feature_name: batch[i_feat.feature_name]
-                for i_feat in model.input_features
+                for i_feat in model.input_features.values()
             }
             targets = {
                 o_feat.feature_name: batch[o_feat.feature_name]
-                for o_feat in model.output_features
+                for o_feat in model.output_features.values()
             }
 
             model.train_step(
                 self._optimizer,
                 inputs,
                 targets,
-                regularization_lambda
+                self._regularization_lambda
             )
 
             progress_bar.update(1)

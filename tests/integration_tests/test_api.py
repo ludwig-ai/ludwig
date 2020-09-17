@@ -220,3 +220,20 @@ def test_api_intent_classification_separated(csv_filename):
         run_api_experiment_separated_datasets(
             input_features, output_features, data_csv=rel_path
         )
+
+
+def test_api_train_online(csv_filename):
+    input_features = [sequence_feature(reduce_output='sum')]
+    output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+    data_csv = generate_data(input_features, output_features, csv_filename)
+
+    model_definition = {
+        'input_features': input_features,
+        'output_features': output_features,
+        'combiner': {'type': 'concat', 'fc_size': 14},
+    }
+    model = LudwigModel(model_definition)
+
+    for i in range(2):
+        model.train_online(dataset=data_csv)
+    model.predict(dataset=data_csv)
