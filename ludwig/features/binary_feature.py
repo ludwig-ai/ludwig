@@ -27,7 +27,7 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix

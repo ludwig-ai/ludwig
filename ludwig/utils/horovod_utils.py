@@ -15,6 +15,20 @@
 # ==============================================================================
 
 import os
+import time
+
+try:
+    import horovod.tensorflow
+    _HVD = horovod.tensorflow
+except (ModuleNotFoundError, ImportError):
+    _HVD = None
+
+ON_MASTER = True
+
+
+def configure_horovod(use_horovod):
+    set_on_master(use_horovod)
+    return _HVD if should_use_horovod(use_horovod) else None
 
 
 def should_use_horovod(use_horovod):
@@ -27,3 +41,34 @@ def should_use_horovod(use_horovod):
 def has_horovodrun():
     """Returns True if running with `horovodrun` using Gloo or OpenMPI."""
     return 'OMPI_COMM_WORLD_RANK' in os.environ or 'HOROVOD_RANK' in os.environ
+
+
+def broadcast_return(fn, horovod):
+    """Returns the result of calling `fn` on master, broadcasted to all other ranks.
+
+    Specifically, `fn` is only executed on master, but its result is returned by every
+    rank by broadcasting the return value from master.
+    """
+    result = fn() if is_on_master() else None
+    if horovod:
+        name = f'broadcast_return_{int(time.time())}'
+        result = _HVD.broadcast_object(result, name=name)
+    return result
+
+
+def set_on_master(use_horovod):
+    global ON_MASTER
+    if should_use_horovod(use_horovod):
+        if not _HVD:
+            raise ValueError("use_horovod parameter specified, "
+                             "but cannot import horovod.tensorflow. "
+                             "Install horovod following the instructions at: "
+                             " https://github.com/horovod/horovod")
+        _HVD.init()
+        ON_MASTER = _HVD.rank() == 0
+    else:
+        ON_MASTER = True
+
+
+def is_on_master():
+    return ON_MASTER

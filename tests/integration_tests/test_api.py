@@ -16,6 +16,8 @@
 import os
 import shutil
 
+import numpy as np
+
 from ludwig.api import LudwigModel
 from ludwig.utils.data_utils import read_csv
 from tests.integration_tests.utils import ENCODERS
@@ -51,6 +53,17 @@ def run_api_experiment(input_features, output_features, data_csv):
             skip_save_unprocessed_output=True
         )
         model.predict(dataset=data_csv)
+
+        model_dir = os.path.join(output_dir, 'model')
+        loaded_model = LudwigModel.load(model_dir)
+
+        # Necessary before call to get_weights() to materialize the weights
+        loaded_model.predict(dataset=data_csv)
+
+        model_weights = model.model.get_weights()
+        loaded_weights = loaded_model.model.get_weights()
+        for model_weight, loaded_weight in zip(model_weights, loaded_weights):
+            assert np.allclose(model_weight, loaded_weight)
     finally:
         # Remove results/intermediate data saved to disk
         shutil.rmtree(output_dir, ignore_errors=True)

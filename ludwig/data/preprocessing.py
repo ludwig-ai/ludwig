@@ -29,7 +29,7 @@ from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry, \
     input_type_registry
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format, \
     DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \

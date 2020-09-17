@@ -31,7 +31,7 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.metric_modules import ErrorScore
 from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.misc_utils import set_default_value

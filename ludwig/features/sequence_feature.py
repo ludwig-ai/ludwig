@@ -31,7 +31,7 @@ from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SequenceLoss
 from ludwig.modules.metric_modules import EditDistanceMetric

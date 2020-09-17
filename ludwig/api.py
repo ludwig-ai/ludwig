@@ -26,11 +26,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
 import copy
 import logging
 import os
-import sys
 import tempfile
 from pprint import pformat
 
@@ -48,8 +46,7 @@ from ludwig.data.preprocessing import preprocess_for_training, \
     preprocess_for_prediction, load_metadata
 from ludwig.features.feature_registries import \
     update_model_definition_with_metadata
-from ludwig.globals import set_on_master, is_on_master, \
-    TRAIN_SET_METADATA_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, \
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, \
     MODEL_WEIGHTS_FILE_NAME, set_disable_progressbar
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor, save_prediction_outputs, \
@@ -57,7 +54,8 @@ from ludwig.models.predictor import Predictor, save_prediction_outputs, \
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json, load_json, generate_kfold_splits
-from ludwig.utils.horovod_utils import should_use_horovod
+from ludwig.utils.horovod_utils import broadcast_return, configure_horovod, set_on_master, \
+    is_on_master
 from ludwig.utils.misc_utils import get_output_directory, get_file_names, \
     get_experiment_description
 from ludwig.utils.tf_utils import initialize_tensorflow
@@ -65,13 +63,12 @@ from ludwig.utils.tf_utils import initialize_tensorflow
 import yaml
 
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
-from ludwig.utils.print_utils import logging_level_registry, print_boxed
+from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)
 
 
 class LudwigModel:
-
     def __init__(self,
                  model_definition=None,
                  model_definition_fp=None,
@@ -82,8 +79,9 @@ class LudwigModel:
                  allow_parallel_threads=True,
                  random_seed=default_random_seed):
         """
-        :param model_definition: (dict) in-memory representation of model definition.
-        :param model_definition_fp: (string) path to model definition file.
+        :param model_definition: (dict, string) in-memory representation of model definition
+               or string path to the saved JSON model definition file.
+        :param model_definition_fp: (string) path to user-defined definition YAML file.
         :param logging_level: Log level that will be sent to stderr.
         :param use_horovod: (bool) use Horovod for distributed training. Will be set
                automatically if `horovodrun` is used to launch the training script.
@@ -117,14 +115,7 @@ class LudwigModel:
         self.model_definition_fp = model_definition_fp
 
         # setup horovod
-        self._horovod = None
-        if should_use_horovod(use_horovod):
-            import horovod.tensorflow
-            self._horovod = horovod.tensorflow
-            self._horovod.init()
-        # todo refactoring: figure out it this belongs here or
-        #  in Trainer and Predictor. It probably belongs here
-        set_on_master(use_horovod)
+        self._horovod = configure_horovod(use_horovod)
 
         # setup logging
         self.set_logging_level(logging_level)
@@ -447,6 +438,10 @@ class LudwigModel:
 
         self.training_set_metadata = training_set_metadata
 
+        if not skip_save_model:
+            # Load the best weights from saved checkpoint
+            self.load_weights(model_dir)
+
         return train_stats, preprocessed_data, output_directory
 
     # todo refactoring: reintroduce the train_online functionality?
@@ -723,16 +718,6 @@ class LudwigModel:
             else:
                 batch_size = self.model_definition[TRAINING]['batch_size']
 
-            # todo tf2 refactor: figure out where this goes given NewLudwigModel
-            # if a model was saved on disk, reload it
-            # model_dir = os.path.join(output_directory, 'model')
-            # if is_model_dir(model_dir):
-            #     model = NewLudwigModel.load(model_dir,
-            #                          use_horovod=use_horovod,
-            #                          gpus=gpus,
-            #                          gpu_memory_limit=gpu_memory_limit,
-            #                          allow_parallel_threads=allow_parallel_threads)
-
             # predict
             test_results, _, _ = self.evaluate(
                 test_set,
@@ -811,7 +796,6 @@ class LudwigModel:
              allow_parallel_threads=True):
         """This function allows for loading pretrained models
 
-
         # Inputs
 
         :param model_dir: (string) path to the directory containing the model.
@@ -837,13 +821,11 @@ class LudwigModel:
         ```
 
         """
-        # load model definition
-        model_definition = load_json(
-            os.path.join(
-                model_dir,
-                MODEL_HYPERPARAMETERS_FILE_NAME
-            )
-        )
+        horovod = configure_horovod(use_horovod)
+        model_definition = broadcast_return(lambda: load_json(os.path.join(
+            model_dir,
+            MODEL_HYPERPARAMETERS_FILE_NAME
+        )), horovod)
 
         # initialize model
         ludwig_model = LudwigModel(
@@ -859,21 +841,33 @@ class LudwigModel:
         ludwig_model.model = LudwigModel.create_model(model_definition)
 
         # load model weights
-        weights_save_path = os.path.join(
-            model_dir,
-            MODEL_WEIGHTS_FILE_NAME
-        )
-        ludwig_model.model.load_weights(weights_save_path)
+        ludwig_model.load_weights(model_dir)
 
         # load train set metadata
-        ludwig_model.training_set_metadata = load_metadata(
-            os.path.join(
-                model_dir,
-                TRAIN_SET_METADATA_FILE_NAME
-            )
+        ludwig_model.training_set_metadata = broadcast_return(
+            lambda: load_metadata(
+                os.path.join(
+                    model_dir,
+                    TRAIN_SET_METADATA_FILE_NAME
+                )
+            ), horovod
         )
 
         return ludwig_model
+
+    def load_weights(self, model_dir):
+        if is_on_master():
+            weights_save_path = os.path.join(
+                model_dir,
+                MODEL_WEIGHTS_FILE_NAME
+            )
+            self.model.load_weights(weights_save_path)
+
+        if self._horovod:
+            # Model weights are only saved on master, so broadcast
+            # to all other ranks
+            self._horovod.broadcast_variables(self.model.variables,
+                                              root_rank=0)
 
     def save(self, save_path):
         """This function allows to save models on disk
@@ -1157,222 +1151,3 @@ def kfold_cross_validate(
     logger.info('completed {:d}-fold cross validation'.format(num_folds))
 
     return kfold_cv_stats, kfold_split_indices
-
-
-# todo refactoring: this shouldn't exist,
-#  all api tests should be done in a proper integration test,
-#  move there if needed
-def test_train(
-        data_csv,
-        model_definition,
-        batch_size=128,
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        debug=False,
-        logging_level=logging.ERROR,
-        **kwargs
-):
-    model = LudwigModel(
-        model_definition=model_definition,
-        logging_level=logging_level,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-    )
-
-    train_stats, _ = model.train(
-        dataset=data_csv,
-        debug=debug,
-    )
-
-    logger.critical(train_stats)
-
-    # predict
-    predictions = model.predict(
-        dataset=data_csv,
-        batch_size=batch_size
-    )
-
-    logger.critical(predictions)
-
-
-# todo refactoring: this shouldn't exist,
-#  all api tests should be done in a proper integration test,
-#  move there if needed
-def test_train_online(
-        data_csv,
-        model_definition,
-        batch_size=128,
-        debug=False,
-        logging_level=logging.ERROR,
-        **kwargs
-):
-    # todo refactoring
-    # model_definition = merge_with_defaults(model_definition)
-    # data, train_set_metadata = build_dataset(
-    #     data_csv,
-    #     (model_definition['input_features'] +
-    #      model_definition['output_features']),
-    #     model_definition['preprocessing']
-    # )
-    #
-    # ludwig_model = NewLudwigModel(model_definition, logging_level=logging_level)
-    # ludwig_model.initialize_model(train_set_metadata=train_set_metadata)
-    #
-    # ludwig_model.train_online(
-    #     data_csv=data_csv,
-    #     batch_size=128,
-    # )
-    # ludwig_model.train_online(
-    #     data_csv=data_csv,
-    #     batch_size=128,
-    # )
-    #
-    # # predict
-    # predictions = ludwig_model.predict(
-    #     data_csv=data_csv,
-    #     batch_size=batch_size,
-    # )
-    # ludwig_model.close()
-    # logger.critical(predictions)
-    pass
-
-
-# todo refactoring: this shouldn't exist,
-#  all api tests should be done in a proper integration test,
-#  move there if needed
-def test_predict(
-        data_csv,
-        model_path,
-        batch_size=128,
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        logging_level=logging.ERROR,
-        **kwargs
-):
-    ludwig_model = LudwigModel.load(
-        model_path,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        logging_level=logging_level)
-
-    predictions = ludwig_model.predict(
-        data_csv=data_csv,
-        batch_size=batch_size,
-    )
-
-    ludwig_model.close()
-    logger.critical(predictions)
-
-    predictions = ludwig_model.predict(
-        data_csv=data_csv,
-        batch_size=batch_size,
-    )
-
-    logger.critical(predictions)
-
-
-# todo(refactoring): this shouldn't exist,
-#  all api tests should be done in a proper integration test,
-#  move there if needed
-def main(sys_argv):
-    parser = argparse.ArgumentParser(
-        description='This script tests ludwig APIs.'
-    )
-
-    parser.add_argument(
-        '-t',
-        '--test',
-        default='train',
-        choices=['train', 'train_online', 'predict'],
-        help='which test to run'
-    )
-
-    # ---------------
-    # Data parameters
-    # ---------------
-    parser.add_argument('--data_csv', help='input data CSV file')
-    parser.add_argument(
-        '--train_set_metadata_json',
-        help='input metadata JSON file'
-    )
-
-    # ----------------
-    # Model parameters
-    # ----------------
-    parser.add_argument('-m', '--model_path', help='model to load')
-    parser.add_argument(
-        '-md',
-        '--model_definition',
-        type=yaml.safe_load,
-        help='model definition'
-    )
-
-    # ------------------
-    # Generic parameters
-    # ------------------
-    parser.add_argument(
-        '-bs',
-        '--batch_size',
-        type=int,
-        default=128,
-        help='size of batches'
-    )
-
-    # ------------------
-    # Runtime parameters
-    # ------------------
-    parser.add_argument(
-        '-g',
-        '--gpus',
-        type=int,
-        default=None,
-        help='list of gpu to use'
-    )
-    parser.add_argument(
-        '-gml',
-        '--gpu_memory_limit',
-        type=int,
-        default=None,
-        help='maximum memory in MB to allocate per GPU device'
-    )
-    parser.add_argument(
-        '-dpt',
-        '--disable_parallel_threads',
-        action='store_false',
-        dest='allow_parallel_threads',
-        help='disable TensorFlow from using multithreading for reproducibility'
-    )
-    parser.add_argument(
-        '-dbg',
-        '--debug',
-        action='store_true',
-        default=False,
-        help='enables debugging mode'
-    )
-    parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
-    )
-
-    args = parser.parse_args(sys_argv)
-    args.logging_level = logging_level_registry[args.logging_level]
-
-    if args.test == 'train':
-        test_train(**vars(args))
-    elif args.test == 'train_online':
-        test_train_online(**vars(args))
-    elif args.test == 'predict':
-        test_predict(**vars(args))
-    else:
-        logger.info('Unsupported test type')
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
