@@ -334,6 +334,7 @@ class ImageFeatureMixin(object):
                     image_dataset[i, :height, :width, :] = (
                         read_image_and_resize(filepath)
                     )
+                h5_file.flush()
 
             dataset[feature['name']] = np.arange(num_images)
 

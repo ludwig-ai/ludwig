@@ -370,8 +370,10 @@ def preprocess_for_training(
                     'of the csv, using them instead'
                 )
                 dataset = replace_file_extension(dataset, 'hdf5')
-                training_set_metadata_fname = replace_file_extension(dataset, 'json')
-                training_set_metadata = data_utils.load_json(training_set_metadata_fname)
+                training_set_metadata_fname = replace_file_extension(dataset,
+                                                                     'json')
+                training_set_metadata = data_utils.load_json(
+                    training_set_metadata_fname)
                 model_definition['data_hdf5_fp'] = dataset
                 data_format = 'hdf5'
 
@@ -383,8 +385,10 @@ def preprocess_for_training(
                     'of the csv, using them instead'
                 )
                 training_set = replace_file_extension(training_set, 'hdf5')
-                training_set_metadata_fname = replace_file_extension(training_set, 'json')
-                training_set_metadata = data_utils.load_json(training_set_metadata_fname)
+                training_set_metadata_fname = replace_file_extension(
+                    training_set, 'json')
+                training_set_metadata = data_utils.load_json(
+                    training_set_metadata_fname)
                 validation_set = replace_file_extension(validation_set,
                                                         'hdf5')
                 test_set = replace_file_extension(test_set, 'hdf5')
@@ -448,6 +452,24 @@ def preprocess_for_training(
                              'training_set_metadata must not be None.')
 
         logger.info('Using full hdf5 and json')
+
+        if DATA_TRAIN_HDF5_FP not in training_set_metadata:
+            logger.warning(
+                'data_train_hdf5_fp not present in training_set_metadata. '
+                'Adding it with the current HDF5 file path {}'.format(dataset)
+            )
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
+        elif training_set_metadata[DATA_TRAIN_HDF5_FP] != dataset:
+            logger.warning(
+                'data_train_hdf5_fp in training_set_metadata is {}, '
+                'different from the current HDF5 file path {}. '
+                'Replacing it'.format(
+                    training_set_metadata[DATA_TRAIN_HDF5_FP],
+                    dataset
+                )
+            )
+            training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
+
         training_set, test_set, validation_set = load_hdf5(
             dataset,
             model_definition['input_features'],
@@ -456,6 +478,16 @@ def preprocess_for_training(
         )
 
     elif data_format in DICT_FORMATS:
+        num_overrides = override_in_memory_flag(
+            model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported '
+                'with {} data format.'.format(data_format)
+            )
+
         dataset = dataset or pd.DataFormat(dataset)
         training_set = training_set or pd.DataFrame(training_set)
         validation_set = validation_set or pd.DataFrame(validation_set)
@@ -723,6 +755,8 @@ def preprocess_for_prediction(
     if isinstance(dataset, Dataset):
         return dataset, training_set_metadata
 
+    hdf5_fp = training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+
     # determine data format if not provided or auto
     if not data_format or data_format == 'auto':
         data_format = figure_data_format(dataset)
@@ -785,16 +819,7 @@ def preprocess_for_prediction(
         )
 
     elif data_format in HDF5_FORMATS:
-        num_overrides = override_in_memory_flag(
-            model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported '
-                'with {} data format.'.format(data_format)
-            )
-
+        hdf5_fp = dataset
         dataset = load_hdf5(
             dataset,
             model_definition['input_features'],
@@ -822,7 +847,7 @@ def preprocess_for_prediction(
         dataset,
         model_definition['input_features'],
         output_features,
-        training_set_metadata.get(DATA_TRAIN_HDF5_FP)
+        hdf5_fp
     )
 
     return dataset, training_set_metadata

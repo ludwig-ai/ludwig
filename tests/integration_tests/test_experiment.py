@@ -19,22 +19,19 @@ import shutil
 import uuid
 from collections import namedtuple
 
+import pandas as pd
 import pytest
 import yaml
-import h5py
-
-import pandas as pd
-import numpy as np
 
 from ludwig.api import LudwigModel
 from ludwig.data.concatenate_datasets import concatenate_df
-from ludwig.data.preprocessing import preprocess_for_training, \
-    preprocess_for_prediction
+from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.experiment import experiment_cli
 from ludwig.features.h3_feature import H3InputFeature
 from ludwig.predict import predict_cli
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.defaults import default_random_seed
+from tests.conftest import delete_temporary_data
 from tests.integration_tests.utils import ENCODERS, HF_ENCODERS, \
     HF_ENCODERS_SHORT, slow
 from tests.integration_tests.utils import audio_feature
@@ -54,8 +51,6 @@ from tests.integration_tests.utils import set_feature
 from tests.integration_tests.utils import text_feature
 from tests.integration_tests.utils import timeseries_feature
 from tests.integration_tests.utils import vector_feature
-from tests.conftest import delete_temporary_data
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -385,8 +380,12 @@ def test_experiment_image_dataset(
         training_set_metadata=training_set_metadata
     )
 
+    model.model_definition['input_features'][0]['preprocessing']['in_memory'] \
+        = test_in_memory
+
     # setup test data format to test
-    test_data = generate_data(input_features, output_features, test_csv_filename)
+    test_data = generate_data(input_features, output_features,
+                              test_csv_filename)
     if test_format == 'csv':
         test_dataset_to_use = test_data
 
@@ -395,19 +394,12 @@ def test_experiment_image_dataset(
 
     else:
         # hdf5 format
-        # temporary override for creating hdf5 data with correct representation
-        # this need due to the way the hdf5 data set is created for testing
-        model_definition['input_features'][0]['preprocessing'][
-            'in_memory'] = True
         # create hdf5 data set
         _, test_set, _, training_set_metadata_for_test = preprocess_for_training(
-            model_definition,
+            model.model_definition,
             dataset=test_data
         )
         test_dataset_to_use = test_set.data_hdf5_fp
-
-    model_definition['input_features'][0]['preprocessing']['in_memory'] \
-        = test_in_memory
 
     # run functions with the specified data format
     model.evaluate(dataset=test_dataset_to_use)
