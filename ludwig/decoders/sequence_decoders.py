@@ -297,7 +297,7 @@ class SequenceGeneratorDecoder(Layer):
             end_tokens = tf.cast(end_tokens, tf.float32)
         targets_with_go_and_eos = tf.concat([
             tf.expand_dims(start_tokens, 1),
-            target,  # todo tf2: right now cast to tf.int32, fails if tf.int64
+            target,  # right now cast to tf.int32, fails if tf.int64
             tf.expand_dims(end_tokens, 1)], 1)
         target_sequence_length_with_eos = target_sequence_length + 1
 
@@ -783,7 +783,6 @@ class SequenceTaggerDecoder(Layer):
             output_type=tf.int64
         )
 
-        # todo tf2: deal with spurious 0s in predictions
         # generated_sequence_lengths = sequence_length_2D(predictions)
         last_predictions = tf.gather_nd(
             predictions,
