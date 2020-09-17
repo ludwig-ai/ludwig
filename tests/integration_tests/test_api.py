@@ -224,10 +224,11 @@ def test_api_train_online(csv_filename):
     output_dir = None
     try:
         for i in range(2):
-            model.train_online(
+            _, _, output_dir = model.train_online(
                 dataset=data_csv,
             )
         model.predict(dataset=data_csv)
     finally:
         # Remove results/intermediate data saved to disk
-        shutil.rmtree(output_dir, ignore_errors=True)
+        if output_dir:
+            shutil.rmtree(output_dir, ignore_errors=True)
