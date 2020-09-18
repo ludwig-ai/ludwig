@@ -488,10 +488,13 @@ def preprocess_for_training(
                 'with {} data format.'.format(data_format)
             )
 
-        dataset = dataset or pd.DataFormat(dataset)
-        training_set = training_set or pd.DataFrame(training_set)
-        validation_set = validation_set or pd.DataFrame(validation_set)
-        test_set = test_set or pd.DataFrame(test_set)
+        dataset = pd.DataFrame(dataset) if dataset is not None else None
+        training_set = pd.DataFrame(training_set) \
+            if training_set_metadata is not None else None
+        validation_set = pd.DataFrame(validation_set) \
+            if validation_set is not None else None
+        test_set = pd.DataFrame(test_set) \
+            if test_set is not None else None
 
         (
             training_set,
