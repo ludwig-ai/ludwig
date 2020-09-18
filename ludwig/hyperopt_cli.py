@@ -30,7 +30,8 @@ from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, \
     VALIDATION
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.features.feature_registries import output_type_registry
-from ludwig.globals import LUDWIG_VERSION, is_on_master, set_on_master
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
@@ -70,14 +71,14 @@ def hyperopt(
         skip_save_log=True,
         skip_save_processed_input=True,
         skip_save_unprocessed_output=True,
-        skip_save_test_predictions=True,
-        skip_save_test_statistics=True,
+        skip_save_predictions=True,
+        skip_save_eval_stats=True,
         skip_save_hyperopt_statistics=False,
         output_directory="results",
         gpus=None,
         gpu_memory_limit=None,
         allow_parallel_threads=True,
-        use_horovod=False,
+        use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
         **kwargs,
@@ -237,8 +238,8 @@ def hyperopt(
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
         skip_save_unprocessed_output=skip_save_unprocessed_output,
-        skip_save_test_predictions=skip_save_test_predictions,
-        skip_save_test_statistics=skip_save_test_statistics,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
         output_directory=output_directory,
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,

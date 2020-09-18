@@ -49,7 +49,8 @@ def embedding_matrix(
                         embeddings_matrix.shape[-1],
                         embedding_size
                     ))
-            embedding_initializer_obj = tf.constant(embeddings_matrix, dtype=tf.float32)
+            embedding_initializer_obj = tf.constant(embeddings_matrix,
+                                                    dtype=tf.float32)
 
         else:
             if vocab_size < embedding_size and not force_embedding_size:
@@ -61,11 +62,13 @@ def embedding_matrix(
                 embedding_size = vocab_size
 
             if embedding_initializer is not None:
-                embedding_initializer_obj_ref = get_initializer(embedding_initializer)
+                embedding_initializer_obj_ref = get_initializer(
+                    embedding_initializer)
             else:
                 embedding_initializer_obj_ref = get_initializer(
                     {'type': 'uniform', 'minval': -1.0, 'maxval': 1.0})
-            embedding_initializer_obj = embedding_initializer_obj_ref([vocab_size, embedding_size])
+            embedding_initializer_obj = embedding_initializer_obj_ref(
+                [vocab_size, embedding_size])
 
         embeddings = tf.Variable(
             embedding_initializer_obj,

@@ -273,9 +273,26 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
             **logits
         }
 
+    def overall_statistics_metadata(self):
+        """Additional metadata used to extend `training_set_metadata`.
+
+        Used when calculating the overall statistics.
+        """
+        return {}
+
     @property
     @abstractmethod
     def default_validation_metric(self):
+        pass
+
+    @abstractmethod
+    def postprocess_predictions(
+            self,
+            result,
+            metadata,
+            output_directory,
+            skip_save_unprocessed_output=False,
+    ):
         pass
 
     @staticmethod
@@ -291,21 +308,9 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
     @staticmethod
     @abstractmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
+            predictions,
+            targets,
             train_set_metadata
-    ):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def postprocess_results(
-            output_feature,
-            result,
-            metadata,
-            experiment_dir_name,
-            skip_save_unprocessed_output=False,
     ):
         pass
 

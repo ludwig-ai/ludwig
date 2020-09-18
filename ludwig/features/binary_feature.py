@@ -27,7 +27,7 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -57,14 +57,14 @@ class BinaryFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters=None
     ):
         column = dataset_df[feature['name']]
         if column.dtype == object:
             column = column.map(str2bool)
-        data[feature['name']] = column.astype(np.bool_).values
+        dataset[feature['name']] = column.astype(np.bool_).values
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):
@@ -211,78 +211,76 @@ class BinaryOutputFeature(BinaryFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
+            predictions,
+            targets,
             train_set_metadata
     ):
-        feature_name = output_feature['name']
-        stats = test_stats[feature_name]
-
+        overall_stats = {}
         confusion_matrix = ConfusionMatrix(
-            dataset.get(feature_name),
-            stats[PREDICTIONS],
+            targets,
+            predictions[PREDICTIONS],
             labels=['False', 'True']
         )
-        stats['confusion_matrix'] = confusion_matrix.cm.tolist()
-        stats['overall_stats'] = confusion_matrix.stats()
-        stats['per_class_stats'] = confusion_matrix.per_class_stats()
+        overall_stats['confusion_matrix'] = confusion_matrix.cm.tolist()
+        overall_stats['overall_stats'] = confusion_matrix.stats()
+        overall_stats['per_class_stats'] = confusion_matrix.per_class_stats()
         fpr, tpr, thresholds = roc_curve(
-            dataset.get(feature_name),
-            stats[PROBABILITIES]
+            targets,
+            predictions[PROBABILITIES]
         )
-        stats['roc_curve'] = {
+        overall_stats['roc_curve'] = {
             'false_positive_rate': fpr.tolist(),
             'true_positive_rate': tpr.tolist()
         }
-        stats['roc_auc_macro'] = roc_auc_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+        overall_stats['roc_auc_macro'] = roc_auc_score(
+            targets,
+            predictions[PROBABILITIES],
             average='macro'
         )
-        stats['roc_auc_micro'] = roc_auc_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+        overall_stats['roc_auc_micro'] = roc_auc_score(
+            targets,
+            predictions[PROBABILITIES],
             average='micro'
         )
         ps, rs, thresholds = precision_recall_curve(
-            dataset.get(feature_name),
-            stats[PROBABILITIES]
+            targets,
+            predictions[PROBABILITIES]
         )
-        stats['precision_recall_curve'] = {
+        overall_stats['precision_recall_curve'] = {
             'precisions': ps.tolist(),
             'recalls': rs.tolist()
         }
-        stats['average_precision_macro'] = average_precision_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+        overall_stats['average_precision_macro'] = average_precision_score(
+            targets,
+            predictions[PROBABILITIES],
             average='macro'
         )
-        stats['average_precision_micro'] = average_precision_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+        overall_stats['average_precision_micro'] = average_precision_score(
+            targets,
+            predictions[PROBABILITIES],
             average='micro'
         )
-        stats['average_precision_samples'] = average_precision_score(
-            dataset.get(feature_name),
-            stats[PROBABILITIES],
+        overall_stats['average_precision_samples'] = average_precision_score(
+            targets,
+            predictions[PROBABILITIES],
             average='samples'
         )
 
-    @staticmethod
-    def postprocess_results(
-            output_feature,
+        return overall_stats
+
+    def postprocess_predictions(
+            self,
             result,
             metadata,
-            experiment_dir_name,
+            output_directory,
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = output_feature['name']
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
-            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+            npy_filename = os.path.join(output_directory, '{}_{}.npy')
         else:
             skip_save_unprocessed_output = True
 

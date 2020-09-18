@@ -49,6 +49,8 @@ def _nccl_available():
         return nccl_built()
     except AttributeError:
         return False
+    except RuntimeError:
+        return False
 
 
 def _run_horovod(csv_filename, **ludwig_kwargs):

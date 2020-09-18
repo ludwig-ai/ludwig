@@ -31,7 +31,7 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.metric_modules import ErrorScore
 from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.misc_utils import set_default_value
@@ -117,22 +117,23 @@ class NumericalFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters,
     ):
-        data[feature['name']] = dataset_df[feature['name']].astype(
+        dataset[feature['name']] = dataset_df[feature['name']].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
                 mean = metadata[feature['name']]['mean']
                 std = metadata[feature['name']]['std']
-                data[feature['name']] = (data[feature['name']] - mean) / std
+                dataset[feature['name']] = (dataset[
+                                                feature['name']] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
                 min_ = metadata[feature['name']]['min']
                 max_ = metadata[feature['name']]['max']
-                values = data[feature['name']]
-                data[feature['name']] = (values - min_) / (max_ - min_)
+                values = dataset[feature['name']]
+                dataset[feature['name']] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):
@@ -283,47 +284,47 @@ class NumericalOutputFeature(NumericalFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
-            train_set_metadata
+            predictions,
+            targets,
+            metadata
     ):
-        pass
+        # no overall stats, just return empty dictionary
+        return {}
 
-    @staticmethod
-    def postprocess_results(
-            output_feature,
-            result,
+    def postprocess_predictions(
+            self,
+            predictions,
             metadata,
-            experiment_dir_name,
-            skip_save_unprocessed_output=False,
+            output_directory,
+            skip_save_unprocessed_output=False
     ):
         postprocessed = {}
-        name = output_feature['name']
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
-            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+            npy_filename = os.path.join(output_directory, '{}_{}.npy')
         else:
             skip_save_unprocessed_output = True
 
-        if PREDICTIONS in result and len(result[PREDICTIONS]) > 0:
-            postprocessed[PREDICTIONS] = result[PREDICTIONS].numpy()
+        if PREDICTIONS in predictions and len(predictions[PREDICTIONS]) > 0:
+            postprocessed[PREDICTIONS] = predictions[PREDICTIONS].numpy()
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PREDICTIONS),
-                    result[PREDICTIONS]
+                    predictions[PREDICTIONS]
                 )
-            del result[PREDICTIONS]
+            del predictions[PREDICTIONS]
 
-        if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
-            postprocessed[PROBABILITIES] = result[PROBABILITIES]
+        if PROBABILITIES in predictions and len(
+                predictions[PROBABILITIES]) > 0:
+            postprocessed[PROBABILITIES] = predictions[PROBABILITIES]
             if not skip_save_unprocessed_output:
                 np.save(
                     npy_filename.format(name, PROBABILITIES),
-                    result[PROBABILITIES]
+                    predictions[PROBABILITIES]
                 )
-            del result[PROBABILITIES]
+            del predictions[PROBABILITIES]
 
         return postprocessed
 

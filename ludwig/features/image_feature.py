@@ -225,7 +225,7 @@ class ImageFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters
     ):
@@ -291,7 +291,7 @@ class ImageFeatureMixin(object):
             metadata[feature['name']]['preprocessing'][
                 'num_processes'] = num_processes
 
-            data[feature['name']] = np.empty(
+            dataset[feature['name']] = np.empty(
                 (num_images, height, width, num_channels),
                 dtype=np.uint8
             )
@@ -305,7 +305,7 @@ class ImageFeatureMixin(object):
                             num_processes
                         )
                     )
-                    data[feature['name']] = np.array(
+                    dataset[feature['name']] = np.array(
                         pool.map(read_image_and_resize, all_file_paths)
                     )
 
@@ -316,7 +316,7 @@ class ImageFeatureMixin(object):
                     'No process pool initialized. Using one process for preprocessing images'
                 )
                 img = read_image_and_resize(all_file_paths[0])
-                data[feature['name']] = np.array([img])
+                dataset[feature['name']] = np.array([img])
         else:
             data_fp = os.path.splitext(dataset_df.csv)[0] + '.hdf5'
             mode = 'w'
@@ -334,8 +334,9 @@ class ImageFeatureMixin(object):
                     image_dataset[i, :height, :width, :] = (
                         read_image_and_resize(filepath)
                     )
+                h5_file.flush()
 
-            data[feature['name']] = np.arange(num_images)
+            dataset[feature['name']] = np.arange(num_images)
 
 
 class ImageInputFeature(ImageFeatureMixin, InputFeature):

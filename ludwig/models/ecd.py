@@ -55,7 +55,8 @@ class ECD(tf.keras.Model):
     def get_model_inputs(self, training=True):
         inputs = {
             input_feature_name: input_feature.create_input()
-            for input_feature_name, input_feature in self.input_features.items()
+            for input_feature_name, input_feature in
+            self.input_features.items()
         }
 
         if not training:
@@ -71,6 +72,10 @@ class ECD(tf.keras.Model):
         inputs = inputs or self.get_model_inputs(training)
         outputs = self.call(inputs)
         return tf.keras.Model(inputs=inputs, outputs=outputs)
+
+    def save_savedmodel(self, save_path):
+        keras_model = self.get_connected_model(training=False)
+        keras_model.save(save_path)
 
     def call(self, inputs, training=None, mask=None):
         # parameter inputs is a dict feature_name -> tensor / ndarray
@@ -240,6 +245,38 @@ class ECD(tf.keras.Model):
         for of_obj in self.output_features.values():
             of_obj.reset_metrics()
         self.eval_loss_metric.reset_states()
+
+    def collect_weights(
+            self,
+            tensor_names=None,
+            **kwargs
+    ):
+        def recurse_weights(model, prefix=None):
+            results = []
+            for layer in model.layers:
+                layer_prefix = f'{prefix}/{layer.name}' if prefix else layer.name
+                if isinstance(layer, tf.keras.Model):
+                    results += recurse_weights(layer, layer_prefix)
+                else:
+                    results += [(f'{layer_prefix}/{w.name}', w) for w in
+                                layer.weights]
+            return results
+
+        connected_model = self.get_connected_model()
+        weights = recurse_weights(connected_model)
+        if tensor_names:
+            # Check for bad tensor names
+            weight_set = set(name for name, w in weights)
+            for name in tensor_names:
+                if name not in weight_set:
+                    raise ValueError(
+                        f'Tensor {name} not present in the model graph')
+
+            # Filter the weights
+            tensor_set = set(tensor_names)
+            weights = [(name, w) for name, w in weights if name in tensor_set]
+
+        return weights
 
 
 def build_inputs(

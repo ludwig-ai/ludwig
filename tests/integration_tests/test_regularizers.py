@@ -1,27 +1,23 @@
-from collections import namedtuple
 import os
 import shutil
 import tempfile
+from collections import namedtuple
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
-
 import tensorflow as tf
 
 from ludwig.data.dataset_synthesizer import build_synthetic_dataset
-from ludwig.encoders.generic_encoders import DenseEncoder
-from ludwig.encoders.sequence_encoders import ParallelCNN
 from ludwig.data.preprocessing import preprocess_for_training
 from ludwig.features.feature_utils import SEQUENCE_TYPES
 from ludwig.models.ecd import build_single_input, build_single_output
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import date_feature
+from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import sequence_feature
-from tests.integration_tests.utils import image_feature
 from tests.integration_tests.utils import set_feature
-
 
 BATCH_SIZE = 32
 HIDDEN_SIZE = 128
@@ -43,7 +39,8 @@ SyntheticData = namedtuple(
 # syn_data: SyntheticData namedtuple of data to create
 # XCoder_other_parms: dictionary for required encoder/decoder parameters
 # regularizer_parm_names: list of regularizer keyword parameter names
-TestCase = namedtuple('TestCase', 'syn_data XCoder_other_parms regularizer_parm_names')
+TestCase = namedtuple('TestCase',
+                      'syn_data XCoder_other_parms regularizer_parm_names')
 
 
 #
@@ -55,7 +52,8 @@ TestCase = namedtuple('TestCase', 'syn_data XCoder_other_parms regularizer_parm_
         # DenseEncoder
         TestCase(
             SyntheticData(BATCH_SIZE, numerical_feature, (), {}),
-            {'num_layers': 2, 'encoder': 'dense', 'preprocessing':{'normalization': 'zscore'}},
+            {'num_layers': 2, 'encoder': 'dense',
+             'preprocessing': {'normalization': 'zscore'}},
             ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
         ),
 
@@ -126,7 +124,6 @@ def test_encoder(test_case):
     shutil.rmtree(IMAGE_DIR, ignore_errors=True)
     os.mkdir(IMAGE_DIR)
 
-
     # reproducible synthetic data set
     np.random.seed(RANDOM_SEED)
     tf.random.set_seed(RANDOM_SEED)
@@ -146,9 +143,9 @@ def test_encoder(test_case):
 
     # minimal model definition sufficient to create the input feature
     model_definition = {'input_features': features, 'output_features': []}
-    training_set, _, _, train_set_metadata = preprocess_for_training(
+    training_set, _, _, training_set_metadata = preprocess_for_training(
         model_definition,
-        data_train_df=df,
+        training_set=df,
         skip_save_processed_input=True,
         random_seed=RANDOM_SEED
     )
@@ -164,7 +161,7 @@ def test_encoder(test_case):
         # setup kwarg for regularizer parms
         x_coder_kwargs = dict(
             zip(test_case.regularizer_parm_names,
-                len(test_case.regularizer_parm_names)*[regularizer])
+                len(test_case.regularizer_parm_names) * [regularizer])
         )
 
         # combine other other keyword parameters
@@ -173,7 +170,8 @@ def test_encoder(test_case):
 
         # shim code to support sequence/sequence like features
         if features[0]['type'] in SEQUENCE_TYPES.union({'category', 'set'}):
-            features[0]['vocab'] = train_set_metadata[feature_name]['idx2str']
+            features[0]['vocab'] = training_set_metadata[feature_name][
+                'idx2str']
             training_set.dataset[feature_name] = \
                 training_set.dataset[feature_name].astype(np.int32)
 
@@ -196,8 +194,9 @@ def test_encoder(test_case):
     assert np.all([t > 0.0 for t in regularizer_losses[1:]])
 
     # # using default setting l1 + l2 == l1_l2 losses
-    assert np.isclose(regularizer_losses[1].numpy() + regularizer_losses[2].numpy(),
-                      regularizer_losses[3].numpy())
+    assert np.isclose(
+        regularizer_losses[1].numpy() + regularizer_losses[2].numpy(),
+        regularizer_losses[3].numpy())
 
     # cleanup
     shutil.rmtree(IMAGE_DIR, ignore_errors=True)
@@ -222,7 +221,8 @@ def test_encoder(test_case):
 
         # Tagger Decoder
         TestCase(
-            SyntheticData(BATCH_SIZE, sequence_feature, (), {'max_len': SEQ_SIZE}),
+            SyntheticData(BATCH_SIZE, sequence_feature, (),
+                          {'max_len': SEQ_SIZE}),
             {'decoder': 'tagger'},
             ['activity_regularizer', 'weights_regularizer', 'bias_regularizer']
         ),
@@ -239,7 +239,6 @@ def test_encoder(test_case):
 
 )
 def test_decoder(test_case):
-
     # reproducible synthetic data set
     np.random.seed(RANDOM_SEED)
     tf.random.set_seed(RANDOM_SEED)
@@ -259,11 +258,11 @@ def test_decoder(test_case):
 
     # create synthetic combiner layer
     combiner_outputs_rank2 = {
-            'combiner_output': tf.random.normal(
-                [BATCH_SIZE, HIDDEN_SIZE],
-                dtype=tf.float32
-            )
-        }
+        'combiner_output': tf.random.normal(
+            [BATCH_SIZE, HIDDEN_SIZE],
+            dtype=tf.float32
+        )
+    }
 
     combiner_outputs_rank3 = {
             'combiner_output': tf.random.normal(
@@ -282,9 +281,9 @@ def test_decoder(test_case):
 
     # minimal model definition sufficient to create output feature
     model_definition = {'input_features': [], 'output_features': features}
-    training_set, _, _, train_set_metadata = preprocess_for_training(
+    training_set, _, _, training_set_metadata = preprocess_for_training(
         model_definition,
-        data_train_df=df,
+        training_set=df,
         skip_save_processed_input=True,
         random_seed=RANDOM_SEED
     )
@@ -300,7 +299,7 @@ def test_decoder(test_case):
         # setup kwarg for regularizer parms
         x_coder_kwargs = dict(
             zip(test_case.regularizer_parm_names,
-                len(test_case.regularizer_parm_names)*[regularizer])
+                len(test_case.regularizer_parm_names) * [regularizer])
         )
 
         # combine other other keyword parameters
@@ -308,7 +307,8 @@ def test_decoder(test_case):
 
         features[0].update(x_coder_kwargs)
         if features[0]['type'] in SEQUENCE_TYPES:
-            features[0]['num_classes'] = train_set_metadata[feature_name]['vocab_size'] + 1
+            features[0]['num_classes'] = training_set_metadata[feature_name][
+                                             'vocab_size'] + 1
             training_set.dataset[feature_name] = \
                 training_set.dataset[feature_name].astype(np.int32)
             combiner_outputs = combiner_outputs_rank3
@@ -325,7 +325,7 @@ def test_decoder(test_case):
             (
                 (combiner_outputs, None),
                 targets
-             ),
+            ),
             training=True,
             mask=None
         )
@@ -340,5 +340,6 @@ def test_decoder(test_case):
     assert np.all([t > 0.0 for t in regularizer_losses[1:]])
 
     # # using default setting l1 + l2 == l1_l2 losses
-    assert np.isclose(regularizer_losses[1].numpy() + regularizer_losses[2].numpy(),
-                      regularizer_losses[3].numpy())
+    assert np.isclose(
+        regularizer_losses[1].numpy() + regularizer_losses[2].numpy(),
+        regularizer_losses[3].numpy())

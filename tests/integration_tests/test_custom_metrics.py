@@ -1,12 +1,7 @@
 from collections import namedtuple
 
 import numpy as np
-import pandas as pd
 import pytest
-
-import tensorflow as tf
-
-from sklearn.model_selection import train_test_split
 
 from ludwig.modules.metric_modules import R2Score, ErrorScore
 

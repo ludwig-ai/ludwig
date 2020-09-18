@@ -26,19 +26,19 @@ from collections.abc import Mapping
 import numpy
 
 import ludwig.globals
+from ludwig.utils.data_utils import figure_data_format
 
 
-def get_experiment_description(model_definition,
-                               data_csv=None,
-                               data_hdf5=None,
-                               metadata_json=None,
-                               data_train_csv=None,
-                               data_validation_csv=None,
-                               data_test_csv=None,
-                               data_train_hdf5=None,
-                               data_validation_hdf5=None,
-                               data_test_hdf5=None,
-                               random_seed=None):
+def get_experiment_description(
+        model_definition,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        random_seed=None
+):
     description = OrderedDict()
     description['ludwig_version'] = ludwig.globals.LUDWIG_VERSION
     description['command'] = ' '.join(sys.argv)
@@ -57,28 +57,31 @@ def get_experiment_description(model_definition,
 
     if random_seed is not None:
         description['random_seed'] = random_seed
-    if data_csv is not None:
-        description['input_data'] = data_csv
-    elif data_hdf5 is not None and metadata_json is not None:
-        description['input_data'] = data_hdf5
-        description['input_metadata'] = metadata_json
-    elif data_train_csv is not None:
-        description['input_data_train'] = data_train_csv
-        if data_validation_csv is not None:
-            description['input_data_validation'] = data_validation_csv
-        if data_test_csv is not None:
-            description['input_data_test'] = data_test_csv
-    elif data_train_hdf5 is not None and metadata_json is not None:
-        description['input_data_train'] = data_train_hdf5
-        if data_validation_hdf5 is not None:
-            description['input_data_validation'] = data_validation_hdf5
-        if data_test_hdf5 is not None:
-            description['input_data_test'] = data_test_hdf5
-        description['input_metadata'] = metadata_json
+
+    if isinstance(dataset, str):
+        description['dataset'] = dataset
+    if isinstance(training_set, str):
+        description['training_set'] = training_set
+    if isinstance(validation_set, str):
+        description['validation_set'] = validation_set
+    if isinstance(test_set, str):
+        description['test_set'] = test_set
+    if training_set_metadata is not None:
+        description['training_set_metadata'] = training_set_metadata
+
+    # determine data format if not provided or auto
+    if not data_format or data_format == 'auto':
+        data_format = figure_data_format(
+            dataset, training_set, validation_set, test_set
+        )
+
+    if data_format:
+        description['data_format'] = str(data_format)
+
     description['model_definition'] = model_definition
 
-    from tensorflow.version import VERSION as tf_version
-    description['tf_version'] = tf_version
+    import tensorflow as tf
+    description['tf_version'] = tf.__version__
 
     return description
 
@@ -191,3 +194,25 @@ def get_available_gpu_memory():
         print('"nvidia-smi" is probably not installed.', e)
 
     return memory_free_values
+
+
+def get_output_directory(
+        output_directory,
+        experiment_name,
+        model_name='run'
+):
+    base_dir_name = os.path.join(
+        output_directory,
+        experiment_name + ('_' if model_name else '') + model_name
+    )
+    return find_non_existing_dir_by_adding_suffix(base_dir_name)
+
+
+def get_file_names(output_directory):
+    description_fn = os.path.join(output_directory, 'description.json')
+    training_stats_fn = os.path.join(
+        output_directory, 'training_statistics.json')
+
+    model_dir = os.path.join(output_directory, 'model')
+
+    return description_fn, training_stats_fn, model_dir

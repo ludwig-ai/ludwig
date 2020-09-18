@@ -1,15 +1,11 @@
 import logging
 
-import numpy as np
-
 import pytest
-
 import tensorflow as tf
 
 from ludwig.combiners.combiners import \
     ConcatCombiner, SequenceConcatCombiner, SequenceCombiner, \
     sequence_encoder_registry
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -38,7 +34,7 @@ def encoder_outputs():
         [BATCH_SIZE, SEQ_SIZE, HIDDEN_SIZE],
         [BATCH_SIZE, SEQ_SIZE, OTHER_HIDDEN_SIZE]
     ]
-    feature_names = ['feature_'+str(i+1) for i in range(len(shapes_list))]
+    feature_names = ['feature_' + str(i + 1) for i in range(len(shapes_list))]
 
     for feature_name, batch_shape in zip(feature_names, shapes_list):
         encoder_outputs[feature_name] = \
@@ -61,10 +57,9 @@ def encoder_outputs():
 # test for simple concatenation combiner
 @pytest.mark.parametrize(
     'fc_layer',
-    [None, [{'fc_size': 64}, {'fc_size':64}]]
+    [None, [{'fc_size': 64}, {'fc_size': 64}]]
 )
 def test_concat_combiner(encoder_outputs, fc_layer):
-
     # clean out unneeded encoder outputs
     del encoder_outputs['feature_3']
     del encoder_outputs['feature_4']
@@ -82,14 +77,16 @@ def test_concat_combiner(encoder_outputs, fc_layer):
 
     # confirm correct output shapes
     if fc_layer:
-        assert results['combiner_output'].shape.as_list() == [BATCH_SIZE, FC_SIZE]
+        assert results['combiner_output'].shape.as_list() == [BATCH_SIZE,
+                                                              FC_SIZE]
     else:
         # calculate expected hidden size for concatenated tensors
         hidden_size = 0
         for k in encoder_outputs:
             hidden_size += encoder_outputs[k]['encoder_output'].shape[1]
 
-        assert results['combiner_output'].shape.as_list() == [BATCH_SIZE, hidden_size]
+        assert results['combiner_output'].shape.as_list() == [BATCH_SIZE,
+                                                              hidden_size]
 
 
 # test for sequence concatenation combiner
@@ -97,7 +94,6 @@ def test_concat_combiner(encoder_outputs, fc_layer):
 @pytest.mark.parametrize('main_sequence_feature', [None, 'feature_3'])
 def test_sequence_concat_combiner(encoder_outputs, main_sequence_feature,
                                   reduce_output):
-
     combiner = SequenceConcatCombiner(
         main_sequence_feature=main_sequence_feature,
         reduce_output=reduce_output
@@ -128,8 +124,7 @@ def test_sequence_concat_combiner(encoder_outputs, main_sequence_feature,
 @pytest.mark.parametrize('encoder', sequence_encoder_registry)
 @pytest.mark.parametrize('main_sequence_feature', [None, 'feature_3'])
 def test_sequence_combiner(encoder_outputs, main_sequence_feature,
-                                  encoder, reduce_output):
-
+                           encoder, reduce_output):
     combiner = SequenceCombiner(
         main_sequence_feature=main_sequence_feature,
         encoder=encoder,
@@ -165,12 +160,3 @@ def test_sequence_combiner(encoder_outputs, main_sequence_feature,
         combiner_shape[-1] == default_layer * default_fc_size
     else:
         combiner_shape[-1] == default_fc_size
-
-
-
-
-
-
-
-
-

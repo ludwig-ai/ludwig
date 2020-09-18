@@ -56,7 +56,7 @@ def run(csv_filename):
         rel_path = generate_data(input_features, output_features, csv_filename)
 
         # Run experiment
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)
     finally:
         # Delete the temporary data created
         shutil.rmtree(image_dest_folder, ignore_errors=True)

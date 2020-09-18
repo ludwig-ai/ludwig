@@ -45,11 +45,11 @@ class CLI(object):
             usage='''ludwig <command> [<args>]
 
 Available sub-commands:
-   experiment            Runs a full experiment training a model and testing it
+   experiment            Runs a full experiment training a model and evaluating it
    train                 Trains a model
+   evaluate              Evaluate a pretrained model's performance
    predict               Predicts using a pretrained model
    serve                 Serves a pretrained model
-   test                  Tests a pretrained model
    visualize             Visualizes experimental results
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
@@ -85,10 +85,10 @@ Available sub-commands:
         ludwig.contrib.contrib_command("serve", *sys.argv)
         serve.cli(sys.argv[2:])
 
-    def test(self):
-        from ludwig import test_performance
-        ludwig.contrib.contrib_command("test", *sys.argv)
-        test_performance.cli(sys.argv[2:])
+    def evaluate(self):
+        from ludwig import evaluate
+        ludwig.contrib.contrib_command("evaluate", *sys.argv)
+        evaluate.cli(sys.argv[2:])
 
     def visualize(self):
         from ludwig import visualize
@@ -110,11 +110,13 @@ Available sub-commands:
         ludwig.contrib.contrib_command("collect_activations", *sys.argv)
         collect.cli_collect_activations(sys.argv[2:])
 
+    # todo: not sure where this came from, likely remove
     def export(self):
         from ludwig import export
         ludwig.contrib.contrib_command("export", *sys.argv)
         export.cli(sys.argv[2:])
 
+    # todo: not sure where this came from, likely remove
     def saved_model_predict(self):
         from ludwig import export
         ludwig.contrib.contrib_command("saved_model_predict", *sys.argv)

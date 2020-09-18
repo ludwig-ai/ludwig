@@ -14,19 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from ludwig.utils.horovod_utils import should_use_horovod
 
 LUDWIG_VERSION = '0.3.0-a.4'
 
 MODEL_WEIGHTS_FILE_NAME = 'model_weights'
 MODEL_HYPERPARAMETERS_FILE_NAME = 'model_hyperparameters.json'
-TRAIN_SET_METADATA_FILE_NAME = 'train_set_metadata.json'
+TRAIN_SET_METADATA_FILE_NAME = 'training_set_metadata.json'
 TRAINING_PROGRESS_TRACKER_FILE_NAME = 'training_progress.json'
 TRAINING_CHECKPOINTS_DIR_PATH = 'training_checkpoints'
 
 DISABLE_PROGRESSBAR = False
-
-ON_MASTER = True
 
 
 def set_disable_progressbar(value):
@@ -36,23 +33,3 @@ def set_disable_progressbar(value):
 
 def is_progressbar_disabled():
     return DISABLE_PROGRESSBAR
-
-
-def set_on_master(use_horovod):
-    global ON_MASTER
-    if should_use_horovod(use_horovod):
-        try:
-            import horovod.tensorflow
-            horovod.tensorflow.init()
-            ON_MASTER = horovod.tensorflow.rank() == 0
-        except ImportError:
-            raise ValueError("use_horovod parameter specified, "
-                             "but cannot import horovod.tensorflow. "
-                             "Install horovod following the instructions at: "
-                             " https://github.com/horovod/horovod")
-    else:
-        ON_MASTER = True
-
-
-def is_on_master():
-    return ON_MASTER

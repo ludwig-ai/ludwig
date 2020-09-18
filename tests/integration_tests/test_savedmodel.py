@@ -22,7 +22,6 @@ import pytest
 import tensorflow as tf
 
 from ludwig.api import LudwigModel
-from ludwig.constants import FULL
 from ludwig.data.preprocessing import preprocess_for_prediction
 from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
 from tests.integration_tests.utils import category_feature
@@ -61,7 +60,7 @@ def test_savedmodel(csv_filename, should_load_model):
     }
     ludwig_model = LudwigModel(model_definition)
     ludwig_model.train(
-        data_csv=data_csv_path,
+        dataset=data_csv_path,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
         skip_save_model=True,
@@ -93,37 +92,34 @@ def test_savedmodel(csv_filename, should_load_model):
     ##############################
     # collect weight tensors names
     ##############################
-    original_predictions_df = ludwig_model.predict(data_csv=data_csv_path)
-    original_weights = deepcopy(ludwig_model.model.model.trainable_variables)
-    ludwig_model.close()
+    original_predictions_df, _ = ludwig_model.predict(dataset=data_csv_path)
+    original_weights = deepcopy(ludwig_model.model.trainable_variables)
 
     ###################################################
     # load Ludwig model, obtain predictions and weights
     ###################################################
     ludwig_model = LudwigModel.load(ludwigmodel_path)
-    loaded_prediction_df = ludwig_model.predict(data_csv=data_csv_path)
-    loaded_weights = deepcopy(ludwig_model.model.model.trainable_variables)
+    loaded_prediction_df, _ = ludwig_model.predict(dataset=data_csv_path)
+    loaded_weights = deepcopy(ludwig_model.model.trainable_variables)
 
     #################################################
     # restore savedmodel, obtain predictions and weights
     #################################################
-    train_set_metadata_json_fp = os.path.join(
+    training_set_metadata_json_fp = os.path.join(
         ludwigmodel_path,
         TRAIN_SET_METADATA_FILE_NAME
     )
 
-    dataset, train_set_metadata = preprocess_for_prediction(
-        ludwigmodel_path,
-        split=FULL,
-        data_csv=data_csv_path,
-        train_set_metadata=train_set_metadata_json_fp,
-        evaluate_performance=False
+    dataset, training_set_metadata = preprocess_for_prediction(
+        ludwig_model.model_definition,
+        dataset=data_csv_path,
+        training_set_metadata=training_set_metadata_json_fp,
     )
 
     restored_model = tf.saved_model.load(savedmodel_path)
 
-    if_name = list(ludwig_model.model.model.input_features.keys())[0]
-    of_name = list(ludwig_model.model.model.output_features.keys())[0]
+    if_name = list(ludwig_model.model.input_features.keys())[0]
+    of_name = list(ludwig_model.model.output_features.keys())[0]
 
     data_to_predict = {
         if_name: tf.convert_to_tensor(dataset.dataset[if_name], dtype=tf.int32)
@@ -137,7 +133,7 @@ def test_savedmodel(csv_filename, should_load_model):
         name='predictions_{}'.format(of_name)
     )
     restored_predictions = tf.map_fn(
-        lambda idx: train_set_metadata[of_name]['idx2str'][idx],
+        lambda idx: training_set_metadata[of_name]['idx2str'][idx],
         restored_predictions,
         dtype=tf.string
     )

@@ -9,7 +9,7 @@ import pytest
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-from ludwig.experiment import full_experiment
+from ludwig.experiment import experiment_cli
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json
 
@@ -18,6 +18,7 @@ NUMBER_OBSERVATIONS = 500
 
 GeneratedData = namedtuple('GeneratedData',
                            'train_df validation_df test_df')
+
 
 def get_feature_definitions():
     input_features = [
@@ -75,10 +76,10 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     results_dir.mkdir()
 
     # run experiment
-    exp_dir_name = full_experiment(
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+    _, _, _, _, output_dir = experiment_cli(
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory=str(results_dir),
         model_definition=model_definition,
         skip_save_processed_input=True,
@@ -89,8 +90,8 @@ def test_early_stopping(early_stop, generated_data, tmp_path):
     )
 
     # test existence of required files
-    train_stats_fp = os.path.join(exp_dir_name, 'training_statistics.json')
-    metadata_fp = os.path.join(exp_dir_name, 'description.json')
+    train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
+    metadata_fp = os.path.join(output_dir, 'description.json')
     assert os.path.isfile(train_stats_fp)
     assert os.path.isfile(metadata_fp)
 
@@ -134,10 +135,10 @@ def test_model_progress_save(
     results_dir.mkdir()
 
     # run experiment
-    exp_dir_name = full_experiment(
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+    _, _, _, _, output_dir = experiment_cli(
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory=str(results_dir),
         model_definition=model_definition,
         skip_save_processed_input=True,
@@ -149,26 +150,26 @@ def test_model_progress_save(
 
     # ========== Check for required result data sets =============
     if skip_save_model:
-        model_dir = os.path.join(exp_dir_name, 'model')
+        model_dir = os.path.join(output_dir, 'model')
         files = [f for f in os.listdir(model_dir) if
                  re.match(r'model_weights', f)]
         assert len(files) == 0
     else:
-        model_dir = os.path.join(exp_dir_name, 'model')
+        model_dir = os.path.join(output_dir, 'model')
         files = [f for f in os.listdir(model_dir) if
                  re.match(r'model_weights', f)]
         # at least one .index and one .data file, but .data may be more
         assert len(files) >= 2
         assert os.path.isfile(
-            os.path.join(exp_dir_name, 'model', 'checkpoint'))
+            os.path.join(output_dir, 'model', 'checkpoint'))
 
     if skip_save_progress:
         assert not os.path.isdir(
-            os.path.join(exp_dir_name, 'model', 'training_checkpoints')
+            os.path.join(output_dir, 'model', 'training_checkpoints')
         )
     else:
         assert os.path.isdir(
-            os.path.join(exp_dir_name, 'model', 'training_checkpoints')
+            os.path.join(output_dir, 'model', 'training_checkpoints')
         )
 
 
@@ -191,47 +192,48 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
-    exp_dir_name_1 = full_experiment(
+    _, _, _, _, output_dir = experiment_cli(
         model_definition,
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory='results'  # results_dir
     )
 
     model_definition['training']['epochs'] = 4
 
-    full_experiment(
+    experiment_cli(
         model_definition,
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
-        model_resume_path=exp_dir_name_1
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
+        model_resume_path=output_dir
     )
 
-    exp_dir_name_2 = full_experiment(
+    experiment_cli(
         model_definition,
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
     )
 
     # compare learning curves with and without resuming
-    ts1 = load_json(os.path.join(exp_dir_name_1, 'training_statistics.json'))
-    ts2 = load_json(os.path.join(exp_dir_name_2, 'training_statistics.json'))
+    ts1 = load_json(os.path.join(output_dir, 'training_statistics.json'))
+    ts2 = load_json(os.path.join(output_dir, 'training_statistics.json'))
     print('ts1', ts1)
     print('ts2', ts2)
     assert ts1['training']['combined']['loss'] == ts2['training']['combined'][
         'loss']
 
     # compare predictions with and without resuming
-    y_pred1 = np.load(os.path.join(exp_dir_name_1, 'y_predictions.npy'))
-    y_pred2 = np.load(os.path.join(exp_dir_name_2, 'y_predictions.npy'))
+    y_pred1 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
+    y_pred2 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
     print('y_pred1', y_pred1)
     print('y_pred2', y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
 
 
+# todo refactoring: check if this is relevant
 # work-in-progress
 # def test_model_save_resume(generated_data, tmp_path):
 #
@@ -250,9 +252,9 @@ def test_resume_training(optimizer, generated_data, tmp_path):
 #     # perform inital model training
 #     ludwig_model = LudwigModel(model_definition)
 #     train_stats = ludwig_model.train(
-#         data_train_df=generated_data.train_df,
-#         data_validation_df=generated_data.validation_df,
-#         data_test_df=generated_data.test_df,
+#         training_set=generated_data.train_df,
+#         validation_set=generated_data.validation_df,
+#         test_set=generated_data.test_df,
 #         output_directory='results' #results_dir
 #     )
 #
@@ -294,10 +296,10 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
     results_dir.mkdir()
 
     # run experiment
-    exp_dir_name = full_experiment(
-        data_train_df=generated_data.train_df,
-        data_validation_df=generated_data.validation_df,
-        data_test_df=generated_data.test_df,
+    _, _, _, _, output_dir = experiment_cli(
+        training_set=generated_data.train_df,
+        validation_set=generated_data.validation_df,
+        test_set=generated_data.test_df,
         output_directory=str(results_dir),
         model_definition=model_definition,
         skip_save_processed_input=True,
@@ -308,8 +310,8 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
     )
 
     # test existence of required files
-    train_stats_fp = os.path.join(exp_dir_name, 'training_statistics.json')
-    metadata_fp = os.path.join(exp_dir_name, 'description.json')
+    train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
+    metadata_fp = os.path.join(output_dir, 'description.json')
     assert os.path.isfile(train_stats_fp)
     assert os.path.isfile(metadata_fp)
 
@@ -341,7 +343,6 @@ def test_regularization(generated_data, tmp_path):
         }
     }
 
-
     # create sub-directory to store results
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
@@ -353,15 +354,18 @@ def test_regularization(generated_data, tmp_path):
         tf.random.set_seed(RANDOM_SEED)
 
         # setup regularization parameters
-        model_definition['output_features'][0]['weights_regularizer'] = regularizer
-        model_definition['output_features'][0]['bias_regularizer'] = regularizer
-        model_definition['output_features'][0]['activity_regularizer'] = regularizer
+        model_definition['output_features'][0][
+            'weights_regularizer'] = regularizer
+        model_definition['output_features'][0][
+            'bias_regularizer'] = regularizer
+        model_definition['output_features'][0][
+            'activity_regularizer'] = regularizer
 
         # run experiment
-        exp_dir_name = full_experiment(
-            data_train_df=generated_data.train_df,
-            data_validation_df=generated_data.validation_df,
-            data_test_df=generated_data.test_df,
+        _, _, _, _, output_dir = experiment_cli(
+            training_set=generated_data.train_df,
+            validation_set=generated_data.validation_df,
+            test_set=generated_data.test_df,
             output_directory=str(results_dir),
             model_definition=model_definition,
             experiment_name='regularization',
@@ -374,8 +378,8 @@ def test_regularization(generated_data, tmp_path):
         )
 
         # test existence of required files
-        train_stats_fp = os.path.join(exp_dir_name, 'training_statistics.json')
-        metadata_fp = os.path.join(exp_dir_name, 'description.json')
+        train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
+        metadata_fp = os.path.join(output_dir, 'description.json')
         assert os.path.isfile(train_stats_fp)
         assert os.path.isfile(metadata_fp)
 

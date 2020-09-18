@@ -114,16 +114,15 @@ class TimeseriesFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters
     ):
-        timeseries_data = TimeseriesFeatureMixin.feature_data(
+        dataset[feature['name']] = TimeseriesFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters
         )
-        data[feature['name']] = timeseries_data
 
 
 class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
@@ -409,12 +408,12 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #     ):
 #         pass
 #
-#     @staticmethod
-#     def postprocess_results(
-#             output_feature,
+#
+#     def postprocess_predictions(
+#             self,
 #             result,
 #             metadata,
-#             experiment_dir_name,
+#             output_directory,
 #             skip_save_unprocessed_output=False,
 #     ):
 #         pass

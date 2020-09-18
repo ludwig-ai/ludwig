@@ -16,69 +16,58 @@
 # ==============================================================================
 import pandas as pd
 
-from ludwig.constants import TYPE
-from ludwig.features.feature_registries import output_type_registry
 from ludwig.features.feature_utils import SEQUENCE_TYPES
+from ludwig.utils.data_utils import DICT_FORMATS, DATAFRAME_FORMATS
 from ludwig.utils.misc_utils import get_from_registry
 
 
-def postprocess_results(
-        result,
-        output_feature,
-        metadata,
-        experiment_dir_name='',
-        skip_save_unprocessed_output=False,
-):
-    feature = get_from_registry(
-        output_feature[TYPE], output_type_registry
-    )
-    return feature.postprocess_results(
-        output_feature,
-        result,
-        metadata,
-        experiment_dir_name,
-        skip_save_unprocessed_output=skip_save_unprocessed_output,
-    )
-
-
 def postprocess(
-        results,
+        predictions,
         output_features,
-        metadata,
-        experiment_dir_name='',
+        training_set_metadata,
+        output_directory='',
         skip_save_unprocessed_output=False,
 ):
     postprocessed = {}
-    for output_feature in output_features:
-        postprocessed[output_feature['name']] = postprocess_results(
-            results[output_feature['name']],
-            output_feature,
-            metadata.get(output_feature['name'], {}),
-            experiment_dir_name=experiment_dir_name,
-            skip_save_unprocessed_output=skip_save_unprocessed_output,
+    for of_name, output_feature in output_features.items():
+        postprocessed[of_name] = output_feature.postprocess_predictions(
+            predictions[of_name],
+            training_set_metadata.get(of_name, {}),
+            output_directory=output_directory,
+            skip_save_unprocessed_output=skip_save_unprocessed_output
         )
     return postprocessed
 
 
-def postprocess_df(
-    model_output,
-    output_features,
-    metadata,
-    experiment_dir_name='',
-        skip_save_unprocessed_output=True,
-):
-    postprocessed_output = postprocess(
-        model_output,
-        output_features,
-        metadata,
-        experiment_dir_name=experiment_dir_name,
-        skip_save_unprocessed_output=skip_save_unprocessed_output,
+def convert_predictions(predictions, output_features, training_set_metadata, return_type='dict'):
+    convert_fn = get_from_registry(
+        return_type,
+        conversion_registry
     )
+    return convert_fn(
+        predictions,
+        output_features,
+        training_set_metadata,
+    )
+
+
+def convert_to_dict(
+        predictions,
+        output_features,
+        training_set_metadata,
+):
+    return predictions
+
+
+def convert_to_df(
+        predictions,
+        output_features,
+        training_set_metadata,
+):
     data_for_df = {}
-    for output_feature in output_features:
-        output_feature_name = output_feature['name']
-        output_feature_type = output_feature[TYPE]
-        output_feature_dict = postprocessed_output[output_feature_name]
+    for output_feature_name, output_feature in output_features.items():
+        output_feature_type = output_feature.type
+        output_feature_dict = predictions[output_feature_name]
         for key_val in output_feature_dict.items():
             output_subgroup_name, output_type_value = key_val
             if (hasattr(output_type_value, 'shape') and
@@ -92,9 +81,9 @@ def postprocess_df(
                     ] = output_type_value.tolist()
                 else:
                     for i, value in enumerate(output_type_value.T):
-                        if (output_feature_name in metadata and
-                                'idx2str' in metadata[output_feature_name]):
-                            class_name = metadata[output_feature_name][
+                        if (output_feature_name in training_set_metadata and
+                                'idx2str' in training_set_metadata[output_feature_name]):
+                            class_name = training_set_metadata[output_feature_name][
                                 'idx2str'][i]
                         else:
                             class_name = str(i)
@@ -114,3 +103,9 @@ def postprocess_df(
                 ] = output_type_value
     output_df = pd.DataFrame(data_for_df)
     return output_df
+
+
+conversion_registry = {
+    **{format: convert_to_dict for format in DICT_FORMATS},
+    **{format: convert_to_df for format in DATAFRAME_FORMATS},
+}

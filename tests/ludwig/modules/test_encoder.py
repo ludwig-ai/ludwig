@@ -220,7 +220,6 @@ def test_sequence_encoder_embed():
 
     for reduce_output, output_shape in zip(reduce_outputs, output_shapes):
         for trainable in [True, False]:
-
             encoder_args['reduce_output'] = reduce_output
             encoder_args['embeddings_trainable'] = trainable
             encoder_args['weights_regularizer'] = L1_REGULARIZER

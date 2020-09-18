@@ -27,7 +27,7 @@ from ludwig.encoders.set_encoders import SetSparseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
 from ludwig.utils.misc_utils import set_default_value
@@ -88,11 +88,11 @@ class SetFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters,
     ):
-        data[feature['name']] = SetFeatureMixin.feature_data(
+        dataset[feature['name']] = SetFeatureMixin.feature_data(
             dataset_df[feature['name']].astype(str),
             metadata[feature['name']],
             preprocessing_parameters
@@ -227,27 +227,26 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
+            predictions,
+            targets,
             train_set_metadata
     ):
-        pass
+        # no overall stats, just return empty dictionary
+        return {}
 
-    @staticmethod
-    def postprocess_results(
-            output_feature,
+    def postprocess_predictions(
+            self,
             result,
             metadata,
-            experiment_dir_name,
+            output_directory,
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = output_feature['name']
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
-            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+            npy_filename = os.path.join(output_directory, '{}_{}.npy')
         else:
             skip_save_unprocessed_output = True
 
@@ -256,7 +255,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
             if 'idx2str' in metadata:
                 postprocessed[PREDICTIONS] = [
                     [metadata['idx2str'][i] for i, pred in enumerate(pred_set)
-                     if pred == True] for pred_set in preds
+                     if pred] for pred_set in preds
                 ]
             else:
                 postprocessed[PREDICTIONS] = preds
@@ -269,7 +268,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
         if PROBABILITIES in result and len(result[PROBABILITIES]) > 0:
             probs = result[PROBABILITIES].numpy()
             prob = [[prob for prob in prob_set if
-                     prob >= output_feature['threshold']] for prob_set in
+                     prob >= self.threshold] for prob_set in
                     probs]
             postprocessed[PROBABILITIES] = probs
             postprocessed[PROBABILITY] = prob

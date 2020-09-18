@@ -25,8 +25,9 @@ class LudwigNeuropodModelWrapper:
         data_dict = kwargs
         for key in data_dict:
             data_dict[key] = np.squeeze(data_dict[key], axis=1)
-        predicted = self.ludwig_model.predict(
-            data_dict=data_dict, return_type=dict
+        predicted, _ = self.ludwig_model.predict(
+            dataset=data_dict,
+            return_type=dict
         )
         # print(predicted, file=sys.stderr)
         return postprocess_for_neuropod(
@@ -106,7 +107,6 @@ def postprocess_for_neuropod(predicted, model_definition):
             postprocessed[feature_name + "_predictions"] = np.expand_dims(
                 np.array(predicted[feature_name][PREDICTIONS], dtype='str'), 1
             )
-    # print(postprocessed, file=sys.stderr)
     return postprocessed
 
 

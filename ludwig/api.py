@@ -26,198 +26,65 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
 import copy
 import logging
 import os
-import sys
+import tempfile
+from pprint import pformat
+
+import numpy as np
+import pandas as pd
 
 import ludwig.contrib
-from ludwig.constants import *
 
 ludwig.contrib.contrib_import()
 
-import pandas as pd
+from ludwig.constants import PREPROCESSING, TRAINING, VALIDATION, TEST
+from ludwig.contrib import contrib_command
+from ludwig.data.postprocessing import convert_predictions, postprocess
+from ludwig.data.preprocessing import preprocess_for_training, \
+    preprocess_for_prediction, load_metadata
+from ludwig.features.feature_registries import \
+    update_model_definition_with_metadata
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, \
+    MODEL_WEIGHTS_FILE_NAME, set_disable_progressbar
+from ludwig.models.ecd import ECD
+from ludwig.models.predictor import Predictor, save_prediction_outputs, \
+    calculate_overall_stats, print_evaluation_stats, save_evaluation_stats
+from ludwig.models.trainer import Trainer
+from ludwig.modules.metric_modules import get_best_function
+from ludwig.utils.data_utils import save_json, load_json, generate_kfold_splits
+from ludwig.utils.horovod_utils import broadcast_return, configure_horovod, set_on_master, \
+    is_on_master
+from ludwig.utils.misc_utils import get_output_directory, get_file_names, \
+    get_experiment_description
+from ludwig.utils.tf_utils import initialize_tensorflow
+
 import yaml
 
-from ludwig.data.dataset import Dataset
-from ludwig.data.postprocessing import postprocess_df, postprocess
-from ludwig.data.preprocessing import build_data
-from ludwig.data.preprocessing import build_dataset
-from ludwig.data.preprocessing import load_metadata
-from ludwig.data.preprocessing import replace_text_feature_level
-from ludwig.experiment import \
-    kfold_cross_validate as experiment_kfold_cross_validate
-from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
-from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
-from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME
-from ludwig.globals import set_disable_progressbar
-from ludwig.models.trainer import Trainer
-from ludwig.models.trainer import load_model_and_definition
-from ludwig.predict import calculate_overall_stats
-from ludwig.train import full_train
-from ludwig.train import update_model_definition_with_metadata
-from ludwig.utils.data_utils import override_in_memory_flag
-from ludwig.utils.data_utils import read_csv
-from ludwig.utils.data_utils import save_json
-from ludwig.utils.defaults import default_random_seed
-from ludwig.utils.defaults import merge_with_defaults
-from ludwig.utils.print_utils import logging_level_registry
+from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.print_utils import print_boxed
 
 logger = logging.getLogger(__name__)
 
 
 class LudwigModel:
-    """Class that allows access to high level Ludwig functionalities.
-
-    # Inputs
-
-    :param model_definition: (dict) a dictionary containing information needed
-           to build a model. Refer to the [User Guide]
-           (http://ludwig.ai/user_guide/#model-definition) for details.
-    :param model_definition_file: (string, optional, default: `None`) path to
-           a YAML file containing the model definition. If available it will be
-           used instead of the model_definition dict.
-    :param logging_level: (int, default: `logging.ERROR`) logging level to use
-           for logging. Use logging constants like `logging.DEBUG`,
-           `logging.INFO` and `logging.ERROR`. By default only errors will be
-           printed. It is possible to change the logging_level later by using
-           the set_logging_level method.
-
-    # Example usage:
-
-    ```python
-    from ludwig.api import LudwigModel
-    ```
-
-    Train a model:
-
-    ```python
-    model_definition = {...}
-    ludwig_model = LudwigModel(model_definition)
-    train_stats = ludwig_model.train(data_csv=csv_file_path)
-    ```
-
-    or
-
-    ```python
-    train_stats = ludwig_model.train(data_df=dataframe)
-    ```
-
-    If you have already trained a model you can load it and use it to predict
-
-    ```python
-    ludwig_model = LudwigModel.load(model_dir)
-    ```
-
-    Predict:
-
-    ```python
-    predictions = ludwig_model.predict(data_csv=csv_file_path)
-    ```
-
-    or
-
-    ```python
-    predictions = ludwig_model.predict(data_df=dataframe)
-    ```
-
-    Test:
-
-    ```python
-    predictions, test_stats = ludwig_model.test(data_csv=csv_file_path)
-    ```
-
-    or
-
-    ```python
-    predictions, test_stats = ludwig_model.predict(data_df=dataframe)
-    ```
-
-    Finally in order to release resources:
-
-    ```python
-    model.close()
-    ```
-    """
-
-    def __init__(
-            self,
-            model_definition=None,
-            model_definition_file=None,
-            logging_level=logging.ERROR
-    ):
-        # check for model_definition and model_definition_file
-        if model_definition is None and model_definition_file is None:
-            raise ValueError(
-                'Either model_definition of model_definition_file have to be'
-                'not None to initialize a LudwigModel'
-            )
-        if model_definition is not None and model_definition_file is not None:
-            raise ValueError(
-                'Only one between model_definition and '
-                'model_definition_file can be provided'
-            )
-
-        self.set_logging_level(logging_level)
-
-        if model_definition_file is not None:
-            with open(model_definition_file, 'r') as def_file:
-                self.model_definition = merge_with_defaults(
-                    yaml.safe_load(def_file)
-                )
-        else:
-            model_definition_copy = copy.deepcopy(model_definition)
-            self.model_definition = merge_with_defaults(model_definition_copy)
-
-        self.train_set_metadata = None
-        self.model = None
-        self.exp_dir_name = ''
-
-    @staticmethod
-    def set_logging_level(logging_level):
+    def __init__(self,
+                 model_definition=None,
+                 model_definition_fp=None,
+                 logging_level=logging.ERROR,
+                 use_horovod=None,
+                 gpus=None,
+                 gpu_memory_limit=None,
+                 allow_parallel_threads=True,
+                 random_seed=default_random_seed):
         """
-        :param logging_level: Set/Update the logging level. Use logging
-        constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
-
-        :return: None
-        """
-        logging.getLogger('ludwig').setLevel(logging_level)
-        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
-            set_disable_progressbar(True)
-        else:
-            set_disable_progressbar(False)
-
-    @staticmethod
-    def _read_data(data_csv, data_dict):
-        """
-        :param data_csv: path to the csv data
-        :param data_dict: raw data
-        :return: pandas dataframe with the data
-        """
-        if data_csv is not None:
-            data_df = read_csv(data_csv)
-        elif data_dict is not None:
-            data_df = pd.DataFrame(data_dict)
-        else:
-            raise ValueError(
-                'No input data specified. '
-                'One of data_df, data_csv or data_dict must be provided'
-            )
-
-        return data_df
-
-    @staticmethod
-    def load(model_dir, gpus=None, gpu_memory_limit=None,
-             allow_parallel_threads=True):
-        """This function allows for loading pretrained models
-
-
-        # Inputs
-
-        :param model_dir: (string) path to the directory containing the model.
-               If the model was trained by the `train` or `experiment` command,
-               the model is in `results_dir/experiment_dir/model`.
+        :param model_definition: (dict, string) in-memory representation of model definition
+               or string path to the saved JSON model definition file.
+        :param model_definition_fp: (string) path to user-defined definition YAML file.
+        :param logging_level: Log level that will be sent to stderr.
+        :param use_horovod: (bool) use Horovod for distributed training. Will be set
+               automatically if `horovodrun` is used to launch the training script.
         :param gpus: (string, default: `None`) list of GPUs to use (it uses the
                same syntax of CUDA_VISIBLE_DEVICES)
         :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
@@ -225,126 +92,59 @@ class LudwigModel:
         :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
                multithreading parallelism to improve performance at the cost of
                determinism.
-
-        # Return
-
-        :return: (LudwigModel) a LudwigModel object
-
-
-        # Example usage
-
-        ```python
-        ludwig_model = LudwigModel.load(model_dir)
-        ```
-
         """
-
-        model, model_definition = load_model_and_definition(model_dir,
-                                                            gpus=gpus,
-                                                            gpu_memory_limit=gpu_memory_limit,
-                                                            allow_parallel_threads=allow_parallel_threads)
-        ludwig_model = LudwigModel(model_definition)
-        ludwig_model.model = model
-        ludwig_model.train_set_metadata = load_metadata(
-            os.path.join(
-                model_dir,
-                TRAIN_SET_METADATA_FILE_NAME
+        # check for model_definition and model_definition_file
+        if model_definition is None and model_definition_fp is None:
+            raise ValueError(
+                'Either model_definition of model_definition_file have to be'
+                'not None to initialize a LudwigModel'
             )
-        )
-        return ludwig_model
+        if model_definition is not None and model_definition_fp is not None:
+            raise ValueError(
+                'Only one between model_definition and '
+                'model_definition_file can be provided'
+            )
 
-    def save(self, save_path):
-        """This function allows to save models on disk
+        # merge model definition with defaults
+        if model_definition_fp is not None:
+            with open(model_definition_fp, 'r') as def_file:
+                raw_model_definition = yaml.safe_load(def_file)
+        else:
+            raw_model_definition = copy.deepcopy(model_definition)
+        self.model_definition = merge_with_defaults(raw_model_definition)
+        self.model_definition_fp = model_definition_fp
 
-        # Inputs
+        # setup horovod
+        self._horovod = configure_horovod(use_horovod)
 
-        :param  save_path: (string) path to the directory where the model is
-                going to be saved. Both a JSON file containing the model
-                architecture hyperparameters and checkpoints files containing
-                model weights will be saved.
+        # setup logging
+        self.set_logging_level(logging_level)
 
+        # setup TensorFlow
+        initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads,
+                              self._horovod)
+        # todo refactoring: decide where to put this,
+        #  here or at the beginning of training.
+        #  Either way make sure it is called before the model is initialized.
+        # tf.random.set_seed(random_seed)
 
-        # Example usage
+        # setup model
+        self.model = None
+        self.training_set_metadata = None
 
-        ```python
-        ludwig_model.save(save_path)
-        ```
-
-        """
-        if self.model is None or self.model_definition is None or self.train_set_metadata is None:
-            raise ValueError('Model has not been initialized or loaded')
-
-        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
-
-        model_hyperparameters_path = os.path.join(
-            save_path,
-            MODEL_HYPERPARAMETERS_FILE_NAME
-        )
-
-        self.model.model.save_weights(model_weights_path)
-
-        train_set_metadata_path = os.path.join(
-            save_path,
-            TRAIN_SET_METADATA_FILE_NAME
-        )
-        save_json(train_set_metadata_path, self.train_set_metadata)
-
-        self.model.save_hyperparameters(
-            self.model._hyperparameters,
-            model_hyperparameters_path
-        )
-
-    def save_for_serving(self, save_path):
-        """This function allows to save models on disk
-
-        # Inputs
-
-        :param  save_path: (string) path to the directory where the SavedModel
-                is going to be saved.
-
-
-        # Example usage
-
-        ```python
-        ludwig_model.save_for_serving(save_path)
-        ```
-
-        """
-        if (self.model is None or self.model._session is None or
-                self.model_definition is None or self.train_set_metadata is None):
-            raise ValueError('Model has not been initialized or loaded')
-
-        self.model.save_savedmodel(save_path)
-
-    def close(self):
-        """Closes an open LudwigModel (closing the session running it).
-        It should be called once done with the model to release resources.
-        """
-        # TODO(travis): determine whether this method is still needed in TF2
-        pass
+        # online training state
+        self._online_trainer = None
 
     def train(
             self,
-            data_df=None,
-            data_train_df=None,
-            data_validation_df=None,
-            data_test_df=None,
-            data_csv=None,
-            data_train_csv=None,
-            data_validation_csv=None,
-            data_test_csv=None,
-            data_hdf5=None,
-            data_train_hdf5=None,
-            data_validation_hdf5=None,
-            data_test_hdf5=None,
-            data_dict=None,
-            data_train_dict=None,
-            data_validation_dict=None,
-            data_test_dict=None,
-            train_set_metadata_json=None,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
             experiment_name='api_experiment',
             model_name='run',
-            model_load_path=None,
             model_resume_path=None,
             skip_save_training_description=False,
             skip_save_training_statistics=False,
@@ -353,11 +153,7 @@ class LudwigModel:
             skip_save_log=False,
             skip_save_processed_input=False,
             output_directory='results',
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
-            use_horovod=None,
-            random_seed=42,
+            random_seed=default_random_seed,
             debug=False,
             **kwargs
     ):
@@ -366,80 +162,22 @@ class LudwigModel:
 
         # Inputs
 
-        :param data_df: (DataFrame) dataframe containing data. If it has a split
-               column, it will be used for splitting (0: train, 1: validation,
-               2: test), otherwise the dataset will be randomly split
-        :param data_train_df: (DataFrame) dataframe containing training data
-        :param data_validation_df: (DataFrame) dataframe containing validation
-               data
-        :param data_test_df: (DataFrame dataframe containing test data
-        :param data_csv: (string) input data CSV file. If it has a split column,
-               it will be used for splitting (0: train, 1: validation, 2: test),
-               otherwise the dataset will be randomly split
-        :param data_train_csv: (string) input train data CSV file
-        :param data_validation_csv: (string) input validation data CSV file
-        :param data_test_csv: (string) input test data CSV file
-        :param data_hdf5: (string) input data HDF5 file. It is an intermediate
-               preprocess  version of the input CSV created the first time a CSV
-               file is used in the same directory with the same name and a hdf5
-               extension
-        :param data_train_hdf5: (string) input train data HDF5 file. It is an
-               intermediate preprocess  version of the input CSV created the
-               first time a CSV file is used in the same directory with the same
-               name and a hdf5 extension
-        :param data_validation_hdf5: (string) input validation data HDF5 file.
-               It is an intermediate preprocess version of the input CSV created
-               the first time a CSV file is used in the same directory with the
-               same name and a hdf5 extension
-        :param data_test_hdf5: (string) input test data HDF5 file. It is an
-               intermediate preprocess  version of the input CSV created the
-               first time a CSV file is used in the same directory with the same
-               name and a hdf5 extension
-        :param data_dict: (dict) input data dictionary. It is expected to
-               contain one key for each field and the values have to be lists of
-               the same length. Each index in the lists corresponds to one
-               datapoint. For example a data set consisting of two datapoints
-               with a text and a class may be provided as the following dict
-               `{'text_field_name': ['text of the first datapoint', text of the
-               second datapoint'], 'class_filed_name': ['class_datapoints_1',
-               'class_datapoints_2']}`.
-        :param data_train_dict: (dict) input training data dictionary. It is
-               expected to contain one key for each field and the values have
-               to be lists of the same length. Each index in the lists
-               corresponds to one datapoint. For example a data set consisting
-               of two datapoints with a text and a class may be provided as the
-               following dict:
-               `{'text_field_name': ['text of the first datapoint', 'text of the
-               second datapoint'], 'class_field_name': ['class_datapoint_1',
-               'class_datapoint_2']}`.
-        :param data_validation_dict: (dict) input validation data dictionary. It
-               is expected to contain one key for each field and the values have
-               to be lists of the same length. Each index in the lists
-               corresponds to one datapoint. For example a data set consisting
-               of two datapoints with a text and a class may be provided as the
-               following dict:
-               `{'text_field_name': ['text of the first datapoint', 'text of the
-               second datapoint'], 'class_field_name': ['class_datapoint_1',
-               'class_datapoint_2']}`.
-        :param data_test_dict: (dict) input test data dictionary. It is
-               expected to contain one key for each field and the values have
-               to be lists of the same length. Each index in the lists
-               corresponds to one datapoint. For example a data set consisting
-               of two datapoints with a text and a class may be provided as the
-               following dict:
-               `{'text_field_name': ['text of the first datapoint', 'text of the
-               second datapoint'], 'class_field_name': ['class_datapoint_1',
-               'class_datapoint_2']}`.
-        :param train_set_metadata_json: (string) input metadata JSON file. It is an
-               intermediate preprocess file containing the mappings of the input
+        :param dataset: (string, dict, DataFrame) source containing the entire dataset.
+               If it has a split column, it will be used for splitting (0: train,
+               1: validation, 2: test), otherwise the dataset will be randomly split.
+        :param training_set: (string, dict, DataFrame) source containing training data.
+        :param validation_set: (string, dict, DataFrame) source containing validation data.
+        :param test_set: (string, dict, DataFrame) source containing test data.
+        :param training_set_metadata: (string, dict) metadata JSON file or loaded metadata.
+               Intermediate preprocess structure containing the mappings of the input
                CSV created the first time a CSV file is used in the same
-               directory with the same name and a json extension
+               directory with the same name and a '.json' extension.
+        :param data_format: (string) format to interpret data sources. Will be inferred
+               automatically if not specified.
         :param experiment_name: (string) a name for the experiment, used for the save
                directory
         :param model_name: (string) a name for the model, used for the save
                directory
-        :param model_load_path: (string) path of a pretrained model to load as
-               initialization
         :param model_resume_path: (string) path of a the model directory to
                resume training of
         :param skip_save_training_description: (bool, default: `False`) disables
@@ -468,13 +206,6 @@ class LudwigModel:
                intermediate HDF5 and JSON files
         :param output_directory: (string, default: `'results'`) directory that
                contains the results
-        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
-               same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
-              per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
-               multithreading parallelism to improve performance at the cost of
-               determinism.
         :param random_seed: (int, default`42`) a random seed that is going to be
                used anywhere there is a call to a random number generator: data
                splitting, parameter initialization and training set shuffling
@@ -503,43 +234,507 @@ class LudwigModel:
 
         # Return
 
-        :return: (dict) a dictionary containing training statistics for each
-        output feature containing loss and metrics values for each epoch.
+        :return: ((dict, DataFrame)) tuple containing:
+            - A dictionary of training statistics for each output feature containing
+              loss and metrics values for each epoch. The second return
+            - A Pandas DataFrame of preprocessed training data.
         """
+        # setup directories and file names
+        if model_resume_path is not None:
+            if os.path.exists(model_resume_path):
+                output_directory = model_resume_path
+            else:
+                if is_on_master():
+                    logger.info(
+                        'Model resume path does not exists, '
+                        'starting training from scratch'
+                    )
+                model_resume_path = None
 
-        if data_df is None and data_dict is not None:
-            data_df = pd.DataFrame(data_dict)
+        if model_resume_path is None:
+            if is_on_master():
+                output_directory = get_output_directory(
+                    output_directory,
+                    experiment_name,
+                    model_name
+                )
+            else:
+                output_directory = None
 
-        if data_train_df is None and data_train_dict is not None:
-            data_train_df = pd.DataFrame(data_train_dict)
+        # if we are skipping all saving,
+        # there is no need to create a directory that will remain empty
+        should_create_output_directory = not (
+                skip_save_training_description and
+                skip_save_training_statistics and
+                skip_save_model and
+                skip_save_progress and
+                skip_save_log and
+                skip_save_processed_input
+        )
 
-        if data_validation_df is None and data_validation_dict is not None:
-            data_validation_df = pd.DataFrame(data_validation_dict)
+        description_fn = training_stats_fn = model_dir = None
+        if is_on_master():
+            if should_create_output_directory:
+                if not os.path.exists(output_directory):
+                    os.makedirs(output_directory, exist_ok=True)
+            description_fn, training_stats_fn, model_dir = get_file_names(
+                output_directory)
 
-        if data_test_df is None and data_test_dict is not None:
-            data_test_df = pd.DataFrame(data_test_dict)
+        # save description
+        if is_on_master():
+            description = get_experiment_description(
+                self.model_definition,
+                dataset=dataset,
+                training_set=training_set,
+                validation_set=validation_set,
+                test_set=test_set,
+                training_set_metadata=training_set_metadata,
+                data_format=data_format,
+                random_seed=random_seed
+            )
+            if not skip_save_training_description:
+                save_json(description_fn, description)
+            # print description
+            logger.info('Experiment name: {}'.format(experiment_name))
+            logger.info('Model name: {}'.format(model_name))
+            logger.info('Output directory: {}'.format(output_directory))
+            logger.info('\n')
+            for key, value in description.items():
+                logger.info('{}: {}'.format(key, pformat(value, indent=4)))
+            logger.info('\n')
 
-        (
-            self.model,
-            preprocessed_data,
-            self.exp_dir_name,
-            train_stats,
-            self.model_definition
-        ) = full_train(
+        # preprocess
+        preprocessed_data = preprocess_for_training(
             self.model_definition,
-            data_df=data_df,
-            data_train_df=data_train_df,
-            data_validation_df=data_validation_df,
-            data_test_df=data_test_df,
-            data_csv=data_csv,
-            data_train_csv=data_train_csv,
-            data_validation_csv=data_validation_csv,
-            data_test_csv=data_test_csv,
-            data_hdf5=data_hdf5,
-            data_train_hdf5=data_train_hdf5,
-            data_validation_hdf5=data_validation_hdf5,
-            data_test_hdf5=data_test_hdf5,
-            train_set_metadata_json=train_set_metadata_json,
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=self.model_definition[PREPROCESSING],
+            random_seed=random_seed
+        )
+
+        (training_set,
+         validation_set,
+         test_set,
+         training_set_metadata) = preprocessed_data
+        self.training_set_metadata = training_set_metadata
+
+        if is_on_master():
+            logger.info('Training set: {0}'.format(training_set.size))
+            if validation_set is not None:
+                logger.info('Validation set: {0}'.format(validation_set.size))
+            if test_set is not None:
+                logger.info('Test set: {0}'.format(test_set.size))
+
+        if is_on_master():
+            if not skip_save_model:
+                # save train set metadata
+                os.makedirs(model_dir, exist_ok=True)
+                save_json(
+                    os.path.join(
+                        model_dir,
+                        TRAIN_SET_METADATA_FILE_NAME
+                    ),
+                    training_set_metadata
+                )
+
+        contrib_command("train_init", experiment_directory=output_directory,
+                        experiment_name=experiment_name, model_name=model_name,
+                        output_directory=output_directory,
+                        resume=model_resume_path is not None)
+
+        # Build model if not provided
+        # if it was provided it means it was already loaded
+        if not self.model:
+            if is_on_master():
+                print_boxed('MODEL', print_fun=logger.debug)
+            # update model definition with metadata properties
+            update_model_definition_with_metadata(
+                self.model_definition,
+                training_set_metadata
+            )
+            self.model = LudwigModel.create_model(self.model_definition)
+
+        # init trainer
+        trainer = Trainer(
+            **self.model_definition[TRAINING],
+            resume=model_resume_path is not None,
+            skip_save_model=skip_save_model,
+            skip_save_progress=skip_save_progress,
+            skip_save_log=skip_save_log,
+            random_seed=random_seed,
+            horoovd=self._horovod,
+            debug=debug
+        )
+
+        contrib_command("train_model", self.model, self.model_definition,
+                        self.model_definition_fp)
+
+        # train model
+        if is_on_master():
+            print_boxed('TRAINING')
+            if not skip_save_model:
+                self.save_model_definition(model_dir)
+
+        train_stats = trainer.train(
+            self.model,
+            training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            save_path=model_dir,
+        )
+
+        train_trainset_stats, train_valiset_stats, train_testset_stats = train_stats
+        train_stats = {
+            TRAINING: train_trainset_stats,
+            VALIDATION: train_valiset_stats,
+            TEST: train_testset_stats
+        }
+
+        # save training statistics
+        if is_on_master():
+            if not skip_save_training_statistics:
+                save_json(training_stats_fn, train_stats)
+
+        # grab the results of the model with highest validation test performance
+        validation_field = self.model_definition[TRAINING]['validation_field']
+        validation_metric = self.model_definition[TRAINING][
+            'validation_metric']
+        validation_field_result = train_valiset_stats[validation_field]
+
+        best_function = get_best_function(validation_metric)
+        # results of the model with highest validation test performance
+        if is_on_master() and validation_set is not None:
+            epoch_best_vali_metric, best_vali_metric = best_function(
+                enumerate(validation_field_result[validation_metric]),
+                key=lambda pair: pair[1]
+            )
+            logger.info(
+                'Best validation model epoch: {0}'.format(
+                    epoch_best_vali_metric + 1)
+            )
+            logger.info(
+                'Best validation model {0} on validation set {1}: {2}'.format(
+                    validation_metric, validation_field, best_vali_metric
+                ))
+            if test_set is not None:
+                best_vali_metric_epoch_test_metric = train_testset_stats[
+                    validation_field][validation_metric][
+                    epoch_best_vali_metric]
+
+                logger.info(
+                    'Best validation model {0} on test set {1}: {2}'.format(
+                        validation_metric,
+                        validation_field,
+                        best_vali_metric_epoch_test_metric
+                    )
+                )
+            logger.info(
+                '\nFinished: {0}_{1}'.format(experiment_name, model_name))
+            logger.info('Saved to: {0}'.format(output_directory))
+
+        contrib_command("train_save", output_directory)
+
+        self.training_set_metadata = training_set_metadata
+
+        if not skip_save_model:
+            # Load the best weights from saved checkpoint
+            self.load_weights(model_dir)
+
+        return train_stats, preprocessed_data, output_directory
+
+    def train_online(self,
+                     dataset,
+                     training_set_metadata=None,
+                     data_format='auto',
+                     random_seed=default_random_seed,
+                     debug=False):
+        """Performs one epoch of training of the model on `dataset`.
+
+        :param dataset: (string, dict, DataFrame) source containing the training dataset.
+        :param training_set_metadata: (string, dict) metadata JSON file or loaded metadata.
+               Intermediate preprocess structure containing the mappings of the input
+               CSV created the first time a CSV file is used in the same
+               directory with the same name and a '.json' extension.
+        :param data_format: (string) format to interpret data sources. Will be inferred
+               automatically if not specified.
+        :param random_seed: (int, default`42`) a random seed that is going to be
+               used anywhere there is a call to a random number generator: data
+               splitting, parameter initialization and training set shuffling
+        :param debug: (bool, default: `False`) enables debugging mode
+
+        """
+        training_set_metadata = training_set_metadata or self.training_set_metadata
+        training_dataset, _, _, training_set_metadata = preprocess_for_training(
+            self.model_definition,
+            training_set=dataset,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
+            skip_save_processed_input=True,
+            preprocessing_params=self.model_definition[PREPROCESSING],
+            random_seed=random_seed
+        )
+
+        if not self.training_set_metadata:
+            self.training_set_metadata = training_set_metadata
+
+        if not self.model:
+            update_model_definition_with_metadata(
+                self.model_definition,
+                training_set_metadata
+            )
+            self.model = LudwigModel.create_model(self.model_definition)
+
+        if not self._online_trainer:
+            self._online_trainer = Trainer(
+                **self.model_definition[TRAINING],
+                random_seed=random_seed,
+                horoovd=self._horovod,
+                debug=debug
+            )
+
+        self._online_trainer.train_online(
+            self.model,
+            training_dataset,
+        )
+
+    def predict(
+            self,
+            dataset=None,
+            data_format=None,
+            batch_size=128,
+            skip_save_unprocessed_output=True,
+            skip_save_predictions=True,
+            output_directory='results',
+            return_type=pd.DataFrame,
+            debug=False,
+            **kwargs
+    ):
+        self._check_initialization()
+
+        logger.debug('Preprocessing')
+        # Added [:] to next line, before I was just assigning,
+        # this way I'm copying the list. If you don't do it, you are actually
+        # modifying the input feature list when you add output features,
+        # which you definitely don't want to do
+        features_to_load = self.model_definition['input_features'][:]
+
+        # preprocessing
+        dataset, training_set_metadata = preprocess_for_prediction(
+            self.model_definition,
+            dataset=dataset,
+            data_format=data_format,
+            training_set_metadata=self.training_set_metadata,
+            include_outputs=False,
+        )
+
+        logger.debug('Predicting')
+        predictor = Predictor(
+            batch_size=batch_size, horovod=self._horovod, debug=debug
+        )
+        predictions = predictor.batch_predict(
+            self.model,
+            dataset,
+        )
+
+        if is_on_master():
+            # if we are skipping all saving,
+            # there is no need to create a directory that will remain empty
+            should_create_exp_dir = not (
+                    skip_save_unprocessed_output and skip_save_predictions
+            )
+            if should_create_exp_dir:
+                os.makedirs(output_directory, exist_ok=True)
+
+        logger.debug('Postprocessing')
+        postproc_predictions = convert_predictions(
+            postprocess(
+                predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                output_directory=output_directory,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            ),
+            self.model.output_features,
+            self.training_set_metadata,
+            return_type=return_type
+        )
+
+        if is_on_master():
+            if not skip_save_predictions:
+                save_prediction_outputs(postproc_predictions,
+                                        output_directory)
+
+                logger.info('Saved to: {0}'.format(output_directory))
+
+        return postproc_predictions, output_directory
+
+    # def evaluate_pseudo(self, data, return_preds=False):
+    #     preproc_data = preprocess_data(data)
+    #     if return_preds:
+    #         eval_stats, preds = self.model.batch_evaluate(
+    #             preproc_data, return_preds=return_preds
+    #         )
+    #         postproc_preds = postprocess_data(preds)
+    #         return eval_stats, postproc_preds
+    #     else:
+    #         eval_stats = self.model.batch_evaluate(
+    #             preproc_data, return_preds=return_preds
+    #         )
+    #         return eval_stats
+
+    def evaluate(
+            self,
+            dataset=None,
+            data_format=None,
+            batch_size=128,
+            skip_save_unprocessed_output=True,
+            skip_save_predictions=True,
+            skip_save_eval_stats=True,
+            collect_predictions=False,
+            collect_overall_stats=False,
+            output_directory='results',
+            return_type=pd.DataFrame,
+            debug=False,
+            **kwargs
+    ):
+        self._check_initialization()
+
+        logger.debug('Preprocessing')
+        # Added [:] to next line, before I was just assigning,
+        # this way I'm copying the list. If you don't do it, you are actually
+        # modifying the input feature list when you add output features,
+        # which you definitely don't want to do
+        features_to_load = self.model_definition['input_features'] + \
+                           self.model_definition['output_features']
+
+        # preprocessing
+        # todo refactoring: maybe replace the self.model_definition paramter
+        #  here with features_to_load
+        dataset, training_set_metadata = preprocess_for_prediction(
+            self.model_definition,
+            dataset=dataset,
+            data_format=data_format,
+            training_set_metadata=self.training_set_metadata,
+            include_outputs=True,
+        )
+
+        logger.debug('Predicting')
+        predictor = Predictor(
+            batch_size=batch_size, horovod=self._horovod, debug=debug
+        )
+        stats, predictions = predictor.batch_evaluation(
+            self.model,
+            dataset,
+            collect_predictions=collect_predictions or collect_overall_stats,
+        )
+
+        # calculate the overall metrics
+        if collect_overall_stats:
+            overall_stats = calculate_overall_stats(
+                self.model.output_features,
+                predictions,
+                dataset,
+                training_set_metadata
+            )
+            stats = {of_name: {**stats[of_name], **overall_stats[of_name]}
+            # account for presence of 'combined' key
+            if of_name in overall_stats else {**stats[of_name]}
+                     for of_name in stats}
+
+        if is_on_master():
+            # if we are skipping all saving,
+            # there is no need to create a directory that will remain empty
+            should_create_exp_dir = not (
+                    skip_save_unprocessed_output and
+                    skip_save_predictions and
+                    skip_save_eval_stats
+            )
+            if should_create_exp_dir:
+                os.makedirs(output_directory, exist_ok=True)
+
+        if collect_predictions:
+            logger.debug('Postprocessing')
+            postproc_predictions = postprocess(
+                predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                output_directory=output_directory,
+                skip_save_unprocessed_output=skip_save_unprocessed_output
+                                             or not is_on_master(),
+            )
+        else:
+            postproc_predictions = predictions  # = {}
+
+        if is_on_master():
+            if postproc_predictions is not None and not skip_save_predictions:
+                save_prediction_outputs(postproc_predictions,
+                                        output_directory)
+
+            print_evaluation_stats(stats)
+            if not skip_save_eval_stats:
+                save_evaluation_stats(stats, output_directory)
+
+            if not skip_save_predictions or not skip_save_eval_stats:
+                logger.info('Saved to: {0}'.format(output_directory))
+
+        if collect_predictions:
+            postproc_predictions = convert_predictions(
+                postproc_predictions,
+                self.model.output_features,
+                self.training_set_metadata,
+                return_type=return_type)
+
+        return stats, postproc_predictions, output_directory
+
+    def experiment(
+            self,
+            dataset=None,
+            training_set=None,
+            validation_set=None,
+            test_set=None,
+            training_set_metadata=None,
+            data_format=None,
+            experiment_name='experiment',
+            model_name='run',
+            model_load_path=None,
+            model_resume_path=None,
+            skip_save_training_description=False,
+            skip_save_training_statistics=False,
+            skip_save_model=False,
+            skip_save_progress=False,
+            skip_save_log=False,
+            skip_save_processed_input=False,
+            skip_save_unprocessed_output=False,
+            skip_save_predictions=False,
+            skip_save_eval_stats=False,
+            skip_collect_predictions=False,
+            skip_collect_overall_stats=False,
+            output_directory='results',
+            gpus=None,
+            gpu_memory_limit=None,
+            allow_parallel_threads=True,
+            use_horovod=None,
+            random_seed=default_random_seed,
+            debug=False,
+            **kwargs
+    ):
+        (
+            train_stats,
+            preprocessed_data,
+            output_directory
+        ) = self.train(
+            dataset=dataset,
+            training_set=training_set,
+            validation_set=validation_set,
+            test_set=test_set,
+            training_set_metadata=training_set_metadata,
+            data_format=data_format,
             experiment_name=experiment_name,
             model_name=model_name,
             model_load_path=model_load_path,
@@ -550,6 +745,7 @@ class LudwigModel:
             skip_save_progress=skip_save_progress,
             skip_save_log=skip_save_log,
             skip_save_processed_input=skip_save_processed_input,
+            skip_save_unprocessed_output=skip_save_unprocessed_output,
             output_directory=output_directory,
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
@@ -559,443 +755,254 @@ class LudwigModel:
             debug=debug,
         )
 
-        self.train_set_metadata = preprocessed_data[-1]
+        (_,  # training_set
+         _,  # validation_set
+         test_set,
+         training_set_metadata) = preprocessed_data
 
-        return train_stats
+        if test_set is not None:
+            if self.model_definition[TRAINING]['eval_batch_size'] > 0:
+                batch_size = self.model_definition[TRAINING]['eval_batch_size']
+            else:
+                batch_size = self.model_definition[TRAINING]['batch_size']
 
-    def initialize_model(
+            # predict
+            test_results, _, _ = self.evaluate(
+                test_set,
+                data_format=data_format,
+                batch_size=batch_size,
+                output_directory=output_directory,
+                skip_save_unprocessed_output=skip_save_unprocessed_output,
+                skip_save_predictions=skip_save_predictions,
+                skip_save_eval_stats=skip_save_eval_stats,
+                collect_predictions=not skip_collect_predictions,
+                collect_overall_stats=not skip_collect_overall_stats,
+                debug=debug
+            )
+        else:
+            test_results = None
+
+        return test_results, train_stats, preprocessed_data, output_directory
+
+    def collect_weights(
             self,
-            train_set_metadata=None,
-            train_set_metadata_json=None,
-            gpus=None,
-            gpu_memory_limit=None,
-            allow_parallel_threads=True,
-            random_seed=default_random_seed,
+            tensor_names=None,
+            **kwargs
+    ):
+        self._check_initialization()
+        collected_tensors = self.model.collect_weights(tensor_names)
+        return collected_tensors
+
+    def collect_activations(
+            self,
+            layer_names,
+            dataset,
+            data_format=None,
+            batch_size=128,
+            # output_directory='results',
             debug=False,
             **kwargs
     ):
-        """This function initializes a model. It is need for performing online
-        learning, so it has to be called before `train_online`.
-        `train` initialize the model under the hood, so there is no need to call
-        this function if you don't use `train_online`.
-
-        # Inputs
-
-        :param train_set_metadata: (dict) it contains metadata information for
-               the input and output features the model is going to be trained
-               on. It's the same content of the metadata json file that is
-               created while training.
-        :param train_set_metadata_json: (string)  path to the JSON metadata file
-               created while training. it contains metadata information for the
-               input and output features the model is going to be trained on
-        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
-               same syntax of CUDA_VISIBLE_DEVICES)
-        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
-               per GPU device.
-        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
-               multithreading parallelism to improve performance at the cost of
-               determinism.
-        :param random_seed: (int, default`42`) a random seed that is going to be
-               used anywhere there is a call to a random number generator: data
-               splitting, parameter initialization and training set shuffling
-        :param debug: (bool, default: `False`) enables debugging mode
-        """
-
-        if train_set_metadata is None and train_set_metadata_json is None:
-            raise ValueError(
-                'train_set_metadata or train_set_metadata_json must not None.'
-            )
-        if train_set_metadata_json is not None:
-            train_set_metadata = load_metadata(train_set_metadata_json)
-
-        # update model definition with metadata properties
-        update_model_definition_with_metadata(
-            self.model_definition,
-            train_set_metadata)
-
-        # build model
-        model = Trainer(
-            self.model_definition['input_features'],
-            self.model_definition['output_features'],
-            self.model_definition['combiner'],
-            self.model_definition[TRAINING],
-            self.model_definition['preprocessing'],
-            gpus=gpus,
-            gpu_memory_limit=gpu_memory_limit,
-            allow_parallel_threads=allow_parallel_threads,
-            random_seed=random_seed,
-            debug=debug
-        )
-
-        # set parameters
-        self.model = model
-        self.train_set_metadata = train_set_metadata
-
-    def train_online(
-            self,
-            data_df=None,
-            data_csv=None,
-            data_dict=None,
-            batch_size=None,
-            learning_rate=None,
-            regularization_lambda=None,
-            bucketing_field=None
-    ):
-        """This function is used to perform one epoch of training of the model
-        on the specified dataset.
-
-        # Inputs
-
-        :param data_df: (DataFrame) dataframe containing data.
-        :param data_csv: (string) input data CSV file.
-        :param data_dict: (dict) input data dictionary. It is expected to
-               contain one key for each field and the values have to be lists of
-               the same length. Each index in the lists corresponds to one
-               datapoint. For example a data set consisting of two datapoints
-               with a text and a class may be provided as the following dict
-               ``{'text_field_name': ['text of the first datapoint', text of the
-               second datapoint'], 'class_filed_name': ['class_datapoints_1',
-               'class_datapoints_2']}`.
-        :param batch_size: (int) the batch size to use for training. By default
-               it's the one specified in the model definition.
-        :param learning_rate: (float) the learning rate to use for training. By
-               default the values is the one specified in the model definition.
-        :param regularization_lambda: (float) the regularization lambda
-               parameter to use for training. By default the values is the one
-               specified in the model definition.
-        :param dropout: (float) the dropout rate to use for training. By
-               default the values is the one specified in the model definition.
-        :param bucketing_field: (string) the bucketing field to use for
-               bucketing the data. By default the values is one specified in the
-               model definition.
-
-        There are three ways to provide data: by dataframes using the `data_df`
-        parameter, by CSV using the `data_csv` parameter and by dictionary,
-        using the `data_dict` parameter.
-
-        The DataFrame approach uses data previously obtained and put in a
-        dataframe, the CSV approach loads data from a CSV file, while dict
-        approach uses data organized by keys representing columns and values
-        that are lists of the datapoints for each. For example a data set
-        consisting of two datapoints with a text and a class may be provided as
-        the following dict ``{'text_field_name}: ['text of the first datapoint',
-        text of the second datapoint'], 'class_filed_name':
-        ['class_datapoints_1', 'class_datapoints_2']}`.
-        """
-
-        if (self.model is None or self.model_definition is None
-                or self.train_set_metadata is None):
-            raise ValueError('Model has not been initialized or loaded')
-
-        if data_df is None:
-            data_df = self._read_data(data_csv, data_dict)
-            data_df.csv = data_csv
-
-        if batch_size is None:
-            batch_size = self.model_definition[TRAINING]['batch_size']
-        if learning_rate is None:
-            learning_rate = self.model_definition[TRAINING]['learning_rate']
-        if regularization_lambda is None:
-            regularization_lambda = self.model_definition[TRAINING][
-                'regularization_lambda'
-            ]
-        if bucketing_field is None:
-            bucketing_field = self.model_definition[TRAINING][
-                'bucketing_field'
-            ]
-
-        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
-        features_to_load = (self.model_definition['input_features'] +
-                            self.model_definition['output_features'])
-        preprocessed_data = build_data(
-            data_df,
-            features_to_load,
-            self.train_set_metadata,
-            self.model_definition['preprocessing']
-        )
-        replace_text_feature_level(
-            self.model_definition['input_features'] +
-            self.model_definition['output_features'],
-            [preprocessed_data]
-        )
-        dataset = Dataset(
-            preprocessed_data,
-            self.model_definition['input_features'],
-            self.model_definition['output_features'],
-            None
-        )
-
-        logger.debug('Training batch')
-        self.model.train_online(
-            dataset,
-            batch_size=batch_size,
-            learning_rate=learning_rate,
-            regularization_lambda=regularization_lambda,
-            bucketing_field=bucketing_field)
-
-    def _predict(
-            self,
-            data_df=None,
-            data_csv=None,
-            data_dict=None,
-            return_type=pd.DataFrame,
-            batch_size=128,
-            evaluate_performance=False,
-            skip_save_unprocessed_output=False
-    ):
-
-        if (self.model is None or self.model_definition is None or
-                self.train_set_metadata is None):
-            raise ValueError('Model has not been trained or loaded')
-
-        if data_df is None:
-            data_df = self._read_data(data_csv, data_dict)
-
-        logger.debug('Preprocessing {} datapoints'.format(len(data_df)))
+        self._check_initialization()
+        logger.debug('Preprocessing')
         # Added [:] to next line, before I was just assigning,
         # this way I'm copying the list. If you don't do it, you are actually
         # modifying the input feature list when you add output features,
         # which you definitely don't want to do
         features_to_load = self.model_definition['input_features'][:]
-        if evaluate_performance:
-            output_features = self.model_definition['output_features']
-        else:
-            output_features = []
-        features_to_load += output_features
 
-        num_overrides = override_in_memory_flag(
-            self.model_definition['input_features'],
-            True
-        )
-        if num_overrides > 0:
-            logger.warning(
-                'Using in_memory = False is not supported for Ludwig API.'
-            )
-
-        preprocessed_data = build_data(
-            data_df,
-            features_to_load,
-            self.train_set_metadata,
-            self.model_definition['preprocessing']
-        )
-        replace_text_feature_level(
-            features_to_load,
-            [preprocessed_data]
-        )
-        dataset = Dataset(
-            preprocessed_data,
-            self.model_definition['input_features'],
-            output_features,
-            None
+        # preprocessing
+        dataset, training_set_metadata = preprocess_for_prediction(
+            self.model_definition,
+            dataset=dataset,
+            data_format=data_format,
+            training_set_metadata=self.training_set_metadata,
+            include_outputs=False,
         )
 
         logger.debug('Predicting')
-        predict_stats, predict_predictions = self.model.predict(
+        predictor = Predictor(
+            batch_size=batch_size, horovod=self._horovod, debug=debug
+        )
+        activations = predictor.batch_collect_activations(
+            self.model,
+            layer_names,
             dataset,
-            batch_size,
-            evaluate_performance=evaluate_performance,
-            session=getattr(self.model, 'session', None)
         )
 
-        if evaluate_performance:
-            # combine predictions with the overall metrics
-            for of_name in predict_predictions:
-                # remove logits, not needed for overall stats
-                del predict_predictions[of_name][LOGITS]
-                predict_stats[of_name] = {**predict_stats[of_name],
-                                          **predict_predictions[of_name]}
+        return activations
 
-            calculate_overall_stats(
-                predict_stats,
-                self.model_definition['output_features'],
-                dataset,
-                self.train_set_metadata
-            )
+    @staticmethod
+    def load(model_dir,
+             logging_level=logging.ERROR,
+             use_horovod=None,
+             gpus=None,
+             gpu_memory_limit=None,
+             allow_parallel_threads=True):
+        """This function allows for loading pretrained models
 
-        logger.debug('Postprocessing')
-        if (
-                return_type == 'dict' or
-                return_type == 'dictionary' or
-                return_type == dict
-        ):
-            postprocessed_predictions = postprocess(
-                predict_predictions,
-                self.model_definition['output_features'],
-                self.train_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output,
+        # Inputs
+
+        :param model_dir: (string) path to the directory containing the model.
+               If the model was trained by the `train` or `experiment` command,
+               the model is in `results_dir/experiment_dir/model`.
+        :param gpus: (string, default: `None`) list of GPUs to use (it uses the
+               same syntax of CUDA_VISIBLE_DEVICES)
+        :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+              per GPU device.
+        :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+               multithreading parallelism to improve performance at the cost of
+               determinism.
+
+        # Return
+
+        :return: (LudwigModel) a LudwigModel object
+
+
+        # Example usage
+
+        ```python
+        ludwig_model = LudwigModel.load(model_dir)
+        ```
+
+        """
+        horovod = configure_horovod(use_horovod)
+        model_definition = broadcast_return(lambda: load_json(os.path.join(
+            model_dir,
+            MODEL_HYPERPARAMETERS_FILE_NAME
+        )), horovod)
+
+        # initialize model
+        ludwig_model = LudwigModel(
+            model_definition,
+            logging_level=logging_level,
+            use_horovod=use_horovod,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+        )
+
+        # generate model from definition
+        ludwig_model.model = LudwigModel.create_model(model_definition)
+
+        # load model weights
+        ludwig_model.load_weights(model_dir)
+
+        # load train set metadata
+        ludwig_model.training_set_metadata = broadcast_return(
+            lambda: load_metadata(
+                os.path.join(
+                    model_dir,
+                    TRAIN_SET_METADATA_FILE_NAME
+                )
+            ), horovod
+        )
+
+        return ludwig_model
+
+    def load_weights(self, model_dir):
+        if is_on_master():
+            weights_save_path = os.path.join(
+                model_dir,
+                MODEL_WEIGHTS_FILE_NAME
             )
-        elif (
-                return_type == 'dataframe' or
-                return_type == 'df' or
-                return_type == pd.DataFrame
-        ):
-            postprocessed_predictions = postprocess_df(
-                predict_predictions,
-                self.model_definition['output_features'],
-                self.train_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output,
-            )
+            self.model.load_weights(weights_save_path)
+
+        if self._horovod:
+            # Model weights are only saved on master, so broadcast
+            # to all other ranks
+            self._horovod.broadcast_variables(self.model.variables,
+                                              root_rank=0)
+
+    def save(self, save_path):
+        """This function allows to save models on disk
+
+        # Inputs
+
+        :param  save_path: (string) path to the directory where the model is
+                going to be saved. Both a JSON file containing the model
+                architecture hyperparameters and checkpoints files containing
+                model weights will be saved.
+
+
+        # Example usage
+
+        ```python
+        ludwig_model.save(save_path)
+        ```
+
+        """
+        self._check_initialization()
+
+        # save model definition
+        self.save_model_definition(save_path)
+
+        # save model weights
+        model_weights_path = os.path.join(save_path, MODEL_WEIGHTS_FILE_NAME)
+        self.model.save_weights(model_weights_path)
+
+        # save training set metadata
+        training_set_metadata_path = os.path.join(
+            save_path,
+            TRAIN_SET_METADATA_FILE_NAME
+        )
+        save_json(training_set_metadata_path, self.training_set_metadata)
+
+    def save_model_definition(self, save_path):
+        os.makedirs(save_path, exist_ok=True)
+        model_hyperparameters_path = os.path.join(
+            save_path,
+            MODEL_HYPERPARAMETERS_FILE_NAME
+        )
+        save_json(model_hyperparameters_path, self.model_definition)
+
+    def save_for_serving(self, save_path):
+        """This function allows to save models on disk
+
+        # Inputs
+
+        :param  save_path: (string) path to the directory where the SavedModel
+                is going to be saved.
+
+
+        # Example usage
+
+        ```python
+        ludwig_model.save_for_serving(save_path)
+        ```
+
+        """
+        self._check_initialization()
+        self.model.save_savedmodel(save_path)
+
+    def _check_initialization(self):
+        if self.model is None or \
+                self.model_definition is None or \
+                self.training_set_metadata is None:
+            raise ValueError('Model has not been trained or loaded')
+
+    @staticmethod
+    def create_model(model_definition):
+        # TODO: support loading other model types based on definition
+        return ECD(
+            input_features_def=model_definition['input_features'],
+            combiner_def=model_definition['combiner'],
+            output_features_def=model_definition['output_features'],
+        )
+
+    @staticmethod
+    def set_logging_level(logging_level):
+        """
+        :param logging_level: Set/Update the logging level. Use logging
+        constants like `logging.DEBUG` , `logging.INFO` and `logging.ERROR`.
+
+        :return: None
+        """
+        logging.getLogger('ludwig').setLevel(logging_level)
+        if logging_level in {logging.WARNING, logging.ERROR, logging.CRITICAL}:
+            set_disable_progressbar(True)
         else:
-            logger.warning(
-                'Unrecognized return_type: {}. '
-                'Returning DataFrame.'.format(return_type)
-            )
-            postprocessed_predictions = postprocess(
-                (predict_stats, predict_predictions),
-                self.model_definition['output_features'],
-                self.train_set_metadata,
-                experiment_dir_name=self.exp_dir_name,
-                skip_save_unprocessed_output=skip_save_unprocessed_output,
-            )
-
-        return postprocessed_predictions, (predict_stats, predict_predictions)
-
-    def predict(
-            self,
-            data_df=None,
-            data_csv=None,
-            data_dict=None,
-            return_type=pd.DataFrame,
-            batch_size=128,
-            skip_save_unprocessed_output=True
-    ):
-        """This function is used to predict the output variables given the input
-           variables using the trained model.
-
-        # Inputs
-
-        :param data_df: (DataFrame) dataframe containing data. Only the input
-               features defined in the model definition need to be present in
-               the dataframe.
-        :param data_csv: (string) input data CSV file. Only the input features
-               defined in the model definition need to be present in the CSV.
-        :param data_dict: (dict) input data dictionary. It is expected to
-               contain one key for each field and the values have to be lists
-               of the same length. Each index in the lists corresponds to one
-               datapoint. Only the input features defined in the model
-               definition need to be present in the dataframe. For example a
-               data set consisting of two datapoints with a input text may be
-               provided as the following dict ``{'text_field_name}: ['text of
-               the first datapoint', text of the second datapoint']}`.
-        :param return_type: (strng or type, default: `DataFrame`)
-               string describing the type of the returned prediction object.
-               `'dataframe'`, `'df'` and `DataFrame` will return a pandas
-               DataFrame , while `'dict'`, ''dictionary'` and `dict` will
-               return a dictionary.
-        :param batch_size: (int, default: `128`) batch size
-        :param skip_save_unprocessed_output: If this parameter is False,
-               predictions and their probabilities are saved in both raw
-               unprocessed numpy files contaning tensors and as postprocessed
-               CSV files (one for each output feature). If this parameter is
-               True, only the CSV ones are saved and the numpy ones are skipped.
-
-        # Return
-
-        :return: (DataFrame or dict) a dataframe containing the predictions for
-                 each output feature and their probabilities (for types that
-                 return them) will be returned. For instance in a 3 way
-                 multiclass classification problem with a category field names
-                 `class` as output feature with possible values `one`, `two`
-                 and `three`, the dataframe will have as many rows as input
-                 datapoints and five columns: `class_predictions`,
-                 `class_UNK_probability`, `class_one_probability`,
-                 `class_two_probability`, `class_three_probability`. (The UNK
-                 class is always present in categorical features).
-                 If the `return_type` is a dictionary, the returned object be
-                 a dictionary contaning one entry for each output feature.
-                 Each entry is itself a dictionary containing aligned
-                 arrays of predictions and probabilities / scores.
-        """
-        predictions, _ = self._predict(
-            data_df=data_df,
-            data_csv=data_csv,
-            data_dict=data_dict,
-            return_type=return_type,
-            batch_size=batch_size,
-            evaluate_performance=False,
-            skip_save_unprocessed_output=skip_save_unprocessed_output
-        )
-
-        return predictions
-
-    def test(
-            self,
-            data_df=None,
-            data_csv=None,
-            data_dict=None,
-            return_type=pd.DataFrame,
-            batch_size=128,
-            skip_save_unprocessed_output=False,
-    ):
-        """This function is used to predict the output variables given the input
-        variables using the trained model and compute test statistics like
-        performance metrics, confusion matrices and the like.
-
-
-        # Inputs
-
-        :param data_df: (DataFrame) dataframe containing data. Both input and
-               output features defined in the model definition need to be
-               present in the dataframe.
-        :param data_csv: (string) input data CSV file. Both input and output
-               features defined in the model definition need to be present in
-               the CSV.
-        :param data_dict: (dict) input data dictionary. It is expected to
-               contain one key for each field and the values have to be lists
-               of the same length. Each index in the lists corresponds to one
-               datapoint. Both input and output features defined in the model
-               definition need to be present in the dataframe. For example a
-               data set consisting of two datapoints with a input text may be
-               provided as the following dict ``{'text_field_name}: ['text of
-               the first datapoint', text of the second datapoint']}`.
-        :param return_type: (strng or type, default: `DataFrame`)
-               string describing the type of the returned prediction object.
-               `'dataframe'`, `'df'` and `DataFrame` will return a pandas
-               DataFrame , while `'dict'`, ''dictionary'` and `dict` will
-               return a dictionary.
-        :param batch_size: (int, default: `128`) batch size
-        :param skip_save_unprocessed_output: If this parameter is False,
-               predictions and their probabilities are saved in both raw
-               unprocessed numpy files contaning tensors and as postprocessed
-               CSV files (one for each output feature). If this parameter is
-               True, only the CSV ones are saved and the numpy ones are skipped.
-
-        # Return
-
-        :return: (tuple((DataFrame or dict), dict)) a tuple of a dataframe and a
-                 dictionary. The dataframe contains the predictions for each
-                 output feature and their probabilities (for types that return
-                 them) will be returned. For instance in a 3 way multiclass
-                 classification problem with a category field names `class` as
-                 output feature with possible values `one`, `two` and `three`,
-                 the dataframe will have as many rows as input datapoints and
-                 five columns: `class_predictions`, `class_UNK_probability`,
-                 `class_one_probability`, `class_two_probability`,
-                 `class_three_probability`. (The UNK class is always present in
-                 categorical features).
-                 If the `return_type` is a dictionary, the first object
-                 of the tuple will be a dictionary contaning one entry
-                 for each output feature.
-                 Each entry is itself a dictionary containing aligned
-                 arrays of predictions and probabilities / scores.
-                 The second object of the tuple is a dictionary that contains
-                 the test statistics, with each key being the name of an output
-                 feature and the values being dictionaries containing metrics
-                 names and their values.
-        """
-        predictions, test_stats = self._predict(
-            data_df=data_df,
-            data_csv=data_csv,
-            data_dict=data_dict,
-            return_type=return_type,
-            batch_size=batch_size,
-            evaluate_performance=True,
-            skip_save_unprocessed_output=skip_save_unprocessed_output
-        )
-
-        return predictions, test_stats
+            set_disable_progressbar(False)
 
 
 def kfold_cross_validate(
@@ -1003,15 +1010,30 @@ def kfold_cross_validate(
         model_definition=None,
         model_definition_file=None,
         data_csv=None,
+        skip_save_training_description=False,
+        skip_save_training_statistics=False,
+        skip_save_model=False,
+        skip_save_progress=False,
+        skip_save_log=False,
+        skip_save_processed_input=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
+        skip_collect_predictions=False,
+        skip_collect_overall_stats=False,
         output_directory='results',
         random_seed=default_random_seed,
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
+        logging_level=logging.INFO,
+        debug=False,
         **kwargs
 ):
     """Performs k-fold cross validation and returns result data structures.
 
-
     # Inputs
-    
+
     :param num_folds: (int) number of folds to create for the cross-validation
     :param model_definition: (dict, default: None) a dictionary containing
            information needed to build a model. Refer to the
@@ -1032,213 +1054,145 @@ def kfold_cross_validate(
              `kfold_split_indices`: indices to split training data into
              training fold and test fold.
     """
+    set_on_master(use_horovod)
 
-    (kfold_cv_stats,
-     kfold_split_indices) = experiment_kfold_cross_validate(
-        num_folds,
-        model_definition=model_definition,
-        model_definition_file=model_definition_file,
-        data_csv=data_csv,
-        output_directory=output_directory,
-        random_seed=random_seed
-    )
+    # check for k_fold
+    if num_folds is None:
+        raise ValueError(
+            'k_fold parameter must be specified'
+        )
+
+    # check for model_definition and model_definition_file
+    if model_definition is None and model_definition_file is None:
+        raise ValueError(
+            'Either model_definition of model_definition_file have to be'
+            'not None to initialize a LudwigModel'
+        )
+    if model_definition is not None and model_definition_file is not None:
+        raise ValueError(
+            'Only one between model_definition and '
+            'model_definition_file can be provided'
+        )
+
+    logger.info('starting {:d}-fold cross validation'.format(num_folds))
+
+    # create output_directory if not available
+    if not os.path.isdir(output_directory):
+        os.mkdir(output_directory)
+
+    # read in data to split for the folds
+    data_df = pd.read_csv(data_csv)
+
+    # place each fold in a separate directory
+    data_dir = os.path.dirname(data_csv)
+
+    kfold_cv_stats = {}
+    kfold_split_indices = {}
+
+    for train_indices, test_indices, fold_num in \
+            generate_kfold_splits(data_df, num_folds, random_seed):
+        with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
+            curr_train_df = data_df.iloc[train_indices]
+            curr_test_df = data_df.iloc[test_indices]
+
+            kfold_split_indices['fold_' + str(fold_num)] = {
+                'training_indices': train_indices,
+                'test_indices': test_indices
+            }
+
+            # train and validate model on this fold
+            logger.info("training on fold {:d}".format(fold_num))
+
+            model = LudwigModel(
+                model_definition=model_definition,
+                model_definition_fp=model_definition_file,
+                logging_level=logging_level,
+                use_horovod=use_horovod,
+                gpus=gpus,
+                gpu_memory_limit=gpu_memory_limit,
+                allow_parallel_threads=allow_parallel_threads,
+                random_seed=random_seed
+            )
+            (
+                test_results,
+                train_stats,
+                preprocessed_data,
+                output_directory
+            ) = model.experiment(
+                training_set=curr_train_df,
+                test_set=curr_test_df,
+                experiment_name='cross_validation',
+                model_name='fold_' + str(fold_num),
+                skip_save_training_description=skip_save_training_description,
+                skip_save_training_statistics=skip_save_training_statistics,
+                skip_save_model=skip_save_model,
+                skip_save_progress=skip_save_progress,
+                skip_save_log=skip_save_log,
+                skip_save_processed_input=skip_save_processed_input,
+                skip_save_predictions=skip_save_predictions,
+                skip_save_eval_stats=skip_save_eval_stats,
+                skip_collect_predictions=skip_collect_predictions,
+                skip_collect_overall_stats=skip_collect_overall_stats,
+                output_directory=os.path.join(temp_dir_name, 'results'),
+                random_seed=random_seed,
+                debug=debug,
+            )
+
+            # todo if we want to save the csv of predictions uncomment block
+            # if is_on_master():
+            #     print_test_results(test_results)
+            #     if not skip_save_predictions:
+            #         save_prediction_outputs(
+            #             postprocessed_output,
+            #             output_directory
+            #         )
+            #     if not skip_save_eval_stats:
+            #         save_test_statistics(test_results, output_directory)
+
+            # augment the training statistics with scoring metric from
+            # the hold out fold
+            train_stats['fold_test_results'] = test_results
+
+            # collect training statistics for this fold
+            kfold_cv_stats['fold_' + str(fold_num)] = train_stats
+
+    # consolidate raw fold metrics across all folds
+    raw_kfold_stats = {}
+    for fold_name in kfold_cv_stats:
+        curr_fold_test_results = kfold_cv_stats[fold_name]['fold_test_results']
+        for of_name in curr_fold_test_results:
+            if of_name not in raw_kfold_stats:
+                raw_kfold_stats[of_name] = {}
+            fold_test_results_of = curr_fold_test_results[of_name]
+
+            for metric in fold_test_results_of:
+                if metric not in {
+                    'predictions',
+                    'probabilities',
+                    'confusion_matrix',
+                    'overall_stats',
+                    'per_class_stats',
+                    'roc_curve',
+                    'precision_recall_curve'
+                }:
+                    if metric not in raw_kfold_stats[of_name]:
+                        raw_kfold_stats[of_name][metric] = []
+                    raw_kfold_stats[of_name][metric].append(
+                        fold_test_results_of[metric]
+                    )
+
+    # calculate overall kfold statistics
+    overall_kfold_stats = {}
+    for of_name in raw_kfold_stats:
+        overall_kfold_stats[of_name] = {}
+        for metric in raw_kfold_stats[of_name]:
+            mean = np.mean(raw_kfold_stats[of_name][metric])
+            std = np.std(raw_kfold_stats[of_name][metric])
+            overall_kfold_stats[of_name][metric + '_mean'] = mean
+            overall_kfold_stats[of_name][metric + '_std'] = std
+
+    kfold_cv_stats['overall'] = overall_kfold_stats
+
+    logger.info('completed {:d}-fold cross validation'.format(num_folds))
 
     return kfold_cv_stats, kfold_split_indices
-
-
-def test_train(
-        data_csv,
-        model_definition,
-        batch_size=128,
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        debug=False,
-        logging_level=logging.ERROR,
-        **kwargs
-):
-    ludwig_model = LudwigModel(model_definition, logging_level=logging_level)
-
-    train_stats = ludwig_model.train(
-        data_csv=data_csv,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        debug=debug
-    )
-
-    logger.critical(train_stats)
-
-    # predict
-    predictions = ludwig_model.predict(
-        data_csv=data_csv,
-        batch_size=batch_size
-    )
-
-    ludwig_model.close()
-    logger.critical(predictions)
-
-
-def test_train_online(
-        data_csv,
-        model_definition,
-        batch_size=128,
-        debug=False,
-        logging_level=logging.ERROR,
-        **kwargs
-):
-    model_definition = merge_with_defaults(model_definition)
-    data, train_set_metadata = build_dataset(
-        data_csv,
-        (model_definition['input_features'] +
-         model_definition['output_features']),
-        model_definition['preprocessing']
-    )
-
-    ludwig_model = LudwigModel(model_definition, logging_level=logging_level)
-    ludwig_model.initialize_model(train_set_metadata=train_set_metadata)
-
-    ludwig_model.train_online(
-        data_csv=data_csv,
-        batch_size=128,
-    )
-    ludwig_model.train_online(
-        data_csv=data_csv,
-        batch_size=128,
-    )
-
-    # predict
-    predictions = ludwig_model.predict(
-        data_csv=data_csv,
-        batch_size=batch_size,
-    )
-    ludwig_model.close()
-    logger.critical(predictions)
-
-
-def test_predict(
-        data_csv,
-        model_path,
-        batch_size=128,
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        logging_level=logging.ERROR,
-        **kwargs
-):
-    ludwig_model = LudwigModel.load(model_path)
-
-    predictions = ludwig_model.predict(
-        data_csv=data_csv,
-        batch_size=batch_size,
-    )
-
-    ludwig_model.close()
-    logger.critical(predictions)
-
-    predictions = ludwig_model.predict(
-        data_csv=data_csv,
-        batch_size=batch_size,
-    )
-
-    logger.critical(predictions)
-
-
-def main(sys_argv):
-    parser = argparse.ArgumentParser(
-        description='This script tests ludwig APIs.'
-    )
-
-    parser.add_argument(
-        '-t',
-        '--test',
-        default='train',
-        choices=['train', 'train_online', 'predict'],
-        help='which test to run'
-    )
-
-    # ---------------
-    # Data parameters
-    # ---------------
-    parser.add_argument('--data_csv', help='input data CSV file')
-    parser.add_argument(
-        '--train_set_metadata_json',
-        help='input metadata JSON file'
-    )
-
-    # ----------------
-    # Model parameters
-    # ----------------
-    parser.add_argument('-m', '--model_path', help='model to load')
-    parser.add_argument(
-        '-md',
-        '--model_definition',
-        type=yaml.safe_load,
-        help='model definition'
-    )
-
-    # ------------------
-    # Generic parameters
-    # ------------------
-    parser.add_argument(
-        '-bs',
-        '--batch_size',
-        type=int,
-        default=128,
-        help='size of batches'
-    )
-
-    # ------------------
-    # Runtime parameters
-    # ------------------
-    parser.add_argument(
-        '-g',
-        '--gpus',
-        type=int,
-        default=None,
-        help='list of gpu to use'
-    )
-    parser.add_argument(
-        '-gml',
-        '--gpu_memory_limit',
-        type=int,
-        default=None,
-        help='maximum memory in MB to allocate per GPU device'
-    )
-    parser.add_argument(
-        '-dpt',
-        '--disable_parallel_threads',
-        action='store_false',
-        dest='allow_parallel_threads',
-        help='disable TensorFlow from using multithreading for reproducibility'
-    )
-    parser.add_argument(
-        '-dbg',
-        '--debug',
-        action='store_true',
-        default=False,
-        help='enables debugging mode'
-    )
-    parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
-    )
-
-    args = parser.parse_args(sys_argv)
-    args.logging_level = logging_level_registry[args.logging_level]
-
-    if args.test == 'train':
-        test_train(**vars(args))
-    elif args.test == 'train_online':
-        test_train_online(**vars(args))
-    elif args.test == 'predict':
-        test_predict(**vars(args))
-    else:
-        logger.info('Unsupported test type')
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])

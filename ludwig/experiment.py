@@ -22,170 +22,30 @@ import argparse
 import logging
 import os
 import sys
-import tempfile
 
-import numpy as np
-import pandas as pd
 import yaml
 
-from ludwig.constants import TRAINING
+from ludwig.api import LudwigModel, kfold_cross_validate
 from ludwig.contrib import contrib_command, contrib_import
-from ludwig.data.postprocessing import postprocess
-from ludwig.globals import LUDWIG_VERSION, set_on_master, is_on_master
-from ludwig.models.trainer import Trainer
-from ludwig.predict import predict
-from ludwig.predict import print_test_results
-from ludwig.predict import save_prediction_outputs
-from ludwig.predict import save_test_statistics
-from ludwig.train import full_train
-from ludwig.utils.data_utils import save_json, generate_kfold_splits, \
-    is_model_dir
-from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
+from ludwig.utils.data_utils import save_json
+from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
 logger = logging.getLogger(__name__)
 
 
-def experiment(
+def experiment_cli(
         model_definition,
         model_definition_file=None,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        train_set_metadata_json=None,
-        experiment_name='experiment',
-        model_name='run',
-        model_load_path=None,
-        model_resume_path=None,
-        skip_save_training_description=False,
-        skip_save_training_statistics=False,
-        skip_save_model=False,
-        skip_save_progress=False,
-        skip_save_log=False,
-        skip_save_processed_input=False,
-        skip_save_unprocessed_output=False,  # skipcq: PYL-W0613
-        skip_save_test_predictions=False,  # skipcq: PYL-W0613
-        skip_save_test_statistics=False,  # skipcq: PYL-W0613
-        output_directory='results',
-        gpus=None,
-        gpu_memory_limit=None,
-        allow_parallel_threads=True,
-        use_horovod=None,
-        random_seed=default_random_seed,
-        debug=False,
-        **kwargs
-):
-    (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
-        train_stats,
-        model_definition
-    ) = full_train(
-        model_definition,
-        model_definition_file=model_definition_file,
-        data_df=data_df,
-        data_train_df=data_train_df,
-        data_validation_df=data_validation_df,
-        data_test_df=data_test_df,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
-        experiment_name=experiment_name,
-        model_name=model_name,
-        model_load_path=model_load_path,
-        model_resume_path=model_resume_path,
-        skip_save_training_description=skip_save_training_description,
-        skip_save_training_statistics=skip_save_training_statistics,
-        skip_save_model=skip_save_model,
-        skip_save_progress=skip_save_progress,
-        skip_save_log=skip_save_log,
-        skip_save_processed_input=skip_save_processed_input,
-        output_directory=output_directory,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
-        random_seed=random_seed,
-        debug=debug,
-        **kwargs
-    )
-
-    (_,  # training_set
-     _,  # validation_set
-     test_set,
-     train_set_metadata) = preprocessed_data
-
-    if test_set is not None:
-        if model_definition[TRAINING]['eval_batch_size'] > 0:
-            batch_size = model_definition[TRAINING]['eval_batch_size']
-        else:
-            batch_size = model_definition[TRAINING]['batch_size']
-
-        # if a model was saved on disk, reload it
-        model_dir = os.path.join(experiment_dir_name, 'model')
-        if is_model_dir(model_dir):
-            model = Trainer.load(model_dir,
-                                 use_horovod=use_horovod,
-                                 gpus=gpus,
-                                 gpu_memory_limit=gpu_memory_limit,
-                                 allow_parallel_threads=allow_parallel_threads)
-
-        # predict
-        test_results = predict(
-            test_set,
-            train_set_metadata,
-            model,
-            model_definition,
-            batch_size,
-            evaluate_performance=True,
-            debug=debug
-        )
-    else:
-        test_results = None
-
-    return (
-        model,
-        preprocessed_data,
-        experiment_dir_name,
-        train_stats,
-        model_definition,
-        test_results
-    )
-
-
-def full_experiment(
-        model_definition,
-        model_definition_file=None,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        train_set_metadata_json=None,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        data_format=None,
+        training_set_metadata=None,
         experiment_name='experiment',
         model_name='run',
         model_load_path=None,
@@ -197,8 +57,10 @@ def full_experiment(
         skip_save_log=False,
         skip_save_processed_input=False,
         skip_save_unprocessed_output=False,
-        skip_save_test_predictions=False,
-        skip_save_test_statistics=False,
+        skip_save_predictions=False,
+        skip_save_eval_stats=False,
+        skip_collect_predictions=False,
+        skip_collect_overall_stats=False,
         output_directory='results',
         gpus=None,
         gpu_memory_limit=None,
@@ -206,6 +68,7 @@ def full_experiment(
         use_horovod=None,
         random_seed=default_random_seed,
         debug=False,
+        logging_level=logging.INFO,
         **kwargs
 ):
     """Trains a model on a dataset's training and validation splits and
@@ -217,34 +80,24 @@ def full_experiment(
     :param model_definition_file: The file that specifies the model definition.
            It is a yaml file.
     :type model_definition_file: filepath (str)
-    :param data_csv: A CSV file containing the input data which is used to
-           train, validate and test a model. The CSV either contains a
-           split column or will be split.
-    :type data_csv: filepath (str)
-    :param data_train_csv: A CSV file containing the input data which is used
-           to train a model.
-    :type data_train_csv: filepath (str)
-    :param data_validation_csv: A CSV file containing the input data which is used
-           to validate a model..
-    :type data_validation_csv: filepath (str)
-    :param data_test_csv: A CSV file containing the input data which is used
-           to test a model.
-    :type data_test_csv: filepath (str)
-    :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
-           of the csv file.
-    :type data_hdf5: filepath (str)
-    :param data_train_hdf5: If the training set is in the hdf5 format, this is
-           used instead of the csv file.
-    :type data_train_hdf5: filepath (str)
-    :param data_validation_hdf5: If the validation set is in the hdf5 format,
-           this is used instead of the csv file.
-    :type data_validation_hdf5: filepath (str)
-    :param data_test_hdf5: If the test set is in the hdf5 format, this is
-           used instead of the csv file.
-    :type data_test_hdf5: filepath (str)
-    :param train_set_metadata_json: If the dataset is in hdf5 format, this is
-           the associated json file containing metadata.
-    :type train_set_metadata_json: filepath (str)
+    :param dataset: Source containing the entire dataset.
+           If it has a split column, it will be used for splitting (0: train,
+           1: validation, 2: test), otherwise the dataset will be randomly split.
+    :type dataset: Str, Dictionary, DataFrame
+    :param training_set: Source containing training data.
+    :type training_set: Str, Dictionary, DataFrame
+    :param validation_set: Source containing validation data.
+    :type validation_set: Str, Dictionary, DataFrame
+    :param test_set: Source containing test data.
+    :type test_set: Str, Dictionary, DataFrame
+    :param training_set_metadata: Metadata JSON file or loaded metadata.
+           Intermediate preprocess structure containing the mappings of the input
+           CSV created the first time a CSV file is used in the same
+           directory with the same name and a '.json' extension.
+    :type training_set_metadata: Str, Dictionary
+    :param data_format: Format to interpret data sources. Will be inferred
+           automatically if not specified.
+    :type data_format: Str
     :param experiment_name: The name for the experiment.
     :type experiment_name: Str
     :param model_name: Name of the model that is being used.
@@ -296,10 +149,14 @@ def full_experiment(
            (one for each output feature). If this parameter is True,
            only the CSV ones are saved and the numpy ones are skipped.
     :type skip_save_unprocessed_output: Boolean
-    :param skip_save_test_predictions: skips saving test predictions CSV files
-    :type skip_save_test_predictions: Boolean
-    :param skip_save_test_statistics: skips saving test statistics JSON file
-    :type skip_save_test_statistics: Boolean
+    :param skip_save_predictions: skips saving test predictions CSV files
+    :type skip_save_predictions: Boolean
+    :param skip_save_eval_stats: skips saving test statistics JSON file
+    :type skip_save_eval_stats: Boolean
+    :param skip_collect_predictions: skips collecting post-processed predictions during eval.
+    :type skip_collect_predictions: Boolean
+    :param skip_collect_overall_stats: skips collecting overall stats during eval.
+    :type skip_collect_overall_stats: Boolean
     :param output_directory: The directory that will contain the training
            statistics, the saved model and the training progress files.
     :type output_directory: filepath (str)
@@ -317,35 +174,38 @@ def full_experiment(
     :type random_seed: Integer
     :param debug: If true turns on tfdbg with inf_or_nan checks.
     :type debug: Boolean
+    :param logging_level: Log level to send to stderr.
+    :type logging_level: int
     """
     set_on_master(use_horovod)
 
+    if model_load_path:
+        model = LudwigModel.load(model_load_path)
+    else:
+        model = LudwigModel(
+            model_definition=model_definition,
+            model_definition_fp=model_definition_file,
+            logging_level=logging_level,
+            use_horovod=use_horovod,
+            gpus=gpus,
+            gpu_memory_limit=gpu_memory_limit,
+            allow_parallel_threads=allow_parallel_threads,
+            random_seed=random_seed
+        )
     (
-        model,
+        test_results,
+        train_stats,
         preprocessed_data,
-        experiment_dir_name,
-        _,  # train_stats
-        model_definition,
-        test_results
-    ) = experiment(
-        model_definition,
-        model_definition_file=model_definition_file,
-        data_df=data_df,
-        data_train_df=data_train_df,
-        data_validation_df=data_validation_df,
-        data_test_df=data_test_df,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
+        output_directory
+    ) = model.experiment(
+        dataset=dataset,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
-        model_load_path=model_load_path,
         model_resume_path=model_resume_path,
         skip_save_training_description=skip_save_training_description,
         skip_save_training_statistics=skip_save_training_statistics,
@@ -353,208 +213,20 @@ def full_experiment(
         skip_save_progress=skip_save_progress,
         skip_save_log=skip_save_log,
         skip_save_processed_input=skip_save_processed_input,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
+        skip_collect_predictions=skip_collect_predictions,
+        skip_collect_overall_stats=skip_collect_overall_stats,
         output_directory=output_directory,
-        gpus=gpus,
-        gpu_memory_limit=gpu_memory_limit,
-        allow_parallel_threads=allow_parallel_threads,
-        use_horovod=use_horovod,
         random_seed=random_seed,
         debug=debug,
-        **kwargs
     )
 
-    (training_set,
-     validation_set,
-     test_set,
-     train_set_metadata) = preprocessed_data
-
-    if test_set is not None:
-        # check if we need to create the output dir
-        if is_on_master():
-            if not (
-                    skip_save_unprocessed_output and
-                    skip_save_test_predictions and
-                    skip_save_test_statistics
-            ):
-                if not os.path.exists(experiment_dir_name):
-                    os.makedirs(experiment_dir_name)
-
-        # postprocess
-        postprocessed_output = postprocess(
-            test_results,
-            model_definition['output_features'],
-            train_set_metadata,
-            experiment_dir_name,
-            skip_save_unprocessed_output or not is_on_master()
-        )
-
-        if is_on_master():
-            print_test_results(test_results)
-            if not skip_save_test_predictions:
-                save_prediction_outputs(
-                    postprocessed_output,
-                    experiment_dir_name
-                )
-            if not skip_save_test_statistics:
-                save_test_statistics(test_results, experiment_dir_name)
-
-    if is_on_master():
-        logger.info('\nFinished: {0}_{1}'.format(
-            experiment_name, model_name))
-        logger.info('Saved to: {}'.format(experiment_dir_name))
-
-    contrib_command("experiment_save", experiment_dir_name)
-    return experiment_dir_name
+    return model, test_results, train_stats, preprocessed_data, output_directory
 
 
-def kfold_cross_validate(
-        num_folds,
-        model_definition=None,
-        model_definition_file=None,
-        data_csv=None,
-        output_directory='results',
-        random_seed=default_random_seed,
-        **kwargs
-):
-    # check for k_fold
-    if num_folds is None:
-        raise ValueError(
-            'k_fold parameter must be specified'
-        )
-
-    # check for model_definition and model_definition_file
-    if model_definition is None and model_definition_file is None:
-        raise ValueError(
-            'Either model_definition of model_definition_file have to be'
-            'not None to initialize a LudwigModel'
-        )
-    if model_definition is not None and model_definition_file is not None:
-        raise ValueError(
-            'Only one between model_definition and '
-            'model_definition_file can be provided'
-        )
-
-    logger.info('starting {:d}-fold cross validation'.format(num_folds))
-
-    # extract out model definition for use
-    if model_definition_file is not None:
-        with open(model_definition_file, 'r') as def_file:
-            model_definition = \
-                merge_with_defaults(yaml.safe_load(def_file))
-
-    # create output_directory if not available
-    if not os.path.isdir(output_directory):
-        os.mkdir(output_directory)
-
-    # read in data to split for the folds
-    data_df = pd.read_csv(data_csv)
-
-    # place each fold in a separate directory
-    data_dir = os.path.dirname(data_csv)
-
-    kfold_cv_stats = {}
-    kfold_split_indices = {}
-
-    for train_indices, test_indices, fold_num in \
-            generate_kfold_splits(data_df, num_folds, random_seed):
-        with tempfile.TemporaryDirectory(dir=data_dir) as temp_dir_name:
-            curr_train_df = data_df.iloc[train_indices]
-            curr_test_df = data_df.iloc[test_indices]
-
-            kfold_split_indices['fold_' + str(fold_num)] = {
-                'training_indices': train_indices,
-                'test_indices': test_indices
-            }
-
-            # train and validate model on this fold
-            logger.info("training on fold {:d}".format(fold_num))
-            (
-                _,  # model
-                preprocessed_data,  # preprocessed_data
-                experiment_dir_name,  # experiment_dir_name
-                train_stats,
-                model_definition,
-                test_results
-            ) = experiment(
-                model_definition,
-                data_train_df=curr_train_df,
-                data_test_df=curr_test_df,
-                experiment_name='cross_validation',
-                model_name='fold_' + str(fold_num),
-                output_directory=os.path.join(temp_dir_name, 'results')
-            )
-
-            # todo this works for obtaining the postprocessed prediction
-            #  and replace the raw ones, but some refactoring is needed to
-            #  avoid having to do it
-            postprocessed_output = postprocess(
-                test_results,
-                model_definition['output_features'],
-                metadata=preprocessed_data[3],
-                experiment_dir_name=experiment_dir_name,
-                skip_save_unprocessed_output=True
-            )
-            # todo if we want to save the csv of predictions uncomment block
-            # if is_on_master():
-            #     print_test_results(test_results)
-            #     if not skip_save_test_predictions:
-            #         save_prediction_outputs(
-            #             postprocessed_output,
-            #             experiment_dir_name
-            #         )
-            #     if not skip_save_test_statistics:
-            #         save_test_statistics(test_results, experiment_dir_name)
-
-            # augment the training statistics with scoring metric from
-            # the hold out fold
-            train_stats['fold_test_results'] = test_results
-
-            # collect training statistics for this fold
-            kfold_cv_stats['fold_' + str(fold_num)] = train_stats
-
-    # consolidate raw fold metrics across all folds
-    raw_kfold_stats = {}
-    for fold_name in kfold_cv_stats:
-        curr_fold_test_results = kfold_cv_stats[fold_name]['fold_test_results']
-        for of_name in curr_fold_test_results:
-            if of_name not in raw_kfold_stats:
-                raw_kfold_stats[of_name] = {}
-            fold_test_results_of = curr_fold_test_results[of_name]
-
-            for metric in fold_test_results_of:
-                if metric not in {
-                    'predictions',
-                    'probabilities',
-                    'confusion_matrix',
-                    'overall_stats',
-                    'per_class_stats',
-                    'roc_curve',
-                    'precision_recall_curve'
-                }:
-                    if metric not in raw_kfold_stats[of_name]:
-                        raw_kfold_stats[of_name][metric] = []
-                    raw_kfold_stats[of_name][metric].append(
-                        fold_test_results_of[metric]
-                    )
-
-    # calculate overall kfold statistics
-    overall_kfold_stats = {}
-    for of_name in raw_kfold_stats:
-        overall_kfold_stats[of_name] = {}
-        for metric in raw_kfold_stats[of_name]:
-            mean = np.mean(raw_kfold_stats[of_name][metric])
-            std = np.std(raw_kfold_stats[of_name][metric])
-            overall_kfold_stats[of_name][metric + '_mean'] = mean
-            overall_kfold_stats[of_name][metric + '_std'] = std
-
-    kfold_cv_stats['overall'] = overall_kfold_stats
-
-    logger.info('completed {:d}-fold cross validation'.format(num_folds))
-
-    return kfold_cv_stats, kfold_split_indices
-
-
-def full_kfold_cross_validate(
+def kfold_cross_validate_cli(
         k_fold,
         model_definition=None,
         model_definition_file=None,
@@ -677,7 +349,7 @@ def cli(sys_argv):
     )
 
     parser.add_argument(
-        '--train_set_metadata_json',
+        '--training_set_metadata_json',
         help='input metadata JSON file. It is an intermediate preprocess file'
              ' containing the mappings of the input CSV created the first time '
              'a CSV file is used in the same directory with the same name and a'
@@ -761,14 +433,14 @@ def cli(sys_argv):
     )
     parser.add_argument(
         '-sstp',
-        '--skip_save_test_predictions',
+        '--skip_save_predictions',
         help='skips saving test predictions CSV files',
         action='store_true', default=False
     )
     parser.add_argument(
         '-sstes',
-        '--skip_save_test_statistics',
-        help='skips saving test statistics JSON file',
+        '--skip_save_eval_stats',
+        help='skips saving eval statistics JSON file',
         action='store_true', default=False
     )
     parser.add_argument(
@@ -877,9 +549,9 @@ def cli(sys_argv):
         print_ludwig('Experiment', LUDWIG_VERSION)
 
     if args.k_fold is None:
-        full_experiment(**vars(args))
+        experiment_cli(**vars(args))
     else:
-        full_kfold_cross_validate(**vars(args))
+        kfold_cross_validate_cli(**vars(args))
 
 
 if __name__ == '__main__':

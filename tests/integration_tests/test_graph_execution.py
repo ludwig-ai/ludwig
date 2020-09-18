@@ -17,12 +17,12 @@
 import contextlib
 
 import pytest
-
 import tensorflow as tf
 
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
-from tests.integration_tests.utils import generate_output_features_with_dependencies
+from tests.integration_tests.utils import \
+    generate_output_features_with_dependencies
 from tests.integration_tests.utils import numerical_feature
 from tests.integration_tests.utils import run_experiment
 from tests.integration_tests.utils import sequence_feature
@@ -83,7 +83,7 @@ def test_experiment_multiple_seq_seq(csv_filename, output_features):
         output_features = output_features
 
         rel_path = generate_data(input_features, output_features, csv_filename)
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)
 
 
 @pytest.mark.parametrize('dec_beam_width', [3])
@@ -134,4 +134,4 @@ def test_sequence_generator(
         output_features[0]['beam_width'] = dec_beam_width
 
         # run the experiment
-        run_experiment(input_features, output_features, data_csv=rel_path)
+        run_experiment(input_features, output_features, dataset=rel_path)

@@ -31,7 +31,7 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.globals import is_on_master
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import ErrorScore, \
     SoftmaxCrossEntropyMetric
@@ -102,7 +102,7 @@ class VectorFeatureMixin(object):
     def add_feature_data(
             feature,
             dataset_df,
-            data,
+            dataset,
             metadata,
             preprocessing_parameters,
     ):
@@ -115,7 +115,7 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            data[feature['name']] = np.array(
+            dataset[feature['name']] = np.array(
                 [x.split() for x in dataset_df[feature['name']]],
                 dtype=np.float32
             )
@@ -127,7 +127,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = len(data[feature['name']][0])
+        vector_size = len(dataset[feature['name']][0])
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -276,27 +276,26 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
 
     @staticmethod
     def calculate_overall_stats(
-            test_stats,
-            output_feature,
-            dataset,
+            predictions,
+            targets,
             train_set_metadata
     ):
-        pass
+        # no overall stats, just return empty dictionary
+        return {}
 
-    @staticmethod
-    def postprocess_results(
-            output_feature,
+    def postprocess_predictions(
+            self,
             result,
             metadata,
-            experiment_dir_name,
+            output_directory,
             skip_save_unprocessed_output=False,
     ):
         postprocessed = {}
-        name = output_feature['name']
+        name = self.feature_name
 
         npy_filename = None
         if is_on_master():
-            npy_filename = os.path.join(experiment_dir_name, '{}_{}.npy')
+            npy_filename = os.path.join(output_directory, '{}_{}.npy')
         else:
             skip_save_unprocessed_output = True
 

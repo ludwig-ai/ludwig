@@ -30,11 +30,17 @@ import pandas as pd
 from pandas.errors import ParserError
 from sklearn.model_selection import KFold
 
-from ludwig.constants import SPLIT
+from ludwig.constants import SPLIT, PREPROCESSING
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 
 logger = logging.getLogger(__name__)
+
+DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
+DICT_FORMATS = {'dict', 'dictionary', dict}
+DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame}
+CSV_FORMATS = {'csv'}
+HDF5_FORMATS = {'hdf5', 'h5'}
 
 
 def get_abs_path(data_csv_path, file_path):
@@ -78,7 +84,8 @@ def read_csv(data_fp, header=0, nrows=None, skiprows=None):
     except ParserError:
         logger.warning('Failed to parse the CSV with pandas default way,'
                        ' trying \\ as escape character.')
-        df = pd.read_csv(data_fp, sep=separator, header=header, escapechar='\\',
+        df = pd.read_csv(data_fp, sep=separator, header=header,
+                         escapechar='\\',
                          nrows=nrows, skiprows=skiprows)
 
     return df
@@ -99,7 +106,6 @@ def csv_contains_column(data_fp, column_name):
 
 
 def load_json(data_fp):
-    data = []
     with open(data_fp, 'r') as input_file:
         data = json.load(input_file)
     return data
@@ -296,7 +302,7 @@ def shuffle_inplace(np_dict):
         np_dict[k] = np_dict[k][p]
 
 
-def split_dataset_tvt(dataset, split):
+def split_dataset_ttv(dataset, split):
     if SPLIT in dataset:
         del dataset[SPLIT]
     training_set = split_dataset(dataset, split, value_to_split=0)
@@ -417,9 +423,9 @@ def add_sequence_feature_column(df, col_name, seq_length):
 def override_in_memory_flag(input_features, override_value):
     num_overrides = 0
     for feature in input_features:
-        if 'preprocessing' in feature:
-            if 'in_memory' in feature['preprocessing']:
-                feature['preprocessing']['in_memory'] = override_value
+        if PREPROCESSING in feature:
+            if 'in_memory' in feature[PREPROCESSING]:
+                feature[PREPROCESSING]['in_memory'] = override_value
                 num_overrides += 1
     return num_overrides
 
@@ -475,6 +481,59 @@ def get_path_size(
 def clear_data_cache():
     """Clears any cached data objects (e.g., embeddings)"""
     load_glove.cache_clear()
+
+
+def figure_data_format_dataset(dataset):
+    if isinstance(dataset, pd.DataFrame):
+        return pd.DataFrame
+    elif isinstance(dataset, dict):
+        return dict
+    elif isinstance(dataset, str):
+        dataset = dataset.lower()
+        if dataset.endswith('.csv'):
+            return 'csv'
+        elif dataset.endswith('.h5') or dataset.endswith('.hdf5'):
+            return 'hdf5'
+        else:
+            raise ValueError(
+                "Dataset path string {} "
+                "does not contain a valid extension".format(dataset)
+            )
+    else:
+        raise ValueError(
+            "Cannot figure out the format of dataset {}".format(dataset)
+        )
+
+
+def figure_data_format(
+        dataset=None, training_set=None, validation_set=None, test_set=None
+):
+    if dataset is not None:
+        data_format = figure_data_format_dataset(dataset)
+    elif training_set is not None:
+        data_formats = [figure_data_format_dataset(training_set)]
+        if validation_set is not None:
+            data_formats.append(figure_data_format_dataset(validation_set))
+        if test_set is not None:
+            data_formats.append(figure_data_format_dataset(test_set))
+        data_formats_set = set(data_formats)
+        if len(data_formats_set) > 1:
+            error_message = "Datasets have different formats. Training: "
+            error_message += str(data_formats[0])
+            if validation_set:
+                error_message = ", Validation: "
+                error_message += str(data_formats[1])
+            if test_set:
+                error_message = ", Test: "
+                error_message += str(data_formats[-1])
+            raise ValueError(error_message)
+        else:
+            data_format = next(iter(data_formats_set))
+    else:
+        raise ValueError(
+            "At least one between dataset and training_set must be not None"
+        )
+    return data_format
 
 
 def is_model_dir(path: str) -> bool:
