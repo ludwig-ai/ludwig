@@ -4,19 +4,29 @@
 #   image features
 #   audio features
 #   visualizations
+#   hyperparameter optimization
+#   distributed training
 #   model serving
 #
 
-FROM tensorflow/tensorflow:1.15.2-gpu-py3
+FROM tensorflow/tensorflow:2.3.0-gpu
 
-RUN apt-get -y update && apt-get -y install git libsndfile1
+RUN apt-get -y update && apt-get -y install \
+    git \
+    libsndfile1 \
+    cmake \
+    libcudnn7=7.6.5.32-1+cuda10.1 \
+    libnccl2=2.7.8-1+cuda10.1 \
+    libnccl-dev=2.7.8-1+cuda10.1
 
 RUN git clone --depth=1 https://github.com/uber/ludwig.git \
     && cd ludwig/ \
-    && pip install -r requirements.txt -r requirements_text.txt \
-          -r requirements_image.txt -r requirements_audio.txt \
-          -r requirements_serve.txt -r requirements_viz.txt \
-    && python setup.py install
+    && HOROVOD_GPU_OPERATIONS=NCCL \
+       HOROVOD_WITH_TENSORFLOW=1 \
+       HOROVOD_WITHOUT_MPI=1 \
+       HOROVOD_WITHOUT_PYTORCH=1 \
+       HOROVOD_WITHOUT_MXNET=1 \
+    && pip install --no-cache-dir '.[full]'
 
 WORKDIR /data
 
