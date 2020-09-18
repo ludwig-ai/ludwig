@@ -29,7 +29,6 @@ from ludwig.data.concatenate_datasets import concatenate_df
 from ludwig.data.dataset import Dataset
 from ludwig.features.feature_registries import base_type_registry, \
     input_type_registry
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format, \
     DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
@@ -42,6 +41,7 @@ from ludwig.utils.data_utils import text_feature_data_field
 from ludwig.utils.defaults import default_preprocessing_parameters, \
     merge_with_defaults
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import get_from_registry, resolve_pointers
 from ludwig.utils.misc_utils import merge_dict
 from ludwig.utils.misc_utils import set_random_seed
@@ -488,10 +488,14 @@ def preprocess_for_training(
                 'with {} data format.'.format(data_format)
             )
 
-        dataset = dataset or pd.DataFormat(dataset)
-        training_set = training_set or pd.DataFrame(training_set)
-        validation_set = validation_set or pd.DataFrame(validation_set)
-        test_set = test_set or pd.DataFrame(test_set)
+        if dataset is not None:
+            dataset = pd.DataFrame(dataset)
+        if training_set_metadata is not None:
+            training_set = pd.DataFrame(training_set)
+        if validation_set is not None:
+            validation_set = pd.DataFrame(validation_set)
+        if test_set is not None:
+            test_set = pd.DataFrame(test_set)
 
         (
             training_set,

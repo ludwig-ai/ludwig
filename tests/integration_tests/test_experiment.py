@@ -304,9 +304,9 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
 
 
 @pytest.mark.parametrize('test_in_memory', [True, False])
-@pytest.mark.parametrize('test_format', ['csv', 'df', 'hdf5'])
+@pytest.mark.parametrize('test_format', ['csv', 'df', 'dict', 'hdf5'])
 @pytest.mark.parametrize('train_in_memory', [True, False])
-@pytest.mark.parametrize('train_format', ['csv', 'df', 'hdf5'])
+@pytest.mark.parametrize('train_format', ['csv', 'df', 'dict', 'hdf5'])
 def test_experiment_image_dataset(
         train_format, train_in_memory,
         test_format, test_in_memory
@@ -359,8 +359,10 @@ def test_experiment_image_dataset(
     if train_format == 'csv':
         train_dataset_to_use = train_data
 
-    elif train_format == 'df':
+    elif train_format in {'df', 'dict'}:
         train_dataset_to_use = pd.read_csv(train_data)
+        if train_format == 'dict':
+            train_dataset_to_use = train_dataset_to_use.to_dict(orient='list')
 
     else:
         # hdf5 format
@@ -389,8 +391,10 @@ def test_experiment_image_dataset(
     if test_format == 'csv':
         test_dataset_to_use = test_data
 
-    elif test_format == 'df':
+    elif test_format in {'df', 'dict'}:
         test_dataset_to_use = pd.read_csv(test_data)
+        if test_format == 'dict':
+            test_dataset_to_use = test_dataset_to_use.to_dict(orient='list')
 
     else:
         # hdf5 format
