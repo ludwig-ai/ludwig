@@ -87,13 +87,23 @@ def learning_rate_warmup(
         epoch,
         warmup_epochs,
         curr_step,
-        steps_per_epoch
+        steps_per_epoch,
+        initial_learning_rate,
+        decay,
+        decay_rate,
+        decay_steps
 ):
     global_curr_step = 1 + curr_step + epoch * steps_per_epoch
     warmup_steps = warmup_epochs * steps_per_epoch
 
+    if decay:
+        learning_rate_to_use = \
+            initial_learning_rate * decay_rate ** (float(global_curr_step) / decay_steps)
+    else:
+        learning_rate_to_use = learning_rate
+
     warmup_percent_done = global_curr_step / warmup_steps
-    warmup_learning_rate = learning_rate * warmup_percent_done
+    warmup_learning_rate = learning_rate_to_use * warmup_percent_done
 
     is_warmup = int(global_curr_step < warmup_steps)
     interpolated_learning_rate = (

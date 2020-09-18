@@ -70,6 +70,9 @@ class Trainer:
             epochs=100,
             regularization_lambda=0.0,
             learning_rate=0.001,
+            decay=False,
+            decay_rate=0.96,
+            decay_steps=10000,
             batch_size=128,
             eval_batch_size=0,
             bucketing_field=None,
@@ -187,6 +190,9 @@ class Trainer:
         self._epochs = epochs
         self._regularization_lambda = regularization_lambda
         self._learning_rate = learning_rate
+        self._decay = decay
+        self._decay_rate = decay_rate
+        self._decay_steps = decay_steps
         self._batch_size = batch_size
         self._eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
         self._bucketing_field = bucketing_field
@@ -560,7 +566,11 @@ class Trainer:
                         progress_tracker.epoch,
                         self._learning_rate_warmup_epochs,
                         batcher.step,
-                        batcher.steps_per_epoch
+                        batcher.steps_per_epoch,
+                        self._learning_rate,
+                        self._decay,
+                        self._decay_rate,
+                        self._decay_steps
                     )
                 self._optimizer.set_learning_rate(current_learning_rate)
 
