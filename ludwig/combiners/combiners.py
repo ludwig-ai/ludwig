@@ -58,7 +58,7 @@ class ConcatCombiner(tf.keras.Model):
 
         self.fc_stack = None
 
-        # todo this may be redundant, check
+        # todo future: this may be redundant, check
         if fc_layers is None and \
                 num_fc_layers is not None:
             fc_layers = []

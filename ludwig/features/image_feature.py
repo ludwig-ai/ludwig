@@ -323,7 +323,7 @@ class ImageFeatureMixin(object):
                 mode = 'r+'
 
             with h5py.File(data_fp, mode) as h5_file:
-                # TODO add multiprocessing/multithreading
+                # todo future add multiprocessing/multithreading
                 image_dataset = h5_file.create_dataset(
                     feature[NAME] + '_data',
                     (num_images, height, width, num_channels),

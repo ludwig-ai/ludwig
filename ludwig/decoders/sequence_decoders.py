@@ -179,7 +179,7 @@ class SequenceGeneratorDecoder(Layer):
                 # if it is bidirectional gru / rnn, the output of one of
                 # the directions will be treated as the inital c of the lstm
                 # which is weird and may lead to poor performance
-                # todo try to find a way to distinguish among these two cases
+                # todo future: try to find a way to distinguish among these two cases
                 pass
             elif len(encoder_output_state) == 4:
                 # the encoder was a bidirectional lstm
@@ -740,7 +740,7 @@ class SequenceTaggerDecoder(Layer):
                 'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
                     len(hidden.shape)))
 
-        # TODO tf2 add feed forward attention
+        # todo TF2: add feed forward attention
 
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)

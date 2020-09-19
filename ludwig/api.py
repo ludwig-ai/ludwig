@@ -985,7 +985,7 @@ class LudwigModel:
 
     @staticmethod
     def create_model(model_definition):
-        # TODO: support loading other model types based on definition
+        # todo: support loading other model types based on definition
         return ECD(
             input_features_def=model_definition['input_features'],
             combiner_def=model_definition['combiner'],
@@ -1139,17 +1139,6 @@ def kfold_cross_validate(
                 random_seed=random_seed,
                 debug=debug,
             )
-
-            # todo if we want to save the csv of predictions uncomment block
-            # if is_on_master():
-            #     print_test_results(test_results)
-            #     if not skip_save_predictions:
-            #         save_prediction_outputs(
-            #             postprocessed_output,
-            #             output_directory
-            #         )
-            #     if not skip_save_eval_stats:
-            #         save_test_statistics(test_results, output_directory)
 
             # augment the training statistics with scoring metric from
             # the hold out fold

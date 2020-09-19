@@ -116,18 +116,6 @@ class ECD(tf.keras.Model):
                 mask=mask
             )
             output_logits[output_feature_name] = decoder_outputs
-            # output_logits[output_feature_name][LOGITS] = decoder_logits
-            # output_logits[output_feature_name][
-            #    LAST_HIDDEN] = decoder_last_hidden
-
-            # todo Piero: not sure this is needed,
-            #  if combiner had lengths and the decoder wants to return them
-            #  the decoder should do it, otherwise
-            #  this can override the decoder outputs
-            # if LENGTHS in combiner_outputs:
-            #    output_logits[output_feature_name][LENGTHS] = \
-            #        combiner_outputs[LENGTHS]
-
             output_last_hidden[output_feature_name] = decoder_outputs[
                 'last_hidden']
 

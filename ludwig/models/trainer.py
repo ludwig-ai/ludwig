@@ -587,7 +587,7 @@ class Trainer:
                 progress_bar.close()
 
             progress_tracker.epoch += 1
-            batcher.reset()  # todo this may be useless, doublecheck
+            batcher.reset()  # todo future: this may be useless, doublecheck
 
             # ================ Eval ================
             # init tables

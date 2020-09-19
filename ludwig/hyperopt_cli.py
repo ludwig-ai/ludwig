@@ -191,7 +191,7 @@ def hyperopt(
             output_type_registry
         )
         if metric not in feature_class.metric_functions:
-            # TODO allow users to specify also metrics from the overall
+            # todo v0.4: allow users to specify also metrics from the overall
             #  and per class metrics from the trainign stats and in general
             #  and potprocessed metric
             raise ValueError(

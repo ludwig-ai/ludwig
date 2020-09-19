@@ -350,7 +350,7 @@ def accuracy(targets, predictions, output_feature_name):
     return accuracy, correct_predictions
 
 
-# TODO TF2 refactor to better adapt for TF2 port
+# todo TF2: refactor to better adapt for TF2 port
 def masked_accuracy(targets, predictions, sequence_lengths):
     truncated_predictions = predictions[:, :targets.shape[1]]
     paddings = tf.stack([[0, 0], [0, tf.shape(targets)[1] -

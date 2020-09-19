@@ -629,8 +629,6 @@ def substitute_parameters(model_definition, parameters):
     return model_definition
 
 
-# TODO this is duplicate code from experiment,
-#  reorganize experiment to avoid having to do this
 def train_and_eval_on_split(
         model_definition,
         eval_split=VALIDATION,
