@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 from ludwig.constants import BAG, BINARY, CATEGORY, DATE, H3, IMAGE, NUMERICAL, \
-    SEQUENCE, SET, TEXT, TIMESERIES, VECTOR, AUDIO, TYPE
+    SEQUENCE, SET, TEXT, TIMESERIES, VECTOR, AUDIO, TYPE, NAME
 from ludwig.features.audio_feature import AudioFeatureMixin, AudioInputFeature
 from ludwig.features.bag_feature import BagFeatureMixin, BagInputFeature
 from ludwig.features.binary_feature import BinaryFeatureMixin, \

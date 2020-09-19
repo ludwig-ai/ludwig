@@ -15,6 +15,7 @@
 # ==============================================================================
 import tensorflow as tf
 
+from ludwig.constants import TYPE
 from ludwig.utils.misc_utils import get_from_registry
 
 initializers_registry = {

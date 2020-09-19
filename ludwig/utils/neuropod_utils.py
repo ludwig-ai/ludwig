@@ -8,7 +8,7 @@ import numpy as np
 from ludwig import __file__ as ludwig_path
 from ludwig.api import LudwigModel
 from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET, \
-    VECTOR, PREDICTIONS, PROBABILITIES, PROBABILITY
+    VECTOR, PREDICTIONS, PROBABILITIES, PROBABILITY, NAME
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
     TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION
 from ludwig.utils.data_utils import load_json

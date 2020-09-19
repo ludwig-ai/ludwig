@@ -34,7 +34,8 @@ import tensorflow as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
+from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE, \
+    NAME
 from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME

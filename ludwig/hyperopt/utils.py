@@ -1,5 +1,5 @@
 from ludwig.constants import STRATEGY, EXECUTOR, VALIDATION, COMBINED, LOSS, \
-    MINIMIZE
+    MINIMIZE, TYPE
 from ludwig.hyperopt.execution import executor_registry
 from ludwig.hyperopt.sampling import sampler_registry
 from ludwig.utils.misc_utils import set_default_value, set_default_values, \

@@ -27,7 +27,7 @@ from pprint import pformat
 import yaml
 
 from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, \
-    VALIDATION
+    VALIDATION, TYPE
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION
