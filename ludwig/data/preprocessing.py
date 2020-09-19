@@ -310,6 +310,8 @@ def load_hdf5(
 
     if not split_data:
         hdf5_data.close()
+        if shuffle_training:
+            dataset = data_utils.shuffle_dict_unison_inplace(dataset)
         return dataset
 
     split = hdf5_data[SPLIT][()]
@@ -441,12 +443,6 @@ def preprocess_for_training(
         )
 
     elif data_format in HDF5_FORMATS:
-        if not dataset:
-            raise ValueError('When providing HDF5 data, '
-                             'data must not be None and '
-                             'should be the path to a HDF5 file containing '
-                             'train, validation and test splits.')
-
         if not training_set_metadata:
             raise ValueError('When providing HDF5 data, '
                              'training_set_metadata must not be None.')
@@ -470,12 +466,32 @@ def preprocess_for_training(
             )
             training_set_metadata[DATA_TRAIN_HDF5_FP] = dataset
 
-        training_set, test_set, validation_set = load_hdf5(
-            dataset,
-            model_definition['input_features'],
-            model_definition['output_features'],
-            shuffle_training=True
-        )
+        if dataset is not None:
+            training_set, test_set, validation_set = load_hdf5(
+                dataset,
+                model_definition['input_features'],
+                model_definition['output_features'],
+                shuffle_training=True
+            )
+        elif training_set is not None:
+            kwargs = dict(
+                input_features=model_definition['input_features'],
+                output_features=model_definition['output_features'],
+                split_data=False
+            )
+            training_set = load_hdf5(training_set,
+                                     shuffle_training=True,
+                                     **kwargs)
+            if validation_set is not None:
+                validation_set = load_hdf5(validation_set,
+                                           shuffle_training=False,
+                                           **kwargs)
+            if test_set is not None:
+                test_set = load_hdf5(test_set,
+                                     shuffle_training=False,
+                                     **kwargs)
+        else:
+            raise ValueError('One of `dataset` or `training_set` must be not None')
 
     elif data_format in DICT_FORMATS:
         num_overrides = override_in_memory_flag(

@@ -257,3 +257,6 @@ def test_api_training_set(csv_filename):
         model = LudwigModel(model_definition)
         model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
         model.predict(dataset=test_csv)
+
+        # Train again, this time the HDF5 cache will be used
+        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
