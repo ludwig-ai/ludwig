@@ -482,12 +482,14 @@ def preprocess_for_training(
             training_set = load_hdf5(training_set,
                                      shuffle_training=True,
                                      **kwargs)
-            validation_set = load_hdf5(validation_set,
-                                       shuffle_training=False,
-                                       **kwargs)
-            test_set = load_hdf5(test_set,
-                                 shuffle_training=False,
-                                 **kwargs)
+            if validation_set is not None:
+                validation_set = load_hdf5(validation_set,
+                                           shuffle_training=False,
+                                           **kwargs)
+            if test_set is not None:
+                test_set = load_hdf5(test_set,
+                                     shuffle_training=False,
+                                     **kwargs)
         else:
             raise ValueError('either data or data_train have to be not None')
 
