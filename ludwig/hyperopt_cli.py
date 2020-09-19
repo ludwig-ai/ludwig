@@ -37,11 +37,80 @@ from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
 from ludwig.utils.horovod_utils import set_on_master, is_on_master
-from ludwig.utils.misc_utils import get_from_registry
+from ludwig.utils.misc_utils import get_from_registry, \
+    check_which_model_definition
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig, \
     print_boxed
 
 logger = logging.getLogger(__name__)
+
+
+def hyperopt_cli(
+        model_definition=None,
+        model_definition_file=None,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
+        experiment_name="hyperopt",
+        model_name="run",
+        # model_load_path=None,
+        # model_resume_path=None,
+        skip_save_training_description=True,
+        skip_save_training_statistics=True,
+        skip_save_model=True,
+        skip_save_progress=True,
+        skip_save_log=True,
+        skip_save_processed_input=True,
+        skip_save_unprocessed_output=True,
+        skip_save_predictions=True,
+        skip_save_eval_stats=True,
+        skip_save_hyperopt_statistics=False,
+        output_directory="results",
+        gpus=None,
+        gpu_memory_limit=None,
+        allow_parallel_threads=True,
+        use_horovod=None,
+        random_seed=default_random_seed,
+        debug=False,
+        **kwargs,
+):
+    model_definition = check_which_model_definition(model_definition,
+                                                    model_definition_file)
+
+    hyperopt(
+        model_definition=model_definition,
+        dataset=dataset,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        data_format=data_format,
+        experiment_name=experiment_name,
+        model_name=model_name,
+        # model_load_path=model_load_path,
+        # model_resume_path=model_resume_path,
+        skip_save_training_description=skip_save_training_description,
+        skip_save_training_statistics=skip_save_training_statistics,
+        skip_save_model=skip_save_model,
+        skip_save_progress=skip_save_progress,
+        skip_save_log=skip_save_log,
+        skip_save_processed_input=skip_save_processed_input,
+        skip_save_unprocessed_output=skip_save_unprocessed_output,
+        skip_save_predictions=skip_save_predictions,
+        skip_save_eval_stats=skip_save_eval_stats,
+        skip_save_hyperopt_statistics=skip_save_hyperopt_statistics,
+        output_directory=output_directory,
+        gpus=gpus,
+        gpu_memory_limit=gpu_memory_limit,
+        allow_parallel_threads=allow_parallel_threads,
+        use_horovod=use_horovod,
+        random_seed=random_seed,
+        debug=debug,
+        **kwargs,
+    )
 
 
 def hyperopt(
@@ -75,11 +144,15 @@ def hyperopt(
         debug=False,
         **kwargs,
 ):
-    # merge with default model definition to set defaults
-    if model_definition_file is not None:
-        with open(model_definition_file, "r") as def_file:
-            model_definition = yaml.safe_load(def_file)
-    model_definition = merge_with_defaults(model_definition)
+    # check if model definition is a path or a dict
+    if isinstance(model_definition, str):  # assume path
+        with open(model_definition, 'r') as def_file:
+            model_definition_dict = yaml.safe_load(def_file)
+    else:
+        model_definition_dict = model_definition
+
+    # merge model definition with defaults
+    model_definition = merge_with_defaults(model_definition_dict)
 
     if HYPEROPT not in model_definition:
         raise ValueError(
@@ -105,9 +178,9 @@ def hyperopt(
     # check validity of output_feature / metric/ split combination
     ######################
     if split == TRAINING:
-        if not (data_train_df or data_train_csv or data_train_hdf5) and (
-                model_definition['preprocessing']['split_probabilities'][
-                    0] <= 0):
+        if not training_set and (
+                model_definition['preprocessing']['split_probabilities'][0]
+                <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -115,12 +188,9 @@ def hyperopt(
                 'of the model definition is not greater than 0'.format(split)
             )
     elif split == VALIDATION:
-        if not (
-                data_validation_df or
-                data_validation_csv or
-                data_validation_hdf5
-        ) and (model_definition['preprocessing']['split_probabilities'][
-                   1] <= 0):
+        if not validation_set and (
+                model_definition['preprocessing']['split_probabilities'][1]
+                <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -128,9 +198,9 @@ def hyperopt(
                 'of the model definition is not greater than 0'.format(split)
             )
     elif split == TEST:
-        if not (data_test_df or data_test_csv or data_test_hdf5) and (
-                model_definition['preprocessing']['split_probabilities'][
-                    2] <= 0):
+        if not test_set and (
+                model_definition['preprocessing']['split_probabilities'][2]
+                <= 0):
             raise ValueError(
                 'The data for the specified split for hyperopt "{}" '
                 'was not provided, '
@@ -483,7 +553,7 @@ def cli(sys_argv):
     if is_on_master():
         print_ludwig("Hyperopt", LUDWIG_VERSION)
 
-    hyperopt(**vars(args))
+    hyperopt_cli(**vars(args))
 
 
 if __name__ == "__main__":
