@@ -45,21 +45,13 @@ logger = logging.getLogger(__name__)
 
 
 def hyperopt(
-        model_definition=None,
-        model_definition_file=None,
-        data_df=None,
-        data_train_df=None,
-        data_validation_df=None,
-        data_test_df=None,
-        data_csv=None,
-        data_train_csv=None,
-        data_validation_csv=None,
-        data_test_csv=None,
-        data_hdf5=None,
-        data_train_hdf5=None,
-        data_validation_hdf5=None,
-        data_test_hdf5=None,
-        train_set_metadata_json=None,
+        model_definition,
+        dataset=None,
+        training_set=None,
+        validation_set=None,
+        test_set=None,
+        training_set_metadata=None,
+        data_format=None,
         experiment_name="hyperopt",
         model_name="run",
         # model_load_path=None,
@@ -83,18 +75,6 @@ def hyperopt(
         debug=False,
         **kwargs,
 ):
-    # check for model_definition and model_definition_file
-    if model_definition is None and model_definition_file is None:
-        raise ValueError(
-            "Either model_definition of model_definition_file have to be"
-            "not None to initialize a LudwigModel"
-        )
-    if model_definition is not None and model_definition_file is not None:
-        raise ValueError(
-            "Only one between model_definition and "
-            "model_definition_file can be provided"
-        )
-
     # merge with default model definition to set defaults
     if model_definition_file is not None:
         with open(model_definition_file, "r") as def_file:
@@ -214,19 +194,12 @@ def hyperopt(
 
     hyperopt_results = hyperopt_executor.execute(
         model_definition,
-        data_df=data_df,
-        data_train_df=data_train_df,
-        data_validation_df=data_validation_df,
-        data_test_df=data_test_df,
-        data_csv=data_csv,
-        data_train_csv=data_train_csv,
-        data_validation_csv=data_validation_csv,
-        data_test_csv=data_test_csv,
-        data_hdf5=data_hdf5,
-        data_train_hdf5=data_train_hdf5,
-        data_validation_hdf5=data_validation_hdf5,
-        data_test_hdf5=data_test_hdf5,
-        train_set_metadata_json=train_set_metadata_json,
+        dataset=dataset,
+        training_set=training_set,
+        validation_set=validation_set,
+        test_set=test_set,
+        training_set_metadata=training_set_metadata,
+        data_format=data_format,
         experiment_name=experiment_name,
         model_name=model_name,
         # model_load_path=None,

@@ -28,9 +28,10 @@ import yaml
 from ludwig.api import LudwigModel, kfold_cross_validate
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
+from ludwig.utils.misc_utils import check_which_model_definition
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -179,12 +180,14 @@ def experiment_cli(
     """
     set_on_master(use_horovod)
 
+    model_definition = check_which_model_definition(model_definition,
+                                                    model_definition_file)
+
     if model_load_path:
         model = LudwigModel.load(model_load_path)
     else:
         model = LudwigModel(
             model_definition=model_definition,
-            model_definition_fp=model_definition_file,
             logging_level=logging_level,
             use_horovod=use_horovod,
             gpus=gpus,
@@ -254,12 +257,13 @@ def kfold_cross_validate_cli(
 
     :return: None
     """
+    model_definition = check_which_model_definition(model_definition,
+                                                    model_definition_file)
 
     (kfold_cv_stats,
      kfold_split_indices) = kfold_cross_validate(
         k_fold,
         model_definition=model_definition,
-        model_definition_file=model_definition_file,
         data_csv=data_csv,
         output_directory=output_directory,
         random_seed=random_seed
