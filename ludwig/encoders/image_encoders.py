@@ -123,7 +123,7 @@ class Stacked2DCNN(Layer):
             :param inputs: The inputs fed into the encoder.
                     Shape: [batch x height x width x channels], type tf.uint8
         """
-        inputs = tf.cast(inputs, tf.float32)
+        inputs = (tf.cast(inputs, tf.float32) / 128.0) - 1.0
 
         # ================ Conv Layers ================
         hidden = self.conv_stack_2d(
@@ -215,7 +215,7 @@ class ResNetEncoder(Layer):
         )
 
     def call(self, inputs, training=None, mask=None):
-        hidden = tf.cast(inputs, tf.float32)
+        hidden = (tf.cast(inputs, tf.float32) / 128.0) - 1.0
 
         hidden = self.resnet(hidden, training=training)
         hidden = self.flatten(hidden, training=training)
