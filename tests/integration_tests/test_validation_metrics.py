@@ -105,7 +105,6 @@ def test_validation_metrics(test_case, csv_filename):
             [category_feature(), numerical_feature()],
             []
         )
-
     ]
 )
 def test_validation_metrics_mulitiple_output(test_case, csv_filename):
