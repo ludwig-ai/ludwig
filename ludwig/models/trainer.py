@@ -57,8 +57,6 @@ from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
 
-tf.config.experimental_run_functions_eagerly(True)
-
 
 class Trainer:
     """
