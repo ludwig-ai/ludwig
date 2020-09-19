@@ -27,12 +27,12 @@ from ludwig.encoders.category_encoders import CategoricalSparseEncoder
 from ludwig.encoders.generic_encoders import PassthroughEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import CategoryAccuracy
 from ludwig.modules.metric_modules import HitsAtKMetric
 from ludwig.modules.metric_modules import SoftmaxCrossEntropyMetric
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import int_type
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
@@ -89,9 +89,9 @@ class CategoryFeatureMixin(object):
             metadata,
             preprocessing_parameters=None
     ):
-        dataset[feature['name']] = CategoryFeatureMixin.feature_data(
-            dataset_df[feature['name']].astype(str),
-            metadata[feature['name']]
+        dataset[feature[NAME]] = CategoryFeatureMixin.feature_data(
+            dataset_df[feature[NAME]].astype(str),
+            metadata[feature[NAME]]
         )
 
 
@@ -265,7 +265,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     'for the <UNK> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
                         output_feature['num_classes'],
-                        output_feature['name']
+                        output_feature[NAME]
                     )
                 )
 
@@ -282,7 +282,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                     'for the <UNK> class too.'.format(
                         output_feature[LOSS]['class_weights'].keys(),
                         feature_metadata['str2idx'].keys(),
-                        output_feature['name']
+                        output_feature[NAME]
                     )
                 )
             else:
@@ -314,7 +314,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                                 'the first row {}. All rows must have '
                                 'the same length.'.format(
                                     curr_row,
-                                    output_feature['name'],
+                                    output_feature[NAME],
                                     curr_row_length,
                                     first_row_length
                                 )
@@ -328,7 +328,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         'The class_similarities matrix of {} has '
                         '{} rows and {} columns, '
                         'their number must be identical.'.format(
-                            output_feature['name'],
+                            output_feature[NAME],
                             len(similarities),
                             all_rows_length
                         )
@@ -341,7 +341,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                         'Check the metadata JSON file to see the classes '
                         'and their order and '
                         'consider <UNK> class too.'.format(
-                            output_feature['name'],
+                            output_feature[NAME],
                             all_rows_length,
                             output_feature['num_classes']
                         )
@@ -359,7 +359,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0, '
                     'but no class_similarities are provided '
-                    'for feature {}'.format(output_feature['name'])
+                    'for feature {}'.format(output_feature[NAME])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':
@@ -460,7 +460,7 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
         set_default_values(
             output_feature[LOSS],
             {
-                'type': 'softmax_cross_entropy',
+                TYPE: 'softmax_cross_entropy',
                 'labels_smoothing': 0,
                 'class_weights': 1,
                 'robust_lambda': 0,

@@ -27,8 +27,8 @@ import yaml
 from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -400,8 +400,9 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
+    args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
-        logging_level_registry[args.logging_level]
+        args.logging_level
     )
     global logger
     logger = logging.getLogger('ludwig.train')

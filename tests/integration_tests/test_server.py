@@ -54,10 +54,7 @@ def train_model(input_features, output_features, data_csv):
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
-
     model = LudwigModel(model_definition)
-
-    # Training with csv
     _, _, output_dir = model.train(
         dataset=data_csv,
         skip_save_processed_input=True,
@@ -65,18 +62,6 @@ def train_model(input_features, output_features, data_csv):
         skip_save_unprocessed_output=True
     )
     model.predict(dataset=data_csv, output_directory=output_dir)
-    shutil.rmtree(output_dir, ignore_errors=True)
-
-    # Training with dataframe
-    data_df = read_csv(data_csv)
-    _, _, output_dir = model.train(
-        dataset=data_df,
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.predict(dataset=data_df, output_directory=output_dir)
-    shutil.rmtree(output_dir, ignore_errors=True)
 
     return model, output_dir
 
@@ -121,7 +106,6 @@ def test_server_integration(csv_filename):
     input_features = [
         image_feature(
             folder=image_dest_folder,
-            encoder='resnet',
             preprocessing={
                 'in_memory': True,
                 'height': 8,
@@ -135,7 +119,7 @@ def test_server_integration(csv_filename):
         numerical_feature(normalization='zscore')
     ]
     output_features = [
-        category_feature(vocab_size=2, reduce_input='sum'),
+        category_feature(vocab_size=2),
         numerical_feature()
     ]
 
@@ -152,11 +136,19 @@ def test_server_integration(csv_filename):
     assert response.json() == ALL_FEATURES_PRESENT_ERROR
 
     data_df = read_csv(rel_path)
-    data, files = convert_to_form(data_df.T.to_dict()[0])
-    response = client.post('/predict', data=data, files=files)
+    first_entry = data_df.T.to_dict()[0]
+    data, files = convert_to_form(first_entry)
+    server_response = client.post('/predict', data=data, files=files)
+    server_response = server_response.json()
 
-    response_keys = sorted(list(response.json().keys()))
-    assert response_keys == sorted(output_keys_for(output_features))
+    server_response_keys = sorted(list(server_response.keys()))
+    assert server_response_keys == sorted(output_keys_for(output_features))
+
+    model_output, _ = model.predict(
+        dataset=[first_entry], data_format=dict
+    )
+    model_output = model_output.to_dict('records')[0]
+    assert model_output == server_response
 
     shutil.rmtree(output_dir, ignore_errors=True)
     shutil.rmtree(image_dest_folder)

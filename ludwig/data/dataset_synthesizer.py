@@ -25,7 +25,7 @@ import uuid
 import numpy as np
 import yaml
 
-from ludwig.constants import VECTOR, TYPE
+from ludwig.constants import VECTOR, TYPE, NAME
 from ludwig.utils.data_utils import save_csv
 from ludwig.utils.h3_util import components_to_h3
 from ludwig.utils.misc_utils import get_from_registry
@@ -100,7 +100,7 @@ def build_feature_parameters(features):
             parameters_builders_registry
         )
 
-        feature_parameters[feature['name']] = fearure_builder_function(feature)
+        feature_parameters[feature[NAME]] = fearure_builder_function(feature)
     return feature_parameters
 
 
@@ -125,7 +125,7 @@ def build_synthetic_dataset(dataset_size, features):
     build_feature_parameters(features)
     header = []
     for feature in features:
-        header.append(feature['name'])
+        header.append(feature[NAME])
 
     yield header
     for _ in range(dataset_size):

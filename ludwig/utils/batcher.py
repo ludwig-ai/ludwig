@@ -236,7 +236,7 @@ class DistributedBatcher(object):
 #     elif bucketing_field is not None:
 #         bucketing_feature = [
 #             feature for feature in input_features if
-#             feature['name'] == bucketing_field
+#             feature[NAME] == bucketing_field
 #         ]
 #         if not bucketing_feature:
 #             raise ValueError(

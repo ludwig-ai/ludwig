@@ -118,9 +118,9 @@ class TimeseriesFeatureMixin(object):
             metadata,
             preprocessing_parameters
     ):
-        dataset[feature['name']] = TimeseriesFeatureMixin.feature_data(
-            dataset_df[feature['name']].astype(str),
-            metadata[feature['name']],
+        dataset[feature[NAME]] = TimeseriesFeatureMixin.feature_data(
+            dataset_df[feature[NAME]].astype(str),
+            metadata[feature[NAME]],
             preprocessing_parameters
         )
 
@@ -196,7 +196,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #
 #         self.loss = {
 #             'weight': 1,
-#             'type': 'softmax_cross_entropy',
+#             TYPE: 'softmax_cross_entropy',
 #             'class_weights': 1,
 #             'class_similarities_temperature': 0
 #         }
@@ -341,43 +341,43 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #             'output': EVAL_LOSS,
 #             'aggregation': SUM,
 #             'value': 0,
-#             'type': METRIC
+#             TYPE: METRIC
 #         }),
 #         (MEAN_SQUARED_ERROR, {
 #             'output': SQUARED_ERROR,
 #             'aggregation': SUM,
 #             'value': 0,
-#             'type': METRIC
+#             TYPE: METRIC
 #         }),
 #         (MEAN_ABSOLUTE_ERROR, {
 #             'output': ABSOLUTE_ERROR,
 #             'aggregation': SUM,
 #             'value': 0,
-#             'type': METRIC
+#             TYPE: METRIC
 #         }),
 #         (R2, {
 #             'output': R2,
 #             'aggregation': SUM,
 #             'value': 0,
-#             'type': METRIC
+#             TYPE: METRIC
 #         }),
 #         (ERROR, {
 #             'output': ERROR,
 #             'aggregation': SUM,
 #             'value': 0,
-#             'type': METRIC
+#             TYPE: METRIC
 #         }),
 #         (PREDICTIONS, {
 #             'output': PREDICTIONS,
 #             'aggregation': APPEND,
 #             'value': [],
-#             'type': PREDICTION
+#             TYPE: PREDICTION
 #         }),
 #         (LENGTHS, {
 #             'output': LENGTHS,
 #             'aggregation': APPEND,
 #             'value': [],
-#             'type': PREDICTION
+#             TYPE: PREDICTION
 #         })
 #     ])
 #
@@ -423,9 +423,9 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
 #         set_default_value(
 #             output_feature,
 #             LOSS,
-#             {'type': 'mean_absolute_error', 'weight': 1}
+#             {TYPE: 'mean_absolute_error', 'weight': 1}
 #         )
-#         set_default_value(output_feature[LOSS], 'type', 'mean_absolute_error')
+#         set_default_value(output_feature[LOSS], TYPE, 'mean_absolute_error')
 #         set_default_value(output_feature[LOSS], 'weight', 1)
 #
 #         set_default_value(output_feature, 'decoder', 'generator')

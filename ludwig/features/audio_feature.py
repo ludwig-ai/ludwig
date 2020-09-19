@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 
-from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE
+from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE, NAME
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -51,7 +51,7 @@ class AudioFeatureMixin(object):
         'padding_value': 0,
         'norm': None,
         'audio_feature': {
-            'type': 'raw',
+            TYPE: 'raw',
         }
     }
 
@@ -244,7 +244,7 @@ class AudioFeatureMixin(object):
         csv_path = None
         # this is not super nice, but works both and DFs and lists
         first_path = '.'
-        for first_path in dataset_df[feature['name']]:
+        for first_path in dataset_df[feature[NAME]]:
             break
         if hasattr(dataset_df, 'csv'):
             csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
@@ -256,7 +256,7 @@ class AudioFeatureMixin(object):
         num_audio_utterances = len(dataset_df)
         padding_value = preprocessing_parameters['padding_value']
         normalization_type = preprocessing_parameters['norm']
-        feature_name = feature['name']
+        feature_name = feature[NAME]
 
         feature_dim = metadata[feature_name]['feature_dim']
         max_length = metadata[feature_name]['max_length']
@@ -279,11 +279,11 @@ class AudioFeatureMixin(object):
         }
 
         if feature['preprocessing']['in_memory']:
-            dataset[feature['name']] = np.empty(
+            dataset[feature[NAME]] = np.empty(
                 (num_audio_utterances, max_length, feature_dim),
                 dtype=np.float32
             )
-            for i, path in enumerate(dataset_df[feature['name']]):
+            for i, path in enumerate(dataset_df[feature[NAME]]):
                 filepath = get_abs_path(
                     csv_path,
                     path
@@ -293,7 +293,7 @@ class AudioFeatureMixin(object):
                     padding_value, normalization_type, audio_stats
                 )
 
-                dataset[feature['name']][i, :, :] = audio_feature
+                dataset[feature[NAME]][i, :, :] = audio_feature
 
             audio_stats['std'] = np.sqrt(
                 audio_stats['var'] / float(audio_stats['count']))

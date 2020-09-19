@@ -40,10 +40,10 @@ class BaseFeature(object):
     def __init__(self, feature, *args, **kwargs):
         super().__init__()
 
-        if 'name' not in feature:
+        if NAME not in feature:
             raise ValueError('Missing feature name')
 
-        self.feature_name = feature['name']
+        self.feature_name = feature[NAME]
         self.type = None
 
     def overwrite_defaults(self, feature):

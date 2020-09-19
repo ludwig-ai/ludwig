@@ -46,7 +46,8 @@ from ludwig.data.preprocessing import preprocess_for_training, \
     preprocess_for_prediction, load_metadata
 from ludwig.features.feature_registries import \
     update_model_definition_with_metadata
-from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME, MODEL_HYPERPARAMETERS_FILE_NAME, \
+from ludwig.globals import TRAIN_SET_METADATA_FILE_NAME, \
+    MODEL_HYPERPARAMETERS_FILE_NAME, \
     MODEL_WEIGHTS_FILE_NAME, set_disable_progressbar
 from ludwig.models.ecd import ECD
 from ludwig.models.predictor import Predictor, save_prediction_outputs, \
@@ -54,7 +55,8 @@ from ludwig.models.predictor import Predictor, save_prediction_outputs, \
 from ludwig.models.trainer import Trainer
 from ludwig.modules.metric_modules import get_best_function
 from ludwig.utils.data_utils import save_json, load_json, generate_kfold_splits
-from ludwig.utils.horovod_utils import broadcast_return, configure_horovod, set_on_master, \
+from ludwig.utils.horovod_utils import broadcast_return, configure_horovod, \
+    set_on_master, \
     is_on_master
 from ludwig.utils.misc_utils import get_output_directory, get_file_names, \
     get_experiment_description

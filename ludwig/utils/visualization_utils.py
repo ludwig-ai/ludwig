@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 
 import ludwig.contrib
-from ludwig.constants import TRAINING, VALIDATION
+from ludwig.constants import TRAINING, VALIDATION, TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -1190,7 +1190,7 @@ def hyperopt_report(
         float_precision=3
 ):
     for hp_name, hp_params in hyperparameters.items():
-        if hp_params['type'] == 'int':
+        if hp_params[TYPE] == 'int':
             hyperopt_int_plot(
                 hyperopt_results_df,
                 hp_name,
@@ -1198,7 +1198,7 @@ def hyperopt_report(
                 filename_template.format(
                     hp_name) if filename_template else None
             )
-        elif hp_params['type'] == 'float':
+        elif hp_params[TYPE] == 'float':
             hyperopt_float_plot(
                 hyperopt_results_df,
                 hp_name,
@@ -1208,7 +1208,7 @@ def hyperopt_report(
                 log_scale_x=hp_params[
                                 'scale'] == 'log' if 'scale' in hp_params else False
             )
-        elif hp_params['type'] == 'category':
+        elif hp_params[TYPE] == 'category':
             hyperopt_category_plot(
                 hyperopt_results_df,
                 hp_name,
@@ -1219,7 +1219,7 @@ def hyperopt_report(
 
     # quantize float and int columns
     for hp_name, hp_params in hyperparameters.items():
-        if hp_params['type'] == 'int':
+        if hp_params[TYPE] == 'int':
             num_distinct_values = len(hyperopt_results_df[hp_name].unique())
             if num_distinct_values > INT_QUANTILES:
                 hyperopt_results_df[hp_name] = pd.qcut(
@@ -1227,7 +1227,7 @@ def hyperopt_report(
                     q=INT_QUANTILES,
                     precision=0
                 )
-        elif hp_params['type'] == 'float':
+        elif hp_params[TYPE] == 'float':
             hyperopt_results_df[hp_name] = pd.qcut(
                 hyperopt_results_df[hp_name],
                 q=FLOAT_QUANTILES,

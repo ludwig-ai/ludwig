@@ -16,8 +16,12 @@
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.keras.metrics import \
+    MeanAbsoluteError as MeanAbsoluteErrorMetric, \
+    MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
+from ludwig.constants import PREDICTIONS
 from ludwig.modules.loss_modules import BWCEWLoss, \
     SigmoidCrossEntropyLoss
 from ludwig.modules.loss_modules import SequenceLoss
@@ -34,9 +38,6 @@ min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
                PERPLEXITY}
 
 
-#
-# Custom classes to support Tensorflow 2
-#
 class R2Score(tf.keras.metrics.Metric):
     def __init__(self, name='r2_score'):
         super(R2Score, self).__init__(name=name)
@@ -296,6 +297,26 @@ class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
             y_true,
             y_pred[LOGITS],
             sample_weight=sample_weight
+        )
+
+
+class MAEMetric(MeanAbsoluteErrorMetric):
+    def __init__(self, **kwargs):
+        super(MAEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
+        )
+
+
+class MSEMetric(MeanSquaredErrorMetric):
+    def __init__(self, **kwargs):
+        super(MSEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
         )
 
 

@@ -27,16 +27,16 @@ from pprint import pformat
 import yaml
 
 from ludwig.constants import HYPEROPT, COMBINED, LOSS, TRAINING, TEST, \
-    VALIDATION
+    VALIDATION, TYPE
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.features.feature_registries import output_type_registry
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.hyperopt.execution import get_build_hyperopt_executor
 from ludwig.hyperopt.sampling import get_build_hyperopt_sampler
 from ludwig.hyperopt.utils import update_hyperopt_params_with_defaults
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed, merge_with_defaults
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig, \
     print_boxed
@@ -185,7 +185,7 @@ def hyperopt(
         output_feature_type = None
         for of in model_definition['output_features']:
             if of['name'] == output_feature:
-                output_feature_type = of['type']
+                output_feature_type = of[TYPE]
         feature_class = get_from_registry(
             output_feature_type,
             output_type_registry
@@ -201,15 +201,15 @@ def hyperopt(
                     metric,
                     output_feature,
                     output_feature_type,
-                    available_metrics
+                    feature_class.metric_functions.keys()
                 )
             )
 
     hyperopt_sampler = get_build_hyperopt_sampler(
-        sampler["type"]
+        sampler[TYPE]
     )(goal, parameters, **sampler)
     hyperopt_executor = get_build_hyperopt_executor(
-        executor["type"]
+        executor[TYPE]
     )(hyperopt_sampler, output_feature, metric, split, **executor)
 
     hyperopt_results = hyperopt_executor.execute(
@@ -498,8 +498,9 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
+    args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
-        logging_level_registry[args.logging_level]
+        args.logging_level
     )
     global logger
     logger = logging.getLogger('ludwig.hyperopt')

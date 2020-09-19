@@ -619,9 +619,9 @@ def get_parameters_dict(parameters):
 def substitute_parameters(model_definition, parameters):
     parameters_dict = get_parameters_dict(parameters)
     for input_feature in model_definition["input_features"]:
-        set_values(input_feature, input_feature["name"], parameters_dict)
+        set_values(input_feature, input_feature[NAME], parameters_dict)
     for output_feature in model_definition["output_features"]:
-        set_values(output_feature, output_feature["name"], parameters_dict)
+        set_values(output_feature, output_feature[NAME], parameters_dict)
     set_values(model_definition["combiner"], "combiner", parameters_dict)
     set_values(model_definition["training"], "training", parameters_dict)
     set_values(model_definition["preprocessing"], "preprocessing",

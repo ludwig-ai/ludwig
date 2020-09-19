@@ -45,7 +45,7 @@ default_preprocessing_parameters.update({
 default_combiner_type = 'concat'
 
 default_training_params = {
-    'optimizer': {'type': 'adam'},
+    'optimizer': {TYPE: 'adam'},
     'epochs': 100,
     'regularizer': 'l2',
     'regularization_lambda': 0,
@@ -185,13 +185,13 @@ def merge_with_defaults(model_definition):
                 model_definition['input_features'] +
                 model_definition['output_features']
         )
-        feature_names = set(f['name'] for f in features)
+        feature_names = set(f[NAME] for f in features)
         if stratify not in feature_names:
             logger.warning(
                 'Stratify is not among the features. '
                 'Cannot establish if it is a binary or category'
             )
-        elif ([f for f in features if f['name'] == stratify][0][TYPE]
+        elif ([f for f in features if f[NAME] == stratify][0][TYPE]
               not in {BINARY, CATEGORY}):
             raise ValueError('Stratify feature must be binary or category')
 
@@ -222,11 +222,11 @@ def merge_with_defaults(model_definition):
 
     # ===== Combiner =====
     set_default_value(model_definition, 'combiner',
-                      {'type': default_combiner_type})
+                      {TYPE: default_combiner_type})
 
     # ===== Output features =====
     for output_feature in model_definition['output_features']:
-        get_from_registry(output_feature['type'],
+        get_from_registry(output_feature[TYPE],
                           output_type_registry).populate_defaults(
             output_feature)
 

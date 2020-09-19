@@ -34,13 +34,13 @@ import tensorflow as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
+from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE, \
+    NAME
 from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
 from ludwig.globals import TRAINING_CHECKPOINTS_DIR_PATH
 from ludwig.globals import TRAINING_PROGRESS_TRACKER_FILE_NAME
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.globals import is_progressbar_disabled
 from ludwig.models.predictor import Predictor
 from ludwig.modules.metric_modules import get_improved_fun
@@ -50,13 +50,12 @@ from ludwig.utils import time_utils
 from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import learning_rate_warmup, \
     learning_rate_warmup_distributed, exponential_decay
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
-
-tf.config.experimental_run_functions_eagerly(True)
 
 
 class Trainer:
@@ -332,7 +331,7 @@ class Trainer:
                 'The specificed validation_field {} is not valid.'
                 'Available ones are: {}'.format(
                     self._validation_field,
-                    [of['name'] for of in output_features] + ['combined']
+                    [of[NAME] for of in output_features] + ['combined']
                 )
             )
 

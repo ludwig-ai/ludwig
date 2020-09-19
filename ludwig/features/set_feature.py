@@ -27,9 +27,9 @@ from ludwig.encoders.set_encoders import SetSparseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.features.feature_utils import set_str_to_idx
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SigmoidCrossEntropyLoss
 from ludwig.modules.metric_modules import SigmoidCrossEntropyMetric
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.strings_utils import create_vocabulary, UNKNOWN_SYMBOL
 
@@ -92,9 +92,9 @@ class SetFeatureMixin(object):
             metadata,
             preprocessing_parameters,
     ):
-        dataset[feature['name']] = SetFeatureMixin.feature_data(
-            dataset_df[feature['name']].astype(str),
-            metadata[feature['name']],
+        dataset[feature[NAME]] = SetFeatureMixin.feature_data(
+            dataset_df[feature[NAME]].astype(str),
+            metadata[feature[NAME]],
             preprocessing_parameters
         )
 
@@ -284,7 +284,7 @@ class SetOutputFeature(SetFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         set_default_value(output_feature, LOSS,
-                          {'weight': 1, 'type': SIGMOID_CROSS_ENTROPY})
+                          {'weight': 1, TYPE: SIGMOID_CROSS_ENTROPY})
         set_default_value(output_feature[LOSS], 'weight', 1)
 
         set_default_value(output_feature, 'threshold', 0.5)

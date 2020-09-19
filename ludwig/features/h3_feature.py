@@ -66,11 +66,11 @@ class H3FeatureMixin(object):
             metadata,
             preprocessing_parameters
     ):
-        column = dataset_df[feature['name']]
+        column = dataset_df[feature[NAME]]
         if column.dtype == object:
             column = column.map(int)
         column = column.map(H3FeatureMixin.h3_to_list)
-        dataset[feature['name']] = np.array(column.tolist(), dtype=np.uint8)
+        dataset[feature[NAME]] = np.array(column.tolist(), dtype=np.uint8)
 
 
 class H3InputFeature(H3FeatureMixin, InputFeature):

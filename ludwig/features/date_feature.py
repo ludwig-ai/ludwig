@@ -105,9 +105,9 @@ class DateFeatureMixin(object):
             np.array(DateFeatureMixin.date_to_list(
                 row, datetime_format, preprocessing_parameters
             ))
-            for row in dataset_df[feature['name']]
+            for row in dataset_df[feature[NAME]]
         ]
-        dataset[feature['name']] = np.array(dates_to_lists, dtype=np.int16)
+        dataset[feature[NAME]] = np.array(dates_to_lists, dtype=np.int16)
 
 
 class DateInputFeature(DateFeatureMixin, InputFeature):

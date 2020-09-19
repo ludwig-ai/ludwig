@@ -27,9 +27,9 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import BWCEWLoss
 from ludwig.modules.metric_modules import BWCEWLMetric
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.metrics_utils import average_precision_score
 from ludwig.utils.metrics_utils import precision_recall_curve
@@ -61,10 +61,10 @@ class BinaryFeatureMixin(object):
             metadata,
             preprocessing_parameters=None
     ):
-        column = dataset_df[feature['name']]
+        column = dataset_df[feature[NAME]]
         if column.dtype == object:
             column = column.map(str2bool)
-        dataset[feature['name']] = column.astype(np.bool_).values
+        dataset[feature[NAME]] = column.astype(np.bool_).values
 
 
 class BinaryInputFeature(BinaryFeatureMixin, InputFeature):

@@ -25,6 +25,7 @@ import sys
 import tempfile
 
 from ludwig.api import LudwigModel
+from ludwig.constants import NAME
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry, print_ludwig
@@ -57,7 +58,7 @@ def server(model):
     app = FastAPI()
 
     input_features = {
-        f['name'] for f in model.model_definition['input_features']
+        f[NAME] for f in model.model_definition['input_features']
     }
 
     @app.get('/')
@@ -160,8 +161,9 @@ def cli(sys_argv):
 
     args = parser.parse_args(sys_argv)
 
+    args.logging_level = logging_level_registry[args.logging_level]
     logging.getLogger('ludwig').setLevel(
-        logging_level_registry[args.logging_level]
+        args.logging_level
     )
     global logger
     logger = logging.getLogger('ludwig.serve')
