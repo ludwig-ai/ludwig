@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 
 import ludwig.contrib
-from ludwig.constants import TRAINING, VALIDATION
+from ludwig.constants import TRAINING, VALIDATION, TYPE
 
 logger = logging.getLogger(__name__)
 

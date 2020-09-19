@@ -201,7 +201,7 @@ def hyperopt(
                     metric,
                     output_feature,
                     output_feature_type,
-                    available_metrics
+                    feature_class.metric_functions.keys()
                 )
             )
 

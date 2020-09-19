@@ -47,12 +47,14 @@ class CLI(object):
 Available sub-commands:
    experiment            Runs a full experiment training a model and evaluating it
    train                 Trains a model
-   evaluate              Evaluate a pretrained model's performance
    predict               Predicts using a pretrained model
+   evaluate              Evaluate a pretrained model's performance
    serve                 Serves a pretrained model
    visualize             Visualizes experimental results
+   hyperopt              Perform hyperparameter optimization
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
+   export                Exports Ludwig models to other formats
 ''')
         parser.add_argument('command', help='Subcommand to run')
         # parse_args defaults to [1:] for args, but you need to
@@ -80,15 +82,15 @@ Available sub-commands:
         ludwig.contrib.contrib_command("predict", *sys.argv)
         predict.cli(sys.argv[2:])
 
-    def serve(self):
-        from ludwig import serve
-        ludwig.contrib.contrib_command("serve", *sys.argv)
-        serve.cli(sys.argv[2:])
-
     def evaluate(self):
         from ludwig import evaluate
         ludwig.contrib.contrib_command("evaluate", *sys.argv)
         evaluate.cli(sys.argv[2:])
+
+    def serve(self):
+        from ludwig import serve
+        ludwig.contrib.contrib_command("serve", *sys.argv)
+        serve.cli(sys.argv[2:])
 
     def visualize(self):
         from ludwig import visualize
@@ -110,16 +112,10 @@ Available sub-commands:
         ludwig.contrib.contrib_command("collect_activations", *sys.argv)
         collect.cli_collect_activations(sys.argv[2:])
 
-    # todo: not sure where this came from, likely remove
+    # todo TF2: add a command that exports to savedmodel and to neuropod
     def export(self):
         from ludwig import export
         ludwig.contrib.contrib_command("export", *sys.argv)
-        export.cli(sys.argv[2:])
-
-    # todo: not sure where this came from, likely remove
-    def saved_model_predict(self):
-        from ludwig import export
-        ludwig.contrib.contrib_command("saved_model_predict", *sys.argv)
         export.cli(sys.argv[2:])
 
 

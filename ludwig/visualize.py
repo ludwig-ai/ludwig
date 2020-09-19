@@ -987,7 +987,8 @@ def compare_classifiers_performance_from_pred(
     for i, pred in enumerate(preds):
         accuracies.append(sklearn.metrics.accuracy_score(ground_truth, pred))
         precisions.append(
-            sklearn.metrics.precision_score(ground_truth, pred, average='macro')
+            sklearn.metrics.precision_score(ground_truth, pred,
+                                            average='macro')
         )
         recalls.append(sklearn.metrics.recall_score(
             ground_truth,
@@ -1312,7 +1313,8 @@ def compare_classifiers_multiclass_multimetric(
                 if filename_template_path:
                     os.makedirs(output_directory, exist_ok=True)
                     filename = filename_template_path.format(
-                        model_name_name, output_feature_name, 'best{}'.format(k)
+                        model_name_name, output_feature_name,
+                        'best{}'.format(k)
                     )
                 visualization_utils.compare_classifiers_multiclass_multimetric_plot(
                     [p_np[higher_f1s],
@@ -2188,8 +2190,9 @@ def confidence_thresholding_2thresholds_2d(
         indices = np.logical_and(cov_matrix >= lower, cov_matrix < upper)
         selected_acc = acc_matrix.copy()
         selected_acc[np.logical_not(indices)] = -1
-        threshold_indices = np.unravel_index(np.argmax(selected_acc, axis=None),
-                                             selected_acc.shape)
+        threshold_indices = np.unravel_index(
+            np.argmax(selected_acc, axis=None),
+            selected_acc.shape)
         t1_maxes.append(thresholds[threshold_indices[0]])
         t2_maxes.append(thresholds[threshold_indices[1]])
     model_name = model_names_list[0] if model_names_list is not None and len(
