@@ -31,7 +31,6 @@ from ludwig.utils.data_utils import get_abs_path
 from ludwig.utils.image_utils import greyscale
 from ludwig.utils.image_utils import num_channels_in_image
 from ludwig.utils.image_utils import resize_image
-from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
@@ -370,42 +369,6 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
 
     def get_input_shape(self):
         return self.height, self.width, self.num_channels
-
-    # keep this here for now until it's refactored
-    def build_input(
-            self,
-            regularizer,
-            dropout,
-            is_training=False,
-            **kwargs
-    ):
-        placeholder = self._get_input_placeholder()
-        logger.debug('  placeholder: {0}'.format(placeholder))
-
-        scaled = get_from_registry(
-            self.scaling,
-            image_scaling_registry
-        )(placeholder)
-        logger.debug('  scaled: {0}'.format(scaled))
-
-        feature_representation, feature_representation_size = self.encoder_obj(
-            placeholder,
-            regularizer,
-            dropout,
-            is_training,
-        )
-        logger.debug(
-            '  feature_representation: {0}'.format(feature_representation)
-        )
-
-        feature_representation = {
-            NAME: self.feature_name,
-            'type': self.type,
-            'representation': feature_representation,
-            'size': feature_representation_size,
-            'placeholder': placeholder
-        }
-        return feature_representation
 
     @staticmethod
     def update_model_definition_with_metadata(
