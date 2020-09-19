@@ -54,10 +54,7 @@ def train_model(input_features, output_features, data_csv):
         'combiner': {'type': 'concat', 'fc_size': 14},
         'training': {'epochs': 2}
     }
-
     model = LudwigModel(model_definition)
-
-    # Training with csv
     _, _, output_dir = model.train(
         dataset=data_csv,
         skip_save_processed_input=True,
@@ -65,18 +62,6 @@ def train_model(input_features, output_features, data_csv):
         skip_save_unprocessed_output=True
     )
     model.predict(dataset=data_csv, output_directory=output_dir)
-    shutil.rmtree(output_dir, ignore_errors=True)
-
-    # Training with dataframe
-    data_df = read_csv(data_csv)
-    _, _, output_dir = model.train(
-        dataset=data_df,
-        skip_save_processed_input=True,
-        skip_save_progress=True,
-        skip_save_unprocessed_output=True
-    )
-    model.predict(dataset=data_df, output_directory=output_dir)
-    shutil.rmtree(output_dir, ignore_errors=True)
 
     return model, output_dir
 
