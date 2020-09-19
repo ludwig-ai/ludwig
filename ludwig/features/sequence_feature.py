@@ -476,7 +476,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
             output_feature,
             LOSS,
             {
-                'type': 'softmax_cross_entropy',
+                TYPE: 'softmax_cross_entropy',
                 'sampler': None,
                 'negative_samples': 0,
                 'distortion': 1,
@@ -488,7 +488,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 'weight': 1
             }
         )
-        set_default_value(output_feature[LOSS], 'type',
+        set_default_value(output_feature[LOSS], TYPE,
                           'softmax_cross_entropy')
         set_default_value(output_feature[LOSS], 'labels_smoothing', 0)
         set_default_value(output_feature[LOSS], 'class_weights', 1)

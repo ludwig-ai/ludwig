@@ -175,7 +175,7 @@ class GridSampler(HyperoptSampler):
         search_space = {}
         for hp_name, hp_params in self.parameters.items():
             grid_function = get_from_registry(
-                hp_params['type'], grid_functions_registry
+                hp_params[TYPE], grid_functions_registry
             )
             search_space[hp_name] = grid_function(**hp_params)
         return search_space

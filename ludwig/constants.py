@@ -88,8 +88,6 @@ APPEND = 'append'
 SEQ_SUM = 'seq_sum'
 AVG_EXP = 'avg_exp'
 
-TYPE = 'type'
-
 TRAINING = 'training'
 VALIDATION = 'validation'
 TEST = 'test'
@@ -103,3 +101,4 @@ MINIMIZE = 'minimize'
 MAXIMIZE = 'maximize'
 
 NAME = 'name'
+TYPE = 'type'

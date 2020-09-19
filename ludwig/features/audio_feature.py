@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 
-from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE
+from ludwig.constants import AUDIO, BACKFILL, TIED, TYPE, NAME
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
     StackedParallelCNN, StackedRNN, SequencePassthroughEncoder, StackedCNNRNN
 from ludwig.features.sequence_feature import SequenceInputFeature
@@ -51,7 +51,7 @@ class AudioFeatureMixin(object):
         'padding_value': 0,
         'norm': None,
         'audio_feature': {
-            'type': 'raw',
+            TYPE: 'raw',
         }
     }
 

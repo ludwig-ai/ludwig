@@ -3154,7 +3154,7 @@ def hyperopt_results_to_dataframe(
          for res in hyperopt_results]
     )
     df = df.astype(
-        {hp_name: hp_params['type']
+        {hp_name: hp_params[TYPE]
          for hp_name, hp_params in hyperopt_parameters.items()}
     )
     return df

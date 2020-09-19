@@ -43,7 +43,7 @@ def postprocess_for_neuropod(predicted, model_definition):
     postprocessed = {}
     for output_feature in model_definition['output_features']:
         feature_name = output_feature[NAME]
-        feature_type = output_feature['type']
+        feature_type = output_feature[TYPE]
         if feature_type == BINARY:
             postprocessed[feature_name + "_predictions"] = \
                 np.expand_dims(
@@ -179,7 +179,7 @@ def export_neuropod(
 
     output_spec = []
     for feature in ludwig_model_definition['output_features']:
-        feature_type = feature['type']
+        feature_type = feature[TYPE]
         feature_name = feature[NAME]
         if feature_type == BINARY:
             output_spec.append({

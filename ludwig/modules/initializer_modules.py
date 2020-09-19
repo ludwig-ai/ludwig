@@ -48,9 +48,9 @@ def get_initializer(parameters):
         return initializer_fun()
     elif isinstance(parameters, dict):
         initializer_fun = get_from_registry(
-            parameters['type'], initializers_registry)
+            parameters[TYPE], initializers_registry)
         arguments = parameters.copy()
-        del arguments['type']
+        del arguments[TYPE]
         return initializer_fun(**arguments)
     else:
         raise ValueError(

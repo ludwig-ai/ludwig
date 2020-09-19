@@ -66,7 +66,7 @@ def embedding_matrix(
                     embedding_initializer)
             else:
                 embedding_initializer_obj_ref = get_initializer(
-                    {'type': 'uniform', 'minval': -1.0, 'maxval': 1.0})
+                    {TYPE: 'uniform', 'minval': -1.0, 'maxval': 1.0})
             embedding_initializer_obj = embedding_initializer_obj_ref(
                 [vocab_size, embedding_size])
 

@@ -313,7 +313,7 @@ class VectorOutputFeature(VectorFeatureMixin, OutputFeature):
     @staticmethod
     def populate_defaults(output_feature):
         set_default_value(output_feature, LOSS, {})
-        set_default_value(output_feature[LOSS], 'type', MEAN_SQUARED_ERROR)
+        set_default_value(output_feature[LOSS], TYPE, MEAN_SQUARED_ERROR)
         set_default_value(output_feature[LOSS], 'weight', 1)
         set_default_value(output_feature, 'reduce_input', None)
         set_default_value(output_feature, 'reduce_dependencies', None)
