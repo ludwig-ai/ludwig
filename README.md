@@ -71,17 +71,6 @@ In order to install Ludwig just run:
 pip install ludwig
 ```
 
-or install it by building the source code from the repository:
-
-```
-git clone git@github.com:uber/ludwig.git
-cd ludwig
-virtualenv -p python3 venv
-source venv/bin/activate
-pip install -r requirements.txt
-python setup.py install
-```
-
 This will install only Ludwig-s basic requirements, different feature types require different dependencies.
 We divided them as different extras so that users could install only the ones they actually need.
 
@@ -124,7 +113,20 @@ for full details on available installation options.
 Any combination of extra packages can be installed at the same time with `pip install ludwig[extra1,extra2,...]` like for instance `pip install ludwig[text,viz]`.
 The full set of dependencies can be installed with `pip install ludwig[full]`.
 
-Beware that the `tensorflow` package contained in the `requirements.txt` file is the CPU version. If you prefer to install the GPU version, uninstall `tensorflow` and replace it with `tensorflow=gpu` after having installed `ludwig`, being careful at matching the version ludwig requires, as shown in `requirements.txt`.
+For developers who wish to build the source code from the repository:
+
+```
+git clone git@github.com:uber/ludwig.git
+cd ludwig
+virtualenv -p python3 venv
+source venv/bin/activate
+pip install -e '.[test]'
+```
+
+**Note:** that if you are running without GPUs, you may wish to use the CPU-only version of TensorFlow, 
+which takes up much less space on disk. To use a CPU-only TensorFlow version, uninstall `tensorflow` and 
+replace it with `tensorflow-cpu` after having installed `ludwig`. Be sure to install a version within the
+compatible range as shown in `requirements.txt`.
 
 
 Basic Principles
