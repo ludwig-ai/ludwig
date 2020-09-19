@@ -532,7 +532,8 @@ def test_confidence_thresholding_2thresholds_2d_vis_api(csv_filename):
     ])
     viz_outputs = ('pdf', 'png')
     for viz_output in viz_outputs:
-        vis_output_pattern_pdf = output_dir + '/*.{}'.format(viz_output)
+        vis_output_pattern_pdf = os.path.join(output_dir, '*.{}').format(
+            viz_output)
         visualize.confidence_thresholding_2thresholds_2d(
             [probability1, probability2],
             [ground_truth1, ground_truth2],
