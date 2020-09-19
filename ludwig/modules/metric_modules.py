@@ -38,9 +38,6 @@ min_metrics = {EDIT_DISTANCE, MEAN_SQUARED_ERROR, MEAN_ABSOLUTE_ERROR, LOSS,
                PERPLEXITY}
 
 
-#
-# Custom classes to support Tensorflow 2
-#
 class R2Score(tf.keras.metrics.Metric):
     def __init__(self, name='r2_score'):
         super(R2Score, self).__init__(name=name)
@@ -303,6 +300,26 @@ class HitsAtKMetric(tf.keras.metrics.SparseTopKCategoricalAccuracy):
         )
 
 
+class MAEMetric(MeanAbsoluteErrorMetric):
+    def __init__(self, **kwargs):
+        super(MAEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
+        )
+
+
+class MSEMetric(MeanSquaredErrorMetric):
+    def __init__(self, **kwargs):
+        super(MSEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
+        )
+
+
 def get_improved_fun(metric):
     if metric in min_metrics:
         return lambda x, y: x < y
@@ -433,23 +450,3 @@ def r2(targets, predictions, output_feature_name):
     r2 = tf.subtract(1., res_ss / tot_ss,
                      name='r2_{}'.format(output_feature_name))
     return r2
-
-
-class MAEMetric(MeanAbsoluteErrorMetric):
-    def __init__(self, **kwargs):
-        super(MAEMetric, self).__init__(**kwargs)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        super().update_state(
-            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
-        )
-
-
-class MSEMetric(MeanSquaredErrorMetric):
-    def __init__(self, **kwargs):
-        super(MSEMetric, self).__init__(**kwargs)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        super().update_state(
-            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
-        )
