@@ -552,7 +552,7 @@ class Trainer:
 
                 if self._decay:
                     current_learning_rate = exponential_decay(
-                        self._learning_rate,
+                        current_learning_rate,
                         self._decay_rate,
                         self._decay_steps,
                         batcher.step
