@@ -45,17 +45,17 @@ def convert_size(size_bytes):
     return '{} {}'.format(s, size_name[i])
 
 
+def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step):
+    return initial_learning_rate * decay_rate ** (float(step) / decay_steps)
+
+
 def learning_rate_warmup_distributed(
         learning_rate,
         epoch,
         warmup_epochs,
         num_workers,
         curr_step,
-        steps_per_epoch,
-        initial_learning_rate,
-        decay,
-        decay_rate,
-        decay_steps
+        steps_per_epoch
 ):
     """Implements gradual learning rate warmup:
     `lr = initial_lr / hvd.size()` ---> `lr = initial_lr`
@@ -78,19 +78,11 @@ def learning_rate_warmup_distributed(
                                   size
             lr'(epoch = warmup) = lr
     """
-    global_curr_step = 1 + curr_step + epoch * steps_per_epoch
-    if decay:
-        learning_rate_to_use = \
-            initial_learning_rate * decay_rate ** (
-                        float(global_curr_step) / decay_steps)
-    else:
-        learning_rate_to_use = learning_rate
-
     if epoch > warmup_epochs:
-        return learning_rate_to_use
+        return learning_rate
     else:
         epoch_adjusted = float(epoch) + (curr_step / steps_per_epoch)
-        return learning_rate_to_use / num_workers * (
+        return learning_rate / num_workers * (
                 epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
 
 
@@ -99,27 +91,17 @@ def learning_rate_warmup(
         epoch,
         warmup_epochs,
         curr_step,
-        steps_per_epoch,
-        initial_learning_rate,
-        decay,
-        decay_rate,
-        decay_steps
+        steps_per_epoch
 ):
     global_curr_step = 1 + curr_step + epoch * steps_per_epoch
     warmup_steps = warmup_epochs * steps_per_epoch
 
-    if decay:
-        learning_rate_to_use = \
-            initial_learning_rate * decay_rate ** (float(global_curr_step) / decay_steps)
-    else:
-        learning_rate_to_use = learning_rate
-
     warmup_percent_done = global_curr_step / warmup_steps
-    warmup_learning_rate = learning_rate_to_use * warmup_percent_done
+    warmup_learning_rate = learning_rate * warmup_percent_done
 
     is_warmup = int(global_curr_step < warmup_steps)
     interpolated_learning_rate = (
-            (1.0 - is_warmup) * learning_rate_to_use +
+            (1.0 - is_warmup) * learning_rate +
             is_warmup * warmup_learning_rate
     )
 

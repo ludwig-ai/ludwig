@@ -51,7 +51,7 @@ from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.math_utils import learning_rate_warmup, \
-    learning_rate_warmup_distributed
+    learning_rate_warmup_distributed, exponential_decay
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
@@ -551,6 +551,14 @@ class Trainer:
                     self._horovod.broadcast_variables(
                         self._optimizer.variables(), root_rank=0)
 
+                if self._decay:
+                    current_learning_rate = exponential_decay(
+                        self._learning_rate,
+                        self._decay_rate,
+                        self._decay_steps,
+                        batcher.step
+                    )
+
                 if self._horovod:
                     current_learning_rate = learning_rate_warmup_distributed(
                         current_learning_rate,
@@ -558,11 +566,7 @@ class Trainer:
                         self._learning_rate_warmup_epochs,
                         self._horovod.size(),
                         batcher.step,
-                        batcher.steps_per_epoch,
-                        self._learning_rate,
-                        self._decay,
-                        self._decay_rate,
-                        self._decay_steps
+                        batcher.steps_per_epoch
                     ) * self._horovod.size()
                 else:
                     current_learning_rate = learning_rate_warmup(
@@ -570,11 +574,7 @@ class Trainer:
                         progress_tracker.epoch,
                         self._learning_rate_warmup_epochs,
                         batcher.step,
-                        batcher.steps_per_epoch,
-                        self._learning_rate,
-                        self._decay,
-                        self._decay_rate,
-                        self._decay_steps
+                        batcher.steps_per_epoch
                     )
                 self._optimizer.set_learning_rate(current_learning_rate)
 
