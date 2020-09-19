@@ -201,7 +201,6 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
         super(SequenceLastAccuracyMetric, self).__init__(name=name)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        # TODO TF2 account for weights
         targets_sequence_length = sequence_length_2D(
             tf.cast(y_true, dtype=tf.int64)
         )
@@ -219,7 +218,7 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
 
         last_targets = tf.cast(last_targets, dtype=tf.int64)
 
-        super().update_state(last_targets, y_pred)
+        super().update_state(last_targets, y_pred, sample_weight=sample_weight)
 
 
 class PerplexityMetric(tf.keras.metrics.Mean):
