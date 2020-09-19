@@ -16,8 +16,12 @@
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.keras.metrics import \
+    MeanAbsoluteError as MeanAbsoluteErrorMetric, \
+    MeanSquaredError as MeanSquaredErrorMetric
 
 from ludwig.constants import *
+from ludwig.constants import PREDICTIONS
 from ludwig.modules.loss_modules import BWCEWLoss, \
     SigmoidCrossEntropyLoss
 from ludwig.modules.loss_modules import SequenceLoss
@@ -429,3 +433,23 @@ def r2(targets, predictions, output_feature_name):
     r2 = tf.subtract(1., res_ss / tot_ss,
                      name='r2_{}'.format(output_feature_name))
     return r2
+
+
+class MAEMetric(MeanAbsoluteErrorMetric):
+    def __init__(self, **kwargs):
+        super(MAEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
+        )
+
+
+class MSEMetric(MeanSquaredErrorMetric):
+    def __init__(self, **kwargs):
+        super(MSEMetric, self).__init__(**kwargs)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        super().update_state(
+            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
+        )

@@ -19,8 +19,6 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.losses import MeanAbsoluteError
-from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.metrics import \
     MeanAbsoluteError as MeanAbsoluteErrorMetric
 from tensorflow.keras.metrics import MeanSquaredError as MeanSquaredErrorMetric
@@ -31,55 +29,14 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.modules.metric_modules import ErrorScore
+from ludwig.modules.loss_modules import MSELoss, MAELoss
+from ludwig.modules.metric_modules import ErrorScore, MAEMetric, MSEMetric
 from ludwig.modules.metric_modules import R2Score
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 
 logger = logging.getLogger(__name__)
-
-
-# TODO TF2 can we eliminate use of these custom wrapper classes?
-# custom class to handle how Ludwig stores predictions
-class MSELoss(MeanSquaredError):
-    def __init__(self, **kwargs):
-        super(MSELoss, self).__init__(**kwargs)
-
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        logits = y_pred[LOGITS]
-        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
-        return loss
-
-
-class MSEMetric(MeanSquaredErrorMetric):
-    def __init__(self, **kwargs):
-        super(MSEMetric, self).__init__(**kwargs)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        super().update_state(
-            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
-        )
-
-
-class MAELoss(MeanAbsoluteError):
-    def __init__(self, **kwargs):
-        super(MAELoss, self).__init__(**kwargs)
-
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        logits = y_pred[LOGITS]
-        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
-        return loss
-
-
-class MAEMetric(MeanAbsoluteErrorMetric):
-    def __init__(self, **kwargs):
-        super(MAEMetric, self).__init__(**kwargs)
-
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        super().update_state(
-            y_true, y_pred[PREDICTIONS], sample_weight=sample_weight
-        )
 
 
 class NumericalFeatureMixin(object):

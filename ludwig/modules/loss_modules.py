@@ -16,9 +16,31 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
+from tensorflow.python.keras.losses import MeanSquaredError, MeanAbsoluteError
 
 from ludwig.constants import *
+from ludwig.constants import LOGITS
 from ludwig.utils.tf_utils import sequence_length_2D
+
+
+class MSELoss(MeanSquaredError):
+    def __init__(self, **kwargs):
+        super(MSELoss, self).__init__(**kwargs)
+
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        logits = y_pred[LOGITS]
+        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        return loss
+
+
+class MAELoss(MeanAbsoluteError):
+    def __init__(self, **kwargs):
+        super(MAELoss, self).__init__(**kwargs)
+
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        logits = y_pred[LOGITS]
+        loss = super().__call__(y_true, logits, sample_weight=sample_weight)
+        return loss
 
 
 class BWCEWLoss(tf.keras.losses.Loss):
