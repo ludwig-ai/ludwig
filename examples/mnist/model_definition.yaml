@@ -3,6 +3,7 @@ input_features:
         name: image_path
         type: image
         preprocessing:
+            in_memory: True
             num_processes: 4
         encoder: stacked_cnn
         conv_layers:
@@ -16,11 +17,11 @@ input_features:
                 filter_size: 3
                 pool_size: 2
                 pool_stride: 2
-                dropout: true
+                dropout: 0.4
         fc_layers:
             -
                 fc_size: 128
-                dropout: true
+                dropout: 0.4
 
 output_features:
     -
@@ -28,5 +29,5 @@ output_features:
         type: category
 
 training:
-    dropout: 0.4
-    epochs: 10
+    epochs: 15
+    learning_rate: 0.01
