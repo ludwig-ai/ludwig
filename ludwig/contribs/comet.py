@@ -115,7 +115,7 @@ class Comet():
                     *args, **kwargs):
         logger.info("comet.train_model() called......")
         if self.cometml_experiment:
-            # TODO tf2: currently no clear way to set model graph
+            # TODO v0.4: currently not clear way to set model graph
             # see: https://github.com/comet-ml/issue-tracking/issues/296
             # if model:
             #     self.cometml_experiment.set_model_graph(
