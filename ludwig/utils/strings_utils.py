@@ -51,7 +51,7 @@ def strip_accents(s):
 
 
 def str2bool(v):
-    return v.lower() in ('yes', 'true', 't', '1')
+    return str(v).lower() in ('yes', 'true', 't', '1')
 
 
 def match_replace(string_to_match, list_regex):
