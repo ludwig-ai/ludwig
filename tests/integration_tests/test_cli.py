@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -74,7 +75,13 @@ def test_train_cli_training_set(csv_filename):
     with tempfile.TemporaryDirectory() as tmpdir:
         model_definition_filename = os.path.join(tmpdir, 'model_definition.yaml')
         dataset_filename = _prepare_data(csv_filename, model_definition_filename)
+        validation_filename = shutil.copyfile(
+            dataset_filename, os.path.join(tmpdir, 'validation.csv'))
+        test_filename = shutil.copyfile(
+            dataset_filename, os.path.join(tmpdir, 'test.csv'))
         _run_ludwig('train',
                     training_set=dataset_filename,
+                    validation_set=validation_filename,
+                    test_set=test_filename,
                     model_definition_file=model_definition_filename,
                     output_directory=tmpdir)
