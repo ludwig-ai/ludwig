@@ -52,7 +52,7 @@ from ludwig.utils.data_utils import load_json, save_json
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import learning_rate_warmup, \
-    learning_rate_warmup_distributed
+    learning_rate_warmup_distributed, exponential_decay
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
@@ -69,6 +69,9 @@ class Trainer:
             epochs=100,
             regularization_lambda=0.0,
             learning_rate=0.001,
+            decay=False,
+            decay_rate=0.96,
+            decay_steps=10000,
             batch_size=128,
             eval_batch_size=0,
             bucketing_field=None,
@@ -186,6 +189,9 @@ class Trainer:
         self._epochs = epochs
         self._regularization_lambda = regularization_lambda
         self._learning_rate = learning_rate
+        self._decay = decay
+        self._decay_rate = decay_rate
+        self._decay_steps = decay_steps
         self._batch_size = batch_size
         self._eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
         self._bucketing_field = bucketing_field
@@ -543,6 +549,14 @@ class Trainer:
                                                       root_rank=0)
                     self._horovod.broadcast_variables(
                         self._optimizer.variables(), root_rank=0)
+
+                if self._decay:
+                    current_learning_rate = exponential_decay(
+                        current_learning_rate,
+                        self._decay_rate,
+                        self._decay_steps,
+                        batcher.step
+                    )
 
                 if self._horovod:
                     current_learning_rate = learning_rate_warmup_distributed(

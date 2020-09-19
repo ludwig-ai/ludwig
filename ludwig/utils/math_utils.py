@@ -45,6 +45,10 @@ def convert_size(size_bytes):
     return '{} {}'.format(s, size_name[i])
 
 
+def exponential_decay(initial_learning_rate, decay_rate, decay_steps, step):
+    return initial_learning_rate * decay_rate ** (float(step) / decay_steps)
+
+
 def learning_rate_warmup_distributed(
         learning_rate,
         epoch,
