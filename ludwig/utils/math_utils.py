@@ -51,7 +51,11 @@ def learning_rate_warmup_distributed(
         warmup_epochs,
         num_workers,
         curr_step,
-        steps_per_epoch
+        steps_per_epoch,
+        initial_learning_rate,
+        decay,
+        decay_rate,
+        decay_steps
 ):
     """Implements gradual learning rate warmup:
     `lr = initial_lr / hvd.size()` ---> `lr = initial_lr`
@@ -74,11 +78,19 @@ def learning_rate_warmup_distributed(
                                   size
             lr'(epoch = warmup) = lr
     """
+    global_curr_step = 1 + curr_step + epoch * steps_per_epoch
+    if decay:
+        learning_rate_to_use = \
+            initial_learning_rate * decay_rate ** (
+                        float(global_curr_step) / decay_steps)
+    else:
+        learning_rate_to_use = learning_rate
+
     if epoch > warmup_epochs:
-        return learning_rate
+        return learning_rate_to_use
     else:
         epoch_adjusted = float(epoch) + (curr_step / steps_per_epoch)
-        return learning_rate / num_workers * (
+        return learning_rate_to_use / num_workers * (
                 epoch_adjusted * (num_workers - 1) / warmup_epochs + 1)
 
 

@@ -558,7 +558,11 @@ class Trainer:
                         self._learning_rate_warmup_epochs,
                         self._horovod.size(),
                         batcher.step,
-                        batcher.steps_per_epoch
+                        batcher.steps_per_epoch,
+                        self._learning_rate,
+                        self._decay,
+                        self._decay_rate,
+                        self._decay_steps
                     ) * self._horovod.size()
                 else:
                     current_learning_rate = learning_rate_warmup(
