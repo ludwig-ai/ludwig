@@ -287,7 +287,7 @@ def build_inputs(
     input_features_def = topological_sort_feature_dependencies(
         input_features_def)
     for input_feature_def in input_features_def:
-        input_features[input_feature_def['name']] = build_single_input(
+        input_features[input_feature_def[NAME]] = build_single_input(
             input_feature_def,
             input_features,
             **kwargs
@@ -298,7 +298,7 @@ def build_inputs(
 def build_single_input(input_feature_def, other_input_features, **kwargs):
     logger.debug('Input {} feature {}'.format(
         input_feature_def[TYPE],
-        input_feature_def['name']
+        input_feature_def[NAME]
     ))
 
     encoder_obj = None
@@ -339,7 +339,7 @@ def build_outputs(
             output_features,
             **kwargs
         )
-        output_features[output_feature_def['name']] = output_feature
+        output_features[output_feature_def[NAME]] = output_feature
 
     return output_features
 
@@ -352,7 +352,7 @@ def build_single_output(
 ):
     logger.debug('Output {} feature {}'.format(
         output_feature_def[TYPE],
-        output_feature_def['name']
+        output_feature_def[NAME]
     ))
 
     output_feature_class = get_from_registry(

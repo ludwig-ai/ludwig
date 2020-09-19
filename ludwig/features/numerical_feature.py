@@ -31,9 +31,9 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.metric_modules import ErrorScore
 from ludwig.modules.metric_modules import R2Score
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 from ludwig.utils.misc_utils import set_default_values
 
@@ -121,19 +121,19 @@ class NumericalFeatureMixin(object):
             metadata,
             preprocessing_parameters,
     ):
-        dataset[feature['name']] = dataset_df[feature['name']].astype(
+        dataset[feature[NAME]] = dataset_df[feature[NAME]].astype(
             np.float32).values
         if preprocessing_parameters['normalization'] is not None:
             if preprocessing_parameters['normalization'] == 'zscore':
-                mean = metadata[feature['name']]['mean']
-                std = metadata[feature['name']]['std']
-                dataset[feature['name']] = (dataset[
-                                                feature['name']] - mean) / std
+                mean = metadata[feature[NAME]]['mean']
+                std = metadata[feature[NAME]]['std']
+                dataset[feature[NAME]] = (dataset[
+                                              feature[NAME]] - mean) / std
             elif preprocessing_parameters['normalization'] == 'minmax':
-                min_ = metadata[feature['name']]['min']
-                max_ = metadata[feature['name']]['max']
-                values = dataset[feature['name']]
-                dataset[feature['name']] = (values - min_) / (max_ - min_)
+                min_ = metadata[feature[NAME]]['min']
+                max_ = metadata[feature[NAME]]['max']
+                values = dataset[feature[NAME]]
+                dataset[feature[NAME]] = (values - min_) / (max_ - min_)
 
 
 class NumericalInputFeature(NumericalFeatureMixin, InputFeature):

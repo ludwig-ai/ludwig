@@ -331,7 +331,7 @@ def class_counts(dataset, labels_field):
 
 
 def text_feature_data_field(text_feature):
-    return text_feature['name'] + '_' + text_feature['level']
+    return text_feature[NAME] + '_' + text_feature['level']
 
 
 def load_from_file(file_name, field=None, dtype=int, ground_truth_split=2):

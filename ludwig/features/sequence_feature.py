@@ -31,7 +31,6 @@ from ludwig.encoders.sequence_encoders import StackedRNN
 from ludwig.encoders.text_encoders import *
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SequenceLoss
 from ludwig.modules.metric_modules import EditDistanceMetric
@@ -39,6 +38,7 @@ from ludwig.modules.metric_modules import PerplexityMetric
 from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.modules.metric_modules import SequenceLossMetric
 from ludwig.modules.metric_modules import TokenAccuracyMetric
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.math_utils import softmax
 from ludwig.utils.metrics_utils import ConfusionMatrix
 from ludwig.utils.misc_utils import set_default_value
@@ -115,9 +115,9 @@ class SequenceFeatureMixin(object):
             preprocessing_parameters
     ):
         sequence_data = SequenceInputFeature.feature_data(
-            dataset_df[feature['name']].astype(str),
-            metadata[feature['name']], preprocessing_parameters)
-        dataset[feature['name']] = sequence_data
+            dataset_df[feature[NAME]].astype(str),
+            metadata[feature[NAME]], preprocessing_parameters)
+        dataset[feature[NAME]] = sequence_data
 
 
 class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
@@ -284,7 +284,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     'for the <UNK> and <PAD> class too.'.format(
                         len(output_feature[LOSS]['class_weights']),
                         output_feature['num_classes'],
-                        output_feature['name']
+                        output_feature[NAME]
                     )
                 )
 
@@ -311,7 +311,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                                 'the first row {}. All rows must have '
                                 'the same length.'.format(
                                     curr_row,
-                                    output_feature['name'],
+                                    output_feature[NAME],
                                     curr_row_length,
                                     first_row_length
                                 )
@@ -325,7 +325,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'The class_similarities matrix of {} has '
                         '{} rows and {} columns, '
                         'their number must be identical.'.format(
-                            output_feature['name'],
+                            output_feature[NAME],
                             len(similarities),
                             all_rows_length
                         )
@@ -338,7 +338,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                         'Check the metadata JSON file to see the classes '
                         'and their order and '
                         'consider <UNK> and <PAD> class too.'.format(
-                            output_feature['name'],
+                            output_feature[NAME],
                             all_rows_length,
                             output_feature['num_classes']
                         )
@@ -355,7 +355,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                 raise ValueError(
                     'class_similarities_temperature > 0, '
                     'but no class_similarities are provided '
-                    'for feature {}'.format(output_feature['name'])
+                    'for feature {}'.format(output_feature[NAME])
                 )
 
         if output_feature[LOSS][TYPE] == 'sampled_softmax_cross_entropy':

@@ -118,9 +118,9 @@ class TimeseriesFeatureMixin(object):
             metadata,
             preprocessing_parameters
     ):
-        dataset[feature['name']] = TimeseriesFeatureMixin.feature_data(
-            dataset_df[feature['name']].astype(str),
-            metadata[feature['name']],
+        dataset[feature[NAME]] = TimeseriesFeatureMixin.feature_data(
+            dataset_df[feature[NAME]].astype(str),
+            metadata[feature[NAME]],
             preprocessing_parameters
         )
 

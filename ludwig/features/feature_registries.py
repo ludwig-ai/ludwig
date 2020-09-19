@@ -91,7 +91,7 @@ def update_model_definition_with_metadata(model_definition,
         feature.populate_defaults(input_feature)
         feature.update_model_definition_with_metadata(
             input_feature,
-            training_set_metadata[input_feature['name']],
+            training_set_metadata[input_feature[NAME]],
             model_definition=model_definition
         )
 
@@ -104,7 +104,7 @@ def update_model_definition_with_metadata(model_definition,
         feature.populate_defaults(output_feature)
         feature.update_model_definition_with_metadata(
             output_feature,
-            training_set_metadata[output_feature['name']]
+            training_set_metadata[output_feature[NAME]]
         )
 
     for feature in (
@@ -112,6 +112,6 @@ def update_model_definition_with_metadata(model_definition,
             model_definition['output_features']
     ):
         if 'preprocessing' in feature:
-            feature['preprocessing'] = training_set_metadata[feature['name']][
+            feature['preprocessing'] = training_set_metadata[feature[NAME]][
                 'preprocessing'
             ]

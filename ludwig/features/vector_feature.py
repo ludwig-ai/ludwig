@@ -31,11 +31,11 @@ from ludwig.encoders.generic_encoders import PassthroughEncoder, \
     DenseEncoder
 from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.modules.loss_modules import SoftmaxCrossEntropyLoss
 from ludwig.modules.metric_modules import ErrorScore, \
     SoftmaxCrossEntropyMetric
 from ludwig.modules.metric_modules import R2Score
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import set_default_value
 
 logger = logging.getLogger(__name__)
@@ -115,8 +115,8 @@ class VectorFeatureMixin(object):
 
         # Convert the string of features into a numpy array
         try:
-            dataset[feature['name']] = np.array(
-                [x.split() for x in dataset_df[feature['name']]],
+            dataset[feature[NAME]] = np.array(
+                [x.split() for x in dataset_df[feature[NAME]]],
                 dtype=np.float32
             )
         except ValueError:
@@ -127,7 +127,7 @@ class VectorFeatureMixin(object):
             raise
 
         # Determine vector size
-        vector_size = len(dataset[feature['name']][0])
+        vector_size = len(dataset[feature[NAME]][0])
         if 'vector_size' in preprocessing_parameters:
             if vector_size != preprocessing_parameters['vector_size']:
                 raise ValueError(
@@ -139,7 +139,7 @@ class VectorFeatureMixin(object):
         else:
             logger.debug('Observed vector size: {}'.format(vector_size))
 
-        metadata[feature['name']]['vector_size'] = vector_size
+        metadata[feature[NAME]]['vector_size'] = vector_size
 
 
 class VectorInputFeature(VectorFeatureMixin, InputFeature):
