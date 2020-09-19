@@ -4,7 +4,7 @@ import signal
 from abc import ABC, abstractmethod
 
 from ludwig.api import LudwigModel
-from ludwig.constants import MAXIMIZE, VALIDATION, TRAINING, TEST
+from ludwig.constants import *
 from ludwig.hyperopt.sampling import HyperoptSampler, \
     logger
 from ludwig.utils.defaults import default_random_seed
