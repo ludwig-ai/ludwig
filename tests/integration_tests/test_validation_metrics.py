@@ -83,9 +83,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
             }
         }
 
-        model = LudwigModel(
-            model_definition
-        )
+        model = LudwigModel(model_definition)
         model.train(
             dataset=training_data,
             skip_save_training_description=True,

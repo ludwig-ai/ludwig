@@ -216,3 +216,20 @@ def get_file_names(output_directory):
     model_dir = os.path.join(output_directory, 'model')
 
     return description_fn, training_stats_fn, model_dir
+
+
+def check_which_model_definition(model_definition, model_definition_file):
+    # check for model_definition and model_definition_file
+    if model_definition is None and model_definition_file is None:
+        raise ValueError(
+            'Either model_definition of model_definition_file have to be'
+            'not None to initialize a LudwigModel'
+        )
+    if model_definition is not None and model_definition_file is not None:
+        raise ValueError(
+            'Only one between model_definition and '
+            'model_definition_file can be provided'
+        )
+    if not model_definition:
+        model_definition = model_definition_file
+    return model_definition
