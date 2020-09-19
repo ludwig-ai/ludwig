@@ -607,7 +607,7 @@ def _preprocess_csv_for_training(
             data_utils.save_json(training_set_metadata_fp,
                                  training_set_metadata)
 
-        training_set, test_set, validation_set = split_dataset_ttv(
+        training_data, test_data, validation_data = split_dataset_ttv(
             data,
             data[SPLIT]
         )
@@ -637,7 +637,7 @@ def _preprocess_csv_for_training(
             random_seed=random_seed
         )
 
-        training_set, test_set, validation_set = split_dataset_ttv(
+        training_data, test_data, validation_data = split_dataset_ttv(
             data,
             data[SPLIT]
         )
@@ -647,7 +647,7 @@ def _preprocess_csv_for_training(
             data_train_hdf5_fp = replace_file_extension(training_set, 'hdf5')
             data_utils.save_hdf5(
                 data_train_hdf5_fp,
-                training_set,
+                training_data,
                 training_set_metadata
             )
             training_set_metadata[DATA_TRAIN_HDF5_FP] = data_train_hdf5_fp
@@ -659,7 +659,7 @@ def _preprocess_csv_for_training(
                 )
                 data_utils.save_hdf5(
                     data_validation_hdf5_fp,
-                    validation_set,
+                    validation_data,
                     training_set_metadata
                 )
 
@@ -670,7 +670,7 @@ def _preprocess_csv_for_training(
                 )
                 data_utils.save_hdf5(
                     data_test_hdf5_fp,
-                    test_set,
+                    test_data,
                     training_set_metadata
                 )
 
@@ -687,7 +687,7 @@ def _preprocess_csv_for_training(
     else:
         raise ValueError('either data or data_train have to be not None')
 
-    return training_set, test_set, validation_set, training_set_metadata
+    return training_data, test_data, validation_data, training_set_metadata
 
 
 def _preprocess_df_for_training(
