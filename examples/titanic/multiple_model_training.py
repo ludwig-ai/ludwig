@@ -13,15 +13,8 @@ import shutil
 
 
 # clean out old results
-try:
-    shutil.rmtree('./results')
-except FileNotFoundError:
-    pass
-
-try:
-    shutil.rmtree('./visualizations')
-except FileNotFoundError:
-    pass
+shutil.rmtree('./results', ignore_errors=True)
+shutil.rmtree('./visualizations', ignore_errors=True)
 
 # list models to train
 list_of_model_ids = ['model1', 'model2']
@@ -33,11 +26,11 @@ for model_id in list_of_model_ids:
     print('>>>> training: ', model_id)
 
     # Define Ludwig model object that drive model training
-    model = LudwigModel(model_definition_file='./' + model_id + '_definition.yaml',
+    model = LudwigModel(model_definition_fp='./' + model_id + '_definition.yaml',
                         logging_level=logging.WARN)
 
     # initiate model training
-    train_stats = model.train(data_csv='./data/train.csv',
+    train_stats, _, _ = model.train(dataset='./data/train.csv',
                              experiment_name='multiple_experiment',
                              model_name=model_id)
 
@@ -45,8 +38,6 @@ for model_id in list_of_model_ids:
     list_of_train_stats.append(train_stats)
 
     print('>>>>>>> completed: ', model_id,'\n')
-
-    model.close()
 
 # generating learning curves from training
 learning_curves(list_of_train_stats, 'Survived',
