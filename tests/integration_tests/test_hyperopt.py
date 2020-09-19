@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import logging
 
 import pytest
@@ -122,3 +121,5 @@ def test_hyperopt_executor_with_metric(csv_filename):
                            csv_filename,
                            validate_output_feature=True,
                            validation_metric=ACCURACY)
+
+# todo future: add test for hyperopt.run.hyperopt function
