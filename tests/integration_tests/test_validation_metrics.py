@@ -39,16 +39,18 @@ TestCase = namedtuple('TestCase', 'output_features validation_metrics')
         ),
         TestCase(
             [text_feature()],
-            ['loss', 'token_accuracy', 'last_accuracy', 'edit_distance', 'perplexity']
+            ['loss', 'token_accuracy', 'last_accuracy', 'edit_distance',
+             'perplexity']
         )
     ]
 )
-def test_validation_metrics(test_case, csv_filename):
+def test_validation_metrics(test_case: TestCase, csv_filename: str):
     # setup test scenarios
     if len(test_case.output_features) == 1:
         # single output feature capture feature specific metrics
         of_name = test_case.output_features[0][NAME]
-        test_scenarios = [(of_name, measure) for measure in test_case.validation_metrics]
+        test_scenarios = [(of_name, measure)
+                          for measure in test_case.validation_metrics]
         # add standard test for combined
         test_scenarios.append(('combined', 'loss'))
     else:
@@ -56,7 +58,9 @@ def test_validation_metrics(test_case, csv_filename):
         test_scenarios = [('combined', 'loss')]
 
     # setup features for the test
-    input_features = [numerical_feature(), category_feature(), binary_feature()]
+    input_features = [numerical_feature(),
+                      category_feature(),
+                      binary_feature()]
     output_features = test_case.output_features
 
     # generate training data
@@ -82,7 +86,7 @@ def test_validation_metrics(test_case, csv_filename):
         model = LudwigModel(
             model_definition
         )
-        train_stats, preprocessed_data, output_directory = model.train(
+        model.train(
             dataset=training_data,
             skip_save_training_description=True,
             skip_save_training_statistics=True,
@@ -107,9 +111,9 @@ def test_validation_metrics(test_case, csv_filename):
         )
     ]
 )
-def test_validation_metrics_mulitiple_output(test_case, csv_filename):
+def test_validation_metrics_mulitiple_output(test_case: TestCase,
+                                             csv_filename: str):
     test_validation_metrics(test_case, csv_filename)
-
 
 # negative test for invalid metric name
 @pytest.mark.parametrize(
@@ -121,12 +125,14 @@ def test_validation_metrics_mulitiple_output(test_case, csv_filename):
         )
     ]
 )
-def test_validation_invalid_metric(test_case, csv_filename):
+def test_validation_invalid_metric(test_case: TestCase,
+                                   csv_filename: str):
     # this should generate ValueError Exception
     try:
         test_validation_metrics(test_case, csv_filename)
         raise RuntimeError(
-            'test_validation_metrics() should have raised ValueError but did not.'
+            'test_validation_metrics() should have raised ValueError '
+            'but did not.'
         )
     except ValueError:
         pass
