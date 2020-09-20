@@ -57,7 +57,6 @@ from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
 
-
 class Trainer:
     """
     Trainer is a class that train a model
@@ -465,7 +464,8 @@ class Trainer:
 
         set_random_seed(self._random_seed)
         batcher = initialize_batcher(
-            training_set, self._batch_size, self._bucketing_field,
+            training_set,
+            batch_size=self._batch_size,
             horovod=self._horovod
         )
 
@@ -587,7 +587,7 @@ class Trainer:
                 progress_bar.close()
 
             progress_tracker.epoch += 1
-            batcher.reset()  # todo future: this may be useless, doublecheck
+            batcher.reset()
 
             # ================ Eval ================
             # init tables
@@ -733,7 +733,7 @@ class Trainer:
     ):
         batcher = initialize_batcher(
             dataset,
-            self._batch_size,
+            batch_size=self._batch_size,
             horovod=self._horovod
         )
 

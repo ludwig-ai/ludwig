@@ -9,6 +9,7 @@ import pytest
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
+from ludwig.api import LudwigModel
 from ludwig.experiment import experiment_cli
 from ludwig.modules.optimization_modules import optimizers_registry
 from ludwig.utils.data_utils import load_json
@@ -38,12 +39,34 @@ def generated_data():
     # function generates simple training data that guarantee convergence
     # within 30 epochs for suitable model definition
 
-
     # generate data
-    np.random.seed(43)
+    np.random.seed(RANDOM_SEED)
     x = np.array(range(NUMBER_OBSERVATIONS)).reshape(-1, 1)
     y = 2 * x + 1 + np.random.normal(size=x.shape[0]).reshape(-1, 1)
     raw_df = pd.DataFrame(np.concatenate((x, y), axis=1), columns=['x', 'y'])
+
+    # create training data
+    train, valid_test = train_test_split(raw_df, train_size=0.7)
+
+    # create validation and test data
+    validation, test = train_test_split(valid_test, train_size=0.5)
+
+    return GeneratedData(train, validation, test)
+
+@pytest.fixture(scope='module')
+def generated_data_for_optimizer():
+    # function generates simple training data that guarantee convergence
+    # within 30 epochs for suitable model definition
+
+    # generate data
+    np.random.seed(RANDOM_SEED)
+    x = np.array(range(NUMBER_OBSERVATIONS)).reshape(-1, 1)
+    y = 2 * x + 1 + np.random.normal(size=x.shape[0]).reshape(-1, 1)
+    raw_df = pd.DataFrame(np.concatenate((x, y), axis=1), columns=['x', 'y'])
+    raw_df['x'] = (raw_df['x'] - raw_df['x'].min()) / \
+                  (raw_df['x'].max() - raw_df['x'].min())
+    raw_df['y'] = (raw_df['y'] - raw_df['y'].min()) / \
+                  (raw_df['y'].max() - raw_df['y'].min())
 
     # create training data
     train, valid_test = train_test_split(raw_df, train_size=0.7)
@@ -275,7 +298,7 @@ def test_resume_training(optimizer, generated_data, tmp_path):
 
 
 @pytest.mark.parametrize('optimizer_type', optimizers_registry)
-def test_optimizers(optimizer_type, generated_data, tmp_path):
+def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
     input_features, output_features = get_feature_definitions()
 
     model_definition = {
@@ -291,15 +314,19 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
         }
     }
 
+    # special handling for adadelta, break out of local minima
+    if optimizer_type == 'adadelta':
+        model_definition['training']['learning_rate'] = 0.1
+
+    model = LudwigModel(model_definition)
+
     # create sub-directory to store results
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
     # run experiment
-    _, _, _, _, output_dir = experiment_cli(
-        training_set=generated_data.train_df,
-        validation_set=generated_data.validation_df,
-        test_set=generated_data.test_df,
+    train_stats, preprocessed_data, output_directory = model.train(
+        training_set=generated_data_for_optimizer.train_df,
         output_directory=str(results_dir),
         model_definition=model_definition,
         skip_save_processed_input=True,
@@ -309,15 +336,6 @@ def test_optimizers(optimizer_type, generated_data, tmp_path):
         skip_save_log=True
     )
 
-    # test existence of required files
-    train_stats_fp = os.path.join(output_dir, 'training_statistics.json')
-    metadata_fp = os.path.join(output_dir, 'description.json')
-    assert os.path.isfile(train_stats_fp)
-    assert os.path.isfile(metadata_fp)
-
-    # retrieve results so we can validate early stopping
-    with open(train_stats_fp, 'r') as f:
-        train_stats = json.load(f)
 
     # retrieve training losses for first and last epochs
     train_losses = np.array(train_stats['training']['combined']['loss'])

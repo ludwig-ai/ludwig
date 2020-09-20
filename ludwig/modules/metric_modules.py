@@ -201,9 +201,8 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
         super(SequenceLastAccuracyMetric, self).__init__(name=name)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        targets_sequence_length = sequence_length_2D(
-            tf.cast(y_true, dtype=tf.int64)
-        )
+        y_true = tf.cast(y_true, dtype=tf.int64)
+        targets_sequence_length = sequence_length_2D(y_true)
         last_targets = tf.gather_nd(
             y_true,
             tf.stack(
@@ -215,9 +214,6 @@ class SequenceLastAccuracyMetric(tf.keras.metrics.Accuracy):
                 axis=1
             )
         )
-
-        last_targets = tf.cast(last_targets, dtype=tf.int64)
-
         super().update_state(last_targets, y_pred, sample_weight=sample_weight)
 
 
@@ -265,13 +261,34 @@ class TokenAccuracyMetric(tf.keras.metrics.Mean):
         # y_pred: shape [batch_size, sequence_size]
 
         prediction_dtype = y_pred.dtype
-        prediction_sequence_length = sequence_length_2D(y_pred)
         y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
         target_sequence_length = sequence_length_2D(y_true_tensor)
-        _, masked_corrected_predictions, _, _ = \
-            masked_accuracy(y_true_tensor, y_pred, target_sequence_length)
+        masked_corrected_preds = masked_corrected_predictions(
+            y_true_tensor,
+            y_pred,
+            target_sequence_length
+        )
 
-        super().update_state(masked_corrected_predictions)
+        super().update_state(masked_corrected_preds)
+
+
+class SequenceAccuracyMetric(tf.keras.metrics.Mean):
+    def __init__(self, name=None):
+        super(SequenceAccuracyMetric, self).__init__(name=name)
+
+    def update_state(self, y_true, y_pred):
+        # y_true: shape [batch_size, sequence_size]
+        # y_pred: shape [batch_size, sequence_size]
+
+        prediction_dtype = y_pred.dtype
+        y_true_tensor = tf.cast(y_true, dtype=prediction_dtype)
+        target_sequence_length = sequence_length_2D(y_true_tensor)
+        masked_sequence_corrected_preds = \
+            masked_sequence_corrected_predictions(
+                y_true_tensor, y_pred, target_sequence_length
+            )
+
+        super().update_state(masked_sequence_corrected_preds)
 
 
 class CategoryAccuracy(tf.keras.metrics.Accuracy):
@@ -350,40 +367,60 @@ def accuracy(targets, predictions, output_feature_name):
     return accuracy, correct_predictions
 
 
-# todo TF2: refactor to better adapt for TF2 port
-def masked_accuracy(targets, predictions, sequence_lengths):
-    truncated_predictions = predictions[:, :targets.shape[1]]
-    paddings = tf.stack([[0, 0], [0, tf.shape(targets)[1] -
-                                  tf.shape(
-                                      truncated_predictions)[1]]])
-    padded_truncated_predictions = tf.pad(truncated_predictions,
-                                          paddings,
-                                          name='ptp')
+def masked_corrected_predictions(
+        targets,
+        predictions,
+        targets_sequence_lengths
+):
+    truncated_preds = predictions[:, :targets.shape[1]]
+    paddings = tf.stack([
+        [0, 0],
+        [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]
+    ])
+    padded_truncated_preds = tf.pad(truncated_preds, paddings, name='ptp')
 
-    correct_predictions = tf.equal(padded_truncated_predictions,
-                                   targets)
+    correct_preds = tf.equal(padded_truncated_preds, targets)
 
-    mask = tf.sequence_mask(sequence_lengths,
-                            maxlen=correct_predictions.shape[1],
+    mask = tf.sequence_mask(targets_sequence_lengths,
+                            maxlen=correct_preds.shape[1],
                             dtype=tf.int32)
 
-    filtered_out, masked_correct_predictions = tf.dynamic_partition(
-        correct_predictions, mask, 2)
-    token_accuracy = tf.reduce_mean(
-        tf.cast(masked_correct_predictions, tf.float32))
+    _, masked_correct_preds = tf.dynamic_partition(correct_preds, mask, 2)
+    masked_correct_preds = tf.cast(masked_correct_preds, dtype=tf.float32)
 
-    one_masked_correct_prediction = 1.0 - tf.cast(mask,
-                                                  tf.float32) + (
-                                            tf.cast(mask,
-                                                    tf.float32) * tf.cast(
-                                        correct_predictions,
-                                        tf.float32))
-    rowwise_correct_predictions = tf.reduce_prod(
-        one_masked_correct_prediction,
-        axis=-1)
-    rowwise_accuracy = tf.reduce_mean(rowwise_correct_predictions)
+    return masked_correct_preds
 
-    return token_accuracy, masked_correct_predictions, rowwise_accuracy, rowwise_correct_predictions
+
+def masked_sequence_corrected_predictions(
+        targets,
+        predictions,
+        targets_sequence_lengths
+):
+    truncated_preds = predictions[:, :targets.shape[1]]
+    paddings = tf.stack([
+        [0, 0],
+        [0, tf.shape(targets)[1] - tf.shape(truncated_preds)[1]]
+    ])
+    padded_truncated_preds = tf.pad(truncated_preds,
+                                    paddings,
+                                    name='ptp')
+
+    correct_preds = tf.equal(padded_truncated_preds, targets)
+
+    mask = tf.sequence_mask(targets_sequence_lengths,
+                            maxlen=correct_preds.shape[1],
+                            dtype=tf.int32)
+
+    one_masked_correct_prediction = \
+        1.0 - tf.cast(mask, tf.float32) + (
+                tf.cast(mask, tf.float32) * tf.cast(correct_preds,
+                                                    tf.float32)
+        )
+    sequence_correct_preds = tf.reduce_prod(
+        one_masked_correct_prediction, axis=-1
+    )
+
+    return sequence_correct_preds
 
 
 def hits_at_k(targets, predictions_logits, top_k, output_feature_name):

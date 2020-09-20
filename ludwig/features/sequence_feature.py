@@ -33,7 +33,8 @@ from ludwig.features.base_feature import InputFeature
 from ludwig.features.base_feature import OutputFeature
 from ludwig.modules.loss_modules import SampledSoftmaxCrossEntropyLoss
 from ludwig.modules.loss_modules import SequenceLoss
-from ludwig.modules.metric_modules import EditDistanceMetric
+from ludwig.modules.metric_modules import EditDistanceMetric, \
+    SequenceAccuracyMetric
 from ludwig.modules.metric_modules import PerplexityMetric
 from ludwig.modules.metric_modules import SequenceLastAccuracyMetric
 from ludwig.modules.metric_modules import SequenceLossMetric
@@ -132,7 +133,6 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         else:
             self.encoder_obj = self.initialize_encoder(feature)
 
-
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
@@ -188,7 +188,8 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
 class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     decoder = 'generator'
     loss = {TYPE: SOFTMAX_CROSS_ENTROPY}
-    metric_functions = {LOSS: None, TOKEN_ACCURACY: None, LAST_ACCURACY: None,
+    metric_functions = {LOSS: None, TOKEN_ACCURACY: None,
+                        SEQUENCE_ACCURACY: None, LAST_ACCURACY: None,
                         PERPLEXITY: None, EDIT_DISTANCE: None}
     default_validation_metric = LOSS
     max_sequence_length = 0
@@ -223,6 +224,7 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
     def _setup_metrics(self):
         self.metric_functions[LOSS] = self.eval_loss_function
         self.metric_functions[TOKEN_ACCURACY] = TokenAccuracyMetric()
+        self.metric_functions[SEQUENCE_ACCURACY] = SequenceAccuracyMetric()
         self.metric_functions[LAST_ACCURACY] = SequenceLastAccuracyMetric()
         self.metric_functions[PERPLEXITY] = PerplexityMetric()
         self.metric_functions[EDIT_DISTANCE] = EditDistanceMetric()
@@ -409,7 +411,8 @@ class SequenceOutputFeature(SequenceFeatureMixin, OutputFeature):
                     [metadata['idx2str'][token]
                      if token < len(metadata['idx2str']) else UNKNOWN_SYMBOL
                      for token in [pred[i] for i in range(length)]]
-                    for pred, length in [(preds[j], lengths[j]) for j in range(len(preds))]
+                    for pred, length in
+                    [(preds[j], lengths[j]) for j in range(len(preds))]
                 ]
             else:
                 postprocessed[PREDICTIONS] = preds

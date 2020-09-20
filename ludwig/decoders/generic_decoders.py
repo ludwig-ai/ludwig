@@ -113,7 +113,6 @@ class Projector(Layer):
         return values
 
 
-# todo TF2: maybe unify Projector and Classifier in a single class
 class Classifier(Layer):
 
     def __init__(

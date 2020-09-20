@@ -182,6 +182,10 @@ def test_encoder(test_case):
         if len(inputs.shape) == 1:
             inputs = inputs.reshape(-1, 1)
 
+        # special handling for image feature
+        if features[0]['type'] == 'image':
+            inputs = tf.cast(inputs, tf.float32) / 255
+
         input_def_obj.encoder_obj(inputs)
         regularizer_loss = tf.reduce_sum(input_def_obj.encoder_obj.losses)
         regularizer_losses.append(regularizer_loss)
