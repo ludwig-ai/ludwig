@@ -42,8 +42,12 @@ def generated_data():
     # generate data
     np.random.seed(43)
     x = np.array(range(NUMBER_OBSERVATIONS)).reshape(-1, 1)
-    y = 2 * x + 1 + np.random.normal(size=x.shape[0]).reshape(-1, 1)
+    y = 2 * x + 1 #+ 0.5 * np.random.normal(size=x.shape[0]).reshape(-1, 1)
     raw_df = pd.DataFrame(np.concatenate((x, y), axis=1), columns=['x', 'y'])
+    raw_df['x'] = (raw_df['x'] - raw_df['x'].min()) / \
+                  (raw_df['x'].max() - raw_df['x'].min())
+    raw_df['y'] = (raw_df['y'] - raw_df['y'].min()) / \
+                  (raw_df['y'].max() - raw_df['y'].min())
 
     # create training data
     train, valid_test = train_test_split(raw_df, train_size=0.7)
