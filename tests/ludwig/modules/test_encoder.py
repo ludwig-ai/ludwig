@@ -94,7 +94,7 @@ def encoder_test(
     assert hidden.shape.as_list() == output_shape
 
     if output_data is not None:
-        # TODO the hidden output is actually a tensor. May need modification
+        # todo the hidden output is actually a tensor. May need modification
         assert np.allclose(hidden, output_data)
 
 
@@ -262,7 +262,7 @@ def test_sequence_encoders():
     }
 
     # Different values for reduce_output and the corresponding expected size
-    # TODO Figure out the output size for parallel 1d conv
+    # todo figure out the output size for parallel 1d conv
     reduce_outputs = ['sum', 'max']
     output_shapes = [
         [num_sentences, fc_size],
