@@ -16,11 +16,11 @@ input_features:
                 filter_size: 3
                 pool_size: 2
                 pool_stride: 2
-                dropout: true
+                dropout: 0.4
         fc_layers:
             -
                 fc_size: 128
-                dropout: true
+                dropout: 0.4
 
 output_features:
     -
@@ -28,5 +28,4 @@ output_features:
         type: category
 
 training:
-    dropout: 0.4
-    epochs: 10
+    epochs: 5

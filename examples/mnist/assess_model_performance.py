@@ -31,7 +31,7 @@ print(test_df.head())
 model = LudwigModel.load('./results/multiple_experiment_Option3/model')
 
 # make predictions
-pred_df = model.predict(data_df=test_df)
+pred_df, _ = model.predict(dataset=test_df)
 print(pred_df.head())
 
 # print accuracy on test data set
