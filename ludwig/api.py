@@ -393,9 +393,8 @@ class LudwigModel:
                 save_json(training_stats_fn, train_stats)
 
         # grab the results of the model with highest validation test performance
-        validation_field = self.model_definition[TRAINING]['validation_field']
-        validation_metric = self.model_definition[TRAINING][
-            'validation_metric']
+        validation_field = trainer._validation_field
+        validation_metric = trainer._validation_metric
         validation_field_result = train_valiset_stats[validation_field]
 
         best_function = get_best_function(validation_metric)

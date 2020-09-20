@@ -34,8 +34,7 @@ import tensorflow as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE, \
-    NAME
+from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
 from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -304,15 +303,13 @@ class Trainer:
 
         # check if validation_field is valid
         valid_validation_field = False
-        validation_output_feature_name = None
         if self._validation_field == 'combined':
             valid_validation_field = True
-            validation_output_feature_name = 'combined'
             if self._validation_metric is not LOSS and len(
                     output_features) == 1:
                 only_of = next(iter(output_features))
                 if self._validation_metric in metrics_names[only_of]:
-                    validation_output_feature_name = only_of
+                    self._validation_field = only_of
                     logger.warning(
                         "Replacing 'combined' validation field "
                         "with '{}' as the specified validation "
@@ -324,27 +321,27 @@ class Trainer:
             for output_feature in output_features:
                 if self._validation_field == output_feature:
                     valid_validation_field = True
-                    validation_output_feature_name = self._validation_field
+
         if not valid_validation_field:
             raise ValueError(
                 'The specificed validation_field {} is not valid.'
                 'Available ones are: {}'.format(
                     self._validation_field,
-                    [of[NAME] for of in output_features] + ['combined']
+                    list(output_features.keys()) + ['combined']
                 )
             )
 
         # check if validation_metric is valid
         valid_validation_metric = self._validation_metric in metrics_names[
-            validation_output_feature_name
+            self._validation_field
         ]
         if not valid_validation_metric:
             raise ValueError(
                 'The specificed metric {} is not valid. '
                 'Available metrics for {} output feature are: {}'.format(
                     self._validation_metric,
-                    validation_output_feature_name,
-                    metrics_names[validation_output_feature_name]
+                    self._validation_field,
+                    metrics_names[self._validation_field]
                 )
             )
 
@@ -672,7 +669,7 @@ class Trainer:
                 should_break = self.check_progress_on_validation(
                     model,
                     progress_tracker,
-                    validation_output_feature_name,
+                    self._validation_field,
                     self._validation_metric,
                     model_weights_path,
                     model_hyperparameters_path,
