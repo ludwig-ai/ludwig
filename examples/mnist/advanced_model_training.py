@@ -18,15 +18,8 @@ from ludwig.api import LudwigModel
 from ludwig.visualize import learning_curves
 
 # clean out old results
-try:
-    shutil.rmtree('./results')
-except FileNotFoundError:
-    pass
-
-try:
-    shutil.rmtree('./visualizations')
-except FileNotFoundError:
-    pass
+shutil.rmtree('./results', ignore_errors=True)
+shutil.rmtree('./visualizations', ignore_errors=True)
 
 file_list = glob.glob('./data/*.json')
 file_list += glob.glob('./data/*.hdf5')
@@ -47,12 +40,12 @@ TrainingResult = namedtuple('TrainingResult', ['name', 'train_stats'])
 FullyConnectedLayers = namedtuple('FullyConnectedLayers',['name', 'fc_layers'])
 
 list_of_fc_layers = [
-    FullyConnectedLayers(name='Option1', fc_layers=[{'fc_size':64, 'dropout': 'true'}]),
+    FullyConnectedLayers(name='Option1', fc_layers=[{'fc_size': 64}]),
 
-    FullyConnectedLayers(name='Option2', fc_layers=[{'fc_size':128, 'dropout':'true'},
-                                                    {'fc_size':64, 'dropout': 'true'}]),
+    FullyConnectedLayers(name='Option2', fc_layers=[{'fc_size': 128},
+                                                    {'fc_size': 64}]),
 
-    FullyConnectedLayers(name='Option3', fc_layers=[{'fc_size':128, 'dropout':'true'}])
+    FullyConnectedLayers(name='Option3', fc_layers=[{'fc_size':128}])
 ]
 
 #
@@ -65,14 +58,14 @@ for model_option in list_of_fc_layers:
     # set up Python dictionary to hold model training parameters
     model_definition = base_model.copy()
     model_definition['input_features'][0]['fc_layers'] = model_option.fc_layers
-    model_definition['training']['epochs'] = 8
+    model_definition['training']['epochs'] = 5
 
     # Define Ludwig model object that drive model training
     model = LudwigModel(model_definition,
                         logging_level=logging.INFO)
 
     # initiate model training
-    train_stats = model.train(data_csv='./data/mnist_dataset_training.csv',
+    train_stats, _, _ = model.train(dataset='./data/mnist_dataset_training.csv',
                              experiment_name='multiple_experiment',
                              model_name=model_option.name)
 
@@ -81,7 +74,6 @@ for model_option in list_of_fc_layers:
 
     print('>>>>>>> completed: ', model_option.name, '\n')
 
-    model.close()
 
 # generating learning curves from training
 option_names = [trs.name for trs in list_of_train_stats]
