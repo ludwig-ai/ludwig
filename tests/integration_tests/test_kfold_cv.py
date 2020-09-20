@@ -216,7 +216,7 @@ def test_kfold_cv_api_from_file():
         (
             kfold_cv_stats,
             kfold_split_indices
-         ) = kfold_cross_validate(
+        ) = kfold_cross_validate(
             3,
             model_definition=model_definition_fp,
             data_csv=training_data_fp
@@ -229,6 +229,7 @@ def test_kfold_cv_api_from_file():
 
         for key in ['fold_' + str(i + 1) for i in range(num_folds)]:
             assert key in kfold_split_indices
+
 
 def test_kfold_cv_api_in_memory():
     # k-fold_cross_validate api with in-memory model defintion
@@ -267,7 +268,7 @@ def test_kfold_cv_api_in_memory():
             kfold_cv_stats,
             kfold_split_indices
         ) = kfold_cross_validate(
-             3,
+            3,
             model_definition=model_definition,
             data_csv=training_data_fp
         )

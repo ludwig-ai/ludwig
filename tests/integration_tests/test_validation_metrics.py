@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-
 TestCase = namedtuple('TestCase', 'output_features validation_metrics')
+
+
 # output_features: output features to test
 # validation_metrics: relevant metrics for the output feature
 
@@ -117,6 +118,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
 def test_validation_metrics_mulitiple_output(test_case: TestCase,
                                              csv_filename: str):
     test_validation_metrics(test_case, csv_filename)
+
 
 # negative test for invalid metric name
 @pytest.mark.parametrize(

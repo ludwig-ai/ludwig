@@ -19,7 +19,6 @@
 # email: ivaylo.stefanov82@gmail.com
 # github: https://github.com/istefano82
 # ==============================================================================
-
 import glob
 import json
 import os
@@ -252,6 +251,7 @@ def test_visualization_compare_performance_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
 def test_visualization_compare_classifiers_from_prob_csv_output_saved(
         csv_filename
 ):
@@ -387,6 +387,7 @@ def test_visualization_compare_classifiers_from_prob_npy_output_saved(
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
 def test_visualization_compare_classifiers_from_pred_npy_output_saved(
         csv_filename
 ):
@@ -455,6 +456,7 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(
             os.remove(file)
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
+
 
 def test_visualization_compare_classifiers_from_pred_csv_output_saved(
         csv_filename
@@ -849,6 +851,7 @@ def test_visualization_compare_classifiers_predictions_csv_output_saved(
             os.remove(file)
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
+
 
 def test_visualization_cmp_classifiers_predictions_distribution_output_saved(
         csv_filename
@@ -1735,6 +1738,7 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
         except OSError as e:  # if failed, report it back to the user
             print("Error: %s - %s." % (e.filename, e.strerror))
 
+
 def test_load_ground_truth_split_from_file(csv_filename):
     """Ensure correct ground truth split is loaded when ground_truth_split is given.
 
@@ -1759,10 +1763,11 @@ def test_load_ground_truth_split_from_file(csv_filename):
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
 
-    ground_truth_train_split = load_from_file(ground_truth, output_feature_name,
+    ground_truth_train_split = load_from_file(ground_truth,
+                                              output_feature_name,
                                               ground_truth_split=0)
     ground_truth_val_split = load_from_file(ground_truth, output_feature_name,
-                                              ground_truth_split=1)
+                                            ground_truth_split=1)
     ground_truth_test_split = load_from_file(ground_truth, output_feature_name)
 
     test_df, train_df, val_df = obtain_df_splits(csv_filename)
@@ -1784,6 +1789,7 @@ def test_load_ground_truth_split_from_file(csv_filename):
         for test_row in target_predictions_from_test
     ])
 
-    assert str(ground_truth_train_split) == str(ground_truth_loaded_train_split)
+    assert str(ground_truth_train_split) == str(
+        ground_truth_loaded_train_split)
     assert str(ground_truth_val_split) == str(ground_truth_loaded_val_split)
     assert str(ground_truth_test_split) == str(ground_truth_loaded_test_split)

@@ -94,6 +94,7 @@ def h3_to_components(h3_value):
         'cells': h3_components(h3_value)
     }
 
+
 if __name__ == '__main__':
     value = 622236723497533439
     components = h3_to_components(value)
@@ -103,4 +104,3 @@ if __name__ == '__main__':
     print(components)
     print(h3)
     print(components2)
-

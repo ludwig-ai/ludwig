@@ -53,6 +53,7 @@ def generated_data():
 
     return GeneratedData(train, validation, test)
 
+
 @pytest.fixture(scope='module')
 def generated_data_for_optimizer():
     # function generates simple training data that guarantee convergence
@@ -335,7 +336,6 @@ def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
         skip_save_model=True,
         skip_save_log=True
     )
-
 
     # retrieve training losses for first and last epochs
     train_losses = np.array(train_stats['training']['combined']['loss'])

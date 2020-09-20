@@ -1,6 +1,6 @@
 import pytest
-
 import tensorflow as tf
+
 from ludwig.modules.attention_modules import FeedForwardAttentionReducer
 
 
@@ -12,7 +12,6 @@ def test_feed_forward_attention_reducer(
         input_seq_size,
         input_hidden_size
 ):
-
     # Generate synthetic data
     current_inputs = tf.random.normal(
         [input_batch_size, input_seq_size, input_hidden_size],
@@ -26,4 +25,3 @@ def test_feed_forward_attention_reducer(
 
     # ensure returned tensor is the correct shape
     assert result.shape.as_list() == [input_batch_size, input_hidden_size]
-

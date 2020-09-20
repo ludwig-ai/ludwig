@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from __future__ import absolute_import
-from __future__ import division
-
 import copy
 import logging
 import sys
@@ -420,8 +417,9 @@ def donut(
                  pctdistance=1 - (width / 2) / (1 - width),
                  colors=inside_colors, startangle=90, counterclock=False,
                  textprops={'color': 'w', 'weight': 'bold',
-                            'path_effects': [PathEffects.withStroke(linewidth=3,
-                                                                    foreground='black')]})
+                            'path_effects': [
+                                PathEffects.withStroke(linewidth=3,
+                                                       foreground='black')]})
     plt.setp(inside + outside, width=width, edgecolor='white')
 
     wedges = []

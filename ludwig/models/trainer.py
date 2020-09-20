@@ -17,10 +17,6 @@
 """
 This module contains the class and auxiliary methods of a model.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import logging
 import os
 import os.path
@@ -55,6 +51,7 @@ from ludwig.utils.math_utils import learning_rate_warmup, \
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
+
 
 class Trainer:
     """

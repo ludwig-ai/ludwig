@@ -228,7 +228,6 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
         else:
             self.pad_idx = None
 
-
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.int8 or inputs.dtype == tf.int16 or \
@@ -239,7 +238,7 @@ class TextInputFeature(TextFeatureMixin, SequenceInputFeature):
 
         if self.pad_idx is not None:
             inputs_mask = tf.not_equal(inputs, self.pad_idx)
-        else: 
+        else:
             inputs_mask = None
 
         encoder_output = self.encoder_obj(

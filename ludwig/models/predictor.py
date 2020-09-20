@@ -9,9 +9,9 @@ from tqdm import tqdm
 
 from ludwig.constants import COMBINED, LOGITS
 from ludwig.globals import is_progressbar_disabled
-from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.batcher import initialize_batcher
 from ludwig.utils.data_utils import save_csv, save_json
+from ludwig.utils.horovod_utils import is_on_master
 from ludwig.utils.misc_utils import sum_dicts
 from ludwig.utils.print_utils import repr_ordered_dict
 
@@ -145,7 +145,8 @@ class Predictor:
                             if pred_name not in predictions[of_name]:
                                 predictions[of_name][pred_name] = [pred_values]
                             else:
-                                predictions[of_name][pred_name].append(pred_values)
+                                predictions[of_name][pred_name].append(
+                                    pred_values)
 
             if is_on_master():
                 progress_bar.update(1)

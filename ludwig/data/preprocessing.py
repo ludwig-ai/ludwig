@@ -491,7 +491,8 @@ def preprocess_for_training(
                                      shuffle_training=False,
                                      **kwargs)
         else:
-            raise ValueError('One of `dataset` or `training_set` must be not None')
+            raise ValueError(
+                'One of `dataset` or `training_set` must be not None')
 
     elif data_format in DICT_FORMATS:
         num_overrides = override_in_memory_flag(

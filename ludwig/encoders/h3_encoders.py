@@ -326,7 +326,6 @@ class H3WeightedSum(Layer):
         self.should_softmax = should_softmax
         self.reduce_sequence = SequenceReducer(reduce_mode='sum')
 
-
         self.h3_embed = H3Embed(
             embedding_size,
             embeddings_on_cpu=embeddings_on_cpu,

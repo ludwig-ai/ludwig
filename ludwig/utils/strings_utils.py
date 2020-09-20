@@ -35,6 +35,7 @@ SPACE_PUNCTUATION_REGEX = re.compile(r'\w+|[^\w\s]')
 COMMA_REGEX = re.compile(r'\s*,\s*')
 UNDERSCORE_REGEX = re.compile(r'\s*_\s*')
 
+
 def make_safe_filename(s):
     def safe_char(c):
         if c.isalnum():
@@ -1159,7 +1160,7 @@ class HFTokenizer(BaseTokenizer):
                  **kwargs
                  ):
         super().__init__()
-        from transformers import AutoTokenizer 
+        from transformers import AutoTokenizer
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,

@@ -417,7 +417,8 @@ class CategoryOutputFeature(CategoryFeatureMixin, OutputFeature):
 
             del predictions[PREDICTIONS]
 
-        if PROBABILITIES in predictions and len(predictions[PROBABILITIES]) > 0:
+        if PROBABILITIES in predictions and len(
+                predictions[PROBABILITIES]) > 0:
             probs = predictions[PROBABILITIES].numpy()
             prob = np.amax(probs, axis=1)
             postprocessed[PROBABILITIES] = probs

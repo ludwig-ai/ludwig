@@ -290,7 +290,8 @@ def test_experiment_image_inputs(image_parms: ImageParms, csv_filename: str):
     ]
 
     input_features[0]['encoder'] = image_parms.image_encoder
-    input_features[0]['preprocessing']['in_memory'] = image_parms.in_memory_flag
+    input_features[0]['preprocessing'][
+        'in_memory'] = image_parms.in_memory_flag
     rel_path = generate_data(input_features, output_features, csv_filename)
     run_experiment(
         input_features,
@@ -352,7 +353,8 @@ def test_experiment_image_dataset(
     test_csv_filename = 'test_' + uuid.uuid4().hex[:10].upper() + '.csv'
 
     # setup training data format to test
-    train_data = generate_data(input_features, output_features, train_csv_filename)
+    train_data = generate_data(input_features, output_features,
+                               train_csv_filename)
     model_definition['input_features'][0]['preprocessing']['in_memory'] \
         = train_in_memory
     training_set_metadata = None

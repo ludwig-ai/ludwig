@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import numpy as np
 from scipy.signal import lfilter
 from scipy.signal.windows import get_window
@@ -56,7 +55,8 @@ def get_group_delay(raw_data, sampling_rate_in_hz, window_length_in_s,
 def get_phase_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s,
                              window_shift_in_s, num_fft_points, window_type):
     stft = _get_stft(raw_data, sampling_rate_in_hz, window_length_in_s,
-                     window_shift_in_s, num_fft_points, window_type=window_type)
+                     window_shift_in_s, num_fft_points,
+                     window_type=window_type)
     abs_stft = np.abs(stft)
     phase = np.angle(stft)
     stft_phase = np.concatenate((phase, abs_stft), axis=1)
@@ -66,7 +66,8 @@ def get_phase_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s,
 def get_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s,
                        window_shift_in_s, num_fft_points, window_type):
     stft = _get_stft(raw_data, sampling_rate_in_hz, window_length_in_s,
-                     window_shift_in_s, num_fft_points, window_type=window_type)
+                     window_shift_in_s, num_fft_points,
+                     window_type=window_type)
     stft_magnitude = np.abs(stft)
     return np.transpose(stft_magnitude)
 
@@ -77,9 +78,11 @@ def get_stft_magnitude(raw_data, sampling_rate_in_hz, window_length_in_s,
 # https://github.com/jameslyons/python_speech_features/blob/40c590269b57c64a8c1f1ddaaff2162008d1850c/python_speech_features/base.py#L84################################################################################
 ################################################################################
 def get_fbank(raw_data, sampling_rate_in_hz, window_length_in_s,
-              window_shift_in_s, num_fft_points, window_type, num_filter_bands):
+              window_shift_in_s, num_fft_points, window_type,
+              num_filter_bands):
     stft = _get_stft(raw_data, sampling_rate_in_hz, window_length_in_s,
-                     window_shift_in_s, num_fft_points, window_type=window_type,
+                     window_shift_in_s, num_fft_points,
+                     window_type=window_type,
                      zero_mean_offset=True)
     stft_power = np.abs(stft) ** 2
     upper_limit_freq = int(sampling_rate_in_hz / 2)
@@ -147,7 +150,8 @@ def _get_stft(raw_data, sampling_rate_in_hz, window_length_in_s,
     return non_symmetric_stft
 
 
-def _short_time_fourier_transform(data, sampling_rate_in_hz, window_length_in_s,
+def _short_time_fourier_transform(data, sampling_rate_in_hz,
+                                  window_length_in_s,
                                   window_shift_in_s, num_fft_points,
                                   window_type, data_transformation=None,
                                   zero_mean_offset=False):
