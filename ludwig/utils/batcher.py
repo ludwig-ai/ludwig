@@ -29,16 +29,17 @@ class Batcher(object):
 
         # store our dataset as well
         self.dataset = dataset
-        if should_shuffle:
-            shuffle_inplace(self.dataset.get_dataset())
 
         self.ignore_last = ignore_last
         self.batch_size = batch_size
         self.total_size = dataset.size
-        self.steps_per_epoch = int(math.ceil(self.total_size / self.batch_size))
+        self.steps_per_epoch = int(
+            math.ceil(self.total_size / self.batch_size))
+        self.epoch = 0
         self.index = 0
         self.step = 0
-        self.epoch = 0
+        if should_shuffle:
+            shuffle_inplace(self.dataset.get_dataset())
 
     def next_batch(self):
         if self.last_batch():
@@ -69,6 +70,8 @@ class Batcher(object):
     def reset(self):
         self.index = 0
         self.step = 0
+        if self.should_shuffle:
+            shuffle_inplace(self.dataset.get_dataset())
 
 
 class BucketedBatcher(object):
@@ -174,17 +177,18 @@ class DistributedBatcher(object):
             self.partition = (partition_size * partition_number,
                               partition_size * (partition_number + 1))
         self.dataset = dataset
-        if should_shuffle:
-            shuffle_inplace(self.dataset.get_dataset())
 
         self.ignore_last = ignore_last
         self.batch_size = batch_size
         self.total_size = self.partition[1] - self.partition[0]
-        self.steps_per_epoch = int(math.ceil(self.total_size / self.batch_size))
+        self.steps_per_epoch = int(
+            math.ceil(self.total_size / self.batch_size))
         self.index = self.partition[0]
         self.max_index = self.partition[1]
-        self.step = 0
         self.epoch = 0
+        self.step = 0
+        if should_shuffle:
+            shuffle_inplace(self.dataset.get_dataset())
 
     def next_batch(self):
         if self.last_batch():
