@@ -218,7 +218,7 @@ def test_kfold_cv_api_from_file():
             kfold_split_indices
          ) = kfold_cross_validate(
             3,
-            model_definition_file=model_definition_fp,
+            model_definition=model_definition_fp,
             data_csv=training_data_fp
         )
 

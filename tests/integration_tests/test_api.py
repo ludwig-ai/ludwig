@@ -15,6 +15,7 @@
 # ==============================================================================
 import os
 import shutil
+import tempfile
 
 import numpy as np
 
@@ -237,3 +238,25 @@ def test_api_train_online(csv_filename):
     for i in range(2):
         model.train_online(dataset=data_csv)
     model.predict(dataset=data_csv)
+
+
+def test_api_training_set(csv_filename):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_features = [sequence_feature(reduce_output='sum')]
+        output_features = [category_feature(vocab_size=2, reduce_input='sum')]
+
+        data_csv = generate_data(input_features, output_features, csv_filename)
+        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'validation.csv'))
+        test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'test.csv'))
+
+        model_definition = {
+            'input_features': input_features,
+            'output_features': output_features,
+            'combiner': {'type': 'concat', 'fc_size': 14},
+        }
+        model = LudwigModel(model_definition)
+        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+        model.predict(dataset=test_csv)
+
+        # Train again, this time the HDF5 cache will be used
+        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
