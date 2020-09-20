@@ -28,19 +28,6 @@ with open('./model_definition.yaml','r') as f:
 model = LudwigModel(model_definition,
                     logging_level=logging.INFO)
 
-# get cwd to set absolute path for image files
-current_working_directory = os.getcwd()
-
-# read in data set and randomize sequence of records
-train_df = pd.read_csv('./data/mnist_dataset_training.csv')
-# ensure absolute path for images
-train_df['image_path'] = current_working_directory + '/data/' + train_df['image_path']
-train_df = train_df.sample(train_df.shape[0])
-
-# prepare test data set
-test_df = pd.read_csv('./data/mnist_dataset_testing.csv')
-# ensure absolute path to images
-test_df['image_path'] = current_working_directory + '/data/' + test_df['image_path']
 
 # initiate model training
 (
@@ -48,8 +35,8 @@ test_df['image_path'] = current_working_directory + '/data/' + test_df['image_pa
     _,
     output_directory  # location for training results saved to disk
 ) = model.train(
-    training_set=train_df,
-    test_set=test_df,
+    training_set='./data/mnist_dataset_training.csv',
+    test_set='./data/mnist_dataset_testing.csv',
     experiment_name='simple_image_experiment',
     model_name='single_model',
     skip_save_processed_input=True

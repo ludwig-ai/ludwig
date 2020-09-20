@@ -28,4 +28,4 @@ output_features:
         type: category
 
 training:
-    epochs: 10
+    epochs: 5
