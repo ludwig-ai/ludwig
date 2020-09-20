@@ -32,7 +32,7 @@ def hyperopt(
         # model_resume_path=None,
         skip_save_training_description=True,
         skip_save_training_statistics=True,
-        skip_save_model=True,
+        skip_save_model=False,  # False because want use model best validation
         skip_save_progress=True,
         skip_save_log=True,
         skip_save_processed_input=True,
