@@ -54,7 +54,8 @@ Available sub-commands:
    hyperopt              Perform hyperparameter optimization
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
-   export                Exports Ludwig models to other formats
+   export_savedmodel     Exports Ludwig models to SavedModel
+   export_neuropod       Exports Ludwig models to Neuropod
 ''')
         parser.add_argument('command', help='Subcommand to run')
         # parse_args defaults to [1:] for args, but you need to
@@ -112,11 +113,15 @@ Available sub-commands:
         ludwig.contrib.contrib_command("collect_activations", *sys.argv)
         collect.cli_collect_activations(sys.argv[2:])
 
-    # todo TF2: add a command that exports to savedmodel and to neuropod
-    def export(self):
+    def export_savedmodel(self):
         from ludwig import export
-        ludwig.contrib.contrib_command("export", *sys.argv)
-        export.cli(sys.argv[2:])
+        ludwig.contrib.contrib_command("export_savedmodel", *sys.argv)
+        export.export_savedmodel(sys.argv[2:])
+
+    def export_neuropod(self):
+        from ludwig import export
+        ludwig.contrib.contrib_command("export_neuropod", *sys.argv)
+        export.export_neuropod(sys.argv[2:])
 
 
 def main():

@@ -1,4 +1,4 @@
-import argparse
+import logging
 import logging
 import os
 import shutil
@@ -10,9 +10,8 @@ from ludwig.api import LudwigModel
 from ludwig.constants import CATEGORY, NUMERICAL, BINARY, SEQUENCE, TEXT, SET, \
     VECTOR, PREDICTIONS, PROBABILITIES, PROBABILITY, NAME, TYPE
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME, \
-    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME, LUDWIG_VERSION
+    TRAIN_SET_METADATA_FILE_NAME, MODEL_WEIGHTS_FILE_NAME
 from ludwig.utils.data_utils import load_json
-from ludwig.utils.print_utils import logging_level_registry, print_ludwig
 
 logger = logging.getLogger(__name__)
 
@@ -291,64 +290,3 @@ def export_neuropod(
         output_spec=output_spec
     )
     logger.info('Neuropod saved to: {}'.format(neuropod_path))
-
-
-def cli():
-    parser = argparse.ArgumentParser(
-        description='This script exports a Ludwig model in the Neuropod format'
-    )
-
-    # ----------------
-    # Model parameters
-    # ----------------
-    parser.add_argument(
-        '-m',
-        '--ludwig_model_path',
-        help='path to the Ludwig model to export',
-        required=True
-    )
-
-    parser.add_argument(
-        '-l',
-        '--logging_level',
-        default='info',
-        help='the level of logging to use',
-        choices=['critical', 'error', 'warning', 'info', 'debug', 'notset']
-    )
-
-    # -------------------
-    # Neuropod parameters
-    # -------------------
-    parser.add_argument(
-        '-n',
-        '--neuropod_path',
-        help='path of the output Neuropod package file',
-        required=True
-    )
-    parser.add_argument(
-        '-nm',
-        '--neuropod_model_name',
-        help='path of the output Neuropod package file',
-        default='ludwig_model'
-    )
-
-    args = parser.parse_args()
-
-    args.logging_level = logging_level_registry[args.logging_level]
-    logging.getLogger('ludwig').setLevel(
-        args.logging_level
-    )
-    global logger
-    logger = logging.getLogger('ludwig.serve')
-
-    print_ludwig('Export Neuropod', LUDWIG_VERSION)
-
-    export_neuropod(
-        args.ludwig_model_path,
-        args.neuropod_path,
-        args.neuropod_model_name,
-    )
-
-
-if __name__ == '__main__':
-    cli()
