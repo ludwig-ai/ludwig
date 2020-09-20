@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -25,20 +26,10 @@ from tests.integration_tests.utils import generate_data
 from tests.integration_tests.utils import sequence_feature
 
 
-def _run_ludwig(command, csv_filename, **ludwig_kwargs):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        model_definition_filename = os.path.join(tmpdir, 'model_definition.yaml')
-        dataset_filename = _prepare_data(csv_filename, model_definition_filename)
-
-        commands = [
-            'ludwig', command,
-            '--dataset', dataset_filename,
-            '--model_definition_file', model_definition_filename,
-            '--output_directory', tmpdir,
-        ]
+def _run_ludwig(command, **ludwig_kwargs):
+        commands = ['ludwig', command]
         for arg_name, value in ludwig_kwargs.items():
             commands += ['--' + arg_name, value]
-
         cmdline = ' '.join(commands)
         print(cmdline)
         exit_code = subprocess.call(cmdline, shell=True,
@@ -68,6 +59,29 @@ def _prepare_data(csv_filename, model_definition_filename):
     return dataset_filename
 
 
-def test_train_cli_defaults(csv_filename):
-    """Test training using `ludwig train` without overriding any args."""
-    _run_ludwig('train', csv_filename)
+def test_train_cli_dataset(csv_filename):
+    """Test training using `ludwig train --dataset`."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model_definition_filename = os.path.join(tmpdir, 'model_definition.yaml')
+        dataset_filename = _prepare_data(csv_filename, model_definition_filename)
+        _run_ludwig('train',
+                    dataset=dataset_filename,
+                    model_definition_file=model_definition_filename,
+                    output_directory=tmpdir)
+
+
+def test_train_cli_training_set(csv_filename):
+    """Test training using `ludwig train --training_set`."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model_definition_filename = os.path.join(tmpdir, 'model_definition.yaml')
+        dataset_filename = _prepare_data(csv_filename, model_definition_filename)
+        validation_filename = shutil.copyfile(
+            dataset_filename, os.path.join(tmpdir, 'validation.csv'))
+        test_filename = shutil.copyfile(
+            dataset_filename, os.path.join(tmpdir, 'test.csv'))
+        _run_ludwig('train',
+                    training_set=dataset_filename,
+                    validation_set=validation_filename,
+                    test_set=test_filename,
+                    model_definition_file=model_definition_filename,
+                    output_directory=tmpdir)

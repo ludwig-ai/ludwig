@@ -28,9 +28,10 @@ import yaml
 from ludwig.api import LudwigModel, kfold_cross_validate
 from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
-from ludwig.utils.horovod_utils import set_on_master, is_on_master
 from ludwig.utils.data_utils import save_json
 from ludwig.utils.defaults import default_random_seed
+from ludwig.utils.horovod_utils import set_on_master, is_on_master
+from ludwig.utils.misc_utils import check_which_model_definition
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -179,12 +180,14 @@ def experiment_cli(
     """
     set_on_master(use_horovod)
 
+    model_definition = check_which_model_definition(model_definition,
+                                                    model_definition_file)
+
     if model_load_path:
         model = LudwigModel.load(model_load_path)
     else:
         model = LudwigModel(
             model_definition=model_definition,
-            model_definition_fp=model_definition_file,
             logging_level=logging_level,
             use_horovod=use_horovod,
             gpus=gpus,
@@ -254,12 +257,13 @@ def kfold_cross_validate_cli(
 
     :return: None
     """
+    model_definition = check_which_model_definition(model_definition,
+                                                    model_definition_file)
 
     (kfold_cv_stats,
      kfold_split_indices) = kfold_cross_validate(
         k_fold,
         model_definition=model_definition,
-        model_definition_file=model_definition_file,
         data_csv=data_csv,
         output_directory=output_directory,
         random_seed=random_seed
@@ -308,52 +312,31 @@ def cli(sys_argv):
     # Data parameters
     # ---------------
     parser.add_argument(
-        '--data_csv',
-        help='input data CSV file. If it has a split column, it will be used '
-             'for splitting (0: train, 1: validation, 2: test), otherwise the '
-             'dataset will be randomly split'
+        '--dataset',
+        help='input data file path. '
+             'If it has a split column, it will be used for splitting '
+             '(0: train, 1: validation, 2: test), '
+             'otherwise the dataset will be randomly split'
     )
-    parser.add_argument('--data_train_csv', help='input train data CSV file')
+    parser.add_argument('--training_set', help='input train data file path')
     parser.add_argument(
-        '--data_validation_csv',
-        help='input validation data CSV file'
+        '--validation_set', help='input validation data file path'
     )
-    parser.add_argument('--data_test_csv', help='input test data CSV file')
+    parser.add_argument('--test_set', help='input test data file path')
 
     parser.add_argument(
-        '--data_hdf5',
-        help='input data HDF5 file. It is an intermediate preprocess version of'
-             ' the input CSV created the first time a CSV file is used in the '
-             'same directory with the same name and a hdf5 extension'
-    )
-    parser.add_argument(
-        '--data_train_hdf5',
-        help='input train data HDF5 file. It is an intermediate preprocess '
-             'version of the input CSV created the first time a CSV file is '
-             'used in the same directory with the same name and a hdf5 '
-             'extension'
-    )
-    parser.add_argument(
-        '--data_validation_hdf5',
-        help='input validation data HDF5 file. It is an intermediate preprocess'
-             ' version of the input CSV created the first time a CSV file is '
-             'used in the same directory with the same name and a hdf5 '
-             'extension'
-    )
-    parser.add_argument(
-        '--data_test_hdf5',
-        help='input test data HDF5 file. It is an intermediate preprocess '
-             'version of the input CSV created the first time a CSV file is '
-             'used in the same directory with the same name and a hdf5 '
-             'extension'
+        '--training_set_metadata',
+        help='input metadata JSON file path. An intermediate preprocess file '
+             'containing the mappings of the input file created '
+             'the first time a file is used, in the same directory '
+             'with the same name and a .json extension'
     )
 
     parser.add_argument(
-        '--training_set_metadata_json',
-        help='input metadata JSON file. It is an intermediate preprocess file'
-             ' containing the mappings of the input CSV created the first time '
-             'a CSV file is used in the same directory with the same name and a'
-             ' json extension'
+        '--data_format',
+        help='format of the input data',
+        default='auto',
+        choices=['auto', 'csv', 'hdf5']
     )
 
     parser.add_argument(

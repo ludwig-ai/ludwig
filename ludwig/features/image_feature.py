@@ -246,10 +246,7 @@ class ImageFeatureMixin(object):
         if num_images == 0:
             raise ValueError('There are no images in the dataset provided.')
 
-        # this is not super nice, but works both and DFs and lists
-        first_path = '.'
-        for first_path in dataset_df[feature[NAME]]:
-            break
+        first_path = next(iter(dataset_df[feature[NAME]]))
 
         if csv_path is None and not os.path.isabs(first_path):
             raise ValueError('Image file paths must be absolute')
@@ -356,7 +353,9 @@ class ImageInputFeature(ImageFeatureMixin, InputFeature):
     def call(self, inputs, training=None, mask=None):
         assert isinstance(inputs, tf.Tensor)
         assert inputs.dtype == tf.uint8
-        # assert len(inputs.shape) == 1
+
+        # csting and rescaling
+        inputs = tf.cast(inputs, tf.float32) / 255
 
         inputs_encoded = self.encoder_obj(
             inputs, training=training, mask=mask

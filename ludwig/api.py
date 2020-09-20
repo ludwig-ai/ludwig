@@ -72,8 +72,7 @@ logger = logging.getLogger(__name__)
 
 class LudwigModel:
     def __init__(self,
-                 model_definition=None,
-                 model_definition_fp=None,
+                 model_definition,
                  logging_level=logging.ERROR,
                  use_horovod=None,
                  gpus=None,
@@ -95,26 +94,17 @@ class LudwigModel:
                multithreading parallelism to improve performance at the cost of
                determinism.
         """
-        # check for model_definition and model_definition_file
-        if model_definition is None and model_definition_fp is None:
-            raise ValueError(
-                'Either model_definition of model_definition_file have to be'
-                'not None to initialize a LudwigModel'
-            )
-        if model_definition is not None and model_definition_fp is not None:
-            raise ValueError(
-                'Only one between model_definition and '
-                'model_definition_file can be provided'
-            )
+        # check if model definition is a path or a dict
+        if isinstance(model_definition, str):  # assume path
+            with open(model_definition, 'r') as def_file:
+                model_definition_dict = yaml.safe_load(def_file)
+            self.model_definition_fp = model_definition
+        else:
+            model_definition_dict = copy.deepcopy(model_definition)
+            self.model_definition_fp = None
 
         # merge model definition with defaults
-        if model_definition_fp is not None:
-            with open(model_definition_fp, 'r') as def_file:
-                raw_model_definition = yaml.safe_load(def_file)
-        else:
-            raw_model_definition = copy.deepcopy(model_definition)
-        self.model_definition = merge_with_defaults(raw_model_definition)
-        self.model_definition_fp = model_definition_fp
+        self.model_definition = merge_with_defaults(model_definition_dict)
 
         # setup horovod
         self._horovod = configure_horovod(use_horovod)
@@ -1009,8 +999,7 @@ class LudwigModel:
 
 def kfold_cross_validate(
         num_folds,
-        model_definition=None,
-        model_definition_file=None,
+        model_definition,
         data_csv=None,
         skip_save_training_description=False,
         skip_save_training_statistics=False,
@@ -1064,18 +1053,6 @@ def kfold_cross_validate(
             'k_fold parameter must be specified'
         )
 
-    # check for model_definition and model_definition_file
-    if model_definition is None and model_definition_file is None:
-        raise ValueError(
-            'Either model_definition of model_definition_file have to be'
-            'not None to initialize a LudwigModel'
-        )
-    if model_definition is not None and model_definition_file is not None:
-        raise ValueError(
-            'Only one between model_definition and '
-            'model_definition_file can be provided'
-        )
-
     logger.info('starting {:d}-fold cross validation'.format(num_folds))
 
     # create output_directory if not available
@@ -1107,7 +1084,6 @@ def kfold_cross_validate(
 
             model = LudwigModel(
                 model_definition=model_definition,
-                model_definition_fp=model_definition_file,
                 logging_level=logging_level,
                 use_horovod=use_horovod,
                 gpus=gpus,

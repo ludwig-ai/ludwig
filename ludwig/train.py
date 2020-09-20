@@ -29,6 +29,7 @@ from ludwig.contrib import contrib_command, contrib_import
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.defaults import default_random_seed
 from ludwig.utils.horovod_utils import set_on_master, is_on_master
+from ludwig.utils.misc_utils import check_which_model_definition
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
 
@@ -168,12 +169,14 @@ def train_cli(
     :type debug: Boolean
     :returns: None
     """
+    model_definition = check_which_model_definition(model_definition,
+                                                    model_definition_file)
+
     if model_load_path:
         model = LudwigModel.load(model_load_path)
     else:
         model = LudwigModel(
             model_definition=model_definition,
-            model_definition_fp=model_definition_file,
             logging_level=logging_level,
             use_horovod=use_horovod,
             gpus=gpus,

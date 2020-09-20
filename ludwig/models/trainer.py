@@ -57,7 +57,6 @@ from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
 
-
 class Trainer:
     """
     Trainer is a class that train a model
