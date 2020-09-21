@@ -1,6 +1,6 @@
 # Hyperparameter Optimization
 
-Demonstrates hyperparameter optimization using the [hyperopt package](https://github.com/hyperopt/hyperopt).
+Demonstrates hyperparameter optimization using Ludwig's in-built capabililies.
 
 ### Preparatory Steps
 * Create `data` directory
@@ -13,7 +13,12 @@ hyperopt/
 ```
 
 ### Description
-Jupyter notebook `model_hyperopt_example.ipynb` demonstrates using the `hyperopt` package to perform hyperparameter optimization during Ludwig model training. Key features demonstrated in the notebook:
-* Programmatically building a Ludwig model definition from training data set
-* Setup hyperparameter search space for optimization
-* Using `hyperopt` `fmin()` function to determine optimal hyperparameters
+Jupyter notebook `model_hyperopt_example.ipynb` demonstrates several hyperparameter optimization capabilities. Key features demonstrated in the notebook:
+* Training data is prepared for use
+* Programmatically create Ludwig model definition dictionary from the training data dataframe
+* Setup parameter space for hyperparameter optimization
+* Perform two hyperparameter runs
+  * Parallel workers using random search strategy
+  * Serial processing using random search strategy
+  * Parallel workers uing grid search strategy (Note: takes about 35 minutes)
+* Convert results returned from hyperparameter optimization to a dataframe
