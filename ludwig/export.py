@@ -24,6 +24,7 @@ from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
+from ludwig.utils.neuropod_utils import export_neuropod as utils_export_neuropod
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ def export_neuropod(
     logger.info('Output path: {}'.format(output_path))
     logger.info('\n')
 
-    export_neuropod(model_path, output_path, model_name)
+    utils_export_neuropod(model_path, output_path, model_name)
 
     logger.info('Saved to: {0}'.format(output_path))
 
