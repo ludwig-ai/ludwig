@@ -21,4 +21,4 @@ Jupyter notebook `model_hyperopt_example.ipynb` demonstrates several hyperparame
   * Parallel workers using random search strategy
   * Serial processing using random search strategy
   * Parallel workers uing grid search strategy (Note: takes about 35 minutes)
-* Convert results returned from hyperparameter optimization to a dataframe
+* Demonstrate various Ludwig visualizations for hyperparameter optimization
