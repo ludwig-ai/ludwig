@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger("ludwig").setLevel(logging.INFO)
 
-
 TestCase = namedtuple('TestCase', 'output_features validation_metrics')
+
+
 # output_features: output features to test
 # validation_metrics: relevant metrics for the output feature
 
@@ -46,16 +47,21 @@ TestCase = namedtuple('TestCase', 'output_features validation_metrics')
 )
 def test_validation_metrics(test_case: TestCase, csv_filename: str):
     # setup test scenarios
-    if len(test_case.output_features) == 1:
+    test_scenarios = []
+    for output_feature in test_case.output_features:
         # single output feature capture feature specific metrics
-        of_name = test_case.output_features[0][NAME]
-        test_scenarios = [(of_name, measure)
-                          for measure in test_case.validation_metrics]
-        # add standard test for combined
-        test_scenarios.append(('combined', 'loss'))
-    else:
-        # multi output features, do one combined loss metric
-        test_scenarios = [('combined', 'loss')]
+        of_name = output_feature[NAME]
+        for metric in test_case.validation_metrics:
+            test_scenarios.append((of_name, metric))
+            if len(test_case.output_features) == 1:
+                # it shoudl work when there's only one output feature
+                # and the metric applyys to the output feature type,
+                # the output feature name should be replacing combined
+                # and a warning should be printed about the substitution
+                test_scenarios.append(('combined', metric))
+
+    # add standard test for combined
+    test_scenarios.append(('combined', 'loss'))
 
     # setup features for the test
     input_features = [numerical_feature(),
@@ -112,6 +118,7 @@ def test_validation_metrics(test_case: TestCase, csv_filename: str):
 def test_validation_metrics_mulitiple_output(test_case: TestCase,
                                              csv_filename: str):
     test_validation_metrics(test_case, csv_filename)
+
 
 # negative test for invalid metric name
 @pytest.mark.parametrize(

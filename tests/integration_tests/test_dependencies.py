@@ -50,7 +50,6 @@ def test_multiple_dependencies(
         dependent_hidden_shape,
         dependent_hidden_shape2
 ):
-
     # setup at least for a single dependency
     hidden_layer = tf.random.normal(
         hidden_shape,
@@ -75,7 +74,7 @@ def test_multiple_dependencies(
     # with one dependencies
     if reduce_dependencies == 'concat' and len(hidden_shape) == 2 and \
             len(dependent_hidden_shape) == 3:
-            expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE * SEQ_SIZE
+        expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE * SEQ_SIZE
     else:
         expected_hidden_size = HIDDEN_SIZE + OTHER_HIDDEN_SIZE
 
@@ -94,7 +93,7 @@ def test_multiple_dependencies(
         # hidden size with two dependencies
         if reduce_dependencies == 'concat' and len(hidden_shape) == 2 and \
                 len(dependent_hidden_shape2) == 3:
-                expected_hidden_size += dependent_hidden_shape2[-1] * SEQ_SIZE
+            expected_hidden_size += dependent_hidden_shape2[-1] * SEQ_SIZE
         else:
             expected_hidden_size += dependent_hidden_shape2[-1]
 
@@ -112,7 +111,4 @@ def test_multiple_dependencies(
     else:
         assert results.shape.as_list() == [BATCH_SIZE, expected_hidden_size]
 
-    del(out_feature)
-
-
-
+    del (out_feature)

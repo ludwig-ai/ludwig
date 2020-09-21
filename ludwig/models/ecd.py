@@ -64,7 +64,8 @@ class ECD(tf.keras.Model):
 
         targets = {
             output_feature_name: output_feature.create_input()
-            for output_feature_name, output_feature in self.output_features.items()
+            for output_feature_name, output_feature in
+            self.output_features.items()
         }
         return inputs, targets
 

@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import contextlib
 
 import pytest
@@ -60,7 +59,8 @@ def graph_mode():
         # Generator decoder and reduce_input = None
         [
             category_feature(vocab_size=2, reduce_input='sum'),
-            sequence_feature(max_len=5, decoder='generator', reduce_input=None),
+            sequence_feature(max_len=5, decoder='generator',
+                             reduce_input=None),
             numerical_feature(normalization='minmax')
         ],
 

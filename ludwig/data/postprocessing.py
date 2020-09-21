@@ -39,7 +39,8 @@ def postprocess(
     return postprocessed
 
 
-def convert_predictions(predictions, output_features, training_set_metadata, return_type='dict'):
+def convert_predictions(predictions, output_features, training_set_metadata,
+                        return_type='dict'):
     convert_fn = get_from_registry(
         return_type,
         conversion_registry
@@ -82,9 +83,11 @@ def convert_to_df(
                 else:
                     for i, value in enumerate(output_type_value.T):
                         if (output_feature_name in training_set_metadata and
-                                'idx2str' in training_set_metadata[output_feature_name]):
-                            class_name = training_set_metadata[output_feature_name][
-                                'idx2str'][i]
+                                'idx2str' in training_set_metadata[
+                                    output_feature_name]):
+                            class_name = \
+                                training_set_metadata[output_feature_name][
+                                    'idx2str'][i]
                         else:
                             class_name = str(i)
                         data_for_df[

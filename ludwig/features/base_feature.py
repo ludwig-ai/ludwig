@@ -225,7 +225,8 @@ class OutputFeature(BaseFeature, tf.keras.Model, ABC):
 
     def call(
             self,
-            inputs,  # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
+            inputs,
+            # ((hidden, other_output_hidden), target) or (hidden, other_output_hidden)
             training=None,
             mask=None
     ):

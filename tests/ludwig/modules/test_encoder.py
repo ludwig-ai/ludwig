@@ -49,7 +49,7 @@ def generate_images(image_size, num_images):
 def _generate_sentence(vocab_size, max_len):
     sentence = np.zeros(max_len, dtype=np.int32)
     random_length = random.randint(1, max_len)
-    sentence[:random_length] = [random.randint(0, vocab_size-1) for _ in
+    sentence[:random_length] = [random.randint(0, vocab_size - 1) for _ in
                                 range(random_length)]
 
     return sentence

@@ -21,11 +21,6 @@
     Date last modified: 5/21/2019
     Python Version: 3+
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import copy
 import logging
 import os
@@ -393,9 +388,8 @@ class LudwigModel:
                 save_json(training_stats_fn, train_stats)
 
         # grab the results of the model with highest validation test performance
-        validation_field = self.model_definition[TRAINING]['validation_field']
-        validation_metric = self.model_definition[TRAINING][
-            'validation_metric']
+        validation_field = trainer.validation_field
+        validation_metric = trainer.validation_metric
         validation_field_result = train_valiset_stats[validation_field]
 
         best_function = get_best_function(validation_metric)

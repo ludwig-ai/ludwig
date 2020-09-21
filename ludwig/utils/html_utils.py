@@ -20,7 +20,6 @@ from html.parser import HTMLParser
 
 from ludwig.utils import strings_utils
 
-
 logger = logging.getLogger(__name__)
 
 
