@@ -52,6 +52,7 @@ Available sub-commands:
    serve                 Serves a pretrained model
    visualize             Visualizes experimental results
    hyperopt              Perform hyperparameter optimization
+   collect_summary       Prints names of weights and layers activations to use with other collect commands
    collect_weights       Collects tensors containing a pretrained model weights
    collect_activations   Collects tensors for each datapoint using a pretrained model
    export_savedmodel     Exports Ludwig models to SavedModel
@@ -121,12 +122,12 @@ Available sub-commands:
     def export_savedmodel(self):
         from ludwig import export
         ludwig.contrib.contrib_command("export_savedmodel", *sys.argv)
-        export.export_savedmodel_cli(sys.argv[2:])
+        export.cli_export_savedmodel(sys.argv[2:])
 
     def export_neuropod(self):
         from ludwig import export
         ludwig.contrib.contrib_command("export_neuropod", *sys.argv)
-        export.export_neuropod_cli(sys.argv[2:])
+        export.cli_export_neuropod(sys.argv[2:])
 
 
 def main():

@@ -384,7 +384,8 @@ def cli_collect_summary(sys_argv):
     """
     parser = argparse.ArgumentParser(
         description='This script loads a pretrained model '
-                    'and uses it collect weight names.',
+                    'and prints names of weights and layers activations '
+                    'to use with other collect commands',
         prog='ludwig collect_summary',
         usage='%(prog)s [options]'
     )

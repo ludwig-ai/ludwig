@@ -15,12 +15,13 @@
 # ==============================================================================
 import os
 import os.path
+import re
 import shutil
 import subprocess
 import tempfile
-import re
-import yaml
 from io import StringIO
+
+import yaml
 
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -35,7 +36,7 @@ def _run_ludwig(command, **ludwig_kwargs):
     print(cmdline)
     completed_process = subprocess.run(cmdline, shell=True, encoding='utf-8',
                                        stdout=subprocess.PIPE,
-                                env=os.environ.copy())
+                                       env=os.environ.copy())
     assert completed_process.returncode == 0
 
     return completed_process
@@ -62,6 +63,7 @@ def _prepare_data(csv_filename, model_definition_filename):
         yaml.dump(model_definition, f)
 
     return dataset_filename
+
 
 def _prepare_hyperopt_data(csv_filename, model_definition_filename):
     # Single sequence input, single category output
@@ -133,6 +135,7 @@ def test_train_cli_training_set(csv_filename):
                     model_definition_file=model_definition_filename,
                     output_directory=tmpdir)
 
+
 def test_export_savedmodel_cli(csv_filename):
     """Test exporting Ludwig model to Tensorflows savedmodel format."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -149,6 +152,7 @@ def test_export_savedmodel_cli(csv_filename):
                     output_path=os.path.join(tmpdir, 'savedmodel')
                     )
 
+
 def test_export_neuropod_cli(csv_filename):
     """Test exporting Ludwig model to neuropod format."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -164,6 +168,7 @@ def test_export_neuropod_cli(csv_filename):
                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
                     output_path=os.path.join(tmpdir, 'neuropod')
                     )
+
 
 def test_experiment_cli(csv_filename):
     """Test experiment cli."""
@@ -211,13 +216,14 @@ def test_evaluate_cli(csv_filename):
                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
                     output_directory=os.path.join(tmpdir, 'predictions'))
 
+
 def test_hyperopt_cli(csv_filename):
     """Test hyperopt cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
         model_definition_filename = os.path.join(tmpdir,
                                                  'model_definition.yaml')
         dataset_filename = _prepare_hyperopt_data(csv_filename,
-                                         model_definition_filename)
+                                                  model_definition_filename)
         _run_ludwig('hyperopt',
                     dataset=dataset_filename,
                     model_definition_file=model_definition_filename,
@@ -240,7 +246,7 @@ def test_visualize_cli(csv_filename):
                     model_names='run',
                     training_statistics=os.path.join(
                         tmpdir, 'experiment_run', 'training_statistics.json'
-                        ),
+                    ),
                     output_directory=os.path.join(tmpdir, 'visualizations')
                     )
 
@@ -257,7 +263,11 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                     model_definition_file=model_definition_filename,
                     output_directory=tmpdir)
         completed_process = _run_ludwig('collect_summary',
-                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'))
+                                        model_path=os.path.join(
+                                            tmpdir,
+                                            'experiment_run',
+                                            'model')
+                                        )
 
         # parse output of collect_summary to find tensor names to use
         # in the collect_wights and collect_activations.
@@ -277,8 +287,6 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                         line) > 1:
                     layers_list.append(line[:-1])
 
-
-
         # search for substring with weights names
         weights = re.search(
             "Weights(\w|\d|\:|\/|\n)*",
@@ -290,10 +298,9 @@ def test_collect_summary_activations_weights_cli(csv_filename):
         weights_list = []
         with StringIO(substring) as f:
             for _, line in enumerate(f):
-                if not (line[:6] == 'Layers' or line[:6] == 'Weight') and len(
-                        line) > 1:
+                if (not (line[:6] == 'Layers' or line[:6] == 'Weight')
+                        and len(line) > 1):
                     weights_list.append(line[:-1])
-
 
         # collect activations
         _run_ludwig('collect_activations',
@@ -309,5 +316,3 @@ def test_collect_summary_activations_weights_cli(csv_filename):
                     tensors=' '.join(weights_list),
                     output_directory=tmpdir
                     )
-
-
