@@ -78,7 +78,7 @@ def _prepare_hyperopt_data(csv_filename, model_definition_filename):
     model_definition = {
         'input_features': input_features,
         'output_features': output_features,
-        'combiner': {'type': 'concat', 'fc_size': 14},
+        'combiner': {'type': 'concat', 'fc_size': 4},
         'training': {'epochs': 2},
         'hyperopt': {
             'parameters': {
@@ -94,7 +94,7 @@ def _prepare_hyperopt_data(csv_filename, model_definition_filename):
             'output_feature': output_features[0]['name'],
             'validation_metrics': 'loss',
             'executor': {'type': 'serial'},
-            'sampler': {'type': 'random', 'num_samples': 5}
+            'sampler': {'type': 'random', 'num_samples': 2}
         }
     }
 
