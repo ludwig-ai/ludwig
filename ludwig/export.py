@@ -22,9 +22,10 @@ import sys
 from ludwig.api import LudwigModel
 from ludwig.contrib import contrib_command
 from ludwig.globals import LUDWIG_VERSION
+from ludwig.utils.neuropod_utils import \
+    export_neuropod as utils_export_neuropod
 from ludwig.utils.print_utils import logging_level_registry
 from ludwig.utils.print_utils import print_ludwig
-from ludwig.utils.neuropod_utils import export_neuropod as utils_export_neuropod
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,7 @@ def export_savedmodel_cli(sys_argv):
 
     print_ludwig('Export SavedModel', LUDWIG_VERSION)
 
-    export_savedmodel_cli(**vars(args))
+    export_savedmodel(**vars(args))
 
 
 def export_neuropod_cli(sys_argv):
@@ -187,7 +188,7 @@ def export_neuropod_cli(sys_argv):
 
     print_ludwig('Export Neuropod', LUDWIG_VERSION)
 
-    export_neuropod_cli(**vars(args))
+    export_neuropod(**vars(args))
 
 
 if __name__ == '__main__':

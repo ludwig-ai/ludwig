@@ -106,3 +106,19 @@ def test_export_savedmodel_cli(csv_filename):
                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
                     output_path=os.path.join(tmpdir, 'savedmodel')
                     )
+
+def test_export_neuropod_cli(csv_filename):
+    """Test training using `ludwig train --dataset`."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model_definition_filename = os.path.join(tmpdir,
+                                                 'model_definition.yaml')
+        dataset_filename = _prepare_data(csv_filename,
+                                         model_definition_filename)
+        _run_ludwig('train',
+                    dataset=dataset_filename,
+                    model_definition_file=model_definition_filename,
+                    output_directory=tmpdir)
+        _run_ludwig('export_neuropod',
+                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+                    output_path=os.path.join(tmpdir, 'neuropod')
+                    )

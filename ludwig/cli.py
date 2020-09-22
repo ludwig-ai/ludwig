@@ -116,12 +116,12 @@ Available sub-commands:
     def export_savedmodel(self):
         from ludwig import export
         ludwig.contrib.contrib_command("export_savedmodel", *sys.argv)
-        export.export_savedmodel(sys.argv[2:])
+        export.export_savedmodel_cli(sys.argv[2:])
 
     def export_neuropod(self):
         from ludwig import export
         ludwig.contrib.contrib_command("export_neuropod", *sys.argv)
-        export.export_neuropod(sys.argv[2:])
+        export.export_neuropod_cli(sys.argv[2:])
 
 
 def main():
