@@ -123,7 +123,7 @@ def export_savedmodel_cli(sys_argv):
         args.logging_level
     )
     global logger
-    logger = logging.getLogger('ludwig.collect')
+    logger = logging.getLogger('ludwig.export')
 
     print_ludwig('Export SavedModel', LUDWIG_VERSION)
 
@@ -183,7 +183,7 @@ def export_neuropod_cli(sys_argv):
         args.logging_level
     )
     global logger
-    logger = logging.getLogger('ludwig.collect')
+    logger = logging.getLogger('ludwig.export')
 
     print_ludwig('Export Neuropod', LUDWIG_VERSION)
 
