@@ -391,7 +391,7 @@ class DistilBERTEncoder(Layer):
     def __init__(
             self,
             pretrained_model_name_or_path='distilbert-base-uncased',
-            reduce_output='cls_pooled',
+            reduce_output='sum',
             trainable=False,
             num_tokens=None,
             **kwargs
@@ -411,8 +411,7 @@ class DistilBERTEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
 
@@ -424,11 +423,8 @@ class DistilBERTEncoder(Layer):
             "training": training,
             "attention_mask": mask
         })
-        if self.reduce_output == 'cls_pooled':
-            hidden = transformer_outputs[1]
-        else:
-            hidden = transformer_outputs[0][:, 1:-1, :]
-            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        hidden = transformer_outputs[0][:, 1:-1, :]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 
 
@@ -707,7 +703,7 @@ class FlauBERTEncoder(Layer):
     def __init__(
             self,
             pretrained_model_name_or_path='jplu/tf-flaubert-base-uncased',
-            reduce_output='cls_pooled',
+            reduce_output='sum',
             trainable=False,
             num_tokens=None,
             **kwargs
@@ -727,8 +723,7 @@ class FlauBERTEncoder(Layer):
             pretrained_model_name_or_path
         )
         self.reduce_output = reduce_output
-        if not self.reduce_output == 'cls_pooled':
-            self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
+        self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
 
@@ -741,11 +736,8 @@ class FlauBERTEncoder(Layer):
             'attention_mask': mask,
             'token_type_ids': tf.zeros_like(inputs)
         })
-        if self.reduce_output == 'cls_pooled':
-            hidden = transformer_outputs[1]
-        else:
-            hidden = transformer_outputs[0][:, 1:-1, :]
-            hidden = self.reduce_sequence(hidden, self.reduce_output)
+        hidden = transformer_outputs[0][:, 1:-1, :]
+        hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}
 
 
@@ -864,7 +856,6 @@ class AutoTransformerEncoder(Layer):
             reduce_output='sum',
             trainable=False,
             num_tokens=None,
-            pooler_output=None,
             **kwargs
     ):
         super(AutoTransformerEncoder, self).__init__()
@@ -886,7 +877,6 @@ class AutoTransformerEncoder(Layer):
             self.reduce_sequence = SequenceReducer(reduce_mode=reduce_output)
         self.transformer.trainable = trainable
         self.transformer.resize_token_embeddings(num_tokens)
-        self.pooler_output_idx = pooler_output
 
     def call(self, inputs, training=None, mask=None):
         if mask is not None:
@@ -896,13 +886,13 @@ class AutoTransformerEncoder(Layer):
             "training": training,
             "attention_mask": mask,
             "token_type_ids": tf.zeros_like(inputs)
-        })
-        if self.reduce_output == 'cls_pooled' and self.pooler_output_idx is not None:
+        }, return_dict=True)
+        if self.reduce_output == 'cls_pooled':
             # this works only if the user know that the specific model
             # they want to use has the same outputs of
             # the BERT base class call() function
-            hidden = transformer_outputs[self.pooler_output_idx]
+            hidden = transformer_outputs['cls_pooled']
         else:
-            hidden = transformer_outputs[0]
+            hidden = transformer_outputs['last_hidden_state']
             hidden = self.reduce_sequence(hidden, self.reduce_output)
         return {'encoder_output': hidden}

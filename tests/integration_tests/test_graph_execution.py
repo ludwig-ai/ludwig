@@ -33,10 +33,10 @@ from tests.integration_tests.utils import text_feature
 def graph_mode():
     prev_mode = tf.config.experimental_functions_run_eagerly()
     try:
-        tf.config.experimental_run_functions_eagerly(False)
+        tf.config.run_functions_eagerly(False)
         yield
     finally:
-        tf.config.experimental_run_functions_eagerly(prev_mode)
+        tf.config.run_functions_eagerly(prev_mode)
 
 
 @pytest.mark.parametrize(
