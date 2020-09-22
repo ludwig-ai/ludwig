@@ -241,17 +241,15 @@ class AudioFeatureMixin(object):
                 'type has to be present in audio_feature dictionary '
                 'for audio.')
 
-        csv_path = None
+        src_path = None
         # this is not super nice, but works both and DFs and lists
         first_path = '.'
         for first_path in dataset_df[feature[NAME]]:
             break
-        if hasattr(dataset_df, 'csv'):
-            csv_path = os.path.dirname(os.path.abspath(dataset_df.csv))
-        if csv_path is None and not os.path.isabs(first_path):
-            raise ValueError(
-                'Audio file paths must be absolute'
-            )
+        if hasattr(dataset_df, 'src'):
+            src_path = os.path.dirname(os.path.abspath(dataset_df.src))
+        if src_path is None and not os.path.isabs(first_path):
+            raise ValueError('Audio file paths must be absolute')
 
         num_audio_utterances = len(dataset_df)
         padding_value = preprocessing_parameters['padding_value']
@@ -285,7 +283,7 @@ class AudioFeatureMixin(object):
             )
             for i, path in enumerate(dataset_df[feature[NAME]]):
                 filepath = get_abs_path(
-                    csv_path,
+                    src_path,
                     path
                 )
                 audio_feature = AudioFeatureMixin._read_audio_and_transform_to_feature(

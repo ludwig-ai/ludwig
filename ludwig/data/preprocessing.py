@@ -32,7 +32,8 @@ from ludwig.features.feature_registries import base_type_registry, \
 from ludwig.utils import data_utils
 from ludwig.utils.data_utils import collapse_rare_labels, figure_data_format, \
     DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
-    HDF5_FORMATS, override_in_memory_flag
+    HDF5_FORMATS, override_in_memory_flag, TSV_FORMATS, JSON_FORMATS, \
+    JSONL_FORMATS, read_tsv, read_jsonl, read_json, EXCEL_FORMATS, read_excel
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
@@ -49,27 +50,7 @@ from ludwig.utils.misc_utils import set_random_seed
 logger = logging.getLogger(__name__)
 
 
-def build_dataset_csv(
-        dataset_csv,
-        features,
-        global_preprocessing_parameters,
-        training_set_metadata=None,
-        random_seed=default_random_seed,
-        **kwargs
-):
-    dataset_df = read_csv(dataset_csv)
-    dataset_df.csv = dataset_csv
-    return build_dataset_df(
-        dataset_df,
-        features,
-        global_preprocessing_parameters,
-        training_set_metadata,
-        random_seed,
-        **kwargs
-    )
-
-
-def build_dataset_df(
+def build_dataset(
         dataset_df,
         features,
         global_preprocessing_parameters,
@@ -363,7 +344,9 @@ def preprocess_for_training(
     # in case data_format is csv,
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
-    if data_format in CSV_FORMATS:
+    if (data_format in CSV_FORMATS or data_format in TSV_FORMATS or
+            data_format in JSONL_FORMATS or data_format in EXCEL_FORMATS):
+        # todo: fix no JSON for name clash
         if dataset:
             if (file_exists_with_diff_extension(dataset, 'hdf5') and
                     file_exists_with_diff_extension(dataset, 'json')):
@@ -430,12 +413,99 @@ def preprocess_for_training(
             test_set,
             validation_set,
             training_set_metadata
-        ) = _preprocess_csv_for_training(
+        ) = _preprocess_file_for_training(
             features,
             dataset,
             training_set,
             validation_set,
             test_set,
+            read_fn=read_csv,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    elif data_format in TSV_FORMATS:
+        (
+            training_set,
+            test_set,
+            validation_set,
+            training_set_metadata
+        ) = _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_tsv,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    elif data_format in JSON_FORMATS:
+        num_overrides = override_in_memory_flag(
+            model_definition['input_features'],
+            True
+        )
+        if num_overrides > 0:
+            logger.warning(
+                'Using in_memory = False is not supported '
+                'with {} data format.'.format(data_format)
+            )
+
+        (
+            training_set,
+            test_set,
+            validation_set,
+            training_set_metadata
+        ) = _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_json,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    elif data_format in JSONL_FORMATS:
+        (
+            training_set,
+            test_set,
+            validation_set,
+            training_set_metadata
+        ) = _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_jsonl,
+            training_set_metadata=training_set_metadata,
+            skip_save_processed_input=skip_save_processed_input,
+            preprocessing_params=preprocessing_params,
+            random_seed=random_seed
+        )
+
+    elif data_format in EXCEL_FORMATS:
+        (
+            training_set,
+            test_set,
+            validation_set,
+            training_set_metadata
+        ) = _preprocess_file_for_training(
+            features,
+            dataset,
+            training_set,
+            validation_set,
+            test_set,
+            read_fn=read_excel,
             training_set_metadata=training_set_metadata,
             skip_save_processed_input=skip_save_processed_input,
             preprocessing_params=preprocessing_params,
@@ -572,13 +642,14 @@ def preprocess_for_training(
     )
 
 
-def _preprocess_csv_for_training(
+def _preprocess_file_for_training(
         features,
         dataset=None,
         training_set=None,
         validation_set=None,
         test_set=None,
         training_set_metadata=None,
+        read_fn=read_csv,
         skip_save_processed_input=False,
         preprocessing_params=default_preprocessing_parameters,
         random_seed=default_random_seed
@@ -606,8 +677,10 @@ def _preprocess_csv_for_training(
         )
         logger.info('Building dataset (it may take a while)')
 
-        data, training_set_metadata = build_dataset_csv(
-            dataset,
+        dataset_df = read_fn(dataset)
+        dataset_df.src = dataset
+        data, training_set_metadata = build_dataset(
+            dataset_df,
             features,
             preprocessing_params,
             training_set_metadata=training_set_metadata,
@@ -644,9 +717,9 @@ def _preprocess_csv_for_training(
             validation_set,
             test_set
         )
-        concatenated_df.csv = training_set
+        concatenated_df.src = training_set
 
-        data, training_set_metadata = build_dataset_df(
+        data, training_set_metadata = build_dataset(
             concatenated_df,
             features,
             preprocessing_params,
@@ -736,7 +809,7 @@ def _preprocess_df_for_training(
             test_set
         )
 
-    dataset, training_set_metadata = build_dataset_df(
+    dataset, training_set_metadata = build_dataset(
         dataset,
         features,
         preprocessing_params,
@@ -812,7 +885,8 @@ def preprocess_for_prediction(
     # in case data_format is csv,
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
-    if data_format in CSV_FORMATS:
+    if (data_format in CSV_FORMATS or data_format in TSV_FORMATS or
+            data_format in JSONL_FORMATS or data_format in EXCEL_FORMATS):
         if (file_exists_with_diff_extension(dataset, 'hdf5') and
                 file_exists_with_diff_extension(dataset, 'json')):
             logger.info(
@@ -824,7 +898,7 @@ def preprocess_for_prediction(
             data_format = 'hdf5'
 
     if data_format in DATAFRAME_FORMATS:
-        dataset, training_set_metadata = build_dataset_df(
+        dataset, training_set_metadata = build_dataset(
             dataset,
             features,
             preprocessing_params,
@@ -832,8 +906,50 @@ def preprocess_for_prediction(
         )
 
     elif data_format in CSV_FORMATS:
-        dataset, training_set_metadata = build_dataset_csv(
-            dataset,
+        dataset_df = read_csv(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+
+    elif data_format in TSV_FORMATS:
+        dataset_df = read_tsv(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+
+    elif data_format in JSON_FORMATS:
+        dataset_df = read_json(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+
+    elif data_format in JSONL_FORMATS:
+        dataset_df = read_jsonl(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
+            features,
+            preprocessing_params,
+            training_set_metadata=training_set_metadata
+        )
+
+    elif data_format in EXCEL_FORMATS:
+        dataset_df = read_excel(dataset)
+        dataset_df.src = dataset
+        dataset, training_set_metadata = build_dataset(
+            dataset_df,
             features,
             preprocessing_params,
             training_set_metadata=training_set_metadata
@@ -849,7 +965,7 @@ def preprocess_for_prediction(
         )
 
     elif data_format in DICT_FORMATS:
-        dataset, training_set_metadata = build_dataset_df(
+        dataset, training_set_metadata = build_dataset(
             pd.DataFrame(dataset),
             features,
             preprocessing_params,
@@ -983,8 +1099,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    dataset, training_set_metadata = build_dataset_csv(
-        args.dataset_csv,
+    dataset_df = read_csv(args.dataset_csv)
+    dataset_df.src = args.dataset_csv
+    dataset, training_set_metadata = build_dataset(
+        dataset_df,
         args.training_set_metadata_json,
         args.features,
         args.preprocessing_parameters,

@@ -40,6 +40,10 @@ DATA_TRAIN_HDF5_FP = 'data_train_hdf5_fp'
 DICT_FORMATS = {'dict', 'dictionary', dict}
 DATAFRAME_FORMATS = {'dataframe', 'df', pd.DataFrame}
 CSV_FORMATS = {'csv'}
+TSV_FORMATS = {'tsv'}
+JSON_FORMATS = {'json'}
+JSONL_FORMATS = {'jsonl'}
+EXCEL_FORMATS = {'excel'}
 HDF5_FORMATS = {'hdf5', 'h5'}
 
 
@@ -57,25 +61,24 @@ def load_csv(data_fp):
     return data
 
 
-def read_csv(data_fp, header=0, nrows=None, skiprows=None):
+def read_xsv(data_fp, separator=',', header=0, nrows=None, skiprows=None):
     """
     Helper method to read a csv file. Wraps around pd.read_csv to handle some
     exceptions. Can extend to cover cases as necessary
-    :param data_fp: path to the csv file
+    :param data_fp: path to the xsv file
+    :param separator: defaults separator to use for splitting
     :param header: header argument for pandas to read the csv
     :param nrows: number of rows to read from the csv, None means all
     :param skiprows: number of rows to skip from the csv, None means no skips
     :return: Pandas dataframe with the data
     """
-
-    separator = ','
     with open(data_fp, 'r', encoding="utf8") as csvfile:
         try:
             dialect = csv.Sniffer().sniff(csvfile.read(1024 * 100),
                                           delimiters=[',', '\t', '|'])
             separator = dialect.delimiter
         except csv.Error:
-            # Could not conclude the delimiter, defaulting to comma
+            # Could not conclude the delimiter, defaulting to user provided
             pass
 
     try:
@@ -90,6 +93,27 @@ def read_csv(data_fp, header=0, nrows=None, skiprows=None):
 
     return df
 
+
+read_csv = functools.partial(read_xsv, separator=',')
+read_tsv = functools.partial(read_xsv, separator='\t')
+
+
+def read_json(data_fp, normalize=False):
+    if normalize:
+        return pd.json_normalize(load_json(data_fp))
+    else:
+        return pd.read_json(data_fp)
+
+
+def read_jsonl(data_fp):
+    return pd.read_json(data_fp, lines=True)
+
+
+def read_excel(data_fp):
+    return pd.read_excel(data_fp)
+
+
+# todo: add read pickle, fwf, html, father, parquet, orc, sas, spss, stata
 
 def save_csv(data_fp, data):
     with open(data_fp, 'w', encoding='utf-8') as csv_file:
@@ -492,6 +516,14 @@ def figure_data_format_dataset(dataset):
         dataset = dataset.lower()
         if dataset.endswith('.csv'):
             return 'csv'
+        elif dataset.endswith('.tsv'):
+            return 'tsv'
+        elif dataset.endswith('.json'):
+            return 'json'
+        elif dataset.endswith('.jsonl'):
+            return 'jsonl'
+        elif dataset.endswith('.xls') or dataset.endswith('.xslx'):
+            return 'excel'
         elif dataset.endswith('.h5') or dataset.endswith('.hdf5'):
             return 'hdf5'
         else:
