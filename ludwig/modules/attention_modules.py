@@ -17,32 +17,21 @@ import logging
 
 import tensorflow as tf
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Layer, Dense, Embedding, Dropout, \
+from tensorflow.keras.layers import Layer, Dense, Dropout, \
     LayerNormalization
-
-from ludwig.modules.embedding_modules import EmbedSequence
 
 logger = logging.getLogger(__name__)
 
 
 class FeedForwardAttentionReducer(Layer):
-    def __init__(self, hidden_size=256):
+    def __init__(self, hidden_size=256, activation='tanh'):
         super().__init__()
-
-        self.layer1 = Dense(
-            hidden_size,
-            activation='tanh',
-        )
-        self.layer2 = Dense(
-            1,
-            activation='linear',
-            use_bias=False,
-        )
+        self.layer1 = Dense(hidden_size, activation=activation)
+        self.layer2 = Dense(1, activation='linear', use_bias=False)
 
     def call(self, inputs, training=None, mask=None):
         # current_inputs shape [b, s, h]
-        hidden = self.layer1(inputs,
-                             training=training)  # [b, s, h`], h`=hidden_size
+        hidden = self.layer1(inputs, training=training)  # [b, s, h']
         hidden = self.layer2(hidden, training=training)  # [b, s, 1]
         attention = tf.nn.softmax(hidden, axis=1)
         geated_inputs = tf.reduce_sum(attention * inputs, 1)  # [b, h]
@@ -50,20 +39,20 @@ class FeedForwardAttentionReducer(Layer):
 
 
 class MultiHeadSelfAttention(Layer):
-    def __init__(self, embedding_size, num_heads=8):
+    def __init__(self, hidden_size, num_heads=8):
         super(MultiHeadSelfAttention, self).__init__()
-        self.embedding_size = embedding_size
+        self.embedding_size = hidden_size
         self.num_heads = num_heads
-        if embedding_size % num_heads != 0:
+        if hidden_size % num_heads != 0:
             raise ValueError(
-                f"embedding size = {embedding_size}, "
+                f"hidden size = {hidden_size}, "
                 f"should be divisible by number of heads = {num_heads}"
             )
-        self.projection_dim = embedding_size // num_heads
-        self.query_dense = Dense(embedding_size)
-        self.key_dense = Dense(embedding_size)
-        self.value_dense = Dense(embedding_size)
-        self.combine_heads = Dense(embedding_size)
+        self.projection_dim = hidden_size // num_heads
+        self.query_dense = Dense(hidden_size)
+        self.key_dense = Dense(hidden_size)
+        self.value_dense = Dense(hidden_size)
+        self.combine_heads = Dense(hidden_size)
 
     def attention(self, query, key, value, mask=None):
         score = tf.matmul(query, key, transpose_b=True)
@@ -84,9 +73,9 @@ class MultiHeadSelfAttention(Layer):
     def call(self, inputs, training=None, mask=None):
         # x.shape = [batch_size, seq_len, embedding_dim]
         batch_size = tf.shape(inputs)[0]
-        query = self.query_dense(inputs)  # (batch_size, seq_len, embed_dim)
-        key = self.key_dense(inputs)  # (batch_size, seq_len, embed_dim)
-        value = self.value_dense(inputs)  # (batch_size, seq_len, embed_dim)
+        query = self.query_dense(inputs)  # (batch_size, seq_len, h)
+        key = self.key_dense(inputs)  # (batch_size, seq_len, h)
+        value = self.value_dense(inputs)  # (batch_size, seq_len, h)
         query = self.separate_heads(
             query, batch_size
         )  # (batch_size, num_heads, seq_len, projection_dim)
@@ -102,24 +91,23 @@ class MultiHeadSelfAttention(Layer):
         )  # (batch_size, seq_len, num_heads, projection_dim)
         concat_outputs = tf.reshape(
             outputs, (batch_size, -1, self.embedding_size)
-        )  # (batch_size, seq_len, embed_dim)
+        )  # (batch_size, seq_len, h)
         projected_outputs = self.combine_heads(
             concat_outputs
-        )  # (batch_size, seq_len, embed_dim)
+        )  # (batch_size, seq_len, h)
         return projected_outputs
 
 
 class TransformerBlock(Layer):
-    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
+    def __init__(self, hidden_size, num_heads, fc_size, dropout=0.1):
         super(TransformerBlock, self).__init__()
-        self.self_attention = MultiHeadSelfAttention(embed_dim, num_heads)
-        self.dropout1 = Dropout(rate)
+        self.self_attention = MultiHeadSelfAttention(hidden_size, num_heads)
+        self.dropout1 = Dropout(dropout)
         self.layernorm1 = LayerNormalization(epsilon=1e-6)
-
         self.fully_connected = Sequential(
-            [Dense(ff_dim, activation="relu"), Dense(embed_dim)]
+            [Dense(fc_size, activation="relu"), Dense(hidden_size)]
         )
-        self.dropout2 = Dropout(rate)
+        self.dropout2 = Dropout(dropout)
         self.layernorm2 = LayerNormalization(epsilon=1e-6)
 
     def call(self, inputs, training=None, mask=None):
@@ -131,19 +119,37 @@ class TransformerBlock(Layer):
         return self.layernorm2(ln1_output + fc_output)
 
 
-class TokenAndPositionEmbedding(Layer):
-    def __init__(self, maxlen, vocab, embedding_size):
-        super(TokenAndPositionEmbedding, self).__init__()
-        self.token_emb = EmbedSequence(vocab=vocab,
-                                       embedding_size=embedding_size)
-        self.pos_emb = Embedding(input_dim=maxlen, output_dim=embedding_size)
+class TrasformerStack(Layer):
+    def __init__(
+            self,
+            hidden_size=256,
+            num_heads=8,
+            fc_size=256,
+            num_layers=1,
+            dropout=0.1,
+            **kwargs
+    ):
+        super(TrasformerStack, self).__init__()
+        self.supports_masking = True
+
+        self.layers = []
+        for _ in range(num_layers):
+            layer = TransformerBlock(
+                hidden_size=hidden_size,
+                num_heads=num_heads,
+                fc_size=fc_size,
+                dropout=dropout
+            )
+            self.layers.append(layer)
+
+        for layer in self.layers:
+            logger.debug('   {}'.format(layer.name))
 
     def call(self, inputs, training=None, mask=None):
-        maxlen = tf.shape(inputs)[-1]
-        positions = tf.range(start=0, limit=maxlen, delta=1)
-        positions_hidden = self.pos_emb(positions)
-        token_hidden = self.token_emb(inputs)
-        return token_hidden + positions_hidden
+        hidden = inputs
+        for layer in self.layers:
+            hidden = layer(hidden, training=training, mask=mask)
+        return hidden
 
 # todo future: maybe reintroduce these attention function
 # def feed_forward_attention(current_inputs, feature_hidden_size,

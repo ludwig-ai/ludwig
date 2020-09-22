@@ -21,7 +21,7 @@ import numpy as np
 from ludwig.constants import *
 from ludwig.decoders.sequence_decoders import SequenceGeneratorDecoder
 from ludwig.decoders.sequence_decoders import SequenceTaggerDecoder
-from ludwig.encoders.sequence_encoders import ParallelCNN
+from ludwig.encoders.sequence_encoders import ParallelCNN, StackedTransformer
 from ludwig.encoders.sequence_encoders import SequenceEmbedEncoder
 from ludwig.encoders.sequence_encoders import SequencePassthroughEncoder
 from ludwig.encoders.sequence_encoders import StackedCNN
@@ -176,6 +176,7 @@ class SequenceInputFeature(SequenceFeatureMixin, InputFeature):
         'stacked_parallel_cnn': StackedParallelCNN,
         'rnn': StackedRNN,
         'cnnrnn': StackedCNNRNN,
+        'transformer': StackedTransformer,
         'embed': SequenceEmbedEncoder,
         'passthrough': SequencePassthroughEncoder,
         'null': SequencePassthroughEncoder,

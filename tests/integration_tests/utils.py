@@ -31,7 +31,7 @@ from ludwig.experiment import experiment_cli
 
 ENCODERS = [
     'embed', 'rnn', 'parallel_cnn', 'cnnrnn', 'stacked_parallel_cnn',
-    'stacked_cnn'
+    'stacked_cnn', 'transformer'
 ]
 
 HF_ENCODERS_SHORT = ['distilbert']

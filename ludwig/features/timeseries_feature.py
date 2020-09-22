@@ -21,7 +21,8 @@ import tensorflow as tf
 
 from ludwig.constants import *
 from ludwig.encoders.sequence_encoders import StackedCNN, ParallelCNN, \
-    StackedParallelCNN, StackedRNN, StackedCNNRNN, SequencePassthroughEncoder
+    StackedParallelCNN, StackedRNN, StackedCNNRNN, SequencePassthroughEncoder, \
+    StackedTransformer
 from ludwig.features.sequence_feature import SequenceInputFeature
 from ludwig.utils.misc_utils import get_from_registry, set_default_values
 from ludwig.utils.strings_utils import tokenizer_registry
@@ -179,6 +180,7 @@ class TimeseriesInputFeature(TimeseriesFeatureMixin, SequenceInputFeature):
         'stacked_parallel_cnn': StackedParallelCNN,
         'rnn': StackedRNN,
         'cnnrnn': StackedCNNRNN,
+        'transformer': StackedTransformer,
         'passthrough': SequencePassthroughEncoder,
         'null': SequencePassthroughEncoder,
         'none': SequencePassthroughEncoder,

@@ -714,7 +714,7 @@ class SequenceTaggerDecoder(Layer):
         if attention:
             logger.debug('  MultiHeadSelfAttention')
             self.self_attention = MultiHeadSelfAttention(
-                embedding_size=attention_embedding_size,
+                hidden_size=attention_embedding_size,
                 num_heads=attention_num_heads
             )
 

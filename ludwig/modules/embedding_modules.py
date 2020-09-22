@@ -18,7 +18,8 @@ import logging
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Dropout
-from tensorflow.keras.layers import Layer
+from tensorflow.python.keras.engine.base_layer import Layer
+from tensorflow.python.keras.layers import Embedding
 
 from ludwig.constants import TYPE
 from ludwig.modules.initializer_modules import get_initializer
@@ -358,3 +359,43 @@ class EmbedSequence(Layer):
             embedded = self.dropout(embedded, training=training)
 
         return embedded
+
+
+class TokenAndPositionEmbedding(Layer):
+    def __init__(self,
+                 max_length,
+                 vocab,
+                 embedding_size,
+                 representation='dense',
+                 embeddings_trainable=True,
+                 pretrained_embeddings=None,
+                 force_embedding_size=False,
+                 embeddings_on_cpu=False,
+                 dropout=0.0,
+                 embedding_initializer=None,
+                 embedding_regularizer=None
+                 ):
+        super(TokenAndPositionEmbedding, self).__init__()
+        self.token_embed = EmbedSequence(
+            vocab=vocab,
+            embedding_size=embedding_size,
+            representation=representation,
+            embeddings_trainable=embeddings_trainable,
+            pretrained_embeddings=pretrained_embeddings,
+            force_embedding_size=force_embedding_size,
+            embeddings_on_cpu=embeddings_on_cpu,
+            dropout=dropout,
+            embedding_initializer=embedding_initializer,
+            embedding_regularizer=embedding_regularizer
+        )
+        self.position_embed = Embedding(
+            input_dim=max_length,
+            output_dim=self.token_embed.embedding_size
+        )
+
+    def call(self, inputs, training=None, mask=None):
+        max_length = tf.shape(inputs)[-1]
+        positions = tf.range(start=0, limit=max_length, delta=1)
+        positions_hidden = self.position_embed(positions)
+        token_hidden = self.token_embed(inputs)
+        return token_hidden + positions_hidden

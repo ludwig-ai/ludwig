@@ -654,7 +654,7 @@ def test_experiment_timeseries(csv_filename):
     output_features = [binary_feature()]
 
     encoders2 = [
-        'rnn', 'cnnrnn', 'stacked_cnn', 'parallel_cnn', 'stacked_parallel_cnn'
+        'transformer'
     ]
     # Generate test data
     rel_path = generate_data(input_features, output_features, csv_filename)
