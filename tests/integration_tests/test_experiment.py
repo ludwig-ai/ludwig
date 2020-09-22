@@ -377,7 +377,6 @@ def test_experiment_image_dataset(
     # define Ludwig model
     model = LudwigModel(
         model_definition=model_definition,
-        random_seed=default_random_seed
     )
     model.train(
         dataset=train_dataset_to_use,

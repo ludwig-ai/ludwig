@@ -72,8 +72,7 @@ class LudwigModel:
                  use_horovod=None,
                  gpus=None,
                  gpu_memory_limit=None,
-                 allow_parallel_threads=True,
-                 random_seed=default_random_seed):
+                 allow_parallel_threads=True):
         """
         :param model_definition: (dict, string) in-memory representation of model definition
                or string path to the saved JSON model definition file.
@@ -109,10 +108,6 @@ class LudwigModel:
         # setup TensorFlow
         initialize_tensorflow(gpus, gpu_memory_limit, allow_parallel_threads,
                               self._horovod)
-        # todo refactoring: decide where to put this,
-        #  here or at the beginning of training.
-        #  Either way make sure it is called before the model is initialized.
-        # tf.random.set_seed(random_seed)
 
         # setup model
         self.model = None
@@ -343,7 +338,8 @@ class LudwigModel:
                 self.model_definition,
                 training_set_metadata
             )
-            self.model = LudwigModel.create_model(self.model_definition)
+            self.model = LudwigModel.create_model(self.model_definition,
+                                                  random_seed=random_seed)
 
         # init trainer
         trainer = Trainer(
@@ -472,7 +468,8 @@ class LudwigModel:
                 self.model_definition,
                 training_set_metadata
             )
-            self.model = LudwigModel.create_model(self.model_definition)
+            self.model = LudwigModel.create_model(self.model_definition,
+                                                  random_seed=random_seed)
 
         if not self._online_trainer:
             self._online_trainer = Trainer(
@@ -820,6 +817,9 @@ class LudwigModel:
 
         # Inputs
 
+        :param logging_level: Log level that will be sent to stderr.
+        :param use_horovod: (bool) use Horovod for distributed training. Will be set
+               automatically if `horovodrun` is used to launch the training script.
         :param model_dir: (string) path to the directory containing the model.
                If the model was trained by the `train` or `experiment` command,
                the model is in `results_dir/experiment_dir/model`.
@@ -959,12 +959,13 @@ class LudwigModel:
             raise ValueError('Model has not been trained or loaded')
 
     @staticmethod
-    def create_model(model_definition):
+    def create_model(model_definition, random_seed=default_random_seed):
         # todo: support loading other model types based on definition
         return ECD(
             input_features_def=model_definition['input_features'],
             combiner_def=model_definition['combiner'],
             output_features_def=model_definition['output_features'],
+            random_seed=random_seed,
         )
 
     @staticmethod
@@ -1074,7 +1075,6 @@ def kfold_cross_validate(
                 gpus=gpus,
                 gpu_memory_limit=gpu_memory_limit,
                 allow_parallel_threads=allow_parallel_threads,
-                random_seed=random_seed
             )
             (
                 test_results,
