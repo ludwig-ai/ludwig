@@ -591,16 +591,8 @@ class LudwigModel:
         self._check_initialization()
 
         logger.debug('Preprocessing')
-        # Added [:] to next line, before I was just assigning,
-        # this way I'm copying the list. If you don't do it, you are actually
-        # modifying the input feature list when you add output features,
-        # which you definitely don't want to do
-        features_to_load = self.model_definition['input_features'] + \
-                           self.model_definition['output_features']
 
         # preprocessing
-        # todo refactoring: maybe replace the self.model_definition paramter
-        #  here with features_to_load
         dataset, training_set_metadata = preprocess_for_prediction(
             self.model_definition,
             dataset=dataset,
