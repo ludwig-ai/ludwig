@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import os.path
 import shutil
 import subprocess
 import tempfile
@@ -89,3 +90,19 @@ def test_train_cli_training_set(csv_filename):
                     test_set=test_filename,
                     model_definition_file=model_definition_filename,
                     output_directory=tmpdir)
+
+def test_export_savedmodel_cli(csv_filename):
+    """Test training using `ludwig train --dataset`."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model_definition_filename = os.path.join(tmpdir,
+                                                 'model_definition.yaml')
+        dataset_filename = _prepare_data(csv_filename,
+                                         model_definition_filename)
+        _run_ludwig('train',
+                    dataset=dataset_filename,
+                    model_definition_file=model_definition_filename,
+                    output_directory=tmpdir)
+        _run_ludwig('export_savedmodel',
+                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+                    output_path=os.path.join(tmpdir, 'savedmodel')
+                    )
