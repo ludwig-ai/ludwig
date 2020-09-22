@@ -246,7 +246,8 @@ def test_api_training_set(csv_filename):
         output_features = [category_feature(vocab_size=2, reduce_input='sum')]
 
         data_csv = generate_data(input_features, output_features, csv_filename)
-        val_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'validation.csv'))
+        val_csv = shutil.copyfile(data_csv,
+                                  os.path.join(tmpdir, 'validation.csv'))
         test_csv = shutil.copyfile(data_csv, os.path.join(tmpdir, 'test.csv'))
 
         model_definition = {
@@ -255,8 +256,12 @@ def test_api_training_set(csv_filename):
             'combiner': {'type': 'concat', 'fc_size': 14},
         }
         model = LudwigModel(model_definition)
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+        model.train(training_set=data_csv,
+                    validation_set=val_csv,
+                    test_set=test_csv)
         model.predict(dataset=test_csv)
 
         # Train again, this time the HDF5 cache will be used
-        model.train(training_set=data_csv, validation_set=val_csv, test_set=test_csv)
+        model.train(training_set=data_csv,
+                    validation_set=val_csv,
+                    test_set=test_csv)

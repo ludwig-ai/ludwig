@@ -13,16 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import argparse
 import json
 import os
 import shutil
 import sys
 
-import numpy as np
-
 import horovod.tensorflow as hvd
+import numpy as np
 
 PATH_HERE = os.path.abspath(os.path.dirname(__file__))
 PATH_ROOT = os.path.join(PATH_HERE, '..', '..', '..')

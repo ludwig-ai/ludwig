@@ -41,7 +41,8 @@ if __name__ == '__main__':
         description='Split a file based on its lines'
     )
 
-    parser.add_argument('-i', '--input', required=True, help='input file names')
+    parser.add_argument('-i', '--input', required=True,
+                        help='input file names')
     parser.add_argument(
         '-o1',
         '--output1',

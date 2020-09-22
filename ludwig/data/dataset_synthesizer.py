@@ -284,8 +284,9 @@ def generate_image(feature):
         imsave(image_dest_path, img.astype('uint8'))
 
     except IOError as e:
-        raise IOError('Unable to create a folder for images/save image to disk.'
-                      '{0}'.format(e))
+        raise IOError(
+            'Unable to create a folder for images/save image to disk.'
+            '{0}'.format(e))
 
     return image_dest_path
 

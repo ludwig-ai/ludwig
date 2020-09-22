@@ -44,7 +44,6 @@ class FeedForwardAttentionReducer(Layer):
         geated_inputs = tf.reduce_sum(attention * inputs, 1)  # [b, h]
         return geated_inputs  # [b, h]
 
-
 # todo future: maybe reintroduce these attention function
 # def feed_forward_attention(current_inputs, feature_hidden_size,
 #                            hidden_size=256):

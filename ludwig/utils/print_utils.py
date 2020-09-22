@@ -27,7 +27,6 @@ logging_level_registry = {
     'notset': logging.NOTSET
 }
 
-
 logger = logging.getLogger(__name__)
 
 

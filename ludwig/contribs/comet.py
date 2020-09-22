@@ -13,11 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 import logging
 import os
 from datetime import datetime
-
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +164,8 @@ class Comet():
                     elif item is not None:
                         self.cometml_experiment.log_metric(item_name, item)
                 except Exception:
-                    logger.info("comet.train_epoch_end() skip logging '%s'", item_name)
+                    logger.info("comet.train_epoch_end() skip logging '%s'",
+                                item_name)
 
     def experiment_save(self, *args, **kwargs):
         logger.info("comet.experiment_save() called......")

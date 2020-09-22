@@ -5,12 +5,12 @@
 # 
 # This example trains multiple models and extracts training statistics
 
-# ## Import required libraries
-from ludwig.api import LudwigModel
-from ludwig.visualize import learning_curves
 import logging
 import shutil
 
+# ## Import required libraries
+from ludwig.api import LudwigModel
+from ludwig.visualize import learning_curves
 
 # clean out old results
 shutil.rmtree('./results', ignore_errors=True)
@@ -26,7 +26,7 @@ for model_id in list_of_model_ids:
     print('>>>> training: ', model_id)
 
     # Define Ludwig model object that drive model training
-    model = LudwigModel(model_definition_fp='./' + model_id + '_definition.yaml',
+    model = LudwigModel(model_definition='./' + model_id + '_definition.yaml',
                         logging_level=logging.WARN)
 
     # initiate model training

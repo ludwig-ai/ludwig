@@ -17,10 +17,6 @@
 """
 This module contains the class and auxiliary methods of a model.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import logging
 import os
 import os.path
@@ -34,8 +30,7 @@ import tensorflow as tf
 from tabulate import tabulate
 from tqdm import tqdm
 
-from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE, \
-    NAME
+from ludwig.constants import LOSS, COMBINED, TRAINING, VALIDATION, TEST, TYPE
 from ludwig.contrib import contrib_command
 from ludwig.globals import MODEL_HYPERPARAMETERS_FILE_NAME
 from ludwig.globals import MODEL_WEIGHTS_FILE_NAME
@@ -56,6 +51,7 @@ from ludwig.utils.math_utils import learning_rate_warmup, \
 from ludwig.utils.misc_utils import set_random_seed
 
 logger = logging.getLogger(__name__)
+
 
 class Trainer:
     """
@@ -185,46 +181,46 @@ class Trainer:
         :param random_seed: Default initialization for the random seeds
         :type: Float
         """
-        self._epochs = epochs
-        self._regularization_lambda = regularization_lambda
-        self._learning_rate = learning_rate
-        self._decay = decay
-        self._decay_rate = decay_rate
-        self._decay_steps = decay_steps
-        self._batch_size = batch_size
-        self._eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
-        self._bucketing_field = bucketing_field
-        self._validation_field = validation_field
-        self._validation_metric = validation_metric
-        self._early_stop = early_stop
-        self._reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
-        self._reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
-        self._reduce_learning_rate_on_plateau_rate = reduce_learning_rate_on_plateau_rate
-        self._reduce_learning_rate_eval_metric = reduce_learning_rate_eval_metric
-        self._reduce_learning_rate_eval_split = reduce_learning_rate_eval_split
-        self._increase_batch_size_on_plateau = increase_batch_size_on_plateau
-        self._increase_batch_size_on_plateau_patience = increase_batch_size_on_plateau_patience
-        self._increase_batch_size_on_plateau_rate = increase_batch_size_on_plateau_rate
-        self._increase_batch_size_on_plateau_max = increase_batch_size_on_plateau_max
-        self._increase_batch_size_eval_metric = increase_batch_size_eval_metric
-        self._increase_batch_size_eval_split = increase_batch_size_eval_split
-        self._learning_rate_warmup_epochs = learning_rate_warmup_epochs
-        self._resume = resume
-        self._skip_save_model = skip_save_model
-        self._skip_save_progress = skip_save_progress
-        self._skip_save_log = skip_save_log
-        self._random_seed = random_seed
-        self._horovod = horovod
-        self._debug = debug
-        self._received_sigint = False
+        self.epochs = epochs
+        self.regularization_lambda = regularization_lambda
+        self.learning_rate = learning_rate
+        self.decay = decay
+        self.decay_rate = decay_rate
+        self.decay_steps = decay_steps
+        self.batch_size = batch_size
+        self.eval_batch_size = batch_size if eval_batch_size < 1 else eval_batch_size
+        self.bucketing_field = bucketing_field
+        self.validation_field = validation_field
+        self.validation_metric = validation_metric
+        self.early_stop = early_stop
+        self.reduce_learning_rate_on_plateau = reduce_learning_rate_on_plateau
+        self.reduce_learning_rate_on_plateau_patience = reduce_learning_rate_on_plateau_patience
+        self.reduce_learning_rate_on_plateau_rate = reduce_learning_rate_on_plateau_rate
+        self.reduce_learning_rate_eval_metric = reduce_learning_rate_eval_metric
+        self.reduce_learning_rate_eval_split = reduce_learning_rate_eval_split
+        self.increase_batch_size_on_plateau = increase_batch_size_on_plateau
+        self.increase_batch_size_on_plateau_patience = increase_batch_size_on_plateau_patience
+        self.increase_batch_size_on_plateau_rate = increase_batch_size_on_plateau_rate
+        self.increase_batch_size_on_plateau_max = increase_batch_size_on_plateau_max
+        self.increase_batch_size_eval_metric = increase_batch_size_eval_metric
+        self.increase_batch_size_eval_split = increase_batch_size_eval_split
+        self.learning_rate_warmup_epochs = learning_rate_warmup_epochs
+        self.resume = resume
+        self.skip_save_model = skip_save_model
+        self.skip_save_progress = skip_save_progress
+        self.skip_save_log = skip_save_log
+        self.random_seed = random_seed
+        self.horovod = horovod
+        self.debug = debug
+        self.received_sigint = False
 
-        if self._horovod:
-            self._learning_rate *= self._horovod.size()
+        if self.horovod:
+            self.learning_rate *= self.horovod.size()
 
         # ================ Optimizer ================
         if optimizer is None:
             optimizer = {TYPE: 'Adam'}
-        self._optimizer = ClippedOptimizer(
+        self.optimizer = ClippedOptimizer(
             horovod=horovod,
             **optimizer
         )
@@ -291,10 +287,10 @@ class Trainer:
         :param test_set: The test dataset
         """
         # ====== General setup =======
-        tf.random.set_seed(self._random_seed)
+        tf.random.set_seed(self.random_seed)
 
         output_features = model.output_features
-        digits_per_epochs = len(str(self._epochs))
+        digits_per_epochs = len(str(self.epochs))
         # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
         if threading.current_thread() == threading.main_thread():
             signal.signal(signal.SIGINT, self.set_epochs_to_1_or_quit)
@@ -304,47 +300,45 @@ class Trainer:
 
         # check if validation_field is valid
         valid_validation_field = False
-        validation_output_feature_name = None
-        if self._validation_field == 'combined':
+        if self.validation_field == 'combined':
             valid_validation_field = True
-            validation_output_feature_name = 'combined'
-            if self._validation_metric is not LOSS and len(
+            if self.validation_metric is not LOSS and len(
                     output_features) == 1:
                 only_of = next(iter(output_features))
-                if self._validation_metric in metrics_names[only_of]:
-                    validation_output_feature_name = only_of
+                if self.validation_metric in metrics_names[only_of]:
+                    self.validation_field = only_of
                     logger.warning(
                         "Replacing 'combined' validation field "
                         "with '{}' as the specified validation "
                         "metric {} is invalid for 'combined' "
                         "but is valid for '{}'.".format(
-                            only_of, self._validation_metric, only_of
+                            only_of, self.validation_metric, only_of
                         ))
         else:
             for output_feature in output_features:
-                if self._validation_field == output_feature:
+                if self.validation_field == output_feature:
                     valid_validation_field = True
-                    validation_output_feature_name = self._validation_field
+
         if not valid_validation_field:
             raise ValueError(
                 'The specificed validation_field {} is not valid.'
                 'Available ones are: {}'.format(
-                    self._validation_field,
-                    [of[NAME] for of in output_features] + ['combined']
+                    self.validation_field,
+                    list(output_features.keys()) + ['combined']
                 )
             )
 
         # check if validation_metric is valid
-        valid_validation_metric = self._validation_metric in metrics_names[
-            validation_output_feature_name
+        valid_validation_metric = self.validation_metric in metrics_names[
+            self.validation_field
         ]
         if not valid_validation_metric:
             raise ValueError(
                 'The specificed metric {} is not valid. '
                 'Available metrics for {} output feature are: {}'.format(
-                    self._validation_metric,
-                    validation_output_feature_name,
-                    metrics_names[validation_output_feature_name]
+                    self.validation_metric,
+                    self.validation_field,
+                    metrics_names[self.validation_field]
                 )
             )
 
@@ -376,7 +370,7 @@ class Trainer:
         checkpoint = checkpoint_manager = None
         if is_on_master():
             checkpoint = tf.train.Checkpoint(
-                optimizer=self._optimizer,
+                optimizer=self.optimizer,
                 model=model
             )
             checkpoint_manager = tf.train.CheckpointManager(
@@ -386,7 +380,7 @@ class Trainer:
         train_summary_writer = None
         validation_summary_writer = None
         test_summary_writer = None
-        if is_on_master() and not self._skip_save_log and tensorboard_log_dir:
+        if is_on_master() and not self.skip_save_log and tensorboard_log_dir:
             train_summary_writer = tf.summary.create_file_writer(
                 os.path.join(
                     tensorboard_log_dir, TRAINING
@@ -405,7 +399,7 @@ class Trainer:
                     )
                 )
 
-        if self._debug and is_on_master():
+        if self.debug and is_on_master():
             # See https://www.tensorflow.org/tensorboard/debugger_v2 for usage.
             debug_path = os.path.join(
                 save_path, 'debug'
@@ -418,7 +412,7 @@ class Trainer:
             tf.config.experimental_run_functions_eagerly(True)
 
         # ================ Resume logic ================
-        if self._resume:
+        if self.resume:
             progress_tracker = self.resume_training_progress_tracker(
                 training_progress_tracker_path
             )
@@ -434,22 +428,22 @@ class Trainer:
             ) = self.initialize_training_metrics(output_features)
 
             progress_tracker = ProgressTracker(
-                batch_size=self._batch_size,
+                batch_size=self.batch_size,
                 epoch=0,
                 steps=0,
                 last_improvement_epoch=0,
                 last_learning_rate_reduction_epoch=0,
                 last_increase_batch_size_epoch=0,
-                learning_rate=self._learning_rate,
+                learning_rate=self.learning_rate,
                 best_eval_metric=get_initial_validation_value(
-                    self._validation_metric
+                    self.validation_metric
                 ),
                 best_reduce_learning_rate_eval_metric=get_initial_validation_value(
-                    self._reduce_learning_rate_eval_metric
+                    self.reduce_learning_rate_eval_metric
                 ),
                 last_reduce_learning_rate_eval_metric_improvement=0,
                 best_increase_batch_size_eval_metric=get_initial_validation_value(
-                    self._increase_batch_size_eval_metric
+                    self.increase_batch_size_eval_metric
                 ),
                 last_increase_batch_size_eval_metric_improvement=0,
                 num_reductions_learning_rate=0,
@@ -462,16 +456,16 @@ class Trainer:
                 last_increase_batch_size=0,
             )
 
-        set_random_seed(self._random_seed)
+        set_random_seed(self.random_seed)
         batcher = initialize_batcher(
             training_set,
-            batch_size=self._batch_size,
-            horovod=self._horovod
+            batch_size=self.batch_size,
+            horovod=self.horovod
         )
 
         # ================ Training Loop ================
         first_batch = True
-        while progress_tracker.epoch < self._epochs:
+        while progress_tracker.epoch < self.epochs:
             # epoch init
             start_time = time.time()
             if is_on_master():
@@ -515,10 +509,10 @@ class Trainer:
                 #    tf.summary.trace_on(graph=True, profiler=True)
 
                 loss, all_losses = model.train_step(
-                    self._optimizer,
+                    self.optimizer,
                     inputs,
                     targets,
-                    self._regularization_lambda
+                    self.regularization_lambda
                 )
 
                 # Reintroduce for tensorboard graph
@@ -530,7 +524,7 @@ class Trainer:
                 #             profiler_outdir=tensorboard_log_dir
                 #         )
 
-                if is_on_master() and not self._skip_save_log:
+                if is_on_master() and not self.skip_save_log:
                     self.write_step_summary(
                         train_summary_writer=train_summary_writer,
                         combined_loss=loss,
@@ -538,44 +532,44 @@ class Trainer:
                         step=progress_tracker.steps,
                     )
 
-                if self._horovod and first_batch:
+                if self.horovod and first_batch:
                     # Horovod: broadcast initial variable states from rank 0 to all other processes.
                     # This is necessary to ensure consistent initialization of all workers when
                     # training is started with random weights or restored from a checkpoint.
                     #
                     # Note: broadcast should be done after the first gradient step to ensure
                     # optimizer initialization.
-                    self._horovod.broadcast_variables(model.variables,
-                                                      root_rank=0)
-                    self._horovod.broadcast_variables(
-                        self._optimizer.variables(), root_rank=0)
+                    self.horovod.broadcast_variables(model.variables,
+                                                     root_rank=0)
+                    self.horovod.broadcast_variables(
+                        self.optimizer.variables(), root_rank=0)
 
-                if self._decay:
+                if self.decay:
                     current_learning_rate = exponential_decay(
                         current_learning_rate,
-                        self._decay_rate,
-                        self._decay_steps,
+                        self.decay_rate,
+                        self.decay_steps,
                         batcher.step
                     )
 
-                if self._horovod:
+                if self.horovod:
                     current_learning_rate = learning_rate_warmup_distributed(
                         current_learning_rate,
                         progress_tracker.epoch,
-                        self._learning_rate_warmup_epochs,
-                        self._horovod.size(),
+                        self.learning_rate_warmup_epochs,
+                        self.horovod.size(),
                         batcher.step,
                         batcher.steps_per_epoch
-                    ) * self._horovod.size()
+                    ) * self.horovod.size()
                 else:
                     current_learning_rate = learning_rate_warmup(
                         current_learning_rate,
                         progress_tracker.epoch,
-                        self._learning_rate_warmup_epochs,
+                        self.learning_rate_warmup_epochs,
                         batcher.step,
                         batcher.steps_per_epoch
                     )
-                self._optimizer.set_learning_rate(current_learning_rate)
+                self.optimizer.set_learning_rate(current_learning_rate)
 
                 progress_tracker.steps += 1
                 if is_on_master():
@@ -605,7 +599,7 @@ class Trainer:
                 'train',
                 progress_tracker.train_metrics,
                 tables,
-                self._eval_batch_size,
+                self.eval_batch_size,
             )
 
             self.write_epoch_summary(
@@ -623,7 +617,7 @@ class Trainer:
                     'vali',
                     progress_tracker.vali_metrics,
                     tables,
-                    self._eval_batch_size,
+                    self.eval_batch_size,
                 )
 
                 self.write_epoch_summary(
@@ -640,7 +634,7 @@ class Trainer:
                     TEST,
                     progress_tracker.test_metrics,
                     tables,
-                    self._eval_batch_size,
+                    self.eval_batch_size,
                 )
 
                 self.write_epoch_summary(
@@ -672,35 +666,35 @@ class Trainer:
                 should_break = self.check_progress_on_validation(
                     model,
                     progress_tracker,
-                    validation_output_feature_name,
-                    self._validation_metric,
+                    self.validation_field,
+                    self.validation_metric,
                     model_weights_path,
                     model_hyperparameters_path,
-                    self._reduce_learning_rate_on_plateau,
-                    self._reduce_learning_rate_on_plateau_patience,
-                    self._reduce_learning_rate_on_plateau_rate,
-                    self._reduce_learning_rate_eval_metric,
-                    self._reduce_learning_rate_eval_split,
-                    self._increase_batch_size_on_plateau,
-                    self._increase_batch_size_on_plateau_patience,
-                    self._increase_batch_size_on_plateau_rate,
-                    self._increase_batch_size_on_plateau_max,
-                    self._increase_batch_size_eval_metric,
-                    self._increase_batch_size_eval_split,
-                    self._early_stop,
-                    self._skip_save_model,
+                    self.reduce_learning_rate_on_plateau,
+                    self.reduce_learning_rate_on_plateau_patience,
+                    self.reduce_learning_rate_on_plateau_rate,
+                    self.reduce_learning_rate_eval_metric,
+                    self.reduce_learning_rate_eval_split,
+                    self.increase_batch_size_on_plateau,
+                    self.increase_batch_size_on_plateau_patience,
+                    self.increase_batch_size_on_plateau_rate,
+                    self.increase_batch_size_on_plateau_max,
+                    self.increase_batch_size_eval_metric,
+                    self.increase_batch_size_eval_split,
+                    self.early_stop,
+                    self.skip_save_model,
                 )
                 if should_break:
                     break
             else:
                 # there's no validation, so we save the model at each iteration
                 if is_on_master():
-                    if not self._skip_save_model:
+                    if not self.skip_save_model:
                         model.save_weights(model_weights_path)
 
             # ========== Save training progress ==========
             if is_on_master():
-                if not self._skip_save_progress:
+                if not self.skip_save_progress:
                     checkpoint_manager.save()
                     progress_tracker.save(
                         os.path.join(
@@ -733,8 +727,8 @@ class Trainer:
     ):
         batcher = initialize_batcher(
             dataset,
-            batch_size=self._batch_size,
-            horovod=self._horovod
+            batch_size=self.batch_size,
+            horovod=self.horovod
         )
 
         # training step loop
@@ -757,10 +751,10 @@ class Trainer:
             }
 
             model.train_step(
-                self._optimizer,
+                self.optimizer,
                 inputs,
                 targets,
-                self._regularization_lambda
+                self.regularization_lambda
             )
 
             progress_bar.update(1)
@@ -800,7 +794,7 @@ class Trainer:
             debug=False,
     ):
         predictor = Predictor(
-            batch_size=batch_size, horovod=self._horovod, debug=self._debug
+            batch_size=batch_size, horovod=self.horovod, debug=self.debug
         )
         metrics, predictions = predictor.batch_evaluation(
             model,
@@ -966,9 +960,9 @@ class Trainer:
         return should_break
 
     def set_epochs_to_1_or_quit(self, signum, frame):
-        if not self._received_sigint:
-            self._epochs = 1
-            self._received_sigint = True
+        if not self.received_sigint:
+            self.epochs = 1
+            self.received_sigint = True
             logger.critical(
                 '\nReceived SIGINT, will finish this epoch and then conclude '
                 'the training'

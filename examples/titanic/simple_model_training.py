@@ -6,9 +6,9 @@
 # This example is the API example for this Ludwig command line example
 # (https://ludwig-ai.github.io/ludwig-docs/examples/#kaggles-titanic-predicting-survivors).
 
+import logging
 # Import required libraries
 import os
-import logging
 import shutil
 
 from ludwig.api import LudwigModel
@@ -17,7 +17,7 @@ from ludwig.api import LudwigModel
 shutil.rmtree('./results', ignore_errors=True)
 
 # Define Ludwig model object that drive model training
-model = LudwigModel(model_definition_fp='./model1_definition.yaml',
+model = LudwigModel(model_definition='./model1_definition.yaml',
                     logging_level=logging.INFO)
 
 # initiate model training
