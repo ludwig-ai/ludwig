@@ -209,12 +209,14 @@ def cli_collect_activations(sys_argv):
         required=True
     )
     parser.add_argument(
-        '-t',
-        '--tensors',
+        '-lyr',
+        '--layers',
         help='tensors to collect',
         nargs='+',
         required=True
     )
+
+
 
     # -------------------------
     # Output results parameters

@@ -18,8 +18,9 @@ import os.path
 import shutil
 import subprocess
 import tempfile
-
+import re
 import yaml
+from io import StringIO
 
 from tests.integration_tests.utils import category_feature
 from tests.integration_tests.utils import generate_data
@@ -32,9 +33,12 @@ def _run_ludwig(command, **ludwig_kwargs):
         commands += ['--' + arg_name, value]
     cmdline = ' '.join(commands)
     print(cmdline)
-    exit_code = subprocess.call(cmdline, shell=True,
+    completed_process = subprocess.run(cmdline, shell=True, encoding='utf-8',
+                                       stdout=subprocess.PIPE,
                                 env=os.environ.copy())
-    assert exit_code == 0
+    assert completed_process.returncode == 0
+
+    return completed_process
 
 
 def _prepare_data(csv_filename, model_definition_filename):
@@ -241,7 +245,7 @@ def test_visualize_cli(csv_filename):
                     )
 
 
-def test_collect_summary_cli(csv_filename):
+def test_collect_summary_activations_weights_cli(csv_filename):
     """Test collect_summary cli."""
     with tempfile.TemporaryDirectory() as tmpdir:
         model_definition_filename = os.path.join(tmpdir,
@@ -252,5 +256,58 @@ def test_collect_summary_cli(csv_filename):
                     dataset=dataset_filename,
                     model_definition_file=model_definition_filename,
                     output_directory=tmpdir)
-        _run_ludwig('collect_summary',
+        completed_process = _run_ludwig('collect_summary',
                     model_path=os.path.join(tmpdir, 'experiment_run', 'model'))
+
+        # parse output of collect_summary to find tensor names to use
+        # in the collect_wights and collect_activations.
+        # This part of test is sensitive to output format of collect_summary
+        # search for substring with layer names
+        layers = re.search(
+            "Layers(\w|\d|\:|\/|\n)*Weights",
+            completed_process.stdout
+        )
+        substring = completed_process.stdout[layers.start(): layers.end()]
+
+        # extract layer names
+        layers_list = []
+        with StringIO(substring) as f:
+            for _, line in enumerate(f):
+                if not (line[:6] == 'Layers' or line[:6] == 'Weight') and len(
+                        line) > 1:
+                    layers_list.append(line[:-1])
+
+
+
+        # search for substring with weights names
+        weights = re.search(
+            "Weights(\w|\d|\:|\/|\n)*",
+            completed_process.stdout
+        )
+        substring = completed_process.stdout[weights.start(): weights.end()]
+
+        # extract weights names
+        weights_list = []
+        with StringIO(substring) as f:
+            for _, line in enumerate(f):
+                if not (line[:6] == 'Layers' or line[:6] == 'Weight') and len(
+                        line) > 1:
+                    weights_list.append(line[:-1])
+
+
+        # collect activations
+        _run_ludwig('collect_activations',
+                    dataset=dataset_filename,
+                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+                    layers=' '.join(layers_list),
+                    output_directory=tmpdir
+                    )
+
+        # collect weights
+        _run_ludwig('collect_weights',
+                    model_path=os.path.join(tmpdir, 'experiment_run', 'model'),
+                    tensors=' '.join(weights_list),
+                    output_directory=tmpdir
+                    )
+
+
