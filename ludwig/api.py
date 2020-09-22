@@ -942,7 +942,7 @@ class LudwigModel:
         )
         save_json(model_hyperparameters_path, self.model_definition)
 
-    def save_for_serving(self, save_path):
+    def save_savedmodel(self, save_path):
         """This function allows to save models on disk
 
         # Inputs
