@@ -25,6 +25,7 @@ from tensorflow_addons.seq2seq import BahdanauAttention
 from tensorflow_addons.seq2seq import LuongAttention
 
 from ludwig.constants import *
+from ludwig.modules.attention_modules import MultiHeadSelfAttention
 from ludwig.modules.reduction_modules import SequenceReducer
 from ludwig.utils.misc_utils import get_from_registry
 from ludwig.utils.tf_utils import sequence_length_3D, sequence_length_2D
@@ -701,6 +702,8 @@ class SequenceTaggerDecoder(Layer):
             bias_regularizer=None,
             activity_regularizer=None,
             attention=False,
+            attention_embedding_size=256,
+            attention_num_heads=8,
             is_timeseries=False,
             **kwargs
     ):
@@ -708,6 +711,12 @@ class SequenceTaggerDecoder(Layer):
         logger.debug(' {}'.format(self.name))
 
         self.attention = attention
+        if attention:
+            logger.debug('  MultiHeadSelfAttention')
+            self.self_attention = MultiHeadSelfAttention(
+                embedding_size=attention_embedding_size,
+                num_heads=attention_num_heads
+            )
 
         if is_timeseries:
             num_classes = 1
@@ -740,7 +749,8 @@ class SequenceTaggerDecoder(Layer):
                 'Consider setting reduce_output to null / None if a sequential encoder / combiner is used.'.format(
                     len(hidden.shape)))
 
-        # todo TF2: add feed forward attention
+        if self.attention:
+            hidden = self.self_attention(hidden, training=training, mask=mask)
 
         # hidden shape [batch_size, sequence_length, hidden_size]
         logits = self.projection_layer(hidden)

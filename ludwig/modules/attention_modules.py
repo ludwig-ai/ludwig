@@ -16,7 +16,11 @@
 import logging
 
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Layer, Dense, Embedding, Dropout, \
+    LayerNormalization
+
+from ludwig.modules.embedding_modules import EmbedSequence
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +47,103 @@ class FeedForwardAttentionReducer(Layer):
         attention = tf.nn.softmax(hidden, axis=1)
         geated_inputs = tf.reduce_sum(attention * inputs, 1)  # [b, h]
         return geated_inputs  # [b, h]
+
+
+class MultiHeadSelfAttention(Layer):
+    def __init__(self, embedding_size, num_heads=8):
+        super(MultiHeadSelfAttention, self).__init__()
+        self.embedding_size = embedding_size
+        self.num_heads = num_heads
+        if embedding_size % num_heads != 0:
+            raise ValueError(
+                f"embedding size = {embedding_size}, "
+                f"should be divisible by number of heads = {num_heads}"
+            )
+        self.projection_dim = embedding_size // num_heads
+        self.query_dense = Dense(embedding_size)
+        self.key_dense = Dense(embedding_size)
+        self.value_dense = Dense(embedding_size)
+        self.combine_heads = Dense(embedding_size)
+
+    def attention(self, query, key, value, mask=None):
+        score = tf.matmul(query, key, transpose_b=True)
+        dim_key = tf.cast(tf.shape(key)[-1], tf.float32)
+        scaled_score = score / tf.math.sqrt(dim_key)
+        if mask:
+            scaled_score = mask * scaled_score
+        weights = tf.nn.softmax(scaled_score, axis=-1)
+        output = tf.matmul(weights, value)
+        return output, weights
+
+    def separate_heads(self, inputs, batch_size):
+        inputs = tf.reshape(
+            inputs, (batch_size, -1, self.num_heads, self.projection_dim)
+        )
+        return tf.transpose(inputs, perm=[0, 2, 1, 3])
+
+    def call(self, inputs, training=None, mask=None):
+        # x.shape = [batch_size, seq_len, embedding_dim]
+        batch_size = tf.shape(inputs)[0]
+        query = self.query_dense(inputs)  # (batch_size, seq_len, embed_dim)
+        key = self.key_dense(inputs)  # (batch_size, seq_len, embed_dim)
+        value = self.value_dense(inputs)  # (batch_size, seq_len, embed_dim)
+        query = self.separate_heads(
+            query, batch_size
+        )  # (batch_size, num_heads, seq_len, projection_dim)
+        key = self.separate_heads(
+            key, batch_size
+        )  # (batch_size, num_heads, seq_len, projection_dim)
+        value = self.separate_heads(
+            value, batch_size
+        )  # (batch_size, num_heads, seq_len, projection_dim)
+        outputs, weights = self.attention(query, key, value, mask=mask)
+        outputs = tf.transpose(
+            outputs, perm=[0, 2, 1, 3]
+        )  # (batch_size, seq_len, num_heads, projection_dim)
+        concat_outputs = tf.reshape(
+            outputs, (batch_size, -1, self.embedding_size)
+        )  # (batch_size, seq_len, embed_dim)
+        projected_outputs = self.combine_heads(
+            concat_outputs
+        )  # (batch_size, seq_len, embed_dim)
+        return projected_outputs
+
+
+class TransformerBlock(Layer):
+    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
+        super(TransformerBlock, self).__init__()
+        self.self_attention = MultiHeadSelfAttention(embed_dim, num_heads)
+        self.dropout1 = Dropout(rate)
+        self.layernorm1 = LayerNormalization(epsilon=1e-6)
+
+        self.fully_connected = Sequential(
+            [Dense(ff_dim, activation="relu"), Dense(embed_dim)]
+        )
+        self.dropout2 = Dropout(rate)
+        self.layernorm2 = LayerNormalization(epsilon=1e-6)
+
+    def call(self, inputs, training=None, mask=None):
+        attn_output = self.self_attention(inputs)
+        attn_output = self.dropout1(attn_output, training=training)
+        ln1_output = self.layernorm1(inputs + attn_output)
+        fc_output = self.fully_connected(ln1_output)
+        fc_output = self.dropout2(fc_output, training=training)
+        return self.layernorm2(ln1_output + fc_output)
+
+
+class TokenAndPositionEmbedding(Layer):
+    def __init__(self, maxlen, vocab, embedding_size):
+        super(TokenAndPositionEmbedding, self).__init__()
+        self.token_emb = EmbedSequence(vocab=vocab,
+                                       embedding_size=embedding_size)
+        self.pos_emb = Embedding(input_dim=maxlen, output_dim=embedding_size)
+
+    def call(self, inputs, training=None, mask=None):
+        maxlen = tf.shape(inputs)[-1]
+        positions = tf.range(start=0, limit=maxlen, delta=1)
+        positions_hidden = self.pos_emb(positions)
+        token_hidden = self.token_emb(inputs)
+        return token_hidden + positions_hidden
 
 # todo future: maybe reintroduce these attention function
 # def feed_forward_attention(current_inputs, feature_hidden_size,

@@ -515,8 +515,10 @@ def test_sequence_generator(
 
 
 @pytest.mark.parametrize('enc_cell_type', ['lstm', 'rnn', 'gru'])
+@pytest.mark.parametrize('attention', [False, True])
 def test_sequence_tagger(
         enc_cell_type,
+        attention,
         csv_filename
 ):
     # Define input and output features
@@ -532,6 +534,7 @@ def test_sequence_tagger(
         sequence_feature(
             max_len=10,
             decoder='tagger',
+            attention=attention,
             reduce_input=None
         )
     ]
