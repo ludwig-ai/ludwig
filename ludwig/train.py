@@ -64,106 +64,70 @@ def train_cli(
     """*full_train* defines the entire training procedure used by Ludwig's
     internals. Requires most of the parameters that are taken into the model.
     Builds a full ludwig model and performs the training.
-    :param data_test_df:
-    :param data_df:
-    :param data_train_df:
-    :param data_validation_df:
-    :param model_definition: Model definition which defines the different
-           parameters of the model, features, preprocessing and training.
-    :type model_definition: Dictionary
-    :param model_definition_file: The file that specifies the model definition.
-           It is a yaml file.
-    :type model_definition_file: filepath (str)
-    :param data_csv: A CSV file containing the input data which is used to
-           train, validate and test a model. The CSV either contains a
-           split column or will be split.
-    :type data_csv: filepath (str)
-    :param data_train_csv: A CSV file containing the input data which is used
-           to train a model.
-    :type data_train_csv: filepath (str)
-    :param data_validation_csv: A CSV file containing the input data which is used
-           to validate a model..
-    :type data_validation_csv: filepath (str)
-    :param data_test_csv: A CSV file containing the input data which is used
-           to test a model.
-    :type data_test_csv: filepath (str)
-    :param data_hdf5: If the dataset is in the hdf5 format, this is used instead
-           of the csv file.
-    :type data_hdf5: filepath (str)
-    :param data_train_hdf5: If the training set is in the hdf5 format, this is
-           used instead of the csv file.
-    :type data_train_hdf5: filepath (str)
-    :param data_validation_hdf5: If the validation set is in the hdf5 format,
-           this is used instead of the csv file.
-    :type data_validation_hdf5: filepath (str)
-    :param data_test_hdf5: If the test set is in the hdf5 format, this is
-           used instead of the csv file.
-    :type data_test_hdf5: filepath (str)
-    :param training_set_metadata_json: If the dataset is in hdf5 format, this is
-           the associated json file containing metadata.
-    :type training_set_metadata_json: filepath (str)
-    :param experiment_name: The name for the experiment.
-    :type experiment_name: Str
-    :param model_name: Name of the model that is being used.
-    :type model_name: Str
-    :param model_load_path: If this is specified the loaded model will be used
+
+    :param model_definition: (dict, string) in-memory representation of model definition
+           or string path to the saved JSON model definition file.
+    :param model_definition_file: (string) path to user-defined definition YAML file.
+    :param dataset: (string, dict, DataFrame) source containing the entire dataset.
+           If it has a split column, it will be used for splitting (0: train,
+           1: validation, 2: test), otherwise the dataset will be randomly split.
+    :param training_set: (string, dict, DataFrame) source containing training data.
+    :param validation_set: (string, dict, DataFrame) source containing validation data.
+    :param test_set: (string, dict, DataFrame) source containing test data.
+    :param training_set_metadata: (string, dict) metadata JSON file or loaded metadata.
+           Intermediate preprocess structure containing the mappings of the input
+           CSV created the first time a CSV file is used in the same
+           directory with the same name and a '.json' extension.
+    :param data_format: (string) format to interpret data sources. Will be inferred
+           automatically if not specified.
+    :param experiment_name: (string) a name for the experiment, used for the save
+           directory
+    :param model_name: (string) a name for the model, used for the save
+           directory
+    :param model_load_path: (string) if this is specified the loaded model will be used
            as initialization (useful for transfer learning).
-    :type model_load_path: filepath (str)
-    :param model_resume_path: Resumes training of the model from the path
-           specified. The difference with model_load_path is that also training
-           statistics like the current epoch and the loss and performance so
-           far are also resumed effectively cotinuing a previously interrupted
-           training process.
-    :type model_resume_path: filepath (str)
-    :param skip_save_training_description: Disables saving
-           the description JSON file.
-    :type skip_save_training_description: Boolean
-    :param skip_save_training_statistics: Disables saving
-           training statistics JSON file.
-    :type skip_save_training_statistics: Boolean
-    :param skip_save_model: Disables saving model weights
-           and hyperparameters each time the model
+    :param model_resume_path: (string) path of a the model directory to
+           resume training of
+    :param skip_save_training_description: (bool, default: `False`) disables
+           saving the description JSON file.
+    :param skip_save_training_statistics: (bool, default: `False`) disables
+           saving training statistics JSON file.
+    :param skip_save_model: (bool, default: `False`) disables
+           saving model weights and hyperparameters each time the model
            improves. By default Ludwig saves model weights after each epoch
-           the validation metric improves, but if the model is really big
+           the validation metric imrpvoes, but if the model is really big
            that can be time consuming if you do not want to keep
            the weights and just find out what performance can a model get
            with a set of hyperparameters, use this parameter to skip it,
            but the model will not be loadable later on.
-    :type skip_save_model: Boolean
-    :param skip_save_progress: Disables saving
+    :param skip_save_progress: (bool, default: `False`) disables saving
            progress each epoch. By default Ludwig saves weights and stats
            after each epoch for enabling resuming of training, but if
            the model is really big that can be time consuming and will uses
            twice as much space, use this parameter to skip it, but training
            cannot be resumed later on.
-    :type skip_save_progress: Boolean
-    :param skip_save_processed_input: If a CSV dataset is provided it is
-           preprocessed and then saved as an hdf5 and json to avoid running
-           the preprocessing again. If this parameter is False,
-           the hdf5 and json file are not saved.
-    :type skip_save_processed_input: Boolean
-    :param skip_save_log: Disables saving TensorBoard
+    :param skip_save_log: (bool, default: `False`) disables saving TensorBoard
            logs. By default Ludwig saves logs for the TensorBoard, but if it
            is not needed turning it off can slightly increase the
-           overall speed..
-    :type skip_save_progress: Boolean
-    :param output_directory: The directory that will contain the training
-           statistics, the saved model and the training progress files.
-    :type output_directory: filepath (str)
+           overall speed.
+    :param skip_save_processed_input: (bool, default: `False`) skips saving
+           intermediate HDF5 and JSON files
+    :param output_directory: (string, default: `'results'`) directory that
+           contains the results
     :param gpus: (string, default: `None`) list of GPUs to use (it uses the
-            same syntax of CUDA_VISIBLE_DEVICES)
-    :type gpus: str
-    :param gpu_memory_limit: maximum memory in MB to allocate per GPU device.
-    :type gpu_memory_limit: Integer
-    :param allow_parallel_threads: allow TensorFlow to use multithreading parallelism
-           to improve performance at the cost of determinism.
-    :type allow_parallel_threads: Boolean
-    :param random_seed: Random seed used for weights initialization,
-           splits and any other random function.
-    :type random_seed: Integer
-    :param debug: If true turns on tfdbg with inf_or_nan checks.
-    :type debug: Boolean
-    :returns: None
+           same syntax of CUDA_VISIBLE_DEVICES)
+    :param gpu_memory_limit: (int: default: `None`) maximum memory in MB to allocate
+          per GPU device.
+    :param allow_parallel_threads: (bool, default: `True`) allow TensorFlow to use
+           multithreading parallelism to improve performance at the cost of
+           determinism.
+    :param use_horovod: (bool) use Horovod for distributed training. Will be set
+           automatically if `horovodrun` is used to launch the training script.
+    :param random_seed: (int, default`42`) a random seed that is going to be
+           used anywhere there is a call to a random number generator: data
+           splitting, parameter initialization and training set shuffling
+    :param logging_level: Log level that will be sent to stderr.
+    :param debug: (bool, default: `False`) enables debugging mode
     """
     model_definition = check_which_model_definition(model_definition,
                                                     model_definition_file)

@@ -77,7 +77,6 @@ class LudwigModel:
         """
         :param model_definition: (dict, string) in-memory representation of model definition
                or string path to the saved JSON model definition file.
-        :param model_definition_fp: (string) path to user-defined definition YAML file.
         :param logging_level: Log level that will be sent to stderr.
         :param use_horovod: (bool) use Horovod for distributed training. Will be set
                automatically if `horovodrun` is used to launch the training script.
