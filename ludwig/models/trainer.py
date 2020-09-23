@@ -287,8 +287,6 @@ class Trainer:
         :param test_set: The test dataset
         """
         # ====== General setup =======
-        tf.random.set_seed(self.random_seed)
-
         output_features = model.output_features
         digits_per_epochs = len(str(self.epochs))
         # Only use signals when on the main thread to avoid issues with CherryPy: https://github.com/uber/ludwig/issues/286
@@ -460,12 +458,15 @@ class Trainer:
         batcher = initialize_batcher(
             training_set,
             batch_size=self.batch_size,
+            seed=self.random_seed,
             horovod=self.horovod
         )
 
         # ================ Training Loop ================
         first_batch = True
         while progress_tracker.epoch < self.epochs:
+            batcher.set_epoch(progress_tracker.epoch)
+
             # epoch init
             start_time = time.time()
             if is_on_master():
@@ -581,7 +582,6 @@ class Trainer:
                 progress_bar.close()
 
             progress_tracker.epoch += 1
-            batcher.reset()
 
             # ================ Eval ================
             # init tables
