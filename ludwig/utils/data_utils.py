@@ -399,9 +399,9 @@ def replace_file_extension(file_path, extension):
     """
     if file_path is None:
         return None
-    if '.' in extension:
+    if '.' == extension[:1]:
         # Handle the case if the user calls with '.hdf5' instead of 'hdf5'
-        extension = extension.replace('.', '').strip()
+        extension = extension[1:].strip()
 
     return os.path.splitext(file_path)[0] + '.' + extension
 

@@ -158,7 +158,7 @@ def test_visualization_confusion_matrix_output_saved(csv_filename):
     vis_output_pattern_pdf = os.path.join(exp_dir_name, '*.pdf')
     vis_output_pattern_png = os.path.join(exp_dir_name, '*.png')
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth_metadata = experiment_source_data_name + '.json'
+    ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_stats = os.path.join(exp_dir_name, 'test_statistics.json')
     test_cmd_pdf = ['python',
                     '-m',
@@ -418,7 +418,7 @@ def test_visualization_compare_classifiers_from_pred_npy_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
+    ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -488,7 +488,7 @@ def test_visualization_compare_classifiers_from_pred_csv_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
+    ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -684,7 +684,7 @@ def test_visualization_compare_classifiers_multiclass_multimetric_output_saved(
     output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = os.path.join(exp_dir_name, 'test_statistics.json')
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth_metadata = experiment_source_data_name + '.json'
+    ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1146,7 +1146,7 @@ def test_vis_confidence_thresholding_data_vs_acc_subset_per_class_output_saved(
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
+    ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1444,7 +1444,7 @@ def test_visualization_roc_curves_output_saved(csv_filename):
         output_feature_name)
     experiment_source_data_name = csv_filename.split('.')[0]
     ground_truth = experiment_source_data_name + '.hdf5'
-    ground_truth_metadata = experiment_source_data_name + '.json'
+    ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1701,7 +1701,7 @@ def test_visualization_frequency_vs_f1_output_saved(csv_filename):
     output_feature_name = get_output_feature_name(exp_dir_name)
     test_stats = os.path.join(exp_dir_name, 'test_statistics.json')
     experiment_source_data_name = csv_filename.split('.')[0]
-    ground_truth_metadata = experiment_source_data_name + '.json'
+    ground_truth_metadata = experiment_source_data_name + '.meta.json'
     test_cmd_pdf = ['python',
                     '-m',
                     'ludwig.visualize',
@@ -1774,7 +1774,7 @@ def test_load_ground_truth_split_from_file(csv_filename):
     target_predictions_from_train = train_df[output_feature_name]
     target_predictions_from_val = val_df[output_feature_name]
     target_predictions_from_test = test_df[output_feature_name]
-    gtm_name = experiment_source_data_name + '.json'
+    gtm_name = experiment_source_data_name + '.meta.json'
     ground_truth_metadata = load_json(gtm_name)
     ground_truth_loaded_train_split = np.asarray([
         ground_truth_metadata[output_feature_name]['str2idx'][train_row]
