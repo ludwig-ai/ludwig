@@ -216,12 +216,11 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     results_dir = tmp_path / 'results'
     results_dir.mkdir()
 
-    _, _, _, _, output_dir = experiment_cli(
+    _, _, _, _, output_dir1 = experiment_cli(
         model_definition,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
-        output_directory='results'  # results_dir
     )
 
     model_definition['training']['epochs'] = 4
@@ -231,10 +230,10 @@ def test_resume_training(optimizer, generated_data, tmp_path):
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
         test_set=generated_data.test_df,
-        model_resume_path=output_dir
+        model_resume_path=output_dir1,
     )
 
-    experiment_cli(
+    _, _, _, _, output_dir2 = experiment_cli(
         model_definition,
         training_set=generated_data.train_df,
         validation_set=generated_data.validation_df,
@@ -242,61 +241,19 @@ def test_resume_training(optimizer, generated_data, tmp_path):
     )
 
     # compare learning curves with and without resuming
-    ts1 = load_json(os.path.join(output_dir, 'training_statistics.json'))
-    ts2 = load_json(os.path.join(output_dir, 'training_statistics.json'))
+    ts1 = load_json(os.path.join(output_dir1, 'training_statistics.json'))
+    ts2 = load_json(os.path.join(output_dir2, 'training_statistics.json'))
     print('ts1', ts1)
     print('ts2', ts2)
     assert ts1['training']['combined']['loss'] == ts2['training']['combined'][
         'loss']
 
     # compare predictions with and without resuming
-    y_pred1 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
-    y_pred2 = np.load(os.path.join(output_dir, 'y_predictions.npy'))
+    y_pred1 = np.load(os.path.join(output_dir1, 'y_predictions.npy'))
+    y_pred2 = np.load(os.path.join(output_dir2, 'y_predictions.npy'))
     print('y_pred1', y_pred1)
     print('y_pred2', y_pred2)
     assert np.all(np.isclose(y_pred1, y_pred2))
-
-
-# todo refactoring: check if this is relevant
-# work-in-progress
-# def test_model_save_resume(generated_data, tmp_path):
-#
-#     input_features, output_features = get_feature_definitions()
-#     model_definition = {
-#         'input_features': input_features,
-#         'output_features': output_features,
-#         'combiner': {'type': 'concat'},
-#         'training': {'epochs': 3, 'batch_size': 16}
-#     }
-#
-#     # create sub-directory to store results
-#     results_dir = tmp_path / 'results'
-#     results_dir.mkdir()
-#
-#     # perform inital model training
-#     ludwig_model = LudwigModel(model_definition)
-#     train_stats = ludwig_model.train(
-#         training_set=generated_data.train_df,
-#         validation_set=generated_data.validation_df,
-#         test_set=generated_data.test_df,
-#         output_directory='results' #results_dir
-#     )
-#
-#     # load saved model definition
-#     ludwig_model2 = LudwigModel.load(
-#         os.path.join(ludwig_model.exp_dir_name, 'model')
-#     )
-#
-#     for _, i_feature in ludwig_model2.model.ecd.input_features.items():
-#         i_feature.encoder_obj(None, training=False)
-#
-#     ludwig_model2.model.ecd.combiner({'x': {'encoder_output': [None]}}, training=False)
-#
-#     for _, o_feature in ludwig_model2.model.ecd.output_features.items():
-#         o_feature.decoder_obj(None, training=False)
-#
-#     pass
-
 
 @pytest.mark.parametrize('optimizer_type', optimizers_registry)
 def test_optimizers(optimizer_type, generated_data_for_optimizer, tmp_path):
