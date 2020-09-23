@@ -57,7 +57,6 @@ class Batcher(object):
                 indices
             )
 
-        self.index += self.batch_size
         self.step += 1
         return sub_batch
 
