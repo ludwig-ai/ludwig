@@ -37,7 +37,7 @@ def init_tensorflow_cpu(request):
     in `test_graph_execution.py` still run in graph mode.
     """
     import tensorflow as tf
-    tf.config.run_functions_eagerly(True)
+    tf.config.experimental_run_functions_eagerly(True)
     initialize_tensorflow(gpus=-1)
 
 

@@ -409,7 +409,7 @@ class Trainer:
                 tensor_debug_mode='FULL_HEALTH',
                 circular_buffer_size=-1,
             )
-            tf.config.run_functions_eagerly(True)
+            tf.config.experimental_run_functions_eagerly(True)
 
         # ================ Resume logic ================
         if self.resume:
