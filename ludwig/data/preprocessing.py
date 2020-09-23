@@ -789,7 +789,8 @@ def preprocess_for_training(
 
         elif training_set:
             if (file_exists_with_diff_extension(training_set, 'hdf5') and
-                    file_exists_with_diff_extension(training_set, 'json')):
+                    file_exists_with_diff_extension(training_set,
+                                                    'meta.json')):
                 logger.info(
                     'Found hdf5 and json with the same filename '
                     'of the csv, using them instead'
