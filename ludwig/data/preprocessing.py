@@ -770,14 +770,14 @@ def preprocess_for_training(
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
     if (data_format in CSV_FORMATS or data_format in TSV_FORMATS or
-            data_format in JSONL_FORMATS or data_format in EXCEL_FORMATS):
-        # todo: fix no JSON for name clash
+            data_format in JSON_FORMATS or data_format in JSONL_FORMATS or
+            data_format in EXCEL_FORMATS):
         if dataset:
             if (file_exists_with_diff_extension(dataset, 'hdf5') and
                     file_exists_with_diff_extension(dataset, 'meta.json')):
                 logger.info(
-                    'Found hdf5 and json with the same filename '
-                    'of the csv, using them instead'
+                    'Found hdf5 and meta.json with the same filename '
+                    'of the input file, using them instead'
                 )
                 dataset = replace_file_extension(dataset, 'hdf5')
                 training_set_metadata_fp = replace_file_extension(dataset,
@@ -1106,12 +1106,13 @@ def preprocess_for_prediction(
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
     if (data_format in CSV_FORMATS or data_format in TSV_FORMATS or
-            data_format in JSONL_FORMATS or data_format in EXCEL_FORMATS):
+            data_format in JSON_FORMATS or data_format in JSONL_FORMATS or
+            data_format in EXCEL_FORMATS):
         if (file_exists_with_diff_extension(dataset, 'hdf5') and
                 file_exists_with_diff_extension(dataset, 'meta.json')):
             logger.info(
-                'Found hdf5 and json with the same filename '
-                'of the csv, using them instead'
+                'Found hdf5 and meta.json with the same filename '
+                'of the input file, using them instead'
             )
             dataset = replace_file_extension(dataset, 'hdf5')
             model_definition['data_hdf5_fp'] = dataset
