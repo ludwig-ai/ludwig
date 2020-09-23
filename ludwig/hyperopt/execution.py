@@ -668,7 +668,6 @@ def train_and_eval_on_split(
         gpus=gpus,
         gpu_memory_limit=gpu_memory_limit,
         allow_parallel_threads=allow_parallel_threads,
-        random_seed=random_seed
     )
 
     train_stats, preprocessed_data, _ = model.train(

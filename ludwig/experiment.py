@@ -190,7 +190,6 @@ def experiment_cli(
             gpus=gpus,
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
-            random_seed=random_seed
         )
     (
         test_results,
