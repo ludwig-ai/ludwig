@@ -45,7 +45,9 @@ JSON_FORMATS = {'json'}
 JSONL_FORMATS = {'jsonl'}
 EXCEL_FORMATS = {'excel'}
 HDF5_FORMATS = {'hdf5', 'h5'}
-
+CACHEABLE_FORMATS = set.union(*(CSV_FORMATS, TSV_FORMATS,
+                                JSON_FORMATS, JSONL_FORMATS,
+                                EXCEL_FORMATS))
 
 def get_abs_path(data_csv_path, file_path):
     if data_csv_path is not None:

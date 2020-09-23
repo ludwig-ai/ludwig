@@ -34,7 +34,8 @@ from ludwig.utils import data_utils
 from ludwig.utils.data_utils import figure_data_format, \
     DATA_TRAIN_HDF5_FP, DICT_FORMATS, DATAFRAME_FORMATS, CSV_FORMATS, \
     HDF5_FORMATS, override_in_memory_flag, TSV_FORMATS, JSON_FORMATS, \
-    JSONL_FORMATS, read_tsv, read_jsonl, read_json, EXCEL_FORMATS, read_excel
+    JSONL_FORMATS, read_tsv, read_jsonl, read_json, EXCEL_FORMATS, read_excel, \
+    CACHEABLE_FORMATS
 from ludwig.utils.data_utils import file_exists_with_diff_extension
 from ludwig.utils.data_utils import read_csv
 from ludwig.utils.data_utils import replace_file_extension
@@ -766,12 +767,10 @@ def preprocess_for_training(
     features = (model_definition['input_features'] +
                 model_definition['output_features'])
 
-    # in case data_format is csv,
+    # in case data_format is one of the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
-    if (data_format in CSV_FORMATS or data_format in TSV_FORMATS or
-            data_format in JSON_FORMATS or data_format in JSONL_FORMATS or
-            data_format in EXCEL_FORMATS):
+    if data_format in CACHEABLE_FORMATS:
         if dataset:
             if (file_exists_with_diff_extension(dataset, 'hdf5') and
                     file_exists_with_diff_extension(dataset, 'meta.json')):
@@ -1102,12 +1101,10 @@ def preprocess_for_prediction(
         output_features += model_definition['output_features']
     features = model_definition['input_features'] + output_features
 
-    # in case data_format is csv,
+    # in case data_format is one fo the cacheable formats,
     # check if there's a cached hdf5 file with hte same name,
     # and in case move on with the hdf5 branch
-    if (data_format in CSV_FORMATS or data_format in TSV_FORMATS or
-            data_format in JSON_FORMATS or data_format in JSONL_FORMATS or
-            data_format in EXCEL_FORMATS):
+    if data_format in CACHEABLE_FORMATS:
         if (file_exists_with_diff_extension(dataset, 'hdf5') and
                 file_exists_with_diff_extension(dataset, 'meta.json')):
             logger.info(
