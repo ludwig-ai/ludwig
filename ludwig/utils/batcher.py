@@ -32,7 +32,7 @@ class Batcher(object):
 
         self.ignore_last = ignore_last
         self.batch_size = batch_size
-        self.total_size = dataset.size
+        self.total_size = len(sampler)
         self.steps_per_epoch = int(
             math.ceil(self.total_size / self.batch_size))
         self.index = 0
