@@ -287,21 +287,6 @@ def shuffle_dict_unison_inplace(np_dict, random_state=None):
     return recon
 
 
-def shuffle_inplace(np_dict):
-    if len(np_dict) == 0:
-        return
-    size = np_dict[next(iter(np_dict))].shape[0]
-    for k in np_dict:
-        if np_dict[k].shape[0] != size:
-            raise ValueError(
-                'Invalid: dictionary contains variable length arrays')
-
-    p = np.random.permutation(size)
-
-    for k in np_dict:
-        np_dict[k] = np_dict[k][p]
-
-
 def split_dataset_ttv(dataset, split):
     if SPLIT in dataset:
         del dataset[SPLIT]
